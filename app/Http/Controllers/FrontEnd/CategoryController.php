@@ -3627,470 +3627,43 @@ public function getSpecificationFilters1(Request $request)
         ->get()
         ->keyBy('measurement_type');
 
-    //    $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
-    //     $originalValue = trim($originalValue);
-        
-    //     // First try the database-configured measurement priorities
-    //     foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
-    //         $shouldConvert = false;
-            
-    //         switch (strtolower($measurementType)) {
-    //             case 'length':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'length') !== false ||
-    //                     stripos($attributeName, 'height') !== false ||
-    //                     stripos($attributeName, 'width') !== false ||
-    //                     stripos($attributeName, 'depth') !== false ||
-    //                     stripos($attributeName, 'diameter') !== false ||
-    //                     stripos($attributeName, 'dimension') !== false ||
-    //                     stripos($attributeName, 'size') !== false
-    //                 );
-    //                 break;
-    //             case 'mass':
-    //             case 'weight':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'weight') !== false ||
-    //                     stripos($attributeName, 'mass') !== false
-    //                 );
-    //                 break;
-    //             case 'volume':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'volume') !== false ||
-    //                     stripos($attributeName, 'capacity') !== false
-    //                 );
-    //                 break;
-    //             case 'voltage':
-    //             case 'electric_potential':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'voltage') !== false ||
-    //                     stripos($attributeName, 'volt') !== false
-    //                 );
-    //                 break;
-    //             case 'current':
-    //             case 'electric_current':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'current') !== false ||
-    //                     stripos($attributeName, 'ampere') !== false ||
-    //                     stripos($attributeName, 'amp') !== false
-    //                 );
-    //                 break;
-    //             case 'power':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'power') !== false ||
-    //                     stripos($attributeName, 'watt') !== false ||
-    //                     stripos($attributeName, 'horsepower') !== false
-    //                 );
-    //                 break;
-    //             case 'frequency':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'frequency') !== false ||
-    //                     stripos($attributeName, 'freq') !== false ||
-    //                     stripos($attributeName, 'hz') !== false ||
-    //                     stripos($attributeName, 'hertz') !== false
-    //                 );
-    //                 break;
-    //             case 'temperature':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'temperature') !== false ||
-    //                     stripos($attributeName, 'temp') !== false
-    //                 );
-    //                 break;
-    //             case 'pressure':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'pressure') !== false ||
-    //                     stripos($attributeName, 'psi') !== false ||
-    //                     stripos($attributeName, 'bar') !== false
-    //                 );
-    //                 break;
-    //             case 'speed':
-    //             case 'velocity':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'speed') !== false ||
-    //                     stripos($attributeName, 'velocity') !== false ||
-    //                     stripos($attributeName, 'rpm') !== false
-    //                 );
-    //                 break;
-    //             default:
-    //                 $shouldConvert = stripos($attributeName, $measurementType) !== false;
-    //                 break;
-    //         }
-            
-    //         if ($shouldConvert) {
-    //             // Handle values with units (like "208/220 V", "120V", "1.5W")
-    //             if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches)) {
-    //                 $numericValue = $matches[1];
-    //                 $originalUnit = $matches[2];
-    //                 $targetUnit = $priority->primary_unit;
-    //                 $targetSymbol = $priority->primary_symbol;
-                    
-    //                 // For values with slashes, preserve the format but standardize unit
-    //                 if (strpos($numericValue, '/') !== false) {
-    //                     return [
-    //                         'converted_value' => $numericValue,
-    //                         'unit' => $targetUnit,
-    //                         'symbol' => $targetSymbol,
-    //                         'display_value' => $numericValue . ' ' . $targetSymbol,
-    //                         'original_value' => $originalValue,
-    //                         'conversion_applied' => false
-    //                     ];
-    //                 } else {
-    //                     // Single numeric values with units - ACTUAL CONVERSION
-    //                     try {
-    //                         $convertedValue = convert_unit($measurementType, (float)$numericValue, $originalUnit, $targetUnit);
-                            
-    //                         if (is_numeric($convertedValue) && $convertedValue !== false) {
-    //                             // Round appropriately based on measurement type
-    //                             $roundedValue = $this->roundByMeasurementType($measurementType, $convertedValue);
-                                
-    //                             return [
-    //                                 'converted_value' => $roundedValue,
-    //                                 'unit' => $targetUnit,
-    //                                 'symbol' => $targetSymbol,
-    //                                 'display_value' => $roundedValue . ' ' . $targetSymbol,
-    //                                 'original_value' => $originalValue,
-    //                                 'conversion_applied' => true
-    //                             ];
-    //                         } else {
-    //                             // Conversion failed, use original value but standardize unit symbol
-    //                             return [
-    //                                 'converted_value' => $numericValue,
-    //                                 'unit' => $targetUnit,
-    //                                 'symbol' => $targetSymbol,
-    //                                 'display_value' => $numericValue . ' ' . $targetSymbol,
-    //                                 'original_value' => $originalValue,
-    //                                 'conversion_applied' => false
-    //                             ];
-    //                         }
-    //                     } catch (Exception $e) {
-    //                         // Log conversion error for debugging
-    //                         \Log::warning("Unit conversion failed for {$attributeName}: {$originalValue}. Error: " . $e->getMessage());
-                            
-    //                         // Return original value with standardized unit symbol
-    //                         return [
-    //                             'converted_value' => $numericValue,
-    //                             'unit' => $targetUnit,
-    //                             'symbol' => $targetSymbol,
-    //                             'display_value' => $numericValue . ' ' . $targetSymbol,
-    //                             'original_value' => $originalValue,
-    //                             'conversion_applied' => false
-    //                         ];
-    //                     }
-    //                 }
-    //             }
-    //             // Handle values without units but should have them (like "208/220", "120")
-    //             else if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue, $matches)) {
-    //                 $numericValue = $matches[1];
-    //                 $targetUnit = $priority->primary_unit;
-    //                 $targetSymbol = $priority->primary_symbol;
-                    
-    //                 return [
-    //                     'converted_value' => $numericValue,
-    //                     'unit' => $targetUnit,
-    //                     'symbol' => $targetSymbol,
-    //                     'display_value' => $numericValue . ' ' . $targetSymbol,
-    //                     'original_value' => $originalValue,
-    //                     'conversion_applied' => false
-    //                 ];
-    //             }
-    //             // Handle fractional values (like "3/4")
-    //             else if (preg_match('/^(\d+\/\d+)$/', $originalValue, $matches)) {
-    //                 $fractionValue = $matches[1];
-    //                 $targetUnit = $priority->primary_unit;
-    //                 $targetSymbol = $priority->primary_symbol;
-                    
-    //                 return [
-    //                     'converted_value' => $fractionValue,
-    //                     'unit' => $targetUnit,
-    //                     'symbol' => $targetSymbol,
-    //                     'display_value' => $fractionValue . ' ' . $targetSymbol,
-    //                     'original_value' => $originalValue,
-    //                     'conversion_applied' => false
-    //                 ];
-    //             }
-    //             // If shouldConvert is true but value doesn't match expected patterns,
-    //             // just return original without adding units
-    //             else {
-    //                 return [
-    //                     'converted_value' => $originalValue,
-    //                     'unit' => null,
-    //                     'symbol' => '',
-    //                     'display_value' => $originalValue,
-    //                     'original_value' => $originalValue,
-    //                     'conversion_applied' => false
-    //                 ];
-    //             }
-    //         }
-    //     }
-        
-    //     // Return original value if no database config found and no conversion needed
-    //     // FIXED: Don't add hardcoded units for non-measurement attributes
-    //     return [
-    //         'converted_value' => $originalValue,
-    //         'unit' => null,
-    //         'symbol' => '',
-    //         'display_value' => $originalValue,
-    //         'original_value' => $originalValue,
-    //         'conversion_applied' => false
-    //     ];
-    // };
-
-    //   $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
-    //     $originalValue = trim($originalValue);
-        
-    //     // Only apply conversion logic if this attribute is explicitly configured in measurement priorities
-    //     $matchedMeasurementType = null;
-    //     $matchedPriority = null;
-        
-    //     foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
-    //         $shouldConvert = false;
-            
-    //         switch (strtolower($measurementType)) {
-    //             case 'length':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'length') !== false ||
-    //                     stripos($attributeName, 'height') !== false ||
-    //                     stripos($attributeName, 'width') !== false ||
-    //                     stripos($attributeName, 'depth') !== false ||
-    //                     stripos($attributeName, 'diameter') !== false ||
-    //                     stripos($attributeName, 'dimension') !== false ||
-    //                     stripos($attributeName, 'size') !== false
-    //                 );
-    //                 break;
-    //             case 'mass':
-    //             case 'weight':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'weight') !== false ||
-    //                     stripos($attributeName, 'mass') !== false
-    //                 );
-    //                 break;
-    //             case 'volume':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'volume') !== false ||
-    //                     stripos($attributeName, 'capacity') !== false
-    //                 );
-    //                 break;
-    //             case 'voltage':
-    //             case 'electric_potential':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'voltage') !== false ||
-    //                     stripos($attributeName, 'volt') !== false
-    //                 );
-    //                 break;
-    //             case 'current':
-    //             case 'electric_current':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'current') !== false ||
-    //                     stripos($attributeName, 'ampere') !== false ||
-    //                     stripos($attributeName, 'amp') !== false
-    //                 );
-    //                 break;
-    //             case 'power':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'power') !== false ||
-    //                     stripos($attributeName, 'watt') !== false ||
-    //                     stripos($attributeName, 'horsepower') !== false
-    //                 );
-    //                 break;
-    //             case 'frequency':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'frequency') !== false ||
-    //                     stripos($attributeName, 'freq') !== false ||
-    //                     stripos($attributeName, 'hz') !== false ||
-    //                     stripos($attributeName, 'hertz') !== false
-    //                 );
-    //                 break;
-    //             case 'temperature':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'temperature') !== false ||
-    //                     stripos($attributeName, 'temp') !== false
-    //                 );
-    //                 break;
-    //             case 'pressure':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'pressure') !== false ||
-    //                     stripos($attributeName, 'psi') !== false ||
-    //                     stripos($attributeName, 'bar') !== false
-    //                 );
-    //                 break;
-    //             case 'speed':
-    //             case 'velocity':
-    //                 $shouldConvert = (
-    //                     stripos($attributeName, 'speed') !== false ||
-    //                     stripos($attributeName, 'velocity') !== false ||
-    //                     stripos($attributeName, 'rpm') !== false
-    //                 );
-    //                 break;
-    //             default:
-    //                 $shouldConvert = stripos($attributeName, $measurementType) !== false;
-    //                 break;
-    //         }
-            
-    //         if ($shouldConvert) {
-    //             $matchedMeasurementType = $measurementType;
-    //             $matchedPriority = $priority;
-    //             break;
-    //         }
-    //     }
-        
-    //     // If no measurement type matched, return original value without units
-    //     if (!$matchedMeasurementType || !$matchedPriority) {
-    //         return [
-    //             'converted_value' => $originalValue,
-    //             'unit' => null,
-    //             'symbol' => '',
-    //             'display_value' => $originalValue,
-    //             'original_value' => $originalValue,
-    //             'conversion_applied' => false
-    //         ];
-    //     }
-        
-    //     // Check if the value actually looks like it needs measurement conversion
-    //     // Only convert values that have units or are pure numbers that make sense for the measurement type
-    //     $hasUnits = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue);
-    //     $isPureNumber = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue);
-        
-    //     // For capacity attributes, be more selective - only convert if it actually has volume units
-    //     if (strtolower($matchedMeasurementType) === 'volume' && stripos($attributeName, 'capacity') !== false) {
-    //         if ($hasUnits) {
-    //             // Check if the unit is actually a volume unit
-    //             if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches)) {
-    //                 $unit = strtolower($matches[2]);
-    //                 $volumeUnits = ['l', 'ml', 'liter', 'litre', 'gallon', 'gal', 'quart', 'qt', 'pint', 'pt', 'cup', 'fl', 'oz', 'm3', 'cm3', 'mm3'];
-    //                 if (!in_array($unit, $volumeUnits)) {
-    //                     // Not a volume unit, don't convert
-    //                     return [
-    //                         'converted_value' => $originalValue,
-    //                         'unit' => null,
-    //                         'symbol' => '',
-    //                         'display_value' => $originalValue,
-    //                         'original_value' => $originalValue,
-    //                         'conversion_applied' => false
-    //                     ];
-    //                 }
-    //             }
-    //         } else if ($isPureNumber) {
-    //             // Pure numbers for capacity might be counts, not measurements
-    //             // Only convert if the numbers are in a range that makes sense for volume
-    //             $numericValue = (float)$originalValue;
-    //             if ($numericValue < 100 && !strpos($originalValue, '.')) {
-    //                 // Small whole numbers for capacity are likely counts
-    //                 return [
-    //                     'converted_value' => $originalValue,
-    //                     'unit' => null,
-    //                     'symbol' => '',
-    //                     'display_value' => $originalValue,
-    //                     'original_value' => $originalValue,
-    //                     'conversion_applied' => false
-    //                 ];
-    //             }
-    //         }
-    //     }
-        
-    //     // Now proceed with the conversion logic for matched measurement types
-    //     $targetUnit = $matchedPriority->primary_unit;
-    //     $targetSymbol = $matchedPriority->primary_symbol;
-        
-    //     // Handle values with units (like "208/220 V", "120V", "1.5W")
-    //     if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches)) {
-    //         $numericValue = $matches[1];
-    //         $originalUnit = $matches[2];
-            
-    //         // For values with slashes, preserve the format but standardize unit
-    //         if (strpos($numericValue, '/') !== false) {
-    //             return [
-    //                 'converted_value' => $numericValue,
-    //                 'unit' => $targetUnit,
-    //                 'symbol' => $targetSymbol,
-    //                 'display_value' => $numericValue . ' ' . $targetSymbol,
-    //                 'original_value' => $originalValue,
-    //                 'conversion_applied' => false
-    //             ];
-    //         } else {
-    //             // Single numeric values with units - ACTUAL CONVERSION
-    //             try {
-    //                 $convertedValue = convert_unit($matchedMeasurementType, (float)$numericValue, $originalUnit, $targetUnit);
-                    
-    //                 if (is_numeric($convertedValue) && $convertedValue !== false) {
-    //                     // Round appropriately based on measurement type
-    //                     $roundedValue = $this->roundByMeasurementType($matchedMeasurementType, $convertedValue);
-                        
-    //                     return [
-    //                         'converted_value' => $roundedValue,
-    //                         'unit' => $targetUnit,
-    //                         'symbol' => $targetSymbol,
-    //                         'display_value' => $roundedValue . ' ' . $targetSymbol,
-    //                         'original_value' => $originalValue,
-    //                         'conversion_applied' => true
-    //                     ];
-    //                 } else {
-    //                     // Conversion failed, use original value but standardize unit symbol
-    //                     return [
-    //                         'converted_value' => $numericValue,
-    //                         'unit' => $targetUnit,
-    //                         'symbol' => $targetSymbol,
-    //                         'display_value' => $numericValue . ' ' . $targetSymbol,
-    //                         'original_value' => $originalValue,
-    //                         'conversion_applied' => false
-    //                     ];
-    //                 }
-    //             } catch (Exception $e) {
-    //                 // Log conversion error for debugging
-    //                 \Log::warning("Unit conversion failed for {$attributeName}: {$originalValue}. Error: " . $e->getMessage());
-                    
-    //                 // Return original value with standardized unit symbol
-    //                 return [
-    //                     'converted_value' => $numericValue,
-    //                     'unit' => $targetUnit,
-    //                     'symbol' => $targetSymbol,
-    //                     'display_value' => $numericValue . ' ' . $targetSymbol,
-    //                     'original_value' => $originalValue,
-    //                     'conversion_applied' => false
-    //                 ];
-    //             }
-    //         }
-    //     }
-    //     // Handle values without units but should have them (like "208/220", "120")
-    //     else if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue, $matches)) {
-    //         $numericValue = $matches[1];
-            
-    //         return [
-    //             'converted_value' => $numericValue,
-    //             'unit' => $targetUnit,
-    //             'symbol' => $targetSymbol,
-    //             'display_value' => $numericValue . ' ' . $targetSymbol,
-    //             'original_value' => $originalValue,
-    //             'conversion_applied' => false
-    //         ];
-    //     }
-    //     // Handle fractional values (like "3/4")
-    //     else if (preg_match('/^(\d+\/\d+)$/', $originalValue, $matches)) {
-    //         $fractionValue = $matches[1];
-            
-    //         return [
-    //             'converted_value' => $fractionValue,
-    //             'unit' => $targetUnit,
-    //             'symbol' => $targetSymbol,
-    //             'display_value' => $fractionValue . ' ' . $targetSymbol,
-    //             'original_value' => $originalValue,
-    //             'conversion_applied' => false
-    //         ];
-    //     }
-    //     // If value doesn't match expected patterns, return original without units
-    //     else {
-    //         return [
-    //             'converted_value' => $originalValue,
-    //             'unit' => null,
-    //             'symbol' => '',
-    //             'display_value' => $originalValue,
-    //             'original_value' => $originalValue,
-    //             'conversion_applied' => false
-    //         ];
-    //     }
-    // };
     $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
         $originalValue = trim($originalValue);
-        
-        // Only apply conversion logic if this attribute is explicitly configured in measurement priorities
+        // Handle count-based capacity attributes with their own units
+           // Handle count-based capacity attributes 
+      // Handle count-based capacity attributes 
+           // Handle count-based capacity attributes 
+           // Handle count-based capacity attributes 
+         // Handle count-based capacity attributes 
+           if (preg_match('/capacity\b/i', $attributeName) && 
+                preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel|pan)\b/i', $attributeName, $matches)) {
+                
+                // If the original value already has the unit, don't add it again
+                $unitName = ucfirst($matches[1]) . 's';
+                if (stripos($originalValue, $unitName) !== false) {
+                    // Value already has unit, return as-is
+                    return [
+                        'converted_value' => $originalValue,
+                        'unit' => null,
+                        'symbol' => '',
+                        'display_value' => $originalValue,
+                        'original_value' => $originalValue,
+                        'conversion_applied' => false
+                    ];
+                }
+                
+                // Value doesn't have unit, add it
+                return [
+                    'converted_value' => $originalValue,
+                    'unit' => $unitName,
+                    'symbol' => $unitName,
+                    'display_value' => $originalValue . ' ' . $unitName,
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false
+                ];
+            }
+                
+        // Check if this attribute matches any measurement type in the database
         $matchedMeasurementType = null;
         $matchedPriority = null;
         
@@ -4116,10 +3689,14 @@ public function getSpecificationFilters1(Request $request)
                         stripos($attributeName, 'mass') !== false
                     );
                     break;
-                case 'volume':
+               case 'volume':
+                    // More specific volume detection
                     $shouldConvert = (
                         stripos($attributeName, 'volume') !== false ||
-                        stripos($attributeName, 'capacity') !== false
+                        ($attributeName === 'Capacity') 
+                        //|| // Generic capacity IS a volume measurement
+                        // (stripos($attributeName, 'capacity') !== false && 
+                        // !preg_match('/\b\d+\s*(oz|ml|l|liter|litre|")\.\s*\w+\s+capacity\b/i', $attributeName))
                     );
                     break;
                 case 'voltage':
@@ -4185,7 +3762,7 @@ public function getSpecificationFilters1(Request $request)
             }
         }
         
-        // If no measurement type matched, return original value without units
+        // If no measurement type matched, return as-is (this will show all filters)
         if (!$matchedMeasurementType || !$matchedPriority) {
             return [
                 'converted_value' => $originalValue,
@@ -4197,49 +3774,21 @@ public function getSpecificationFilters1(Request $request)
             ];
         }
         
-        // Check if the value actually looks like it needs measurement conversion
-        // Only convert values that have units or are pure numbers that make sense for the measurement type
-        $hasUnits = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue);
-        $isPureNumber = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue);
-        
-        // For capacity attributes, be more selective - only convert if it actually has volume units
-        if (strtolower($matchedMeasurementType) === 'volume' && stripos($attributeName, 'capacity') !== false) {
-            if ($hasUnits) {
-                // Check if the unit is actually a volume unit
-                if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches)) {
-                    $unit = strtolower($matches[2]);
-                    $volumeUnits = ['l', 'ml', 'liter', 'litre', 'gallon', 'gal', 'quart', 'qt', 'pint', 'pt', 'cup', 'fl', 'oz', 'm3', 'cm3', 'mm3'];
-                    if (!in_array($unit, $volumeUnits)) {
-                        // Not a volume unit, don't convert
-                        return [
-                            'converted_value' => $originalValue,
-                            'unit' => null,
-                            'symbol' => '',
-                            'display_value' => $originalValue,
-                            'original_value' => $originalValue,
-                            'conversion_applied' => false
-                        ];
-                    }
-                }
-            } else if ($isPureNumber) {
-                // Pure numbers for capacity might be counts, not measurements
-                // Only convert if the numbers are in a range that makes sense for volume
-                $numericValue = (float)$originalValue;
-                if ($numericValue < 100 && !strpos($originalValue, '.')) {
-                    // Small whole numbers for capacity are likely counts
-                    return [
-                        'converted_value' => $originalValue,
-                        'unit' => null,
-                        'symbol' => '',
-                        'display_value' => $originalValue,
-                        'original_value' => $originalValue,
-                        'conversion_applied' => false
-                    ];
-                }
+        // For volume measurement type, check if values are counts vs actual volumes
+        if (strtolower($matchedMeasurementType) === 'volume') {
+             if (preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\s+capacity\b/i', $attributeName)) {
+                return [
+                    'converted_value' => $originalValue,
+                    'unit' => null,
+                    'symbol' => '',
+                    'display_value' => $originalValue,
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false
+                 ];
             }
         }
         
-        // Now proceed with the conversion logic for matched measurement types
+        // Proceed with measurement conversion
         $targetUnit = $matchedPriority->primary_unit;
         $targetSymbol = $matchedPriority->primary_symbol;
         
@@ -4340,6 +3889,31 @@ public function getSpecificationFilters1(Request $request)
             ];
         }
     };
+
+    // Helper function to round values appropriately by measurement type
+    $roundByMeasurementType = function($measurementType, $value) {
+        switch (strtolower($measurementType)) {
+            case 'length':
+            case 'mass':
+            case 'weight':
+            case 'volume':
+                return $value < 10 ? round($value, 2) : round($value);
+            case 'voltage':
+            case 'current':
+            case 'power':
+            case 'frequency':
+                return $value < 100 ? round($value, 1) : round($value);
+            case 'temperature':
+                return round($value, 1);
+            case 'pressure':
+            case 'speed':
+            case 'velocity':
+                return round($value);
+            default:
+                return round($value, 2);
+        }
+    };
+
     // Get products from current category
     $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
     
@@ -4382,7 +3956,6 @@ public function getSpecificationFilters1(Request $request)
     $rangeFiltersByAttribute = [];
     $selectedFilters = [];
 
-    // FIXED: Enhanced filter parsing to handle both start/end and min/max formats
     if ($request->has('filters') && is_array($request->filters)) {
         foreach ($request->filters as $filter) {
             if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
@@ -4396,7 +3969,6 @@ public function getSpecificationFilters1(Request $request)
 
             $isRangeFilter = false;
             
-            // Handle YOUR URL format: start/end
             if (is_array($filter['specification_value']) && 
                 isset($filter['specification_value']['start']) && 
                 isset($filter['specification_value']['end'])) {
@@ -4415,7 +3987,6 @@ public function getSpecificationFilters1(Request $request)
                     'max' => (int)$filter['specification_value']['end']
                 ]];
             } else {
-                // Handle standard min/max format
                 foreach ($specValues as $value) {
                     if (is_array($value) && isset($value['min']) && isset($value['max'])) {
                         $isRangeFilter = true;
@@ -4475,14 +4046,13 @@ public function getSpecificationFilters1(Request $request)
         }
     }
 
-    // FIXED: Apply range filters with better error handling
+    // Apply range filters
     foreach ($rangeFiltersByAttribute as $specName => $ranges) {
         $attribute = Attribute::where('name', $specName)->first();
         if (!$attribute) {
             continue;
         }
 
-        // Get all products that have this attribute
         $productsWithAttribute = DB::table('product_attributes as pa')
             ->where('pa.attribute_id', $attribute->id)
             ->whereIn('pa.product_id', $filteredProductIds)
@@ -4498,17 +4068,14 @@ public function getSpecificationFilters1(Request $request)
             $min = (int)$range['min'];
             $max = (int)$range['max'];
 
-            // Filter products in PHP instead of complex SQL
             $rangeMatches = $productsWithAttribute->filter(function($item) use ($min, $max) {
                 $value = trim($item->attribute_value);
                 
-                // Handle pure numbers
                 if (is_numeric($value)) {
                     $numericValue = (int)round((float)$value);
                     return $numericValue >= $min && $numericValue <= $max;
                 }
                 
-                // Handle numbers with units (e.g., "25 cm", "30cm")
                 if (preg_match('/^(\d+(?:\.\d+)?)\s*[a-zA-Z]*$/', $value, $matches)) {
                     $numericValue = (int)round((float)$matches[1]);
                     return $numericValue >= $min && $numericValue <= $max;
@@ -4520,12 +4087,9 @@ public function getSpecificationFilters1(Request $request)
             $allMatchingProductIds = $allMatchingProductIds->merge($rangeMatches);
         }
 
-        // Apply the filter
         $filteredProductIds = $filteredProductIds->intersect($allMatchingProductIds->unique());
 
-        // If no products found, continue to show available filters instead of returning empty
         if ($filteredProductIds->isEmpty()) {
-            // Log for debugging but don't break
             \Log::info("No products match range filter for: $specName");
             continue;
         }
@@ -4782,7 +4346,7 @@ public function getSpecificationFilters1(Request $request)
 
     $paginatedProducts->setCollection($modifiedProducts);
 
-    // Build filters
+    // Build filters - ALWAYS show all filters
     $filters = [];
 
     $subCategory = DB::table('sub_categories')
@@ -4826,7 +4390,8 @@ public function getSpecificationFilters1(Request $request)
                     $attributeName = $attribute->name;
                     $isFilterSelected = isset($selectedFilters[$attributeName]);
 
-                    $productIdsToUse = $isFilterSelected ? $allCategoryProductIds : $filteredProductIds;
+                    // ALWAYS use all category products for filter generation
+                    $productIdsToUse = $allCategoryProductIds;
 
                     $attributeValues = DB::table('product_attributes as pa')
                         ->join('attributes as at', 'at.id', '=', 'pa.attribute_id')
@@ -4871,16 +4436,19 @@ public function getSpecificationFilters1(Request $request)
                             }
                             return $cleanedVal;
                         });
+                        // BUT NOT for count-based capacity attributes
+                        $isCountBasedCapacity = (preg_match('/capacity\b/i', $attributeName) && 
+                            preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel|pan)\b/i', $attributeName));
 
-                        // FIXED: Range generation with improved logic
-                        if ($numericValues && $cleanedValues->count() > 2) {
+                        // Generate range filters for numeric values with more than 2 unique values
+                        
+                        if ($numericValues && $cleanedValues->count() > 2 && !$isCountBasedCapacity) {
                             $sorted = $cleanedValues->filter(function($value) {
                                 return is_numeric($value);
                             })->map(function($val) {
                                 return (int)$val;
                             })->unique()->sort()->values();
 
-                            // Only proceed if we have more than 2 unique values
                             if ($sorted->count() > 2) {
                                 $chunkCount = min(5, ceil($sorted->count() / 2));
                                 $chunkSize = ceil($sorted->count() / $chunkCount);
@@ -4891,7 +4459,6 @@ public function getSpecificationFilters1(Request $request)
                                     $min = (int)$chunk->first();
                                     $max = (int)$chunk->last();
 
-                                    // Skip ranges where min equals max (same value ranges)
                                     if ($min == $max && $chunk->count() == 1) {
                                         return null;
                                     }
@@ -4915,27 +4482,11 @@ public function getSpecificationFilters1(Request $request)
                                         'display_value' => $displayValue,
                                         'symbol' => $unit
                                     ];
-                                })->filter(function($range) use ($isFilterSelected) {
-                                    // Filter out null ranges and ranges with same min/max (unless selected)
-                                    return $range !== null && ($isFilterSelected || $range['product_count'] > 0);
+                                })->filter(function($range) {
+                                    return $range !== null;
                                 })->values()->toArray();
 
-                                // Merge consecutive ranges if they have same min/max to avoid duplicates
-                                $mergedRanges = [];
-                                foreach ($ranges as $range) {
-                                    $isDuplicate = false;
-                                    foreach ($mergedRanges as $existingRange) {
-                                        if ($existingRange['min'] == $range['min'] && $existingRange['max'] == $range['max']) {
-                                            $isDuplicate = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!$isDuplicate) {
-                                        $mergedRanges[] = $range;
-                                    }
-                                }
-                                $ranges = $mergedRanges;
-
+                                // Add selected ranges
                                 foreach ($selectedRanges as $selectedRange) {
                                     if (is_array($selectedRange) && isset($selectedRange['min']) && isset($selectedRange['max'])) {
                                         $selectedMin = (int)$selectedRange['min'];
@@ -4978,7 +4529,6 @@ public function getSpecificationFilters1(Request $request)
                                     return $a['min'] - $b['min'];
                                 });
 
-                                // Only add if we have valid ranges (more than 1)
                                 if (count($ranges) > 1) {
                                     $filters[] = [
                                         'specification_name' => $attributeName,
@@ -4988,7 +4538,7 @@ public function getSpecificationFilters1(Request $request)
                                 }
                             }
                         } else {
-                            // For fixed values - only show if there are more than 1 unique values
+                            // For fixed values - show all values
                             $valueCountMap = [];
                             $selectedValues = isset($selectedFilters[$attributeName]) ? $selectedFilters[$attributeName] : [];
 
@@ -5004,18 +4554,16 @@ public function getSpecificationFilters1(Request $request)
                                     ->unique()
                                     ->count();
 
-                                if ($isFilterSelected || $productCount > 0) {
-                                    $valueCountMap[] = [
-                                        'value' => $correspondingItem->attribute_value,
-                                        'display_value' => $displayValue,
-                                        'converted_value' => $correspondingItem->converted_value,
-                                        'unit' => $correspondingItem->unit,
-                                        'symbol' => $correspondingItem->symbol,
-                                        'product_count' => $productCount,
-                                        'display_with_count' => $displayValue . ' (' . $productCount . ')',
-                                        'conversion_applied' => $correspondingItem->conversion_applied
-                                    ];
-                                }
+                                $valueCountMap[] = [
+                                    'value' => $correspondingItem->attribute_value,
+                                    'display_value' => $displayValue,
+                                    'converted_value' => $correspondingItem->converted_value,
+                                    'unit' => $correspondingItem->unit,
+                                    'symbol' => $correspondingItem->symbol,
+                                    'product_count' => $productCount,
+                                    'display_with_count' => $correspondingItem->display_value . ' (' . $productCount . ')',
+                                    'conversion_applied' => $correspondingItem->conversion_applied
+                                ];
                             }
 
                             foreach ($selectedValues as $selectedValue) {
@@ -5044,7 +4592,9 @@ public function getSpecificationFilters1(Request $request)
                                         'unit' => $conversionResult['unit'],
                                         'symbol' => $conversionResult['symbol'],
                                         'product_count' => $productCount,
-                                        'display_with_count' => $conversionResult['display_value'] . ' (' . $productCount . ')',
+                                        'display_with_count' => ($conversionResult['symbol'] ? 
+                                        $conversionResult['converted_value'] . ' ' . $conversionResult['symbol'] : 
+                                        $conversionResult['display_value']) . ' (' . $productCount . ')',
                                         'selected' => true,
                                         'conversion_applied' => $conversionResult['conversion_applied']
                                     ];
@@ -5052,11 +4602,9 @@ public function getSpecificationFilters1(Request $request)
                             }
 
                             usort($valueCountMap, function($a, $b) {
-                                // Extract numeric values from display values for proper sorting
                                 $aNumeric = null;
                                 $bNumeric = null;
                                 
-                                // Try to extract number from display value
                                 if (preg_match('/^(\d+(?:\.\d+)?)\s*/', $a['display_value'], $matches)) {
                                     $aNumeric = (float)$matches[1];
                                 }
@@ -5064,22 +4612,19 @@ public function getSpecificationFilters1(Request $request)
                                     $bNumeric = (float)$matches[1];
                                 }
                                 
-                                // If both have numeric values, sort numerically
                                 if ($aNumeric !== null && $bNumeric !== null) {
                                     return $aNumeric - $bNumeric;
                                 }
                                 
-                                // Fallback to converted_value if available
                                 if (is_numeric($a['converted_value']) && is_numeric($b['converted_value'])) {
                                     return (int)round((float)$a['converted_value']) - (int)round((float)$b['converted_value']);
                                 }
                                 
-                                // Final fallback to string comparison
                                 return strcmp($a['display_value'], $b['display_value']);
                             });
 
-                            // Only add fixed filter if we have more than 1 unique value
-                            if (count($valueCountMap) > 1) {
+                            // Always add filters if they have values
+                            if (count($valueCountMap) > 0) {
                                 $filters[] = [
                                     'specification_name' => $attributeName,
                                     'specification_type' => 'fixed',
@@ -5176,6 +4721,7 @@ public function getSpecificationFilters1(Request $request)
         'category_measurement_priorities' => $categoryMeasurementPriorities->toArray()
     ]);
 }
+
 private function getAllCategoryProductIds($categoryId)
 {
     // Get products from current category
