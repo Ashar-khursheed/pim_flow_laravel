@@ -127,10 +127,10 @@ public function index(Request $request): JsonResponse
            
             // 👇 Conditional validation
             'customer_ids'   => 'required_if:basis,customer|array',
-            'customer_ids.*' => 'required_if:basis,customer|exists:ec_customers,id',
+            'customer_ids.*' => 'required_if:basis,customer|exists:customers,id',
 
             'category_ids'   => 'required_if:basis,category|array',
-            'category_ids.*' => 'required_if:basis,category|exists:ec_product_categories,id',
+            'category_ids.*' => 'required_if:basis,category|exists:categories,id',
 
             'product_ids'   => 'required_if:basis,product|array',
             'product_ids.*' => 'required_if:basis,product|exists:ec_products,id',
