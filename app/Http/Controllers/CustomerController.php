@@ -258,7 +258,7 @@ class CustomerController extends Controller
 		} else {
 			unset($validatedData['profile_img']); // Don't update this field at all
 		}
-		
+
 
 
 		if (isset($validatedData['password'])) {
@@ -364,7 +364,7 @@ public function filterByDate(Request $request)
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
- 
+
         // First, let's check if there are ANY customers in the database
         $totalCustomers = Customer::count();
 
@@ -385,7 +385,7 @@ public function filterByDate(Request $request)
             Carbon::parse($endDate)->endOfDay()
         ])->getBindings();
 
-    
+
 
         // Execute the query
         $customers = Customer::whereBetween($dateType, [
@@ -393,7 +393,7 @@ public function filterByDate(Request $request)
             Carbon::parse($endDate)->endOfDay()
         ])->get();
 
-     
+
         // Return proper response
         return response()->json([
             'success' => true,
@@ -408,7 +408,7 @@ public function filterByDate(Request $request)
         ]);
 
     } catch (\Exception $e) {
-       
+
         return response()->json([
             'success' => false,
             'message' => 'An error occurred: ' . $e->getMessage(),

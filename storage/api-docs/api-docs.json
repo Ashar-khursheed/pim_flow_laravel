@@ -17329,6 +17329,130 @@
                 ]
             }
         },
+        "/api/frontend/pre-purchase-claims": {
+            "post": {
+                "tags": [
+                    "FrontEnd-PrePurchaseClaims"
+                ],
+                "summary": "Create a new pre-purchase claim",
+                "operationId": "d54e3f13534ae49f89999ce3122e43aa",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "customer_name",
+                                    "customer_email",
+                                    "product_url",
+                                    "product_price",
+                                    "product_quantity",
+                                    "competitor_product_url",
+                                    "competitor_product_price",
+                                    "customer_address",
+                                    "customer_country",
+                                    "customer_city",
+                                    "is_confirm",
+                                    "is_agree"
+                                ],
+                                "properties": {
+                                    "customer_name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "customer_business_name": {
+                                        "type": "string",
+                                        "example": "Doe Enterprises"
+                                    },
+                                    "customer_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "customer_country_code": {
+                                        "type": "string",
+                                        "example": "+91"
+                                    },
+                                    "customer_mobile_number": {
+                                        "type": "string",
+                                        "example": "971500000000"
+                                    },
+                                    "customer_address": {
+                                        "type": "string",
+                                        "example": "123 Main Street"
+                                    },
+                                    "customer_country": {
+                                        "type": "string",
+                                        "example": "UAE"
+                                    },
+                                    "customer_state": {
+                                        "type": "string",
+                                        "example": "Dubai"
+                                    },
+                                    "customer_city": {
+                                        "type": "string",
+                                        "example": "Dubai"
+                                    },
+                                    "customer_zipcode": {
+                                        "type": "string",
+                                        "example": "560001"
+                                    },
+                                    "product_url": {
+                                        "type": "string",
+                                        "example": "https://www.thehorecastore.com/products/abc"
+                                    },
+                                    "product_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
+                                    },
+                                    "product_quantity": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "competitor_product_url": {
+                                        "type": "string",
+                                        "example": "https://competitor.com/product/xyz"
+                                    },
+                                    "competitor_product_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 180
+                                    },
+                                    "competitor_product_shipping_charge": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
+                                    "competitor_screenshot": {
+                                        "description": "Competitor screenshot image (jpeg, png, jpg, webp, max:2MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "is_confirm": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_agree": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/product/{id}/nutrition-facts1": {
             "get": {
                 "tags": [
@@ -35814,6 +35938,10 @@
         {
             "name": "Frontend-Payment History",
             "description": "Frontend-Payment History"
+        },
+        {
+            "name": "FrontEnd-PrePurchaseClaims",
+            "description": "FrontEnd-PrePurchaseClaims"
         },
         {
             "name": "Frontend-Attribute Products",

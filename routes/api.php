@@ -120,6 +120,7 @@ use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewContro
 use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController ;
 use App\Http\Controllers\FrontEnd\GlitchErrorController;
 use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventController;
+use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseClaimController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -213,30 +214,32 @@ Route::apiResource('newsletters', NewsletterController::class);
 Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
 
 Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
+Route::apiResource('frontend/pre-purchase-claims', F_PrePurchaseClaimController::class);
+
 Route::prefix('analytics')->group(function () {
     // Basic Analytics
     Route::get('/overview', [AnalyticsController::class, 'overview']);
     Route::get('/sessions-by-date', [AnalyticsController::class, 'sessionsByDate']);
     Route::get('/realtime', [AnalyticsController::class, 'realTimeAnalytics']);
-    
+
     // Detailed Analytics
     Route::get('/device', [AnalyticsController::class, 'deviceAnalytics']);
     Route::get('/geographic', [AnalyticsController::class, 'geographicAnalytics']);
     Route::get('/traffic-sources', [AnalyticsController::class, 'trafficSources']);
     Route::get('/pages', [AnalyticsController::class, 'pageAnalytics']);
     Route::get('/events', [AnalyticsController::class, 'eventAnalytics']);
-    
+
     // E-commerce & Conversions
     Route::get('/conversions', [AnalyticsController::class, 'conversionAnalytics']);
     Route::get('/abandoned-cart', [AnalyticsController::class, 'abandonedCartAnalytics']);
     Route::get('/ecommerce-funnel', [AnalyticsController::class, 'ecommerceFunnel']);
     Route::get('/goal-completions', [AnalyticsController::class, 'goalCompletions']);
-    
+
     // Audience Analytics
     Route::get('/demographics', [AnalyticsController::class, 'audienceDemographics']);
     Route::get('/cohort-analysis', [AnalyticsController::class, 'cohortAnalysis']);
     Route::get('/user-journey', [AnalyticsController::class, 'userJourney']);
-    
+
     // Advanced Features
     Route::get('/time-based', [AnalyticsController::class, 'timeBasedAnalytics']);
     Route::get('/complete-dashboard', [AnalyticsController::class, 'completeDashboard']);
