@@ -21,9 +21,7 @@ return new class extends Migration
             $table->dateTime('used_at');
             $table->timestamps();
             
-            $table->unsignedBigInteger('coupon_id')->references('id')->on('coupons')->onDelete('cascade');
-            $table->unsignedBigInteger('customer_id')->references('id')->on('users')->onDelete('cascade');
-            $table->unsignedBigInteger('order_id')->references('id')->on('orders')->onDelete('set null');
+
             
          
             $table->index(['used_at']);
