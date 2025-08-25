@@ -4252,8 +4252,8 @@ $allChildCategoryIds = $getAllDescendantCategoryIds($category->id);
 $childProductIds = [];
 if (!empty($allChildCategoryIds)) {
     $childProductIds = DB::table('ec_products')
-        ->join('categories', 'ec_products.id', '=', 'categories.product_id')
-        ->whereIn('categories.category_id', $allChildCategoryIds)
+        ->join('categories', 'ec_products.id', '=', 'product_categories.product_id')
+        ->whereIn('product_categories.id', $allChildCategoryIds)
         ->where('ec_products.status', 'published')
         ->pluck('ec_products.id')
         ->toArray();
