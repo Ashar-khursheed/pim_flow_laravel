@@ -14289,7 +14289,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "post": {
                 "tags": [
@@ -14424,7 +14429,12 @@
                     "422": {
                         "description": "Validation errors"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/coupons/{id}": {
@@ -14470,7 +14480,12 @@
                     "404": {
                         "description": "Coupon not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "put": {
                 "tags": [
@@ -14651,7 +14666,12 @@
                     "404": {
                         "description": "Coupon not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/coupons/{id}/approve": {
@@ -14700,7 +14720,12 @@
                     "400": {
                         "description": "Coupon already approved or rejected"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/coupons/{id}/reject": {
@@ -14749,7 +14774,12 @@
                     "400": {
                         "description": "Coupon already approved or rejected"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/coupons/validate": {
@@ -14834,7 +14864,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/coupons/apply": {
@@ -14896,7 +14931,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/coupons/{id}/usage-report": {
@@ -14957,7 +14997,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/customer-address": {

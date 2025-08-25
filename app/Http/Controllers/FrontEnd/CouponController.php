@@ -14,6 +14,7 @@ class CouponController extends Controller
 #[OA\Get(
     path: '/api/coupons',
     summary: 'Get all coupons',
+    security: [['bearerAuth' => []]], 
     tags: ['Coupons'],
     parameters: [
         new OA\Parameter(name: 'status', in: 'query', description: 'Filter by status', schema: new OA\Schema(type: 'string', enum: ['pending', 'approved', 'rejected'])),
@@ -65,6 +66,7 @@ public function index(Request $request): JsonResponse
         path: '/api/coupons',
         summary: 'Create a new coupon',
         tags: ['Coupons'],
+         security: [['bearerAuth' => []]], 
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -160,6 +162,7 @@ public function index(Request $request): JsonResponse
         path: '/api/coupons/{id}',
         summary: 'Get coupon by ID',
         tags: ['Coupons'],
+         security: [['bearerAuth' => []]], 
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Coupon ID', schema: new OA\Schema(type: 'integer'))
         ],
@@ -298,6 +301,7 @@ public function index(Request $request): JsonResponse
         path: '/api/coupons/{id}',
         summary: 'Delete coupon',
         tags: ['Coupons'],
+         security: [['bearerAuth' => []]], 
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Coupon ID', schema: new OA\Schema(type: 'integer'))
         ],
@@ -329,6 +333,7 @@ public function index(Request $request): JsonResponse
         path: '/api/coupons/{id}/approve',
         summary: 'Approve coupon',
         tags: ['Coupons'],
+         security: [['bearerAuth' => []]], 
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Coupon ID', schema: new OA\Schema(type: 'integer'))
         ],
@@ -371,6 +376,7 @@ public function index(Request $request): JsonResponse
         path: '/api/coupons/{id}/reject',
         summary: 'Reject coupon',
         tags: ['Coupons'],
+         security: [['bearerAuth' => []]], 
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Coupon ID', schema: new OA\Schema(type: 'integer'))
         ],
@@ -412,6 +418,7 @@ public function index(Request $request): JsonResponse
         path: '/api/coupons/validate',
         summary: 'Validate coupon code',
         tags: ['Coupons'],
+         security: [['bearerAuth' => []]], 
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -577,6 +584,7 @@ public function index(Request $request): JsonResponse
         path: '/api/coupons/apply',
         summary: 'Apply coupon to order',
         tags: ['Coupons'],
+         security: [['bearerAuth' => []]], 
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -652,6 +660,7 @@ public function index(Request $request): JsonResponse
         path: '/api/coupons/{id}/usage-report',
         summary: 'Get coupon usage report',
         tags: ['Coupons'],
+         security: [['bearerAuth' => []]], 
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Coupon ID', schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'start_date', in: 'query', description: 'Start date for report', schema: new OA\Schema(type: 'string', format: 'date')),
