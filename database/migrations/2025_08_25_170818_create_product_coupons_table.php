@@ -17,10 +17,9 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id');
             $table->timestamps();
             
-            $table->unsignedBigInteger('coupon_id')->references('id')->on('coupons')->onDelete('cascade');
-            $table->unsignedBigInteger('product_id')->references('id')->on('products')->onDelete('cascade');
+        
             
-            $table->unique(['coupon_id', 'product_id']);
+         
         });
     }
 
