@@ -188,7 +188,7 @@ class PrePurchaseClaimController extends BaseController
 			'recordId' => $claim->id,
 		]));
 
-		// $this->sendToOdoo($guestCustomer);
+		$this->sendToOdoo($guestCustomer);
 
 		return response()->json([
 			'success' => true,
