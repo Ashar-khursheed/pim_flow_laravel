@@ -4,6 +4,9 @@ namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\Coupon;
+use App\Models\FrontEnd\Customers;
+use App\Models\Product;
+use App\Models\Category;
 use App\Models\FrontEnd\CouponUsage;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
