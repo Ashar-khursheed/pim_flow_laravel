@@ -3906,31 +3906,21 @@ public function getSpecificationFilters1(Request $request)
 //         ];
 //     }
 // };
-  $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
+   $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
     $originalValue = trim($originalValue);
     
     // Handle count-based capacity attributes with their own units
     if (preg_match('/capacity\b/i', $attributeName) && 
         preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel|pan)\b/i', $attributeName, $matches)) {
         
-        // First check if the original value already contains any unit
-        $containerTypes = ['stein', 'steins', 'mug', 'mugs', 'cup', 'cups', 'plate', 'plates', 
-                          'bowl', 'bowls', 'glass', 'glasses', 'bottle', 'bottles', 
-                          'keg', 'kegs', 'barrel', 'barrels', 'pan', 'pans'];
+        $containerType = $matches[1];
+        $unitName = ucfirst($containerType) . 's';
         
-        $valueHasUnit = false;
-        $existingUnit = null;
-        
-        foreach ($containerTypes as $type) {
-            if (preg_match('/\b' . preg_quote($type, '/') . '\b/i', $originalValue)) {
-                $valueHasUnit = true;
-                $existingUnit = $type;
-                break;
-            }
-        }
-        
-        // If value already has a unit, return as-is
-        if ($valueHasUnit) {
+        // Check if the original value already contains the unit name or container type
+        if (stripos($originalValue, $unitName) !== false || 
+            stripos($originalValue, $containerType) !== false ||
+            preg_match('/\b' . preg_quote($containerType, '/') . 's?\b/i', $originalValue)) {
+            // Value already has unit, return as-is
             return [
                 'converted_value' => $originalValue,
                 'unit' => null,
@@ -3941,10 +3931,7 @@ public function getSpecificationFilters1(Request $request)
             ];
         }
         
-        // If no unit in value, determine which unit to add based on attribute name
-        $containerType = $matches[1];
-        $unitName = ucfirst($containerType) . 's';
-        
+        // Value doesn't have unit, add it
         return [
             'converted_value' => $originalValue,
             'unit' => $unitName,
