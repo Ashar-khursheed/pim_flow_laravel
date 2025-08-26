@@ -376,6 +376,7 @@ public function show($id)
         'orderProducts.product.brand:id,name',
         'orderProducts.product.currency:id,symbol',
         'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+		'orderProducts.product.warrantyAttribute', 
         'tracking',
         'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
     ]);
@@ -390,6 +391,9 @@ public function show($id)
 
             $product->brand_name = $product->brand->name ?? null;
             $product->currency_symbol = $product->currency->symbol ?? null;
+
+			$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
+
 
             // 🔹 Fetch SEO URL directly without relation
             $seo = \App\Models\SeoManagement::where('relational_id', $product->id)
