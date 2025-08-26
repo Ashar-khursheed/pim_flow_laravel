@@ -160,7 +160,8 @@ public function addressAutocompleteGCC(Request $request)
     $apiKey = config('services.google_maps.key');
 
     // GCC country codes
-    $gccCountries = [ 'ae' , 'sa'];
+    $gccCountries = ['ae', 'sa', 'kw', 'om', 'qa', 'bh'];
+
 
     $allPredictions = [];
 
