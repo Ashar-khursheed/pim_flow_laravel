@@ -6057,7 +6057,7 @@ public function fetchCategories(Request $request)
                     'id' => $parent->id,
                     'name' => $parent->name,
                     'slug' => optional($parent->seoUrl)->url,
-                ];
+                ];  
                 $current = $parent;
             } else {
                 break;

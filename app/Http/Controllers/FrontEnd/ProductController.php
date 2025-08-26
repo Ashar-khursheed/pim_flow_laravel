@@ -541,7 +541,7 @@ class ProductController extends Controller
                         'data' => $products,
                         'pagination' => $pagination
             
-                    ]);
+                    ])->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
@@ -952,7 +952,7 @@ class ProductController extends Controller
                         'data' => $products,
                         'pagination' => $pagination,
              
-                    ]);
+                   ])->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
