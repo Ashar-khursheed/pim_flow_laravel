@@ -5897,78 +5897,179 @@ private function getEmptyResponse()
 
 	// 	return response()->json($limitedCategories);
 	// }
+// public function fetchCategories(Request $request)
+// {
+// 	$limit = 15;
+
+// 	$allowedNames = [
+// 		'Reach-In Refrigerators',
+// 		'Pizza Prep Tables',
+// 		'Work Top Refrigerators',
+// 		'Commercial Chef Base',
+// 		'Undercounter Refrigerators',
+// 		'Beer Dispensers',
+// 		'Back Bar Coolers',
+// 		'Glass Chillers and Frosters',
+// 		'Milk Cooler',
+// 		'Commercial Grills & Griddles',
+// 		'Commercial Gas Fryers',
+// 		'Commercial Gas And Electric Range',
+// 		'Deck Ovens',
+// 		'Commercial Food Processors',
+// 		'Planetary Mixer',
+// 		'Commercial Espresso Machines',
+// 	];
+
+// 	// Fetch matching leaf categories
+// 	$leafCategories = Category::where('status', 'published')
+// 		->whereDoesntHave('children')
+// 		->whereIn('name', $allowedNames)
+// 		->with(['seoUrl:id,relational_id,url'])
+// 		->get(['id', 'name', 'parent_id', 'image']);
+
+// 	// Sort categories in the same order as in $allowedNames
+// 	$sortedCategories = collect($allowedNames)->map(function ($name) use ($leafCategories) {
+// 		return $leafCategories->firstWhere('name', $name);
+// 	})->filter(); // remove any nulls in case some names aren't found
+
+// 	// Limit results
+// 	$limitedCategories = $sortedCategories->take($limit);
+
+// 	foreach ($limitedCategories as $category) {
+// 		$category->slug = optional($category->seoUrl)->url;
+// 		unset($category->seoUrl);
+
+// 		$category->productCount = $category->products()
+// 			->where('status', 'published')
+// 			->count();
+
+// 		$hierarchy = [];
+// 		$current = $category;
+
+// 		while ($current && $current->parent_id) {
+// 			$parent = Category::where('id', $current->parent_id)
+// 				->where('status', 'published')
+// 				->with(['seoUrl:id,relational_id,url'])
+// 				->first(['id', 'name', 'parent_id']);
+
+// 			if ($parent) {
+// 				$hierarchy[] = [
+// 					'id' => $parent->id,
+// 					'name' => $parent->name,
+// 					'slug' => optional($parent->seoUrl)->url,
+// 				];
+// 				$current = $parent;
+// 			} else {
+// 				break;
+// 			}
+// 		}
+
+// 		$category->hierarchy = array_reverse($hierarchy);
+// 	}
+
+// 	return response()->json($limitedCategories->values());
+// }
 public function fetchCategories(Request $request)
 {
-	$limit = 15;
+    $limit = 15;
 
-	$allowedNames = [
-		'Reach-In Refrigerators',
-		'Pizza Prep Tables',
-		'Work Top Refrigerators',
-		'Commercial Chef Base',
-		'Undercounter Refrigerators',
-		'Beer Dispensers',
-		'Back Bar Coolers',
-		'Glass Chillers and Frosters',
-		'Milk Cooler',
-		'Commercial Grills & Griddles',
-		'Commercial Gas Fryers',
-		'Commercial Gas And Electric Range',
-		'Deck Ovens',
-		'Commercial Food Processors',
-		'Planetary Mixer',
-		'Commercial Espresso Machines',
-	];
+    // Load allowed names based on environment variable
+    $website = env('APP_WEBSITE', 'US'); // default US if not set
 
-	// Fetch matching leaf categories
-	$leafCategories = Category::where('status', 'published')
-		->whereDoesntHave('children')
-		->whereIn('name', $allowedNames)
-		->with(['seoUrl:id,relational_id,url'])
-		->get(['id', 'name', 'parent_id', 'image']);
+    $allowedNames = match ($website) {
+        'US' => [
+            'Reach-In Refrigerators',
+            'Pizza Prep Tables',
+            'Work Top Refrigerators',
+            'Commercial Chef Base',
+            'Undercounter Refrigerators',
+            'Beer Dispensers',
+            'Back Bar Coolers',
+            'Glass Chillers and Frosters',
+            'Milk Cooler',
+            'Commercial Grills & Griddles',
+            'Commercial Gas Fryers',
+            'Commercial Gas And Electric Range',
+            'Deck Ovens',
+            'Commercial Food Processors',
+            'Planetary Mixer',
+            'Commercial Espresso Machines',
+        ],
+        'UAE' => [
+            'Espresso Machine',
+            'Minibar',
+            'Merchandising Refrigerators',
+            'Undercounter Refrigerators',
+            'Waffles Maker and Crepe Machine',
+            'Commercial Blender',
+            'Commercial Fryers',
+            'Commercial Gas And Electric Cooker',
+            'Commercial Grills And Griddles',
+            'Food Vacuuming',
+            'Juicer Machines',
+            'Food Warmer and Display',
+            'Bakery Ovens',
+            'Popcorn Machine and Chocolate Fountains',
+            'Upright Chillers',
+            'Work Top Refrigerators',
+            'Commercial Toasters',
+            'Commercial Chest Freezer',
+            'Commercial Dishwashers',
+            'Microwave Oven',
+        ],
+        default => [], // fallback if APP_WEBSITE is not set properly
+    };
 
-	// Sort categories in the same order as in $allowedNames
-	$sortedCategories = collect($allowedNames)->map(function ($name) use ($leafCategories) {
-		return $leafCategories->firstWhere('name', $name);
-	})->filter(); // remove any nulls in case some names aren't found
+    // Fetch matching leaf categories
+    $leafCategories = Category::where('status', 'published')
+        ->whereDoesntHave('children')
+        ->whereIn('name', $allowedNames)
+        ->with(['seoUrl:id,relational_id,url'])
+        ->get(['id', 'name', 'parent_id', 'image']);
 
-	// Limit results
-	$limitedCategories = $sortedCategories->take($limit);
+    // Sort categories in the same order as in $allowedNames
+    $sortedCategories = collect($allowedNames)->map(function ($name) use ($leafCategories) {
+        return $leafCategories->firstWhere('name', $name);
+    })->filter();
 
-	foreach ($limitedCategories as $category) {
-		$category->slug = optional($category->seoUrl)->url;
-		unset($category->seoUrl);
+    // Limit results
+    $limitedCategories = $sortedCategories->take($limit);
 
-		$category->productCount = $category->products()
-			->where('status', 'published')
-			->count();
+    foreach ($limitedCategories as $category) {
+        $category->slug = optional($category->seoUrl)->url;
+        unset($category->seoUrl);
 
-		$hierarchy = [];
-		$current = $category;
+        $category->productCount = $category->products()
+            ->where('status', 'published')
+            ->count();
 
-		while ($current && $current->parent_id) {
-			$parent = Category::where('id', $current->parent_id)
-				->where('status', 'published')
-				->with(['seoUrl:id,relational_id,url'])
-				->first(['id', 'name', 'parent_id']);
+        $hierarchy = [];
+        $current = $category;
 
-			if ($parent) {
-				$hierarchy[] = [
-					'id' => $parent->id,
-					'name' => $parent->name,
-					'slug' => optional($parent->seoUrl)->url,
-				];
-				$current = $parent;
-			} else {
-				break;
-			}
-		}
+        while ($current && $current->parent_id) {
+            $parent = Category::where('id', $current->parent_id)
+                ->where('status', 'published')
+                ->with(['seoUrl:id,relational_id,url'])
+                ->first(['id', 'name', 'parent_id']);
 
-		$category->hierarchy = array_reverse($hierarchy);
-	}
+            if ($parent) {
+                $hierarchy[] = [
+                    'id' => $parent->id,
+                    'name' => $parent->name,
+                    'slug' => optional($parent->seoUrl)->url,
+                ];
+                $current = $parent;
+            } else {
+                break;
+            }
+        }
 
-	return response()->json($limitedCategories->values());
+        $category->hierarchy = array_reverse($hierarchy);
+    }
+
+    return response()->json($limitedCategories->values());
 }
+
 
 
 
