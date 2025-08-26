@@ -277,6 +277,7 @@ class PrePurchaseClaimController extends BaseController
 				'country_code' => $request->customer_country_code,
 				'mobile_number' => $request->customer_mobile_number,
 			]);
+			$this->sendToOdoo($customer);
 
 			$customerAddress = CustomerAddress::create([
 				'customer_id' => $customer->id,
@@ -341,7 +342,6 @@ class PrePurchaseClaimController extends BaseController
 			'recordId' => $claim->id,
 		]));
 
-		$this->sendToOdoo($guestCustomer);
 
 		return response()->json([
 			'success' => true,
