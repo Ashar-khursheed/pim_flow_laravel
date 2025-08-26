@@ -160,7 +160,8 @@ public function addressAutocompleteGCC(Request $request)
     $apiKey = config('services.google_maps.key');
 
     // GCC country codes
-    $gccCountries = [ 'ae'];
+    $gccCountries = ['ae', 'sa', 'kw', 'om', 'qa', 'bh'];
+
 
     $allPredictions = [];
 
@@ -189,7 +190,7 @@ public function addressAutocompleteGCC(Request $request)
     }
 
     // ✅ Limit to first 5 predictions
-    $limitedPredictions = array_slice($allPredictions, 0, 5);
+    $limitedPredictions = array_slice($allPredictions, 0, 15);
 
     // Get Place Details for the first prediction
     $firstPrediction = $limitedPredictions[0];
