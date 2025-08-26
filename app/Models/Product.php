@@ -138,7 +138,7 @@ class Product extends Model
 		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
 		->where(function ($query) {
 			$query->where('relational_type', 'Product')
-			->orWhere('relational_type', 'App\Models\Product');
+			->orWhere('relational_type', static::class);
 		});
 	}
 

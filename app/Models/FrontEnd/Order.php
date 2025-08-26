@@ -19,6 +19,8 @@ class Order extends Model
 		'customer_id',
 		'customer_address_id',
 		'shipping_charge',
+		'is_lift_gate',
+		'is_residential_address',
 		'amount',
 		'tax_percentage',
 		'tax_amount',
@@ -111,7 +113,7 @@ class Order extends Model
 	{
 		return $this->hasOne(\App\Models\NoFraudResponse::class, 'order_id', 'order_number');
 	}
-	
+
 	public function utm()
 	{
 		return $this->hasOne(\App\Models\Utm::class, 'id', 'utm_id');

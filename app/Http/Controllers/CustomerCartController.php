@@ -1,0 +1,441 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
+
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Models\FrontEnd\CustomerCart;
+use App\Models\FrontEnd\CustomerCartProduct;
+use App\Models\FrontEnd\CustomerAddress;
+use App\Jobs\Order\CartCreationMailJob;
+
+class CustomerCartController extends Controller
+{
+	/**
+	 * @OA\Get(
+	 *     path="/api/carts",
+	 *     summary="Get all carts with pagination and filters",
+	 *     tags={"Carts"},
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
+	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "reference_number", "shipping_charge", "total_amount", "total_products", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function index(Request $request)
+	{
+		$searchableColumns = ['id', 'reference_number'];
+		$sortableColumns = array_merge($searchableColumns, ['shipping_charge', 'total_amount', 'total_products', 'created_at', 'updated_at']);
+
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+		$recordsQuery = CustomerCart::query();
+		/* Check if pagination requested */
+		if ($request->filled('page') && $request->filled('length')) {
+			/* Eager load relationships */
+			$recordsQuery->with([
+				'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+				'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+				'customerCartProducts.product.brand:id,name',
+				'customerCartProducts.product.currency:id,symbol',
+			]);
+
+			if ($request->has('from_date') && $request->has('to_date')) {
+				$from = $request->from_date . ' 00:00:00';
+				$to = $request->to_date . ' 23:59:59';
+				$recordsQuery->whereBetween('customer_carts.created_at', [$from, $to]);
+			} elseif ($request->has('from_date')) {
+				$from = $request->from_date . ' 00:00:00';
+				$recordsQuery->where('customer_carts.created_at', '>=', $from);
+			} elseif ($request->has('to_date')) {
+				$to = $request->to_date . ' 23:59:59';
+				$recordsQuery->where('customer_carts.created_at', '<=', $to);
+			}
+
+			/* Global search */
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						$q->orWhere("customer_carts.$col", 'like', '%' . $search . '%');
+					}
+				});
+			}
+
+			/* Sorting */
+			$recordsQuery->orderBy($sortBy, $sortDir);
+
+			/* Pagination */
+			$length = (int) $request->input('length');
+			$page = (int) $request->input('page');
+
+			$totalRecords = (clone $recordsQuery)->count();
+			$totalPages = (int) ceil($totalRecords / $length);
+
+			if ($page > $totalPages && $totalPages > 0) {
+				$page = 1;
+			}
+
+			$records = $recordsQuery
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
+
+			/* Transform results */
+			$records->transform(function ($record) {
+				/* Process each product in customer cart products */
+				foreach ($record->customerCartProducts as $customerCartProduct) {
+					$product = $customerCartProduct->product;
+					if ($product) {
+						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+						$product->brand_name = $product->brand->name ?? null;
+						$product->currency_symbol = $product->currency->symbol ?? null;
+						unset($product->brand, $product->currency);
+					}
+					$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
+					? getDateRange($record->created_at, $customerCartProduct->product_supplier['delivery_days'])
+					: null;
+				}
+				foreach (['amount', 'tax_amount', 'total_amount'] as $key) {
+					if (isset($record->$key)) {
+						$record->$key = number_format($record->$key, 2, '.', '');
+					}
+				}
+
+				return $record;
+			});
+		} else {
+			/* No pagination: just fetch id and reference number */
+			$records = CustomerCart::orderBy('reference_number', 'asc')->get(['id', 'reference_number']);
+			$totalRecords = $records->count();
+			$totalPages = 1;
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => __('msg_rec_list'),
+			'data' => $records,
+			'total_pages' => $totalPages,
+			'total_records' => $totalRecords,
+		]);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/carts",
+	 *     summary="Create a new cart",
+	 *     tags={"Carts"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"customer_id", "customer_address_id", "products"},
+	 *             @OA\Property(property="customer_id", type="integer", example=1),
+	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
+	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
+	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
+	 *             @OA\Property(property="tax_percentage", type="number", example=5),
+	 *             @OA\Property(
+	 *                 property="products",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
+	 *                     @OA\Property(property="product_id", type="integer", example=101),
+	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
+	 *                     @OA\Property(property="quantity", type="integer", example=5),
+	 *                     @OA\Property(property="unit_price", type="number", format="float", example=199.99),
+	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function store(Request $request)
+	{
+		$request->validate([
+			'customer_id' => 'required|integer|exists:customers,id',
+			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+			'is_lift_gate' => 'nullable|boolean',
+			'is_residential_address' => 'nullable|boolean',
+			'tax_percentage' => 'required|numeric|min:0',
+			'products' => 'required|array|min:1',
+			'products.*.product_id' => 'required|integer|exists:ec_products,id',
+			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
+			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.unit_price' => 'required|numeric|min:0',
+			'products.*.shipping_charge' => 'required|numeric|min:0',
+		]);
+
+		$address = CustomerAddress::where('id', $request->customer_address_id)
+			->where('customer_id', $request->customer_id)
+			->first();
+
+		if (!$address) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The selected address does not belong to the customer.'
+			], 422);
+		}
+
+		DB::beginTransaction();
+
+		try {
+			$totalProducts = 0;
+			$cartAmount = 0;
+			$cartShipping = 0;
+
+			foreach ($request->products as $product) {
+				$totalProducts += $product['quantity'];
+				$cartAmount += $product['quantity'] * $product['unit_price'];
+				$cartShipping += $product['shipping_charge'];
+			}
+
+			$cartAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$cartAmount += $request->boolean('is_residential_address') ? 199 : 0;
+
+			$taxAmount = round($cartAmount * ($request->tax_percentage / 100), 2);
+			$totalAmount = $cartAmount + $taxAmount + $cartShipping;
+
+			/* Get the latest cart by ID (most recent) */
+			$latestCart = CustomerCart::orderBy('id', 'desc')->first();
+
+			// Generate the next cart reference number
+			if ($latestCart && is_numeric($latestCart->reference_number)) {
+				$referenceNumber = (int) $latestCart->reference_number + 1;
+			} else {
+				$website = config('app.website');
+				$referenceNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+			}
+
+			$customerCart = CustomerCart::create([
+				'reference_number' => $referenceNumber,
+				'customer_id' => $request->customer_id,
+				'customer_address_id' => $request->customer_address_id,
+				'shipping_charge' => $cartShipping,
+				'is_lift_gate' => $request->is_lift_gate,
+				'is_residential_address' => $request->is_residential_address,
+				'amount' => $cartAmount,
+				'tax_percentage' => $request->tax_percentage,
+				'tax_amount' => $taxAmount,
+				'total_amount' => $totalAmount,
+				'total_products' => $totalProducts,
+				'created_by' => auth()->id(),
+			]);
+
+			foreach ($request->products as $product) {
+				$total = $product['quantity'] * $product['unit_price'];
+				CustomerCartProduct::create([
+					'customer_cart_id' => $customerCart->id,
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'unit_price' => $product['unit_price'],
+					'amount' => $total,
+					'shipping_charge' => $product['shipping_charge'],
+					'total_amount' => $total + $product['shipping_charge'],
+				]);
+			}
+
+			$randomPassword = Str::random(8);
+			$hashedPassword = Hash::make($randomPassword);
+			$customerCart->customer->update(['password' => $hashedPassword]);
+
+			DB::commit();
+
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+			})->catch(function (Batch $batch, Throwable $e) {
+			})->finally(function (Batch $batch) {
+			})->name('Cart Creation')->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_CART_ADD';
+			$batch->add(new CartCreationMailJob([
+				'recordId' => $customerCart->id,
+				'randomPassword' => $randomPassword,
+			]));
+
+			/* Load relationships */
+			$customerCart->load([
+				'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+				'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+				'customerCartProducts.product.brand:id,name',
+				'customerCartProducts.product.currency:id,symbol',
+			]);
+
+			/* Mutate the data for each customer cart product */
+			foreach ($customerCart->customerCartProducts as $customerCartProduct) {
+				$product = $customerCartProduct->product;
+				if ($product) {
+					$product->images = is_array($product->images)
+						? $product->images
+						: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+					$product->brand_name = $product->brand->name ?? null;
+					$product->currency_symbol = $product->currency->symbol ?? null;
+					unset($product->brand, $product->currency);
+				}
+
+				$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)
+					->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+				$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
+					? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
+					: null;
+
+				// Format numeric values to 2 decimal places - FIXED variable name
+				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+					if (isset($customerCartProduct->$key)) {
+						$customerCartProduct->$key = number_format($customerCartProduct->$key, 2, '.', '');
+					}
+				}
+			}
+
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				if (isset($customerCart->$key)) {
+					$customerCart->$key = number_format($customerCart->$key, 2, '.', '');
+				}
+			}
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Customer cart created successfully',
+				'data' => $customerCart,
+			], 201);
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to create customer cart: ' . $e->getMessage()
+			], 500);
+		}
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/carts/{id}",
+	 *     summary="Get cart details",
+	 *     tags={"Carts"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Cart ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Retrieved successfully", @OA\MediaType(mediaType="application/json"))
+	 * )
+	 */
+	public function show($id)
+	{
+		$customerCart = CustomerCart::find($id);
+
+		if (!$customerCart) {
+			return response()->json([
+				'success' => false,
+				'message' => "Customer cart not found."
+			]);
+		}
+
+		/* Load relationships */
+		$customerCart->load([
+			'customer:id,name,email,type,country_code,mobile_number',
+			'customerAddress',
+			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+			'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+			'customerCartProducts.product.brand:id,name',
+			'customerCartProducts.product.currency:id,symbol',
+			'customerCartProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'creator',
+			'updator',
+		]);
+
+		/* Mutate the data for each customer cart product */
+		$customerCart->created_by = $customerCart->creator->name ?? null;
+		$customerCart->updated_by = $customerCart->updator->name ?? null;
+		unset($record->creator, $record->updator);
+
+		foreach ($customerCart->customerCartProducts as $customerCartProduct) {
+			$product = $customerCartProduct->product;
+			if ($product) {
+				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+				$product->brand_name = $product->brand->name ?? null;
+				$product->currency_symbol = $product->currency->symbol ?? null;
+				unset($product->brand, $product->currency);
+			}
+			$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+			$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
+			? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
+			: null;
+
+			/* Format numeric values to 2 decimal places */
+			foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+				if (isset($quoteProduct->$key)) {
+					$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+				}
+			}
+		}
+
+		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+			if (isset($customerCart->$key)) {
+				$customerCart->$key = number_format($customerCart->$key, 2, '.', '');
+			}
+		}
+
+		return response()->json([
+			'success' => true,
+			'data' => $customerCart
+		]);
+	}
+
+	/**
+	 * Update the specified resource in storage.
+	 */
+	public function update(Request $request, CustomerCart $customerCart)
+	{
+		//
+	}
+
+	/**
+	 * @OA\Delete(
+	 *     path="/api/carts/{id}",
+	 *     summary="Delete a cart",
+	 *     tags={"Carts"},
+	 *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+	 *     @OA\Response(response=200, description="Deleted successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function destroy($id)
+	{
+		$customerCart = CustomerCart::find($id);
+
+		if (!$customerCart) {
+			return response()->json([
+				'success' => false,
+				'message' => __("err_exist")
+			]);
+		}
+
+		$customerCart->customerCartProducts()->delete();
+		$customerCart->delete();
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Cart deleted successfully',
+		]);
+	}
+}

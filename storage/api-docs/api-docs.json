@@ -8071,6 +8071,261 @@
                 ]
             }
         },
+        "/api/carts": {
+            "get": {
+                "tags": [
+                    "Carts"
+                ],
+                "summary": "Get all carts with pagination and filters",
+                "operationId": "520d42474cc0f6e87e5686016c5f2673",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "reference_number",
+                                "shipping_charge",
+                                "total_amount",
+                                "total_products",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Carts"
+                ],
+                "summary": "Create a new cart",
+                "operationId": "f25b44d156bb5e0478d14467af0d09d0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "customer_address_id",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": "1"
+                                    },
+                                    "is_lift_gate": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "tax_percentage": {
+                                        "type": "number",
+                                        "example": 5
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price",
+                                                "shipping_charge"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 199.99
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/carts/{id}": {
+            "get": {
+                "tags": [
+                    "Carts"
+                ],
+                "summary": "Get cart details",
+                "operationId": "9d678efe34a8a30237b9259db1890073",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Cart ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Carts"
+                ],
+                "summary": "Delete a cart",
+                "operationId": "94edba2e35d86637902c45b8505b8957",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customers": {
             "get": {
                 "tags": [
@@ -16813,6 +17068,14 @@
                                         "type": "integer",
                                         "example": "1"
                                     },
+                                    "is_lift_gate": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "example": 5
@@ -24939,6 +25202,14 @@
                                         "type": "integer",
                                         "example": "1"
                                     },
+                                    "is_lift_gate": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "example": 5
@@ -25077,6 +25348,14 @@
                                     "customer_address_id": {
                                         "type": "integer",
                                         "example": "1"
+                                    },
+                                    "is_lift_gate": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "type": "boolean",
+                                        "example": true
                                     },
                                     "tax_percentage": {
                                         "type": "number",
@@ -36279,6 +36558,10 @@
         {
             "name": "Customer-Address",
             "description": "Customer-Address"
+        },
+        {
+            "name": "Carts",
+            "description": "Carts"
         },
         {
             "name": "Customers",
