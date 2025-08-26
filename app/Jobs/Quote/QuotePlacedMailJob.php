@@ -46,7 +46,7 @@ class QuotePlacedMailJob implements ShouldQueue
 				'TEST' => 'test_yourquote@thehorecastore.com',
 				default => 'yourquote@thehorecastore.com',
 			};
-			$fromName = 'HorecaStore Quotes Updates';
+			$fromName = 'Best Price | HorecaStore';
 			$replyToEmail = $fromEmail;
 
 			$ccEmails = [];
