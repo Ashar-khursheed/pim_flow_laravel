@@ -69,6 +69,7 @@ use App\Http\Controllers\AbandonedCartController;
 use App\Http\Controllers\Utmcontroller;
 use App\Http\Controllers\CustomerEventController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\CustomerCartController;
 use App\Http\Controllers\PrePurchaseClaimController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
@@ -501,9 +502,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
 
-
-	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
-
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 	Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -514,6 +512,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
 	Route::post('/unisource/authenticate', [UnisourceShipmentController::class, 'authenticateWithUnisource']);
+    Route::apiResource('carts', CustomerCartController::class);
 
 });
 
