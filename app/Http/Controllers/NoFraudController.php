@@ -83,7 +83,7 @@ public function screenTransaction(Request $request)
         'billing_first_name' => 'required|string|max:100',
         'billing_last_name' => 'nullable|string|max:100',
         'billing_email' => 'required|email',
-        'billing_phone' => 'required|string|max:20',
+        'billing_phone' => 'nullable|string|max:20',
         'billing_address' => 'required|string|max:255',
         'billing_city' => 'required|string|max:100',
         'billing_state' => 'required|string|max:10',
