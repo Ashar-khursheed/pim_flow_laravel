@@ -44,5 +44,17 @@ Route::get('/robots.txt', function (Request $request) {
         ->header('Content-Type', 'text/plain');
 });
 
+Route::get('/health', function () {
+    try {
+        DB::connection()->getPdo();
+        return response()->json(['status' => 'ok'], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'db' => $e->getMessage()
+        ], 500);
+    }
+});
+
 
 
