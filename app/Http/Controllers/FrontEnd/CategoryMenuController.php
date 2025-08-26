@@ -78,7 +78,7 @@ class CategoryMenuController extends Controller
     // Fetch children of this category recursively
     $categoryWithChildren = $this->getCategoryWithChildren($category);
 
-    return response()->json($categoryWithChildren);
+    return response()->json($categoryWithChildren) ->header('Cache-Control', 'public, max-age=86400');
 }
    
     /**
@@ -163,7 +163,7 @@ private function getCategoryWithChildren($category)
         'parent_id' => $category->parent_id,
         'image' => $category->image,
         'children' => $category->children,
-    ];
+    ] ->header('Cache-Control', 'public, max-age=86400');
 }
 
 //    private function getCategoryWithChildren1($category)
@@ -268,7 +268,7 @@ private function getCategoryWithChildren($category)
         return $this->buildCategoryTree($categories);
     });
 
-    return response()->json($categoriesTree);
+    return response()->json($categoriesTree) ->header('Cache-Control', 'public, max-age=86400');
 }
 
 private function buildCategoryTree($categories)
