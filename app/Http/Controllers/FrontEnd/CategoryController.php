@@ -4696,7 +4696,7 @@ public function getSpecificationFilters1(Request $request)
 // Helper method to get all child category IDs recursively
 private function getAllChildCategoryIds($categoryId)
 {
-    $childIds = DB::table('ec_categories')
+    $childIds = DB::table('categories')
         ->where('parent_id', $categoryId)
         ->pluck('id')
         ->toArray();
