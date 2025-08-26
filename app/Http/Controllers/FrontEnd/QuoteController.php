@@ -555,7 +555,7 @@ class QuoteController extends BaseController
 
 			DB::commit();
 
-			$quote->load([
+			$quote->refresh()->load([
 				'customer:id,name,email,type,country_code,mobile_number',
 				'customerAddress',
 				'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',

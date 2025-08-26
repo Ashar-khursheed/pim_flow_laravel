@@ -15,7 +15,7 @@ switch ($website) {
 
 	case 'US':
 	default:
-		$url = 'https://thehorecastore.com';
+		$url = 'https://www.thehorecastore.com';
 		$backendUrl = 'https://pim.thehorecastore.co';
 		break;
 }

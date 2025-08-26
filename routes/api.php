@@ -70,6 +70,7 @@ use App\Http\Controllers\Utmcontroller;
 use App\Http\Controllers\CustomerEventController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\CustomerCartController;
+use App\Http\Controllers\PrePurchaseClaimController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -121,6 +122,7 @@ use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewContro
 use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController ;
 use App\Http\Controllers\FrontEnd\GlitchErrorController;
 use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventController;
+use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseClaimController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -214,6 +216,10 @@ Route::apiResource('newsletters', NewsletterController::class);
 Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
 
 Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
+
+// Route::apiResource('frontend/pre-purchase-claims', F_PrePurchaseClaimController::class);
+Route::post('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'store']);
+
 Route::prefix('analytics')->group(function () {
     // Basic Analytics
     Route::get('/overview', [AnalyticsController::class, 'overview']);
@@ -257,14 +263,14 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+    Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
 
-	Route::prefix('/frontend/coupons')->group(function () {
-        Route::get('/', [F_CouponController::class, 'index']);   // List coupons
-        Route::post('/', [F_CouponController::class, 'store']);  // Create coupon
-        Route::get('/{id}', [F_CouponController::class, 'show']); // Show single coupon
-        Route::put('/{id}', [F_CouponController::class, 'update']); // Update coupon
-        Route::delete('/{id}', [F_CouponController::class, 'destroy']); // Delete coupon
-    });
+    Route::apiResource('/coupons', F_CouponController::class);
+    Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
+    Route::post('/coupons/{coupon}/reject', [F_CouponController::class, 'reject']);
+    Route::post('/coupons/validate', [F_CouponController::class, 'validate']);
+    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
+    Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
 
 	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
 	Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
@@ -527,8 +533,10 @@ Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'get
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+    Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
+    Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
 
-Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
+    Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
 	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
     Route::get('/frontend/invoices/{id}', [F_InvoiceController::class, 'show']);
