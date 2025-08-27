@@ -37,7 +37,7 @@ class PostClaimMailJob implements ShouldQueue
 		}
 
 		if (!empty($claim)) {
-			$fromEmail = config('app.website') === 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
+			$fromEmail = config('app.website') === 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
 			$fromName = 'HorecaStore';
 			$replyToEmail = $fromEmail;
 
