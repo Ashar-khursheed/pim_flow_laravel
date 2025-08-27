@@ -246,13 +246,13 @@ private function getCategoryWithChildren($category)
      * )
      */
    
- public function getCategoriesWithChildren(Request $request)
+public function getCategoriesWithChildren(Request $request)
 {
     $filterId = $request->get('id');
 
     $query = Category::select(['id', 'name', 'parent_id', 'image'])
         ->withCount('products')
-        ->with(['seoUrl']) // Eager load seoUrl relationship
+        ->with(['seoUrl'])
         ->where('status', 'published');
 
     if ($filterId) {
@@ -268,41 +268,39 @@ private function getCategoryWithChildren($category)
         return $this->buildCategoryTree($categories);
     });
 
-    return response()->json($categoriesTree) ->header('Cache-Control', 'public, max-age=86400');
+    return response()->json($categoriesTree)
+        ->header('Cache-Control', 'public, max-age=86400');
 }
 
 private function buildCategoryTree($categories)
 {
-    $tree = [];
-    $categoryMap = [];
+    // Map categories by parent_id
+    $categoriesByParent = $categories->groupBy('parent_id');
 
-    // Create a lookup table for fast access
-    foreach ($categories as $category) {
-        // Get the slug from seoUrl relationship
-        $seoSlug = $category->seoUrl?->url ?? null;
-        
-        $categoryMap[$category->id] = [
-            'id' => $category->id,
-            'name' => $category->name,
-            'slug' => $seoSlug, // Use the slug from seoUrl relationship
-            'parent_id' => $category->parent_id,
-            'productCount' => $category->products_count,
-            'image' => $category->image,
-            'children' => [],
-        ];
-    }
-
-    // Build the tree using the lookup table
-    foreach ($categoryMap as &$category) {
-        if ($category['parent_id'] && isset($categoryMap[$category['parent_id']])) {
-            $categoryMap[$category['parent_id']]['children'][] = &$category;
-        } else {
-            $tree[] = &$category;
+    // Recursive function to build tree
+    $buildTree = function($parentId) use (&$buildTree, $categoriesByParent) {
+        $tree = [];
+        if (isset($categoriesByParent[$parentId])) {
+            foreach ($categoriesByParent[$parentId] as $category) {
+                $seoSlug = $category->seoUrl?->url ?? null;
+                $tree[] = [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $seoSlug,
+                    'parent_id' => $category->parent_id,
+                    'productCount' => $category->products_count,
+                    'image' => $category->image,
+                    'children' => $buildTree($category->id),
+                ];
+            }
         }
-    }
+        return $tree;
+    };
 
-    return $tree;
+    // Only start from top-level categories (parent_id = 0)
+    return $buildTree(0);
 }
+
 
     /**
  * @OA\Schema(
