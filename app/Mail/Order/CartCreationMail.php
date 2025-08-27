@@ -106,7 +106,7 @@ class CartCreationMail extends Mailable
 		$total = $customerCart->total_amount ?? 0;
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'carts@horecastore.ae':'carts@thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'carts@thehorecastore.co':'carts@thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,

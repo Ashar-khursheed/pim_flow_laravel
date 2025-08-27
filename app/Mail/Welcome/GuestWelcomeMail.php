@@ -37,7 +37,7 @@ class GuestWelcomeMail extends Mailable
 		$websiteUrl = url("/");
 		$regionName = config('app.website') == 'UAE' ? "Middle East’s":"America’s";
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,

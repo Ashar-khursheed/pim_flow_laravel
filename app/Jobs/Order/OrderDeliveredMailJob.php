@@ -36,7 +36,7 @@ class OrderDeliveredMailJob implements ShouldQueue
 		if (!empty($order)) {
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'orders@thehorecastore.com',
-				'UAE'  => 'orders@horecastore.ae',
+				'UAE'  => 'orders@thehorecastore.co',
 				'TEST' => 'test_orders@thehorecastore.com',
 				default => 'orders@thehorecastore.com',
 			};

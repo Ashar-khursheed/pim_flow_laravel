@@ -38,11 +38,11 @@ class CartCreationMailJob implements ShouldQueue
 		if (!empty($customerCart)) {
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'carts@thehorecastore.com',
-				'UAE'  => 'carts@horecastore.ae',
+				'UAE'  => 'carts@thehorecastore.co',
 				'TEST' => 'test_carts@thehorecastore.com',
 				default => 'carts@thehorecastore.com',
 			};
-			$fromEmail = config('app.website') === 'UAE' ? 'cart@horecastore.ae' : 'cart@thehorecastore.com';
+			$fromEmail = config('app.website') === 'UAE' ? 'cart@thehorecastore.co' : 'cart@thehorecastore.com';
 			$fromName = 'HorecaStore Cart Updates';
 			$replyToEmail = $fromEmail;
 
