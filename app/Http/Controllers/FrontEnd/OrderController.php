@@ -14,6 +14,7 @@ use App\Models\Utm;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
+use App\Jobs\Order\OrderPlacedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 
 class OrderController extends BaseController
@@ -174,6 +175,7 @@ class OrderController extends BaseController
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
+	 *             @OA\Property(property="is_cod", type="boolean", example=false),
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(
 	 *                 property="products",
@@ -203,6 +205,7 @@ class OrderController extends BaseController
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
+			'is_cod' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -299,6 +302,15 @@ class OrderController extends BaseController
 			]);
 
 			DB::commit();
+
+			if ($request->boolean('is_cod')) {
+				$batch = Bus::batch([])->name('Order Place')->dispatch();
+
+				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+				$batch->add(new OrderPlacedMailJob([
+					'recordId' => $order->id
+				]));
+			}
 
 			/* Load relationships */
 			$order->load([
