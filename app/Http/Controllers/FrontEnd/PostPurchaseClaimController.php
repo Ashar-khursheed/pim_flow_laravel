@@ -15,7 +15,6 @@ use Illuminate\Bus\Batch;
 use App\Models\FrontEnd\Order;
 use App\Models\FrontEnd\PostPurchaseClaim;
 
-use App\Jobs\Welcome\PostClaimWelcomeMailJob;
 use App\Jobs\Welcome\PostClaimMailJob;
 
 class PostPurchaseClaimController extends BaseController
@@ -229,6 +228,17 @@ class PostPurchaseClaimController extends BaseController
 				'success' => false,
 				'message' => __('The selected order was not found or does not belong to you.')
 			], 404);
+		}
+
+		/* Check if order is within 120 days */
+		$orderDate = $order->created_at;
+		$daysSinceOrder = now()->diffInDays($orderDate);
+
+		if ($daysSinceOrder > 120) {
+			return response()->json([
+				'success' => false,
+				'message' => __('Sorry, our price match guarantee applies within 120 days of purchase. This order is just outside that window, but we\'ll consider your future orders as promised.')
+			], 422);
 		}
 
 		/* check order product */
