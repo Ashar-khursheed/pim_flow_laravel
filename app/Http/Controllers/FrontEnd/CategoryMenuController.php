@@ -163,7 +163,7 @@ private function getCategoryWithChildren($category)
         'parent_id' => $category->parent_id,
         'image' => $category->image,
         'children' => $category->children,
-    ] ->header('Cache-Control', 'public, max-age=86400');
+    ] ;
 }
 
 //    private function getCategoryWithChildren1($category)
