@@ -78,11 +78,7 @@ class CategoryMenuController extends Controller
     // Fetch children of this category recursively
     $categoryWithChildren = $this->getCategoryWithChildren($category);
 
- return response()
-    ->json($categoryWithChildren)
-    ->header('Cache-Control', 'public, max-age=86400')
-    ->header('Content-Type', 'application/json');
-
+    return response()->json($categoryWithChildren);
 }
    
     /**
