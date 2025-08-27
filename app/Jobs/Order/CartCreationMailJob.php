@@ -10,60 +10,50 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
 
 use Illuminate\Support\Facades\Mail;
-use App\Models\FrontEnd\Order;
-use App\Mail\Order\OrderDeliveredMail;
+use App\Models\FrontEnd\CustomerCart;
+use App\Mail\Order\CartCreationMail;
 
-class OrderDeliveredMailJob implements ShouldQueue
+class CartCreationMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 	public $timeout = 600;
-	public $orderId;
+	public $customerCartID;
+	public $randomPassword;
 
 	public function __construct($data)
 	{
-		$this->orderId = $data['recordId'];
+		$this->customerCartID = $data['recordId'];
+		$this->randomPassword = $data['randomPassword'];
 	}
 
 	public function handle(): void
 	{
-		$order = Order::find($this->orderId);
+		$customerCart = CustomerCart::find($this->customerCartID);
 
-		if (!$order) {
-			$this->fail(new \Exception("Order {$this->orderId} not found"));
+		if (!$customerCart) {
+			$this->fail(new \Exception("Customer cart {$this->customerCartID} not found"));
 			return;
 		}
 
-		if (!empty($order)) {
+		if (!empty($customerCart)) {
 			$fromEmail = match (config('app.website')) {
-				'US'  => 'orders@thehorecastore.com',
-				'UAE'  => 'orders@thehorecastore.co',
-				'TEST' => 'test_orders@thehorecastore.com',
-				default => 'orders@thehorecastore.com',
+				'US'  => 'carts@thehorecastore.com',
+				'UAE'  => 'carts@thehorecastore.co',
+				'TEST' => 'test_carts@thehorecastore.com',
+				default => 'carts@thehorecastore.com',
 			};
-			$fromName = 'HorecaStore Order Updates';
+			$fromEmail = config('app.website') === 'UAE' ? 'cart@thehorecastore.co' : 'cart@thehorecastore.com';
+			$fromName = 'HorecaStore Cart Updates';
 			$replyToEmail = $fromEmail;
 
-			$to = $order->customer->email;
+			$to = $customerCart->customer->email;
 			Mail::to($to)->send(
 				(
-					new OrderDeliveredMail($order)
+					new CartCreationMail($customerCart, $this->randomPassword)
 				)
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)
 			);
-
-			if (config('app.website') !== 'TEST') {
-				$recipients = order_cc_mails();
-				$to = array_shift($recipients);
-				$cc = $recipients;
-				Mail::to($to)->cc($cc)->send(
-					(
-						new OrderDeliveredMail($order)
-					)
-					->from($fromEmail, $fromName)
-					->replyTo($replyToEmail)
-				);
-			}
 		}
 	}
 

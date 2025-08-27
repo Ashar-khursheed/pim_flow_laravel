@@ -72,7 +72,7 @@ use App\Models\VendorContact;
 use App\Models\VendorDocument;
 use App\Models\Website;
 use App\Models\Zipcode;
-
+use Illuminate\Support\Facades\URL;
 class AppServiceProvider extends ServiceProvider
 {
 	/**
@@ -99,6 +99,10 @@ class AppServiceProvider extends ServiceProvider
 		CategoryAttributeGroup::observe(TransactionLogObserver::class);
 		Product::observe(TransactionLogObserver::class);
 		Category::observe(TransactionLogObserver::class);
+
+		  if (app()->environment('production')) {
+                URL::forceScheme('https');
+        }
 
 
 		// AppKeyword::observe(TransactionLogObserver::class);

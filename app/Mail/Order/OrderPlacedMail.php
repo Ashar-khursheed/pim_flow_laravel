@@ -94,6 +94,9 @@ class OrderPlacedMail extends Mailable
 		/* Total saved = original total - actual subtotal */
 		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($order->amount ?? 0));
 
+		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
+		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
+
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
 		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
@@ -102,7 +105,7 @@ class OrderPlacedMail extends Mailable
 		$total = $order->total_amount ?? 0;
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'orders@thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'orders@thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,
@@ -124,6 +127,8 @@ class OrderPlacedMail extends Mailable
 			'products' => $products,
 			'totalSaved' => $totalSaved,
 
+			'liftGateCharge' => $liftGateCharge,
+			'residentialAddressCharge' => $residentialAddressCharge,
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
 			'taxName' => $taxName,

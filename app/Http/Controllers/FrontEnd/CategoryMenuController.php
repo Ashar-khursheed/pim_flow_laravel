@@ -163,7 +163,7 @@ private function getCategoryWithChildren($category)
         'parent_id' => $category->parent_id,
         'image' => $category->image,
         'children' => $category->children,
-    ];
+    ] ;
 }
 
 //    private function getCategoryWithChildren1($category)
@@ -268,7 +268,7 @@ private function getCategoryWithChildren($category)
         return $this->buildCategoryTree($categories);
     });
 
-    return response()->json($categoriesTree);
+    return response()->json($categoriesTree) ->header('Cache-Control', 'public, max-age=86400');
 }
 
 private function buildCategoryTree($categories)

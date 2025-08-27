@@ -169,6 +169,8 @@ class OrderController extends BaseController
 	 *         @OA\JsonContent(
 	 *             required={"customer_address_id", "tax_percentage", "products"},
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
+	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
+	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
@@ -196,6 +198,8 @@ class OrderController extends BaseController
 		logger()->info('customer order payload: ', $request->all());
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+			'is_lift_gate' => 'nullable|boolean',
+			'is_residential_address' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
@@ -229,6 +233,14 @@ class OrderController extends BaseController
 				$orderAmount += $product['quantity'] * $product['unit_price'];
 				$orderShipping += $product['shipping_charge'];
 			}
+			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
+
+			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
+			$paidAmount = $request->paid_amount ?? 0;
+			$pendingAmount = $totalAmount - $paidAmount;
+
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('id', 'desc')->first();
 
@@ -240,16 +252,13 @@ class OrderController extends BaseController
 				$orderNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
 			}
 
-			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
-			$paidAmount = $request->paid_amount ?? 0;
-			$pendingAmount = $totalAmount - $paidAmount;
-
 			$order = Order::create([
 				'order_number' => $orderNumber,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $orderShipping,
+				'is_lift_gate' => $request->is_lift_gate,
+				'is_residential_address' => $request->is_residential_address,
 				'amount' => $orderAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
@@ -391,7 +400,6 @@ class OrderController extends BaseController
 
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
-
 				$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
 
 

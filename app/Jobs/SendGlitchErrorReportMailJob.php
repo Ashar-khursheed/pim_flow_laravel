@@ -36,13 +36,15 @@ class SendGlitchErrorReportMailJob implements ShouldQueue
 			return;
 		}
 
-		$recipients = glitch_error_reporting_mails(); // returns email array
+		if (config('app.website') !== 'TEST') {
+			$recipients = glitch_error_reporting_mails();
 
-		if (!empty($recipients)) {
-			$to = array_shift($recipients); // first is To
-			$cc = $recipients;              // rest as CC
+			if (!empty($recipients)) {
+				$to = array_shift($recipients);
+				$cc = $recipients;
 
-			Mail::to($to)->cc($cc)->send(new GlitchErrorMail($glitchError));
+				Mail::to($to)->cc($cc)->send(new GlitchErrorMail($glitchError));
+			}
 		}
 	}
 

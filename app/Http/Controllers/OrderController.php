@@ -50,7 +50,6 @@ class OrderController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
 	public function index(Request $request)
 	{
 		if ($request->filled('from_date') && $request->filled('to_date')) {
@@ -231,6 +230,8 @@ class OrderController extends Controller
 	 *             required={"customer_id", "customer_address_id", "shipping_charge", "products"},
 	 *             @OA\Property(property="customer_id", type="integer", example=1),
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
+	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
+	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
@@ -258,6 +259,8 @@ class OrderController extends Controller
 		$request->validate([
 			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+			'is_lift_gate' => 'nullable|boolean',
+			'is_residential_address' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
@@ -293,7 +296,15 @@ class OrderController extends Controller
 				$orderShipping += $product['shipping_charge'];
 			}
 
-			// Get the latest order by ID (most recent)
+			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
+
+			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
+			$paidAmount = $request->paid_amount ?? 0;
+			$pendingAmount = $totalAmount - $paidAmount;
+
+			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('id', 'desc')->first();
 
 			// Generate the next order number
@@ -304,16 +315,13 @@ class OrderController extends Controller
 				$orderNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
 			}
 
-			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
-			$paidAmount = $request->paid_amount ?? 0;
-			$pendingAmount = $totalAmount - $paidAmount;
-
 			$order = Order::create([
 				'order_number' => $orderNumber,
 				'customer_id' => $request->customer_id,
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $orderShipping,
+				'is_lift_gate' => $request->is_lift_gate,
+				'is_residential_address' => $request->is_residential_address,
 				'amount' => $orderAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
@@ -364,8 +372,6 @@ class OrderController extends Controller
 					$order->save();
 				}
 			} catch (\Exception $e) {
-				\Log::error('Square payment link generation failed for order ' . $order->id . ': ' . $e->getMessage());
-				// Continue without payment link - business decision whether to fail entire order or not
 			}
 
 			DB::commit();
@@ -395,14 +401,14 @@ class OrderController extends Controller
 			foreach ($order->orderProducts as $orderProduct) {
 				$product = $orderProduct->product;
 				if ($product) {
-					$product->images = is_array($product->images) 
-						? $product->images 
+					$product->images = is_array($product->images)
+						? $product->images
 						: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 					$product->brand_name = $product->brand->name ?? null;
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
-				
+
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
 					->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
@@ -505,8 +511,6 @@ class OrderController extends Controller
 		return response()->json(['success' => true, 'message' => 'Order marked as paid.']);
 	}
 
-
-
 	/**
 	 * @OA\Get(
 	 *     path="/api/orders/{id}",
@@ -605,6 +609,8 @@ class OrderController extends Controller
 	 *         @OA\JsonContent(
 	 *             required={"customer_address_id", "tax_percentage", "products"},
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
+	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
+	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
@@ -651,6 +657,8 @@ class OrderController extends Controller
 
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+			'is_lift_gate' => 'nullable|boolean',
+			'is_residential_address' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
@@ -685,6 +693,8 @@ class OrderController extends Controller
 				$orderAmount += $product['quantity'] * $product['unit_price'];
 				$orderShipping += $product['shipping_charge'];
 			}
+			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
 			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
@@ -694,6 +704,8 @@ class OrderController extends Controller
 			$order->update([
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $orderShipping,
+				'is_lift_gate' => $request->is_lift_gate,
+				'is_residential_address' => $request->is_residential_address,
 				'amount' => $orderAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,

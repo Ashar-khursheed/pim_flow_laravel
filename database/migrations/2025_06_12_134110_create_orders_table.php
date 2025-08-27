@@ -19,6 +19,8 @@ return new class extends Migration
 			$table->integer('customer_address_id');
 
 			$table->decimal('shipping_charge', 10, 2);
+			$table->boolean('is_lift_gate')->nullable();
+			$table->boolean('is_residential_address')->nullable();
 			$table->decimal('amount', 10, 2);
 			$table->decimal('tax_percentage', 10, 2);
 			$table->decimal('tax_amount', 10, 2);
@@ -28,7 +30,6 @@ return new class extends Migration
 			$table->boolean('ship_all_at_once')->default(true);
 			$table->boolean('separate_deliveries')->default(false);
 
-			// Payment Status
 			$table->boolean('is_paid')->default(false);
 			$table->decimal('paid_amount', 10, 2)->default(0);
 			$table->decimal('pending_amount', 10, 2)->default(0);

@@ -236,7 +236,7 @@ class BrandController extends Controller
                     })
                 ];
             }),
-        ]);
+        ]) ->header('Cache-Control', 'public, max-age=86400');
     }
 
 
@@ -471,12 +471,12 @@ class BrandController extends Controller
                             'return_policy' => $firstSupplier->return_policy ?? null,
                             'free_shipping' => $firstSupplier->free_shipping ?? null,
                             'warranty_information' => $firstSupplier->warranty_information ?? null,
-                        ];
+                        ] ;
 
                     })->values(),
                 ];
             }),
-        ]);
+        ]) ->header('Cache-Control', 'public, max-age=86400');
     }
 
 
@@ -548,7 +548,7 @@ class BrandController extends Controller
             'success' => true,
             'message' => 'Brands retrieved successfully.',
             'data' => $brands
-        ]);
+        ]) ->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
@@ -776,7 +776,7 @@ public function getCategories($id)
         'success' => true,
         'brand_id' => $brand->id,
         'categories' => $categories
-    ]);
+    ]) ->header('Cache-Control', 'public, max-age=86400');
 }
 
 
@@ -1149,7 +1149,7 @@ if (!is_null($categoryId)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Category not found'
-            ], 404);
+            ], 404) ->header('Cache-Control', 'public, max-age=86400');
         }
 
         $categoryId = $seoCategory->relational_id;
@@ -1274,7 +1274,7 @@ if (!is_null($categoryId)) {
             'data' => $transformedProducts->values(),
             'pagination' => $pagination,
             'message' => 'Products retrieved successfully',
-        ]);
+        ]) ->header('Cache-Control', 'public, max-age=86400');
     } catch (\Exception $e) {
         Log::error('Error in getProductsByBrandAndCategory: ' . $e->getMessage());
         return response()->json([
@@ -1400,7 +1400,7 @@ if (!is_null($categoryId)) {
             'success' => true,
             'message' => 'Brands grouped alphabetically.',
             'data' => $grouped
-        ]);
+        ]) ->header('Cache-Control', 'public, max-age=86400');
     }
 }
 
