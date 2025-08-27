@@ -48,7 +48,7 @@ class OrderDeliveredMail extends Mailable
 		}
 
 		$rightPngURL = $backendURL. '/right.png';
-		$checkoutURL = url("/checkout");
+		$checkoutURL = url("/view-order/{$order->id}");
 		$orderDetailUrl = url("/order-details/{$order->id}");
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
 

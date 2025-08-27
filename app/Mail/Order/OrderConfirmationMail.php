@@ -34,7 +34,7 @@ class OrderConfirmationMail extends Mailable
 
 		$rightPngURL = $backendURL. '/right.png';
 
-		$orderUrl = url("/my-order");
+		$orderUrl = url("/order-details/{$order->id}");
 		$siteName = config('app.website') == 'UAE' ? 'UAE':'USA';
 		$siteTollFreeContact = config('app.website') == 'UAE' ? '800 - HORECA (467-322)':'1-866-4-HORECA (1-866-446-7322)';
 		$siteInternationalContact = config('app.website') == 'UAE' ? '+971 4 224 5818':'';

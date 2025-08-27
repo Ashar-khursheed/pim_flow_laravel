@@ -49,7 +49,7 @@ class OutDeliveryMail extends Mailable
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
 		$zipcode = $customerAddress->zip_code ?? '';
-		$orderDetailUrl = url("/order-details/{$order->id}");
+		$orderDetailUrl = url("/track-order/{$order->id}");
 		$rightPngURL = $backendURL. '/right.png';
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
