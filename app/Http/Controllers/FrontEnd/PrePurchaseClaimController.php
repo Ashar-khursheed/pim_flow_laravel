@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
@@ -261,49 +262,27 @@ class PrePurchaseClaimController extends BaseController
 				'message' => 'Invalid product URL provided.'
 			], 422);
 		}
+		try {
+			/* Start transaction */
+			DB::beginTransaction();
 
-		$batch = Bus::batch([])->name('Pre Claim Mails')->dispatch();
+			$batch = Bus::batch([])->name('Pre Claim Mails')->dispatch();
 
-		$customer = Customer::where('email', $request->customer_email)->first();
-		if (!$customer) {
-			$randomPassword = Str::random(8);
+			$customer = Customer::where('email', $request->customer_email)->first();
+			if (!$customer) {
+				$randomPassword = Str::random(8);
 
-			$customer = Customer::create([
-				'name' => $request->customer_name,
-				'business_name' => $request->customer_business_name,
-				'email' => $request->customer_email,
-				'password' => Hash::make($randomPassword),
-				'type' => 'Private',
-				'country_code' => $request->customer_country_code,
-				'mobile_number' => $request->customer_mobile_number,
-			]);
-			$this->sendToOdoo($customer);
+				$customer = Customer::create([
+					'name' => $request->customer_name,
+					'business_name' => $request->customer_business_name,
+					'email' => $request->customer_email,
+					'password' => Hash::make($randomPassword),
+					'type' => 'Private',
+					'country_code' => $request->customer_country_code,
+					'mobile_number' => $request->customer_mobile_number,
+				]);
+				$this->sendToOdoo($customer);
 
-			$customerAddress = CustomerAddress::create([
-				'customer_id' => $customer->id,
-				'type' => 'Home',
-				'address' => $request->customer_address,
-				'country' => $request->customer_country,
-				'state' => $request->customer_state,
-				'city' => $request->customer_city,
-				'zip_code' => $request->customer_zipcode,
-				'is_default' => true,
-			]);
-
-			$batch->options['queue'] = config('app.website') . '_CLM_WLCM';
-			$batch->add(new PreClaimWelcomeMailJob([
-				'recordId' => $customer->id,
-				'randomPassword' => $randomPassword,
-			]));
-		} else {
-			$customerAddress = $customer->customerAddress()
-			->where('address', $request->customer_address)
-			->where('country', $request->customer_country)
-			->where('city', $request->customer_city)
-			->first();
-
-			/* If not found, create new */
-			if (!$customerAddress) {
 				$customerAddress = CustomerAddress::create([
 					'customer_id' => $customer->id,
 					'type' => 'Home',
@@ -312,42 +291,79 @@ class PrePurchaseClaimController extends BaseController
 					'state' => $request->customer_state,
 					'city' => $request->customer_city,
 					'zip_code' => $request->customer_zipcode,
+					'is_default' => true,
 				]);
+
+				$batch->options['queue'] = config('app.website') . '_CLM_WLCM';
+				$batch->add(new PreClaimWelcomeMailJob([
+					'recordId' => $customer->id,
+					'randomPassword' => $randomPassword,
+				]));
+			} else {
+				$customerAddress = $customer->customerAddress()
+				->where('address', $request->customer_address)
+				->where('country', $request->customer_country)
+				->where('city', $request->customer_city)
+				->first();
+
+				/* If not found, create new */
+				if (!$customerAddress) {
+					$customerAddress = CustomerAddress::create([
+						'customer_id' => $customer->id,
+						'type' => 'Home',
+						'address' => $request->customer_address,
+						'country' => $request->customer_country,
+						'state' => $request->customer_state,
+						'city' => $request->customer_city,
+						'zip_code' => $request->customer_zipcode,
+					]);
+				}
 			}
+
+			/* Upload competitor screenshot if provided */
+			$competitorProductImgURL = null;
+			if ($request->hasFile('competitor_screenshot')) {
+				$competitorProductImgURL = uploadImageToWebpS3FromFile(
+					$request,
+					'competitor_screenshot',
+					env('STORAGE_ENV') . '/pre_purchase_claims/screenshot'
+				);
+			}
+
+			$claim = PrePurchaseClaim::create([
+				'customer_id' => $customer->id,
+				'customer_address_id' => $customerAddress->id ?? null,
+				'product_id' => $productID,
+				'product_quantity' => $request->product_quantity,
+				'competitor_product_url' => $request->competitor_product_url,
+				'competitor_product_price' => $request->competitor_product_price,
+				'competitor_product_shipping_charge' => $request->competitor_product_shipping_charge ?? 0,
+				'competitor_screenshot_url' => $competitorProductImgURL,
+			]);
+
+			$batch->options['queue'] = config('app.website') . '_PRE_CLM';
+			$batch->add(new PreClaimMailJob([
+				'recordId' => $claim->id,
+			]));
+
+			/* Commit transaction */
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => __("msg_create"),
+				'data' => $claim
+			], 201);
+		} catch (\Exception $e) {
+			/* Rollback transaction */
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => __('Something went wrong. Please try again.'),
+				'error'   => $e->getMessage()
+			], 500);
 		}
-
-		/* Upload competitor screenshot if provided */
-		$competitorProductImgURL = null;
-		if ($request->hasFile('competitor_screenshot')) {
-			$competitorProductImgURL = uploadImageToWebpS3FromFile(
-				$request,
-				'competitor_screenshot',
-				env('STORAGE_ENV') . '/pre_purchase_claims/screenshot'
-			);
-		}
-
-		$claim = PrePurchaseClaim::create([
-			'customer_id' => $customer->id,
-			'customer_address_id' => $customerAddress->id ?? null,
-			'product_id' => $productID,
-			'product_quantity' => $request->product_quantity,
-			'competitor_product_url' => $request->competitor_product_url,
-			'competitor_product_price' => $request->competitor_product_price,
-			'competitor_product_shipping_charge' => $request->competitor_product_shipping_charge ?? 0,
-			'competitor_screenshot_url' => $competitorProductImgURL,
-		]);
-
-		$batch->options['queue'] = config('app.website') . '_PRE_CLM';
-		$batch->add(new PreClaimMailJob([
-			'recordId' => $claim->id,
-		]));
-
-
-		return response()->json([
-			'success' => true,
-			'message' => __("msg_create"),
-			'data' => $claim
-		], 201);
 	}
 
 	private function sendToOdoo($customer)

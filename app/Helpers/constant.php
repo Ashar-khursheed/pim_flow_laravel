@@ -496,44 +496,106 @@ function getBase64Image($url)
 
 if (!function_exists('glitch_error_reporting_mails')) {
 	function glitch_error_reporting_mails() {
-		$mails = [
-			'nomanpeera@horecastore.ae',
+		$usMails = [
+			'noman.peera@thehorecastore.com',
 			'ofm@thehorecastore.com',
 			'ofs@thehorecastore.com',
-			'nomanpeera@gmail.com',
+			'sales@thehorecastore.com',
 			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
-			'sales@thehorecastore.com',
 			'qa03@thehorecastore.com',
 			'qa04@thehorecastore.com',
 			'qa05@thehorecastore.com',
 		];
 
-		// $mails = [
-		// 	'aksitbhardwaj@gmail.com',
-		// 	'webdeveloper04@horecastore.ae',
-		// ];
+		$uaeMails = [
+			'nomanpeera@horecastore.ae',
+			'hello@horecastore.ae',
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
+			'qa03@thehorecastore.com',
+			'qa04@thehorecastore.com',
+			'qa05@thehorecastore.com',
+		];
 
+		$testMails = [];
+
+		$localMails = [
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
+		];
+
+		switch (config('app.website')) {
+			case 'US':
+			$mails = $usMails;
+			break;
+
+			case 'UAE':
+			$mails = $uaeMails;
+			break;
+
+			case 'TEST':
+			$mails = $testMails;
+			break;
+
+			case 'Local':
+			$mails = $localMails;
+			break;
+
+			default:
+			$mails =[];
+			break;
+		}
 		return $mails;
 	}
 }
 
 if (!function_exists('order_cc_mails')) {
 	function order_cc_mails() {
-		$mails = [
+		$usMails = [
 			'ofm@thehorecastore.com',
-			'nomanpeera@horecastore.ae',
+			'noman.peera@thehorecastore.com',
 			'shehzad@rapid-supplies.com',
 			'ofs@thehorecastore.com',
-			'mfaizan@rapid-supplies.com',
 			'ofs02@thehorecastore.com',
-			'dmm@thehorecastore.com'
+			'dmm@thehorecastore.com',
 		];
-		// $mails = [
-		// 	'webdeveloper01@horecastore.ae',
-		// 	'webdeveloper04@horecastore.ae',
-		// ];
 
+		$uaeMails = [
+			'nomanpeera@horecastore.ae',
+			'imran@horecastore.ae',
+			'hello@horecastore.ae',
+			'dmm@horecastore.ae',
+		];
+
+		$testMails = [];
+
+		$localMails = [
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
+		];
+
+		switch (config('app.website')) {
+			case 'US':
+			$mails = $usMails;
+			break;
+
+			case 'UAE':
+			$mails = $uaeMails;
+			break;
+
+			case 'TEST':
+			$mails = $testMails;
+			break;
+
+			case 'Local':
+			$mails = $localMails;
+			break;
+
+			default:
+			$mails =[];
+			break;
+		}
 		return $mails;
 	}
 }

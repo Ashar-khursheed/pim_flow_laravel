@@ -100,12 +100,12 @@ class OrderPlacedMail extends Mailable
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
 		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
-		$taxPercent = $order->tax_percentage;
+		$taxPercent = config('app.website') == 'UAE' ? round($order->tax_percentage) : $order->tax_percentage;
 		$taxAmount = $order->tax_amount ?? 0;
 		$total = $order->total_amount ?? 0;
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'orders@thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'orders@thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,

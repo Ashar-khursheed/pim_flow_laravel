@@ -41,7 +41,7 @@ class QuotePlacedMail extends Mailable
 		$orderLink = config('app.url') . '/download-quotation/' . $quote->id;
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'yourquote@horecastore.ae':'yourquote@thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'yourquote@thehorecastore.co':'yourquote@thehorecastore.com';
 
 		$mailParams = [
 			'logoUrl' => $logoUrl,
