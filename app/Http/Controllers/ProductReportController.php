@@ -11,7 +11,7 @@ class ProductReportController extends Controller
 {
 	/**
 	 * @OA\Get(
-	 *     path="/api/product-report",
+	 *     path="/api/product-report-export",
 	 *     summary="Get product report list",
 	 *     description="Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
 	 *     tags={"Products Report"},
@@ -29,7 +29,7 @@ class ProductReportController extends Controller
 	 *         required=false,
 	 *         @OA\Schema(type="integer", example=50)
 	 *     ),
-	 *     @OA\Property(property="brand", type="string", example="Brand Name"),
+	 *     @OA\Property(property="brand", type="string", enum=App\Models\Brand::class,example="Brand Name"),
 	 *     @OA\Property(property="category", type="string", example="category Name"),
 	 *     @OA\Parameter(
 	 *         name="search",
@@ -43,7 +43,7 @@ class ProductReportController extends Controller
 	 *				in="query",
 	 *				description="Filter products by status (e.g., published, draft)",
 	 *				required=false,
-	 *				@OA\Schema(type="string", example="active")
+	 *				@OA\Schema(type="string", enum={"publish", "draft"}, example="active")
 	 *				),
 	 *      @OA\Parameter(
 	 * 				name="approved",
@@ -84,7 +84,7 @@ class ProductReportController extends Controller
 
 		/* Validate request data */
 		$request->validate([
-			'status' => 'required|string|in:draft,published',
+			'status' => 'string|in:draft,published',
 			'approved' => 'string|in:0,1',
 			// 'brand' => 'integer',
 			'sort_by' => 'required',
@@ -110,11 +110,6 @@ class ProductReportController extends Controller
 			'vendors'
 		])
 			->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
-
-
-
-		/* Apply search if provided */
-
 		// Apply status filter
 		if ($status !== null) {
 			$query->where('status', $status);
@@ -151,6 +146,7 @@ class ProductReportController extends Controller
 					});
 			});
 		}
+		
 		$products = $query->orderBy($sortBy, $sortDirection);
 		if ($length) {
 			$products = $products->paginate($length);
@@ -160,6 +156,10 @@ class ProductReportController extends Controller
 
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
+			$brands = "";
+			if ($product->brand) {
+				$brands = Brand::withCount('products')->where('id', $product->brand->id)->first();
+			}
 
 			return [
 				'id' => $product->id,
@@ -167,15 +167,17 @@ class ProductReportController extends Controller
 				'approved' => $product->approved,
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+				'brand_id' => optional($product->brand)->id,
 				'brand' => optional($product->brand)->name,
 				'status' => $product->status,
 				'category_id' => $product->categories->pluck('id')->implode(', '),
 				'category_name' => $product->categories->pluck('name')->implode(', '),
-				'count_category' => $product->categories->count(),
+				'category_count' => $product->categories->count(),
+				'product_count' => $brands ? $brands->products_count : null,
 			];
 		});
-	 
-		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand', 'status', 'category_id', 'category_name', 'count_category'];
+
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
@@ -192,8 +194,5 @@ class ProductReportController extends Controller
 
 		$fileName = 'product_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
-
 	}
-
-
 }
