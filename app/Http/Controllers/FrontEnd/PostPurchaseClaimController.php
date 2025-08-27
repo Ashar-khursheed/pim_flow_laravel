@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
@@ -227,7 +228,7 @@ class PostPurchaseClaimController extends BaseController
 			return response()->json([
 				'success' => false,
 				'message' => __('The selected order was not found or does not belong to you.')
-			]);
+			], 404);
 		}
 
 		/* check order product */
@@ -236,42 +237,63 @@ class PostPurchaseClaimController extends BaseController
 			return response()->json([
 				'success' => false,
 				'message' => __('The selected product was not found in this order.'),
+			], 404);
+		}
+
+		try {
+			/* Start transaction */
+			DB::beginTransaction();
+
+			/* Upload competitor screenshot if provided */
+			$competitorProductImgURL = null;
+			if ($request->hasFile('competitor_screenshot')) {
+				$competitorProductImgURL = uploadImageToWebpS3FromFile(
+					$request,
+					'competitor_screenshot',
+					env('STORAGE_ENV') . '/post_purchase_claims/screenshot'
+				);
+			}
+
+			/* Create claim */
+			$claim = PostPurchaseClaim::create([
+				'customer_id' => auth()->id(),
+				'order_id' => $order->id,
+				'order_product_id' => $orderProduct->id,
+				'competitor_product_url' => $request->competitor_product_url,
+				'competitor_product_price' => $request->competitor_product_price,
+				'competitor_product_shipping_charge' => $request->competitor_product_shipping_charge ?? 0,
+				'competitor_screenshot_url' => $competitorProductImgURL,
 			]);
+
+			/* Dispatch job in batch */
+			$batch = Bus::batch([])->name('Post Claim Mails')->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_POST_CLM';
+			$batch->add(new PostClaimMailJob([
+				'recordId' => $claim->id,
+			]));
+
+			/* Commit if everything is good */
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => __("msg_create"),
+				'data' => $claim
+			], 201);
+
+		} catch (\Exception $e) {
+			/* Rollback on error */
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => __('Something went wrong. Please try again.'),
+				'error'   => $e->getMessage()
+			], 500);
 		}
-
-		/* Upload competitor screenshot if provided */
-		$competitorProductImgURL = null;
-		if ($request->hasFile('competitor_screenshot')) {
-			$competitorProductImgURL = uploadImageToWebpS3FromFile(
-				$request,
-				'competitor_screenshot',
-				env('STORAGE_ENV') . '/post_purchase_claims/screenshot'
-			);
-		}
-
-		$claim = PostPurchaseClaim::create([
-			'customer_id' => auth()->id(),
-			'order_id' => $order->id ?? null,
-			'order_product_id' => $orderProduct->id ?? null,
-			'competitor_product_url' => $request->competitor_product_url,
-			'competitor_product_price' => $request->competitor_product_price,
-			'competitor_product_shipping_charge' => $request->competitor_product_shipping_charge ?? 0,
-			'competitor_screenshot_url' => $competitorProductImgURL,
-		]);
-
-		$batch = Bus::batch([])->name('Post Claim Mails')->dispatch();
-
-		$batch->options['queue'] = config('app.website') . '_POST_CLM';
-		$batch->add(new PostClaimMailJob([
-			'recordId' => $claim->id,
-		]));
-
-		return response()->json([
-			'success' => true,
-			'message' => __("msg_create"),
-			'data' => $claim
-		], 201);
 	}
+
 
 	/**
 	 * @OA\Get(
