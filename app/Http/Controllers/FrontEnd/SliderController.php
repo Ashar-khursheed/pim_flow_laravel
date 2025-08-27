@@ -54,10 +54,13 @@ class SliderController extends Controller
      *     )
      * )
      */
-    public function show($id)
-    {
-        $slider = SimpleSlider::with('items')->findOrFail($id) ;
-        return response()->json($slider);
-    }
+   public function show($id)
+{
+    $slider = SimpleSlider::with('items')->findOrFail($id);
+
+    return response()
+        ->json($slider)
+        ->header('Cache-Control', 'public, max-age=86400'); // cache for 1 day
+}
 
 }
