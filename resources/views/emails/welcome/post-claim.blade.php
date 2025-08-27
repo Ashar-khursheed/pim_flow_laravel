@@ -64,7 +64,7 @@
 
 					<tr>
 						<td align="left" style="padding: 10px 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; font-size: 14px;">Your claim ID: <strong style="color:#26683A; font-family: 'Noto Sans', sans-serif;">{{ $claimId ?? 'HS-PM-[XXXX]' }}</strong></p>
+							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; font-size: 14px;">Your claim ID: <strong style="color:#26683A; font-family: 'Noto Sans', sans-serif;">HS-PM-{{ $claimId }}</strong></p>
 							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; font-size: 14px;">No further steps are needed from you right now — we’ll notify you as soon as the review is complete.</p>
 							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; font-size: 14px;">Thank you for trusting HorecaStore. We’re committed to keeping your purchases protected.</p>
 						</td>
