@@ -527,25 +527,25 @@ if (!function_exists('glitch_error_reporting_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-				$mails = $usMails;
-				break;
+			$mails = $usMails;
+			break;
 
 			case 'UAE':
-				$mails = $uaeMails;
-				break;
+			$mails = $uaeMails;
+			break;
 
 			case 'TEST':
-				$mails = $testMails;
-				break;
+			$mails = $testMails;
+			break;
 
 			case 'Local':
-				$mails = $localMails;
-				break;
+			$mails = $localMails;
+			break;
 
 			default:
-				$mails =[];
-
-
+			$mails =[];
+			break;
+		}
 		return $mails;
 	}
 }
@@ -558,7 +558,7 @@ if (!function_exists('order_cc_mails')) {
 			'shehzad@rapid-supplies.com',
 			'ofs@thehorecastore.com',
 			'ofs02@thehorecastore.com',
-			'dmm@thehorecastore.com'
+			'dmm@thehorecastore.com',
 		];
 
 		$uaeMails = [
@@ -577,26 +577,25 @@ if (!function_exists('order_cc_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-				$mails = $usMails;
-				break;
+			$mails = $usMails;
+			break;
 
 			case 'UAE':
-				$mails = $uaeMails;
-				break;
+			$mails = $uaeMails;
+			break;
 
 			case 'TEST':
-				$mails = $testMails;
-				break;
+			$mails = $testMails;
+			break;
 
 			case 'Local':
-				$mails = $localMails;
-				break;
+			$mails = $localMails;
+			break;
 
 			default:
-				$mails =[];
-				break;
+			$mails =[];
+			break;
 		}
-
 		return $mails;
 	}
 }
