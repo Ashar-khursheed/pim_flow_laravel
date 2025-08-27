@@ -70,6 +70,7 @@ use App\Http\Controllers\Utmcontroller;
 use App\Http\Controllers\CustomerEventController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\PrePurchaseClaimController;
+use App\Http\Controllers\PostPurchaseClaimController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -122,6 +123,7 @@ use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController
 use App\Http\Controllers\FrontEnd\GlitchErrorController;
 use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventController;
 use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseClaimController;
+use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseClaimController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -263,6 +265,7 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
     Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
+    Route::apiResource('post-purchase-claims', PostPurchaseClaimController::class);
 
     Route::apiResource('/coupons', F_CouponController::class);
     Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
@@ -536,6 +539,7 @@ Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'get
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
     Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
     Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
+    Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class);
 
     Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
