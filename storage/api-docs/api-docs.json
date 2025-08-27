@@ -17088,6 +17088,10 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "is_cod": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "paid_amount": {
                                         "type": "number",
                                         "format": "float",

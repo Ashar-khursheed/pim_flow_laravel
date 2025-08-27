@@ -303,7 +303,7 @@ class OrderController extends BaseController
 
 			DB::commit();
 
-			if ($request->is_cod === true) {
+			if ($request->boolean('is_cod')) {
 				$batch = Bus::batch([])->name('Order Place')->dispatch();
 
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
