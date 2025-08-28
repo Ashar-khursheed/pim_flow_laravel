@@ -1698,39 +1698,42 @@ class ProductController extends Controller
         }
         $product->per_unit_price = $perUnitPrice;
 
-        // Supplier
-        $firstSupplier = $product->productSuppliers->first();
-        $price = $firstSupplier ? (float) $firstSupplier->price : 0;
-        $salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
+       $firstSupplier = $product->productSuppliers->first();
 
-        return [
-            "id" => $product->id,
-            "name" => $product->name,
-            "sku" => $product->sku,
-            "url" => $product->seoUrl->url ?? null,
-            "total_reviews" => $product->reviews->count(),
-            "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
-            "left_stock" => $product->left_stock ?? 0,
-            "currency" => $product->currency->symbol ?? '$',
-            "images" => $cleanedImages,
-            "alt_tags" => $cleanedAlt,
-            "vendor_sku" => $firstSupplier->vendor_sku ?? null,
-            "price" => $price,
-            "sale_price" => $salePrice,
-            "original_price" => $price,
-            "front_sale_price" => $salePrice ?: $price,
-            "best_price" => $price,
-            "selling_type" => $sellingType,
-            "per_unit_price" => $product->per_unit_price,
-            "vendor_id" => $firstSupplier->vendor_id ?? null,
-            "map" => $firstSupplier ? (float) $firstSupplier->map : 0,
-            "inventory" => $firstSupplier->inventory ?? null,
-            "in_stock" => $firstSupplier->in_stock ?? null,
-            "delivery_days" => $firstSupplier->delivery_days ?? null,
-            "return_policy" => $firstSupplier->return_policy ?? null,
-            "free_shipping" => $firstSupplier->free_shipping ?? null,
-            "warranty_information" => $firstSupplier->warranty_information ?? null,
-        ];
+$price = $firstSupplier ? (float) $firstSupplier->price : null;
+$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : null;
+$vendorSku = $firstSupplier?->vendor_sku;
+$vendorId = $firstSupplier?->vendor_id;
+
+return [
+    "id" => $product->id,
+    "name" => $product->name,
+    "sku" => $product->sku,
+    "url" => $product->seoUrl->url ?? null,
+    "total_reviews" => $product->reviews->count(),
+    "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
+    "left_stock" => $product->left_stock ?? 0,
+    "currency" => $product->currency->symbol ?? '$',
+    "images" => $cleanedImages,
+    "alt_tags" => $cleanedAlt,
+    "vendor_sku" => $vendorSku,
+    "price" => $price ?? 0,
+    "sale_price" => $salePrice ?? 0,
+    "original_price" => $price ?? 0,
+    "front_sale_price" => $salePrice ?: $price ?? 0,
+    "best_price" => $price ?? 0,
+    "selling_type" => $sellingType,
+    "per_unit_price" => $product->per_unit_price,
+    "vendor_id" => $vendorId,
+    "map" => $firstSupplier ? (float) $firstSupplier->map : 0,
+    "inventory" => $firstSupplier->inventory ?? null,
+    "in_stock" => $firstSupplier->in_stock ?? null,
+    "delivery_days" => $firstSupplier->delivery_days ?? null,
+    "return_policy" => $firstSupplier->return_policy ?? null,
+    "free_shipping" => $firstSupplier->free_shipping ?? null,
+    "warranty_information" => $firstSupplier->warranty_information ?? null,
+];
+
     });
 
     return response()->json([
