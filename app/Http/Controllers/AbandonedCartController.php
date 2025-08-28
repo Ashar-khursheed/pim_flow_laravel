@@ -14,7 +14,7 @@ class AbandonedCartController extends Controller
     /**
      * @OA\Get(
      *     path="/api/abandoned-carts",
-     *     tags={"Carts"},
+     *     tags={"Abandoned Carts"},
      *      security={{"bearerAuth":{}}},
      *     summary="Get list of abandoned carts",
      *     description="Returns a paginated list of abandoned carts with customer info, addresses, product, and brand",
@@ -212,7 +212,7 @@ public function index(Request $request)
     /**
      * @OA\Get(
      *     path="/api/abandoned-carts/{id}",
-     *     tags={"Carts"},
+     *     tags={"Abandoned Carts"},
      *   security={{"bearerAuth":{}}},
      *     summary="Get details of a specific abandoned cart",
      *     description="Returns abandoned cart details by ID with customer info, addresses, product, and brand",
@@ -374,7 +374,7 @@ public function show($customerId)
  * @OA\Get(
  *     path="/api/customers-by-date-range",
  *     summary="Get customer IDs with carts within a date range",
- *     tags={"Carts"},
+ *     tags={"Abandoned Carts"},
  *     security={{"bearerAuth":{}}},
  *     @OA\Parameter(
  *         name="start_date",

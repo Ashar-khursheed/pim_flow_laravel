@@ -103,6 +103,7 @@ class CustomerController extends BaseController
 			'name' => 'required|string|max:255',
 			'email' => 'required|string|email|max:255|unique:customers',
 			'password' => 'required|string|min:8',
+			'mobile_number' => 'nullable|string|max:20', // 👈 ADD THIS
 			'type' => 'nullable|string',
 			'business_name' => 'nullable|string',
 			'dob' => 'nullable|date',

@@ -246,78 +246,63 @@ private function getCategoryWithChildren($category)
      * )
      */
    
-    public function getCategoriesWithChildren(Request $request)
-        {
-            $filterId = $request->get('id');
+ public function getCategoriesWithChildren(Request $request)
+{
+    $filterId = $request->get('id');
 
-            $query = Category::select(['id', 'name', 'parent_id', 'image'])
-                ->withCount('products')
-                ->with(['seoUrl:id,relational_id,url']) // Eager load URL
-                ->where('status', 'published');
+    $query = Category::select(['id', 'name', 'parent_id', 'image'])
+        ->withCount('products')
+        ->with(['seoUrl']) // Eager load seoUrl relationship
+        ->where('status', 'published');
 
-            if ($filterId) {
-                $query->where(function ($q) use ($filterId) {
-                    $q->where('id', $filterId)->orWhere('parent_id', $filterId);
-                });
-            }
-
-            $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
-
-            $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
-                $categories = $query->get();
-
-                // Add URL to each category
-                return $this->buildCategoryTree(
-                    $categories->map(function ($category) {
-                       $category->seo_slug = optional($category->seoUrl)->url;
-
-                        return $category;
-                    })
-                );
-            });
-
-            return response()->json($categoriesTree);
-        }
-
-
-
-
-
-    /**
-     * Build a hierarchical category tree efficiently.
-     */
-    private function buildCategoryTree($categories)
-    {
-        $tree = [];
-        $categoryMap = [];
-
-
-        // Create a lookup table for fast access
-        foreach ($categories as $category) {
-              $seo = $category->seoUrl; // Assumes you have the seoUrl() relationship
-    $category->seo_slug = $seo?->url ?? null;
-            $categoryMap[$category->id] = [
-                'id' => $category->id,
-                'name' => $category->name,
-                'slug' => $category->seo_slug,
-                'parent_id' => $category->parent_id,
-                'productCount' => $category->products_count, // Eager-loaded product count
-                'image' =>  $category->image,
-                'children' => [],
-            ];
-        }
-
-        // Build the tree using the lookup table
-        foreach ($categoryMap as &$category) {
-            if ($category['parent_id'] && isset($categoryMap[$category['parent_id']])) {
-                $categoryMap[$category['parent_id']]['children'][] = &$category;
-            } else {
-                $tree[] = &$category;
-            }
-        }
-
-        return $tree;
+    if ($filterId) {
+        $query->where(function ($q) use ($filterId) {
+            $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+        });
     }
+
+    $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
+
+    $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
+        $categories = $query->get();
+        return $this->buildCategoryTree($categories);
+    });
+
+    return response()->json($categoriesTree);
+}
+
+private function buildCategoryTree($categories)
+{
+    $tree = [];
+    $categoryMap = [];
+
+    // Create a lookup table for fast access
+    foreach ($categories as $category) {
+        // Get the slug from seoUrl relationship
+        $seoSlug = $category->seoUrl?->url ?? null;
+        
+        $categoryMap[$category->id] = [
+            'id' => $category->id,
+            'name' => $category->name,
+            'slug' => $seoSlug, // Use the slug from seoUrl relationship
+            'parent_id' => $category->parent_id,
+            'productCount' => $category->products_count,
+            'image' => $category->image,
+            'children' => [],
+        ];
+    }
+
+    // Build the tree using the lookup table
+    foreach ($categoryMap as &$category) {
+        if ($category['parent_id'] && isset($categoryMap[$category['parent_id']])) {
+            $categoryMap[$category['parent_id']]['children'][] = &$category;
+        } else {
+            $tree[] = &$category;
+        }
+    }
+
+    return $tree;
+}
 
     /**
  * @OA\Schema(

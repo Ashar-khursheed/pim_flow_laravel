@@ -233,15 +233,20 @@ class ProductController extends Controller
                         }
                         
                         
-                        
-                        
-                        
-                        
-
-                        if ($product->brand) {
+            
+                      if ($product->brand) {
                             $product->brand_id = $product->brand->id;
                             $product->brand_name = $product->brand->name;
                             $product->brand_logo = $product->brand->logo;
+
+                            if ($product->brand->seoUrl) {
+                                $product->brand_url = $product->brand->seoUrl->url;
+                            } else {
+                                $product->brand_url = null;
+                            }
+                        
+
+    
                         
                             // Get review stats directly from the database
                             $brandProductIds = \DB::table('ec_products')
@@ -261,6 +266,9 @@ class ProductController extends Controller
                         }
                         $product->images = collect(json_decode($product->images, true))->map(function ($image) {
                             return  $image;
+                        });
+                          $product->alt_tags = collect(json_decode($product->alt_tags, true))->map(function ($alt_tags) {
+                            return  $alt_tags;
                         });
 
                         // Custom sorting for documents
@@ -533,7 +541,7 @@ class ProductController extends Controller
                         'data' => $products,
                         'pagination' => $pagination
             
-                    ]);
+                    ])->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
@@ -719,10 +727,18 @@ class ProductController extends Controller
                         
                         
                     
-                        if ($product->brand) {
+                      if ($product->brand) {
                             $product->brand_id = $product->brand->id;
                             $product->brand_name = $product->brand->name;
                             $product->brand_logo = $product->brand->logo;
+
+                            if ($product->brand->seoUrl) {
+                                $product->brand_url = $product->brand->seoUrl->url;
+                            } else {
+                                $product->brand_url = null;
+                            }
+                        
+
                         
                             // Get review stats directly from the database
                             $brandProductIds = \DB::table('ec_products')
@@ -743,6 +759,10 @@ class ProductController extends Controller
                         
                         $product->images = collect(json_decode($product->images, true))->map(function ($image) {
                             return  $image;
+                        });
+
+                        $product->alt_tags = collect(json_decode($product->alt_tags, true))->map(function ($alt_tags) {
+                            return  $alt_tags;
                         });
 
                         // Custom sorting for documents
@@ -932,7 +952,7 @@ class ProductController extends Controller
                         'data' => $products,
                         'pagination' => $pagination,
              
-                    ]);
+                   ])->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
@@ -1030,6 +1050,15 @@ class ProductController extends Controller
                 return [$item];
             })->flatten()->filter()->values();
 
+               $AltArray = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true);
+            $cleanedAlt = collect($imageArray)->map(function ($item) {
+                if (is_string($item) && str_starts_with($item, '[')) {
+                    $decoded = json_decode($item, true);
+                    return is_array($decoded) ? $decoded : [$item];
+                }
+                return [$item];
+            })->flatten()->filter()->values();
+
                     $videoPaths = json_decode($product->video_path, true);
                     $product->video_path = collect($videoPaths)->map(function ($video) {
                         return $video;
@@ -1049,6 +1078,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $cleanedImages,
+                'alt_tags' => $cleanedAlt,
                 "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
@@ -1088,7 +1118,7 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'data' => $transformed
-        ]);
+        ])->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
@@ -1182,6 +1212,10 @@ class ProductController extends Controller
                 return $image;
             });
 
+            $product->alt_tags = collect($product->alt_tags)->map(function ($alt_tags) {
+                return $alt_tags;
+            });
+
             $videoPaths = json_decode($product->video_path, true);
             $product->video_path = collect($videoPaths)->map(function ($video) {
                 return $video;
@@ -1199,6 +1233,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $product->images,
+                 'alt_tags' => $product->alt_tags,
                 "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
@@ -1242,7 +1277,7 @@ class ProductController extends Controller
             'total' => $products->total(),
             'per_page' => $products->perPage(),
             'data' => $transformed,
-        ]);
+       ])->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
@@ -1344,6 +1379,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $product->images,
+                'alt_tags' => $product->alt_tags,
                 "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
@@ -1387,7 +1423,7 @@ class ProductController extends Controller
             'total' => $products->total(),
             'per_page' => $products->perPage(),
             'data' => $transformed,
-        ]);
+        ])->header('Cache-Control', 'public, max-age=86400');
     }
 
 
@@ -1507,7 +1543,7 @@ class ProductController extends Controller
             'total_units_sold' => $totalUnitsSold,
             'total_reviews' => $totalReviews,
         ]
-    ]);
+   ])->header('Cache-Control', 'public, max-age=86400');
 }
 
     /**
@@ -1618,6 +1654,15 @@ class ProductController extends Controller
                 return [$item];
             })->flatten()->filter()->values();
 
+              $AltArray = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true);
+            $cleanedAlt = collect($AltArray)->map(function ($item) {
+                if (is_string($item) && str_starts_with($item, '[')) {
+                    $decoded = json_decode($item, true);
+                    return is_array($decoded) ? $decoded : [$item];
+                }
+                return [$item];
+            })->flatten()->filter()->values();
+
             $sellingType = null;
             if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                 $fullValue = $product->sellingUnitAttribute->attribute_value;
@@ -1662,6 +1707,7 @@ class ProductController extends Controller
                 "left_stock" => $product->left_stock ?? 0,
                 "currency" => $product->currency->symbol ?? '$',
                 "images" => $cleanedImages,
+                 "alt_tags" => $cleanedAlt,
                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
                 'price' => (float) ($firstSupplier->price ?? 0),
                 "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
@@ -1685,7 +1731,7 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'data' => $data,
-        ]);
+        ])->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
@@ -1807,6 +1853,14 @@ class ProductController extends Controller
                 return [$item];
             })->flatten()->filter()->values();
 
+            $AltArray = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true);
+            $cleanedAlt = collect($AltArray)->map(function ($item) {
+                if (is_string($item) && str_starts_with($item, '[')) {
+                    $decoded = json_decode($item, true);
+                    return is_array($decoded) ? $decoded : [$item];
+                }
+                return [$item];
+            })->flatten()->filter()->values();
                     $videoPaths = json_decode($product->video_path, true);
                     $product->video_path = collect($videoPaths)->map(function ($video) {
                         return $video;
@@ -1855,6 +1909,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 "images" => $cleanedImages,
+                "alt_tags" => $cleanedAlt,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
@@ -1875,10 +1930,10 @@ class ProductController extends Controller
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                'price' =>  (float) $firstSupplier->price,
-                "sale_price" => (float) $firstSupplier->sale_price,
-                "original_price"=>  (float) $firstSupplier->price,
-                'front_sale_price' => (float) $firstSupplier->sale_price,
+                'price' => (float) ($firstSupplier->price ?? $product->price ?? 0),
+                'sale_price' => (float) ($firstSupplier->sale_price ?? $product->sale_price ?? 0),
+                'original_price' => (float) ($firstSupplier->price ?? $product->price ?? 0),
+                'front_sale_price' => (float) ($firstSupplier->sale_price ?? $product->sale_price ?? 0),
                  "best_price"=>  (float) $firstSupplier->price,
                  "selling_type"=> $sellingType,
                  "per_unit_price"=>   $product->per_unit_price,
@@ -1896,7 +1951,7 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'data' => $transformed
-        ]);
+        ])->header('Cache-Control', 'public, max-age=86400');
     }
     
 
@@ -2168,7 +2223,7 @@ class ProductController extends Controller
             'Return_policy' => $product->productSuppliers->first()->return_policy ?? null,
            'Free_shipping' => ($product->productSuppliers->first()->free_shipping ?? null) == 1 ? 'Yes' : 'No',
 
-        ]);
+       ])->header('Cache-Control', 'public, max-age=86400');
     }
 
     }

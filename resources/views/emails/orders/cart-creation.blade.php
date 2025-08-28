@@ -11,14 +11,6 @@
 				width: 100% !important;
 				padding: 20px !important;
 			}
-
-			{{-- .product-table th,
-			.product-table td {
-				display: block;
-				width: 100% !important;
-				text-align: left !important;
-			} --}}
-
 			.order-button {
 				display: block;
 				margin: 15px 0;
@@ -32,7 +24,7 @@
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: black;">
 	<!-- Preheader text: hidden but visible in email previews -->
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-		Thank you! We’ve received your order and will start processing it shortly.
+		We’ve saved your items. Please complete payment to confirm your order.
 	</span>
 
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f8f8; font-family: 'Noto Sans',  sans-serif;">
@@ -54,13 +46,17 @@
 								</strong>!
 							</p>
 							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
-								Your Order Has Been Placed Successfully
+								Your Order Has Been Reserved Successfully
 							</p>
-							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
-								You’ll receive a separate confirmation email shortly with updated delivery details and next steps. If you’d like to view the status of your order or make changes, visit
+							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
+								To make your payment easily, we’ve created an account for you. Use the details below to log in anytime:
+								<ul style="margin: 0;">
+									<li style="font-size:14px; line-height:20px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">Username: <b>{{ $username }}</b></li>
+									<li style="font-size:14px; line-height:20px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">Password: <b>{{ $password }}</b></li>
+								</ul>
 							</p>
-							<a href="{{ $orderUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
-								Manage Your Orders
+							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
+								Complete Your Payment
 							</a>
 						</td>
 					</tr>
@@ -77,24 +73,24 @@
 										<table>
 											<tr>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; font-size: 14px; line-height:22px; color:black;">
-													Order No.
+													Reference No.
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
-													{{ $orderNumber }}
+													{{ $referenceNumber }}
 												</td>
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; font-size: 15px; line-height:22px; color:black; font-size: 14px;">
-													Order Date
+													Date
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
-													{{ $orderDate }}
+													{{ $customerCartDate }}
 												</td>
 											</tr>
 											<tr>
@@ -110,13 +106,14 @@
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; font-size: 15px; line-height:22px; color:black; font-size: 14px;">
-													Payment Method
+													Payment Status
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
-													{{ $paymentMethod }}
+													Pending
+													<a href="{{ $paymentUrl }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">[Pay Now]</a>
 												</td>
 											</tr>
 										</table>
@@ -137,9 +134,6 @@
 										<p style="font-family: 'Noto Sans', sans-serif; margin:0; color: #26683A; font-weight: 500; font-size:14px; line-height:20px;">
 											{{ $country }}, {{ $zipcode }}
 										</p>
-										<p style="font-family: 'Noto Sans', sans-serif; margin:0; color: #26683A; font-weight: 500; font-size:14px; line-height:20px;">
-											{{ $customerEmail }}
-										</p>
 									</td>
 								</tr>
 							</table>
@@ -152,12 +146,12 @@
 							<table class="product-table" width="100%" cellspacing="0" cellpadding="8" border="0" style="border-collapse:collapse; font-size:14px; line-height:20px; font-family: 'Noto Sans',  sans-serif;">
 								<tr style="background:#FAFAFA; font-weight:bold; border-bottom: 1px solid #26683A; font-family: 'Noto Sans',  sans-serif; line-height:22px;">
 									<td colspan="2" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
-										Items Ordered
+										Items Reserved
 									</td>
-									<td align="center" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
+										<td align="center" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
 										Quantity
 									</td>
-									<td align="right" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
+										<td align="right" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
 										Total
 									</td>
 								</tr>
@@ -169,8 +163,8 @@
 									</td>
 									<td style="width: 60%">
 										<strong style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ Str::limit($product->name, 90, '...') }}</strong><br>
-										<span style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">Arriving</span>
-										<span style="color:#26683A; font-style:italic; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $product->expectedShippingDate }}</span><br>
+										<span style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">Usually delivered within</span>
+										<span style="color:#26683A; font-style:italic; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ str_replace(['Days','Weeks'], ['Business Days','Business Weeks'], $product->delivery_days) }}</span><br>
 										<span style="color:#BE2535; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $currency }} {{ number_format($product->priceBeforeDiscount, 2, '.', ',') }}{{ $product->discount ? ' | Save '.number_format($product->discount, 2).'%' : '' }}</span>
 									</td>
 									<td align="center" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px; width:10%;">
@@ -249,11 +243,15 @@
 
 					<tr>
 						<td>
-
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
 									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
-										You can view or update your order anytime by visiting the Orders section under your account profile.
+										We’re excited to prepare your order! Please complete your payment at the earliest to avoid any delay in processing and delivery.
+									</td>
+								</tr>
+								<tr>
+									<td style="font-size:14px;  padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
+										To make sure your items stay reserved just for you, please complete payment within 7 days. After that, the system may automatically release the order, and we’d hate for you to miss out!
 									</td>
 								</tr>
 								<tr>

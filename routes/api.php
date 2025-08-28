@@ -8,6 +8,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductReportController;
 use App\Http\Controllers\CategoryPageController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\StoreController;
@@ -69,6 +70,8 @@ use App\Http\Controllers\AbandonedCartController;
 use App\Http\Controllers\Utmcontroller;
 use App\Http\Controllers\CustomerEventController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\CustomerCartController;
+use App\Http\Controllers\PrePurchaseClaimController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -120,6 +123,7 @@ use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewContro
 use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController ;
 use App\Http\Controllers\FrontEnd\GlitchErrorController;
 use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventController;
+use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseClaimController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -213,36 +217,41 @@ Route::apiResource('newsletters', NewsletterController::class);
 Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
 
 Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
+
+// Route::apiResource('frontend/pre-purchase-claims', F_PrePurchaseClaimController::class);
+Route::post('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'store']);
+
 Route::prefix('analytics')->group(function () {
     // Basic Analytics
     Route::get('/overview', [AnalyticsController::class, 'overview']);
     Route::get('/sessions-by-date', [AnalyticsController::class, 'sessionsByDate']);
     Route::get('/realtime', [AnalyticsController::class, 'realTimeAnalytics']);
-    
+
     // Detailed Analytics
     Route::get('/device', [AnalyticsController::class, 'deviceAnalytics']);
     Route::get('/geographic', [AnalyticsController::class, 'geographicAnalytics']);
     Route::get('/traffic-sources', [AnalyticsController::class, 'trafficSources']);
     Route::get('/pages', [AnalyticsController::class, 'pageAnalytics']);
     Route::get('/events', [AnalyticsController::class, 'eventAnalytics']);
-    
+
     // E-commerce & Conversions
     Route::get('/conversions', [AnalyticsController::class, 'conversionAnalytics']);
     Route::get('/abandoned-cart', [AnalyticsController::class, 'abandonedCartAnalytics']);
     Route::get('/ecommerce-funnel', [AnalyticsController::class, 'ecommerceFunnel']);
     Route::get('/goal-completions', [AnalyticsController::class, 'goalCompletions']);
-    
+
     // Audience Analytics
     Route::get('/demographics', [AnalyticsController::class, 'audienceDemographics']);
     Route::get('/cohort-analysis', [AnalyticsController::class, 'cohortAnalysis']);
     Route::get('/user-journey', [AnalyticsController::class, 'userJourney']);
-    
+
     // Advanced Features
     Route::get('/time-based', [AnalyticsController::class, 'timeBasedAnalytics']);
     Route::get('/complete-dashboard', [AnalyticsController::class, 'completeDashboard']);
     Route::post('/custom-report', [AnalyticsController::class, 'customReport']);
 });
-
+Route::get('/analytics/landing-pages', [AnalyticsController::class, 'landingPageAnalytics']);
+Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerformance']);
 
 // Route::prefix('analytics')->group(function () {
 //     Route::get('/sessions', [AnalyticsController::class, 'sessions']);
@@ -255,8 +264,17 @@ Route::prefix('analytics')->group(function () {
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+    Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
 
-	
+    Route::apiResource('/coupons', F_CouponController::class);
+    Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
+    Route::post('/coupons/{coupon}/reject', [F_CouponController::class, 'reject']);
+    Route::post('/coupons/validate', [F_CouponController::class, 'validate']);
+    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
+    Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
+
+	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
+	Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
 
 	Route::apiResource('customer-events', CustomerEventController::class);
 
@@ -388,7 +406,12 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
 	Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
 	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
+ 
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
+ 
+
+	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
+ 
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
@@ -415,7 +438,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
 	Route::get('permissions', [RoleController::class, 'getAllPermissions']);
 	Route::apiResource('roles', RoleController::class);
-
 
 
 	Route::apiResource('reviews', ReviewController::class);
@@ -462,7 +484,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/reorder', [CategoryController::class ,'reorder']);
 	Route::apiResource('categories', CategoryController::class);
 
-
 	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
 
@@ -481,15 +502,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
 
 
-
 	Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
 	Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
 
 
 	Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
-
-
-	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 	Route::post('/logout', [AuthController::class, 'logout']);
@@ -501,6 +518,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
 	Route::post('/unisource/authenticate', [UnisourceShipmentController::class, 'authenticateWithUnisource']);
+    Route::apiResource('carts', CustomerCartController::class);
 
 });
 
@@ -521,8 +539,10 @@ Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'get
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+    Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
+    Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
 
-Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
+    Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
 	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
     Route::get('/frontend/invoices/{id}', [F_InvoiceController::class, 'show']);
@@ -590,9 +610,6 @@ Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction
 
 	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
 	Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
-
-
-
 
 
 	Route::get('/frontend/discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
@@ -698,7 +715,7 @@ Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
 Route::get('/frontend/country-phonecodes', [F_CountryController::class, 'getPhoneCodes']);
 
 
-Route::get('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
+Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
 
 Route::prefix('/frontend/blogs')->group(function () {
 	Route::get('/', [F_BlogController::class, 'index']);
@@ -753,6 +770,7 @@ Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhoo
 
 Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
 Route::get('/address-autocomplete', [F_GeoController::class, 'addressAutocomplete']);
+Route::get('/addressgcc-autocomplete', [F_GeoController::class, 'addressAutocompleteGCC']);
 
 Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
 Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);

@@ -39,4 +39,11 @@ class Brand extends Model
 	{
 		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'brands');
 	}
+    public function seoUrl()
+    {
+        return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
+                    ->where('relational_type', 'Brand');
+    }
+
+
 }

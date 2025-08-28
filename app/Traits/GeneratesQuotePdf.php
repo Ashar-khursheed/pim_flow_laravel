@@ -72,9 +72,9 @@ trait GeneratesQuotePdf
 				$product->brandName = $productDetail->brand->name ?? null;
 				$product->sku = $productDetail->sku;
 				$product->warrantyInfo = $productDetail->warrantyAttribute->attribute_value ?? '';
-				$product->shippingCharge = $quoteProduct->shipping_charge == 0
-				? 'FREE SHIPPING'
-				: $currency . ' ' . number_format($quoteProduct->shipping_charge, 2, '.', ',');
+				// $product->shippingCharge = $quoteProduct->shipping_charge == 0
+				// ? 'FREE SHIPPING'
+				// : $currency . ' ' . number_format($quoteProduct->shipping_charge, 2, '.', ',');
 
 				$product->deliveryDays = $productSupplierDetail->delivery_days ?? null;
 				$product->productURL = config('app.url') . '/products/' . $productDetail->seoProductUrl->url ?? $productDetail->id;
@@ -96,19 +96,19 @@ trait GeneratesQuotePdf
 					: trim($fullValue))
 				: '';
 
-				$product->unitPrice = number_format($quoteProduct->unit_price, 2, '.', ',');
-				$product->total = number_format($quoteProduct->amount, 2, '.', ',');
+				$product->unitPrice = $quoteProduct->unit_price;
+				$product->total = $quoteProduct->amount;
 
 				$products->push($product);
 			}
 		}
 
-		$subTotal = number_format($quote->amount ?? 0, 2, '.', ',');
-		$shippingCharge = number_format($quote->shipping_charge ?? 0, 2, '.', ',');
+		$subTotal = $quote->amount ?? 0;
+		$shippingCharge = $quote->shipping_charge ?? 0;
 		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'Sales Tax';
 		$taxPercent = $quote->tax_percentage;
-		$taxAmount = number_format($quote->tax_amount ?? 0, 2, '.', ',');
-		$total = number_format($quote->total_amount ?? 0, 2, '.', ',');
+		$taxAmount = $quote->tax_amount ?? 0;
+		$total = $quote->total_amount ?? 0;
 
 		$totalInWords = config('app.website') == 'UAE'
 		? convertNumberToWords($total, "AED", "Fils")

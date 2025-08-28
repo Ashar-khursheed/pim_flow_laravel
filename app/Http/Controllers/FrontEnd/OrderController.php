@@ -271,7 +271,8 @@ class OrderController extends BaseController
 				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
 				'created_by' => 0,
-				'utm_id' => $request->utm_id
+				'utm_id' => $request->utm_id,
+
 			]);
 
 			foreach ($request->products as $product) {
@@ -384,6 +385,7 @@ class OrderController extends BaseController
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
 			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'orderProducts.product.warrantyAttribute',
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
@@ -398,6 +400,8 @@ class OrderController extends BaseController
 
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
+				$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
+
 
 			// 🔹 Fetch SEO URL directly without relation
 				$seo = \App\Models\SeoManagement::where('relational_id', $product->id)
