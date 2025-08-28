@@ -560,7 +560,6 @@ public function brandsByCategory($id): JsonResponse
     // If no direct brands, check all child categories recursively
     if ($brandIds->isEmpty()) {
         $childCategoryIds = $this->getAllChildCategoryIds($id);
-
         if ($childCategoryIds->isNotEmpty()) {
             $brandIds = Product::whereHas('categories', function ($query) use ($childCategoryIds) {
                 $query->whereIn('product_categories.category_id', $childCategoryIds);
@@ -577,18 +576,23 @@ public function brandsByCategory($id): JsonResponse
         ], 404);
     }
 
-    // Fetch brand details first
+    // Fetch brand details with SEO url
     $brands = Brand::whereIn('id', $brandIds)
         ->where('status', 'published')
         ->select('id', 'name', 'logo')
+        ->with('seoUrl') // eager load seo url
         ->get();
 
     // Filter out brands with null/empty/invalid logos
     $brands = $brands->filter(function ($brand) {
         return !empty($brand->logo) && strtolower($brand->logo) !== 'null';
     })->map(function ($brand) {
-        $brand->logo = asset($brand->logo);
-        return $brand;
+        return [
+            'id'   => $brand->id,
+            'name' => $brand->name,
+            'logo' => asset($brand->logo),
+            'url'  => $brand->seoUrl->url ?? null, // seo URL
+        ];
     })->values(); // reindex collection
 
     if ($brands->isEmpty()) {
@@ -605,6 +609,7 @@ public function brandsByCategory($id): JsonResponse
         'data' => $brands
     ])->header('Cache-Control', 'public, max-age=86400');
 }
+
 
 /**
  * Recursive helper to fetch all child category IDs
