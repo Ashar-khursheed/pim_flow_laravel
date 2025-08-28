@@ -91,8 +91,8 @@ class PartialOrderCancelledMail extends Mailable
 			}
 		}
 
-		$orderListUrl = url("/registration/all-orders");
-		$checkoutURL = url("/checkout");
+		$orderListUrl = url("/my-order");
+		$checkoutURL = url("/view-order/{$order->id}");
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'orders@thehorecastore.com';
 
