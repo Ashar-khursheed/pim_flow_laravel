@@ -577,15 +577,25 @@ public function brandsByCategory($id): JsonResponse
         ], 404);
     }
 
-    // Fetch brand details
+    // Fetch brand details (exclude brands with null/empty logo)
     $brands = Brand::whereIn('id', $brandIds)
         ->where('status', 'published')
+        ->whereNotNull('logo')
+        ->where('logo', '!=', '') // also exclude empty string if any
         ->select('id', 'name', 'logo')
         ->get()
         ->map(function ($brand) {
-            $brand->logo = $brand->logo ? asset($brand->logo) : null;
+            $brand->logo = asset($brand->logo);
             return $brand;
         });
+
+    if ($brands->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No brands with logo found.',
+            'data' => []
+        ], 404);
+    }
 
     return response()->json([
         'success' => true,
@@ -607,6 +617,7 @@ private function getAllChildCategoryIds($categoryId)
 
     return $childIds;
 }
+
 
     /**
      * @OA\Get(
