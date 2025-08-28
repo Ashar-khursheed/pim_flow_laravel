@@ -2824,22 +2824,22 @@ public function fetchCategories(Request $request)
             'Commercial Espresso Machines',
         ],
         'UAE' => [
-            "Work Top Refrigerators",
+          "Work Top Refrigerators",
             "Commercial Fryers",
-            "Commercial Freezers",
-            "Commercial Ovens",
-            "Coffee Machine",
+            "Combi Oven",
             "Commercial Blender",
             "Commercial Gas And Electric Cooker",
-            "Food Warmer and Display",
-            "Preparation Tables",
-            "Upright Chillers",
-            "Cheese",
-            "Crockery",
+            "Upright Freezer",
+            "Espresso Machine",
             "Commercial Grills And Griddles",
-            "Salamander",
             "Commercial Toaster",
-            "Ice Cream Machine"
+            "Upright Chillers",
+            "White Dinnerware",
+            "Cheese",
+            "Food Processors",
+            "Salamander",
+            "Salad Chiller"
+
 
         ],
         default => [], // fallback if APP_WEBSITE is not set properly
