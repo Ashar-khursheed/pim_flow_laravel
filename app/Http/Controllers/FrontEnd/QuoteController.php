@@ -296,10 +296,7 @@ class QuoteController extends BaseController
 
 			DB::commit();
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Quote Mails')->dispatch();
+			$batch = Bus::batch([])->name('Quote Mails')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_QOT_PLC';
 			$batch->add(new QuotePlacedMailJob([
@@ -554,6 +551,13 @@ class QuoteController extends BaseController
 			}
 
 			DB::commit();
+
+			$batch = Bus::batch([])->name('Quote Mails')->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_QOT_PLC';
+			$batch->add(new QuotePlacedMailJob([
+				'recordId' => $quote->id
+			]));
 
 			$quote->refresh()->load([
 				'customer:id,name,email,type,country_code,mobile_number',
