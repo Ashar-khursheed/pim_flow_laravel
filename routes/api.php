@@ -388,7 +388,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
 	Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
 	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
-
+	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
