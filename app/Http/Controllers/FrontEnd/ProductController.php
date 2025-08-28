@@ -1696,7 +1696,8 @@ class ProductController extends Controller
                 $product->per_unit_price = $perUnitPrice;
 
             $firstSupplier = $product->productSuppliers->first();
-
+            $price = $firstSupplier ? (float) $firstSupplier->price : 0;
+            $salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
             return [
                 "id" => $product->id,
                 "name" => $product->name,
@@ -1709,13 +1710,13 @@ class ProductController extends Controller
                 "images" => $cleanedImages,
                  "alt_tags" => $cleanedAlt,
                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                'price' => (float) ($firstSupplier->price ?? 0),
-                "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
+                'price' =>  $price,
+                "sale_price" =>   $salePrice,
                 "original_price"=> (float) ($firstSupplier->price ?? 0),
                 'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
                 "best_price"=> (float) ($firstSupplier->price ?? 0),
-                "selling_type"=> $sellingType ?? null, // ⚠️ also undefined in your code
-                "per_unit_price"=> $details->per_unit_price ?? null, // ⚠️ also undefined in your code
+                 "selling_type" => $sellingType,
+                "per_unit_price" => $product->per_unit_price,
                 'vendor_id' => $firstSupplier->vendor_id ?? null,
                 'map' => (float) ($firstSupplier->map ?? 0),
                 'inventory' => $firstSupplier->inventory ?? null,
