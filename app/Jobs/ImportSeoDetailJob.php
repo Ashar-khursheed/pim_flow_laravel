@@ -833,7 +833,7 @@ class ImportSeoDetailJob implements ShouldQueue
 		}
 		
 		// Check allowed characters only (a-z, 0-9, hyphens)
-		if (!preg_match('/^[a-z0-9-]+$/', $slug)) {
+		if (!preg_match('/^[a-z0-9\/-]+$/', $slug)) {
 			$errors[] = "URL slug contains invalid characters. Only lowercase letters (a-z), numbers (0-9), and hyphens (-) are allowed.";
 		}
 		
