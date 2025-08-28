@@ -521,35 +521,109 @@ class BrandController extends Controller
      *     )
      * )
      */
-    public function brandsByCategory($id): JsonResponse
-    {
-        $brandIds = Product::whereHas('categories', function ($query) use ($id) {
-            $query->where('product_categories.category_id', $id);
-        })->pluck('brand_id')->unique()->filter();
+    // public function brandsByCategory($id): JsonResponse
+    // {
+    //     $brandIds = Product::whereHas('categories', function ($query) use ($id) {
+    //         $query->where('product_categories.category_id', $id);
+    //     })->pluck('brand_id')->unique()->filter();
 
-        if ($brandIds->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No brands found for this category.',
-                'data' => []
-            ], 404);
+    //     if ($brandIds->isEmpty()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'No brands found for this category.',
+    //             'data' => []
+    //         ], 404);
+    //     }
+
+    //     $brands = Brand::whereIn('id', $brandIds)
+    //         ->where('status', 'published')
+    //         ->select('id', 'name', 'logo')
+    //         ->get()
+    //         ->map(function ($brand) {
+    //             $brand->logo = $brand->logo ? asset( $brand->logo) : null;
+    //             return $brand;
+    //         });
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Brands retrieved successfully.',
+    //         'data' => $brands
+    //     ]) ->header('Cache-Control', 'public, max-age=86400');
+    // }
+public function brandsByCategory($id): JsonResponse
+{
+    // Get brands directly assigned to this category
+    $brandIds = Product::whereHas('categories', function ($query) use ($id) {
+        $query->where('product_categories.category_id', $id);
+    })->pluck('brand_id')->unique()->filter();
+
+    // If no direct brands, check all child categories recursively
+    if ($brandIds->isEmpty()) {
+        $childCategoryIds = $this->getAllChildCategoryIds($id);
+        if ($childCategoryIds->isNotEmpty()) {
+            $brandIds = Product::whereHas('categories', function ($query) use ($childCategoryIds) {
+                $query->whereIn('product_categories.category_id', $childCategoryIds);
+            })->pluck('brand_id')->unique()->filter();
         }
-
-        $brands = Brand::whereIn('id', $brandIds)
-            ->where('status', 'published')
-            ->select('id', 'name', 'logo')
-            ->get()
-            ->map(function ($brand) {
-                $brand->logo = $brand->logo ? asset( $brand->logo) : null;
-                return $brand;
-            });
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Brands retrieved successfully.',
-            'data' => $brands
-        ]) ->header('Cache-Control', 'public, max-age=86400');
     }
+
+    // If still empty
+    if ($brandIds->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No brands found for this category or its child categories.',
+            'data' => []
+        ], 404);
+    }
+
+    // Fetch brand details with SEO url
+    $brands = Brand::whereIn('id', $brandIds)
+        ->where('status', 'published')
+        ->select('id', 'name', 'logo')
+        ->with('seoUrl') // eager load seo url
+        ->get();
+
+    // Filter out brands with null/empty/invalid logos
+    $brands = $brands->filter(function ($brand) {
+        return !empty($brand->logo) && strtolower($brand->logo) !== 'null';
+    })->map(function ($brand) {
+        return [
+            'id'   => $brand->id,
+            'name' => $brand->name,
+            'logo' => asset($brand->logo),
+            'url'  => $brand->seoUrl->url ?? null, // seo URL
+        ];
+    })->values(); // reindex collection
+
+    if ($brands->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No brands with logo found.',
+            'data' => []
+        ], 404);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Brands retrieved successfully.',
+        'data' => $brands
+    ])->header('Cache-Control', 'public, max-age=86400');
+}
+
+
+/**
+ * Recursive helper to fetch all child category IDs
+ */
+private function getAllChildCategoryIds($categoryId)
+{
+    $childIds = Category::where('parent_id', $categoryId)->pluck('id');
+
+    foreach ($childIds as $childId) {
+        $childIds = $childIds->merge($this->getAllChildCategoryIds($childId));
+    }
+
+    return $childIds;
+}
 
     /**
      * @OA\Get(
