@@ -472,9 +472,32 @@ function convertNumberToWords($amount, $currencyMain = 'U.S. Dollars', $currency
 	$whole = implode(', ', array_reverse($str));
 	$whole = preg_replace('/\s+/', ' ', $whole);
 
-	$fraction = $decimal > 0 ? ' and ' . convertNumberToWords($decimal, $currencyFraction, '') : '';
+	/* Handle fraction separately */
+	$fraction = '';
+	if ($decimal > 0) {
+		$fractionWords = convertNumberChunkToWords($decimal, $words);
+		$fraction = " and $fractionWords $currencyFraction";
+	}
 
 	return trim("$whole $currencyMain$fraction Only");
+}
+
+/* Helper function just for fraction */
+function convertNumberChunkToWords($number, $words)
+{
+	if ($number < 21) {
+		return $words[$number];
+	} elseif ($number < 100) {
+		$tens = floor($number / 10) * 10;
+		$unitsDigit = $number % 10;
+		return $words[$tens] . ($unitsDigit ? '-' . $words[$unitsDigit] : '');
+	} else {
+		$hundreds = floor($number / 100);
+		$tensUnits = $number % 100;
+		$hundredsPart = $words[$hundreds] . ' Hundred';
+		$tensPart = $tensUnits ? ' ' . convertNumberChunkToWords($tensUnits, $words) : '';
+		return $hundredsPart . $tensPart;
+	}
 }
 
 function getBase64Image($url)
