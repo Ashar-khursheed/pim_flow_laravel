@@ -2826,7 +2826,7 @@ class ProductController extends BaseController
 		$mainProduct = Product::findOrFail(trim($request->input('product')));
 		$product = new Product();
 		$product->name = $mainProduct->name;
-		$product->sku = $mainProduct->sku ."copy";
+		$product->sku = $mainProduct->sku ."-copy";
 		$product->website_ids = $mainProduct->website_ids;
 		$product->gen_type = $mainProduct->gen_type;
 		$product->description = $mainProduct->description;
