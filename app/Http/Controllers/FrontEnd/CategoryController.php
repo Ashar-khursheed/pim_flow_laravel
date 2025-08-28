@@ -636,12 +636,13 @@ public function getSpecificationFilters1(Request $request)
                 // Single numeric values with units - ACTUAL CONVERSION
                 try {
                     // Check if convert_unit function exists, if not, just standardize the unit
+                 // Check if convert_unit function exists, if not, just standardize the unit
                     if (function_exists('convert_unit')) {
                         $convertedValue = convert_unit($matchedMeasurementType, (float)$numericValue, $originalUnit, $targetUnit);
                         
                         if (is_numeric($convertedValue) && $convertedValue !== false) {
-                            // Round appropriately based on measurement type
-                            $roundedValue = $this->roundByMeasurementType($matchedMeasurementType, $convertedValue);
+                            // Use the closure function, not $this->
+                            $roundedValue = $roundByMeasurementType($matchedMeasurementType, $convertedValue);
                             
                             return [
                                 'converted_value' => $roundedValue,
@@ -1141,18 +1142,37 @@ public function getSpecificationFilters1(Request $request)
             $attributeIdsValue = $subCategory->$attributeIdsField;
 
             if (is_string($attributeIdsValue)) {
+                // First try JSON decode
                 $attributeIds = json_decode($attributeIdsValue, true);
 
+                // If JSON decode failed, try comma separation
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     $attributeIds = explode(',', $attributeIdsValue);
-                } else if (count($attributeIds) === 1 && is_string($attributeIds[0]) && strpos($attributeIds[0], ',') !== false) {
-                    $attributeIds = explode(',', $attributeIds[0]);
+                } else if (is_array($attributeIds)) {
+                    // Handle nested arrays or comma-separated strings within JSON
+                    $flattenedIds = [];
+                    foreach ($attributeIds as $id) {
+                        if (is_string($id) && strpos($id, ',') !== false) {
+                            $flattenedIds = array_merge($flattenedIds, explode(',', $id));
+                        } else {
+                            $flattenedIds[] = $id;
+                        }
+                    }
+                    $attributeIds = $flattenedIds;
                 }
-            } else {
+            } else if (is_array($attributeIdsValue)) {
                 $attributeIds = $attributeIdsValue;
+            } else {
+                $attributeIds = [$attributeIdsValue];
             }
 
-            $attributeIds = array_map('intval', (array)$attributeIds);
+            // Clean up and convert to integers
+            $attributeIds = array_filter(array_map(function($id) {
+                return is_numeric($id) ? intval($id) : null;
+            }, (array)$attributeIds));
+
+            // Remove duplicates
+            $attributeIds = array_unique($attributeIds);
 
             if (!empty($attributeIds)) {
                 foreach ($attributeIds as $attributeId) {
@@ -2804,26 +2824,23 @@ public function fetchCategories(Request $request)
             'Commercial Espresso Machines',
         ],
         'UAE' => [
-            'Espresso Machine',
-            'Minibar',
-            'Merchandising Refrigerators',
-            'Undercounter Refrigerators',
-            'Waffles Maker and Crepe Machine',
-            'Commercial Blender',
-            'Commercial Fryers',
-            'Commercial Gas And Electric Cooker',
-            'Commercial Grills And Griddles',
-            'Food Vacuuming',
-            'Juicer Machines',
-            'Food Warmer and Display',
-            'Bakery Ovens',
-            'Popcorn Machine and Chocolate Fountains',
-            'Upright Chillers',
-            'Work Top Refrigerators',
-            'Commercial Toasters',
-            'Commercial Chest Freezer',
-            'Commercial Dishwashers',
-            'Microwave Oven',
+          "Work Top Refrigerators",
+            "Commercial Fryers",
+            "Combi Oven",
+            "Commercial Blender",
+            "Commercial Gas And Electric Cooker",
+            "Upright Freezer",
+            "Espresso Machine",
+            "Commercial Grills And Griddles",
+            "Commercial Toaster",
+            "Upright Chillers",
+            "White Dinnerware",
+            "Cheese",
+            "Food Processors",
+            "Salamander",
+            "Salad Chiller"
+
+
         ],
         default => [], // fallback if APP_WEBSITE is not set properly
     };
