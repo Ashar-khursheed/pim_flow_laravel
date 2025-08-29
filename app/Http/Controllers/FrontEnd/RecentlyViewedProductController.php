@@ -222,6 +222,8 @@ class RecentlyViewedProductController extends Controller
                         'id' => $product->id,
                         'name' => $product->name,
                         'sku' => $product->sku,
+                        'category_url' => $product->category_url(),
+                        'parent_category_url' => $product->parent_category_url(),
                         'url' => $product->seoUrl->url ?? null,
                         'total_reviews' => $product->reviews->count(),
                         'avg_rating' => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
@@ -441,6 +443,8 @@ class RecentlyViewedProductController extends Controller
                 $data[] = [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'category_url' => $product->category_url(),
+                     'parent_category_url' => $product->parent_category_url(),
                     'sku' => $product->sku,
                     'url' => $product->seoUrl->url ?? null,
                     'total_reviews' => $product->reviews->count(),

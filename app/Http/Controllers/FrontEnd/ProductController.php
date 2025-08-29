@@ -1077,6 +1077,8 @@ class ProductController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
+                'category_url' => $product->category_url(),
+                'parent_category_url' => $product->parent_category_url(),
                 'images' => $cleanedImages,
                 'alt_tags' => $cleanedAlt,
                 "url" => $product->seoUrl->url ?? null,
@@ -1232,6 +1234,8 @@ class ProductController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
+                'category_url' => $product->category_url(),
+                 'parent_category_url' => $product->parent_category_url(),
                 'images' => $product->images,
                  'alt_tags' => $product->alt_tags,
                 "url" => $product->seoUrl->url ?? null,
@@ -1378,6 +1382,8 @@ class ProductController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
+                'category_url' => $product->category_url(),
+                 'parent_category_url' => $product->parent_category_url(),
                 'images' => $product->images,
                 'alt_tags' => $product->alt_tags,
                 "url" => $product->seoUrl->url ?? null,
@@ -1708,6 +1714,8 @@ $vendorId = $firstSupplier?->vendor_id;
 return [
     "id" => $product->id,
     "name" => $product->name,
+    'category_url' => $product->category_url(),
+    'parent_category_url' => $product->parent_category_url(),
     "sku" => $product->sku,
     "url" => $product->seoUrl->url ?? null,
     "total_reviews" => $product->reviews->count(),

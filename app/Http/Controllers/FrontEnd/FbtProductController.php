@@ -86,6 +86,8 @@ class FbtProductController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'category_url' => $product->category_url(),
+                     'parent_category_url' => $product->parent_category_url(),
                     'images' => $images,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
@@ -205,6 +207,8 @@ class FbtProductController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'category_url' => $product->category_url(),
+                    'parent_category_url' => $product->parent_category_url(),
                     'images' => $images,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,

@@ -208,6 +208,8 @@ class WishlistController extends Controller
                 $product->unsetRelation('currency');
                 $product->currency = $symbol;
                 $product->url = optional($product->seoUrl)->url;
+                 $product-> category_url -> $product->category_url();
+                 $product->parent_category_url -> $product->parent_category_url();
 
                 $sellingType = null;
         
