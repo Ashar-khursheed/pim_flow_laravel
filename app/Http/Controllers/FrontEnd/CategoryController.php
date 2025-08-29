@@ -600,7 +600,8 @@ public function getSpecificationFilters1(Request $request)
                 ];
             }
             
-            // No unit found
+            // No unit found in original value - for measurement type attributes, return as-is
+            // Don't add units if we don't know what measurement type it should be
             return [
                 'converted_value' => $originalValue,
                 'unit' => null,
@@ -674,7 +675,19 @@ public function getSpecificationFilters1(Request $request)
                 }
             }
         } else {
-            // No unit detected in the original value, return as-is
+            // No unit detected in the original value
+            // For measurement attributes, try to add the primary unit if configured
+            if ($matchedMeasurementType && $matchedPriority) {
+                return [
+                    'converted_value' => $originalValue,
+                    'unit' => $matchedPriority->primary_unit,
+                    'symbol' => $matchedPriority->primary_symbol,
+                    'display_value' => $originalValue . ' ' . $matchedPriority->primary_symbol,
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false
+                ];
+            }
+            
             return [
                 'converted_value' => $originalValue,
                 'unit' => null,
