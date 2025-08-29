@@ -36,12 +36,12 @@ trait GeneratesQuotePdf
 		$backendURL = config('app.backend_url');
 		$pdfLogoUrl = public_path((config('app.website') == 'UAE' ? 'uae_logo.png' : 'us_logo.png'));
 
-		$companyName = config('app.website') == 'UAE' ? 'THE HORECA STORE INC' : 'THE HORECA STORE INC';
-		$companyStreet = config('app.website') == 'UAE' ? '8800 Bissonnet Street, Ste A,' : '8800 Bissonnet Street, Ste A,';
-		$companyCity = config('app.website') == 'UAE' ? 'Houston, Texas 77074' : 'Houston, Texas 77074';
+		$companyName = config('app.website') == 'UAE' ? 'HORECA TRADING CO LLC.' : 'THE HORECA STORE INC';
+		$companyStreet = config('app.website') == 'UAE' ? 'Showroom 01 - Building No 9 19th Street' : '8800 Bissonnet Street, Ste A,';
+		$companyCity = config('app.website') == 'UAE' ? 'Dubai - United Arab Emirates' : 'Houston, Texas 77074';
 		$companyPhone = config('app.website') == 'UAE' ? '1 (866) 446-7322' : '1 (866) 446-7322';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
-		$siteURL = config('app.url') . '/';
+		$siteURL = config('app.website') == 'UAE' ? 'www.horecastore.ae':'www.thehorecastore.com';
 
 		$customerType = $customer->type;
 		$customerBusinessName = $customer->business_name;
@@ -115,11 +115,14 @@ trait GeneratesQuotePdf
 		: convertNumberToWords($total, "U.S. Dollars", "Cents");
 
 		$payNowUrl = config('app.url') . '/download-quotation/' . $quote->id;
+		$siteName = config('app.website');
 
-		$beneficiaryAddress = config('app.website') == 'UAE' ? '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435' : '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435';
-		$accountNo = config('app.website') == 'UAE' ? '6130 9953 3' : '6130 9953 3';
-		$bankName = config('app.website') == 'UAE' ? 'JP Morgan Chase Bank' : 'JP Morgan Chase Bank';
-		$routingCode = config('app.website') == 'UAE' ? '1110 0061 4' : '1110 0061 4';
+		$beneficiaryAddress = config('app.website') == 'UAE' ? '' : '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435';
+		$accountNo = config('app.website') == 'UAE' ? '1015 9086 9400 1' : '6130 9953 3';
+		$bankName = config('app.website') == 'UAE' ? 'Emirates NBD' : 'JP Morgan Chase Bank';
+		$routingCode = config('app.website') == 'UAE' ? '' : '1110 0061 4';
+		$ibanNumber = config('app.website') == 'UAE' ? 'AE48 0260 0010 1590 8694 001' : '';
+		$swiftCode = config('app.website') == 'UAE' ? 'EBILAEADXX' : '';
 
 		$pdfParams = [
 			'pdfLogoUrl' => $pdfLogoUrl,
@@ -159,10 +162,13 @@ trait GeneratesQuotePdf
 			'totalInWords' => $totalInWords,
 			'payNowUrl' => $payNowUrl,
 
+			'siteName' => $siteName,
 			'beneficiaryAddress' => $beneficiaryAddress,
 			'accountNo' => $accountNo,
 			'bankName' => $bankName,
 			'routingCode' => $routingCode,
+			'ibanNumber' => $ibanNumber,
+			'swiftCode' => $swiftCode,
 		];
 
 		return $pdfParams;

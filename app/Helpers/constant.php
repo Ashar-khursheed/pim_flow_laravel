@@ -589,6 +589,7 @@ if (!function_exists('order_cc_mails')) {
 			'imran@horecastore.ae',
 			'hello@horecastore.ae',
 			'dmm@horecastore.ae',
+			'pm@horecastore.ae',
 		];
 
 		$testMails = [];

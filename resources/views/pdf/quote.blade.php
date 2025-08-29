@@ -377,6 +377,7 @@ $pageNumber = 1;
 									{{ $companyName }}
 								</td>
 							</tr>
+							@if($siteName == 'US')
 							<tr>
 								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Beneficiary Address
@@ -385,6 +386,7 @@ $pageNumber = 1;
 									{{ $beneficiaryAddress }}
 								</td>
 							</tr>
+							@endif
 							<tr>
 								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Account No
@@ -401,6 +403,7 @@ $pageNumber = 1;
 									{{ $bankName }}
 								</td>
 							</tr>
+							@if($siteName == 'US')
 							<tr>
 								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Routing Code
@@ -409,6 +412,24 @@ $pageNumber = 1;
 									{{ $routingCode }}
 								</td>
 							</tr>
+							@else
+							<tr>
+								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
+									IBAN Number
+								</td>
+								<td style="border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
+									{{ $ibanNumber }}
+								</td>
+							</tr>
+							<tr>
+								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
+									Swift Code
+								</td>
+								<td style="border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
+									{{ $swiftCode }}
+								</td>
+							</tr>
+							@endif
 							<tr>
 								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									In Case Of Cheque Payment
