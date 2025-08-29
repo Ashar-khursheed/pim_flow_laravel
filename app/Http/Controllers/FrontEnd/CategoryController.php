@@ -403,6 +403,7 @@ class CategoryController extends Controller
 
 
 
+
 public function getSpecificationFilters1(Request $request)
 {
     // Validation
@@ -619,6 +620,8 @@ public function getSpecificationFilters1(Request $request)
             $targetUnit = $matchedPriority->primary_unit;
             $targetSymbol = $matchedPriority->primary_symbol;
             
+            \Log::info("Converting: {$originalValue} | Numeric: {$numericValue} | Original Unit: {$originalUnit} | Target: {$targetUnit} ({$targetSymbol})");
+            
             // For values with slashes, preserve the format but standardize unit
             if (strpos($numericValue, '/') !== false) {
                 return [
@@ -634,9 +637,11 @@ public function getSpecificationFilters1(Request $request)
                 try {
                     if (function_exists('convert_unit')) {
                         $convertedValue = convert_unit($matchedMeasurementType, (float)$numericValue, $originalUnit, $targetUnit);
+                        \Log::info("Conversion result: " . var_export($convertedValue, true));
                         
                         if (is_numeric($convertedValue) && $convertedValue !== false) {
                             $roundedValue = $roundByMeasurementType($matchedMeasurementType, $convertedValue);
+                            \Log::info("Conversion SUCCESS: {$originalValue} -> {$roundedValue} {$targetSymbol}");
                             
                             return [
                                 'converted_value' => $roundedValue,
@@ -649,6 +654,7 @@ public function getSpecificationFilters1(Request $request)
                         }
                     }
                     
+                    \Log::info("Conversion FAILED - keeping original: {$originalValue}");
                     // Conversion failed, keep original unit and value EXACTLY as stored
                     return [
                         'converted_value' => $originalValue, // Keep full original like "1 gal"
@@ -674,18 +680,6 @@ public function getSpecificationFilters1(Request $request)
             }
         } else {
             // No unit detected in the original value
-            // For measurement attributes, try to add the primary unit if configured
-            if ($matchedMeasurementType && $matchedPriority) {
-                return [
-                    'converted_value' => $originalValue,
-                    'unit' => $matchedPriority->primary_unit,
-                    'symbol' => $matchedPriority->primary_symbol,
-                    'display_value' => $originalValue . ' ' . $matchedPriority->primary_symbol,
-                    'original_value' => $originalValue,
-                    'conversion_applied' => false
-                ];
-            }
-            
             return [
                 'converted_value' => $originalValue,
                 'unit' => null,
