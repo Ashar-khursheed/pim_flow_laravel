@@ -404,6 +404,7 @@ class CategoryController extends Controller
 
 	
 
+
 public function getSpecificationFilters1(Request $request)
 {
     // Validation
@@ -473,8 +474,8 @@ public function getSpecificationFilters1(Request $request)
     $convertAttributeValue = function($attributeName, $originalValue, $attributeType = null) use ($categoryMeasurementPriorities, $roundByMeasurementType) {
         $originalValue = trim($originalValue);
         
-        // If attribute type is not measurement-related, return as-is
-        if ($attributeType && !in_array(strtolower($attributeType), ['measurement', 'numeric', 'range'])) {
+        // ONLY apply conversion logic if attribute type is 'measurement'
+        if ($attributeType !== 'measurement') {
             return [
                 'converted_value' => $originalValue,
                 'unit' => null,
@@ -485,35 +486,7 @@ public function getSpecificationFilters1(Request $request)
             ];
         }
         
-        // Handle count-based capacity attributes with their own units
-        if (preg_match('/capacity\b/i', $attributeName) &&
-            preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel|pan)\b/i', $attributeName, $matches)) {
-            
-            // If the original value already has the unit, don't add it again
-            $unitName = ucfirst($matches[1]) . 's';
-            if (stripos($originalValue, $unitName) !== false) {
-                return [
-                    'converted_value' => $originalValue,
-                    'unit' => $unitName,
-                    'symbol' => $unitName,
-                    'display_value' => $originalValue,
-                    'original_value' => $originalValue,
-                    'conversion_applied' => false
-                ];
-            }
-            
-            // Value doesn't have unit, add it
-            return [
-                'converted_value' => $originalValue,
-                'unit' => $unitName,
-                'symbol' => $unitName,
-                'display_value' => $originalValue . ' ' . $unitName,
-                'original_value' => $originalValue,
-                'conversion_applied' => false
-            ];
-        }
-                
-        // Check if this attribute matches any measurement type in the database
+        // For measurement type attributes, find matching measurement type
         $matchedMeasurementType = null;
         $matchedPriority = null;
         
@@ -540,11 +513,9 @@ public function getSpecificationFilters1(Request $request)
                     );
                     break;
                 case 'volume':
-                    // More specific volume detection - fixed the logic
                     $shouldConvert = (
                         stripos($attributeName, 'volume') !== false ||
-                        (stripos($attributeName, 'capacity') !== false && 
-                         !preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel|pan)\b/i', $attributeName))
+                        stripos($attributeName, 'capacity') !== false
                     );
                     break;
                 case 'voltage':
@@ -610,7 +581,7 @@ public function getSpecificationFilters1(Request $request)
             }
         }
         
-        // If no measurement type matched, return as-is with empty units
+        // If no measurement type matched, return original value
         if (!$matchedMeasurementType || !$matchedPriority) {
             return [
                 'converted_value' => $originalValue,
@@ -622,52 +593,14 @@ public function getSpecificationFilters1(Request $request)
             ];
         }
         
-        // Check if the value actually contains a unit - if not, it's probably not a measurement
+        // Parse the value to extract numeric part and unit
         $hasUnit = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches);
-        $isNumericOnly = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue);
         
-        // If it's just a number without units and doesn't look like a measurement value, 
-        // don't add units (this handles cases like "Brand A", "Model 123", etc.)
-        if ($isNumericOnly && !$hasUnit) {
-            // Additional check: if it's a small integer, it might be a model number or count, not a measurement
-            if (is_numeric($originalValue) && (float)$originalValue < 1000 && floor((float)$originalValue) == (float)$originalValue) {
-                // Check if the attribute name strongly suggests it's a measurement
-                $strongMeasurementIndicators = [
-                    'voltage', 'volt', 'current', 'amp', 'ampere', 'power', 'watt', 'frequency', 'hz', 'hertz',
-                    'temperature', 'temp', 'pressure', 'psi', 'bar', 'speed', 'velocity', 'rpm',
-                    'length', 'height', 'width', 'depth', 'diameter', 'dimension', 'weight', 'mass', 'volume',
-                    'capacity'
-                ];
-                
-                $hasStrongIndicator = false;
-                foreach ($strongMeasurementIndicators as $indicator) {
-                    if (stripos($attributeName, $indicator) !== false) {
-                        $hasStrongIndicator = true;
-                        break;
-                    }
-                }
-                
-                if (!$hasStrongIndicator) {
-                    return [
-                        'converted_value' => $originalValue,
-                        'unit' => null,
-                        'symbol' => '',
-                        'display_value' => $originalValue,
-                        'original_value' => $originalValue,
-                        'conversion_applied' => false
-                    ];
-                }
-            }
-        }
-        
-        // Proceed with measurement conversion
-        $targetUnit = $matchedPriority->primary_unit;
-        $targetSymbol = $matchedPriority->primary_symbol;
-        
-        // Handle values with units (like "208/220 V", "120V", "1.5W")
         if ($hasUnit) {
             $numericValue = $matches[1];
             $originalUnit = $matches[2];
+            $targetUnit = $matchedPriority->primary_unit;
+            $targetSymbol = $matchedPriority->primary_symbol;
             
             // For values with slashes, preserve the format but standardize unit
             if (strpos($numericValue, '/') !== false) {
@@ -680,9 +613,8 @@ public function getSpecificationFilters1(Request $request)
                     'conversion_applied' => false
                 ];
             } else {
-                // Single numeric values with units - ACTUAL CONVERSION
+                // Try actual conversion
                 try {
-                    // Check if convert_unit function exists and try conversion
                     if (function_exists('convert_unit')) {
                         $convertedValue = convert_unit($matchedMeasurementType, (float)$numericValue, $originalUnit, $targetUnit);
                         
@@ -700,46 +632,31 @@ public function getSpecificationFilters1(Request $request)
                         }
                     }
                     
-                    // Conversion failed or function doesn't exist, use original value but standardize unit symbol
+                    // Conversion failed, keep original format
                     return [
-                        'converted_value' => $numericValue,
-                        'unit' => $targetUnit,
-                        'symbol' => $targetSymbol,
-                        'display_value' => $numericValue . ' ' . $targetSymbol,
+                        'converted_value' => $originalValue,
+                        'unit' => null,
+                        'symbol' => '',
+                        'display_value' => $originalValue,
                         'original_value' => $originalValue,
                         'conversion_applied' => false
                     ];
                 } catch (Exception $e) {
-                    // Log conversion error for debugging
                     \Log::warning("Unit conversion failed for {$attributeName}: {$originalValue}. Error: " . $e->getMessage());
                     
-                    // Return original value with standardized unit symbol
+                    // Return original value as-is
                     return [
-                        'converted_value' => $numericValue,
-                        'unit' => $targetUnit,
-                        'symbol' => $targetSymbol,
-                        'display_value' => $numericValue . ' ' . $targetSymbol,
+                        'converted_value' => $originalValue,
+                        'unit' => null,
+                        'symbol' => '',
+                        'display_value' => $originalValue,
                         'original_value' => $originalValue,
                         'conversion_applied' => false
                     ];
                 }
             }
-        }
-        // Handle values without units but should have them (like "208/220", "120") - only if they're likely measurements
-        else if ($isNumericOnly) {
-            $numericValue = $originalValue;
-            
-            return [
-                'converted_value' => $numericValue,
-                'unit' => $targetUnit,
-                'symbol' => $targetSymbol,
-                'display_value' => $numericValue . ' ' . $targetSymbol,
-                'original_value' => $originalValue,
-                'conversion_applied' => false
-            ];
-        }
-        // If value doesn't match expected patterns, return original without units
-        else {
+        } else {
+            // No unit detected, return as-is
             return [
                 'converted_value' => $originalValue,
                 'unit' => null,
@@ -1257,15 +1174,14 @@ public function getSpecificationFilters1(Request $request)
                     return $cleanedVal;
                 });
                 
-                // Check if it's count-based capacity attributes
-                $isCountBasedCapacity = (preg_match('/capacity\b/i', $attributeName) && 
-                preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel|pan)\b/i', $attributeName));
+                // Check if it's count-based capacity attributes - REMOVED
+                // $isCountBasedCapacity = false; // No longer needed since we check attribute type
 
                 // Only apply range logic for measurement-type attributes that are numeric
-                $isMeasurementAttribute = in_array(strtolower($attributeType ?? ''), ['measurement', 'numeric', 'range']);
+                $isMeasurementAttribute = strtolower($attributeType ?? '') === 'measurement';
                 
                 // Generate range filters for numeric values with more than 2 unique values (only for measurement attributes)
-                if ($numericValues && $cleanedValues->count() > 2 && !$isCountBasedCapacity && $isMeasurementAttribute) {
+                if ($numericValues && $cleanedValues->count() > 2 && $isMeasurementAttribute) {
                     $sorted = $cleanedValues->filter(function($value) {
                         return is_numeric($value);
                     })->map(function($val) {
@@ -1596,7 +1512,6 @@ private function getEmptyResponse()
         ]
     ])->header('Cache-Control', 'public, max-age=86400');
 }
-
 
 // public function getSpecificationFilters1(Request $request)
 // {
