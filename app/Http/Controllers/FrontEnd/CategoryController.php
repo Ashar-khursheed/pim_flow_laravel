@@ -404,7 +404,6 @@ class CategoryController extends Controller
 
 	
 
-
 public function getSpecificationFilters1(Request $request)
 {
     // Validation
@@ -581,8 +580,26 @@ public function getSpecificationFilters1(Request $request)
             }
         }
         
-        // If no measurement type matched, return original value
+        // If no measurement type matched, but still try to extract unit from original value
         if (!$matchedMeasurementType || !$matchedPriority) {
+            // Try to extract unit from original value even if no measurement type matched
+            $hasUnit = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches);
+            
+            if ($hasUnit) {
+                $numericValue = $matches[1];
+                $originalUnit = $matches[2];
+                
+                return [
+                    'converted_value' => $numericValue,
+                    'unit' => $originalUnit,
+                    'symbol' => $originalUnit,
+                    'display_value' => $numericValue . ' ' . $originalUnit,
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false
+                ];
+            }
+            
+            // No unit found
             return [
                 'converted_value' => $originalValue,
                 'unit' => null,
@@ -632,31 +649,31 @@ public function getSpecificationFilters1(Request $request)
                         }
                     }
                     
-                    // Conversion failed, keep original format
+                    // Conversion failed, keep original unit
                     return [
-                        'converted_value' => $originalValue,
-                        'unit' => null,
-                        'symbol' => '',
-                        'display_value' => $originalValue,
+                        'converted_value' => $numericValue,
+                        'unit' => $originalUnit,
+                        'symbol' => $originalUnit,
+                        'display_value' => $numericValue . ' ' . $originalUnit,
                         'original_value' => $originalValue,
                         'conversion_applied' => false
                     ];
                 } catch (Exception $e) {
                     \Log::warning("Unit conversion failed for {$attributeName}: {$originalValue}. Error: " . $e->getMessage());
                     
-                    // Return original value as-is
+                    // Return original value with original unit
                     return [
-                        'converted_value' => $originalValue,
-                        'unit' => null,
-                        'symbol' => '',
-                        'display_value' => $originalValue,
+                        'converted_value' => $numericValue,
+                        'unit' => $originalUnit,
+                        'symbol' => $originalUnit,
+                        'display_value' => $numericValue . ' ' . $originalUnit,
                         'original_value' => $originalValue,
                         'conversion_applied' => false
                     ];
                 }
             }
         } else {
-            // No unit detected, return as-is
+            // No unit detected in the original value, return as-is
             return [
                 'converted_value' => $originalValue,
                 'unit' => null,
