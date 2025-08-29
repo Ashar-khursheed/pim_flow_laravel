@@ -1209,10 +1209,12 @@ public function getSpecificationFilters1(Request $request)
 
                             $productCount = $matchingConvertedValues->whereIn('product_id', $filteredProductIds)->pluck('product_id')->unique()->count();
 
+                            // Get the unit from the first matching converted value
                             $sampleConvertedValue = $matchingConvertedValues->first();
                             $unit = $sampleConvertedValue ? $sampleConvertedValue->symbol : '';
 
-                            $displayValue = $min == $max ? $min . ' ' . $unit : $min . ' - ' . $max . ' ' . $unit;
+                            // Include unit in display value for ranges
+                            $displayValue = $min == $max ? $min . ($unit ? ' ' . $unit : '') : $min . ' - ' . $max . ($unit ? ' ' . $unit : '');
 
                             return [
                                 'min' => $min,
@@ -1250,7 +1252,7 @@ public function getSpecificationFilters1(Request $request)
                                     $sampleConvertedValue = $matchingConvertedValues->first();
                                     $unit = $sampleConvertedValue ? $sampleConvertedValue->symbol : '';
 
-                                    $displayValue = $selectedMin == $selectedMax ? $selectedMin . ' ' . $unit : $selectedMin . ' - ' . $selectedMax . ' ' . $unit;
+                                    $displayValue = $selectedMin == $selectedMax ? $selectedMin . ($unit ? ' ' . $unit : '') : $selectedMin . ' - ' . $selectedMax . ($unit ? ' ' . $unit : '');
 
                                     $ranges[] = [
                                         'min' => $selectedMin,
@@ -1367,8 +1369,25 @@ public function getSpecificationFilters1(Request $request)
                             return strcmp($a['display_value'], $b['display_value']);
                         });
                     } else {
-                        // Sort alphabetically for non-measurement attributes
+                        // Sort numerically if all values are numeric, otherwise alphabetically
                         usort($valueCountMap, function($a, $b) {
+                            // Extract numeric values from display_value for sorting
+                            $aNumeric = null;
+                            $bNumeric = null;
+                            
+                            if (preg_match('/^(\d+(?:\.\d+)?)\s*/', $a['display_value'], $matches)) {
+                                $aNumeric = (float)$matches[1];
+                            }
+                            if (preg_match('/^(\d+(?:\.\d+)?)\s*/', $b['display_value'], $matches)) {
+                                $bNumeric = (float)$matches[1];
+                            }
+                            
+                            // If both are numeric, sort numerically
+                            if ($aNumeric !== null && $bNumeric !== null) {
+                                return $aNumeric - $bNumeric;
+                            }
+                            
+                            // Otherwise sort alphabetically
                             return strcmp($a['display_value'], $b['display_value']);
                         });
                     }
