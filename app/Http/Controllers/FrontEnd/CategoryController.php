@@ -402,6 +402,7 @@ class CategoryController extends Controller
 	 */
 
 
+
 public function getSpecificationFilters1(Request $request)
 {
     // Validation
@@ -648,24 +649,24 @@ public function getSpecificationFilters1(Request $request)
                         }
                     }
                     
-                    // Conversion failed, keep original unit and value
+                    // Conversion failed, keep original unit and value EXACTLY as stored
                     return [
-                        'converted_value' => $numericValue,
+                        'converted_value' => $originalValue, // Keep full original like "1 gal"
                         'unit' => $originalUnit,
                         'symbol' => $originalUnit,
-                        'display_value' => $originalValue, // Keep the full original value like "1 gal"
+                        'display_value' => $originalValue, // Keep full original like "1 gal"
                         'original_value' => $originalValue,
                         'conversion_applied' => false
                     ];
                 } catch (Exception $e) {
                     \Log::warning("Unit conversion failed for {$attributeName}: {$originalValue}. Error: " . $e->getMessage());
                     
-                    // Return original value with original unit
+                    // Return original value EXACTLY as stored
                     return [
-                        'converted_value' => $numericValue,
+                        'converted_value' => $originalValue, // Keep full original like "1 gal"
                         'unit' => $originalUnit,
                         'symbol' => $originalUnit,
-                        'display_value' => $originalValue, // Keep the full original value like "1 gal"
+                        'display_value' => $originalValue, // Keep full original like "1 gal"
                         'original_value' => $originalValue,
                         'conversion_applied' => false
                     ];
