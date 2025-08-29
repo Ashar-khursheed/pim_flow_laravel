@@ -404,6 +404,7 @@ class CategoryController extends Controller
 
 	
 
+
 public function getSpecificationFilters1(Request $request)
 {
     // Validation
@@ -1155,8 +1156,15 @@ public function getSpecificationFilters1(Request $request)
                 ->get();
 
             if ($attributeValues->count() > 0) {
+                // Add debugging to see what we're getting
+                \Log::info("Processing attribute: {$attributeName} with type: {$attributeType}");
+                
                 $convertedAttributeValues = $attributeValues->map(function($item) use ($convertAttributeValue, $attributeName) {
                     $conversionResult = $convertAttributeValue($attributeName, $item->attribute_value, $item->attribute_type);
+                    
+                    // Debug the conversion result
+                    \Log::info("Original: {$item->attribute_value} -> Converted: " . json_encode($conversionResult));
+                    
                     return (object)[
                         'attribute_name' => $item->attribute_name,
                         'attribute_value' => $item->attribute_value,
@@ -1226,9 +1234,28 @@ public function getSpecificationFilters1(Request $request)
 
                             $productCount = $matchingConvertedValues->whereIn('product_id', $filteredProductIds)->pluck('product_id')->unique()->count();
 
-                            // Get the unit from the first matching converted value
-                            $sampleConvertedValue = $matchingConvertedValues->first();
+                            // Get the unit from any matching converted value that has a symbol
+                            $sampleConvertedValue = $matchingConvertedValues->first(function($item) {
+                                return !empty($item->symbol);
+                            });
+                            
+                            // If no item with symbol found, try to get unit from any matching value
+                            if (!$sampleConvertedValue) {
+                                $sampleConvertedValue = $matchingConvertedValues->first();
+                            }
+                            
                             $unit = $sampleConvertedValue ? $sampleConvertedValue->symbol : '';
+                            
+                            // If still no unit, try to extract from any converted value in this attribute
+                            if (empty($unit)) {
+                                $anyValueWithUnit = $convertedAttributeValues->first(function($item) {
+                                    return !empty($item->symbol);
+                                });
+                                $unit = $anyValueWithUnit ? $anyValueWithUnit->symbol : '';
+                            }
+                            
+                            // Debug what unit we found
+                            \Log::info("Range {$min}-{$max}: Found unit '{$unit}' from sample: " . json_encode($sampleConvertedValue));
 
                             // Include unit in display value for ranges
                             $displayValue = $min == $max ? $min . ($unit ? ' ' . $unit : '') : $min . ' - ' . $max . ($unit ? ' ' . $unit : '');
@@ -1548,7 +1575,6 @@ private function getEmptyResponse()
         ]
     ])->header('Cache-Control', 'public, max-age=86400');
 }
-
 // public function getSpecificationFilters1(Request $request)
 // {
 //     // Validation
