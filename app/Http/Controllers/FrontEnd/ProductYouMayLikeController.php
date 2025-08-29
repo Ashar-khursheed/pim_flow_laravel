@@ -272,6 +272,8 @@ class ProductYouMayLikeController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'category_url' => $product->category_url(),
+                     'parent_category_url' => $product->parent_category_url(),
                     'url' => $product->seoUrl->url ?? null,
                     'images' => $images,
                     'video_url' => $product->video_url,
@@ -628,6 +630,8 @@ class ProductYouMayLikeController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                     'category_url' => $product->category_url(),
+                    'parent_category_url' => $product->parent_category_url(),
                     'images' => $images,
                     'url' => $product->seoUrl->url ?? null,
                     'video_url' => $product->video_url,
