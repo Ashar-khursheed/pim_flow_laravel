@@ -138,7 +138,7 @@ class ProductController extends BaseController
 		$sortDirection = $request->input('sort_direction', 'desc');
 
 		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id' , 'status' , 'gen_type' , 'approved'];
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
 		if (!in_array($sortBy, $allowedSortColumns)) {
 			$sortBy = 'id'; // Default to id if invalid column
 		}
@@ -155,7 +155,7 @@ class ProductController extends BaseController
 			'productSuppliers',
 			'vendors'
 		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status' , 'gen_type' ,'approved']);
+			->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
 
 		/* Apply search if provided */
 
@@ -169,21 +169,21 @@ class ProductController extends BaseController
 
 
 		if ($search) {
-			$query->where(function($q) use ($search) {
+			$query->where(function ($q) use ($search) {
 				$q->where('name', 'like', "%{$search}%")
-				->orWhere('sku', 'like', "%{$search}%")
-				->orWhereHas('brand', function($brandQuery) use ($search) {
-					$brandQuery->where('name', 'like', "%{$search}%");
-				})
+					->orWhere('sku', 'like', "%{$search}%")
+					->orWhereHas('brand', function ($brandQuery) use ($search) {
+						$brandQuery->where('name', 'like', "%{$search}%");
+					})
 
-				->orWhereHas('categories', function($categoryQuery) use ($search) {
-					$categoryQuery->where('name', 'like', "%{$search}%");
-				});
+					->orWhereHas('categories', function ($categoryQuery) use ($search) {
+						$categoryQuery->where('name', 'like', "%{$search}%");
+					});
 			});
 		}
 
 		$products = $query->orderBy($sortBy, $sortDirection)
-		->paginate($perPage);
+			->paginate($perPage);
 
 
 		/* Formatting response */
@@ -200,8 +200,8 @@ class ProductController extends BaseController
 					'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 					'brand' => optional($product->brand)->name,
 					'status' => $product->status,
-					'price'=> null,
-					'sale_price'=> null,
+					'price' => null,
+					'sale_price' => null,
 					'margin' => null,
 					'margin_percent' => null,
 					'product_family' => $product->categories->pluck('name')->toArray(),
@@ -211,8 +211,8 @@ class ProductController extends BaseController
 
 			$margin = $firstSupplier->sale_price - $firstSupplier->price;
 			$marginPercent = $firstSupplier->sale_price > 0
-			? ($margin / $firstSupplier->sale_price) * 100
-			: 0;
+				? ($margin / $firstSupplier->sale_price) * 100
+				: 0;
 
 			return [
 				'id' => $product->id,
@@ -223,9 +223,9 @@ class ProductController extends BaseController
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
 				'status' => $product->status,
-				'price'=> $firstSupplier->price,
-				'sale_price'=> $firstSupplier->sale_price,
-				'vendor_id'=> $firstSupplier->vendor_id,
+				'price' => $firstSupplier->price,
+				'sale_price' => $firstSupplier->sale_price,
+				'vendor_id' => $firstSupplier->vendor_id,
 				'margin' => $margin,
 				'margin_percent' => round($marginPercent, 2),
 				'product_family' => $product->categories->pluck('name')->toArray(),
@@ -287,7 +287,7 @@ class ProductController extends BaseController
 			'name' => "required|string",
 			'product_family' => "required|integer",
 			'sku' => "required|unique:ec_products,sku",
-			'websites'=> "required|array",
+			'websites' => "required|array",
 		]);
 
 		$product = new Product();
@@ -321,8 +321,8 @@ class ProductController extends BaseController
 
 		/* Step 2: Prepare the category for syncing */
 		$categoryWithTimestamp = in_array($categoryId, $existingCategories)
-		? [$categoryId => []]
-		: [$categoryId => ['created_at' => now()]];
+			? [$categoryId => []]
+			: [$categoryId => ['created_at' => now()]];
 
 		/* Step 3: Sync the single category */
 		$product->categories()->sync($categoryWithTimestamp);
@@ -365,13 +365,13 @@ class ProductController extends BaseController
 	public function show($productId, Request $request)
 	{
 		$attributeGroup = [
-			'General' => ['sku', 'barcode', 'status' , 'approved' ],
+			'General' => ['sku', 'barcode', 'status', 'approved'],
 
-			'Inventory & Stock Management' => [ 'stock_status'],
-			'Pricing & Sales' => [ 'tax_id', 'currency_id', 'approved_by'],
+			'Inventory & Stock Management' => ['stock_status'],
+			'Pricing & Sales' => ['tax_id', 'currency_id', 'approved_by'],
 			'Marketing' => ['name', 'description', 'gen_type'],
-			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
-			'Store & Vendor Information' => [ 'brand_id' ],
+			'Media' => ['images', 'video_path', 'documents', 'benefits_features'],
+			'Store & Vendor Information' => ['brand_id'],
 			'Performance & Analytics' => ['views', 'units_sold'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
 			'Other' => ['order', 'website_ids'],
@@ -382,7 +382,7 @@ class ProductController extends BaseController
 
 		$relations = [
 			'General' => ['categories:id,name,parent_id'],
-			'Pricing & Sales' => ['currency:id,title' ],
+			'Pricing & Sales' => ['currency:id,title'],
 			'Shipping & Dimensions' => [],
 			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
 			'SEO' => [],
@@ -405,7 +405,7 @@ class ProductController extends BaseController
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
-				// Extract first vendor's price and sale_price
+		// Extract first vendor's price and sale_price
 		$firstVendor = $product->vendors->first();
 		$productPrice = $firstVendor?->pivot?->price ?? null;
 		$productSalePrice = $firstVendor?->pivot?->sale_price ?? null;
@@ -441,7 +441,7 @@ class ProductController extends BaseController
 					}
 				}
 
-				if (! $found) {
+				if (!$found) {
 					$new = [
 						'id' => $cat->id,
 						'name' => $cat->name,
@@ -465,8 +465,8 @@ class ProductController extends BaseController
 
 		/* Fetch reviews where customer_id is null */
 		$adminReviews = Review::where('product_id', $productId)
-		->whereNull('customer_id')
-		->get();
+			->whereNull('customer_id')
+			->get();
 
 
 		/* Fetch FAQs using the FAQ model */
@@ -486,7 +486,7 @@ class ProductController extends BaseController
 
 		/* Normalize the documents field */
 		if (!empty($product->documents) && is_array($product->documents)) {
-			$product->documents = array_map(function($item) {
+			$product->documents = array_map(function ($item) {
 				/* Check if the item is an array with 'title' and 'path', or just a string */
 				if (is_array($item) && isset($item['path'])) {
 					return [
@@ -528,104 +528,108 @@ class ProductController extends BaseController
 
 			switch ($attribute) {
 				case 'refund':
-				$formattedProduct[$attribute] = [['value' => $value]];
+					$formattedProduct[$attribute] = [['value' => $value]];
 
-				break;
+					break;
 				case 'variant_requires_shipping':
 				case 'is_variation':
-				$formattedProduct[$attribute] = [
-					'type' => 'checkbox',
-					'selected' => (int) $value,
-					'values' => [
-						'0' => 'unchecked',
-						'1' => 'checked'
-					]
-				];
-				break;
+					$formattedProduct[$attribute] = [
+						'type' => 'checkbox',
+						'selected' => (int) $value,
+						'values' => [
+							'0' => 'unchecked',
+							'1' => 'checked'
+						]
+					];
+					break;
 
 				case 'benefits_features':
-				$formattedProduct['benefits_features'] = json_decode($value, true);
-				break;
+					$formattedProduct['benefits_features'] = json_decode($value, true);
+					break;
 
 				case 'stock_status':
-				$stockStatusMappings = [
-					'in_stock' => 'In Stock',
-					'out_of_stock' => 'Out of Stock',
-					'on_backorder' => 'Pre Order'
-				];
+					$stockStatusMappings = [
+						'in_stock' => 'In Stock',
+						'out_of_stock' => 'Out of Stock',
+						'on_backorder' => 'Pre Order'
+					];
 
-				/* Map selected value to frontend readable text */
-				$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
+					/* Map selected value to frontend readable text */
+					$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
 
-				$formattedProduct['stock_status'] = [
-					'selected' => $selectedStockStatus, /* This will now show 'In Stock', 'Out of Stock', etc. */
-					'values' => $stockStatusMappings /* Values remain the same */
-				];
-				break;
+					$formattedProduct['stock_status'] = [
+						'selected' => $selectedStockStatus, /* This will now show 'In Stock', 'Out of Stock', etc. */
+						'values' => $stockStatusMappings /* Values remain the same */
+					];
+					break;
 
 				case 'tax_id':
-				$tax = Tax::find($value);
-				if ($tax) {
-					$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
-				} else {
-					$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
-				}
-				break;
+					$tax = Tax::find($value);
+					if ($tax) {
+						$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
+					} else {
+						$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
+					}
+					break;
 
 				case 'currency_id':
-				$formattedProduct['currency'] = $product->currency ? [[
-					'id' => $product->currency->id,
-					'title' => $product->currency->title
-				]] : null;
-				break;
+					$formattedProduct['currency'] = $product->currency ? [
+						[
+							'id' => $product->currency->id,
+							'title' => $product->currency->title
+						]
+					] : null;
+					break;
 
 				case 'brand_id':
-				$formattedProduct['brand'] = $product->brand ? [[
-					'id' => $product->brand->id,
-					'name' => $product->brand->name
-				]] : null;
-				break;
+					$formattedProduct['brand'] = $product->brand ? [
+						[
+							'id' => $product->brand->id,
+							'name' => $product->brand->name
+						]
+					] : null;
+					break;
 
 				case 'vendor':
-				$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
-					return [
-						'id' => $vendor->id,
-						'name' => $vendor->name,
-						'price' => $vendor->pivot->price ?? null,
-						'sale_price' => $vendor->pivot->sale_price ?? null,
-					];
-				});
-				break;
+					$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
+						return [
+							'id' => $vendor->id,
+							'name' => $vendor->name,
+							'price' => $vendor->pivot->price ?? null,
+							'sale_price' => $vendor->pivot->sale_price ?? null,
+						];
+					});
+					break;
 
 				case 'categories':
-				$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
-					return [
-						'id' => $category->id,
-						'name' => $category->name,
-						'parent_id' => $category->parent_id
-					];
-				}) : [];
-				break;
+					$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
+						return [
+							'id' => $category->id,
+							'name' => $category->name,
+							'parent_id' => $category->parent_id
+						];
+					}) : [];
+					break;
 
 				case 'description':
-				$decodedDescription = json_decode($value, true);
+					$decodedDescription = json_decode($value, true);
 					// Send as array if valid, else send raw string
-				$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
-				break;
+					$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
+					break;
 
 				case 'images':
 				case 'video_path':
 				case 'documents':
-				$formattedProduct[$attribute] = is_array($value) ? $value : [];
-				break;
+					$formattedProduct[$attribute] = is_array($value) ? $value : [];
+					break;
 
 				case 'status':
-				$formattedProduct[$attribute] = [['value' => $value]];
-				break;
+					$formattedProduct[$attribute] = [['value' => $value]];
+					break;
 
 				default:
-				$formattedProduct[$attribute] = $value;
-				break;
+					$formattedProduct[$attribute] = $value;
+					break;
 			}
 		}
 
@@ -1178,37 +1182,37 @@ class ProductController extends BaseController
 	// 		foreach ($request->images as $key => $image) {
 	// 			if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
 	// 				// It's a URL, keep it as is
-    //             $finalImages[] = $image;
-    //         } elseif ($request->hasFile("images.$key")) {
-    //             // It's an uploaded file, store it to S3
-    //             $file = $request->file("images.$key");
-    //             $path = $file->store($imagePath, 's3');
-    //             $finalImages[] = Storage::disk('s3')->url($path);
-    //         }
-    //         // else ignore invalid inputs
-    //     }
+	//             $finalImages[] = $image;
+	//         } elseif ($request->hasFile("images.$key")) {
+	//             // It's an uploaded file, store it to S3
+	//             $file = $request->file("images.$key");
+	//             $path = $file->store($imagePath, 's3');
+	//             $finalImages[] = Storage::disk('s3')->url($path);
+	//         }
+	//         // else ignore invalid inputs
+	//     }
 
-    //     // Save as JSON with unescaped slashes
-    //     $input['images'] = json_encode($finalImages);
+	//     // Save as JSON with unescaped slashes
+	//     $input['images'] = json_encode($finalImages);
 	// 	} else {
 	// 		// User tried to modify images but doesn't have permission - check if they're uploading files
-    //     $hasNewImageFiles = false;
-    //     foreach ($request->images as $key => $image) {
-    //         if ($request->hasFile("images.$key")) {
-    //             $hasNewImageFiles = true;
-    //             break;
-    //         }
-    //     }
+	//     $hasNewImageFiles = false;
+	//     foreach ($request->images as $key => $image) {
+	//         if ($request->hasFile("images.$key")) {
+	//             $hasNewImageFiles = true;
+	//             break;
+	//         }
+	//     }
 
-    //     if ($hasNewImageFiles) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'You do not have permission to modify product images.'
-    //         ], 403);
-    //     }
+	//     if ($hasNewImageFiles) {
+	//         return response()->json([
+	//             'success' => false,
+	//             'message' => 'You do not have permission to modify product images.'
+	//         ], 403);
+	//     }
 
-    //     // Remove from input to prevent overwriting existing images
-    //     unset($input['images']);
+	//     // Remove from input to prevent overwriting existing images
+	//     unset($input['images']);
 	// 		}
 	// 	} else {
 	// 		// If images not in request, preserve existing images
@@ -1218,42 +1222,42 @@ class ProductController extends BaseController
 	// 	// Handle videos with role-based permission - CORRECTED VERSION  
 	// 	if ($request->has('video_path')) {
 	// 		if ($canModifyImages) {
-    //     $finalVideos = [];
-    //     $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
-    //     foreach ($videoPaths as $key => $video) {
-    //         if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
-    //             // It's a URL, keep as is
-    //             $finalVideos[] = $video;
-    //         } elseif ($request->hasFile("video_path.$key")) {
-    //             // It's an uploaded file, upload to S3
-    //             $file = $request->file("video_path.$key");
-    //             $path = $file->store($videoPath, 's3');
-    //             $finalVideos[] = Storage::disk('s3')->url($path);
-    //         }
-    //         // ignore invalid inputs
-    //     }
+	//     $finalVideos = [];
+	//     $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+	//     foreach ($videoPaths as $key => $video) {
+	//         if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
+	//             // It's a URL, keep as is
+	//             $finalVideos[] = $video;
+	//         } elseif ($request->hasFile("video_path.$key")) {
+	//             // It's an uploaded file, upload to S3
+	//             $file = $request->file("video_path.$key");
+	//             $path = $file->store($videoPath, 's3');
+	//             $finalVideos[] = Storage::disk('s3')->url($path);
+	//         }
+	//         // ignore invalid inputs
+	//     }
 
-    //     $input['video_path'] = json_encode($finalVideos);
-   	//  else {
-    //     // User tried to modify videos but doesn't have permission - check if they're uploading files
-    //     $hasNewVideoFiles = false;
-    //     $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
-    //     foreach ($videoPaths as $key => $video) {
-    //         if ($request->hasFile("video_path.$key")) {
-    //             $hasNewVideoFiles = true;
-    //             break;
-    //         }
-    //     }
+	//     $input['video_path'] = json_encode($finalVideos);
+	//  else {
+	//     // User tried to modify videos but doesn't have permission - check if they're uploading files
+	//     $hasNewVideoFiles = false;
+	//     $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+	//     foreach ($videoPaths as $key => $video) {
+	//         if ($request->hasFile("video_path.$key")) {
+	//             $hasNewVideoFiles = true;
+	//             break;
+	//         }
+	//     }
 
-    //     if ($hasNewVideoFiles) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'You do not have permission to modify product videos.'
-    //         ], 403);
-    //     }
+	//     if ($hasNewVideoFiles) {
+	//         return response()->json([
+	//             'success' => false,
+	//             'message' => 'You do not have permission to modify product videos.'
+	//         ], 403);
+	//     }
 
-    //     // Remove from input to prevent overwriting existing videos
-    //     unset($input['video_path']);
+	//     // Remove from input to prevent overwriting existing videos
+	//     unset($input['video_path']);
 	// 	}
 	// 	} else {
 	// 		// If videos not in request, preserve existing videos
@@ -1576,10 +1580,12 @@ class ProductController extends BaseController
 			$categories = $request->input('categories');
 
 			// Handle cases where categories might be sent as a JSON string
-			if (is_string($categories) && (
-				strpos($categories, '[') === 0 ||
-				strpos($categories, '{') === 0
-			)) {
+			if (
+				is_string($categories) && (
+					strpos($categories, '[') === 0 ||
+					strpos($categories, '{') === 0
+				)
+			) {
 				$categories = json_decode($categories, true);
 			}
 			// Handle comma-separated string format
@@ -1588,7 +1594,7 @@ class ProductController extends BaseController
 			}
 			// Handle single value
 			else if (is_string($categories) && is_numeric($categories)) {
-				$categories = [(int)$categories];
+				$categories = [(int) $categories];
 			}
 
 			// Ensure we have a valid array
@@ -1656,8 +1662,8 @@ class ProductController extends BaseController
 						if (!$value && !$measurementUnitID) {
 							/* Both missing = delete the existing attribute */
 							$product->productAttributes()
-							->where('attribute_id', $attributeId)
-							->delete();
+								->where('attribute_id', $attributeId)
+								->delete();
 						} else {
 							/* Both exist = update or create attribute */
 							$product->productAttributes()->updateOrCreate(
@@ -1674,8 +1680,8 @@ class ProductController extends BaseController
 						if (empty($value)) {
 							/* Delete non-measurement attribute if empty */
 							$product->productAttributes()
-							->where('attribute_id', $attributeId)
-							->delete();
+								->where('attribute_id', $attributeId)
+								->delete();
 						} else {
 							/* Update or create normal attribute */
 							$product->productAttributes()->updateOrCreate(
@@ -1786,8 +1792,8 @@ class ProductController extends BaseController
 				$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
 				if (!empty($faqsToDelete)) {
 					Faq::where('product_id', $product->id)
-					->whereIn('id', $faqsToDelete)
-					->delete();
+						->whereIn('id', $faqsToDelete)
+						->delete();
 				}
 			}
 		}
@@ -1808,33 +1814,33 @@ class ProductController extends BaseController
 
 		// Handle images with role-based permission - CORRECTED VERSION
 		if ($request->has('images') && !empty(array_filter($request->images))) {
-		if ($canModifyImages) {
-			$finalImages = [];
-			foreach ($request->images as $key => $image) {
-				if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-					$finalImages[] = $image;
-				} elseif ($request->hasFile("images.$key")) {
-					$file = $request->file("images.$key");
-					 // ✅ Check file size (max 100 KB)
-                if ($file->getSize() > 102400) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Image size must not exceed 100 KB.'
-                    ], 400);
-                }
-					$path = $file->store($imagePath, 's3');
-					$finalImages[] = Storage::disk('s3')->url($path);
-				}
-			}
-			if (!empty($finalImages)) {
-				$input['images'] = json_encode($finalImages);
+			if ($canModifyImages) {
+				$finalImages = [];
+				foreach ($request->images as $key => $image) {
+					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+						$finalImages[] = $image;
+					} elseif ($request->hasFile("images.$key")) {
+						$file = $request->file("images.$key");
+						// ✅ Check file size (max 100 KB)
+						if ($file->getSize() > 102400) {
+							return response()->json([
+								'success' => false,
+								'message' => 'Image size must not exceed 100 KB.'
+							], 400);
+						}
+						$path = $file->store($imagePath, 's3');
+						$finalImages[] = Storage::disk('s3')->url($path);
 					}
-				} else {
-					unset($input['images']);
+				}
+				if (!empty($finalImages)) {
+					$input['images'] = json_encode($finalImages);
 				}
 			} else {
-				unset($input['images']); // preserve existing
+				unset($input['images']);
 			}
+		} else {
+			unset($input['images']); // preserve existing
+		}
 
 
 		// Handle videos with role-based permission - CORRECTED VERSION  
@@ -1928,7 +1934,7 @@ class ProductController extends BaseController
 		$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 
 		/* List of valid fields allowed for updating */
-		$validArray = [ "sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "images", "video_path", "documents", "brand_id", "views", "units_sold", "google_shopping_category", "google_shopping_mpn", "order", "benefits_features" , "gen_type" , "approved"];
+		$validArray = ["sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "images", "video_path", "documents", "brand_id", "views", "units_sold", "google_shopping_category", "google_shopping_mpn", "order", "benefits_features", "gen_type", "approved"];
 
 		unset($input['product_attributes']);
 		unset($input['vendor_id']);
@@ -1942,7 +1948,7 @@ class ProductController extends BaseController
 			$benefitsInput = $request->input('benefits_features');
 
 			if ($canModifyContent) {
-					// Decode and validate input
+				// Decode and validate input
 				if (is_string($benefitsInput)) {
 					$decoded = json_decode($benefitsInput, true);
 					if (json_last_error() === JSON_ERROR_NONE) {
@@ -1962,26 +1968,26 @@ class ProductController extends BaseController
 					], 400);
 				}
 
-					// Ensure it's an array
+				// Ensure it's an array
 				if (!is_array($newBenefits)) {
 					$newBenefits = [];
 				}
 
-					// Get existing saved benefits
+				// Get existing saved benefits
 				$existingBenefits = json_decode($product->benefits_features, true);
 				if (!is_array($existingBenefits)) {
 					$existingBenefits = [];
 				}
 
-					// Only save if changed
+				// Only save if changed
 				if ($newBenefits !== $existingBenefits) {
 					$input['benefits_features'] = json_encode($newBenefits);
 				} else {
-						// No change, so ignore it
+					// No change, so ignore it
 					unset($input['benefits_features']);
 				}
 			} else {
-					// User tried to modify benefits but doesn't have permission
+				// User tried to modify benefits but doesn't have permission
 				unset($input['benefits_features']);
 			}
 		}
@@ -1990,7 +1996,7 @@ class ProductController extends BaseController
 			if ($canModifyContent) {
 				$descriptionInput = $request->input('description');
 
-					// Decode and validate input
+				// Decode and validate input
 				if (is_string($descriptionInput)) {
 					$decoded = json_decode($descriptionInput, true);
 					if (json_last_error() === JSON_ERROR_NONE) {
@@ -2010,17 +2016,17 @@ class ProductController extends BaseController
 					], 400);
 				}
 
-					// Ensure it's an array
+				// Ensure it's an array
 				if (!is_array($newDescription)) {
 					$newDescription = [];
 				}
 
-					// Save the description
+				// Save the description
 				$input['description'] = json_encode($newDescription);
 			} else {
-					// User tried to modify description but doesn't have permission
-					// For now, let's just remove it from input to prevent overwriting
-					// This matches the behavior when no actual change is detected
+				// User tried to modify description but doesn't have permission
+				// For now, let's just remove it from input to prevent overwriting
+				// This matches the behavior when no actual change is detected
 				unset($input['description']);
 			}
 		}
@@ -2130,7 +2136,7 @@ class ProductController extends BaseController
 					$rowError[] = "At least one vendor price detail is required to publish.";
 				}
 
-				if ($product->productSuppliers->contains(fn ($supplier) => $supplier->in_stock !== 1)) {
+				if ($product->productSuppliers->contains(fn($supplier) => $supplier->in_stock !== 1)) {
 					$rowError[] = "All vendor price entries must have 'in_stock' set to Yes.";
 				}
 
@@ -2248,35 +2254,35 @@ class ProductController extends BaseController
 		$productAttributeMeasurement = $product->productAttributes->pluck('measurement_unit_id', 'attribute_id');
 
 		$attributeGroup = $category->categoryAttributeGroups()
-		->with(['groupsAttributes.attributeValues', 'groupsAttributes.measurementUnits'])
-		->get()
-		->map(function ($group) use ($productAttributes, $productAttributeMeasurement) {
-			return [
-				'id' => $group->id,
-				'name' => $group->name,
-				'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes, $productAttributeMeasurement) {
-					$data = [
-						'id' => $attribute->id,
-						'name' => $attribute->name,
-						'code' => $attribute->code,
-						'type' => $attribute->type,
-						'validations' => json_decode($attribute->validations, true),
-						'currentValue' => $productAttributes[$attribute->id] ?? null,
-					];
+			->with(['groupsAttributes.attributeValues', 'groupsAttributes.measurementUnits'])
+			->get()
+			->map(function ($group) use ($productAttributes, $productAttributeMeasurement) {
+				return [
+					'id' => $group->id,
+					'name' => $group->name,
+					'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes, $productAttributeMeasurement) {
+						$data = [
+							'id' => $attribute->id,
+							'name' => $attribute->name,
+							'code' => $attribute->code,
+							'type' => $attribute->type,
+							'validations' => json_decode($attribute->validations, true),
+							'currentValue' => $productAttributes[$attribute->id] ?? null,
+						];
 
-					if ($attribute->type === 'select') {
-						$data['attributeValues'] = $attribute->attributeValues->pluck('attribute_value')->values()->all();
-					}
+						if ($attribute->type === 'select') {
+							$data['attributeValues'] = $attribute->attributeValues->pluck('attribute_value')->values()->all();
+						}
 
-					if ($attribute->type === 'measurement') {
-						$data['attributeMeasurement'] = $attribute->measurementUnits->pluck('name', 'id')->all();
-						$data['currentMeasurementId'] = $productAttributeMeasurement[$attribute->id] ?? null;
-					}
+						if ($attribute->type === 'measurement') {
+							$data['attributeMeasurement'] = $attribute->measurementUnits->pluck('name', 'id')->all();
+							$data['currentMeasurementId'] = $productAttributeMeasurement[$attribute->id] ?? null;
+						}
 
-					return $data;
-				})->toArray(),
-			];
-		});
+						return $data;
+					})->toArray(),
+				];
+			});
 
 
 		return response()->json([
@@ -2367,7 +2373,7 @@ class ProductController extends BaseController
 				'success' => true,
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
-		} catch(\Exception $exception) {
+		} catch (\Exception $exception) {
 			$error[] = 'Error: ' . $exception->getMessage();
 			$error[] = 'File: ' . $exception->getFile();
 			$error[] = 'Line: ' . $exception->getLine();
@@ -2418,12 +2424,12 @@ class ProductController extends BaseController
 		$products = Product::whereHas('categories', function ($query) use ($category_id) {
 			$query->where('category_id', $category_id);
 		})
-		->select(['id', 'name', 'sku', 'images'])
-		->orderBy('id', 'desc') /* Order by product ID in descending order */
-		->get();
+			->select(['id', 'name', 'sku', 'images'])
+			->orderBy('id', 'desc') /* Order by product ID in descending order */
+			->get();
 
 		/* Formatting the response to include only id, name, sku, and image */
-		$formattedProducts = $products->map(function ($product)use ($category_id) {
+		$formattedProducts = $products->map(function ($product) use ($category_id) {
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
@@ -2559,9 +2565,9 @@ class ProductController extends BaseController
 
 		/* Fetch products from the database */
 		$products = Product::whereIn('id', $allProductIds)
-		->select(['id', 'name', 'sku', 'images'])
-		->orderBy('id', 'desc')
-		->get();
+			->select(['id', 'name', 'sku', 'images'])
+			->orderBy('id', 'desc')
+			->get();
 
 		/* Format product data */
 		$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
@@ -2665,9 +2671,9 @@ class ProductController extends BaseController
 
 		/* Fetch products from the database */
 		$products = Product::whereIn('id', $allProductIds)
-		->select(['id', 'name', 'sku', 'images'])
-		->orderBy('id', 'desc')
-		->get();
+			->select(['id', 'name', 'sku', 'images'])
+			->orderBy('id', 'desc')
+			->get();
 
 		/* Format product data */
 		$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
@@ -2771,9 +2777,9 @@ class ProductController extends BaseController
 
 		/* Fetch products from the database */
 		$products = Product::whereIn('id', $allProductIds)
-		->select(['id', 'name', 'sku', 'images'])
-		->orderBy('id', 'desc')
-		->get();
+			->select(['id', 'name', 'sku', 'images'])
+			->orderBy('id', 'desc')
+			->get();
 
 		/* Format product data */
 		$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
@@ -2800,6 +2806,186 @@ class ProductController extends BaseController
 			'message' => 'Products retrieved successfully for categories: ' . $category_ids,
 			'category_summary' => $categorySummary,
 			'data' => $formattedProducts
+		]);
+	}
+	/**
+	 * @OA\Post(
+	 *     path="/api/products/duplicate",
+	 *     summary="Create a product duplicate",
+	 *     description="Creates a new product with the required details.",
+	 *     tags={"Products"},
+	 *  	@OA\Property(property="category", type="string", example="category Name"),
+	 *     @OA\Response(
+	 *         response=201,
+	 *         description="Success",
+	 *          @OA\MediaType(
+	 *              mediaType="application/json",
+	 *          )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function productDuplicate(Request $request)
+	{
+		/* Validate request data */
+		$request->validate([
+			'product' => "required|integer",
+		]);
+		$mainProduct = Product::findOrFail(trim($request->input('product')));
+		$product = new Product();
+		$product->name = $mainProduct->name;
+		$product->sku = $mainProduct->sku ."-copy";
+		$product->website_ids = $mainProduct->website_ids;
+		$product->gen_type = $mainProduct->gen_type;
+		$product->description = $mainProduct->description;
+		$product->benefits_features = $mainProduct->benefits_features;
+		$product->images = $mainProduct->images;
+		$product->order = '0';
+		$product->is_featured = $mainProduct->is_featured;
+		$product->brand_id = $mainProduct->brand_id;
+		$product->quote_available = $mainProduct->quote_available;
+		$product->is_variation = $mainProduct->is_variation;
+		$product->tax_id = $mainProduct->tax_id;
+		$product->views = '0';
+		$product->stock_status = $mainProduct->stock_status;
+		$product->barcode = $mainProduct->barcode;
+		$product->approved_by = $mainProduct->approved_by;
+		$product->google_shopping_category = $mainProduct->google_shopping_category;
+		$product->google_shopping_mpn = $mainProduct->google_shopping_mpn;
+		$product->documents = $mainProduct->documents;
+		$product->video_path = $mainProduct->video_path;
+		$product->units_sold = $mainProduct->units_sold;
+		$product->frequently_bought_together = $mainProduct->frequently_bought_together;
+		$product->currency_id = $mainProduct->currency_id;
+		$product->status = 'draft';
+		$product->created_at = now();
+		$product->updated_at = now();
+		$product->save();
+		if (!empty($mainProduct->categories)) {
+			$categoryId = $mainProduct->categories->pluck('id')->toArray();
+			$this->saveProductCategory($product, $categoryId[0]);
+		}
+
+		if ($mainProduct->productAttributes) {
+
+			$productAttributes = $mainProduct->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+			if (is_array($productAttributes) && count($productAttributes) > 0) {
+				$productAttributes = array_filter($productAttributes, function ($value) {
+					return !is_null($value) && $value !== '';
+				});
+
+				$existingProductAttributes = $mainProduct->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+
+				$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
+
+				if (!empty($attributesToDelete)) {
+					$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
+				}
+
+				foreach ($productAttributes as $attributeId => $attributeValue) {
+
+					$existingAttribute = Attribute::find($attributeId);
+					if (!$existingAttribute) {
+						return response()->json([
+							'success' => false,
+							'message' => "Attribute ID: $attributeId does not exist."
+						]);
+					}
+
+					$value = null;
+					$measurementUnitID = null;
+
+					if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
+						$value = $attributeValue['value'] ?? null;
+						$measurementUnitID = $attributeValue['measurement_id'] ?? null;
+
+						/* Validation: Either both should be present, or both should be empty (for delete) */
+						if (($value && !$measurementUnitID) || (!$value && $measurementUnitID)) {
+							$messages = [];
+
+							if (empty($value)) {
+								$messages[] = "Value not defined for attribute: {$existingAttribute->name}";
+							}
+							if (empty($measurementUnitID)) {
+								$messages[] = "Measurement Unit not defined or invalid for attribute: {$existingAttribute->name}";
+							}
+
+							return response()->json([
+								'success' => false,
+								'message' => implode(' | ', $messages)
+							], 400);
+						}
+
+						if (!$value && !$measurementUnitID) {
+							/* Both missing = delete the existing attribute */
+							$product->productAttributes()
+								->where('attribute_id', $attributeId)
+								->delete();
+						} else {
+							/* Both exist = update or create attribute */
+							$product->productAttributes()->updateOrCreate(
+								['attribute_id' => $attributeId],
+								[
+									'attribute_value' => $value,
+									'measurement_unit_id' => $measurementUnitID
+								]
+							);
+						}
+					} else {
+						$value = $attributeValue;
+
+						if (empty($value)) {
+							/* Delete non-measurement attribute if empty */
+							$product->productAttributes()
+								->where('attribute_id', $attributeId)
+								->delete();
+						} else {
+							/* Update or create normal attribute */
+							$product->productAttributes()->updateOrCreate(
+								['attribute_id' => $attributeId],
+								[
+									'attribute_value' => $value,
+									'measurement_unit_id' => null
+								]
+							);
+						}
+					}
+
+					if ($existingAttribute->type === 'select') {
+						if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
+							$existingAttribute->attributeValues()->create([
+								'attribute_value' => $value
+							]);
+						}
+					}
+				}
+			}
+		}
+
+		if ($mainProduct->faqs) {
+			$faqs = $mainProduct->faqs;
+			// Fetch existing FAQs for comparison
+			$existingFaqs = Faq::where('product_id', $mainProduct->id)->get()->keyBy('id');
+
+			if (!empty($faqs) && !empty($existingFaqs)) {
+				foreach ($faqs as $faqData) {
+					if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+
+						Faq::create([
+							'product_id' => $product->id,
+							'question' => $faqData['question'],
+							'answer' => $faqData['answer'],
+							'category_id' => $faqData['category_id'] ?? null,
+							'status' => 'published',
+						]);
+					}
+				}
+			}
+		}
+		return response()->json([
+			'success' => true,
+			'message' => 'Product created successfully',
+			'product' => $product
 		]);
 	}
 }

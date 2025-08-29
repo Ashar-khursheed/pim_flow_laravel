@@ -8,6 +8,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductReportController;
 use App\Http\Controllers\CategoryPageController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\StoreController;
@@ -408,7 +409,12 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
 	Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
 	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
+ 
+	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
+ 
 
+	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
+ 
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
