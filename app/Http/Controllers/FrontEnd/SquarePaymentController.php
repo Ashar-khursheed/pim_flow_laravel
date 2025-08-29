@@ -82,76 +82,97 @@ class SquarePaymentController extends Controller
      *     )
      * )
      */
-    public function createPayment(Request $request)
-    {
-        // Validate access token
-        $token = env('SQUARE_ACCESS_TOKEN');
-        if (!$token) {
-            return response()->json([
-                'success' => false,
-                'errors' => ['Square access token not found in environment'],
-            ], 500);
-        }
-
-        // Validate request input
-        $request->validate([
-            'source_id' => 'required|string',
-            'amount' => 'required|numeric|min:0.01',
-        ]);
-
-        try {
-            // Follow the official Square documentation approach exactly
-            $response = $this->client->payments->create(
-                new CreatePaymentRequest([
-                    'idempotencyKey' => (string) Str::uuid(),
-                    'amountMoney' => new Money([
-                        'amount' => (int)($request->amount * 100),
-                        'currency' => Currency::Usd->value,
-                    ]),
-                    'sourceId' => $request->source_id,
-                ])
-            );
-
-            // Check if the response has errors (errors property exists and is not empty)
-            if (empty($response->getErrors())) {
-                // Success - payment was created
-                $payment = $response->getPayment();
-                
-                return response()->json([
-                    'success' => true,
-                    'payment' => [
-                        'id' => $payment->getId(),
-                        'status' => $payment->getStatus(),
-                        'amount' => $payment->getAmountMoney()->getAmount() / 100, // Convert back to dollars
-                        'currency' => $payment->getAmountMoney()->getCurrency(),
-                        'created_at' => $payment->getCreatedAt(),
-                        'receipt_url' => $payment->getReceiptUrl(),
-                    ]
-                ]);
-            }
-
-            // Has errors - payment failed
-            $errors = [];
-            foreach ($response->getErrors() as $error) {
-                $errors[] = $error->getCode() . ': ' . $error->getDetail();
-            }
-
-            return response()->json([
-                'success' => false,
-                'errors' => $errors,
-            ], 400);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'errors' => ['Error: ' . $e->getMessage()],
-                'debug_info' => [
-                    'exception_class' => get_class($e),
-                    'file' => $e->getFile() . ':' . $e->getLine(),
-                ]
-            ], 500);
-        }
+   public function createPayment(Request $request)
+{
+    // Validate access token
+    $token = env('SQUARE_ACCESS_TOKEN');
+    if (!$token) {
+        return response()->json([
+            'success' => false,
+            'errors' => ['Square access token not found in environment'],
+        ], 500);
     }
+
+    // Validate request input
+    $request->validate([
+        'source_id' => 'required|string',
+        'amount' => 'required|numeric|min:0.01',
+        'idempotency_key' => 'required|string', // Make this required
+    ]);
+
+    try {
+        // Use the idempotency key from the frontend - THIS IS CRITICAL
+        $idempotencyKey = $request->idempotency_key;
+        
+        // Optional: Log for debugging (remove in production)
+        \Log::info("Processing payment with idempotency key: " . $idempotencyKey);
+
+        $response = $this->client->payments->create(
+            new CreatePaymentRequest([
+                'idempotencyKey' => $idempotencyKey, // Use frontend key
+                'amountMoney' => new Money([
+                    'amount' => (int)($request->amount * 100),
+                    'currency' => Currency::Usd->value,
+                ]),
+                'sourceId' => $request->source_id,
+            ])
+        );
+
+        // Check if the response has errors
+        if (empty($response->getErrors())) {
+            // Success - payment was created
+            $payment = $response->getPayment();
+            
+            \Log::info("Payment successful: " . $payment->getId());
+            
+            return response()->json([
+                'success' => true,
+                'payment' => [
+                    'id' => $payment->getId(),
+                    'status' => $payment->getStatus(),
+                    'amount' => $payment->getAmountMoney()->getAmount() / 100,
+                    'currency' => $payment->getAmountMoney()->getCurrency(),
+                    'created_at' => $payment->getCreatedAt(),
+                    'receipt_url' => $payment->getReceiptUrl(),
+                ]
+            ]);
+        }
+
+        // Has errors - payment failed
+        $errors = [];
+        foreach ($response->getErrors() as $error) {
+            $errorMessage = $error->getCode() . ': ' . $error->getDetail();
+            $errors[] = $errorMessage;
+            \Log::error("Square payment error: " . $errorMessage);
+        }
+
+        return response()->json([
+            'success' => false,
+            'errors' => $errors,
+        ], 400);
+
+    } catch (\Square\Exceptions\ApiException $e) {
+        // Handle Square-specific API exceptions
+        \Log::error("Square API Exception: " . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'errors' => ['Square API Error: ' . $e->getMessage()],
+        ], 500);
+        
+    } catch (\Exception $e) {
+        \Log::error("General payment exception: " . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'errors' => ['Payment processing error: ' . $e->getMessage()],
+            'debug_info' => [
+                'exception_class' => get_class($e),
+                'file' => $e->getFile() . ':' . $e->getLine(),
+            ]
+        ], 500);
+    }
+}
  /**
      * Create a payment link for an order using Square Checkout API
      */
