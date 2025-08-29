@@ -1144,17 +1144,11 @@ public function getSpecificationFilters1(Request $request)
 
     $paginatedProducts->setCollection($modifiedProducts);
 
-    // FIXED: Build filters - Get ALL attributes for the category and its children
+    // Build filters - ONLY get attributes specifically configured for this category
     $filters = [];
-
-    // Get attributes from multiple sources:
-    // 1. From sub_categories table
-    // 2. From category_attributes table (if exists)
-    // 3. From actual product attributes in this category
-    
     $allAttributeIds = collect();
 
-    // Method 1: Get from sub_categories
+    // ONLY get from sub_categories table - the specific attributes configured for this category
     $subCategory = DB::table('sub_categories')
         ->where('category_id', $category->id)
         ->first();
@@ -1202,33 +1196,12 @@ public function getSpecificationFilters1(Request $request)
                 return is_numeric($id) ? intval($id) : null;
             }, (array)$attributeIds));
 
-            $allAttributeIds = $allAttributeIds->merge($attributeIds);
+            // Remove duplicates
+            $allAttributeIds = collect(array_unique($attributeIds));
         }
     }
 
-    // Method 2: Get from category_attributes table (if it exists)
-    if (Schema::hasTable('category_attributes')) {
-        $categoryAttributeIds = DB::table('category_attributes')
-            ->where('category_id', $category->id)
-            ->pluck('attribute_id')
-            ->toArray();
-        
-        $allAttributeIds = $allAttributeIds->merge($categoryAttributeIds);
-    }
-
-    // Method 3: Get all attributes that actually exist for products in this category
-    $actualAttributeIds = DB::table('product_attributes as pa')
-        ->join('attributes as a', 'a.id', '=', 'pa.attribute_id')
-        ->whereIn('pa.product_id', $allCategoryProductIds)
-        ->pluck('a.id')
-        ->unique()
-        ->toArray();
-    
-    $allAttributeIds = $allAttributeIds->merge($actualAttributeIds);
-
-    // Remove duplicates and ensure we have attribute IDs
-    $allAttributeIds = $allAttributeIds->unique()->filter()->values();
-
+    // ONLY process attributes if they are specifically configured in sub_categories
     if ($allAttributeIds->isNotEmpty()) {
         foreach ($allAttributeIds as $attributeId) {
             $attribute = Attribute::find($attributeId);
@@ -1240,13 +1213,11 @@ public function getSpecificationFilters1(Request $request)
             $attributeType = $attribute->type ?? null; // Get attribute type
             $isFilterSelected = isset($selectedFilters[$attributeName]);
 
-            // ALWAYS use all category products for filter generation
-            $productIdsToUse = $allCategoryProductIds;
-
+            // ONLY get attribute values for THIS specific attribute ID and products in this category
             $attributeValues = DB::table('product_attributes as pa')
                 ->join('attributes as at', 'at.id', '=', 'pa.attribute_id')
-                ->whereIn('pa.product_id', $productIdsToUse)
-                ->where('pa.attribute_id', $attributeId)
+                ->whereIn('pa.product_id', $allCategoryProductIds)  // Only products in this category
+                ->where('pa.attribute_id', $attributeId)  // Only THIS specific attribute
                 ->orderBy('pa.attribute_value', 'asc')
                 ->select('at.name as attribute_name', 'pa.attribute_value', 'at.id as attribute_id', 'pa.product_id', 'at.type as attribute_type')
                 ->get();
@@ -1627,7 +1598,6 @@ private function getEmptyResponse()
         ]
     ])->header('Cache-Control', 'public, max-age=86400');
 }
-
 
 
 // public function getSpecificationFilters1(Request $request)
