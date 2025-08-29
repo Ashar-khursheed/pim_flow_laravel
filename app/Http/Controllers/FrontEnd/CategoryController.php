@@ -1630,7 +1630,6 @@ private function getEmptyResponse()
 
 
 
-
 // public function getSpecificationFilters1(Request $request)
 // {
 //     // Validation
