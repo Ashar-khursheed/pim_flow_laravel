@@ -39,7 +39,7 @@ trait GeneratesQuotePdf
 		$companyName = config('app.website') == 'UAE' ? 'HORECA TRADING CO LLC.' : 'THE HORECA STORE INC';
 		$companyStreet = config('app.website') == 'UAE' ? 'Showroom 01 - Building No 9 19th Street' : '8800 Bissonnet Street, Ste A,';
 		$companyCity = config('app.website') == 'UAE' ? 'Dubai - United Arab Emirates' : 'Houston, Texas 77074';
-		$companyPhone = config('app.website') == 'UAE' ? '1 (866) 446-7322' : '1 (866) 446-7322';
+		$companyPhone = config('app.website') == 'UAE' ? '(866) 446-7322' : '1 (866) 446-7322';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
 		$siteURL = config('app.website') == 'UAE' ? 'www.horecastore.ae':'www.thehorecastore.com';
 
