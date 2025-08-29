@@ -234,12 +234,16 @@ class OrderController extends BaseController
 			foreach ($request->products as $product) {
 				$totalProducts += $product['quantity'];
 				$orderAmount += $product['quantity'] * $product['unit_price'];
-				$orderShipping += $product['shipping_charge'];
+				$orderShipping += config('app.website') == 'US' ? $product['shipping_charge'] : 0;
 			}
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+
+			if (config('app.website') == 'UAE') {
+				$orderShipping = ($orderAmount + $taxAmount) < 300 ? 25 : 0;
+			}
 			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
