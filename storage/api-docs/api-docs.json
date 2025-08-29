@@ -27950,6 +27950,39 @@
                 ]
             }
         },
+        "/api/products/duplicate": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Make duplicate product",
+                "operationId": "d0fea69d0c166a2a6ebea27b5466660",
+                "parameters": [ 
+                    {
+                        "name": "product",
+                        "in": "query",
+                        "description": "Enter Product id.",
+                        "schema": {
+                            "type": "integer"                             
+                        },
+                        "example": "14"
+                    }                      
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/product-groups-listing": {
             "get": {
                 "tags": [
