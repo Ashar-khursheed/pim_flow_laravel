@@ -29,6 +29,7 @@ use PhpUnitsOfMeasure\PhysicalQuantity\Area;
 use PhpUnitsOfMeasure\PhysicalQuantity\Energy;
 use PhpUnitsOfMeasure\PhysicalQuantity\Pressure;
 use PhpUnitsOfMeasure\PhysicalQuantity\Force;
+use Illuminate\Support\Facades\Schema;
 
 class CategoryController extends Controller
 {
