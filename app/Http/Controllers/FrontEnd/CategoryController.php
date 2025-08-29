@@ -402,9 +402,6 @@ class CategoryController extends Controller
 	 */
 
 
-	
-
-
 public function getSpecificationFilters1(Request $request)
 {
     // Validation
@@ -651,12 +648,12 @@ public function getSpecificationFilters1(Request $request)
                         }
                     }
                     
-                    // Conversion failed, keep original unit
+                    // Conversion failed, keep original unit and value
                     return [
                         'converted_value' => $numericValue,
                         'unit' => $originalUnit,
                         'symbol' => $originalUnit,
-                        'display_value' => $numericValue . ' ' . $originalUnit,
+                        'display_value' => $originalValue, // Keep the full original value like "1 gal"
                         'original_value' => $originalValue,
                         'conversion_applied' => false
                     ];
@@ -668,7 +665,7 @@ public function getSpecificationFilters1(Request $request)
                         'converted_value' => $numericValue,
                         'unit' => $originalUnit,
                         'symbol' => $originalUnit,
-                        'display_value' => $numericValue . ' ' . $originalUnit,
+                        'display_value' => $originalValue, // Keep the full original value like "1 gal"
                         'original_value' => $originalValue,
                         'conversion_applied' => false
                     ];
@@ -1169,15 +1166,8 @@ public function getSpecificationFilters1(Request $request)
                 ->get();
 
             if ($attributeValues->count() > 0) {
-                // Add debugging to see what we're getting
-                \Log::info("Processing attribute: {$attributeName} with type: {$attributeType}");
-                
                 $convertedAttributeValues = $attributeValues->map(function($item) use ($convertAttributeValue, $attributeName) {
                     $conversionResult = $convertAttributeValue($attributeName, $item->attribute_value, $item->attribute_type);
-                    
-                    // Debug the conversion result
-                    \Log::info("Original: {$item->attribute_value} -> Converted: " . json_encode($conversionResult));
-                    
                     return (object)[
                         'attribute_name' => $item->attribute_name,
                         'attribute_value' => $item->attribute_value,
@@ -1268,7 +1258,7 @@ public function getSpecificationFilters1(Request $request)
                             }
                             
                             // Debug what unit we found
-                            \Log::info("Range {$min}-{$max}: Found unit '{$unit}' from sample: " . json_encode($sampleConvertedValue));
+                            \Log::info("Range {$min}-{$max}: Found unit '{$unit}'");
 
                             // Include unit in display value for ranges
                             $displayValue = $min == $max ? $min . ($unit ? ' ' . $unit : '') : $min . ' - ' . $max . ($unit ? ' ' . $unit : '');
