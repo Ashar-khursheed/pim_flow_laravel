@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 class AlternateProductController extends Controller
 {
-  
+
     public function getAlternateProducts(Request $request, $productId = null)
     {
         try {
@@ -90,6 +90,8 @@ class AlternateProductController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'category_url' => $product->category_url(),
+                    'parent_category_url' => $product->parent_category_url(),
                     'images' => $images,
                     'url' => $product->seoUrl->url ?? null,
                     'video_url' => $product->video_url,
@@ -150,16 +152,16 @@ class AlternateProductController extends Controller
     {
         try {
             $productId = $productId ?? $request->input('product_id');
-    
+
             if (!$productId) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Product ID is required',
                 ], 400);
             }
-    
-    
-    
+
+
+
             // Step 1: Get all alternate product IDs
             $alternateProductData = DB::table('alternate_products')
                 ->where('product_id', $productId)
@@ -171,7 +173,7 @@ class AlternateProductController extends Controller
 
             // Similarity map [product_id => similarity]
             $similarityMap = $alternateProductData->pluck('similarity', 'product_alternate_id')->toArray();
-    
+
             if (empty($alternateProductIds)) {
                 return response()->json([
                     'success' => true,
@@ -179,44 +181,46 @@ class AlternateProductController extends Controller
                     'data' => [],
                 ]);
             }
-    
+
             // Step 2: Get published products with those IDs
             $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute' , 'seoUrl',])
                 ->where('status', 'published')
                 ->whereIn('id', $alternateProductIds)
                 ->get()
                 ->sortBy(fn($product) => array_search($product->id, $alternateProductIds));
-    
+
             // Transform response
             $transformedProducts = $products->map(function ($product)use ( $similarityMap){
                 $images = $this->normalizeMediaUrls($product->images);
                 $videos = $this->normalizeMediaUrls($product->video_path);
-    
+
                 $totalReviews = $product->reviews?->count() ?? 0;
                 $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-    
+
                 $quantity = $product->quantity ?? 0;
                 $unitsSold = $product->units_sold ?? 0;
                 $leftStock = $quantity - $unitsSold;
-    
+
                 $sellingType = null;
                 if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                     $fullValue = $product->sellingUnitAttribute->attribute_value;
                     $attributeUnit = strpos($fullValue, '/') !== false
                         ? trim(explode('/', $fullValue)[1])
                         : $fullValue;
-    
+
                     $sellingType = [
                         'attribute_value' => $fullValue,
                         'attribute_value_unit' => $attributeUnit,
                     ];
                 }
-    
+
                 $firstSupplier = $product->productSuppliers->first();
-    
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'category_url' => $product->category_url(),
+                    'parent_category_url' => $product->parent_category_url(),
                     'images' => $images,
                     'url' => $product->seoUrl->url ?? null,
                     'video_url' => $product->video_url,
@@ -252,7 +256,7 @@ class AlternateProductController extends Controller
                      'similarity' => $similarityMap[$product->id] ?? null,
                 ];
             });
-    
+
             return response()->json([
                 'success' => true,
                 'data' => $transformedProducts->values(),
@@ -260,7 +264,7 @@ class AlternateProductController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Error in getAlternateProducts: ' . $e->getMessage());
-    
+
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while fetching alternate products',
@@ -288,5 +292,5 @@ class AlternateProductController extends Controller
 
         return [];
     }
-    
+
 }

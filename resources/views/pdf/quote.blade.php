@@ -456,7 +456,9 @@ $pageNumber = 1;
 								<tr style="vertical-align: top;">
 									<td colspan="2" style="padding: 8px; font-size: 12px; line-height: 1.6; border-top: 1px solid black; font-family: 'Inter', sans-serif;">
 										<strong>Bank Transfer (Wire/Local):</strong> Orders are processed after 2–3 business days upon receipt of funds.<br>
+										@if($siteName == 'US')
 										<strong>ACH Payments:</strong> Orders are processed after 3 business days from payment receipt.<br>
+										@endif
 										<strong>Personal Checks:</strong> Orders are processed after 5 business days from deposit date.<br>
 										<strong>Corporate Checks:</strong> Orders are processed after 3 business days from deposit date.<br>
 										<strong>Cash & Card Payments:</strong> Orders are processed immediately upon successful payment.<br>

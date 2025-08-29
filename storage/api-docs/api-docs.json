@@ -26189,6 +26189,123 @@
                 ]
             }
         },
+        "/api/post-purchase-claims": {
+            "get": {
+                "tags": [
+                    "PostPurchaseClaims"
+                ],
+                "summary": "Get all post purchase claims of the authenticated customer",
+                "operationId": "9a16c6f4f8a0e6855e8f23a58d6ab129",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "customer_name",
+                                "customer_email",
+                                "order_number",
+                                "product_name",
+                                "customer_city",
+                                "customer_zipcode",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/post-purchase-claims/{id}": {
+            "get": {
+                "tags": [
+                    "PostPurchaseClaims"
+                ],
+                "summary": "Get post purchase claim details",
+                "operationId": "c48c764e0798f508785ccba5bd226edb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Claim ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/pre-onboarding-vendors": {
             "get": {
                 "tags": [
@@ -37263,6 +37380,10 @@
         {
             "name": "Payments",
             "description": "Payments"
+        },
+        {
+            "name": "PostPurchaseClaims",
+            "description": "PostPurchaseClaims"
         },
         {
             "name": "Pre Onboarding Vendors",
