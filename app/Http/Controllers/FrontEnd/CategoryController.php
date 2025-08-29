@@ -404,8 +404,6 @@ class CategoryController extends Controller
 
 	
 
-
-
 public function getSpecificationFilters1(Request $request)
 {
     // Validation
