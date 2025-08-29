@@ -255,4 +255,19 @@ class Product extends Model
 		return $this->hasMany(ProductQuestion::class);
 	}
 
+	public function category_url()
+	{
+		$category = $this->latestChildCategory();
+		return $category->seoUrl ? $category->seoUrl->url : null;
+	}
+
+	public function parent_category_url()
+	{
+		$category = $this->latestChildCategory();
+		$mostParent = $category?->most_parent;
+
+		return $mostParent && $mostParent->seoUrl
+		? $mostParent->seoUrl->url
+		: null;
+	}
 }

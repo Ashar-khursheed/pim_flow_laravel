@@ -101,13 +101,17 @@ class Category extends Model
 	{
 		return $this->morphOne(SeoManagement::class, 'relational');
 	}
+
 	public function seoUrl()
-{
-    return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
-                ->where('relational_type', 'Category');
-}
-
-
+	{
+		// return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
+		// ->where('relational_type', 'Category');
+		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
+		->where(function ($query) {
+			$query->where('relational_type', 'Category')
+			->orWhere('relational_type', static::class);
+		});
+	}
 
 	public function subCategories()
 	{
@@ -144,5 +148,14 @@ class Category extends Model
 			'category_id',
 			'attribute_id'
 		);
+	}
+
+	public function getMostParentAttribute()
+	{
+		$category = $this;
+		while ($category->parent) {
+			$category = $category->parent;
+		}
+		return $category;
 	}
 }
