@@ -32123,6 +32123,81 @@
                 ]
             }
         },
+		
+"/api/product-report-export": {
+            "get": {
+                "tags": [
+                    "Products Report"
+                ],
+                "summary": "Get product report list",
+                "description": "Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
+                "operationId": "83addc73b5adab6c0ca229d3e5994a23",
+                "parameters": [
+                    {
+                        "name":"range_from",
+                        "in": "query",
+                        "description": "Starting product index (must be >= 1)",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    {
+                        "name":"range_to",
+                        "in": "query",
+                        "description": "Ending product index (max range allowed: 500 products)",
+                        "type": "integer",
+                        "example": 500
+                    },                     
+                    {
+                        "name": "approved",
+                        "in": "query",
+                        "description": "Approved status 0 or 1",
+                        "schema": {
+                            "type": "string",
+                            "enum":["0","1"]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Status published/draft",
+                        "schema": {
+                            "type": "string",
+                           "enum": ["published", "draft"]
+                        }
+                       
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filter by Brand,Category,Vendor.",
+                        "schema": {
+                            "type": "string",
+                            "enum": ["Brand","Category"]                             
+                        }
+                    },
+                    {
+                        "name":"relational_id",
+                        "in": "query",
+                        "description": "Enter brand id, category id",
+                        "type": "integer"
+                         
+                    }                    
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },		
         "/api/transaction-logs/{transaction_log_id}": {
             "get": {
                 "tags": [
@@ -35404,6 +35479,10 @@
         {
             "name": "Products",
             "description": "API Endpoints for Product Management"
+        },
+		{
+            "name": "Products Report",
+            "description": "API for Product Report Management"
         },
         {
             "name": "Categories",
