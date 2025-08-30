@@ -15,6 +15,7 @@ use Google\Service\AnalyticsData\StringFilter;
 use Google\Service\AnalyticsData\OrderBy;
 use Google\Service\AnalyticsData\DimensionOrderBy;
 use Google\Service\AnalyticsData\MetricOrderBy;
+use Google\Analytics\Data\V1beta\BetaAnalyticsDataClient;
 
 class GoogleAnalytics
 {
@@ -79,123 +80,248 @@ class GoogleAnalytics
     /**
      * Get basic overview metrics
      */
-    public function getOverview($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    {
-        try {
-            $request = new RunReportRequest();
-            $request->setDateRanges([
-                new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
-            ]);
-            $request->setMetrics([
-                new Metric(['name' => 'sessions']),
-                new Metric(['name' => 'totalUsers']),
-                new Metric(['name' => 'newUsers']),
-                new Metric(['name' => 'screenPageViews']),
-                new Metric(['name' => 'bounceRate']),
-                new Metric(['name' => 'averageSessionDuration'])
-            ]);
+    // public function getOverview($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    // {
+    //     try {
+    //         $request = new RunReportRequest();
+    //         $request->setDateRanges([
+    //             new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+    //         ]);
+    //         $request->setMetrics([
+    //             new Metric(['name' => 'sessions']),
+    //             new Metric(['name' => 'totalUsers']),
+    //             new Metric(['name' => 'newUsers']),
+    //             new Metric(['name' => 'screenPageViews']),
+    //             new Metric(['name' => 'bounceRate']),
+    //             new Metric(['name' => 'averageSessionDuration'])
+    //         ]);
 
-            $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+    //         $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
 
-            $row = $response->getRows()[0] ?? null;
-            if (!$row) {
-                return $this->getDefaultOverview();
-            }
+    //         $row = $response->getRows()[0] ?? null;
+    //         if (!$row) {
+    //             return $this->getDefaultOverview();
+    //         }
 
-            $metrics = $row->getMetricValues();
-            $totalUsers = $this->safeGetMetric($metrics, 1, 'int', 0);
-            $newUsers = $this->safeGetMetric($metrics, 2, 'int', 0);
+    //         $metrics = $row->getMetricValues();
+    //         $totalUsers = $this->safeGetMetric($metrics, 1, 'int', 0);
+    //         $newUsers = $this->safeGetMetric($metrics, 2, 'int', 0);
             
-            return [
-                'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
-                'totalUsers' => $totalUsers,
-                'newUsers' => $newUsers,
-                'returningUsers' => max(0, $totalUsers - $newUsers),
-                'pageViews' => $this->safeGetMetric($metrics, 3, 'int', 0),
-                'bounceRate' => round($this->safeGetMetric($metrics, 4, 'float', 0) * 100, 2),
-                'avgSessionDuration' => $this->safeGetMetric($metrics, 5, 'float', 0),
-                'conversions' => 0, // Will get separately
-                'totalRevenue' => 0.0 // Will get separately
-            ];
-        } catch (\Exception $e) {
-            return $this->getDefaultOverview($e->getMessage());
-        }
-    }
+    //         return [
+    //             'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
+    //             'totalUsers' => $totalUsers,
+    //             'newUsers' => $newUsers,
+    //             'returningUsers' => max(0, $totalUsers - $newUsers),
+    //             'pageViews' => $this->safeGetMetric($metrics, 3, 'int', 0),
+    //             'bounceRate' => round($this->safeGetMetric($metrics, 4, 'float', 0) * 100, 2),
+    //             'avgSessionDuration' => $this->safeGetMetric($metrics, 5, 'float', 0),
+    //             'conversions' => 0, // Will get separately
+    //             'totalRevenue' => 0.0 // Will get separately
+    //         ];
+    //     } catch (\Exception $e) {
+    //         return $this->getDefaultOverview($e->getMessage());
+    //     }
+    // }
+    public function getOverview($propertyId, $startDate = '30daysAgo', $endDate = 'today') {
+    try {
+        $request = new RunReportRequest();
+        $request->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+        
+        $request->setMetrics([
+            new Metric(['name' => 'sessions']),
+            new Metric(['name' => 'totalUsers']),
+            new Metric(['name' => 'newUsers']),
+            new Metric(['name' => 'screenPageViews']),
+            new Metric(['name' => 'bounceRate']),
+            new Metric(['name' => 'averageSessionDuration']),
+            // Add conversion metrics
+            new Metric(['name' => 'conversions']),
+            new Metric(['name' => 'totalRevenue'])
+        ]);
 
-    /**
-     * Get default overview data
-     */
-    private function getDefaultOverview($error = null)
-    {
-        $data = [
-            'sessions' => 0,
-            'totalUsers' => 0,
-            'newUsers' => 0,
-            'returningUsers' => 0,
-            'pageViews' => 0,
-            'bounceRate' => 0,
-            'avgSessionDuration' => 0,
-            'conversions' => 0,
-            'totalRevenue' => 0.0
-        ];
-        
-        if ($error) {
-            $data['error'] = $error;
+        $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+        $row = $response->getRows()[0] ?? null;
+
+        if (!$row) {
+            return $this->getDefaultOverview();
         }
-        
-        return $data;
+
+        $metrics = $row->getMetricValues();
+        $totalUsers = $this->safeGetMetric($metrics, 1, 'int', 0);
+        $newUsers = $this->safeGetMetric($metrics, 2, 'int', 0);
+
+        return [
+            'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
+            'totalUsers' => $totalUsers,
+            'newUsers' => $newUsers,
+            'returningUsers' => max(0, $totalUsers - $newUsers),
+            'pageViews' => $this->safeGetMetric($metrics, 3, 'int', 0),
+            'bounceRate' => round($this->safeGetMetric($metrics, 4, 'float', 0) * 100, 2),
+            'avgSessionDuration' => $this->safeGetMetric($metrics, 5, 'float', 0),
+            'conversions' => $this->safeGetMetric($metrics, 6, 'int', 0), // Now fetching real data
+            'totalRevenue' => $this->safeGetMetric($metrics, 7, 'float', 0.0) // Now fetching real data
+        ];
+
+    } catch (\Exception $e) {
+        return $this->getDefaultOverview($e->getMessage());
     }
+}
+
+// Alternative approach if you need specific conversion events
+public function getOverviewWithSpecificConversions($propertyId, $startDate = '30daysAgo', $endDate = 'today') {
+    try {
+        $request = new RunReportRequest();
+        $request->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+        
+        $request->setMetrics([
+            new Metric(['name' => 'sessions']),
+            new Metric(['name' => 'totalUsers']),
+            new Metric(['name' => 'newUsers']),
+            new Metric(['name' => 'screenPageViews']),
+            new Metric(['name' => 'bounceRate']),
+            new Metric(['name' => 'averageSessionDuration']),
+            new Metric(['name' => 'conversions']),
+            new Metric(['name' => 'totalRevenue'])
+        ]);
+
+        // If you want to filter by specific conversion events
+        $request->setDimensions([
+            new Dimension(['name' => 'eventName'])
+        ]);
+        
+        // Filter for specific conversion events
+        $request->setDimensionFilter(
+            new FilterExpression([
+                'filter' => new Filter([
+                    'field_name' => 'eventName',
+                    'string_filter' => new StringFilter([
+                        'match_type' => StringFilter\MatchType::EXACT,
+                        'value' => 'purchase' // or your specific conversion event
+                    ])
+                ])
+            ])
+        );
+
+        $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+        
+        // Process multiple rows if filtering by event
+        $totalConversions = 0;
+        $totalRevenue = 0.0;
+        
+        foreach ($response->getRows() as $row) {
+            $metrics = $row->getMetricValues();
+            $totalConversions += $this->safeGetMetric($metrics, 6, 'int', 0);
+            $totalRevenue += $this->safeGetMetric($metrics, 7, 'float', 0.0);
+        }
+
+        // Get basic metrics from first row or separate call
+        $basicMetricsRequest = new RunReportRequest();
+        $basicMetricsRequest->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+        $basicMetricsRequest->setMetrics([
+            new Metric(['name' => 'sessions']),
+            new Metric(['name' => 'totalUsers']),
+            new Metric(['name' => 'newUsers']),
+            new Metric(['name' => 'screenPageViews']),
+            new Metric(['name' => 'bounceRate']),
+            new Metric(['name' => 'averageSessionDuration'])
+        ]);
+
+        $basicResponse = $this->analyticsData->properties->runReport("properties/{$propertyId}", $basicMetricsRequest);
+        $basicRow = $basicResponse->getRows()[0] ?? null;
+
+        if (!$basicRow) {
+            return $this->getDefaultOverview();
+        }
+
+        $basicMetrics = $basicRow->getMetricValues();
+        $totalUsers = $this->safeGetMetric($basicMetrics, 1, 'int', 0);
+        $newUsers = $this->safeGetMetric($basicMetrics, 2, 'int', 0);
+
+        return [
+            'sessions' => $this->safeGetMetric($basicMetrics, 0, 'int', 0),
+            'totalUsers' => $totalUsers,
+            'newUsers' => $newUsers,
+            'returningUsers' => max(0, $totalUsers - $newUsers),
+            'pageViews' => $this->safeGetMetric($basicMetrics, 3, 'int', 0),
+            'bounceRate' => round($this->safeGetMetric($basicMetrics, 4, 'float', 0) * 100, 2),
+            'avgSessionDuration' => $this->safeGetMetric($basicMetrics, 5, 'float', 0),
+            'conversions' => $totalConversions,
+            'totalRevenue' => $totalRevenue
+        ];
+
+    } catch (\Exception $e) {
+        return $this->getDefaultOverview($e->getMessage());
+    }
+}
+
 
     /**
      * Get sessions by date
      */
-    public function getSessionsByDate($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    {
-        try {
-            $request = new RunReportRequest();
-            $request->setDateRanges([
-                new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
-            ]);
-            $request->setMetrics([
+   public function getSessionsByDate($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+{
+    try {
+        $request = new RunReportRequest();
+        $request->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+       $request->setMetrics([
                 new Metric(['name' => 'sessions']),
-                new Metric(['name' => 'totalUsers'])
+                new Metric(['name' => 'totalUsers']),
+                new Metric(['name' => 'conversions']),
+                new Metric(['name' => 'purchaseRevenue'])
             ]);
-            $request->setDimensions([new Dimension(['name' => 'date'])]);
-            $request->setOrderBys([
-                new OrderBy([
-                    'dimension' => new DimensionOrderBy(['dimension_name' => 'date'])
-                ])
-            ]);
+        $request->setDimensions([new Dimension(['name' => 'date'])]);
 
-            $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+        // ✅ Order by date DESC
+        $request->setOrderBys([
+            new OrderBy([
+                'dimension' => new DimensionOrderBy(['dimension_name' => 'date']),
+                'desc' => true
+            ])
+        ]);
 
-            $data = [];
-            foreach ($response->getRows() as $row) {
-                $dimensions = $row->getDimensionValues();
-                $metrics = $row->getMetricValues();
-                
-                $data[] = [
-                    'date' => $this->safeGetDimension($dimensions, 0, 'unknown'),
-                    'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
-                    'users' => $this->safeGetMetric($metrics, 1, 'int', 0),
-                    'conversions' => 0,
-                    'revenue' => 0.0
-                ];
-            }
-            return $data;
-        } catch (\Exception $e) {
-            return [
-                [
-                    'date' => date('Ymd'),
-                    'sessions' => 0,
-                    'users' => 0,
-                    'conversions' => 0,
-                    'revenue' => 0.0,
-                    'error' => $e->getMessage()
-                ]
+        $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+
+            // ✅ Format date (from 20250721 → 2025-07-21)
+            $rawDate = $this->safeGetDimension($dimensions, 0, 'unknown');
+            $formattedDate = \DateTime::createFromFormat('Ymd', $rawDate)->format('Y-m-d');
+
+           $data[] = [
+                'date' => $formattedDate,
+                'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
+                'users' => $this->safeGetMetric($metrics, 1, 'int', 0),
+                'conversions' => $this->safeGetMetric($metrics, 2, 'int', 0),
+                'revenue' => $this->safeGetMetric($metrics, 3, 'float', 0.0)
             ];
         }
+
+        return $data;
+    } catch (\Exception $e) {
+        return [
+            [
+                'date' => date('Y-m-d'),
+                'sessions' => 0,
+                'users' => 0,
+                'conversions' => 0,
+                'revenue' => 0.0,
+                'error' => $e->getMessage()
+            ]
+        ];
     }
+}
+
 
     /**
      * Get device analytics
@@ -387,20 +513,76 @@ class GoogleAnalytics
     /**
      * Get abandoned cart analytics - SAFE VERSION
      */
-    public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+     public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
     {
+        $client = new \Google\Client();
+        $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
+        $client->addScope('https://www.googleapis.com/auth/analytics.readonly');
+
+        $analyticsData = new \Google\Service\AnalyticsData($client);
+
+        $request = new \Google\Service\AnalyticsData\RunReportRequest([
+            'dateRanges' => [
+                new \Google\Service\AnalyticsData\DateRange([
+                    'startDate' => $startDate,
+                    'endDate' => $endDate,
+                ]),
+            ],
+            'dimensions' => [
+                new \Google\Service\AnalyticsData\Dimension(['name' => 'eventName']),
+            ],
+            'metrics' => [
+                new \Google\Service\AnalyticsData\Metric(['name' => 'eventCount']),
+            ],
+        ]);
+
+        $response = $analyticsData->properties->runReport(
+            'properties/' . $propertyId,
+            $request
+        );
+
+        $addToCarts = 0;
+        $checkouts = 0;
+        $purchases = 0;
+
+        foreach ($response->getRows() as $row) {
+            $eventName = $row->getDimensionValues()[0]->getValue();
+            $count = (int) $row->getMetricValues()[0]->getValue();
+
+            if ($eventName === 'add_to_cart') {
+                $addToCarts = $count;
+            } elseif ($eventName === 'begin_checkout') {
+                $checkouts = $count;
+            } elseif ($eventName === 'purchase') {
+                $purchases = $count;
+            }
+        }
+
+        // Calculate abandonment & conversion
+        $abandonedCarts = max(0, $addToCarts - $checkouts);
+        $abandonedCheckouts = max(0, $checkouts - $purchases);
+
+        $cartAbandonmentRate = $addToCarts > 0 ? round(($abandonedCarts / $addToCarts) * 100, 2) : 0;
+        $checkoutAbandonmentRate = $checkouts > 0 ? round(($abandonedCheckouts / $checkouts) * 100, 2) : 0;
+        $conversionRate = $addToCarts > 0 ? round(($purchases / $addToCarts) * 100, 2) : 0;
+
         return [
-            'addToCarts' => 0,
-            'checkouts' => 0,
-            'purchases' => 0,
-            'abandonedCarts' => 0,
-            'abandonedCheckouts' => 0,
-            'cartAbandonmentRate' => 0,
-            'checkoutAbandonmentRate' => 0,
-            'conversionRate' => 0,
-            'message' => 'E-commerce tracking not available or not configured'
+            'addToCarts' => $addToCarts,
+            'checkouts' => $checkouts,
+            'purchases' => $purchases,
+            'abandonedCarts' => $abandonedCarts,
+            'abandonedCheckouts' => $abandonedCheckouts,
+            'cartAbandonmentRate' => $cartAbandonmentRate,
+            'checkoutAbandonmentRate' => $checkoutAbandonmentRate,
+            'conversionRate' => $conversionRate,
+            'message' => ($addToCarts + $checkouts + $purchases) === 0
+                ? 'E-commerce tracking not available or not configured'
+                : 'success'
         ];
     }
+
+
+
 
     /**
      * Get traffic sources - SAFE VERSION
@@ -483,28 +665,242 @@ class GoogleAnalytics
             ]
         ];
     }
-
-    public function getRealTimeAnalytics($propertyId)
-    {
-        return [
-            [
-                'country' => 'Unknown',
-                'device' => 'Unknown',
-                'activeUsers' => 0,
-                'pageViews' => 0
-            ]
-        ];
+public function getRealTimeAnalytics($propertyId)
+{
+    // Step 1: Check if credentials file exists
+    $credentialsPath = base_path('app/Script/analytics-key.json');
+    if (!file_exists($credentialsPath)) {
+        throw new \Exception('Credentials file not found at: ' . $credentialsPath);
     }
 
+    // Step 2: Initialize client
+    $client = new BetaAnalyticsDataClient([
+        'credentials' => $credentialsPath
+    ]);
+
+    // Step 3: Create the simplest possible request first
+    $request = new RunRealtimeReportRequest([
+        'property' => "properties/{$propertyId}",
+        'metrics' => [
+            ['name' => 'activeUsers'],
+        ],
+    ]);
+
+    try {
+        $response = $client->runRealtimeReport($request);
+        
+        // Step 4: Debug what we got back
+        $rowCount = 0;
+        $rows = $response->getRows();
+        if ($rows) {
+            $rowCount = count($rows);
+        }
+
+        // Log everything for debugging
+        \Log::info('GA4 Debug Info:', [
+            'property_id' => $propertyId,
+            'full_property_string' => "properties/{$propertyId}",
+            'credentials_file_exists' => file_exists($credentialsPath),
+            'response_row_count' => $rowCount,
+            'has_rows' => $rowCount > 0
+        ]);
+
+        if ($rowCount === 0) {
+            return [
+                'total_active_users' => 0,
+                'data' => [],
+                'timestamp' => now()->toISOString(),
+                'debug' => [
+                    'message' => 'No real-time data available',
+                    'property_id' => $propertyId,
+                    'suggestions' => [
+                        'Check if there is current traffic to your website',
+                        'Verify the property ID is correct',
+                        'Real-time data can have 1-4 minute delays'
+                    ]
+                ]
+            ];
+        }
+
+        // If we have data, process it
+        $totalActiveUsers = 0;
+        foreach ($rows as $row) {
+            $activeUsers = (int)($row->getMetricValues()[0]->getValue() ?? 0);
+            $totalActiveUsers += $activeUsers;
+        }
+
+        return [
+            'total_active_users' => $totalActiveUsers,
+            'data' => [['activeUsers' => $totalActiveUsers]], // Simplified for now
+            'timestamp' => now()->toISOString(),
+            'debug' => [
+                'rows_processed' => $rowCount,
+                'property_id' => $propertyId
+            ]
+        ];
+
+    } catch (\Exception $e) {
+        \Log::error('GA4 API Error:', [
+            'error' => $e->getMessage(),
+            'property_id' => $propertyId,
+            'line' => $e->getLine()
+        ]);
+        throw new \Exception('GA4 API Error: ' . $e->getMessage());
+    }
+}
     public function getAudienceDemographics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    {
-        return [
-            [
-                'ageBracket' => 'Unknown',
-                'gender' => 'Unknown',
-                'users' => 0,
-                'sessions' => 0
-            ]
+{
+    $client = new \Google\Client();
+    $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
+
+    $client->addScope('https://www.googleapis.com/auth/analytics.readonly');
+
+    $analyticsData = new \Google\Service\AnalyticsData($client);
+
+    $request = new \Google\Service\AnalyticsData\RunReportRequest([
+        'dateRanges' => [
+            new \Google\Service\AnalyticsData\DateRange([
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+            ]),
+        ],
+        'dimensions' => [
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'userAgeBracket']),
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'userGender']),
+        ],
+        'metrics' => [
+            new \Google\Service\AnalyticsData\Metric(['name' => 'totalUsers']),
+            new \Google\Service\AnalyticsData\Metric(['name' => 'sessions']),
+        ],
+    ]);
+
+    $response = $analyticsData->properties->runReport(
+        'properties/' . $propertyId,
+        $request
+    );
+
+    $data = [];
+    foreach ($response->getRows() as $row) {
+        $dimensions = $row->getDimensionValues();
+        $metrics = $row->getMetricValues();
+
+        $data[] = [
+            'ageBracket' => $dimensions[0]->getValue(),
+            'gender'     => $dimensions[1]->getValue(),
+            'users'      => $metrics[0]->getValue(),
+            'sessions'   => $metrics[1]->getValue(),
         ];
     }
+
+    return $data;
+}
+
+    //   public function getBasicEcommerceFunnel($propertyId, $startDate, $endDate)
+    // {
+    //     // Example: simple mock/fallback funnel
+    //     $baseUsers = rand(800, 1500);
+    //     $addToCartUsers = (int)($baseUsers * 0.25);
+    //     $checkoutUsers = (int)($addToCartUsers * 0.5);
+    //     $purchaseUsers = (int)($checkoutUsers * 0.6);
+
+    //     return [
+    //         'funnel_data' => [
+    //             ['step' => 'Product Views', 'users' => $baseUsers, 'conversion_rate' => 100],
+    //             ['step' => 'Add to Cart', 'users' => $addToCartUsers, 'conversion_rate' => round(($addToCartUsers/$baseUsers)*100,2)],
+    //             ['step' => 'Checkout Started', 'users' => $checkoutUsers, 'conversion_rate' => round(($checkoutUsers/$baseUsers)*100,2)],
+    //             ['step' => 'Purchase', 'users' => $purchaseUsers, 'conversion_rate' => round(($purchaseUsers/$baseUsers)*100,2)]
+    //         ],
+    //         'conversion_rates' => [
+    //             'view_to_cart' => round(($addToCartUsers/$baseUsers)*100,2),
+    //             'cart_to_checkout' => round(($checkoutUsers/$addToCartUsers)*100,2),
+    //             'checkout_to_purchase' => round(($purchaseUsers/$checkoutUsers)*100,2),
+    //             'overall_conversion_rate' => round(($purchaseUsers/$baseUsers)*100,2)
+    //         ],
+    //         'insights' => [
+    //             'total_started' => $baseUsers,
+    //             'total_completed' => $purchaseUsers,
+    //             'overall_conversion_rate' => round(($purchaseUsers/$baseUsers)*100,2),
+    //             'total_revenue' => $purchaseUsers * rand(50,200),
+    //             'average_order_value' => $purchaseUsers > 0 ? rand(50,200) : 0
+    //         ]
+    //     ];
+    // }
+    
+    public function getEcommerceFunnel($propertyId, $startDate, $endDate)
+    {
+        $request = new RunReportRequest([
+            'dateRanges' => [
+                new DateRange([
+                    'startDate' => $startDate,
+                    'endDate' => $endDate,
+                ]),
+            ],
+            'dimensions' => [
+                new Dimension(['name' => 'eventName']),
+            ],
+            'metrics' => [
+                new Metric(['name' => 'eventCount']),
+            ],
+        ]);
+
+        $response = $this->analyticsData->properties->runReport(
+            'properties/' . $propertyId,
+            $request
+        );
+
+        $funnelSteps = [
+            'session_start'   => 0,
+            'view_item'       => 0,
+            'add_to_cart'     => 0,
+            'begin_checkout'  => 0,
+            'purchase'        => 0,
+        ];
+
+        foreach ($response->getRows() as $row) {
+            $event = $row->getDimensionValues()[0]->getValue();
+            $count = (int)$row->getMetricValues()[0]->getValue();
+
+            if (array_key_exists($event, $funnelSteps)) {
+                $funnelSteps[$event] = $count;
+            }
+        }
+
+        // Build funnel data
+        $funnelData = [
+            ['step' => 'Sessions', 'count' => $funnelSteps['session_start']],
+            ['step' => 'Product Views', 'count' => $funnelSteps['view_item']],
+            ['step' => 'Add to Cart', 'count' => $funnelSteps['add_to_cart']],
+            ['step' => 'Checkout', 'count' => $funnelSteps['begin_checkout']],
+            ['step' => 'Purchases', 'count' => $funnelSteps['purchase']],
+        ];
+
+        // Calculate conversion rates
+        $conversionRates = [];
+        $previous = null;
+        foreach ($funnelData as $step) {
+            if ($previous && $previous['count'] > 0) {
+                $conversionRates[$step['step']] = round(
+                    ($step['count'] / $previous['count']) * 100,
+                    2
+                ) . '%';
+            } else {
+                $conversionRates[$step['step']] = 'N/A';
+            }
+            $previous = $step;
+        }
+
+        return [
+            'funnel_data' => $funnelData,
+            'conversion_rates' => $conversionRates,
+            'insights' => [
+                'drop_off' => 'Biggest drop is usually between views → add to cart',
+            ],
+        ];
+    }
+
+    public function getAnalyticsData()
+    {
+        return $this->analyticsData;
+    }
+
 }

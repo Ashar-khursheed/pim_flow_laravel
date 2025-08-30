@@ -271,7 +271,8 @@ class OrderController extends BaseController
 				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
 				'created_by' => 0,
-				'utm_id' => $request->utm_id
+				'utm_id' => $request->utm_id,
+		
 			]);
 
 			foreach ($request->products as $product) {
@@ -474,134 +475,134 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function update(Request $request, $orderId)
-	{
-		$allowedStatuses = [
-			'Pending'
-		];
+		public function update(Request $request, $orderId)
+		{
+			$allowedStatuses = [
+				'Pending'
+			];
 
-		$order = Order::with('orderProducts')->find($orderId);
+			$order = Order::with('orderProducts')->find($orderId);
 
-		if (!$order) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Order not found'
-			], 404);
-		}
-
-		if (!in_array($order->status, $allowedStatuses)) {
-			return response()->json([
-				'success' => false,
-				'message' => 'This order has already been confirmed or processed and cannot be updated.'
-			], 400);
-		}
-
-		$request->validate([
-			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
-			'shipping_charge' => 'required|numeric|min:0',
-			'ship_all_at_once' => 'nullable|boolean',
-			'separate_deliveries' => 'nullable|boolean',
-			'products' => 'required|array|min:1',
-			'products.*.product_id' => 'required|integer|exists:ec_products,id',
-			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
-			'products.*.quantity' => 'required|integer|min:1',
-			'products.*.unit_price' => 'required|numeric|min:0',
-		]);
-
-		$customerId = auth()->id();
-
-		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
-
-		if (!$address) {
-			return response()->json([
-				'success' => false,
-				'message' => 'The selected address does not belong to the customer.'
-			], 422);
-		}
-
-		DB::beginTransaction();
-
-		try {
-			$totalProducts = 0;
-			$totalAmount = 0;
-
-			foreach ($request->products as $product) {
-				$totalProducts += $product['quantity'];
-				$totalAmount += $product['quantity'] * $product['unit_price'];
+			if (!$order) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Order not found'
+				], 404);
 			}
 
-			$order->update([
-				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $request->shipping_charge,
-				'total_amount' => $totalAmount,
-				'total_products' => $totalProducts,
-				'ship_all_at_once' => $request->get('ship_all_at_once', true),
-				'separate_deliveries' => $request->get('separate_deliveries', false),
-				'pending_amount' => $totalAmount,
-			]);
-
-			/* Delete existing products and re-insert */
-			OrderProduct::where('order_id', $order->id)->delete();
-
-			foreach ($request->products as $product) {
-				$total = $product['quantity'] * $product['unit_price'];
-				OrderProduct::create([
-					'order_id' => $order->id,
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'shipped_quantity' => 0,
-					'remaining_quantity' => $product['quantity'],
-					'unit_price' => $product['unit_price'],
-					'total_amount' => $total,
-					'status' => 'Pending',
-				]);
+			if (!in_array($order->status, $allowedStatuses)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'This order has already been confirmed or processed and cannot be updated.'
+				], 400);
 			}
 
-			OrderTracking::create([
-				'order_id' => $order->id,
-				'status' => 'Order Updated By Customer',
-				'description' => 'Order has been successfully updated',
+			$request->validate([
+				'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+				'shipping_charge' => 'required|numeric|min:0',
+				'ship_all_at_once' => 'nullable|boolean',
+				'separate_deliveries' => 'nullable|boolean',
+				'products' => 'required|array|min:1',
+				'products.*.product_id' => 'required|integer|exists:ec_products,id',
+				'products.*.vendor_id' => 'required|integer|exists:vendors,id',
+				'products.*.quantity' => 'required|integer|min:1',
+				'products.*.unit_price' => 'required|numeric|min:0',
 			]);
 
-			DB::commit();
+			$customerId = auth()->id();
 
-			/* Reload updated order data */
-			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
-				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
-				'orderProducts.product.brand:id,name',
-				'tracking'
-			]);
+			$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
 
-			/* Mutate */
-			foreach ($order->orderProducts as $orderProduct) {
-				$product = $orderProduct->product;
+			if (!$address) {
+				return response()->json([
+					'success' => false,
+					'message' => 'The selected address does not belong to the customer.'
+				], 422);
+			}
 
-				if ($product) {
-					$product->images = json_decode($product->images);
-					if ($product->brand) {
-						$product->brand_name = $product->brand->name;
-					}
-					unset($product->brand);
+			DB::beginTransaction();
+
+			try {
+				$totalProducts = 0;
+				$totalAmount = 0;
+
+				foreach ($request->products as $product) {
+					$totalProducts += $product['quantity'];
+					$totalAmount += $product['quantity'] * $product['unit_price'];
 				}
+
+				$order->update([
+					'customer_address_id' => $request->customer_address_id,
+					'shipping_charge' => $request->shipping_charge,
+					'total_amount' => $totalAmount,
+					'total_products' => $totalProducts,
+					'ship_all_at_once' => $request->get('ship_all_at_once', true),
+					'separate_deliveries' => $request->get('separate_deliveries', false),
+					'pending_amount' => $totalAmount,
+				]);
+
+				/* Delete existing products and re-insert */
+				OrderProduct::where('order_id', $order->id)->delete();
+
+				foreach ($request->products as $product) {
+					$total = $product['quantity'] * $product['unit_price'];
+					OrderProduct::create([
+						'order_id' => $order->id,
+						'product_id' => $product['product_id'],
+						'vendor_id' => $product['vendor_id'],
+						'quantity' => $product['quantity'],
+						'shipped_quantity' => 0,
+						'remaining_quantity' => $product['quantity'],
+						'unit_price' => $product['unit_price'],
+						'total_amount' => $total,
+						'status' => 'Pending',
+					]);
+				}
+
+				OrderTracking::create([
+					'order_id' => $order->id,
+					'status' => 'Order Updated By Customer',
+					'description' => 'Order has been successfully updated',
+				]);
+
+				DB::commit();
+
+				/* Reload updated order data */
+				$order->load([
+					'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
+					'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+					'orderProducts.product.brand:id,name',
+					'tracking'
+				]);
+
+				/* Mutate */
+				foreach ($order->orderProducts as $orderProduct) {
+					$product = $orderProduct->product;
+
+					if ($product) {
+						$product->images = json_decode($product->images);
+						if ($product->brand) {
+							$product->brand_name = $product->brand->name;
+						}
+						unset($product->brand);
+					}
+				}
+
+				return response()->json([
+					'success' => true,
+					'message' => 'Order updated successfully',
+					'data' => $order
+				], 200);
+
+			} catch (\Exception $e) {
+				DB::rollBack();
+
+				return response()->json([
+					'success' => false,
+					'message' => 'Failed to update order: ' . $e->getMessage()
+				], 500);
 			}
-
-			return response()->json([
-				'success' => true,
-				'message' => 'Order updated successfully',
-				'data' => $order
-			], 200);
-
-		} catch (\Exception $e) {
-			DB::rollBack();
-
-			return response()->json([
-				'success' => false,
-				'message' => 'Failed to update order: ' . $e->getMessage()
-			], 500);
 		}
-	}
 
 	/**
 	 * @OA\Put(

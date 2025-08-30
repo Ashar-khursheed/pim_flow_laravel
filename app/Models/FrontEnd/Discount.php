@@ -8,7 +8,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Attribute;
 use App\Models\Product;
 use App\Models\Category;
-
+/**
+ * @OA\Schema(
+ *     schema="Coupon",
+ *     type="object",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="code", type="string", example="WELCOME10"),
+ *     @OA\Property(property="value", type="number", example=50),
+ *     @OA\Property(property="type", type="string", example="fixed"),
+ *     @OA\Property(property="min_order_price", type="number", example=100),
+ *     @OA\Property(property="quantity", type="integer", example=100),
+ *     @OA\Property(property="total_used", type="integer", example=10),
+ *     @OA\Property(property="expires_at", type="string", format="date", example="2025-12-31"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ */
 class Discount extends Model
 {
     protected $table = 'ec_discounts';
