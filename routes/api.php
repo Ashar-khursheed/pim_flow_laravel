@@ -243,7 +243,6 @@ Route::prefix('analytics')->group(function () {
     Route::post('/custom-report', [AnalyticsController::class, 'customReport']);
 });
 
-
 // Route::prefix('analytics')->group(function () {
 //     Route::get('/sessions', [AnalyticsController::class, 'sessions']);
 //     Route::get('/users', [AnalyticsController::class, 'users']);
