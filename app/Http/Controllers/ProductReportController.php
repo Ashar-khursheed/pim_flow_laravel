@@ -15,92 +15,38 @@ class ProductReportController extends Controller
 	 *     summary="Get product report list",
 	 *     description="Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
 	 *     tags={"Products Report"},
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="per_page",
-	 *         in="query",
-	 *         description="Number of products per page (default: 50)",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=50)
-	 *     ),
-	 *     @OA\Property(property="brand", type="string", enum=App\Models\Brand::class,example="Brand Name"),
-	 *     @OA\Property(property="category", type="string", example="category Name"),
-	 *     @OA\Parameter(
-	 *         name="search",
-	 *         in="query",
-	 *         description="Search term for filtering products by name, SKU, brand, store, or category",
-	 *         required=false,
-	 *         @OA\Schema(type="string", example="samsung")
-	 *     ),
+	 *     @OA\Property(property="type", type="string", example="Category", description="Filter type (e.g., Category, Brand)"),
+	 * 	   @OA\Property(property="range_from", type="integer", example=1, description="Starting product index (must be >= 1)"),
+	 *     @OA\Property(property="range_to", type="integer", example=500, description="Ending product index (max range allowed: 500 products)"),
+	 *     @OA\Property(property="relational_id", type="integer", example=14, description="Enter brand id, category id"),
 	 *		@OA\Parameter(
 	 * 				name="status",
 	 *				in="query",
 	 *				description="Filter products by status (e.g., published, draft)",
-	 *				required=false,
-	 *				@OA\Schema(type="string", enum={"publish", "draft"}, example="active")
+	 *				required=true,
+	 *				@OA\Schema(type="string", enum={"all","publish", "draft"}, example="active")
 	 *				),
 	 *      @OA\Parameter(
 	 * 				name="approved",
 	 *				in="query",
 	 *				description="Filter approved by status (e.g., 0, 1)",
-	 *				required=false,
+	 *				required=true,
 	 *				@OA\Schema(type="string", example="active")
 	 *				),
-	 *     @OA\Parameter(
-	 *         name="sort_by",
-	 *         in="query",
-	 *         description="Column to sort by (id, name, sku, brand_id, vendor_id, status)",
-	 *         required=false,
-	 *         @OA\Schema(type="string", example="id")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="sort_direction",
-	 *         in="query",
-	 *         description="Sort direction (asc or desc)",
-	 *         required=false,
-	 *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
-	 *     ),
-	 *      
-	 *     security={{"bearerAuth":{}}}
+	 *      security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function index(Request $request, ExcelRepository $excelRepo)
 	{
-		$perPage = $request->input('page');
-		$length = $request->input('length');
-		$search = trim($request->input('search'));
-		$status = trim($request->input('status'));
-		$approved = trim($request->input('approved'));
-		$brand = trim($request->input('brand'));
-		$category = trim($request->input('category'));
-		$sortBy = $request->input('sort_by', 'id');
-		$sortDirection = $request->input('sort_direction', 'desc');
-
 		/* Validate request data */
 		$request->validate([
 			'status' => 'string|in:draft,published',
 			'approved' => 'string|in:0,1',
-			// 'brand' => 'integer',
-			'sort_by' => 'required',
-
+			'range_from' => 'required|integer|min:1',
+			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 500),
+			'type' => 'required|string|in:Brand,Category,Vendor',
+			'relational_id' => 'required|integer',
 		]);
-
-		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
-		if (!in_array($sortBy, $allowedSortColumns)) {
-			$sortBy = 'id'; // Default to id if invalid column
-		}
-
-		// Validate sort direction
-		if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
-			$sortDirection = 'desc'; // Default to descending if invalid direction
-		}
 
 		$query = Product::with([
 			'brand:id,name',
@@ -108,51 +54,29 @@ class ProductReportController extends Controller
 			'slug:id,key,reference_id',
 			'productSuppliers',
 			'vendors'
-		])
-			->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
-		// Apply status filter
-		if ($status !== null) {
-			$query->where('status', $status);
+		])->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
+		/* Apply relational filters */
+		if (!empty($request->status)) {
+			$query->where('status', $request->status);
 		}
-		if ($approved !== null) {
-			$query->where('approved', $approved);
+		if ($request->approved != '') {
+			$query->where('approved', $request->approved);
 		}
-		if (!empty($category)) {
-			$query->where(function ($q) use ($category) {
-				$q->whereHas('categories', function ($categoryQuery) use ($category) {
-					$categoryQuery->where('id', $category);
-				});
+		if ($request->type == "Brand") {
+			$query->where('brand_id', $request->relational_id);
+		} elseif ($request->type == "Category") {
+			$category = Category::find($request->relational_id);
+			$leafCategories = Category::getLeafCategories($category);
+			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
+				$q->whereIn('category_id', $leafCategoryIds);
 			});
 		}
 
-		if (!empty($brand)) {
-			$query->where(function ($q) use ($brand) {
-				$q->whereHas('brand', function ($brandQuery) use ($brand) {
-					$brandQuery->where('id', $brand);
-				});
-			});
-		}
-
-		if (!empty($search)) {
-			$query->where(function ($q) use ($search) {
-				$q->where('name', 'like', "%{$search}%")
-					->orWhere('sku', 'like', "%{$search}%")
-					->orWhereHas('brand', function ($brand) use ($search) {
-						$brand->where('name', 'like', "%{$search}%");
-					})
-
-					->orWhereHas('categories', function ($categoryQuery) use ($search) {
-						$categoryQuery->where('name', 'like', "%{$search}%");
-					});
-			});
-		}
-		
-		$products = $query->orderBy($sortBy, $sortDirection);
-		if ($length) {
-			$products = $products->paginate($length);
-		} else {
-			$products = $products->get();
-		}
+		$products = $query->offset($request->range_from - 1)
+			->limit($request->range_to - $request->range_from + 1)
+			->orderBy('id', 'asc')
+			->get();
 
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
@@ -191,7 +115,7 @@ class ProductReportController extends Controller
 		foreach ($formattedProducts as $recordRow) {
 			$excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
 		}
-
+		//xlsx
 		$fileName = 'product_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
