@@ -218,7 +218,7 @@ class RecentlyViewedProductController extends Controller
                     $firstSupplier = $product->productSuppliers->first();
 
             
-                    return [
+                 return [
                         'id' => $product->id,
                         'name' => $product->name,
                         'sku' => $product->sku,
@@ -230,25 +230,28 @@ class RecentlyViewedProductController extends Controller
                         'left_stock' => $product->left_stock ?? 0,
                         'currency' => $product->currency->symbol ?? '$',
                         'in_wishlist' => in_array($product->id, $wishlistIds),
-                        'images' =>$cleanedImages,
-                        "selling_type"=> $sellingType,
+                        'images' => $cleanedImages,
+                        "selling_type" => $sellingType,
+
+                        // 🔹 Supplier-safe values
                         'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                        'price' =>  (float) $firstSupplier->price,
-                        "sale_price" => (float) $firstSupplier->sale_price,
-                        "original_price"=>  (float) $firstSupplier->price,
-                        'front_sale_price' => (float) $firstSupplier->sale_price,
-                         "best_price"=>  (float) $firstSupplier->price,
-                         "selling_type"=> $sellingType,
-                         "per_unit_price"=>   $product->per_unit_price,
-                         'vendor_id' => $firstSupplier->vendor_id ?? null,
-                         'map' => (float) $firstSupplier->map ?? null,
-                         'inventory' => $firstSupplier->inventory ?? null,
-                         'in_stock' => $firstSupplier->in_stock ?? null,
-                         'delivery_days' => $firstSupplier->delivery_days ?? null,
-                         'return_policy' => $firstSupplier->return_policy ?? null,
-                         'free_shipping' => $firstSupplier->free_shipping ?? null,
-                         'warranty_information' => $firstSupplier->warranty_information ?? null,
+                        'price' => (float) ($firstSupplier->price ?? 0),
+                        'sale_price' => (float) ($firstSupplier->sale_price ?? 0),
+                        'original_price' => (float) ($firstSupplier->price ?? 0),
+                        'front_sale_price' => (float) ($firstSupplier->sale_price ?? 0),
+                        'best_price' => (float) ($firstSupplier->price ?? 0),
+                        "per_unit_price"=> $product->per_unit_price ?? 0,
+
+                        'vendor_id' => $firstSupplier->vendor_id ?? null,
+                        'map' => (float) ($firstSupplier->map ?? 0),
+                        'inventory' => $firstSupplier->inventory ?? 0,
+                        'in_stock' => $firstSupplier->in_stock ?? 0,
+                        'delivery_days' => $firstSupplier->delivery_days ?? null,
+                        'return_policy' => $firstSupplier->return_policy ?? null,
+                        'free_shipping' => $firstSupplier->free_shipping ?? null,
+                        'warranty_information' => $firstSupplier->warranty_information ?? null,
                     ];
+
                 })->filter(), // Filter out null values
             ]);
         }
