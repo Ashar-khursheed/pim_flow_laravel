@@ -405,6 +405,12 @@ class ProductController extends BaseController
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product does not exist.'
+			]);
+		}
 		// Extract first vendor's price and sale_price
 		$firstVendor = $product->vendors->first();
 		$productPrice = $firstVendor?->pivot?->price ?? null;
@@ -453,14 +459,6 @@ class ProductController extends BaseController
 			}
 
 			unset($ref); // Clear reference
-		}
-
-
-		if (!$product) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Product does not exist.'
-			]);
 		}
 
 		/* Fetch reviews where customer_id is null */
@@ -523,13 +521,17 @@ class ProductController extends BaseController
 			];
 		}
 
-		$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
+		$formattedProduct['product_suppliers'] = $product->productSuppliers->map(function ($productSupplier) {
 			return [
-				'id' => $vendor->id,
-				'vendor_sku' => $vendor->vendor_sku,
-				'name' => $vendor->name,
-				'price' => $vendor->pivot->price ?? null,
-				'sale_price' => $vendor->pivot->sale_price ?? null,
+				'id' => $productSupplier->id,
+				'product_id' => $productSupplier->product_id,
+				'vendor_id' => $productSupplier->vendor_id,
+				'vendor_sku' => $productSupplier->vendor_sku,
+				'total_cost_per_item' => $productSupplier->total_cost_per_item,
+				'inventory' => $productSupplier->inventory,
+				'in_stock' => $productSupplier->in_stock,
+				'vendor_id' => $productSupplier->vendor_id,
+				'vendor_name' => $productSupplier->vendor->name,
 			];
 		});
 
