@@ -491,8 +491,8 @@ public function viewCart(Request $request)
 
     // Fetch cart items with product and currency details
     $cartItems = Auth::check()
-        ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers','product.seoUrl' ,'product.category_url' , 'product.parent_category_url')->get()
-        : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers','product.seoUrl','product.category_url' , 'product.parent_category_url')->get();
+        ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers','product.seoUrl' )->get()
+        : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers','product.seoUrl')->get();
 
     // Fetch applicable discounts for the user
     $userDiscountIds = DB::table('ec_discount_customers')
@@ -517,8 +517,14 @@ public function viewCart(Request $request)
     $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
         $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
         $item->product->images = collect(json_decode($item->product->images, true) ?? []);
-         $item->product->category_url->category_url();
-         $item->product->parent_category_url  ->parent_category_url();
+        $item->product->category_url = method_exists($item->product, 'category_url')
+            ? $item->product->category_url()
+            : null;
+
+        $item->product->parent_category_url = method_exists($item->product, 'parent_category_url')
+            ? $item->product->parent_category_url()
+            : null;
+
         $discountIds = $productDiscounts[$item->product->id] ?? [];
         $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
         $item->product->url = $item->product->seoUrl->url ?? null;
