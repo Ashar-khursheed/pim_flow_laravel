@@ -491,8 +491,8 @@ public function viewCart(Request $request)
 
     // Fetch cart items with product and currency details
     $cartItems = Auth::check()
-        ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers','product.seoUrl')->get()
-        : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers','product.seoUrl')->get();
+        ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers','product.seoUrl' ,'product.category_url' , 'product.parent_category_url')->get()
+        : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers','product.seoUrl','product.category_url' , 'product.parent_category_url')->get();
 
     // Fetch applicable discounts for the user
     $userDiscountIds = DB::table('ec_discount_customers')
