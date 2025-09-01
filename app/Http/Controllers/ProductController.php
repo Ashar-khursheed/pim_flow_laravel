@@ -526,7 +526,7 @@ class ProductController extends BaseController
 		$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
 			return [
 				'id' => $vendor->id,
-				'vendor_sku' => $vendor->vendor_sku,
+				'vendor_sku' => $vendor->pivot->vendor_sku,
 				'name' => $vendor->name,
 				'price' => $vendor->pivot->price ?? null,
 				'sale_price' => $vendor->pivot->sale_price ?? null,
