@@ -13,8 +13,9 @@ class ProductReportController extends Controller
 	 * @OA\Get(
 	 *     path="/api/product-report-export",
 	 *     summary="Get product report list",
-	 *     description="Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
+	 *     description="Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
 	 *     tags={"Products Report"},
+	 *
 	 *     @OA\Parameter(
 	 *         name="page",
 	 *         in="query",
@@ -29,8 +30,6 @@ class ProductReportController extends Controller
 	 *         required=false,
 	 *         @OA\Schema(type="integer", example=50)
 	 *     ),
-	 *     @OA\Property(property="brand", type="string", enum=App\Models\Brand::class,example="Brand Name"),
-	 *     @OA\Property(property="category", type="string", example="category Name"),
 	 *     @OA\Parameter(
 	 *         name="search",
 	 *         in="query",
@@ -38,20 +37,34 @@ class ProductReportController extends Controller
 	 *         required=false,
 	 *         @OA\Schema(type="string", example="samsung")
 	 *     ),
-	 *		@OA\Parameter(
-	 * 				name="status",
-	 *				in="query",
-	 *				description="Filter products by status (e.g., published, draft)",
-	 *				required=false,
-	 *				@OA\Schema(type="string", enum={"publish", "draft"}, example="active")
-	 *				),
-	 *      @OA\Parameter(
-	 * 				name="approved",
-	 *				in="query",
-	 *				description="Filter approved by status (e.g., 0, 1)",
-	 *				required=false,
-	 *				@OA\Schema(type="string", example="active")
-	 *				),
+	 *     @OA\Parameter(
+	 *         name="status",
+	 *         in="query",
+	 *         description="Filter products by status (published, draft)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", enum={"published", "draft"}, example="published")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="approved",
+	 *         in="query",
+	 *         description="Filter approved by status (0 = not approved, 1 = approved)",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", enum={0,1}, example=1)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="brand",
+	 *         in="query",
+	 *         description="Filter by brand id",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=5)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="category",
+	 *         in="query",
+	 *         description="Filter by category id",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=3)
+	 *     ),
 	 *     @OA\Parameter(
 	 *         name="sort_by",
 	 *         in="query",
@@ -66,10 +79,27 @@ class ProductReportController extends Controller
 	 *         required=false,
 	 *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
 	 *     ),
-	 *      
-	 *     security={{"bearerAuth":{}}}
+	 *
+	 *     security={{"bearerAuth":{}}},
+	 *
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Product report Excel file",
+	 *         @OA\MediaType(
+	 *             mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthorized"
+	 *     ),
+	 *     @OA\Response(
+	 *         response=500,
+	 *         description="Server error"
+	 *     )
 	 * )
 	 */
+
 	public function index(Request $request, ExcelRepository $excelRepo)
 	{
 		$perPage = $request->input('page');
