@@ -52,7 +52,10 @@ class ProductReportController extends Controller
 			'categories:id,name',
 			'slug:id,key,reference_id',
 			'productSuppliers',
-			'vendors'
+			'vendors',
+			'productAttributes.attributeDetails',
+			'latestChildCategoryRelation:id,name'
+
 		])->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
 		/* Apply relational filters */
 		if (!empty($request->status)) {
@@ -79,28 +82,49 @@ class ProductReportController extends Controller
 
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
+
+			foreach ($product->productAttributes as $attr) {
+				$product_attributes[] = [
+					'attribute_id' => $attr->attribute_id,
+					'attribute_name' => $attr->attributeDetails->name ?? null,
+					'attribute_value' => $attr->attribute_value,
+					'measurement_unit_id' => $attr->measurement_unit_id,
+					'measurement_unit_name' => $attr->measurementUnit->name ?? null,
+				];
+			}
+
 			$brands = "";
 			if ($product->brand) {
 				$brands = Brand::withCount('products')->where('id', $product->brand->id)->first();
 			}
+			if (!empty($product_attributes)) {
+				foreach ($product_attributes as $attributes) {
 
-			return [
-				'id' => $product->id,
-				'name' => $product->name,
-				'approved' => $product->approved,
-				'sku' => $product->sku,
-				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-				'brand_id' => optional($product->brand)->id,
-				'brand' => optional($product->brand)->name,
-				'status' => $product->status,
-				'category_id' => $product->categories->pluck('id')->implode(', '),
-				'category_name' => $product->categories->pluck('name')->implode(', '),
-				'category_count' => $product->categories->count(),
-				'product_count' => $brands ? $brands->products_count : null,
-			];
+					$data[] = [
+						'id' => $product->id,
+						'name' => $product->name,
+						'approved' => $product->approved,
+						'sku' => $product->sku,
+						'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+						'brand_id' => optional($product->brand)->id,
+						'brand' => optional($product->brand)->name,
+						'status' => $product->status,
+						'category_id' => $product->categories->pluck('id')->implode(', '),
+						'category_name' => $product->categories->pluck('name')->implode(', '),
+						'category_count' => $product->categories->count(),
+						'product_count' => $brands ? $brands->products_count : null,
+						'attribute_id' => $attributes['attribute_id'],
+						'attribute_name' => $attributes['attribute_name'] ?? null,
+						'attribute_value' => $attributes['attribute_value'],
+						'measurement_unit_id' => $attributes['measurement_unit_id'],
+						'measurement_unit_name' => $attributes['measurement_unit_name'] ?? null,
+					];
+				}
+				return $data;
+			}
 		});
 
-		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count'];
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count', 'attribute_id', 'attribute_name', 'attribute_value', 'measurement_unit_id', 'measurement_unit_name'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
@@ -111,8 +135,11 @@ class ProductReportController extends Controller
 
 		/* Fill data rows */
 		$rowIndex = 2;
-		foreach ($formattedProducts as $recordRow) {
-			$excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
+		foreach ($formattedProducts as $firstRow) {
+			foreach ($firstRow as $recordRow) {
+
+				$excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
+			}
 		}
 		//xlsx
 		$fileName = 'product_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
