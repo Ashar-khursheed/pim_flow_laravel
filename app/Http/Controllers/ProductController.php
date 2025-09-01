@@ -374,7 +374,7 @@ class ProductController extends BaseController
 			'Store & Vendor Information' => ['brand_id'],
 			'Performance & Analytics' => ['views', 'units_sold'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
-			'Other' => ['order', 'website_ids'],
+			'Other' => ['order', 'website_ids', 'vendor'],
 			'All' => []
 		];
 
@@ -594,6 +594,7 @@ class ProductController extends BaseController
 					$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
 						return [
 							'id' => $vendor->id,
+							'vendor_sku' => $vendor->vendor_sku,
 							'name' => $vendor->name,
 							'price' => $vendor->pivot->price ?? null,
 							'sale_price' => $vendor->pivot->sale_price ?? null,
@@ -1219,7 +1220,7 @@ class ProductController extends BaseController
 	// 		unset($input['images']);
 	// 	}
 
-	// 	// Handle videos with role-based permission - CORRECTED VERSION  
+	// 	// Handle videos with role-based permission - CORRECTED VERSION
 	// 	if ($request->has('video_path')) {
 	// 		if ($canModifyImages) {
 	//     $finalVideos = [];
@@ -1843,7 +1844,7 @@ class ProductController extends BaseController
 		}
 
 
-		// Handle videos with role-based permission - CORRECTED VERSION  
+		// Handle videos with role-based permission - CORRECTED VERSION
 		if ($request->has('video_path')) {
 			if ($canModifyImages) {
 				$finalVideos = [];
