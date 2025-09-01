@@ -418,12 +418,13 @@ class OrderController extends BaseController
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
 				$product->category_url = method_exists($product, 'category_url')
-							? $item->product->category_url()
-							: null;
+					? $product->category_url()
+					: null;
 
 				$product->parent_category_url = method_exists($product, 'parent_category_url')
 					? $product->parent_category_url()
 					: null;
+
 
 			// 🔹 Fetch SEO URL directly without relation
 				$seo = \App\Models\SeoManagement::where('relational_id', $product->id)
