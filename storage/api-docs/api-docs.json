@@ -1449,6 +1449,11 @@
                                         "type": "integer",
                                         "example": 1
                                     },
+                                    "brand_id": {
+                                        "description": "Brand ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "range_from": {
                                         "description": "Starting range (must be >=1)",
                                         "type": "integer",
