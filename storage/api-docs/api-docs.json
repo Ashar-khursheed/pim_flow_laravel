@@ -27966,7 +27966,15 @@
                             "type": "integer"                             
                         },
                         "example": "14"
-                    }                      
+                    },
+                     {
+                        "name": "sku",
+                        "in": "query",
+                        "description": "Enter sku id.",
+                        "schema": {
+                            "type": "string"                             
+                        }                        
+                    }                    
                 ],
                 "responses": {
                     "200": {
