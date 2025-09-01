@@ -184,76 +184,79 @@ class RecentlyViewedProductController extends Controller
 
 
             return response()->json([
-                'success' => true,
-                'data' => $recentlyViewed->map(function ($viewed) use ($wishlistIds) {
-                    $product = $viewed->product;
+            'success' => true,
+            'data' => $recentlyViewed
+            ->map(function ($viewed) use ($wishlistIds) {
+                $product = $viewed->product;
 
-                    // ✅ Skip null or unpublished products
-                    if (!$product || $product->status !== 'published') {
-                        return null;
+                // ✅ Skip null or unpublished products
+                if (!$product || $product->status !== 'published') {
+                    return null;
+                }
+
+                $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
+                $cleanedImages = collect($imageArray)->map(function ($item) {
+                    if (is_string($item) && str_starts_with($item, '[')) {
+                        $decoded = json_decode($item, true);
+                        return is_array($decoded) ? $decoded : [$item];
                     }
+                    return [$item];
+                })->flatten()->filter()->values();
 
-                    $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
-                    $cleanedImages = collect($imageArray)->map(function ($item) {
-                        if (is_string($item) && str_starts_with($item, '[')) {
-                            $decoded = json_decode($item, true);
-                            return is_array($decoded) ? $decoded : [$item];
-                        }
-                        return [$item];
-                    })->flatten()->filter()->values();
+                $sellingType = null;
+                if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                    $fullValue = $product->sellingUnitAttribute->attribute_value;
+                    $attributeUnit = strpos($fullValue, '/') !== false
+                        ? trim(explode('/', $fullValue)[1])
+                        : $fullValue;
 
-                    $sellingType = null;
-                    if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-                        $fullValue = $product->sellingUnitAttribute->attribute_value;
-
-                        $attributeUnit = strpos($fullValue, '/') !== false
-                            ? trim(explode('/', $fullValue)[1])
-                            : $fullValue;
-
-                        $sellingType = [
-                            'attribute_value' => $product->sellingUnitAttribute->attribute_value,
-                            'attribute_value_unit' => $attributeUnit,
-                        ];
-                    }
-                    $firstSupplier = $product->productSuppliers->first();
-
-            
-                 return [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'sku' => $product->sku,
-                        'category_url' => $product->category_url(),
-                        'parent_category_url' => $product->parent_category_url(),
-                        'url' => $product->seoUrl->url ?? null,
-                        'total_reviews' => $product->reviews->count(),
-                        'avg_rating' => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
-                        'left_stock' => $product->left_stock ?? 0,
-                        'currency' => $product->currency->symbol ?? '$',
-                        'in_wishlist' => in_array($product->id, $wishlistIds),
-                        'images' => $cleanedImages,
-                        "selling_type" => $sellingType,
-
-                        // 🔹 Supplier-safe values
-                        'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                        'price' => (float) ($firstSupplier->price ?? 0),
-                        'sale_price' => (float) ($firstSupplier->sale_price ?? 0),
-                        'original_price' => (float) ($firstSupplier->price ?? 0),
-                        'front_sale_price' => (float) ($firstSupplier->sale_price ?? 0),
-                        'best_price' => (float) ($firstSupplier->price ?? 0),
-                        "per_unit_price"=> $product->per_unit_price ?? 0,
-
-                        'vendor_id' => $firstSupplier->vendor_id ?? null,
-                        'map' => (float) ($firstSupplier->map ?? 0),
-                        'inventory' => $firstSupplier->inventory ?? 0,
-                        'in_stock' => $firstSupplier->in_stock ?? 0,
-                        'delivery_days' => $firstSupplier->delivery_days ?? null,
-                        'return_policy' => $firstSupplier->return_policy ?? null,
-                        'free_shipping' => $firstSupplier->free_shipping ?? null,
-                        'warranty_information' => $firstSupplier->warranty_information ?? null,
+                    $sellingType = [
+                        'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                        'attribute_value_unit' => $attributeUnit,
                     ];
+                }
 
-                })->filter(), // Filter out null values
-            ]);
+            $firstSupplier = $product->productSuppliers->first();
+
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+                'category_url' => $product->category_url(),
+                'parent_category_url' => $product->parent_category_url(),
+                'url' => $product->seoUrl->url ?? null,
+                'total_reviews' => $product->reviews->count(),
+                'avg_rating' => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
+                'left_stock' => $product->left_stock ?? 0,
+                'currency' => $product->currency->symbol ?? '$',
+                'in_wishlist' => in_array($product->id, $wishlistIds),
+                'images' => $cleanedImages,
+                "selling_type" => $sellingType,
+
+                // 🔹 Supplier-safe values
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' => (float) ($firstSupplier->price ?? 0),
+                'sale_price' => (float) ($firstSupplier->sale_price ?? 0),
+                'original_price' => (float) ($firstSupplier->price ?? 0),
+                'front_sale_price' => (float) ($firstSupplier->sale_price ?? 0),
+                'best_price' => (float) ($firstSupplier->price ?? 0),
+                "per_unit_price"=> $product->per_unit_price ?? 0,
+
+                'vendor_id' => $firstSupplier->vendor_id ?? null,
+                'map' => (float) ($firstSupplier->map ?? 0),
+                'inventory' => $firstSupplier->inventory ?? 0,
+                'in_stock' => $firstSupplier->in_stock ?? 0,
+                'delivery_days' => $firstSupplier->delivery_days ?? null,
+                'return_policy' => $firstSupplier->return_policy ?? null,
+                'free_shipping' => $firstSupplier->free_shipping ?? null,
+                'warranty_information' => $firstSupplier->warranty_information ?? null,
+            ];
+        })
+        ->filter()
+        ->values() // reindex keys to numeric array
+        ->all(),   // convert collection to plain array
+]);
+
         }
     }
 
