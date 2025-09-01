@@ -1837,7 +1837,7 @@ class ProductController extends Controller
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
 
 
-       $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute',  'seoUrl','category_url' ,'parent_category_url' ]) // add seoUrl here
+       $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute',  'seoUrl']) // add seoUrl here
       ->where('status', 'published')
 
         ->whereHas('categories', function ($query) use ($allCategoryIds) {
