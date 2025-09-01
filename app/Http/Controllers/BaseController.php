@@ -52,7 +52,10 @@ use App\Http\Controllers\Controller;
  *     name="Products Report",
  *     description="API Endpoints for Product Report Management"
  * )
- *
+ *	@OA\Tag(
+ *     name="Products AI alternates",
+ *     description="API Endpoints for Products AI alternates"
+ * )
  * @OA\Tag(
  *     name="Categories",
  *     description="API Endpoints for Category Management"

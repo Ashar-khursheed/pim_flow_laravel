@@ -33222,7 +33222,7 @@
                 ],
                 "summary": "Get product report list",
                 "description": "Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
-                "operationId": "83addc73b5adab6c0ca229d3e5994a23",
+             
                 "parameters": [
                     {
                         "name":"range_from",
@@ -33274,6 +33274,96 @@
                          
                     }                    
                 ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/ai-products-alternates": {
+            "get": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Get product report list",
+                "description": "Report of products display with Total Suggestions Today,Pending Review,Approved this week,Rejected This Week,Overall AI Accuracy.",                             
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/get-ai-alternates": {
+            "get": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Get product report list",
+                "description": "Report of products display with Total Suggestions Today,Pending Review,Approved this week,Rejected This Week,Overall AI Accuracy.",
+                  "parameters": [   
+                     {
+                        "name":"range_from",
+                        "in": "query",
+                        "description": "Starting product index (must be >= 1)",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    {
+                        "name":"range_to",
+                        "in": "query",
+                        "description": "Ending product index (max range allowed: 500 products)",
+                        "type": "integer",
+                        "example": "500"
+                    },                                                          
+                    {
+                        "name":"search",
+                        "in": "query",
+                        "description": "Search by Sku",
+                        "type": "string"
+                         
+                    },                                       
+                    {
+                        "name":"rejection",
+                        "in": "query",
+                        "description": "Rejection",
+                        "type": "string"
+                         
+                    },                                       
+                    {
+                        "name":"reviewers",
+                        "in": "query",
+                        "description": "Reviewers",
+                        "type": "string"
+                         
+                    },                                       
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "Filter by Category id.",
+                        "schema": {
+                            "type": "integer"
+                                                   
+                        }
+                    }                                      
+                ],           
                 "responses": {
                     "200": {
                         "description": "Success",
