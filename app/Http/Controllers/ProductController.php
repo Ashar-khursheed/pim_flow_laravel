@@ -2837,173 +2837,173 @@ class ProductController extends BaseController
 		try {
 			$mainProduct = Product::findOrFail(trim($request->input('product')));
 			if (!empty($mainProduct)) {
-			$checkSku = Product::where('sku',trim( $mainProduct->sku . "-" . $request->input('sku')))->count();
+				$checkSku = Product::where('sku', trim($mainProduct->sku . "-" . $request->input('sku')))->count();
 
-			if(!$checkSku){
-				$product = new Product();
-				$product->name = $mainProduct->name;
-				$product->sku = $mainProduct->sku . "-" . $request->input('sku');
-				$product->website_ids = $mainProduct->website_ids;
-				$product->gen_type = $mainProduct->gen_type;
-				$product->description = $mainProduct->description;
-				$product->benefits_features = $mainProduct->benefits_features;
-				$product->images = $mainProduct->images;
-				$product->order = '0';
-				$product->is_featured = $mainProduct->is_featured;
-				$product->brand_id = $mainProduct->brand_id;
-				$product->quote_available = $mainProduct->quote_available;
-				$product->is_variation = $mainProduct->is_variation;
-				$product->tax_id = $mainProduct->tax_id;
-				$product->views = '0';
-				$product->stock_status = $mainProduct->stock_status;
-				$product->barcode = $mainProduct->barcode;
-				$product->approved_by = $mainProduct->approved_by;
-				$product->google_shopping_category = $mainProduct->google_shopping_category;
-				$product->google_shopping_mpn = $mainProduct->google_shopping_mpn;
-				$product->documents = $mainProduct->documents;
-				$product->video_path = $mainProduct->video_path;
-				$product->units_sold = $mainProduct->units_sold;
-				$product->frequently_bought_together = $mainProduct->frequently_bought_together;
-				$product->currency_id = $mainProduct->currency_id;
-				$product->status = 'draft';
-				$product->created_at = now();
-				$product->updated_at = now();
-				$product->save();
-				if (!empty($mainProduct->categories)) {
-					$categoryId = $mainProduct->categories->pluck('id')->toArray();
-					$this->saveProductCategory($product, $categoryId[0]);
-				}
+				if (!$checkSku) {
+					$product = new Product();
+					$product->name = $mainProduct->name;
+					$product->sku = $mainProduct->sku . "-" . $request->input('sku');
+					$product->website_ids = $mainProduct->website_ids;
+					$product->gen_type = $mainProduct->gen_type;
+					$product->description = $mainProduct->description;
+					$product->benefits_features = $mainProduct->benefits_features;
+					$product->images = $mainProduct->images;
+					$product->order = '0';
+					$product->is_featured = $mainProduct->is_featured;
+					$product->brand_id = $mainProduct->brand_id;
+					$product->quote_available = $mainProduct->quote_available;
+					$product->is_variation = $mainProduct->is_variation;
+					$product->tax_id = $mainProduct->tax_id;
+					$product->views = '0';
+					$product->stock_status = $mainProduct->stock_status;
+					$product->barcode = $mainProduct->barcode;
+					$product->approved_by = $mainProduct->approved_by;
+					$product->google_shopping_category = $mainProduct->google_shopping_category;
+					$product->google_shopping_mpn = $mainProduct->google_shopping_mpn;
+					$product->documents = $mainProduct->documents;
+					$product->video_path = $mainProduct->video_path;
+					$product->units_sold = $mainProduct->units_sold;
+					$product->frequently_bought_together = $mainProduct->frequently_bought_together;
+					$product->currency_id = $mainProduct->currency_id;
+					$product->status = 'draft';
+					$product->created_at = now();
+					$product->updated_at = now();
+					$product->save();
+					if (!empty($mainProduct->categories)) {
+						$categoryId = $mainProduct->categories->pluck('id')->toArray();
+						$this->saveProductCategory($product, $categoryId[0]);
+					}
 
-				if ($mainProduct->productAttributes) {
+					if ($mainProduct->productAttributes) {
 
-					$productAttributes = $mainProduct->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
-					if (is_array($productAttributes) && count($productAttributes) > 0) {
-						$productAttributes = array_filter($productAttributes, function ($value) {
-							return !is_null($value) && $value !== '';
-						});
+						$productAttributes = $mainProduct->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+						if (is_array($productAttributes) && count($productAttributes) > 0) {
+							$productAttributes = array_filter($productAttributes, function ($value) {
+								return !is_null($value) && $value !== '';
+							});
 
-						$existingProductAttributes = $mainProduct->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+							$existingProductAttributes = $mainProduct->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
 
-						$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
+							$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
 
-						if (!empty($attributesToDelete)) {
-							$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
-						}
-
-						foreach ($productAttributes as $attributeId => $attributeValue) {
-
-							$existingAttribute = Attribute::find($attributeId);
-							if (!$existingAttribute) {
-								return response()->json([
-									'success' => false,
-									'message' => "Attribute ID: $attributeId does not exist."
-								]);
+							if (!empty($attributesToDelete)) {
+								$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
 							}
 
-							$value = null;
-							$measurementUnitID = null;
+							foreach ($productAttributes as $attributeId => $attributeValue) {
 
-							if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
-								$value = $attributeValue['value'] ?? null;
-								$measurementUnitID = $attributeValue['measurement_id'] ?? null;
-
-								/* Validation: Either both should be present, or both should be empty (for delete) */
-								if (($value && !$measurementUnitID) || (!$value && $measurementUnitID)) {
-									$messages = [];
-
-									if (empty($value)) {
-										$messages[] = "Value not defined for attribute: {$existingAttribute->name}";
-									}
-									if (empty($measurementUnitID)) {
-										$messages[] = "Measurement Unit not defined or invalid for attribute: {$existingAttribute->name}";
-									}
-
+								$existingAttribute = Attribute::find($attributeId);
+								if (!$existingAttribute) {
 									return response()->json([
 										'success' => false,
-										'message' => implode(' | ', $messages)
-									], 400);
+										'message' => "Attribute ID: $attributeId does not exist."
+									]);
 								}
 
-								if (!$value && !$measurementUnitID) {
-									/* Both missing = delete the existing attribute */
-									$product->productAttributes()
-										->where('attribute_id', $attributeId)
-										->delete();
-								} else {
-									/* Both exist = update or create attribute */
-									$product->productAttributes()->updateOrCreate(
-										['attribute_id' => $attributeId],
-										[
-											'attribute_value' => $value,
-											'measurement_unit_id' => $measurementUnitID
-										]
-									);
-								}
-							} else {
-								$value = $attributeValue;
+								$value = null;
+								$measurementUnitID = null;
 
-								if (empty($value)) {
-									/* Delete non-measurement attribute if empty */
-									$product->productAttributes()
-										->where('attribute_id', $attributeId)
-										->delete();
+								if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
+									$value = $attributeValue['value'] ?? null;
+									$measurementUnitID = $attributeValue['measurement_id'] ?? null;
+
+									/* Validation: Either both should be present, or both should be empty (for delete) */
+									if (($value && !$measurementUnitID) || (!$value && $measurementUnitID)) {
+										$messages = [];
+
+										if (empty($value)) {
+											$messages[] = "Value not defined for attribute: {$existingAttribute->name}";
+										}
+										if (empty($measurementUnitID)) {
+											$messages[] = "Measurement Unit not defined or invalid for attribute: {$existingAttribute->name}";
+										}
+
+										return response()->json([
+											'success' => false,
+											'message' => implode(' | ', $messages)
+										], 400);
+									}
+
+									if (!$value && !$measurementUnitID) {
+										/* Both missing = delete the existing attribute */
+										$product->productAttributes()
+											->where('attribute_id', $attributeId)
+											->delete();
+									} else {
+										/* Both exist = update or create attribute */
+										$product->productAttributes()->updateOrCreate(
+											['attribute_id' => $attributeId],
+											[
+												'attribute_value' => $value,
+												'measurement_unit_id' => $measurementUnitID
+											]
+										);
+									}
 								} else {
-									/* Update or create normal attribute */
-									$product->productAttributes()->updateOrCreate(
-										['attribute_id' => $attributeId],
-										[
-											'attribute_value' => $value,
-											'measurement_unit_id' => null
-										]
-									);
+									$value = $attributeValue;
+
+									if (empty($value)) {
+										/* Delete non-measurement attribute if empty */
+										$product->productAttributes()
+											->where('attribute_id', $attributeId)
+											->delete();
+									} else {
+										/* Update or create normal attribute */
+										$product->productAttributes()->updateOrCreate(
+											['attribute_id' => $attributeId],
+											[
+												'attribute_value' => $value,
+												'measurement_unit_id' => null
+											]
+										);
+									}
+								}
+
+								if ($existingAttribute->type === 'select') {
+									if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
+										$existingAttribute->attributeValues()->create([
+											'attribute_value' => $value
+										]);
+									}
 								}
 							}
+						}
+					}
 
-							if ($existingAttribute->type === 'select') {
-								if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
-									$existingAttribute->attributeValues()->create([
-										'attribute_value' => $value
+					if ($mainProduct->faqs) {
+						$faqs = $mainProduct->faqs;
+						// Fetch existing FAQs for comparison
+						$existingFaqs = Faq::where('product_id', $mainProduct->id)->get()->keyBy('id');
+
+						if (!empty($faqs) && !empty($existingFaqs)) {
+							foreach ($faqs as $faqData) {
+								if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+
+									Faq::create([
+										'product_id' => $product->id,
+										'question' => $faqData['question'],
+										'answer' => $faqData['answer'],
+										'category_id' => $faqData['category_id'] ?? null,
+										'status' => 'published',
 									]);
 								}
 							}
 						}
 					}
+					return response()->json([
+						'success' => true,
+						'message' => 'Product created successfully',
+						'product' => $product
+					]);
+
+				} else {
+
+					return response()->json([
+						'success' => false,
+						'message' => 'This SKU already exists',
+						'product' => []
+					]);
 				}
-
-				if ($mainProduct->faqs) {
-					$faqs = $mainProduct->faqs;
-					// Fetch existing FAQs for comparison
-					$existingFaqs = Faq::where('product_id', $mainProduct->id)->get()->keyBy('id');
-
-					if (!empty($faqs) && !empty($existingFaqs)) {
-						foreach ($faqs as $faqData) {
-							if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-
-								Faq::create([
-									'product_id' => $product->id,
-									'question' => $faqData['question'],
-									'answer' => $faqData['answer'],
-									'category_id' => $faqData['category_id'] ?? null,
-									'status' => 'published',
-								]);
-							}
-						}
-					}
-				}
-				return response()->json([
-					'success' => true,
-					'message' => 'Product created successfully',
-					'product' => $product
-				]);
-
-			}else{
-
-				return response()->json([
-					'success' => false,
-					'message' => 'This SKU already exists',
-					'product' => []
-				]);
-			}
 
 			} else {
 
