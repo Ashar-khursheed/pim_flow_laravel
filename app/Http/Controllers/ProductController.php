@@ -374,7 +374,7 @@ class ProductController extends BaseController
 			'Store & Vendor Information' => ['brand_id'],
 			'Performance & Analytics' => ['views', 'units_sold'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
-			'Other' => ['order', 'website_ids', 'vendor'],
+			'Other' => ['order', 'website_ids'],
 			'All' => []
 		];
 
@@ -523,6 +523,16 @@ class ProductController extends BaseController
 			];
 		}
 
+		$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
+			return [
+				'id' => $vendor->id,
+				'vendor_sku' => $vendor->vendor_sku,
+				'name' => $vendor->name,
+				'price' => $vendor->pivot->price ?? null,
+				'sale_price' => $vendor->pivot->sale_price ?? null,
+			];
+		});
+
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
 
@@ -588,18 +598,6 @@ class ProductController extends BaseController
 							'name' => $product->brand->name
 						]
 					] : null;
-					break;
-
-				case 'vendor':
-					$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
-						return [
-							'id' => $vendor->id,
-							'vendor_sku' => $vendor->vendor_sku,
-							'name' => $vendor->name,
-							'price' => $vendor->pivot->price ?? null,
-							'sale_price' => $vendor->pivot->sale_price ?? null,
-						];
-					});
 					break;
 
 				case 'categories':
