@@ -33236,7 +33236,7 @@
                         "in": "query",
                         "description": "Ending product index (max range allowed: 500 products)",
                         "type": "integer",
-                        "example": 500
+                        "example": "500"
                     },                     
                     {
                         "name": "approved",
