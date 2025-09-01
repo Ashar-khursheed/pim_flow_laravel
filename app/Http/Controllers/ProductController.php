@@ -523,7 +523,7 @@ class ProductController extends BaseController
 			];
 		}
 
-		$formattedProduct['product_suppliers'] = $product->productSupplier->map(function ($productSupplier) {
+		$formattedProduct['product_suppliers'] = $product->productSuppliers->map(function ($productSupplier) {
 			return [
 				'id' => $productSupplier->id,
 				'product_id' => $productSupplier->product_id,
