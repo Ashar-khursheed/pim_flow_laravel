@@ -405,6 +405,12 @@ class ProductController extends BaseController
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product does not exist.'
+			]);
+		}
 		// Extract first vendor's price and sale_price
 		$firstVendor = $product->vendors->first();
 		$productPrice = $firstVendor?->pivot?->price ?? null;
@@ -453,14 +459,6 @@ class ProductController extends BaseController
 			}
 
 			unset($ref); // Clear reference
-		}
-
-
-		if (!$product) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Product does not exist.'
-			]);
 		}
 
 		/* Fetch reviews where customer_id is null */
