@@ -2837,6 +2837,9 @@ class ProductController extends BaseController
 		try {
 			$mainProduct = Product::findOrFail(trim($request->input('product')));
 			if (!empty($mainProduct)) {
+			$checkSku = Product::where('sku',trim( $mainProduct->sku . "-" . $request->input('sku')))->count();
+
+			if(!$checkSku){
 				$product = new Product();
 				$product->name = $mainProduct->name;
 				$product->sku = $mainProduct->sku . "-" . $request->input('sku');
@@ -2992,6 +2995,15 @@ class ProductController extends BaseController
 					'message' => 'Product created successfully',
 					'product' => $product
 				]);
+
+			}else{
+
+				return response()->json([
+					'success' => false,
+					'message' => 'This SKU already exists',
+					'product' => []
+				]);
+			}
 
 			} else {
 
