@@ -523,8 +523,16 @@ class ProductController extends BaseController
 			];
 		}
 
-		$formattedProduct['product_suppliers'] = $product->productSuppliers->map(function ($productSupplier) {
-			return $productSupplier->toArray() + [
+		$formattedProduct['product_suppliers'] = $product->productSupplier->map(function ($productSupplier) {
+			return [
+				'id' => $productSupplier->id,
+				'product_id' => $productSupplier->product_id,
+				'vendor_id' => $productSupplier->vendor_id,
+				'vendor_sku' => $productSupplier->vendor_sku,
+				'total_cost_per_item' => $productSupplier->total_cost_per_item,
+				'inventory' => $productSupplier->inventory,
+				'in_stock' => $productSupplier->in_stock,
+				'vendor_id' => $productSupplier->vendor_id,
 				'vendor_name' => $productSupplier->vendor->name,
 			];
 		});
