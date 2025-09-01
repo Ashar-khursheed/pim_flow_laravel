@@ -507,7 +507,7 @@ class AttributeController extends BaseController
 		$products = $products->whereHas('categories', fn($query) => $query->whereIn('category_id', $leafCategoryIds));
 		if ($request->brand_id) {
 			$products = $products->whereHas('brand', function ($query) use ($request) {
-				$query->whereIn('id', $request->brand_id);
+				$query->where('id', $request->brand_id);
 			});
 		}
 		$products = $products->offset($request->range_from - 1)
