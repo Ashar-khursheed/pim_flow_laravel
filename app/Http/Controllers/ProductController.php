@@ -523,13 +523,9 @@ class ProductController extends BaseController
 			];
 		}
 
-		$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
-			return [
-				'id' => $vendor->id,
-				'vendor_sku' => $vendor->pivot->vendor_sku,
-				'name' => $vendor->name,
-				'price' => $vendor->pivot->price ?? null,
-				'sale_price' => $vendor->pivot->sale_price ?? null,
+		$formattedProduct['product_suppliers'] = $product->productSuppliers->map(function ($productSupplier) {
+			return $productSupplier->toArray() + [
+				'vendor_name' => $productSupplier->vendor->name,
 			];
 		});
 
