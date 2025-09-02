@@ -8,6 +8,7 @@ use OpenApi\Annotations as OA;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Frontend\Wishlist; // Add this at the top of your Product model
 use App\Models\Frontend\ProductQuestion;
+use App\Models\FrontEnd\AlternateProduct;
 use App\Models\SeoManagement;
 /**
  * @OA\Schema(
@@ -254,20 +255,26 @@ class Product extends Model
 	{
 		return $this->hasMany(ProductQuestion::class);
 	}
+	public function alternateProducts()
+    {
+        return $this->hasMany(AlternateProduct::class, 'product_id', 'id');
+    }
 
 	public function category_url()
-	{
-		$category = $this->latestChildCategory();
-		return $category->seoUrl ? $category->seoUrl->url : null;
-	}
+    {
+        $category = $this->latestChildCategory();
+        return $category->seoUrl ? $category->seoUrl->url : null;
+    }
+ 
+    public function parent_category_url()
+    {
+        $category = $this->latestChildCategory();
+        $mostParent = $category?->most_parent;
+ 
+        return $mostParent && $mostParent->seoUrl
+        ? $mostParent->seoUrl->url
+        : null;
+    }
 
-	public function parent_category_url()
-	{
-		$category = $this->latestChildCategory();
-		$mostParent = $category?->most_parent;
-
-		return $mostParent && $mostParent->seoUrl
-		? $mostParent->seoUrl->url
-		: null;
-	}
+	
 }

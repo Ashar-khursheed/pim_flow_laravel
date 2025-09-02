@@ -102,112 +102,94 @@ class ProductReportController extends Controller
 
 	public function index(Request $request, ExcelRepository $excelRepo)
 	{
-		$perPage = $request->input('page');
-		$length = $request->input('length');
-		$search = trim($request->input('search'));
-		$status = trim($request->input('status'));
-		$approved = trim($request->input('approved'));
-		$brand = trim($request->input('brand'));
-		$category = trim($request->input('category'));
-		$sortBy = $request->input('sort_by', 'id');
-		$sortDirection = $request->input('sort_direction', 'desc');
-
 		/* Validate request data */
 		$request->validate([
 			'status' => 'string|in:draft,published',
 			'approved' => 'string|in:0,1',
-			// 'brand' => 'integer',
-			'sort_by' => 'required',
-
+			'range_from' => 'required|integer|min:1',
+			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 500),
+			'type' => 'required|string|in:Brand,Category,Vendor',
+			'relational_id' => 'required|integer',
 		]);
-
-		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
-		if (!in_array($sortBy, $allowedSortColumns)) {
-			$sortBy = 'id'; // Default to id if invalid column
-		}
-
-		// Validate sort direction
-		if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
-			$sortDirection = 'desc'; // Default to descending if invalid direction
-		}
-
+		
 		$query = Product::with([
 			'brand:id,name',
 			'categories:id,name',
 			'slug:id,key,reference_id',
 			'productSuppliers',
-			'vendors'
-		])
-			->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
-		// Apply status filter
-		if ($status !== null) {
-			$query->where('status', $status);
+			'vendors',
+			'productAttributes.attributeDetails',
+			'latestChildCategoryRelation:id,name'
+
+		])->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
+		/* Apply relational filters */
+		if (!empty($request->status)) {
+			$query->where('status', $request->status);
 		}
-		if ($approved !== null) {
-			$query->where('approved', $approved);
+		if ($request->approved != '') {
+			$query->where('approved', $request->approved);
 		}
-		if (!empty($category)) {
-			$query->where(function ($q) use ($category) {
-				$q->whereHas('categories', function ($categoryQuery) use ($category) {
-					$categoryQuery->where('id', $category);
-				});
+		if ($request->type == "Brand") {
+			$query->where('brand_id', $request->relational_id);
+		} elseif ($request->type == "Category") {
+			$category = Category::find($request->relational_id);
+			$leafCategories = Category::getLeafCategories($category);
+			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
+				$q->whereIn('category_id', $leafCategoryIds);
 			});
 		}
 
-		if (!empty($brand)) {
-			$query->where(function ($q) use ($brand) {
-				$q->whereHas('brand', function ($brandQuery) use ($brand) {
-					$brandQuery->where('id', $brand);
-				});
-			});
-		}
-
-		if (!empty($search)) {
-			$query->where(function ($q) use ($search) {
-				$q->where('name', 'like', "%{$search}%")
-					->orWhere('sku', 'like', "%{$search}%")
-					->orWhereHas('brand', function ($brand) use ($search) {
-						$brand->where('name', 'like', "%{$search}%");
-					})
-
-					->orWhereHas('categories', function ($categoryQuery) use ($search) {
-						$categoryQuery->where('name', 'like', "%{$search}%");
-					});
-			});
-		}
-		
-		$products = $query->orderBy($sortBy, $sortDirection);
-		if ($length) {
-			$products = $products->paginate($length);
-		} else {
-			$products = $products->get();
-		}
+		$products = $query->offset($request->range_from - 1)
+			->limit($request->range_to - $request->range_from + 1)
+			->orderBy('id', 'asc')
+			->get();
 
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
+
+			foreach ($product->productAttributes as $attr) {
+				$product_attributes[] = [
+					'attribute_id' => $attr->attribute_id,
+					'attribute_name' => $attr->attributeDetails->name ?? null,
+					'attribute_value' => $attr->attribute_value,
+					'measurement_unit_id' => $attr->measurement_unit_id,
+					'measurement_unit_name' => $attr->measurementUnit->name ?? null,
+				];
+			}
+
 			$brands = "";
 			if ($product->brand) {
 				$brands = Brand::withCount('products')->where('id', $product->brand->id)->first();
 			}
+			if (!empty($product_attributes)) {
+				foreach ($product_attributes as $attributes) {
 
-			return [
-				'id' => $product->id,
-				'name' => $product->name,
-				'approved' => $product->approved,
-				'sku' => $product->sku,
-				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-				'brand_id' => optional($product->brand)->id,
-				'brand' => optional($product->brand)->name,
-				'status' => $product->status,
-				'category_id' => $product->categories->pluck('id')->implode(', '),
-				'category_name' => $product->categories->pluck('name')->implode(', '),
-				'category_count' => $product->categories->count(),
-				'product_count' => $brands ? $brands->products_count : null,
-			];
+					$data[] = [
+						'id' => $product->id,
+						'name' => $product->name,
+						'approved' => $product->approved,
+						'sku' => $product->sku,
+						'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+						'brand_id' => optional($product->brand)->id,
+						'brand' => optional($product->brand)->name,
+						'status' => $product->status,
+						'category_id' => $product->categories->pluck('id')->implode(', '),
+						'category_name' => $product->categories->pluck('name')->implode(', '),
+						'category_count' => $product->categories->count(),
+						'product_count' => $brands ? $brands->products_count : null,
+						'attribute_id' => $attributes['attribute_id'],
+						'attribute_name' => $attributes['attribute_name'] ?? null,
+						'attribute_value' => $attributes['attribute_value'],
+						'measurement_unit_id' => $attributes['measurement_unit_id'],
+						'measurement_unit_name' => $attributes['measurement_unit_name'] ?? null,
+					];
+				}
+				return $data;
+			}
 		});
 
-		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count'];
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count', 'attribute_id', 'attribute_name', 'attribute_value', 'measurement_unit_id', 'measurement_unit_name'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
@@ -218,10 +200,13 @@ class ProductReportController extends Controller
 
 		/* Fill data rows */
 		$rowIndex = 2;
-		foreach ($formattedProducts as $recordRow) {
-			$excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
-		}
+		foreach ($formattedProducts as $firstRow) {
+			foreach ($firstRow as $recordRow) {
 
+				$excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
+			}
+		}
+		//xlsx
 		$fileName = 'product_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}

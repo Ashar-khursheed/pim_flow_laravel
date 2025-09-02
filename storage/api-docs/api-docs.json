@@ -16,6 +16,120 @@
         }
     },
     "paths": {
+        "/api/ai-products-alternates": {
+            "get": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Get a list of Products AI alternates",
+                "description": "Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
+                "operationId": "83ecc5e745644578c08996462ac604e4",
+                "responses": {
+                    "200": {
+                        "description": "Product report Excel file",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/get-ai-alternates": {
+            "get": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Get a list of Products AI alternates",
+                "description": "Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
+                "operationId": "defb0555db6ffd8f9b6c096da33f32b7",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by SKU",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    },
+                    {
+                        "name": "range_from",
+                        "in": "query",
+                        "description": "Starting product index (must be >= 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "range_to",
+                        "in": "query",
+                        "description": "Ending product index (max range allowed: 500 products)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 500
+                        }
+                    },
+                    {
+                        "name": "rejection",
+                        "in": "query",
+                        "description": "Search by rejection",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    },
+                    {
+                        "name": "reviewers",
+                        "in": "query",
+                        "description": "Search by reviewers",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "Filter by Category id",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/abandoned-carts": {
             "get": {
                 "tags": [
@@ -14147,6 +14261,75 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/frontend/compare-table-product": {
+            "post": {
+                "tags": [
+                    "Compare Products"
+                ],
+                "summary": "Fetch product compare by ID",
+                "description": "Accepts a single product ID and returns its details",
+                "operationId": "29ef3b245c471248b158e690739e3ad9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id": {
+                                        "description": "Single product ID to compare",
+                                        "type": "integer",
+                                        "example": 101
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "sku": {
+                                                    "type": "string",
+                                                    "example": "SKU12345"
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Test Product"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    }
+                }
             }
         },
         "/api/frontend/contact-directories": {
@@ -36941,6 +37124,10 @@
             "description": "API Endpoints for Product Report Management"
         },
         {
+            "name": "Products AI alternates",
+            "description": "API Endpoints for Products AI alternates"
+        },
+        {
             "name": "Categories",
             "description": "API Endpoints for Category Management"
         },
@@ -37090,6 +37277,10 @@
         {
             "name": "Frontend Company Profiles",
             "description": "Frontend Company Profiles"
+        },
+        {
+            "name": "Compare Products",
+            "description": "Compare Products"
         },
         {
             "name": "Frontend ContactDirectory",
