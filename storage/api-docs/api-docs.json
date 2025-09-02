@@ -28315,6 +28315,28 @@
                 "summary": "Create a product duplicate",
                 "description": "Creates a new product with the required details.",
                 "operationId": "36292e068d0fb7811644935f30fdee50",
+                "parameters": [
+                    {
+                        "name": "product",                        
+                        "in": "query",
+                        "description": "Enter Product id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": "1"
+                        }
+                    },
+                    {
+                        "name": "sku",
+                        "in": "query",
+                        "description": "Enter Sku",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Success",
@@ -29199,131 +29221,72 @@
                     }
                 ]
             }
-        },
+        },        
         "/api/product-report-export": {
             "get": {
                 "tags": [
                     "Products Report"
                 ],
                 "summary": "Get product report list",
-                "description": "Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
-                "operationId": "ff314864e00c70302363b737bcc06954",
+                "description": "Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
+                "operationId": "83addc73b5adab6c0ca229d3e5994a23",
                 "parameters": [
                     {
-                        "name": "page",
+                        "name":"range_from",
                         "in": "query",
-                        "description": "Page number for pagination",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
+                        "description": "Starting product index (must be >= 1)",
+                        "type": "integer",
+                        "example": 1
                     },
                     {
-                        "name": "per_page",
+                        "name":"range_to",
                         "in": "query",
-                        "description": "Number of products per page (default: 50)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 50
-                        }
-                    },
+                        "description": "Ending product index (max range allowed: 500 products)",
+                        "type": "integer",
+                        "example": 500
+                    },                     
                     {
-                        "name": "search",
+                        "name": "approved",
                         "in": "query",
-                        "description": "Search term for filtering products by name, SKU, brand, store, or category",
-                        "required": false,
+                        "description": "Approved status 0 or 1",
                         "schema": {
                             "type": "string",
-                            "example": "samsung"
+                            "enum":["0","1"]
                         }
                     },
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Filter products by status (published, draft)",
-                        "required": false,
+                        "description": "Status published/draft",
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "published",
-                                "draft"
-                            ],
-                            "example": "published"
+                           "enum": ["published", "draft"]
                         }
+                       
                     },
                     {
-                        "name": "approved",
+                        "name": "type",
                         "in": "query",
-                        "description": "Filter approved by status (0 = not approved, 1 = approved)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "enum": [
-                                0,
-                                1
-                            ],
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "brand",
-                        "in": "query",
-                        "description": "Filter by brand id",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 5
-                        }
-                    },
-                    {
-                        "name": "category",
-                        "in": "query",
-                        "description": "Filter by category id",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 3
-                        }
-                    },
-                    {
-                        "name": "sort_by",
-                        "in": "query",
-                        "description": "Column to sort by (id, name, sku, brand_id, vendor_id, status)",
-                        "required": false,
+                        "description": "Filter by Brand,Category,Vendor.",
                         "schema": {
                             "type": "string",
-                            "example": "id"
+                            "enum": ["Brand","Category"]                             
                         }
                     },
                     {
-                        "name": "sort_direction",
+                        "name":"relational_id",
                         "in": "query",
-                        "description": "Sort direction (asc or desc)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ],
-                            "example": "desc"
-                        }
-                    }
+                        "description": "Enter brand id, category id",
+                        "type": "integer"
+                         
+                    }                    
                 ],
                 "responses": {
                     "200": {
-                        "description": "Product report Excel file",
+                        "description": "Success",
                         "content": {
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+                            "application/json": {}
                         }
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    },
-                    "500": {
-                        "description": "Server error"
                     }
                 },
                 "security": [
@@ -29333,6 +29296,7 @@
                 ]
             }
         },
+		
         "/api/product-suppliers": {
             "get": {
                 "tags": [
