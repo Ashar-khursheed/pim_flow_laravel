@@ -171,4 +171,19 @@ class Category extends Model
 		->select('ec_brands.id', 'ec_brands.name')
 		->distinct();
 	}
+
+	public function allBrandsFromLeaves()
+	{
+		$leafCategories = self::getLeafCategories($this);
+
+		$leafIds = $leafCategories->pluck('id')->toArray();
+
+		return Product::query()
+			->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
+			->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
+			->whereIn('product_categories.category_id', $leafIds)
+			->select('ec_brands.id', 'ec_brands.name')
+			->distinct()
+			->get();
+	}
 }
