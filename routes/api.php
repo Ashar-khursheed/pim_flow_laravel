@@ -9,6 +9,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReportController;
+use App\Http\Controllers\AIAlternateProductController;
 use App\Http\Controllers\CategoryPageController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\StoreController;
@@ -414,6 +415,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
  
 
 	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
+	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
+	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);	 
  
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
