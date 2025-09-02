@@ -13,10 +13,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 
-use App\Models\FrontEnd\PrePurchaseClaim;
-use App\Mail\Welcome\PreClaimMail;
+use App\Models\FrontEnd\PostPurchaseClaim;
+use App\Mail\Welcome\PostClaimMail;
 
-class PreClaimMailJob implements ShouldQueue
+class PostClaimMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 	public $timeout = 600;
@@ -29,10 +29,10 @@ class PreClaimMailJob implements ShouldQueue
 
 	public function handle(): void
 	{
-		$claim = PrePurchaseClaim::find($this->claimId);
+		$claim = PostPurchaseClaim::find($this->claimId);
 
 		if (!$claim) {
-			$this->fail(new \Exception("Pre purchase claim {$this->claimId} not found"));
+			$this->fail(new \Exception("Post purchase claim {$this->claimId} not found"));
 			return;
 		}
 
@@ -44,7 +44,7 @@ class PreClaimMailJob implements ShouldQueue
 			$to = $claim->customer->email;
 			Mail::to($to)->send(
 				(
-					new PreClaimMail($claim)
+					new PostClaimMail($claim)
 				)
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)

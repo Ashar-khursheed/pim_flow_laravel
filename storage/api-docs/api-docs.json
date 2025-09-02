@@ -1563,6 +1563,11 @@
                                         "type": "integer",
                                         "example": 1
                                     },
+                                    "brand_id": {
+                                        "description": "Brand ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "range_from": {
                                         "description": "Starting range (must be >=1)",
                                         "type": "integer",
@@ -17202,6 +17207,10 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "is_cod": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "paid_amount": {
                                         "type": "number",
                                         "format": "float",
@@ -17938,6 +17947,196 @@
                     },
                     "404": {
                         "description": "Payment not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/post-purchase-claims": {
+            "get": {
+                "tags": [
+                    "FrontEnd-PostPurchaseClaims"
+                ],
+                "summary": "Get all post purchase claims of the authenticated customer",
+                "operationId": "74f763cbd61f40916f86eba078a1aacb",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "order_number",
+                                "product_name",
+                                "customer_city",
+                                "customer_zipcode",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "FrontEnd-PostPurchaseClaims"
+                ],
+                "summary": "Create a new post-purchase claim",
+                "operationId": "19cd6c7f8f0fe57729bb2b3fbe393746",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "order_id",
+                                    "order_product_id",
+                                    "competitor_product_url",
+                                    "competitor_product_price",
+                                    "is_confirm",
+                                    "is_agree"
+                                ],
+                                "properties": {
+                                    "order_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "order_product_id": {
+                                        "type": "integer",
+                                        "example": 1001
+                                    },
+                                    "competitor_product_url": {
+                                        "type": "string",
+                                        "example": "https://competitor.com/product/xyz"
+                                    },
+                                    "competitor_product_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 180
+                                    },
+                                    "competitor_product_shipping_charge": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
+                                    "competitor_screenshot": {
+                                        "description": "Competitor screenshot image (jpeg, png, jpg, webp, max:2MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "is_confirm": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_agree": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/post-purchase-claims/{id}": {
+            "get": {
+                "tags": [
+                    "FrontEnd-PostPurchaseClaims"
+                ],
+                "summary": "Get post purchase claim details",
+                "operationId": "e277fcfddceacfd3d469b4e43de7fe94",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Claim ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -26099,6 +26298,123 @@
                                     "type": "object"
                                 }
                             }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/post-purchase-claims": {
+            "get": {
+                "tags": [
+                    "PostPurchaseClaims"
+                ],
+                "summary": "Get all post purchase claims of the authenticated customer",
+                "operationId": "9a16c6f4f8a0e6855e8f23a58d6ab129",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "customer_name",
+                                "customer_email",
+                                "order_number",
+                                "product_name",
+                                "customer_city",
+                                "customer_zipcode",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/post-purchase-claims/{id}": {
+            "get": {
+                "tags": [
+                    "PostPurchaseClaims"
+                ],
+                "summary": "Get post purchase claim details",
+                "operationId": "c48c764e0798f508785ccba5bd226edb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Claim ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 },
@@ -36966,6 +37282,10 @@
             "description": "Frontend-Payment History"
         },
         {
+            "name": "FrontEnd-PostPurchaseClaims",
+            "description": "FrontEnd-PostPurchaseClaims"
+        },
+        {
             "name": "FrontEnd-PrePurchaseClaims",
             "description": "FrontEnd-PrePurchaseClaims"
         },
@@ -37068,6 +37388,10 @@
         {
             "name": "Payments",
             "description": "Payments"
+        },
+        {
+            "name": "PostPurchaseClaims",
+            "description": "PostPurchaseClaims"
         },
         {
             "name": "Pre Onboarding Vendors",

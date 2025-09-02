@@ -1077,6 +1077,8 @@ class ProductController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
+                'category_url' => $product->category_url(),
+                'parent_category_url' => $product->parent_category_url(),
                 'images' => $cleanedImages,
                 'alt_tags' => $cleanedAlt,
                 "url" => $product->seoUrl->url ?? null,
@@ -1232,6 +1234,8 @@ class ProductController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
+                'category_url' => $product->category_url(),
+                 'parent_category_url' => $product->parent_category_url(),
                 'images' => $product->images,
                  'alt_tags' => $product->alt_tags,
                 "url" => $product->seoUrl->url ?? null,
@@ -1378,6 +1382,8 @@ class ProductController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
+                'category_url' => $product->category_url(),
+                 'parent_category_url' => $product->parent_category_url(),
                 'images' => $product->images,
                 'alt_tags' => $product->alt_tags,
                 "url" => $product->seoUrl->url ?? null,
@@ -1616,35 +1622,42 @@ class ProductController extends Controller
 
     public function getCategoryWiseRandomProducts(Request $request, $category)
     {
-       $categoryModel = Category::where('id', $category)
-        ->orWhere('slug', $category)
-        ->orWhereHas('seoUrl', function($q) use ($category) {
-            $q->where('url', $category);
-        })
-        ->first();
-            if (!$categoryModel) {
-                return response()->json(['error' => 'Category not found'], 404);
-            }
+        $categoryModel = Category::where('id', $category)
+            ->orWhere('slug', $category)
+            ->orWhereHas('seoUrl', function($q) use ($category) {
+                $q->where('url', $category);
+            })
+            ->first();
 
-            $categoryId = $categoryModel->id;
+        if (!$categoryModel) {
+            return response()->json(['error' => 'Category not found'], 404);
+        }
 
+        $categoryId = $categoryModel->id;
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
 
-      $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute', 'seoUrl']) // add seoUrl here
-     ->where('status', 'published')
-        ->whereHas('categories', function ($query) use ($allCategoryIds) {
-            $query->whereIn('categories.id', $allCategoryIds);
-        })
-        ->inRandomOrder()
-        ->take(15)
-        ->get();
-
+        $products = Product::with([
+                'reviews', 
+                'currency', 
+                'productSuppliers', 
+                'sellingUnitAttribute', 
+                'ingredientsAttribute', 
+                'seoUrl'
+            ])
+            ->where('status', 'published')
+            ->whereHas('categories', function ($query) use ($allCategoryIds) {
+                $query->whereIn('categories.id', $allCategoryIds);
+            })
+            ->inRandomOrder()
+            ->take(15)
+            ->get();
 
         if ($products->isEmpty()) {
             return response()->json(['message' => 'No products found in this category or its children'], 404);
         }
 
         $data = $products->map(function ($product) {
+            // Process images
             $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
             $cleanedImages = collect($imageArray)->map(function ($item) {
                 if (is_string($item) && str_starts_with($item, '[')) {
@@ -1654,7 +1667,8 @@ class ProductController extends Controller
                 return [$item];
             })->flatten()->filter()->values();
 
-              $AltArray = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true);
+            // Process alt tags
+            $AltArray = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true);
             $cleanedAlt = collect($AltArray)->map(function ($item) {
                 if (is_string($item) && str_starts_with($item, '[')) {
                     $decoded = json_decode($item, true);
@@ -1663,6 +1677,7 @@ class ProductController extends Controller
                 return [$item];
             })->flatten()->filter()->values();
 
+            // Selling type
             $sellingType = null;
             if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                 $fullValue = $product->sellingUnitAttribute->attribute_value;
@@ -1673,59 +1688,60 @@ class ProductController extends Controller
                     $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
                 }
             }
-            if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
-                $fullValue = $product->ingredientsAttribute->attribute_value;
-            }
 
             // Calculate per unit price
             $unitsPerCase = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
             $packType = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 
-
-                $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-                $perUnitPrice = null;
-
-                if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-                    $unitValue = (float) $unitsPerCase->attribute_value;
-                    if ($unitValue > 0) {
-                        $calculated = round($basePrice / $unitValue, 2);
-                        $perUnitPrice = $calculated .  '/' . ($packType?->attribute_value ?? '');
-                    }
+            $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+            $perUnitPrice = null;
+            if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                $unitValue = (float) $unitsPerCase->attribute_value;
+                if ($unitValue > 0) {
+                    $calculated = round($basePrice / $unitValue, 2);
+                    $perUnitPrice = $calculated . '/' . ($packType?->attribute_value ?? '');
                 }
+            }
+            $product->per_unit_price = $perUnitPrice;
 
-                $product->per_unit_price = $perUnitPrice;
+        $firstSupplier = $product->productSuppliers->first();
 
-            $firstSupplier = $product->productSuppliers->first();
+        $price = $firstSupplier ? (float) $firstSupplier->price : null;
+        $salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : null;
+        $vendorSku = $firstSupplier?->vendor_sku;
+        $vendorId = $firstSupplier?->vendor_id;
 
-            return [
-                "id" => $product->id,
-                "name" => $product->name,
-                "sku" => $product->sku,
-                "url" => $product->seoUrl->url ?? null,
-                "total_reviews" => $product->reviews->count(),
-                "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
-                "left_stock" => $product->left_stock ?? 0,
-                "currency" => $product->currency->symbol ?? '$',
-                "images" => $cleanedImages,
-                 "alt_tags" => $cleanedAlt,
-                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                'price' => (float) ($firstSupplier->price ?? 0),
-                "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
-                "original_price"=> (float) ($firstSupplier->price ?? 0),
-                'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
-                "best_price"=> (float) ($firstSupplier->price ?? 0),
-                "selling_type"=> $sellingType ?? null, // ⚠️ also undefined in your code
-                "per_unit_price"=> $details->per_unit_price ?? null, // ⚠️ also undefined in your code
-                'vendor_id' => $firstSupplier->vendor_id ?? null,
-                'map' => (float) ($firstSupplier->map ?? 0),
-                'inventory' => $firstSupplier->inventory ?? null,
-                'in_stock' => $firstSupplier->in_stock ?? null,
-                'delivery_days' => $firstSupplier->delivery_days ?? null,
-                'return_policy' => $firstSupplier->return_policy ?? null,
-                'free_shipping' => $firstSupplier->free_shipping ?? null,
-                'warranty_information' => $firstSupplier->warranty_information ?? null,
-            ];
-            
+        return [
+            "id" => $product->id,
+            "name" => $product->name,
+            'category_url' => $product->category_url(),
+            'parent_category_url' => $product->parent_category_url(),
+        "sku" => $product->sku,
+        "url" => $product->seoUrl->url ?? null,
+        "total_reviews" => $product->reviews->count(),
+        "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
+        "left_stock" => $product->left_stock ?? 0,
+        "currency" => $product->currency->symbol ?? '$',
+        "images" => $cleanedImages,
+        "alt_tags" => $cleanedAlt,
+        "vendor_sku" => $vendorSku,
+        "price" => $price ?? 0,
+        "sale_price" => $salePrice ?? 0,
+        "original_price" => $price ?? 0,
+        "front_sale_price" => $salePrice ?: $price ?? 0,
+        "best_price" => $price ?? 0,
+        "selling_type" => $sellingType,
+        "per_unit_price" => $product->per_unit_price,
+        "vendor_id" => $vendorId,
+        "map" => $firstSupplier ? (float) $firstSupplier->map : 0,
+        "inventory" => $firstSupplier->inventory ?? null,
+        "in_stock" => $firstSupplier->in_stock ?? null,
+        "delivery_days" => $firstSupplier->delivery_days ?? null,
+        "return_policy" => $firstSupplier->return_policy ?? null,
+        "free_shipping" => $firstSupplier->free_shipping ?? null,
+        "warranty_information" => $firstSupplier->warranty_information ?? null,
+        ];
+
         });
 
         return response()->json([
@@ -1733,6 +1749,7 @@ class ProductController extends Controller
             'data' => $data,
         ])->header('Cache-Control', 'public, max-age=86400');
     }
+
 
     /**
      * @OA\Get(
@@ -1908,6 +1925,8 @@ class ProductController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
+                'category_url' => $product->category_url(),
+                'parent_category_url' => $product->parent_category_url(),
                 "images" => $cleanedImages,
                 "alt_tags" => $cleanedAlt,
                 'video_url' => $product->video_url,

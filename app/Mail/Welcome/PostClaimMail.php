@@ -7,45 +7,49 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
-use App\Models\FrontEnd\Customer;
+use App\Models\FrontEnd\PostPurchaseClaim;
 
-class WelcomeMail extends Mailable
+class PostClaimMail extends Mailable
 {
 	use Queueable, SerializesModels;
 
-	public $customer;
+	public $claim;
 
 	/**
 	 * Create a new message instance.
 	 */
-	public function __construct(Customer $customer)
+	public function __construct(PostPurchaseClaim $claim)
 	{
-		$this->customer = $customer;
+		$this->claim = $claim;
 	}
 
 	public function build()
 	{
-		$customer = $this->customer;
+		$claim = $this->claim;
+
+		$orderNumber = $claim->order->order_number;
 
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
-		$name = $customer->name ?? 'User';
-		$websiteUrl = url("/");
-		$regionName = config('app.website') == 'UAE' ? "Middle East’s":"America’s";
+		$name = $claim->customer->name ?? 'User';
+		$rightPngURL = $backendURL. '/right.png';
+		$claimId = $claim->id;
+
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
 
 		$params = [
+			'orderNumber' => $orderNumber,
 			'logoUrl' => $logoUrl,
 			'name' => $name,
-			'websiteUrl' => $websiteUrl,
-			'regionName' => $regionName,
+			'rightPngURL' => $rightPngURL,
+			'claimId' => $claimId,
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject("Welcome to HorecaStore — Let’s Bring Your Dream to Life")
-		->markdown('emails.welcome.welcome')
+		return $this->subject("Your Price Match claim has been submitted")
+		->markdown('emails.welcome.post-claim')
 		->with($params);
 	}
 }

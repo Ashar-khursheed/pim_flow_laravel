@@ -101,13 +101,17 @@ class Category extends Model
 	{
 		return $this->morphOne(SeoManagement::class, 'relational');
 	}
+
 	public function seoUrl()
-{
-    return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
-                ->where('relational_type', 'Category');
-}
-
-
+	{
+		// return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
+		// ->where('relational_type', 'Category');
+		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
+		->where(function ($query) {
+			$query->where('relational_type', 'Category')
+			->orWhere('relational_type', static::class);
+		});
+	}
 
 	public function subCategories()
 	{
@@ -144,5 +148,42 @@ class Category extends Model
 			'category_id',
 			'attribute_id'
 		);
+	}
+
+	public function getMostParentAttribute()
+	{
+		$category = $this;
+		while ($category->parent) {
+			$category = $category->parent;
+		}
+		return $category;
+	}
+
+	public function categoryBrands()
+	{
+		return $this->belongsToMany(
+			Product::class,
+			'product_categories',
+			'category_id',
+			'product_id'
+		)
+		->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
+		->select('ec_brands.id', 'ec_brands.name')
+		->distinct();
+	}
+
+	public function allBrandsFromLeaves()
+	{
+		$leafCategories = self::getLeafCategories($this);
+
+		$leafIds = $leafCategories->pluck('id')->toArray();
+
+		return Product::query()
+			->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
+			->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
+			->whereIn('product_categories.category_id', $leafIds)
+			->select('ec_brands.id', 'ec_brands.name')
+			->distinct()
+			->get();
 	}
 }

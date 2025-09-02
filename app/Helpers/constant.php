@@ -472,9 +472,32 @@ function convertNumberToWords($amount, $currencyMain = 'U.S. Dollars', $currency
 	$whole = implode(', ', array_reverse($str));
 	$whole = preg_replace('/\s+/', ' ', $whole);
 
-	$fraction = $decimal > 0 ? ' and ' . convertNumberToWords($decimal, $currencyFraction, '') : '';
+	/* Handle fraction separately */
+	$fraction = '';
+	if ($decimal > 0) {
+		$fractionWords = convertNumberChunkToWords($decimal, $words);
+		$fraction = " and $fractionWords $currencyFraction";
+	}
 
 	return trim("$whole $currencyMain$fraction Only");
+}
+
+/* Helper function just for fraction */
+function convertNumberChunkToWords($number, $words)
+{
+	if ($number < 21) {
+		return $words[$number];
+	} elseif ($number < 100) {
+		$tens = floor($number / 10) * 10;
+		$unitsDigit = $number % 10;
+		return $words[$tens] . ($unitsDigit ? '-' . $words[$unitsDigit] : '');
+	} else {
+		$hundreds = floor($number / 100);
+		$tensUnits = $number % 100;
+		$hundredsPart = $words[$hundreds] . ' Hundred';
+		$tensPart = $tensUnits ? ' ' . convertNumberChunkToWords($tensUnits, $words) : '';
+		return $hundredsPart . $tensPart;
+	}
 }
 
 function getBase64Image($url)
@@ -496,44 +519,107 @@ function getBase64Image($url)
 
 if (!function_exists('glitch_error_reporting_mails')) {
 	function glitch_error_reporting_mails() {
-		$mails = [
-			'nomanpeera@horecastore.ae',
+		$usMails = [
+			'noman.peera@thehorecastore.com',
 			'ofm@thehorecastore.com',
 			'ofs@thehorecastore.com',
-			'nomanpeera@gmail.com',
+			'sales@thehorecastore.com',
 			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
-			'sales@thehorecastore.com',
 			'qa03@thehorecastore.com',
 			'qa04@thehorecastore.com',
 			'qa05@thehorecastore.com',
 		];
 
-		// $mails = [
-		// 	'aksitbhardwaj@gmail.com',
-		// 	'webdeveloper04@horecastore.ae',
-		// ];
+		$uaeMails = [
+			'nomanpeera@horecastore.ae',
+			'hello@horecastore.ae',
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
+			'qa03@thehorecastore.com',
+			'qa04@thehorecastore.com',
+			'qa05@thehorecastore.com',
+		];
 
+		$testMails = [];
+
+		$localMails = [
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
+		];
+
+		switch (config('app.website')) {
+			case 'US':
+			$mails = $usMails;
+			break;
+
+			case 'UAE':
+			$mails = $uaeMails;
+			break;
+
+			case 'TEST':
+			$mails = $testMails;
+			break;
+
+			case 'Local':
+			$mails = $localMails;
+			break;
+
+			default:
+			$mails =[];
+			break;
+		}
 		return $mails;
 	}
 }
 
 if (!function_exists('order_cc_mails')) {
 	function order_cc_mails() {
-		$mails = [
+		$usMails = [
 			'ofm@thehorecastore.com',
-			'nomanpeera@horecastore.ae',
+			'noman.peera@thehorecastore.com',
 			'shehzad@rapid-supplies.com',
 			'ofs@thehorecastore.com',
-			'mfaizan@rapid-supplies.com',
 			'ofs02@thehorecastore.com',
-			'dmm@thehorecastore.com'
+			'dmm@thehorecastore.com',
 		];
-		// $mails = [
-		// 	'webdeveloper01@horecastore.ae',
-		// 	'webdeveloper04@horecastore.ae',
-		// ];
 
+		$uaeMails = [
+			'nomanpeera@horecastore.ae',
+			'imran@horecastore.ae',
+			'hello@horecastore.ae',
+			'dmm@horecastore.ae',
+			'pm@horecastore.ae',
+		];
+
+		$testMails = [];
+
+		$localMails = [
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
+		];
+
+		switch (config('app.website')) {
+			case 'US':
+			$mails = $usMails;
+			break;
+
+			case 'UAE':
+			$mails = $uaeMails;
+			break;
+
+			case 'TEST':
+			$mails = $testMails;
+			break;
+
+			case 'Local':
+			$mails = $localMails;
+			break;
+
+			default:
+			$mails =[];
+			break;
+		}
 		return $mails;
 	}
 }

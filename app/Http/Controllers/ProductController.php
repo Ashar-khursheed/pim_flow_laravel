@@ -406,6 +406,12 @@ class ProductController extends BaseController
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product does not exist.'
+			]);
+		}
 		// Extract first vendor's price and sale_price
 		$firstVendor = $product->vendors->first();
 		$productPrice = $firstVendor?->pivot?->price ?? null;
@@ -454,14 +460,6 @@ class ProductController extends BaseController
 			}
 
 			unset($ref); // Clear reference
-		}
-
-
-		if (!$product) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Product does not exist.'
-			]);
 		}
 
 		/* Fetch reviews where customer_id is null */
@@ -523,6 +521,20 @@ class ProductController extends BaseController
 				'measurement_unit_name' => $attr->measurementUnit->name ?? null,
 			];
 		}
+
+		$formattedProduct['product_suppliers'] = $product->productSuppliers->map(function ($productSupplier) {
+			return [
+				'id' => $productSupplier->id,
+				'product_id' => $productSupplier->product_id,
+				'vendor_id' => $productSupplier->vendor_id,
+				'vendor_sku' => $productSupplier->vendor_sku,
+				'total_cost_per_item' => $productSupplier->total_cost_per_item,
+				'inventory' => $productSupplier->inventory,
+				'in_stock' => $productSupplier->in_stock,
+				'vendor_id' => $productSupplier->vendor_id,
+				'vendor_name' => $productSupplier->vendor->name,
+			];
+		});
 
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
@@ -589,17 +601,6 @@ class ProductController extends BaseController
 							'name' => $product->brand->name
 						]
 					] : null;
-					break;
-
-				case 'vendor':
-					$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
-						return [
-							'id' => $vendor->id,
-							'name' => $vendor->name,
-							'price' => $vendor->pivot->price ?? null,
-							'sale_price' => $vendor->pivot->sale_price ?? null,
-						];
-					});
 					break;
 
 				case 'categories':
@@ -1220,7 +1221,7 @@ class ProductController extends BaseController
 	// 		unset($input['images']);
 	// 	}
 
-	// 	// Handle videos with role-based permission - CORRECTED VERSION  
+	// 	// Handle videos with role-based permission - CORRECTED VERSION
 	// 	if ($request->has('video_path')) {
 	// 		if ($canModifyImages) {
 	//     $finalVideos = [];
@@ -1844,7 +1845,7 @@ class ProductController extends BaseController
 		}
 
 
-		// Handle videos with role-based permission - CORRECTED VERSION  
+		// Handle videos with role-based permission - CORRECTED VERSION
 		if ($request->has('video_path')) {
 			if ($canModifyImages) {
 				$finalVideos = [];

@@ -467,6 +467,7 @@ class AttributeController extends BaseController
 	 *             required={"parent_category_id", "range_from", "range_to"},
 	 *             @OA\Property(property="status", type="string", example="all", description="Status (e.g., draft, published)"),
 	 *             @OA\Property(property="parent_category_id", type="integer", example=1, description="Parent category ID"),
+	 *             @OA\Property(property="brand_id", type="integer", example=1, description="Brand ID"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)")
 	 *         )
@@ -487,6 +488,7 @@ class AttributeController extends BaseController
 		$request->validate([
 			'status' => 'required|string|in:all,draft,published',
 			'parent_category_id' => 'required|integer|exists:categories,id',
+			'brand_id' => 'nullable|integer|exists:ec_brands,id',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);
@@ -502,8 +504,13 @@ class AttributeController extends BaseController
 		if ($request->status && $request->status != "all") {
 			$products->where('status', $request->status);
 		}
-		$products = $products->whereHas('categories', fn($query) => $query->whereIn('category_id', $leafCategoryIds))
-		->offset($request->range_from - 1)
+		$products = $products->whereHas('categories', fn($query) => $query->whereIn('category_id', $leafCategoryIds));
+		if ($request->brand_id) {
+			$products = $products->whereHas('brand', function ($query) use ($request) {
+				$query->where('id', $request->brand_id);
+			});
+		}
+		$products = $products->offset($request->range_from - 1)
 		->limit($request->range_to - $request->range_from + 1)
 		->orderBy('id', 'asc')
 		->get(['id', 'sku', 'name']);

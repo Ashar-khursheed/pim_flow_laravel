@@ -38,7 +38,7 @@ class PreClaimWelcomeMail extends Mailable
 		$rightPngURL = $backendURL. '/right.png';
 		$websiteUrl = url("/");
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,

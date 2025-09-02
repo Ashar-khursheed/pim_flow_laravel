@@ -267,6 +267,7 @@ $pageNumber = 1;
 						</ul>
 					</td>
 
+
 					<!-- Invoice Summary Column -->
 					<td style="width: 40%; vertical-align: top; border: 1px solid black; background-color: #ffffff; font-family: 'Inter', sans-serif;">
 						<div style="padding: 10px; font-family: 'Inter', sans-serif;">
@@ -277,7 +278,7 @@ $pageNumber = 1;
 										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
 									</tr>
 									<tr>
-										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">TOTAL W/O TAX</td>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">Shipping Charge</td>
 										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($shippingCharge, 2, '.', ',') }}</td>
 									</tr>
 									<tr>
@@ -292,7 +293,7 @@ $pageNumber = 1;
 						<table width="100%" style="color: #FF0000; background-color: #E7E7E7; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; border-collapse: collapse; margin: 0;">
 							<tr>
 								<td style="text-align: left;">NET TOTAL INCL.{{ $taxName }}</td>
-								<td style="text-align: right;">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
+								<td style="text-align: right;">{{ $currency }} {{ number_format($total, 2, '.', ',') }}</td>
 							</tr>
 						</table>
 
@@ -376,6 +377,7 @@ $pageNumber = 1;
 									{{ $companyName }}
 								</td>
 							</tr>
+							@if($siteName == 'US')
 							<tr>
 								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Beneficiary Address
@@ -384,6 +386,7 @@ $pageNumber = 1;
 									{{ $beneficiaryAddress }}
 								</td>
 							</tr>
+							@endif
 							<tr>
 								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Account No
@@ -400,6 +403,7 @@ $pageNumber = 1;
 									{{ $bankName }}
 								</td>
 							</tr>
+							@if($siteName == 'US')
 							<tr>
 								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Routing Code
@@ -408,6 +412,24 @@ $pageNumber = 1;
 									{{ $routingCode }}
 								</td>
 							</tr>
+							@else
+							<tr>
+								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
+									IBAN Number
+								</td>
+								<td style="border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
+									{{ $ibanNumber }}
+								</td>
+							</tr>
+							<tr>
+								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
+									Swift Code
+								</td>
+								<td style="border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
+									{{ $swiftCode }}
+								</td>
+							</tr>
+							@endif
 							<tr>
 								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									In Case Of Cheque Payment
@@ -434,7 +456,9 @@ $pageNumber = 1;
 								<tr style="vertical-align: top;">
 									<td colspan="2" style="padding: 8px; font-size: 12px; line-height: 1.6; border-top: 1px solid black; font-family: 'Inter', sans-serif;">
 										<strong>Bank Transfer (Wire/Local):</strong> Orders are processed after 2–3 business days upon receipt of funds.<br>
+										@if($siteName == 'US')
 										<strong>ACH Payments:</strong> Orders are processed after 3 business days from payment receipt.<br>
+										@endif
 										<strong>Personal Checks:</strong> Orders are processed after 5 business days from deposit date.<br>
 										<strong>Corporate Checks:</strong> Orders are processed after 3 business days from deposit date.<br>
 										<strong>Cash & Card Payments:</strong> Orders are processed immediately upon successful payment.<br>

@@ -32,10 +32,10 @@ class OrderCancelledMail extends Mailable
 		$name = $order->customer->name ?? 'User';
 		$orderNumber = $order->order_number;
 
-		$checkoutURL = url("/checkout");
+		$checkoutURL = url("/view-order/{$order->id}");
 		$rightPngURL = $backendURL. '/right.png';
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'orders@thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'orders@thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,

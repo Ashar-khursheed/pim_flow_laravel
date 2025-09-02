@@ -99,6 +99,7 @@ class ProductReportController extends Controller
 	 *     )
 	 * )
 	 */
+
 	public function index(Request $request, ExcelRepository $excelRepo)
 	{
 		/* Validate request data */

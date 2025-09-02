@@ -87,7 +87,6 @@ class PrePurchaseClaimController extends BaseController
 				$recordsQuery->addSelect('pre_purchase_claims.*');
 			}
 
-
 			/* Eager load relationships */
 			$recordsQuery->with([
 				'customer:id,name,email',

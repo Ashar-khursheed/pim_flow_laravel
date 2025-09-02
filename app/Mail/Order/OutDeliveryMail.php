@@ -49,11 +49,11 @@ class OutDeliveryMail extends Mailable
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
 		$zipcode = $customerAddress->zip_code ?? '';
-		$orderDetailUrl = url("/order-details/{$order->id}");
+		$orderDetailUrl = url("/track-order/{$order->id}");
 		$rightPngURL = $backendURL. '/right.png';
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'orders@thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'orders@thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,

@@ -14,6 +14,7 @@ use App\Models\Utm;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
+use App\Jobs\Order\OrderPlacedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 
 class OrderController extends BaseController
@@ -174,6 +175,7 @@ class OrderController extends BaseController
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
+	 *             @OA\Property(property="is_cod", type="boolean", example=false),
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(
 	 *                 property="products",
@@ -203,6 +205,7 @@ class OrderController extends BaseController
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
+			'is_cod' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -231,12 +234,16 @@ class OrderController extends BaseController
 			foreach ($request->products as $product) {
 				$totalProducts += $product['quantity'];
 				$orderAmount += $product['quantity'] * $product['unit_price'];
-				$orderShipping += $product['shipping_charge'];
+				$orderShipping += config('app.website') == 'US' ? $product['shipping_charge'] : 0;
 			}
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+
+			if (config('app.website') == 'UAE') {
+				$orderShipping = ($orderAmount + $taxAmount) < 300 ? 25 : 0;
+			}
 			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
@@ -299,6 +306,15 @@ class OrderController extends BaseController
 			]);
 
 			DB::commit();
+
+			if ($request->boolean('is_cod')) {
+				$batch = Bus::batch([])->name('Order Place')->dispatch();
+
+				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+				$batch->add(new OrderPlacedMailJob([
+					'recordId' => $order->id
+				]));
+			}
 
 			/* Load relationships */
 			$order->load([
@@ -401,6 +417,13 @@ class OrderController extends BaseController
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
+				$product->category_url = method_exists($product, 'category_url')
+					? $product->category_url()
+					: null;
+
+				$product->parent_category_url = method_exists($product, 'parent_category_url')
+					? $product->parent_category_url()
+					: null;
 
 
 			// 🔹 Fetch SEO URL directly without relation

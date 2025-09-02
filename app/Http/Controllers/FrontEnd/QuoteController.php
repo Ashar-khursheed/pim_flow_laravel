@@ -120,6 +120,13 @@ class QuoteController extends BaseController
 						$product->brand_name = $product->brand->name ?? null;
 						$product->currency_symbol = $product->currency->symbol ?? null;
 						$product->url = $product->seoProductUrl->url ?? null;
+						$product->category_url = method_exists($product, 'category_url')
+							? $product->category_url()
+							: null;
+
+						$product->parent_category_url = method_exists($product, 'parent_category_url')
+							? $product->parent_category_url()
+							: null;
 						unset($product->brand, $product->currency, $product->seoProductUrl);
 					}
 					$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
@@ -238,8 +245,13 @@ class QuoteController extends BaseController
 			foreach ($request->products as $product) {
 				$totalProducts += $product['quantity'];
 				$quoteAmount += $product['quantity'] * $product['unit_price'];
-				$quoteShipping += $product['shipping_charge'];
+				$quoteShipping += config('app.website') == 'US' ? $product['shipping_charge'] : 0;
 			}
+			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
+			if (config('app.website') == 'UAE') {
+				$quoteShipping = ($quoteAmount + $taxAmount) < 300 ? 25 : 0;
+			}
+			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
 			/* Generate new quote number */
 			$latestQuote = Quote::whereRaw("quote_number REGEXP '^QT[0-9]+$'")
@@ -252,9 +264,6 @@ class QuoteController extends BaseController
 			} else {
 				$quoteNumber = 'QT1001';
 			}
-
-			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
 			$quote = Quote::create([
 				'quote_number' => $quoteNumber,
@@ -296,10 +305,7 @@ class QuoteController extends BaseController
 
 			DB::commit();
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Quote Mails')->dispatch();
+			$batch = Bus::batch([])->name('Quote Mails')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_QOT_PLC';
 			$batch->add(new QuotePlacedMailJob([
@@ -409,6 +415,13 @@ class QuoteController extends BaseController
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				$product->url = $product->seoProductUrl->url ?? null;
+				$product->category_url = method_exists($product, 'category_url')
+							? $product->category_url()
+							: null;
+
+						$product->parent_category_url = method_exists($product, 'parent_category_url')
+							? $product->parent_category_url()
+							: null;
 				unset($product->brand, $product->currency, $product->seoProductUrl);
 			}
 			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
@@ -514,10 +527,12 @@ class QuoteController extends BaseController
 			foreach ($request->products as $product) {
 				$totalProducts += $product['quantity'];
 				$quoteAmount += $product['quantity'] * $product['unit_price'];
-				$quoteShipping += $product['shipping_charge'];
+				$quoteShipping += config('app.website') == 'US' ? $product['shipping_charge'] : 0;
 			}
-
 			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
+			if (config('app.website') == 'UAE') {
+				$quoteShipping = ($quoteAmount + $taxAmount) < 300 ? 25 : 0;
+			}
 			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
 			$quote->update([
@@ -554,6 +569,13 @@ class QuoteController extends BaseController
 			}
 
 			DB::commit();
+
+			$batch = Bus::batch([])->name('Quote Mails')->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_QOT_PLC';
+			$batch->add(new QuotePlacedMailJob([
+				'recordId' => $quote->id
+			]));
 
 			$quote->refresh()->load([
 				'customer:id,name,email,type,country_code,mobile_number',

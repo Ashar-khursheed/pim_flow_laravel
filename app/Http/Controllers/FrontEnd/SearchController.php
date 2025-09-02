@@ -131,6 +131,8 @@ class SearchController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
+                'category_url' => $product->category_url(),
+                'parent_category_url' => $product->parent_category_url(),
                 'url' => $product->seoUrl->url ?? null,
                 'sku' => $product->sku,
                 'images' => json_decode($product->images) ?? [],
@@ -586,6 +588,8 @@ class SearchController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'sku' => $product->sku,
+                'category_url' => $product->category_url(),
+                'parent_category_url' => $product->parent_category_url(),
                 'url' => $product->seoUrl->url ?? null,
                 'images' => json_decode($product->images) ?? [],
                 'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
