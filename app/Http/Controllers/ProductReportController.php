@@ -13,27 +13,90 @@ class ProductReportController extends Controller
 	 * @OA\Get(
 	 *     path="/api/product-report-export",
 	 *     summary="Get product report list",
-	 *     description="Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
+	 *     description="Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
 	 *     tags={"Products Report"},
-	 *     @OA\Property(property="type", type="string", example="Category", description="Filter type (e.g., Category, Brand)"),
-	 * 	   @OA\Property(property="range_from", type="integer", example=1, description="Starting product index (must be >= 1)"),
-	 *     @OA\Property(property="range_to", type="integer", example=500, description="Ending product index (max range allowed: 500 products)"),
-	 *     @OA\Property(property="relational_id", type="integer", example=14, description="Enter brand id, category id"),
-	 *		@OA\Parameter(
-	 * 				name="status",
-	 *				in="query",
-	 *				description="Filter products by status (e.g., published, draft)",
-	 *				required=true,
-	 *				@OA\Schema(type="string", enum={"all","publish", "draft"}, example="active")
-	 *				),
-	 *      @OA\Parameter(
-	 * 				name="approved",
-	 *				in="query",
-	 *				description="Filter approved by status (e.g., 0, 1)",
-	 *				required=true,
-	 *				@OA\Schema(type="string", example="active")
-	 *				),
-	 *      security={{"bearerAuth":{}}}
+	 *
+	 *     @OA\Parameter(
+	 *         name="page",
+	 *         in="query",
+	 *         description="Page number for pagination",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="per_page",
+	 *         in="query",
+	 *         description="Number of products per page (default: 50)",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=50)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="search",
+	 *         in="query",
+	 *         description="Search term for filtering products by name, SKU, brand, store, or category",
+	 *         required=false,
+	 *         @OA\Schema(type="string", example="samsung")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="status",
+	 *         in="query",
+	 *         description="Filter products by status (published, draft)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", enum={"published", "draft"}, example="published")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="approved",
+	 *         in="query",
+	 *         description="Filter approved by status (0 = not approved, 1 = approved)",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", enum={0,1}, example=1)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="brand",
+	 *         in="query",
+	 *         description="Filter by brand id",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=5)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="category",
+	 *         in="query",
+	 *         description="Filter by category id",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=3)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="sort_by",
+	 *         in="query",
+	 *         description="Column to sort by (id, name, sku, brand_id, vendor_id, status)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", example="id")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="sort_direction",
+	 *         in="query",
+	 *         description="Sort direction (asc or desc)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
+	 *     ),
+	 *
+	 *     security={{"bearerAuth":{}}},
+	 *
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Product report Excel file",
+	 *         @OA\MediaType(
+	 *             mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthorized"
+	 *     ),
+	 *     @OA\Response(
+	 *         response=500,
+	 *         description="Server error"
+	 *     )
 	 * )
 	 */
 	public function index(Request $request, ExcelRepository $excelRepo)

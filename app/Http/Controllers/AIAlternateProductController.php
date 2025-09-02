@@ -10,28 +10,32 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use App\Models\Category;
 class AIAlternateProductController extends Controller
-{
+{   
     /**
-     * @OA\Get(
-     *     path="/api/ai-products-alternates",
+	 * @OA\Get(
+	 *     path="/api/ai-products-alternates",
      *     summary="Get a list of Products AI alternates",
      *     description="Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
-     *     tags={"Products AI alternates"},	 * 	   
-     *       @OA\Response(
-     *         response=200,
-     *         description="Successful response",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(ref="#/components/schemas/AlternateProduct")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Bad request"
-     *     ),	 *      
-     *      security={{"bearerAuth":{}}}
-     * )
-     */
+     *     tags={"Products AI alternates"},
+	 *      security={{"bearerAuth":{}}},
+	 *
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Product report Excel file",
+	 *         @OA\MediaType(
+	 *             mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthorized"
+	 *     ),
+	 *     @OA\Response(
+	 *         response=500,
+	 *         description="Server error"
+	 *     )
+	 * )
+	 */
     public function index(Request $request)
     {
 
@@ -120,35 +124,68 @@ class AIAlternateProductController extends Controller
             'message' => 'Alternate products retrieved successfully',
         ]);
     }
-
+ 
     /**
      * @OA\Get(
-     *     path="/api/ai-products-alternates",
+     *     path="/api/get-ai-alternates",
      *     summary="Get a list of Products AI alternates",
      *     description="Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
-     *     tags={"Products AI alternates"},	 *      
-     * 	   @OA\Property(property="search", type="string", example='', description="Search by Sku"),
-     *  @OA\Property(property="range_from", type="integer", example=1, description="Starting product index (must be >= 1)"),
-     *     @OA\Property(property="range_to", type="integer", example=500, description="Ending product index (max range allowed: 500 products)"),
-     *     @OA\Property(property="rejection", type="string", example='', description="Search by rejection"),
-     *  @OA\Property(property="reviewers", type="string", example='', description="Search by reviewers"),
-     *  @OA\Property(property="category", type="string", example='', description="Filter by Category id"),
-     *       @OA\Response(
+     *     tags={"Products AI alternates"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Search by SKU",
+     *         required=false,
+     *         @OA\Schema(type="string", example="")
+     *     ),
+     *     @OA\Parameter(
+     *         name="range_from",
+     *         in="query",
+     *         description="Starting product index (must be >= 1)",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="range_to",
+     *         in="query",
+     *         description="Ending product index (max range allowed: 500 products)",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=500)
+     *     ),
+     *     @OA\Parameter(
+     *         name="rejection",
+     *         in="query",
+     *         description="Search by rejection",
+     *         required=false,
+     *         @OA\Schema(type="string", example="")
+     *     ),
+     *     @OA\Parameter(
+     *         name="reviewers",
+     *         in="query",
+     *         description="Search by reviewers",
+     *         required=false,
+     *         @OA\Schema(type="string", example="")
+     *     ),
+     *     @OA\Parameter(
+     *         name="category",
+     *         in="query",
+     *         description="Filter by Category id",
+     *         required=false,
+     *         @OA\Schema(type="string", example="")
+     *     ),
+     *
+     *     @OA\Response(
      *         response=200,
-     *         description="Successful response",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(ref="#/components/schemas/AlternateProduct")
-     *         )
+     *         description="Successful response"      
      *     ),
      *     @OA\Response(
      *         response=400,
      *         description="Bad request"
-     *     ),	 *      
-     *      security={{"bearerAuth":{}}}
+     *     )
      * )
      */
-
     public function getAiAlternateProducts(Request $request)
     {
         $request->validate([
