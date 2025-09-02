@@ -54,18 +54,14 @@ class CompareProductController extends Controller
      * )
      */
     public function getCompareTableProduct(Request $request)
-    {   //dd($request->input());
+    {    
         $request->validate([
-			'product_id' => "required|integer"			 
+			'product_id' => "required"			 
 		]);
 
        $alternateProduct =  AlternateProduct::where('product_id',$request->input('product_id'))->orderBy('priority','asc')->get();
-       //dd($alternateProduct);
-       
-     
- 
         $formattedProducts = $alternateProduct->map(function ($product) {
-         //   echo "<pre>";print_r($product->product_alternate_id);die;
+      
             $products = Product::with([            
                'brand:id,name',
              'categories:id,name',
