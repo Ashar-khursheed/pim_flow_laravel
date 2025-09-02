@@ -158,4 +158,17 @@ class Category extends Model
 		}
 		return $category;
 	}
+
+	public function categoryBrands()
+	{
+		return $this->belongsToMany(
+			Product::class,
+			'product_categories',
+			'category_id',
+			'product_id'
+		)
+		->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
+		->select('ec_brands.id', 'ec_brands.name')
+		->distinct();
+	}
 }
