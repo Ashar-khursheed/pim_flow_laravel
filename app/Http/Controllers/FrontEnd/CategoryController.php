@@ -955,8 +955,12 @@ private function convertSingleValue($item, $attributeMeasurement, $categoryPrior
 
     // Find original unit for conversion
     $originalUnit = null;
+    $originalUnitSymbol = null;
+    
+    // Priority: measurement_unit_id > extracted unit from value > unit_symbol from join
     if ($item->measurement_unit_id) {
         $originalUnit = DB::table('measurement_units')->where('id', $item->measurement_unit_id)->first();
+        $originalUnitSymbol = $originalUnit ? $originalUnit->symbol : null;
     } elseif ($extractedUnit) {
         $originalUnit = DB::table('measurement_units as mu')
             ->join('measurement_types as mt', 'mt.id', '=', 'mu.measurement_type_id')
@@ -964,27 +968,33 @@ private function convertSingleValue($item, $attributeMeasurement, $categoryPrior
             ->where('mt.name', $attributeMeasurement->measurement_type_name)
             ->select('mu.*')
             ->first();
-    } elseif ($originalUnitSymbol) {
+        $originalUnitSymbol = $extractedUnit;
+    } elseif ($item->unit_symbol) {
         $originalUnit = DB::table('measurement_units as mu')
             ->join('measurement_types as mt', 'mt.id', '=', 'mu.measurement_type_id')
-            ->where('mu.symbol', $originalUnitSymbol)
+            ->where('mu.symbol', $item->unit_symbol)
             ->where('mt.name', $attributeMeasurement->measurement_type_name)
             ->select('mu.*')
             ->first();
+        $originalUnitSymbol = $item->unit_symbol;
     }
 
-    $convertedValue = $numericValue;
+    // ALWAYS use category's primary unit as target
     $targetUnit = $categoryPriority->primary_symbol;
+    $convertedValue = $numericValue;
 
-    // Perform conversion if needed
-    if ($originalUnit && $originalUnit->id != $categoryPriority->primary_unit_id) {
+    // Log what we're trying to convert
+    \Log::info("Converting: {$originalValue} | Original unit: {$originalUnitSymbol} | Target unit: {$targetUnit} | Category primary unit ID: {$categoryPriority->primary_unit_id}");
+
+    // Perform conversion if original unit is different from target
+    if ($originalUnit && $originalUnitSymbol && $originalUnitSymbol !== $targetUnit) {
         try {
             if (function_exists('convert_unit')) {
                 $converted = convert_unit(
                     strtolower($attributeMeasurement->measurement_type_name), 
                     $numericValue, 
-                    $originalUnit->symbol, 
-                    $categoryPriority->primary_symbol
+                    $originalUnitSymbol, 
+                    $targetUnit
                 );
                 
                 if (is_numeric($converted) && $converted !== false) {
@@ -993,12 +1003,18 @@ private function convertSingleValue($item, $attributeMeasurement, $categoryPrior
                         $converted
                     );
                     
-                    \Log::info("Converted {$numericValue} {$originalUnit->symbol} to {$convertedValue} {$targetUnit}");
+                    \Log::info("SUCCESS: Converted {$numericValue} {$originalUnitSymbol} to {$convertedValue} {$targetUnit}");
+                } else {
+                    \Log::warning("FAILED: convert_unit returned false/invalid for {$numericValue} {$originalUnitSymbol} to {$targetUnit}");
                 }
+            } else {
+                \Log::error("convert_unit function does not exist!");
             }
         } catch (Exception $e) {
-            \Log::error("Conversion failed for {$originalValue}: " . $e->getMessage());
+            \Log::error("EXCEPTION: Conversion failed for {$originalValue}: " . $e->getMessage());
         }
+    } else {
+        \Log::info("NO CONVERSION NEEDED: {$originalValue} already in target unit or no original unit found");
     }
 
     return [
