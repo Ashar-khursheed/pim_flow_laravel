@@ -92,7 +92,6 @@ class CustomerAddressController extends Controller
 			'city' => $validated['city'],
 			'zip_code' => $validated['zip_code'] ?? null,
 			'is_default' => $validated['is_default'] ?? false,
-			'created_by' => auth()->id(),
 		]);
 
 		return response()->json([

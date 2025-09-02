@@ -176,6 +176,7 @@ class ProductSupplierController extends BaseController
 			'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
 			'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
 			'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
+			'shipping_charge' => 'nullable|numeric|required_if:free_shipping,Yes',
 			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
 
 			'restocking_fees' => 'nullable|numeric',
@@ -252,6 +253,7 @@ class ProductSupplierController extends BaseController
 
 		$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (!empty($data['in_stock']) && strtolower($data['in_stock']) === 'yes' ? 1 : 0);
 		$data['free_shipping'] = !empty($data['free_shipping']) && strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
+		$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : $data['shipping_charge'];
 
 		$data['created_by'] = auth()->id();
 
@@ -362,6 +364,7 @@ class ProductSupplierController extends BaseController
 			'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
 			'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
 			'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
+			'shipping_charge' => 'nullable|numeric|required_if:free_shipping,Yes',
 			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
 
 			'restocking_fees' => 'nullable|numeric',
@@ -421,6 +424,7 @@ class ProductSupplierController extends BaseController
 
 		$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (!empty($data['in_stock']) && strtolower($data['in_stock']) === 'yes' ? 1 : 0);
 		$data['free_shipping'] = !empty($data['free_shipping']) && strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
+		$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : $data['shipping_charge'];
 
 		$data['updated_by'] = auth()->id();
 		$supplier->update($data);
@@ -569,6 +573,7 @@ class ProductSupplierController extends BaseController
 			'Delivery Days' => 'delivery_days',
 			'Return Policy' => 'return_policy',
 			'Free Shipping' => 'free_shipping',
+			'Shipping Charge' => 'shipping_charge',
 			'Restocking Fees(%)' => 'restocking_fees',
 			'Warranty Information' => 'warranty_information',
 		];
@@ -617,6 +622,7 @@ class ProductSupplierController extends BaseController
 			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'return_policy', $returnPolicies, $selectedReturnPolicy);
 			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'free_shipping', $freeShippingOptions, $selectedFreeShipping);
 
+			$sheet->setCellValue($col++ . $row, $supplier->shipping_charge ?? '');
 			$sheet->setCellValue($col++ . $row, $supplier->restocking_fees ?? '');
 
 			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, $selectedWarranty);
@@ -682,6 +688,7 @@ class ProductSupplierController extends BaseController
 				'Delivery Days' => 'delivery_days',
 				'Return Policy' => 'return_policy',
 				'Free Shipping' => 'free_shipping',
+				'Shipping Charge' => 'shipping_charge',
 				'Restocking Fees(%)' => 'restocking_fees',
 				'Warranty Information' => 'warranty_information',
 			];
@@ -742,6 +749,7 @@ class ProductSupplierController extends BaseController
 			'Delivery Days' => 'delivery_days',
 			'Return Policy' => 'return_policy',
 			'Free Shipping' => 'free_shipping',
+			'Shipping Charge' => 'shipping_charge',
 			'Restocking Fees(%)' => 'restocking_fees',
 			'Warranty Information' => 'warranty_information',
 		];
@@ -784,6 +792,7 @@ class ProductSupplierController extends BaseController
 		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, '');
 		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'return_policy', $returnPolicies, '');
 		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'free_shipping', $freeShippingOptions, '');
+		$sheet->setCellValue($col++ . $row, '');
 		$sheet->setCellValue($col++ . $row, '');
 		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, '');
 

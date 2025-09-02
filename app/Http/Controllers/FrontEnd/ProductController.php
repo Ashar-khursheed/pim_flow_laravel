@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Storage;
 
 
 class ProductController extends Controller
-
 {
     /**
      * @OA\Get(
@@ -97,7 +96,7 @@ class ProductController extends Controller
                 $query = Product::with(['categories', 'brand' ,'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ])
                     ->where('status', 'published');
 
-    
+
                  $productId = $request->input('product_id'); // numeric ID
                             $slug = $request->input('slug');           // string slug
                         if ($productId) {
@@ -119,7 +118,7 @@ class ProductController extends Controller
                 $filteredProductIds = $query->pluck('id');
 
                 // Calculate min-max values only for filtered products
-   
+
 
                 // Get sort parameter
                 $sortBy = $request->input('sort_by', 'created_at');
@@ -153,7 +152,7 @@ class ProductController extends Controller
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
-            
+
 
                 // Add query parameters to pagination
                 $products->appends($request->all());
@@ -194,10 +193,10 @@ class ProductController extends Controller
                         } else {
                             $product->url = null;
                         }
-    
+
                         // if (is_string($product->description)) {
                         //     $decoded = json_decode($product->description, true);
-                        
+
                         //     // If it's a valid JSON array, use it directly
                         //     if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                         //         $product->description = $decoded;
@@ -208,32 +207,32 @@ class ProductController extends Controller
                         // }
                         if (is_string($product->description)) {
                             $decoded = json_decode($product->description, true);
-                        
+
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                                 $product->description = array_values(array_filter(array_map(function ($item) {
                                     if (is_null($item) || strtolower($item) === 'null') {
                                         return null;
                                     }
-                        
+
                                     // Remove all &nbsp; (HTML and UTF-8) from the string
                                     $item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
-                        
+
                                     // Optionally clean up extra spaces
                                     $item = preg_replace('/\s+/', ' ', $item); // collapse spaces
                                     $item = trim($item);
-                        
+
                                     // Still keep <p> tags or not? Your call — if not, uncomment below:
                                     // $item = strip_tags($item);
-                        
+
                                     return $item !== '' ? $item : null;
                                 }, $decoded)));
                             } else {
                                 $product->description = [$product->description];
                             }
                         }
-                        
-                        
-            
+
+
+
                       if ($product->brand) {
                             $product->brand_id = $product->brand->id;
                             $product->brand_name = $product->brand->name;
@@ -244,23 +243,23 @@ class ProductController extends Controller
                             } else {
                                 $product->brand_url = null;
                             }
-                        
 
-    
-                        
+
+
+
                             // Get review stats directly from the database
                             $brandProductIds = \DB::table('ec_products')
                                 ->where('brand_id', $product->brand->id)
                                 ->pluck('id');
-                        
+
                             $brandReviewsQuery = \DB::table('ec_reviews')
                                 ->whereIn('product_id', $brandProductIds);
-                        
+
                             $brandReviewCount = $brandReviewsQuery->count();
                             $brandAvgRating = $brandReviewCount > 0
                                 ? round($brandReviewsQuery->avg('star'), 1)
                                 : null;
-                        
+
                             $product->brand_avg_rating = $brandAvgRating;
                             $product->brand_review_count = $brandReviewCount;
                         }
@@ -304,8 +303,8 @@ class ProductController extends Controller
                         // } else {
                         //     $product->documents = [];
                         // }
-                        
-                    
+
+
                         // $documents = $product->documents;
 
                         // // If $documents is already an array, skip decoding
@@ -397,19 +396,19 @@ class ProductController extends Controller
                             $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
 
-                       
+
                         // Calculate per unit price
                         $unitsPerCase = null;
                         $packType = null;
-                        
+
                         if (!empty($details->per_unit_price_attributes)) {
                             $unitsPerCase = collect($details->per_unit_price_attributes)
                                 ->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
                             $packType = collect($details->per_unit_price_attributes)
                                 ->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
                         }
-                        
-                        
+
+
 
                             $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
                             $perUnitPrice = null;
@@ -424,8 +423,8 @@ class ProductController extends Controller
 
                             $product->per_unit_price = $perUnitPrice;
 
-                
-                        
+
+
                         // Add review and stock details
                         $totalReviews = $product->reviews->count();
                         $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
@@ -472,7 +471,7 @@ class ProductController extends Controller
                             $product->free_shipping = null;
                             $product->warranty_information = null;
                         }
-                        
+
 
                         // Handle currency
                         if ($product->currency) {
@@ -511,13 +510,13 @@ class ProductController extends Controller
                             }
                             return $parents;
                         };
-                        
+
                         // Get all parent categories
                         $parentHierarchy = $getParentHierarchy($category);
-                        
+
                         // Add parents to collection
                         $allCategories->push(...$parentHierarchy);
-                        
+
                         // Add current category
                         $allCategories->push($category);
                     });
@@ -540,7 +539,7 @@ class ProductController extends Controller
                         'success' => true,
                         'data' => $products,
                         'pagination' => $pagination
-            
+
                     ])->header('Cache-Control', 'public, max-age=86400');
     }
 
@@ -591,7 +590,7 @@ class ProductController extends Controller
                 $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ])
                     ->where('status', 'published');
 
-                
+
                 // Check if filtering by specific product ID
                 // $productId = $request->input('product_id');
                 // if ($productId) {
@@ -616,7 +615,7 @@ class ProductController extends Controller
                 // Get filtered IDs efficiently
                 $filteredProductIds = $query->pluck('id');
 
-             
+
                 // Get sort parameter
                 $validSortOptions = ['created_at', 'price', 'name'];
                 $sortBy = $request->input('sort_by', 'created_at');
@@ -695,38 +694,38 @@ class ProductController extends Controller
                         } else {
                             $product->url = null;
                         }
-                    
+
                         // if (is_string($product->description)) {
                         //     $product->description = json_decode($product->description, true);
                         // }
                         if (is_string($product->description)) {
                             $decoded = json_decode($product->description, true);
-                        
+
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                                 $product->description = array_values(array_filter(array_map(function ($item) {
                                     if (is_null($item) || strtolower($item) === 'null') {
                                         return null;
                                     }
-                        
+
                                     // Remove all &nbsp; (HTML and UTF-8) from the string
                                     $item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
-                        
+
                                     // Optionally clean up extra spaces
                                     $item = preg_replace('/\s+/', ' ', $item); // collapse spaces
                                     $item = trim($item);
-                        
+
                                     // Still keep <p> tags or not? Your call — if not, uncomment below:
                                     // $item = strip_tags($item);
-                        
+
                                     return $item !== '' ? $item : null;
                                 }, $decoded)));
                             } else {
                                 $product->description = [$product->description];
                             }
                         }
-                        
-                        
-                    
+
+
+
                       if ($product->brand) {
                             $product->brand_id = $product->brand->id;
                             $product->brand_name = $product->brand->name;
@@ -737,26 +736,26 @@ class ProductController extends Controller
                             } else {
                                 $product->brand_url = null;
                             }
-                        
 
-                        
+
+
                             // Get review stats directly from the database
                             $brandProductIds = \DB::table('ec_products')
                                 ->where('brand_id', $product->brand->id)
                                 ->pluck('id');
-                        
+
                             $brandReviewsQuery = \DB::table('ec_reviews')
                                 ->whereIn('product_id', $brandProductIds);
-                        
+
                             $brandReviewCount = $brandReviewsQuery->count();
                             $brandAvgRating = $brandReviewCount > 0
                                 ? round($brandReviewsQuery->avg('star'), 1)
                                 : null;
-                        
+
                             $product->brand_avg_rating = $brandAvgRating;
                             $product->brand_review_count = $brandReviewCount;
                         }
-                        
+
                         $product->images = collect(json_decode($product->images, true))->map(function ($image) {
                             return  $image;
                         });
@@ -797,7 +796,7 @@ class ProductController extends Controller
                         } else {
                             $product->documents = [];
                         }
-                                            
+
                         $videoPaths = json_decode($product->video_path, true);
                         $product->video_path = collect($videoPaths)->map(function ($video) {
                             return $video;
@@ -819,15 +818,15 @@ class ProductController extends Controller
                         // Calculate per unit price
                         $unitsPerCase = null;
                         $packType = null;
-                        
+
                         if (!empty($details->per_unit_price_attributes)) {
                             $unitsPerCase = collect($details->per_unit_price_attributes)
                                 ->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
                             $packType = collect($details->per_unit_price_attributes)
                                 ->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
                         }
-                        
-                        
+
+
 
                         $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
                         $perUnitPrice = null;
@@ -842,14 +841,14 @@ class ProductController extends Controller
 
                         $product->per_unit_price = $perUnitPrice;
 
-                                            
+
                         // Reviews and stock
                         $totalReviews = $product->reviews->count();
                         $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
                         $quantity = $product->quantity ?? 0;
                         $unitsSold = $product->units_sold ?? 0;
                         $leftStock = $quantity - $unitsSold;
-                    
+
                         $product->total_reviews = $totalReviews;
                         $product->avg_rating = $avgRating;
                         $product->leftStock = $leftStock;
@@ -888,9 +887,9 @@ class ProductController extends Controller
                             $product->free_shipping = null;
                             $product->warranty_information = null;
                         }
-                        
-                        
-                    
+
+
+
                         // Currency
                         if ($product->currency) {
                             $product->currency_title = $product->currency->is_prefix_symbol
@@ -899,9 +898,9 @@ class ProductController extends Controller
                         } else {
                             $product->currency_title = $product->price;
                         }
-                    
+
                         // ❌ Removed specifications section
-                    
+
                         // ❌ Removed frequently bought together section
                        // Get all categories including parent hierarchies
                         $allCategories = collect();
@@ -921,13 +920,13 @@ class ProductController extends Controller
                                 }
                                 return $parents;
                             };
-                            
+
                             // Get all parent categories
                             $parentHierarchy = $getParentHierarchy($category);
-                            
+
                             // Add parents to collection
                             $allCategories->push(...$parentHierarchy);
-                            
+
                             // Add current category
                             $allCategories->push($category);
                         });
@@ -945,13 +944,13 @@ class ProductController extends Controller
                         $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
                         return $product;
                         });
-                    
+
 
                     return response()->json([
                         'success' => true,
                         'data' => $products,
                         'pagination' => $pagination,
-             
+
                    ])->header('Cache-Control', 'public, max-age=86400');
     }
 
@@ -1090,7 +1089,7 @@ class ProductController extends Controller
                 'currency' => $product->currency?->title,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
-              
+
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
@@ -1559,7 +1558,7 @@ class ProductController extends Controller
      *     tags={"Frontend-Product"},
      *     summary="Get 15 random products by category ID (including child categories)",
      *     description="Returns up to 15 random products from the specified category. If not enough products are found, it searches in child and descendant categories recursively.",
-     *     
+     *
      *     @OA\Parameter(
      *         name="categoryId",
      *         in="path",
@@ -1567,7 +1566,7 @@ class ProductController extends Controller
      *         description="The ID of the category to fetch products from",
      *         @OA\Schema(type="integer")
      *     ),
-     *     
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Success response with product data",
@@ -1601,7 +1600,7 @@ class ProductController extends Controller
      *             )
      *         )
      *     ),
-     *     
+     *
      *     @OA\Response(
      *         response=400,
      *         description="Bad Request - category ID not provided",
@@ -1609,7 +1608,7 @@ class ProductController extends Controller
      *             @OA\Property(property="error", type="string", example="category_id is required")
      *         )
      *     ),
-     *     
+     *
      *     @OA\Response(
      *         response=404,
      *         description="Not Found - No products found",
@@ -1637,11 +1636,11 @@ class ProductController extends Controller
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
 
         $products = Product::with([
-                'reviews', 
-                'currency', 
-                'productSuppliers', 
-                'sellingUnitAttribute', 
-                'ingredientsAttribute', 
+                'reviews',
+                'currency',
+                'productSuppliers',
+                'sellingUnitAttribute',
+                'ingredientsAttribute',
                 'seoUrl'
             ])
             ->where('status', 'published')
@@ -1758,7 +1757,7 @@ class ProductController extends Controller
      *     tags={"Frontend-Product"},
      *     summary="Get 15 random products by category ID for logged-in users (with wishlist info)",
      *     description="Returns up to 15 random products from the specified category and child categories, along with wishlist info for logged-in users.",
-     *     
+     *
      *     @OA\Parameter(
      *         name="categoryId",
      *         in="path",
@@ -1766,7 +1765,7 @@ class ProductController extends Controller
      *         description="The ID of the category to fetch products from",
      *         @OA\Schema(type="integer")
      *     ),
-     *     
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Success response with product and wishlist data",
@@ -1797,12 +1796,12 @@ class ProductController extends Controller
      *             )
      *         )
      *     ),
-     *     
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Unauthorized - Login required"
      *     ),
-     *     
+     *
      *     @OA\Response(
      *         response=404,
      *         description="Not Found - No products found"
@@ -1814,7 +1813,7 @@ class ProductController extends Controller
           // Auth and wishlist logic
           $userId = Auth::id();
           $wishlistProductIds = [];
-  
+
           if ($userId) {
               $wishlistProductIds = DB::table('ec_wish_lists')
                   ->where('customer_id', $userId)
@@ -1846,7 +1845,7 @@ class ProductController extends Controller
         ->inRandomOrder()
         ->take(15)
         ->get();
-    
+
 
         if ($products->isEmpty()) {
             return response()->json(['message' => 'No products found in this category or its children'], 404);
@@ -1972,23 +1971,23 @@ class ProductController extends Controller
             'data' => $transformed
         ])->header('Cache-Control', 'public, max-age=86400');
     }
-    
+
 
     private function getAllChildCategoryIds($categoryId)
     {
         // Get all categories
         $allCategories = Category::select('id', 'parent_id')->get();
-    
+
         // Build a lookup table
         $childrenMap = [];
         foreach ($allCategories as $cat) {
             $childrenMap[$cat->parent_id][] = $cat->id;
         }
-    
+
         // Recursively gather all children
         $stack = [$categoryId];
         $result = [];
-    
+
         while (!empty($stack)) {
             $current = array_pop($stack);
             $result[] = $current;
@@ -1998,10 +1997,10 @@ class ProductController extends Controller
                 }
             }
         }
-    
+
         return $result;
     }
-    
+
 
 
 
@@ -2102,7 +2101,7 @@ class ProductController extends Controller
             $query->where('created_at', '<=', $request->input('end_date'));
         }
 
-    
+
         if ($request->has('is_featured')) {
             $query->where('is_featured', $request->input('is_featured'));
         }
@@ -2220,7 +2219,7 @@ class ProductController extends Controller
      *     )
      * )
      */
-        
+
     public function getProductInfoBySlug($slug)
     {
         // Get the product ID from seo_management table
