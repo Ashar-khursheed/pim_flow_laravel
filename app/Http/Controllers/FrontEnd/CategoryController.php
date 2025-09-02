@@ -662,17 +662,85 @@ private function convertValueForComparison($attributeId, $originalValue, $origin
 {
     $originalValue = trim($originalValue);
     
-    // Quick numeric check
+    // Get attribute measurement configuration
+    $attributeMeasurement = DB::table('attribute_measurements as am')
+        ->join('measurement_units as mu', 'mu.id', '=', 'am.measurement_unit_id')
+        ->join('measurement_types as mt', 'mt.id', '=', 'mu.measurement_type_id')
+        ->where('am.attribute_id', $attributeId)
+        ->select('mu.*', 'mt.name as measurement_type_name')
+        ->first();
+
+    if (!$attributeMeasurement) {
+        // No measurement config - extract numeric value only
+        if (is_numeric($originalValue)) {
+            return (float)$originalValue;
+        }
+        if (preg_match('/^(\d+(?:\.\d+)?)\s*/', $originalValue, $matches)) {
+            return (float)$matches[1];
+        }
+        return $originalValue;
+    }
+
+    // Extract numeric value
+    $numericValue = null;
+    $originalUnit = null;
+    
     if (is_numeric($originalValue)) {
-        return (float)$originalValue;
+        $numericValue = (float)$originalValue;
+        // Get unit from originalUnitId or attribute measurement
+        $originalUnit = $originalUnitId ? 
+            DB::table('measurement_units')->where('id', $originalUnitId)->first() : 
+            $attributeMeasurement;
+    } elseif (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z°]+)?$/', $originalValue, $matches)) {
+        $numericValue = (float)$matches[1];
+        $unitSymbol = $matches[2] ?? '';
+        
+        if ($unitSymbol && !$originalUnitId) {
+            // Try to find unit by symbol
+            $originalUnit = DB::table('measurement_units as mu')
+                ->join('measurement_types as mt', 'mt.id', '=', 'mu.measurement_type_id')
+                ->where('mu.symbol', $unitSymbol)
+                ->where('mt.name', $attributeMeasurement->measurement_type_name)
+                ->select('mu.*')
+                ->first();
+        } else {
+            $originalUnit = $originalUnitId ? 
+                DB::table('measurement_units')->where('id', $originalUnitId)->first() : 
+                $attributeMeasurement;
+        }
     }
 
-    // Extract numeric value with regex
-    if (preg_match('/^(\d+(?:\.\d+)?)\s*[a-zA-Z°]*$/', $originalValue, $matches)) {
-        return (float)$matches[1];
+    if (!$numericValue || !$originalUnit) {
+        return $originalValue;
     }
 
-    return $originalValue;
+    // Get category priority for this measurement type
+    $measurementTypeName = strtolower($attributeMeasurement->measurement_type_name);
+    $categoryPriority = $categoryMeasurementPriorities->get($measurementTypeName);
+
+    if (!$categoryPriority || $originalUnit->id == $categoryPriority->primary_unit_id) {
+        return $numericValue; // No conversion needed
+    }
+
+    // Perform actual conversion
+    try {
+        if (function_exists('convert_unit')) {
+            $convertedValue = convert_unit(
+                $measurementTypeName, 
+                $numericValue, 
+                $originalUnit->symbol, 
+                $categoryPriority->primary_symbol
+            );
+            
+            if (is_numeric($convertedValue) && $convertedValue !== false) {
+                return $this->roundByMeasurementType($measurementTypeName, $convertedValue);
+            }
+        }
+    } catch (Exception $e) {
+        \Log::warning("Unit conversion failed for attribute {$attributeId}: {$originalValue}. Error: " . $e->getMessage());
+    }
+
+    return $numericValue; // Fallback to original numeric value
 }
 
 private function buildOptimizedFilters($category, $allCategoryProductIds, $filteredProductIds, $selectedFilters, $categoryMeasurementPriorities)
