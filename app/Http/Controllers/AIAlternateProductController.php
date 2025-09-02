@@ -207,7 +207,6 @@ class AIAlternateProductController extends Controller
         if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
             $sortDirection = 'desc'; // Default to descending if invalid direction
         }
-
         $query = DB::table('ec_products as ec')
             ->join(DB::raw("(
         SELECT m1.id AS alt_id, m1.product_id, m1.status AS alt_status,m1.product_alternate_id,m1.priority,m1.similarity,m1.order,m1.created_at as alt_created,m1.updated_at as alt_updated_by, m1.created_by as alt_created_by,m1.rejected_by as alt_rejected_by,m1.reason

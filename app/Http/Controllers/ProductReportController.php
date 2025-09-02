@@ -110,6 +110,7 @@ class ProductReportController extends Controller
 			'type' => 'required|string|in:Brand,Category,Vendor',
 			'relational_id' => 'required|integer',
 		]);
+		
 		$query = Product::with([
 			'brand:id,name',
 			'categories:id,name',
