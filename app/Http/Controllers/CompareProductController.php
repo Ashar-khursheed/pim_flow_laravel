@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
- 
+
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use App\Models\Category;
 class CompareProductController extends Controller
 {
-     /**
+    /**
      * @OA\Post(
      *     path="/api/compare-table-product",
      *     summary="Fetch multiple products compare by IDs",
@@ -57,7 +57,14 @@ class CompareProductController extends Controller
     public function getCompareTableProduct(Request $request)
     {
         $ids = $request->input('product_ids', []);
+        if (!$ids) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Compare Products ids required!',
+                'data' => [],
 
+            ]);
+        }
         $products = Product::with([
             'alternateProducts',
             'brand:id,name',
