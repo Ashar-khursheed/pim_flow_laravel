@@ -7941,6 +7941,86 @@
                 ]
             }
         },
+        "/api/compare-table-product": {
+            "post": {
+                "tags": [
+                    "Compare Products"
+                ],
+                "summary": "Fetch multiple products compare by IDs",
+                "description": "Accepts an array of product IDs and returns their details",
+                "operationId": "e041e37620c4f59bed1d254b99036fcb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_ids": {
+                                        "description": "Array of Product IDs",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 101
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Products retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 101
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "SKU12345"
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Test Product"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customers/{customer_id}/addresses": {
             "get": {
                 "tags": [
@@ -28315,28 +28395,6 @@
                 "summary": "Create a product duplicate",
                 "description": "Creates a new product with the required details.",
                 "operationId": "36292e068d0fb7811644935f30fdee50",
-                "parameters": [
-                    {
-                        "name": "product",                        
-                        "in": "query",
-                        "description": "Enter Product id",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": "1"
-                        }
-                    },
-                    {
-                        "name": "sku",
-                        "in": "query",
-                        "description": "Enter Sku",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-
-                        }
-                    }
-                ],
                 "responses": {
                     "201": {
                         "description": "Success",
@@ -29221,72 +29279,131 @@
                     }
                 ]
             }
-        },        
+        },
         "/api/product-report-export": {
             "get": {
                 "tags": [
                     "Products Report"
                 ],
                 "summary": "Get product report list",
-                "description": "Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
-                "operationId": "83addc73b5adab6c0ca229d3e5994a23",
+                "description": "Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
+                "operationId": "ff314864e00c70302363b737bcc06954",
                 "parameters": [
                     {
-                        "name":"range_from",
+                        "name": "page",
                         "in": "query",
-                        "description": "Starting product index (must be >= 1)",
-                        "type": "integer",
-                        "example": 1
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     },
                     {
-                        "name":"range_to",
+                        "name": "per_page",
                         "in": "query",
-                        "description": "Ending product index (max range allowed: 500 products)",
-                        "type": "integer",
-                        "example": 500
-                    },                     
+                        "description": "Number of products per page (default: 50)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 50
+                        }
+                    },
                     {
-                        "name": "approved",
+                        "name": "search",
                         "in": "query",
-                        "description": "Approved status 0 or 1",
+                        "description": "Search term for filtering products by name, SKU, brand, store, or category",
+                        "required": false,
                         "schema": {
                             "type": "string",
-                            "enum":["0","1"]
+                            "example": "samsung"
                         }
                     },
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Status published/draft",
+                        "description": "Filter products by status (published, draft)",
+                        "required": false,
                         "schema": {
                             "type": "string",
-                           "enum": ["published", "draft"]
-                        }
-                       
-                    },
-                    {
-                        "name": "type",
-                        "in": "query",
-                        "description": "Filter by Brand,Category,Vendor.",
-                        "schema": {
-                            "type": "string",
-                            "enum": ["Brand","Category"]                             
+                            "enum": [
+                                "published",
+                                "draft"
+                            ],
+                            "example": "published"
                         }
                     },
                     {
-                        "name":"relational_id",
+                        "name": "approved",
                         "in": "query",
-                        "description": "Enter brand id, category id",
-                        "type": "integer"
-                         
-                    }                    
+                        "description": "Filter approved by status (0 = not approved, 1 = approved)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1
+                            ],
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "brand",
+                        "in": "query",
+                        "description": "Filter by brand id",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "Filter by category id",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by (id, name, sku, brand_id, vendor_id, status)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "id"
+                        }
+                    },
+                    {
+                        "name": "sort_direction",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
+                    }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Product report Excel file",
                         "content": {
-                            "application/json": {}
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Server error"
                     }
                 },
                 "security": [
@@ -29296,7 +29413,6 @@
                 ]
             }
         },
-		
         "/api/product-suppliers": {
             "get": {
                 "tags": [
@@ -37112,6 +37228,10 @@
         {
             "name": "Benefits & Features",
             "description": "Benefits & Features"
+        },
+        {
+            "name": "Compare Products",
+            "description": "Compare Products"
         },
         {
             "name": "Customer-Address",

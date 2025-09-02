@@ -127,6 +127,7 @@ use App\Http\Controllers\FrontEnd\GlitchErrorController;
 use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventController;
 use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseClaimController;
 use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseClaimController;
+use App\Http\Controllers\CompareProductController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -412,6 +413,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
  
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
+	Route::post('compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
  
 
 	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
