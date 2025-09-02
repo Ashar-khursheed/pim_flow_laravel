@@ -14268,8 +14268,8 @@
                 "tags": [
                     "Compare Products"
                 ],
-                "summary": "Fetch multiple products compare by IDs",
-                "description": "Accepts an array of product IDs and returns their details",
+                "summary": "Fetch product compare by ID",
+                "description": "Accepts a single product ID and returns its details",
                 "operationId": "29ef3b245c471248b158e690739e3ad9",
                 "requestBody": {
                     "required": true,
@@ -14278,12 +14278,9 @@
                             "schema": {
                                 "properties": {
                                     "product_id": {
-                                        "description": "Array of Product IDs",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 101
-                                        }
+                                        "description": "Single product ID to compare",
+                                        "type": "integer",
+                                        "example": 101
                                     }
                                 },
                                 "type": "object"
@@ -14304,27 +14301,24 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Products retrieved successfully"
+                                            "example": "Product retrieved successfully"
                                         },
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 101
-                                                    },
-                                                    "sku": {
-                                                        "type": "string",
-                                                        "example": "SKU12345"
-                                                    },
-                                                    "name": {
-                                                        "type": "string",
-                                                        "example": "Test Product"
-                                                    }
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 101
                                                 },
-                                                "type": "object"
-                                            }
+                                                "sku": {
+                                                    "type": "string",
+                                                    "example": "SKU12345"
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Test Product"
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
