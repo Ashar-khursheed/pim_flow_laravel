@@ -13,8 +13,8 @@ class CompareProductController extends Controller
     /**
      * @OA\Post(
      *     path="/api/frontend/compare-table-product",
-     *     summary="Fetch multiple products compare by IDs",
-     *     description="Accepts an array of product IDs and returns their details",
+     *     summary="Fetch product compare by ID",
+     *     description="Accepts a single product ID and returns its details",
      *     tags={"Compare Products"},
      *     @OA\RequestBody(
      *         required=true,
@@ -22,9 +22,9 @@ class CompareProductController extends Controller
      *             type="object",
      *             @OA\Property(
      *                 property="product_id",
-     *                 type="array",
-     *                 description="Array of Product IDs",
-     *                 @OA\Items(type="integer", example=101)
+     *                 type="integer",
+     *                 example=101,
+     *                 description="Single product ID to compare"
      *             )
      *         )
      *     ),
@@ -34,63 +34,60 @@ class CompareProductController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Products retrieved successfully"),
+     *             @OA\Property(property="message", type="string", example="Product retrieved successfully"),
      *             @OA\Property(
      *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     type="object",
-     *                     @OA\Property(property="id", type="integer", example=101),
-     *                     @OA\Property(property="sku", type="string", example="SKU12345"),
-     *                     @OA\Property(property="name", type="string", example="Test Product")                      
-     *                 )
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=101),
+     *                 @OA\Property(property="sku", type="string", example="SKU12345"),
+     *                 @OA\Property(property="name", type="string", example="Test Product")
      *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=400,
      *         description="Bad request"
-     *     ) 
+     *     )
      * )
      */
     public function getCompareTableProduct(Request $request)
-    {    
+    {
         $request->validate([
-			'product_id' => "required"			 
-		]);
+            'product_id' => "required"
+        ]);
 
-       $alternateProduct =  AlternateProduct::where('product_id',$request->input('product_id'))->orderBy('priority','asc')->get();
+        $alternateProduct = AlternateProduct::where('product_id', $request->input('product_id'))->orderBy('priority', 'asc')->get();
         $formattedProducts = $alternateProduct->map(function ($product) {
-      
-            $products = Product::with([            
-               'brand:id,name',
-             'categories:id,name',
-              'productAttributes.attributeDetails',
-			'productAttributes.measurementUnit',
-            'reviews:id'
 
-         ])
-            ->where('id', $product->product_alternate_id)
-             ->select([
-                'id',
-                'name',
-                'sku',
-                'status',
-                'images',
-                 'currency_id',
-                 'barcode',
+            $products = Product::with([
+                'brand:id,name',
+                'categories:id,name',
+                'productAttributes.attributeDetails',
+                'productAttributes.measurementUnit',
+                'reviews:id'
+
             ])
-            ->first();
-          
+                ->where('id', $product->product_alternate_id)
+                ->select([
+                    'id',
+                    'name',
+                    'sku',
+                    'status',
+                    'images',
+                    'currency_id',
+                    'barcode',
+                ])
+                ->first();
+
             $firstSupplier = $products->productSuppliers->first();
- 
+
             foreach ($products->productAttributes as $attr) {
                 $product_attributes[] = [
-                'attribute_id' => $attr->attribute_id,
-                'attribute_name' => $attr->attributeDetails->name ?? null,
-                'attribute_value' => $attr->attribute_value,
-                'measurement_unit_id' => $attr->measurement_unit_id,
-                'measurement_unit_name' => $attr->measurementUnit->name ?? null,
+                    'attribute_id' => $attr->attribute_id,
+                    'attribute_name' => $attr->attributeDetails->name ?? null,
+                    'attribute_value' => $attr->attribute_value,
+                    'measurement_unit_id' => $attr->measurement_unit_id,
+                    'measurement_unit_name' => $attr->measurementUnit->name ?? null,
                 ];
             }
             return [
@@ -116,7 +113,7 @@ class CompareProductController extends Controller
                 'totalReviews' => $products->reviews?->count() ?? 0,
                 'avgRating' => $products->reviews?->count() > 0 ? $products->reviews->avg('star') : null,
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
-    
+
                 'alt_id' => $product->id,
                 'alt_status' => $product->status,
                 'product_alternate_id' => $product->product_alternate_id,
@@ -130,7 +127,7 @@ class CompareProductController extends Controller
                 'reason' => $product->reason,
                 'brand' => $product->brand ? $product->brand->name : null,
                 'product_attributes' => $product_attributes,
-                 'categories' => $products->categories->pluck('name'),
+                'categories' => $products->categories->pluck('name'),
             ];
         });
 
@@ -138,7 +135,7 @@ class CompareProductController extends Controller
             'success' => true,
             'message' => 'Products retrieved successfully',
             'data' => $formattedProducts,
-            
+
         ]);
     }
 }
