@@ -127,7 +127,7 @@ use App\Http\Controllers\FrontEnd\GlitchErrorController;
 use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventController;
 use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseClaimController;
 use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseClaimController;
-use App\Http\Controllers\CompareProductController;
+use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -413,8 +413,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
  
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
-	Route::post('compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
- 
+	
 
 	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
@@ -545,12 +544,13 @@ Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCu
 
 Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
-
+Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
+ 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
     Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
     Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
     Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class);
-
+	
     Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
 	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
