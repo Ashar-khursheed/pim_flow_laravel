@@ -247,13 +247,10 @@ class QuoteController extends BaseController
 				$quoteAmount += $product['quantity'] * $product['unit_price'];
 				$quoteShipping += config('app.website') == 'US' ? $product['shipping_charge'] : 0;
 			}
-
 			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
-
 			if (config('app.website') == 'UAE') {
 				$quoteShipping = ($quoteAmount + $taxAmount) < 300 ? 25 : 0;
 			}
-
 			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
 			/* Generate new quote number */
@@ -530,10 +527,12 @@ class QuoteController extends BaseController
 			foreach ($request->products as $product) {
 				$totalProducts += $product['quantity'];
 				$quoteAmount += $product['quantity'] * $product['unit_price'];
-				$quoteShipping += $product['shipping_charge'];
+				$quoteShipping += config('app.website') == 'US' ? $product['shipping_charge'] : 0;
 			}
-
 			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
+			if (config('app.website') == 'UAE') {
+				$quoteShipping = ($quoteAmount + $taxAmount) < 300 ? 25 : 0;
+			}
 			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
 			$quote->update([
