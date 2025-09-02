@@ -61,7 +61,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "example":""
+                            "example": ""
                         }
                     },
                     {
@@ -28315,6 +28315,28 @@
                 "summary": "Create a product duplicate",
                 "description": "Creates a new product with the required details.",
                 "operationId": "36292e068d0fb7811644935f30fdee50",
+                 "parameters": [
+                    {
+                        "name": "product",                        
+                        "in": "query",
+                        "description": "Enter Product id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": "1"
+                        }
+                    },
+                    {
+                        "name": "sku",
+                        "in": "query",
+                        "description": "Enter Sku",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                             
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Success",

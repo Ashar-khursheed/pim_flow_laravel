@@ -2817,8 +2817,8 @@ class ProductController extends BaseController
 	 *     description="Creates a new product with the required details.",
 	 *     tags={"Products"},
 	 *  	@OA\Property(property="product", type="string", example="product id"),
-	 * @OA\Property(property="sku", type="string", example="Enter sku"),
-	 *     @OA\Response(
+	 * 		@OA\Property(property="sku", type="string", example="Enter sku"),
+	 *     	@OA\Response(
 	 *         response=201,
 	 *         description="Success",
 	 *          @OA\MediaType(

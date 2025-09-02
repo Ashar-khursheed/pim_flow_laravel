@@ -752,6 +752,9 @@ private function buildOptimizedFilters($category, $allCategoryProductIds, $filte
         return [];
     }
 
+    // DEBUG: Log category measurement priorities
+    \Log::info("Category Measurement Priorities:", $categoryMeasurementPriorities->toArray());
+
     // OPTIMIZATION: Single query to get all attribute values with details
     $allAttributeData = DB::table('product_attributes as pa')
         ->join('attributes as a', 'a.id', '=', 'pa.attribute_id')
@@ -775,6 +778,12 @@ private function buildOptimizedFilters($category, $allCategoryProductIds, $filte
         ->orderBy('pa.attribute_value')
         ->get();
 
+    // DEBUG: Log raw data for capacity attribute
+    $capacityData = $allAttributeData->where('attribute_name', 'Capacity');
+    if ($capacityData->count() > 0) {
+        \Log::info("RAW CAPACITY DATA:", $capacityData->take(10)->toArray());
+    }
+
     // Group by attribute
     $attributeGroups = $allAttributeData->groupBy('attribute_name');
     
@@ -784,8 +793,23 @@ private function buildOptimizedFilters($category, $allCategoryProductIds, $filte
         $firstValue = $attributeValues->first();
         $hasMeasurementConfig = (bool)$firstValue->has_measurement;
         
+        // DEBUG: Log processing for Capacity
+        if ($attributeName === 'Capacity') {
+            \Log::info("Processing Capacity - Has measurement config: " . ($hasMeasurementConfig ? 'YES' : 'NO'));
+            \Log::info("Sample values:", $attributeValues->take(5)->toArray());
+        }
+        
         // Convert and analyze values
         $processedValues = $this->processAttributeValues($attributeValues, $filteredProductIds, $categoryMeasurementPriorities);
+        
+        // DEBUG: Log processed values for Capacity
+        if ($attributeName === 'Capacity') {
+            \Log::info("PROCESSED CAPACITY VALUES:", [
+                'unique_values_count' => count($processedValues['unique_values']),
+                'sample_unique_values' => array_slice($processedValues['unique_values'], 0, 5, true),
+                'unique_numeric_values' => array_slice($processedValues['unique_numeric_values'], 0, 10, true)
+            ]);
+        }
         
         if (empty($processedValues['unique_values'])) {
             continue;
@@ -797,6 +821,11 @@ private function buildOptimizedFilters($category, $allCategoryProductIds, $filte
         if ($shouldCreateRange) {
             $ranges = $this->generateOptimizedRanges($processedValues, $filteredProductIds, $attributeName, $selectedFilters);
             if (!empty($ranges)) {
+                // DEBUG: Log ranges for Capacity
+                if ($attributeName === 'Capacity') {
+                    \Log::info("CAPACITY RANGES GENERATED:", $ranges);
+                }
+                
                 $filters[] = [
                     'specification_name' => $attributeName,
                     'specification_type' => 'range',
@@ -999,116 +1028,6 @@ private function processAttributeValues($attributeValues, $filteredProductIds, $
         'unique_values' => $uniqueDisplayValues,
         'unique_numeric_values' => $uniqueNumericValues,
         'all_numeric' => $allNumeric
-    ];
-}
-
-private function convertSingleValue($item, $attributeMeasurement, $categoryPriority)
-{
-    $originalValue = trim($item->attribute_value);
-    $originalUnitSymbol = $item->unit_symbol ?? '';
-    
-    // Extract numeric value and unit from attribute_value
-    $numericValue = null;
-    $extractedUnit = null;
-    
-    if (is_numeric($originalValue)) {
-        $numericValue = (float)$originalValue;
-    } elseif (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z°]+)?\s*$/', $originalValue, $matches)) {
-        $numericValue = (float)$matches[1];
-        $extractedUnit = $matches[2] ?? '';
-    } else {
-        // Non-numeric value - return as is
-        return [
-            'product_id' => $item->product_id,
-            'original_value' => $originalValue,
-            'converted_numeric' => $originalValue,
-            'display_value' => $originalValue,
-            'unit_symbol' => $originalUnitSymbol
-        ];
-    }
-
-    if (!$attributeMeasurement || !$categoryPriority || !$numericValue) {
-        // No conversion possible
-        $displayUnit = $originalUnitSymbol ?: $extractedUnit ?: '';
-        return [
-            'product_id' => $item->product_id,
-            'original_value' => $originalValue,
-            'converted_numeric' => $numericValue,
-            'display_value' => $numericValue . ($displayUnit ? ' ' . $displayUnit : ''),
-            'unit_symbol' => $displayUnit
-        ];
-    }
-
-    // Find original unit for conversion
-    $originalUnit = null;
-    $originalUnitSymbol = null;
-    
-    // Priority: measurement_unit_id > extracted unit from value > unit_symbol from join
-    if ($item->measurement_unit_id) {
-        $originalUnit = DB::table('measurement_units')->where('id', $item->measurement_unit_id)->first();
-        $originalUnitSymbol = $originalUnit ? $originalUnit->symbol : null;
-    } elseif ($extractedUnit) {
-        $originalUnit = DB::table('measurement_units as mu')
-            ->join('measurement_types as mt', 'mt.id', '=', 'mu.measurement_type_id')
-            ->where('mu.symbol', $extractedUnit)
-            ->where('mt.name', $attributeMeasurement->measurement_type_name)
-            ->select('mu.*')
-            ->first();
-        $originalUnitSymbol = $extractedUnit;
-    } elseif ($item->unit_symbol) {
-        $originalUnit = DB::table('measurement_units as mu')
-            ->join('measurement_types as mt', 'mt.id', '=', 'mu.measurement_type_id')
-            ->where('mu.symbol', $item->unit_symbol)
-            ->where('mt.name', $attributeMeasurement->measurement_type_name)
-            ->select('mu.*')
-            ->first();
-        $originalUnitSymbol = $item->unit_symbol;
-    }
-
-    // ALWAYS use category's primary unit as target
-    $targetUnit = $categoryPriority->primary_symbol;
-    $convertedValue = $numericValue;
-
-    // Log what we're trying to convert
-    \Log::info("Converting: {$originalValue} | Original unit: {$originalUnitSymbol} | Target unit: {$targetUnit} | Category primary unit ID: {$categoryPriority->primary_unit_id}");
-
-    // Perform conversion if original unit is different from target
-    if ($originalUnit && $originalUnitSymbol && $originalUnitSymbol !== $targetUnit) {
-        try {
-            if (function_exists('convert_unit')) {
-                $converted = convert_unit(
-                    strtolower($attributeMeasurement->measurement_type_name), 
-                    $numericValue, 
-                    $originalUnitSymbol, 
-                    $targetUnit
-                );
-                
-                if (is_numeric($converted) && $converted !== false) {
-                    $convertedValue = $this->roundByMeasurementType(
-                        strtolower($attributeMeasurement->measurement_type_name), 
-                        $converted
-                    );
-                    
-                    \Log::info("SUCCESS: Converted {$numericValue} {$originalUnitSymbol} to {$convertedValue} {$targetUnit}");
-                } else {
-                    \Log::warning("FAILED: convert_unit returned false/invalid for {$numericValue} {$originalUnitSymbol} to {$targetUnit}");
-                }
-            } else {
-                \Log::error("convert_unit function does not exist!");
-            }
-        } catch (Exception $e) {
-            \Log::error("EXCEPTION: Conversion failed for {$originalValue}: " . $e->getMessage());
-        }
-    } else {
-        \Log::info("NO CONVERSION NEEDED: {$originalValue} already in target unit or no original unit found");
-    }
-
-    return [
-        'product_id' => $item->product_id,
-        'original_value' => $originalValue,
-        'converted_numeric' => $convertedValue,
-        'display_value' => $convertedValue . ' ' . $targetUnit,
-        'unit_symbol' => $targetUnit
     ];
 }
 
