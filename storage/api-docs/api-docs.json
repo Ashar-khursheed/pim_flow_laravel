@@ -7941,86 +7941,6 @@
                 ]
             }
         },
-        "/api/compare-table-product": {
-            "post": {
-                "tags": [
-                    "Compare Products"
-                ],
-                "summary": "Fetch multiple products compare by IDs",
-                "description": "Accepts an array of product IDs and returns their details",
-                "operationId": "e041e37620c4f59bed1d254b99036fcb",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "product_ids": {
-                                        "description": "Array of Product IDs",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 101
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Products retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 101
-                                                    },
-                                                    "sku": {
-                                                        "type": "string",
-                                                        "example": "SKU12345"
-                                                    },
-                                                    "name": {
-                                                        "type": "string",
-                                                        "example": "Test Product"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/api/customers/{customer_id}/addresses": {
             "get": {
                 "tags": [
@@ -14341,6 +14261,35 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/frontend/compare-table-product": {
+            "post": {
+                "tags": [
+                    "Compare Products"
+                ],
+                "summary": "Fetch products compare by ID",
+                "description": "Accepts an array of product IDs and returns their details",
+                "operationId": "29ef3b245c471248b158e690739e3ad9",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                 "responses": {
+                    "200": {
+                        "description": "Successful fetch"
+                         
+                    },
+                    "404": {
+                        "description": "not found data"
+                    }
+                }
             }
         },
         "/api/frontend/contact-directories": {
@@ -37230,10 +37179,6 @@
             "description": "Benefits & Features"
         },
         {
-            "name": "Compare Products",
-            "description": "Compare Products"
-        },
-        {
             "name": "Customer-Address",
             "description": "Customer-Address"
         },
@@ -37292,6 +37237,10 @@
         {
             "name": "Frontend Company Profiles",
             "description": "Frontend Company Profiles"
+        },
+        {
+            "name": "Compare Products",
+            "description": "Compare Products"
         },
         {
             "name": "Frontend ContactDirectory",

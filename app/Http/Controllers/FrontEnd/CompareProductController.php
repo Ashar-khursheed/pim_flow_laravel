@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\FrontEnd;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
-use App\Models\Category;
+use App\Models\FrontEnd\AlternateProduct;
 class CompareProductController extends Controller
 {
     /**
      * @OA\Post(
-     *     path="/api/compare-table-product",
+     *     path="/api/frontend/compare-table-product",
      *     summary="Fetch multiple products compare by IDs",
      *     description="Accepts an array of product IDs and returns their details",
      *     tags={"Compare Products"},
@@ -21,7 +21,7 @@ class CompareProductController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(
-     *                 property="product_ids",
+     *                 property="product_id",
      *                 type="array",
      *                 description="Array of Product IDs",
      *                 @OA\Items(type="integer", example=101)
@@ -50,48 +50,59 @@ class CompareProductController extends Controller
      *     @OA\Response(
      *         response=400,
      *         description="Bad request"
-     *     ),
-     *     security={{"bearerAuth":{}}}
+     *     ) 
      * )
      */
     public function getCompareTableProduct(Request $request)
-    {
-        $ids = $request->input('product_ids', []);
-        if (!$ids) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Compare Products ids required!',
-                'data' => [],
+    {   //dd($request->input());
+        $request->validate([
+			'product_id' => "required|integer"			 
+		]);
 
-            ]);
-        }
-        $products = Product::with([
-            'alternateProducts',
-            'brand:id,name',
-            'categories:id,name'
-        ])
-            ->whereIn('id', $ids)
-            ->select([
+       $alternateProduct =  AlternateProduct::where('product_id',$request->input('product_id'))->orderBy('priority','asc')->get();
+       //dd($alternateProduct);
+       
+     
+ 
+        $formattedProducts = $alternateProduct->map(function ($product) {
+         //   echo "<pre>";print_r($product->product_alternate_id);die;
+            $products = Product::with([            
+               'brand:id,name',
+             'categories:id,name',
+              'productAttributes.attributeDetails',
+			'productAttributes.measurementUnit',
+            'reviews:id'
+
+         ])
+            ->where('id', $product->product_alternate_id)
+             ->select([
                 'id',
                 'name',
                 'sku',
                 'status',
                 'images',
-                'currency_id',
-                'barcode',
-
+                 'currency_id',
+                 'barcode',
             ])
-            ->paginate(10);
-
-        $formattedProducts = $products->map(function ($product) {
-            $firstSupplier = $product->productSuppliers->first();
-
+            ->first();
+          
+            $firstSupplier = $products->productSuppliers->first();
+ 
+            foreach ($products->productAttributes as $attr) {
+                $product_attributes[] = [
+                'attribute_id' => $attr->attribute_id,
+                'attribute_name' => $attr->attributeDetails->name ?? null,
+                'attribute_value' => $attr->attribute_value,
+                'measurement_unit_id' => $attr->measurement_unit_id,
+                'measurement_unit_name' => $attr->measurementUnit->name ?? null,
+                ];
+            }
             return [
-                'id' => $product->id,
-                'product_name' => $product->name,
-                'product_sku' => $product->sku,
-                'product_status' => $product->status,
-                'product_images' => $product->images,
+                'id' => $products->id,
+                'product_name' => $products->name,
+                'product_sku' => $products->sku,
+                'product_status' => $products->status,
+                'product_images' => is_array($products->images) ? $product->images : (is_array($decoded = json_decode($products->images, true)) ? $decoded : null),
                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
                 'price' => $firstSupplier ? (float) $firstSupplier->price : null,
                 'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
@@ -106,26 +117,24 @@ class CompareProductController extends Controller
                 'delivery_days' => $firstSupplier->delivery_days ?? null,
                 'return_policy' => $firstSupplier->return_policy ?? null,
                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+                'totalReviews' => $products->reviews?->count() ?? 0,
+                'avgRating' => $products->reviews?->count() > 0 ? $products->reviews->avg('star') : null,
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
-                // If alternateProducts is a relation (many records), map them
-                'alternates' => $product->alternateProducts->map(function ($alt) {
-                    return [
-                        'alt_id' => $alt->id,
-                        'alt_status' => $alt->status,
-                        'product_alternate_id' => $alt->product_alternate_id,
-                        'priority' => $alt->priority,
-                        'similarity' => $alt->similarity,
-                        'order' => $alt->order,
-                        'alt_created' => $alt->created_at,
-                        'alt_updated_by' => $alt->updated_by,
-                        'alt_created_by' => $alt->created_by,
-                        'alt_rejected_by' => $alt->rejected_by,
-                        'reason' => $alt->reason,
-                    ];
-                }),
-
+    
+                'alt_id' => $product->id,
+                'alt_status' => $product->status,
+                'product_alternate_id' => $product->product_alternate_id,
+                'priority' => $product->priority,
+                'similarity' => $product->similarity,
+                'order' => $product->order,
+                'alt_created' => $product->created_at,
+                'alt_updated_by' => $product->updated_by,
+                'alt_created_by' => $product->created_by,
+                'alt_rejected_by' => $product->rejected_by,
+                'reason' => $product->reason,
                 'brand' => $product->brand ? $product->brand->name : null,
-                'categories' => $product->categories->pluck('name'),
+                'product_attributes' => $product_attributes,
+                 'categories' => $products->categories->pluck('name'),
             ];
         });
 
@@ -133,14 +142,7 @@ class CompareProductController extends Controller
             'success' => true,
             'message' => 'Products retrieved successfully',
             'data' => $formattedProducts,
-            'pagination' => [
-                'total' => $products->total(),
-                'per_page' => $products->perPage(),
-                'current_page' => $products->currentPage(),
-                'last_page' => $products->lastPage(),
-                'next_page_url' => $products->nextPageUrl(),
-                'prev_page_url' => $products->previousPageUrl(),
-            ],
+            
         ]);
     }
 }
