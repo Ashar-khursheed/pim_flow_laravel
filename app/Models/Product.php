@@ -255,7 +255,6 @@ class Product extends Model
 	{
 		return $this->hasMany(ProductQuestion::class);
 	}
-
 	public function alternateProducts()
     {
         return $this->hasMany(AlternateProduct::class, 'product_id', 'id');
