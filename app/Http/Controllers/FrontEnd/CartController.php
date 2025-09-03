@@ -1543,8 +1543,8 @@ class CartController extends Controller
             
             if ($supplier) {
                 $product->vendor_sku = $supplier->vendor_sku ?? null;
-                $product->price = (float) $cartProduct->unit_price;
-                $product->sale_price = (float) $cartProduct->unit_price;
+                $product->price = (float) $supplier->price;
+                $product->sale_price = (float) $supplier->sale_price;
                 $product->original_price = (float) $supplier->price;
                 $product->front_sale_price = (float) $cartProduct->unit_price;
                 $product->best_price = (float) $cartProduct->unit_price;
