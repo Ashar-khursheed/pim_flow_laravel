@@ -815,7 +815,7 @@ public function buyItAgain(Request $request)
             ]);
 
             // call your CartController function
-            $cartResponse = app(\App\Http\Controllers\CartController::class)->addToCart($cartRequest);
+            $cartResponse = app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
 
             $addedProducts->push([
                 'product_id' => $product->id,
