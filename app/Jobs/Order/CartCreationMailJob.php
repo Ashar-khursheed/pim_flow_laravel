@@ -19,11 +19,13 @@ class CartCreationMailJob implements ShouldQueue
 	public $timeout = 600;
 	public $customerCartID;
 	public $randomPassword;
+	public $isNewCustomer;
 
 	public function __construct($data)
 	{
 		$this->customerCartID = $data['recordId'];
 		$this->randomPassword = $data['randomPassword'];
+		$this->isNewCustomer = $data['isNewCustomer'];
 	}
 
 	public function handle(): void
@@ -49,7 +51,7 @@ class CartCreationMailJob implements ShouldQueue
 			$to = $customerCart->customer->email;
 			Mail::to($to)->send(
 				(
-					new CartCreationMail($customerCart, $this->randomPassword)
+					new CartCreationMail($customerCart, $this->randomPassword, $this->isNewCustomer)
 				)
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)
