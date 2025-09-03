@@ -730,4 +730,348 @@ public function index(Request $request): JsonResponse
             'message' => 'Usage report generated successfully'
         ]);
     }
+
+
+
+#[OA\Post(
+    path: '/api/customer/apply-coupon',
+    summary: 'Apply coupon code for customer and get discount',
+    tags: ['Customer Coupons'],
+    security: [['bearerAuth' => []]], 
+    requestBody: new OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['coupon_code', 'cart_items'],
+            properties: [
+                'coupon_code' => new OA\Property(property: 'coupon_code', type: 'string', description: 'Coupon code to apply'),
+                'cart_items' => new OA\Property(
+                    property: 'cart_items',
+                    type: 'array',
+                    description: 'Array of cart items',
+                    items: new OA\Items(
+                        properties: [
+                            'product_id' => new OA\Property(property: 'product_id', type: 'integer'),
+                            'category_id' => new OA\Property(property: 'category_id', type: 'integer'),
+                            'quantity' => new OA\Property(property: 'quantity', type: 'integer'),
+                            'price' => new OA\Property(property: 'price', type: 'number', format: 'float'),
+                            'subtotal' => new OA\Property(property: 'subtotal', type: 'number', format: 'float'),
+                        ],
+                        type: 'object'
+                    )
+                ),
+            ]
+        )
+    ),
+    responses: [
+        new OA\Response(
+            response: 200,
+            description: 'Coupon applied successfully',
+            content: new OA\JsonContent(
+                properties: [
+                    'success' => new OA\Property(property: 'success', type: 'boolean'),
+                    'data' => new OA\Property(
+                        property: 'data',
+                        properties: [
+                            'coupon_valid' => new OA\Property(property: 'coupon_valid', type: 'boolean'),
+                            'coupon_code' => new OA\Property(property: 'coupon_code', type: 'string'),
+                            'coupon_name' => new OA\Property(property: 'coupon_name', type: 'string'),
+                            'discount_type' => new OA\Property(property: 'discount_type', type: 'string'),
+                            'discount_value' => new OA\Property(property: 'discount_value', type: 'number'),
+                            'original_total' => new OA\Property(property: 'original_total', type: 'number'),
+                            'discount_amount' => new OA\Property(property: 'discount_amount', type: 'number'),
+                            'final_total' => new OA\Property(property: 'final_total', type: 'number'),
+                            'savings' => new OA\Property(property: 'savings', type: 'number'),
+                            'applicable_items' => new OA\Property(
+                                property: 'applicable_items', 
+                                type: 'array',
+                                items: new OA\Items(
+                                    properties: [
+                                        'product_id' => new OA\Property(property: 'product_id', type: 'integer'),
+                                        'quantity' => new OA\Property(property: 'quantity', type: 'integer'),
+                                        'price' => new OA\Property(property: 'price', type: 'number', format: 'float'),
+                                        'subtotal' => new OA\Property(property: 'subtotal', type: 'number', format: 'float'),
+                                    ],
+                                    type: 'object'
+                                )
+                            ),
+                        ],
+                        type: 'object'
+                    ),
+                    'message' => new OA\Property(property: 'message', type: 'string'),
+                ]
+            )
+        ),
+        new OA\Response(
+            response: 400,
+            description: 'Invalid coupon or cannot be applied',
+            content: new OA\JsonContent(
+                properties: [
+                    'success' => new OA\Property(property: 'success', type: 'boolean'),
+                    'data' => new OA\Property(
+                        property: 'data',
+                        properties: [
+                            'coupon_valid' => new OA\Property(property: 'coupon_valid', type: 'boolean'),
+                            'reason' => new OA\Property(property: 'reason', type: 'string'),
+                        ],
+                        type: 'object'
+                    ),
+                    'message' => new OA\Property(property: 'message', type: 'string'),
+                ]
+            )
+        )
+    ]
+)]
+public function applyCustomerCoupon(Request $request): JsonResponse
+{
+    $validated = $request->validate([
+        'coupon_code' => 'required|string',
+        'cart_items' => 'required|array|min:1',
+        'cart_items.*.product_id' => 'required|integer|exists:ec_products,id',
+        'cart_items.*.category_id' => 'required|integer|exists:categories,id',
+        'cart_items.*.quantity' => 'required|integer|min:1',
+        'cart_items.*.price' => 'required|numeric|min:0',
+        'cart_items.*.subtotal' => 'required|numeric|min:0',
+    ]);
+
+    // Get authenticated customer
+    $customerId = auth()->id(); // Assuming customer is authenticated
+    
+    // Find coupon by code
+    $coupon = Coupon::where('code', $validated['coupon_code'])
+                   ->where('is_active', true)
+                   ->first();
+
+    if (!$coupon) {
+        return response()->json([
+            'success' => false,
+            'data' => [
+                'coupon_valid' => false,
+                'reason' => 'Coupon code not found or inactive'
+            ],
+            'message' => 'Invalid coupon code'
+        ], 400);
+    }
+
+    // Calculate cart totals
+    $cartItems = collect($validated['cart_items']);
+    $originalTotal = $cartItems->sum('subtotal');
+    $productIds = $cartItems->pluck('product_id')->unique()->toArray();
+    $categoryIds = $cartItems->pluck('category_id')->unique()->toArray();
+
+    // Validate coupon eligibility
+    $validationResult = $this->validateCouponForCustomer($coupon, $customerId, $originalTotal, $categoryIds, $productIds);
+    
+    if (!$validationResult['valid']) {
+        return response()->json([
+            'success' => false,
+            'data' => [
+                'coupon_valid' => false,
+                'reason' => $validationResult['reason']
+            ],
+            'message' => 'Coupon cannot be applied'
+        ], 400);
+    }
+
+    // Determine applicable items based on coupon basis
+    $applicableItems = $this->getApplicableItems($coupon, $cartItems);
+    
+    if ($applicableItems->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'data' => [
+                'coupon_valid' => false,
+                'reason' => 'No items in cart are eligible for this coupon'
+            ],
+            'message' => 'Coupon not applicable to cart items'
+        ], 400);
+    }
+
+    // Calculate discount on applicable items
+    $applicableTotal = $applicableItems->sum('subtotal');
+    $discountAmount = $this->calculateCouponDiscount($coupon, $applicableTotal);
+
+    // Ensure discount doesn't exceed applicable total
+    $discountAmount = min($discountAmount, $applicableTotal);
+    $finalTotal = max(0, $originalTotal - $discountAmount);
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'coupon_valid' => true,
+            'coupon_code' => $coupon->code,
+            'coupon_name' => $coupon->name,
+            'coupon_description' => $coupon->description,
+            'discount_type' => $coupon->type,
+            'discount_value' => $coupon->value,
+            'original_total' => round($originalTotal, 2),
+            'discount_amount' => round($discountAmount, 2),
+            'final_total' => round($finalTotal, 2),
+            'savings' => round($discountAmount, 2),
+            'applicable_items' => $applicableItems->map(function ($item) {
+                return [
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'subtotal' => $item['subtotal']
+                ];
+            })->toArray(),
+            'coupon_details' => [
+                'basis' => $coupon->basis,
+                'usage_type' => $coupon->usage_type,
+                'min_order_value' => $coupon->min_order_value,
+                'max_order_value' => $coupon->max_order_value,
+                'expire_date' => $coupon->expire_date->format('Y-m-d H:i:s'),
+            ]
+        ],
+        'message' => 'Coupon applied successfully! You saved $' . number_format($discountAmount, 2)
+    ]);
+}
+
+/**
+ * Validate if coupon can be used by customer
+ */
+private function validateCouponForCustomer($coupon, $customerId, $orderValue, $categoryIds, $productIds): array
+{
+    // Check if coupon is valid (active, approved, not expired)
+    if (!$coupon->isValid()) {
+        return [
+            'valid' => false,
+            'reason' => 'Coupon is inactive, expired, or not approved'
+        ];
+    }
+
+    // Check if coupon has reached usage limit
+    if ($coupon->hasReachedUsageLimit()) {
+        return [
+            'valid' => false,
+            'reason' => 'Coupon usage limit has been reached'
+        ];
+    }
+
+    // Check usage limit per customer
+    if ($coupon->usage_limit_per_customer) {
+        $customerUsageCount = CouponUsage::where('coupon_id', $coupon->id)
+                                      ->where('customer_id', $customerId)
+                                      ->count();
+        
+        if ($customerUsageCount >= $coupon->usage_limit_per_customer) {
+            return [
+                'valid' => false,
+                'reason' => 'You have reached the usage limit for this coupon'
+            ];
+        }
+    }
+
+    // Check if it's a "once" usage coupon and customer has already used it
+    if ($coupon->usage_type === 'once') {
+        $hasUsed = CouponUsage::where('coupon_id', $coupon->id)
+                             ->where('customer_id', $customerId)
+                             ->exists();
+        
+        if ($hasUsed) {
+            return [
+                'valid' => false,
+                'reason' => 'You have already used this coupon'
+            ];
+        }
+    }
+
+    // Check minimum order value
+    if ($coupon->min_order_value && $orderValue < $coupon->min_order_value) {
+        return [
+            'valid' => false,
+            'reason' => 'Minimum order value of $' . number_format($coupon->min_order_value, 2) . ' required'
+        ];
+    }
+
+    // Check maximum order value
+    if ($coupon->max_order_value && $orderValue > $coupon->max_order_value) {
+        return [
+            'valid' => false,
+            'reason' => 'Order value exceeds maximum limit of $' . number_format($coupon->max_order_value, 2)
+        ];
+    }
+
+    // Check customer-specific coupon
+    if ($coupon->basis === 'customer') {
+        $isValidCustomer = $coupon->customers()->where('customer_id', $customerId)->exists();
+        if (!$isValidCustomer) {
+            return [
+                'valid' => false,
+                'reason' => 'This coupon is not available for your account'
+            ];
+        }
+    }
+
+    // Check category-specific coupon
+    if ($coupon->basis === 'category') {
+        $validCategories = $coupon->categories()->pluck('categories.id')->toArray();
+        $hasValidCategory = !empty(array_intersect($categoryIds, $validCategories));
+        
+        if (!$hasValidCategory) {
+            return [
+                'valid' => false,
+                'reason' => 'This coupon is not applicable to items in your cart'
+            ];
+        }
+    }
+
+    // Check product-specific coupon
+    if ($coupon->basis === 'product') {
+        $validProducts = $coupon->products()->pluck('products.id')->toArray();
+        $hasValidProduct = !empty(array_intersect($productIds, $validProducts));
+        
+        if (!$hasValidProduct) {
+            return [
+                'valid' => false,
+                'reason' => 'This coupon is not applicable to items in your cart'
+            ];
+        }
+    }
+
+    return ['valid' => true];
+}
+
+/**
+ * Get items that are applicable for the coupon
+ */
+private function getApplicableItems($coupon, $cartItems)
+{
+    switch ($coupon->basis) {
+        case 'promotional':
+            // All items are applicable
+            return $cartItems;
+            
+        case 'customer':
+            // All items are applicable for customer-specific coupons
+            return $cartItems;
+            
+        case 'category':
+            $validCategories = $coupon->categories()->pluck('categories.id')->toArray();
+            return $cartItems->filter(function ($item) use ($validCategories) {
+                return in_array($item['category_id'], $validCategories);
+            });
+            
+        case 'product':
+            $validProducts = $coupon->products()->pluck('products.id')->toArray();
+            return $cartItems->filter(function ($item) use ($validProducts) {
+                return in_array($item['product_id'], $validProducts);
+            });
+            
+        default:
+            return collect([]);
+    }
+}
+
+/**
+ * Calculate discount amount
+ */
+private function calculateCouponDiscount($coupon, $applicableTotal): float
+{
+    if ($coupon->type === 'fixed') {
+        return min($coupon->value, $applicableTotal);
+    } else { // percentage
+        return ($applicableTotal * $coupon->value) / 100;
+    }
+}
 }

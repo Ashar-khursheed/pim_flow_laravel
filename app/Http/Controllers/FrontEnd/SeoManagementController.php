@@ -299,6 +299,7 @@ class SeoManagementController extends Controller
                 'paragraph_2' => $item->paragraph_2,
                 'paragraph_3' => $item->paragraph_3,
                 'paragraph_4' => $item->paragraph_4,
+                'banner_slug' => $item->banner_slug,
                 'banner_image_file' => $item->banner_image_file,
                 'banner_image_alt_text' => $item->banner_image_alt_text,
                 'popular_tags' => is_string($item->popular_tags)
