@@ -15,7 +15,7 @@ return new class extends Migration
 			$table->id();
 			$table->string('reference_number')->unique();
 			$table->integer('customer_id');
-			$table->text('customer_address_id');
+			$table->integer('customer_address_id');
 			$table->decimal('shipping_charge', 10, 2);
 			$table->boolean('is_lift_gate')->nullable();
 			$table->boolean('is_residential_address')->nullable();

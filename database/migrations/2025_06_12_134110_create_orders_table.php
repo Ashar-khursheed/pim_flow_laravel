@@ -24,6 +24,8 @@ return new class extends Migration
 			$table->decimal('amount', 10, 2);
 			$table->decimal('tax_percentage', 10, 2);
 			$table->decimal('tax_amount', 10, 2);
+			$table->integer('coupon_id')->nullable();
+			$table->decimal('discount', 10, 2)->nullable();
 			$table->decimal('total_amount', 10, 2);
 			$table->integer('total_products');
 

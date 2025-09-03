@@ -102,6 +102,7 @@ class OrderPlacedMail extends Mailable
 		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
 		$taxPercent = config('app.website') == 'UAE' ? round($order->tax_percentage) : $order->tax_percentage;
 		$taxAmount = $order->tax_amount ?? 0;
+		$discount = $order->discount ?? 0;
 		$total = $order->total_amount ?? 0;
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
@@ -134,6 +135,7 @@ class OrderPlacedMail extends Mailable
 			'taxName' => $taxName,
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
+			'discount' => $discount,
 			'total' => $total,
 
 			'siteUrl' => $siteUrl,
