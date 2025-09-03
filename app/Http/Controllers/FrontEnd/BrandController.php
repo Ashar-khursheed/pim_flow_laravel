@@ -577,7 +577,7 @@ public function brandsByCategory($id): JsonResponse
 
     // Fetch brands that are actually used + published + have logo
     $brands = Brand::whereIn('id', $brandIds)
-        ->where('status', 'published')
+       ->where('status', '=', 'published')
         ->whereNotNull('logo')
         ->where('logo', '!=', 'null')
         ->select('id', 'name', 'logo')
