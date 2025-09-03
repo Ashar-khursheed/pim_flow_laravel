@@ -16775,6 +16775,15 @@
                                         "format": "float",
                                         "example": 199.99
                                     },
+                                    "coupon_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "discount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
+                                    },
                                     "products": {
                                         "type": "array",
                                         "items": {
@@ -25099,6 +25108,15 @@
                                         "format": "float",
                                         "example": 199.99
                                     },
+                                    "coupon_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "discount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
+                                    },
                                     "products": {
                                         "type": "array",
                                         "items": {
@@ -25245,6 +25263,15 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 199.99
+                                    },
+                                    "coupon_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "discount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
                                     },
                                     "products": {
                                         "type": "array",
