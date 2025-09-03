@@ -275,7 +275,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
     Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
     Route::post('/coupons/{coupon}/reject', [F_CouponController::class, 'reject']);
     Route::post('/coupons/validate', [F_CouponController::class, 'validate']);
-    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
+
     Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
 
 	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
@@ -547,6 +547,7 @@ Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'get
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
  
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
 	Route::prefix('api/customer')->group(function () {
         
         // Customer coupon application
