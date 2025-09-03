@@ -150,7 +150,7 @@ class QuoteController extends BaseController
 						$product->currency_symbol = $product->currency->symbol ?? null;
 						unset($product->brand, $product->currency);
 					}
-					$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
 					? getDateRange($record->created_at, $quoteProduct->product_supplier['delivery_days'])
 					: null;
@@ -384,7 +384,7 @@ class QuoteController extends BaseController
 					unset($product->brand, $product->currency);
 				}
 
-				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
 				? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
 				: null;
@@ -467,7 +467,7 @@ class QuoteController extends BaseController
 				unset($product->brand, $product->currency);
 			}
 
-			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
 			? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
 			: null;
@@ -625,7 +625,7 @@ class QuoteController extends BaseController
 				}
 
 				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only([
-					'price', 'sale_price', 'delivery_days', 'return_policy'
+					'price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy'
 				]);
 
 				$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier

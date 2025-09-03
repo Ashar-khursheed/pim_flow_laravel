@@ -23,6 +23,7 @@ class ProductSupplier extends Model
 		'delivery_days',
 		'return_policy',
 		'free_shipping',
+		'shipping_charge',
 		'margin',
 		'restocking_fees',
 		'warranty_information',

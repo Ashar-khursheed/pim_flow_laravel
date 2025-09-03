@@ -28,6 +28,7 @@ class CreateProductSuppliersTable extends Migration
 			$table->string('delivery_days');
 			$table->string('return_policy');
 			$table->boolean('free_shipping')->default(false);
+			$table->decimal('shipping_charge', 10, 2)->nullable();
 			$table->decimal('margin', 10, 2)->nullable();
 			$table->decimal('restocking_fees', 10, 2)->nullable();
 			$table->string('warranty_information')->nullable();

@@ -129,7 +129,7 @@ class QuoteController extends BaseController
 							: null;
 						unset($product->brand, $product->currency, $product->seoProductUrl);
 					}
-					$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
 					? getDateRange($record->created_at, $quoteProduct->product_supplier['delivery_days'])
 					: null;
@@ -336,7 +336,7 @@ class QuoteController extends BaseController
 					unset($product->brand, $product->currency);
 				}
 
-				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
 
 				/* Format numeric values to 2 decimal places */
 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -424,7 +424,7 @@ class QuoteController extends BaseController
 							: null;
 				unset($product->brand, $product->currency, $product->seoProductUrl);
 			}
-			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
 			? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
 			: null;
@@ -603,7 +603,7 @@ class QuoteController extends BaseController
 				}
 
 				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only([
-					'price', 'sale_price', 'delivery_days', 'return_policy'
+					'price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy'
 				]);
 
 				$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier

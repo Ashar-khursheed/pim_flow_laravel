@@ -104,7 +104,7 @@ class CustomerCartController extends Controller
 						$product->currency_symbol = $product->currency->symbol ?? null;
 						unset($product->brand, $product->currency);
 					}
-					$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
 					? getDateRange($record->created_at, $customerCartProduct->product_supplier['delivery_days'])
 					: null;
@@ -289,7 +289,7 @@ class CustomerCartController extends Controller
 				}
 
 				$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)
-					->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
 					? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
 					: null;
@@ -376,7 +376,7 @@ class CustomerCartController extends Controller
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				unset($product->brand, $product->currency);
 			}
-			$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+			$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
 			? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
 			: null;

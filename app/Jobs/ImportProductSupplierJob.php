@@ -201,6 +201,16 @@ class ImportProductSupplierJob implements ShouldQueue
 				$rowErrors[] = "Invalid Free Shipping Option: '$free_shipping'.";
 			}
 
+			if (!empty($free_shipping) && $free_shipping === 'Yes') {
+				if (empty($shipping_charge) || $shipping_charge == 0) {
+					$rowErrors[] = "Shipping charge is required and must be greater than 0 when Free Shipping = Yes.";
+				}
+			}
+
+			if (!empty($shipping_charge) && !is_numeric($shipping_charge)) {
+				$rowErrors[] = "Shipping charge must be a numeric value.";
+			}
+
 			if (!empty($warranty_information) && !in_array($warranty_information, $warrantyOptions)) {
 				$rowErrors[] = "Invalid Warranty Information: '$warranty_information'.";
 			}
@@ -298,6 +308,7 @@ class ImportProductSupplierJob implements ShouldQueue
 				$supplier->return_policy = $return_policy;
 
 				$supplier->free_shipping = (!empty($free_shipping) && strtolower($free_shipping) === 'yes') ? 1 : 0;
+				$supplier->shipping_charge = $supplier->free_shipping == 1 ? 0 : $supplier->shipping_charge;
 				$supplier->margin = $margin;
 
 				$supplier->restocking_fees = $restocking_fees !== null ? (float)$restocking_fees : null;
