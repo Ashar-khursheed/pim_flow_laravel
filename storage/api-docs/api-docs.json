@@ -11605,6 +11605,11 @@
                                         "type": "integer",
                                         "minimum": 1,
                                         "example": 2
+                                    },
+                                    "vendor_id": {
+                                        "description": "ID of the vendor",
+                                        "type": "integer",
+                                        "example": 69
                                     }
                                 },
                                 "type": "object"
@@ -11657,54 +11662,6 @@
                                 }
                             }
                         }
-                    },
-                    "401": {
-                        "description": "User not authenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthorized user"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "properties": {
-                                                "product_id": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "The product id field is required."
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
                     }
                 },
                 "security": [
@@ -11724,7 +11681,7 @@
                 "operationId": "57ce73d43bf903c2f955d5ed41ec960f",
                 "responses": {
                     "200": {
-                        "description": "Cart items retrieved successfully",
+                        "description": "Successful operation",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -11733,99 +11690,35 @@
                                             "type": "boolean",
                                             "example": true
                                         },
-                                        "currency_title": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string",
-                                                "example": "USD"
-                                            }
-                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
                                                 "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "user_id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
                                                     "product_id": {
                                                         "type": "integer",
                                                         "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Sample Product"
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 99.99
                                                     },
                                                     "quantity": {
                                                         "type": "integer",
                                                         "example": 2
                                                     },
-                                                    "product": {
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 1
-                                                            },
-                                                            "name": {
-                                                                "type": "string",
-                                                                "example": "Product Name"
-                                                            },
-                                                            "price": {
-                                                                "type": "number",
-                                                                "format": "float",
-                                                                "example": 99.99
-                                                            },
-                                                            "image": {
-                                                                "type": "string",
-                                                                "example": "https://example.com/storage/products/image.jpg"
-                                                            },
-                                                            "in_wishlist": {
-                                                                "type": "boolean",
-                                                                "example": false
-                                                            },
-                                                            "images": {
-                                                                "type": "array",
-                                                                "items": {
-                                                                    "type": "string",
-                                                                    "example": "https://example.com/storage/products/image1.jpg"
-                                                                }
-                                                            },
-                                                            "currency": {
-                                                                "properties": {
-                                                                    "id": {
-                                                                        "type": "integer",
-                                                                        "example": 1
-                                                                    },
-                                                                    "title": {
-                                                                        "type": "string",
-                                                                        "example": "USD"
-                                                                    }
-                                                                },
-                                                                "type": "object"
-                                                            },
-                                                            "discounts": {
-                                                                "type": "array",
-                                                                "items": {
-                                                                    "properties": {
-                                                                        "id": {
-                                                                            "type": "integer",
-                                                                            "example": 1
-                                                                        },
-                                                                        "title": {
-                                                                            "type": "string",
-                                                                            "example": "Summer Sale"
-                                                                        },
-                                                                        "value": {
-                                                                            "type": "number",
-                                                                            "format": "float",
-                                                                            "example": 10
-                                                                        }
-                                                                    },
-                                                                    "type": "object"
-                                                                }
-                                                            }
-                                                        },
-                                                        "type": "object"
+                                                    "discount": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 10
+                                                    },
+                                                    "wishlist": {
+                                                        "type": "boolean",
+                                                        "example": false
                                                     }
                                                 },
                                                 "type": "object"
@@ -11836,6 +11729,9 @@
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Bearer token missing or invalid"
                     }
                 },
                 "security": [
@@ -11854,8 +11750,8 @@
                 "description": "Remove all items from the user's shopping cart",
                 "operationId": "571253799378f287bd0e992fbb273207",
                 "responses": {
-                    "201": {
-                        "description": "Cart cleared successfully or was already empty",
+                    "200": {
+                        "description": "Cart cleared successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -11866,7 +11762,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Cart cleared successfully."
+                                            "example": "Cart has been cleared."
                                         }
                                     },
                                     "type": "object"
@@ -11874,25 +11770,11 @@
                             }
                         }
                     },
-                    "200": {
-                        "description": "Cart was already empty",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Cart was already empty or could not be cleared."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                    "401": {
+                        "description": "Unauthorized - Bearer token missing or invalid"
+                    },
+                    "500": {
+                        "description": "Server error while clearing the cart"
                     }
                 },
                 "security": [
@@ -11914,17 +11796,17 @@
                     {
                         "name": "productId",
                         "in": "path",
-                        "description": "ID of the product to remove from cart",
+                        "description": "ID of the product to remove",
                         "required": true,
                         "schema": {
                             "type": "integer",
-                            "example": 1
+                            "example": 123
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Product removed from cart successfully",
+                        "description": "Product removed successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -11932,12 +11814,25 @@
                                         "success": {
                                             "type": "boolean",
                                             "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product removed from cart."
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Product not found in cart"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Bearer token missing or invalid"
+                    },
+                    "500": {
+                        "description": "Server error while removing product from cart"
                     }
                 },
                 "security": [
@@ -11961,19 +11856,18 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "product_id",
+                                    "productId",
                                     "quantity"
                                 ],
                                 "properties": {
-                                    "product_id": {
+                                    "productId": {
                                         "description": "ID of the product",
                                         "type": "integer",
-                                        "example": 1
+                                        "example": 123
                                     },
                                     "quantity": {
-                                        "description": "New quantity",
+                                        "description": "New quantity for the product",
                                         "type": "integer",
-                                        "minimum": 1,
                                         "example": 3
                                     }
                                 },
@@ -11984,7 +11878,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Cart item quantity updated successfully",
+                        "description": "Quantity updated successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -11993,99 +11887,32 @@
                                             "type": "boolean",
                                             "example": true
                                         },
-                                        "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "user_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "session_id": {
-                                                    "type": "string",
-                                                    "example": null,
-                                                    "nullable": true
-                                                },
-                                                "product_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "quantity": {
-                                                    "type": "integer",
-                                                    "example": 3
-                                                },
-                                                "currency_title": {
-                                                    "type": "string",
-                                                    "example": "USD"
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2023-01-01T12:00:00.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2023-01-01T12:30:00.000000Z"
-                                                }
-                                            },
-                                            "type": "object"
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Quantity updated."
+                                        },
+                                        "cart_total": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 249.99
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Invalid input (e.g., quantity less than 1)"
                     },
                     "404": {
-                        "description": "Cart item not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Item not found in cart."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "Product not found in cart"
                     },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "properties": {
-                                                "quantity": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "The quantity must be at least 1."
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                    "401": {
+                        "description": "Unauthorized - Bearer token missing or invalid"
+                    },
+                    "500": {
+                        "description": "Server error while updating cart quantity"
                     }
                 },
                 "security": [
@@ -12109,19 +11936,18 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "product_id",
+                                    "productId",
                                     "quantity"
                                 ],
                                 "properties": {
-                                    "product_id": {
+                                    "productId": {
                                         "description": "ID of the product",
                                         "type": "integer",
-                                        "example": 1
+                                        "example": 123
                                     },
                                     "quantity": {
-                                        "description": "Quantity to decrease",
+                                        "description": "Amount to decrease (defaults to 1 if not provided)",
                                         "type": "integer",
-                                        "minimum": 1,
                                         "example": 1
                                     }
                                 },
@@ -12131,60 +11957,8 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Cart item quantity decreased successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "user_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "session_id": {
-                                                    "type": "string",
-                                                    "example": null,
-                                                    "nullable": true
-                                                },
-                                                "product_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "quantity": {
-                                                    "type": "integer",
-                                                    "example": 2
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2023-01-01T12:00:00.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2023-01-01T12:30:00.000000Z"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
                     "200": {
-                        "description": "Item removed from cart (quantity became 0)",
+                        "description": "Quantity decreased successfully (or product removed if quantity <= 0)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -12195,303 +11969,30 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Item removed from cart."
+                                            "example": "Quantity decreased."
+                                        },
+                                        "cart_total": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 199.99
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Invalid input (e.g., negative quantity)"
                     },
                     "404": {
-                        "description": "Cart item not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Item not found in cart."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "Product not found in cart"
                     },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "properties": {
-                                                "quantity": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "The quantity must be at least 1."
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/cart/guest": {
-            "get": {
-                "tags": [
-                    "Frontend-Cart"
-                ],
-                "summary": "View guest cart items",
-                "description": "Retrieve all items in the guest user's shopping cart (session-based)",
-                "operationId": "a2040d2a4c980a4320f1a76c4ea60914",
-                "responses": {
-                    "200": {
-                        "description": "Guest cart items retrieved successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "session_id": {
-                                                        "type": "string",
-                                                        "example": "abc123session"
-                                                    },
-                                                    "product_id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "quantity": {
-                                                        "type": "integer",
-                                                        "example": 2
-                                                    },
-                                                    "product": {
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 1
-                                                            },
-                                                            "name": {
-                                                                "type": "string",
-                                                                "example": "Product Name"
-                                                            },
-                                                            "price": {
-                                                                "type": "number",
-                                                                "format": "float",
-                                                                "example": 99.99
-                                                            },
-                                                            "image": {
-                                                                "type": "string",
-                                                                "example": "product-image.jpg"
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/frontend/cart/guest/clear": {
-            "delete": {
-                "tags": [
-                    "Frontend-Cart"
-                ],
-                "summary": "Clear guest cart",
-                "description": "Remove all items from the guest user's shopping cart (session-based)",
-                "operationId": "cbdd61c043626151906c88cfd817185a",
-                "responses": {
-                    "200": {
-                        "description": "Guest cart cleared successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/frontend/cart/add-multiple": {
-            "post": {
-                "tags": [
-                    "Frontend-Cart"
-                ],
-                "summary": "Add multiple products to cart",
-                "description": "Adds an array of products with quantity to the cart for the authenticated or guest user.",
-                "operationId": "addMultipleToCart",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "products"
-                                ],
-                                "properties": {
-                                    "products": {
-                                        "type": "array",
-                                        "items": {
-                                            "required": [
-                                                "product_id",
-                                                "quantity"
-                                            ],
-                                            "properties": {
-                                                "product_id": {
-                                                    "description": "ID of the product",
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "quantity": {
-                                                    "description": "Quantity to add",
-                                                    "type": "integer",
-                                                    "example": 2
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Products added to cart",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Products added to cart"
-                                        },
-                                        "cart": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "product_id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "quantity": {
-                                                        "type": "integer",
-                                                        "example": 2
-                                                    },
-                                                    "user_id": {
-                                                        "type": "integer",
-                                                        "nullable": true
-                                                    },
-                                                    "session_id": {
-                                                        "type": "string",
-                                                        "nullable": true
-                                                    },
-                                                    "product": {
-                                                        "description": "Details of the product",
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 1
-                                                            },
-                                                            "name": {
-                                                                "type": "string",
-                                                                "example": "Product Name"
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                    "401": {
+                        "description": "Unauthorized - Bearer token missing or invalid"
                     },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "type": "object",
-                                            "example": {
-                                                "products.0.product_id": [
-                                                    "The product_id field is required."
-                                                ]
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                    "500": {
+                        "description": "Server error while decreasing cart quantity"
                     }
                 },
                 "security": [
@@ -12506,41 +12007,47 @@
                 "tags": [
                     "Frontend-Cart"
                 ],
-                "summary": "Get cart summary for the authenticated user or guest session",
+                "summary": "Get cart summary for the authenticated user",
                 "description": "Returns subtotal, tax, total, shipping rate, and other summary details for the cart.",
                 "operationId": "c1e212d80e6ffa4eff20d2a31660e108",
                 "responses": {
                     "200": {
-                        "description": "Cart summary returned successfully",
+                        "description": "Cart summary retrieved successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "subtotal": {
                                             "type": "number",
                                             "format": "float",
-                                            "example": 150
+                                            "example": 199.99
                                         },
                                         "tax": {
                                             "type": "number",
                                             "format": "float",
-                                            "example": 15
+                                            "example": 10
                                         },
-                                        "total_with_tax": {
+                                        "shipping_rate": {
                                             "type": "number",
                                             "format": "float",
-                                            "example": 165
+                                            "example": 5
                                         },
-                                        "savings": {
+                                        "discount": {
                                             "type": "number",
                                             "format": "float",
                                             "example": 20
                                         },
-                                        "item_count": {
-                                            "type": "integer",
-                                            "example": 3
+                                        "total": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 194.99
                                         },
-                                        "currency_title": {
+                                        "currency": {
+                                            "description": "Currency code for the cart summary",
                                             "type": "string",
                                             "example": "USD"
                                         }
@@ -12551,7 +12058,10 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthenticated"
+                        "description": "Unauthorized - Bearer token missing or invalid"
+                    },
+                    "500": {
+                        "description": "Server error while retrieving cart summary"
                     }
                 },
                 "security": [
@@ -12571,12 +12081,17 @@
                 "operationId": "e80b47574fae58a50f2cc361fff89fe5",
                 "responses": {
                     "200": {
-                        "description": "Total products returned successfully",
+                        "description": "Total products retrieved successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "total": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "total_products": {
+                                            "description": "Total quantity of items in the cart",
                                             "type": "integer",
                                             "example": 5
                                         }
@@ -12587,7 +12102,10 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthenticated"
+                        "description": "Unauthorized - Bearer token missing or invalid"
+                    },
+                    "500": {
+                        "description": "Server error while retrieving total products in cart"
                     }
                 },
                 "security": [
@@ -12595,34 +12113,6 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/frontend/cart/total-products-guest": {
-            "get": {
-                "tags": [
-                    "Frontend-Cart"
-                ],
-                "summary": "Get total quantity of products in cart for guest user",
-                "description": "Returns the total number of items in the cart for a guest session using session ID.",
-                "operationId": "5d5bcea8e6c15bf3a727b89c164f11af",
-                "responses": {
-                    "200": {
-                        "description": "Total products for guest returned successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "total": {
-                                            "type": "integer",
-                                            "example": 3
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
             }
         },
         "/api/frontend/categories": {
