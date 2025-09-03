@@ -557,13 +557,9 @@ class BrandController extends Controller
 public function brandsByCategory($id): JsonResponse
 {
     // Get category ids (parent + children)
-    $categoryIds = collect([$id]);
-    $childCategoryIds = $this->getAllChildCategoryIds($id);
-    if ($childCategoryIds->isNotEmpty()) {
-        $categoryIds = $categoryIds->merge($childCategoryIds);
-    }
+    $categoryIds = collect([$id])->merge($this->getAllChildCategoryIds($id));
 
-    // Collect unique published brand ids that actually exist
+    // Collect unique brand IDs for products in these categories
     $brandIds = Product::whereHas('categories', function ($query) use ($categoryIds) {
             $query->whereIn('product_categories.category_id', $categoryIds);
         })
@@ -579,25 +575,24 @@ public function brandsByCategory($id): JsonResponse
         ], 404);
     }
 
-    // Fetch brands (only published) and limit 12
+    // Fetch brands that are actually used + published + have logo
     $brands = Brand::whereIn('id', $brandIds)
         ->where('status', 'published')
+        ->whereNotNull('logo')
+        ->where('logo', '!=', 'null')
         ->select('id', 'name', 'logo')
         ->with('seoUrl')
-        ->limit(12) // 👈 show only 12
-        ->get();
-
-    // Filter valid logos
-    $brands = $brands->filter(function ($brand) {
-        return !empty($brand->logo) && strtolower($brand->logo) !== 'null';
-    })->map(function ($brand) {
-        return [
-            'id'   => $brand->id,
-            'name' => $brand->name,
-            'logo' => asset($brand->logo),
-            'url'  => $brand->seoUrl->url ?? null,
-        ];
-    })->values();
+        ->get()
+        ->map(function ($brand) {
+            return [
+                'id'   => $brand->id,
+                'name' => $brand->name,
+                'logo' => asset($brand->logo),
+                'url'  => $brand->seoUrl->url ?? null,
+            ];
+        })
+        ->take(12)   // 👈 now we only keep 12 AFTER filtering
+        ->values();
 
     if ($brands->isEmpty()) {
         return response()->json([
@@ -613,6 +608,7 @@ public function brandsByCategory($id): JsonResponse
         'data'    => $brands
     ])->header('Cache-Control', 'public, max-age=86400');
 }
+
 
 
 /**
