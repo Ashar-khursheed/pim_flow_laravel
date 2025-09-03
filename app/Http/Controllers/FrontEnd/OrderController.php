@@ -177,6 +177,8 @@ class OrderController extends BaseController
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
 	 *             @OA\Property(property="is_cod", type="boolean", example=false),
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
+	 *             @OA\Property(property="coupon_id", type="integer", example=1),
+	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -197,7 +199,6 @@ class OrderController extends BaseController
 	 */
 	public function store(Request $request)
 	{
-		logger()->info('customer order payload: ', $request->all());
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
@@ -206,6 +207,8 @@ class OrderController extends BaseController
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
 			'is_cod' => 'nullable|boolean',
+			'coupon_id' => 'nullable|integer',
+			'discount' => 'nullable|numeric|min:0',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -227,6 +230,7 @@ class OrderController extends BaseController
 		DB::beginTransaction();
 
 		try {
+			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
 			$orderShipping = 0;
@@ -244,7 +248,7 @@ class OrderController extends BaseController
 			if (config('app.website') == 'UAE') {
 				$orderShipping = ($orderAmount + $taxAmount) < 300 ? 25 : 0;
 			}
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
+			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
 
@@ -269,6 +273,8 @@ class OrderController extends BaseController
 				'amount' => $orderAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
+				'coupon_id' => $request->coupon_id ?? null,
+				'discount' => $discount,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),

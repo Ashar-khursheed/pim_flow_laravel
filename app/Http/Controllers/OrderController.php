@@ -236,6 +236,8 @@ class OrderController extends Controller
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
+	 *             @OA\Property(property="coupon_id", type="integer", example=1),
+	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -264,6 +266,8 @@ class OrderController extends Controller
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
+			'coupon_id' => 'nullable|integer',
+			'discount' => 'nullable|numeric|min:0',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -286,6 +290,7 @@ class OrderController extends Controller
 		DB::beginTransaction();
 
 		try {
+			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
 			$orderShipping = 0;
@@ -300,7 +305,7 @@ class OrderController extends Controller
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
+			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
 
@@ -325,6 +330,8 @@ class OrderController extends Controller
 				'amount' => $orderAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
+				'coupon_id' => $request->coupon_id ?? null,
+				'discount' => $discount,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
