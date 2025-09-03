@@ -232,6 +232,14 @@
 												<td style="font-family: 'Noto Sans',  sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
 												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
 											</tr>
+
+											@if ($discount > 0)
+											<tr>
+												<td style="font-family: 'Noto Sans',  sans-serif;">Discount</td>
+												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
+											</tr>
+											@endif
+
 											<tr>
 												<td colspan="2" style="border-top: 2px solid #E2E8F0;"></td>
 											</tr>

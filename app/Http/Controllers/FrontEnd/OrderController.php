@@ -136,7 +136,7 @@ class OrderController extends BaseController
 					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
 					: null;
 				}
-				foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -347,7 +347,7 @@ class OrderController extends BaseController
 				: null;
 			}
 
-			foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}
@@ -464,7 +464,7 @@ class OrderController extends BaseController
 			$orderProduct->is_returnable = 'yes';
 		}
 
-		foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+		foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
 				$order->$key = number_format($order->$key, 2, '.', '');
 			}
