@@ -8320,6 +8320,10 @@
                                         "type": "boolean",
                                         "example": true
                                     },
+                                    "is_new_customer": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "example": 5
