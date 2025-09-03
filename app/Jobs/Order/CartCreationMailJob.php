@@ -42,7 +42,7 @@ class CartCreationMailJob implements ShouldQueue
 				'TEST' => 'test_carts@thehorecastore.com',
 				default => 'carts@thehorecastore.com',
 			};
-			$fromEmail = config('app.website') === 'UAE' ? 'cart@thehorecastore.co' : 'cart@thehorecastore.com';
+			$fromEmail = config('app.website') === 'UAE' ? 'hello@thehorecastore.co' : 'sales@thehorecastore.com';
 			$fromName = 'HorecaStore Cart Updates';
 			$replyToEmail = $fromEmail;
 
