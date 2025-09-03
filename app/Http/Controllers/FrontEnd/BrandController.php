@@ -556,38 +556,38 @@ class BrandController extends Controller
     // }
 public function brandsByCategory($id): JsonResponse
 {
-    // Get brands directly assigned to this category
-    $brandIds = Product::whereHas('categories', function ($query) use ($id) {
-        $query->where('product_categories.category_id', $id);
-    })->pluck('brand_id')->unique()->filter();
-
-    // If no direct brands, check all child categories recursively
-    if ($brandIds->isEmpty()) {
-        $childCategoryIds = $this->getAllChildCategoryIds($id);
-        if ($childCategoryIds->isNotEmpty()) {
-            $brandIds = Product::whereHas('categories', function ($query) use ($childCategoryIds) {
-                $query->whereIn('product_categories.category_id', $childCategoryIds);
-            })->pluck('brand_id')->unique()->filter();
-        }
+    // Get category ids (parent + children)
+    $categoryIds = collect([$id]);
+    $childCategoryIds = $this->getAllChildCategoryIds($id);
+    if ($childCategoryIds->isNotEmpty()) {
+        $categoryIds = $categoryIds->merge($childCategoryIds);
     }
 
-    // If still empty
+    // Collect unique published brand ids that actually exist
+    $brandIds = Product::whereHas('categories', function ($query) use ($categoryIds) {
+            $query->whereIn('product_categories.category_id', $categoryIds);
+        })
+        ->pluck('brand_id')
+        ->unique()
+        ->filter();
+
     if ($brandIds->isEmpty()) {
         return response()->json([
             'success' => false,
             'message' => 'No brands found for this category or its child categories.',
-            'data' => []
+            'data'    => []
         ], 404);
     }
 
-    // Fetch brand details with SEO url
+    // Fetch brands (only published) and limit 12
     $brands = Brand::whereIn('id', $brandIds)
         ->where('status', 'published')
         ->select('id', 'name', 'logo')
-        ->with('seoUrl') // eager load seo url
+        ->with('seoUrl')
+        ->limit(12) // 👈 show only 12
         ->get();
 
-    // Filter out brands with null/empty/invalid logos
+    // Filter valid logos
     $brands = $brands->filter(function ($brand) {
         return !empty($brand->logo) && strtolower($brand->logo) !== 'null';
     })->map(function ($brand) {
@@ -595,22 +595,22 @@ public function brandsByCategory($id): JsonResponse
             'id'   => $brand->id,
             'name' => $brand->name,
             'logo' => asset($brand->logo),
-            'url'  => $brand->seoUrl->url ?? null, // seo URL
+            'url'  => $brand->seoUrl->url ?? null,
         ];
-    })->values(); // reindex collection
+    })->values();
 
     if ($brands->isEmpty()) {
         return response()->json([
             'success' => false,
-            'message' => 'No brands with logo found.',
-            'data' => []
+            'message' => 'No published brands with logos found.',
+            'data'    => []
         ], 404);
     }
 
     return response()->json([
         'success' => true,
         'message' => 'Brands retrieved successfully.',
-        'data' => $brands
+        'data'    => $brands
     ])->header('Cache-Control', 'public, max-age=86400');
 }
 
