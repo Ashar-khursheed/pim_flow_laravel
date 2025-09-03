@@ -732,34 +732,152 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function buyItAgain()
+	// public function buyItAgain()
+	// {
+	// 	$customer = auth()->user();
+
+	// 	$deliveredOrders = $customer->orders()->where('status', 'Delivered')->orderByDesc('created_at')->take(5)->with(['orderProducts.product'])->get();
+
+	// 	$products = collect();
+
+	// 	foreach ($deliveredOrders as $order) {
+	// 		foreach ($order->orderProducts as $orderProduct) {
+	// 			if ($orderProduct->product) {
+	// 				$images = null;
+	// 				if (is_string($orderProduct->product->images)) {
+	// 					$images = json_decode($orderProduct->product->images, true);
+	// 				} elseif (is_array($orderProduct->product->images)) {
+	// 					$images = $orderProduct->product->images;
+	// 				}
+
+	// 				$products->push([
+	// 					'product_id' => $orderProduct->product->id,
+	// 					'name' => $orderProduct->product->name,
+	// 					'quantity' => $orderProduct->quantity,
+	// 					'unit_price' => $orderProduct->unit_price,
+	// 					'images' => $images,
+	// 					'brand_name' => $orderProduct->product->brand->name ?? null,
+
+	// 				]);
+	// 			}
+	// 		}
+	// 	}
+
+	// 	if ($products->isEmpty()) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'No delivered orders found or no valid products available to buy again.'
+	// 		], 404);
+	// 	}
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Products retrieved from your previous orders.',
+	// 		'data' => $products
+	// 	], 200);
+	// }
+	public function buyItAgain(Request $request)
 	{
 		$customer = auth()->user();
 
-		$deliveredOrders = $customer->orders()->where('status', 'Delivered')->orderByDesc('created_at')->take(5)->with(['orderProducts.product'])->get();
+		if (!$customer) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Unauthorized user',
+			], 401);
+		}
+
+		// Fetch last 5 delivered orders with products
+		$deliveredOrders = $customer->orders()
+			->where('status', 'Delivered')
+			->orderByDesc('created_at')
+			->take(5)
+			->with(['orderProducts.product.productSuppliers', 'orderProducts.product.currency', 'orderProducts.product.brand'])
+			->get();
 
 		$products = collect();
 
+		// Get or create customer cart
+		$customerCart = CustomerCart::where('customer_id', $customer->id)->first();
+		if (!$customerCart) {
+			$customerCart = CustomerCart::create([
+				'reference_number' => $this->generateReferenceNumber(),
+				'customer_id' => $customer->id,
+				'customer_address_id' => 0,
+				'shipping_charge' => 0,
+				'is_lift_gate' => 0,
+				'is_residential_address' => 1,
+				'amount' => 0,
+				'tax_percentage' => 0,
+				'tax_amount' => 0,
+				'total_amount' => 0,
+				'total_products' => 0,
+				'created_by' => $customer->id,
+				'updated_by' => $customer->id,
+			]);
+		}
+
 		foreach ($deliveredOrders as $order) {
 			foreach ($order->orderProducts as $orderProduct) {
-				if ($orderProduct->product) {
-					$images = null;
-					if (is_string($orderProduct->product->images)) {
-						$images = json_decode($orderProduct->product->images, true);
-					} elseif (is_array($orderProduct->product->images)) {
-						$images = $orderProduct->product->images;
-					}
+				$product = $orderProduct->product;
+				if (!$product) {
+					continue;
+				}
 
-					$products->push([
-						'product_id' => $orderProduct->product->id,
-						'name' => $orderProduct->product->name,
-						'quantity' => $orderProduct->quantity,
-						'unit_price' => $orderProduct->unit_price,
-						'images' => $images,
-						'brand_name' => $orderProduct->product->brand->name ?? null,
+				// Decode images safely
+				$images = null;
+				if (is_string($product->images)) {
+					$images = json_decode($product->images, true);
+				} elseif (is_array($product->images)) {
+					$images = $product->images;
+				}
 
+				$quantity = $orderProduct->quantity;
+
+				// Get supplier info for pricing
+				$supplier = $product->productSuppliers->first();
+				if (!$supplier) {
+					continue;
+				}
+
+				$unitPrice = $supplier->sale_price ?: $supplier->price;
+				$actualVendorId = $supplier->vendor_id;
+
+				// Check if already in cart
+				$cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+					->where('product_id', $product->id)
+					->where('vendor_id', $actualVendorId)
+					->first();
+
+				if ($cartProduct) {
+					// Update existing
+					$cartProduct->quantity += $quantity;
+					$cartProduct->amount = $cartProduct->quantity * $unitPrice;
+					$cartProduct->total_amount = $cartProduct->amount + $cartProduct->shipping_charge;
+					$cartProduct->save();
+				} else {
+					// Create new
+					$amount = $quantity * $unitPrice;
+					$cartProduct = CustomerCartProduct::create([
+						'customer_cart_id' => $customerCart->id,
+						'product_id' => $product->id,
+						'vendor_id' => $actualVendorId,
+						'quantity' => $quantity,
+						'unit_price' => $unitPrice,
+						'amount' => $amount,
+						'shipping_charge' => 0,
+						'total_amount' => $amount,
 					]);
 				}
+
+				$products->push([
+					'product_id' => $product->id,
+					'name' => $product->name,
+					'quantity' => $quantity,
+					'unit_price' => $unitPrice,
+					'images' => $images,
+					'brand_name' => $product->brand->name ?? null,
+				]);
 			}
 		}
 
@@ -770,10 +888,13 @@ class OrderController extends BaseController
 			], 404);
 		}
 
+		// Update cart totals once after processing all
+		$this->updateCartTotals($customerCart);
+
 		return response()->json([
 			'success' => true,
-			'message' => 'Products retrieved from your previous orders.',
-			'data' => $products
+			'message' => 'Products added to cart from your previous orders.',
+			'data' => $products,
 		], 200);
 	}
 
