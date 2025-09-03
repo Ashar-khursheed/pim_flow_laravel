@@ -547,6 +547,20 @@ Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'get
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
  
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+	Route::prefix('api/customer')->group(function () {
+        
+        // Customer coupon application
+        Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
+        
+        // Customer can view available coupons for them
+        Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
+        
+        // Customer coupon history
+        Route::get('coupon-history', [F_CouponController::class, 'getCustomerCouponHistory']);
+        
+        // Check if coupon code exists (without applying)
+        Route::post('check-coupon', [F_CouponController::class, 'checkCouponCode']);
+    });
     Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
     Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
     Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class);

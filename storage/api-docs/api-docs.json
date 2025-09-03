@@ -14938,6 +14938,169 @@
                 ]
             }
         },
+        "/api/customer/apply-coupon": {
+            "post": {
+                "tags": [
+                    "Customer Coupons"
+                ],
+                "summary": "Apply coupon code for customer and get discount",
+                "operationId": "ed8ea97b04759c0a7e107c5658fe73fa",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "coupon_code",
+                                    "cart_items"
+                                ],
+                                "properties": {
+                                    "coupon_code": {
+                                        "description": "Coupon code to apply",
+                                        "type": "string"
+                                    },
+                                    "cart_items": {
+                                        "description": "Array of cart items",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer"
+                                                },
+                                                "category_id": {
+                                                    "type": "integer"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer"
+                                                },
+                                                "price": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "subtotal": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Coupon applied successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "coupon_valid": {
+                                                    "type": "boolean"
+                                                },
+                                                "coupon_code": {
+                                                    "type": "string"
+                                                },
+                                                "coupon_name": {
+                                                    "type": "string"
+                                                },
+                                                "discount_type": {
+                                                    "type": "string"
+                                                },
+                                                "discount_value": {
+                                                    "type": "number"
+                                                },
+                                                "original_total": {
+                                                    "type": "number"
+                                                },
+                                                "discount_amount": {
+                                                    "type": "number"
+                                                },
+                                                "final_total": {
+                                                    "type": "number"
+                                                },
+                                                "savings": {
+                                                    "type": "number"
+                                                },
+                                                "applicable_items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "product_id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "quantity": {
+                                                                "type": "integer"
+                                                            },
+                                                            "price": {
+                                                                "type": "number",
+                                                                "format": "float"
+                                                            },
+                                                            "subtotal": {
+                                                                "type": "number",
+                                                                "format": "float"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid coupon or cannot be applied",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "coupon_valid": {
+                                                    "type": "boolean"
+                                                },
+                                                "reason": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/customer-address": {
             "get": {
                 "tags": [
@@ -36814,6 +36977,10 @@
         {
             "name": "Coupons",
             "description": "Coupons"
+        },
+        {
+            "name": "Customer Coupons",
+            "description": "Customer Coupons"
         },
         {
             "name": "Frontend-Customer-Address",
