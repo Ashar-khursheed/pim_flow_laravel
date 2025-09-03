@@ -2,6 +2,7 @@
 
 namespace App\Models\FrontEnd;
 use App\Models\User;
+use App\Models\FrontEnd\Customers;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -60,7 +61,7 @@ class Coupon extends Model
 
     public function customers(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'coupon_customers', 'coupon_id', 'customer_id')
+        return $this->belongsToMany(Customers::class, 'coupon_customers', 'coupon_id', 'customer_id')
                     ->withPivot('usage_count')
                     ->withTimestamps();
     }
