@@ -321,6 +321,7 @@ class QuoteController extends BaseController
 				'quoteProducts.product.brand:id,name',
 				'quoteProducts.product.currency:id,symbol',
 				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+				'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
 				'quoteEmails',
 			]);
 
@@ -405,6 +406,7 @@ class QuoteController extends BaseController
 			'quoteProducts.product.currency:id,symbol',
 			'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
 			'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
 			'quoteEmails',
 		]);
 
@@ -586,6 +588,7 @@ class QuoteController extends BaseController
 				'quoteProducts.product.brand:id,name',
 				'quoteProducts.product.currency:id,symbol',
 				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+				'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
 				'quoteEmails',
 			]);
 
