@@ -15262,32 +15262,25 @@
             }
         },
         "/api/customer/check-coupon": {
-            "post": {
+            "get": {
                 "tags": [
                     "Customer Coupons"
                 ],
-                "summary": "Check if a coupon code is valid",
-                "description": "Validates a coupon code for existence, active status, and expiry date.",
-                "operationId": "957fac8da98c70fb66c2a94a233a2c96",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "coupon_code"
-                                ],
-                                "properties": {
-                                    "coupon_code": {
-                                        "type": "string",
-                                        "example": "SUMMER2025"
-                                    }
-                                },
-                                "type": "object"
-                            }
+                "summary": "Check if a coupon code is valid for the authenticated customer",
+                "description": "Validates a coupon code for existence, active status, expiry, and usage for the logged-in customer.",
+                "operationId": "696acf20db2ffa5a6fe9e3751bf9f6cc",
+                "parameters": [
+                    {
+                        "name": "coupon_code",
+                        "in": "query",
+                        "description": "The coupon code to validate",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "SUMMER2025"
                         }
                     }
-                },
+                ],
                 "responses": {
                     "200": {
                         "description": "Coupon is valid",
@@ -15301,7 +15294,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Coupon is valid"
+                                            "example": "Coupon is valid for this customer"
                                         },
                                         "data": {
                                             "properties": {
@@ -15327,7 +15320,6 @@
                                                 },
                                                 "discount_value": {
                                                     "type": "number",
-                                                    "format": "float",
                                                     "example": 20
                                                 },
                                                 "basis": {
@@ -15337,16 +15329,6 @@
                                                 "usage_type": {
                                                     "type": "string",
                                                     "example": "once"
-                                                },
-                                                "min_order_value": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 100
-                                                },
-                                                "max_order_value": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 500
                                                 },
                                                 "expire_date": {
                                                     "type": "string",
@@ -15384,7 +15366,7 @@
                                                 },
                                                 "reason": {
                                                     "type": "string",
-                                                    "example": "Coupon has expired"
+                                                    "example": "Coupon expired"
                                                 }
                                             },
                                             "type": "object"
@@ -17248,6 +17230,10 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "is_customer_pickup": {
+                                        "type": "boolean",
+                                        "example": false
                                     },
                                     "products": {
                                         "type": "array",
@@ -25581,6 +25567,10 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "is_customer_pickup": {
+                                        "type": "boolean",
+                                        "example": false
                                     },
                                     "products": {
                                         "type": "array",
