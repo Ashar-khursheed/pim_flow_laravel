@@ -1181,6 +1181,7 @@ public function checkCustomerCoupon(Request $request)
         'success' => true,
         'message' => 'Coupon is valid',
         'data' => [
+              'coupon_id' => $coupon->id,
             'coupon_code' => $coupon->code,
             'coupon_name' => $coupon->name,
             'coupon_description' => $coupon->description,
