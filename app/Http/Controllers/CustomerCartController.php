@@ -45,6 +45,7 @@ class CustomerCartController extends Controller
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Eager load relationships */
 			$recordsQuery->with([
+				'customer:id,name,email,country_code,mobile_number',
 				'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 				'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'customerCartProducts.product.brand:id,name',
