@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 use App\Models\FrontEnd\CustomerCart;
 use App\Models\FrontEnd\CustomerCartProduct;
+use App\Models\Product;
 use App\Models\FrontEnd\CustomerAddress;
 use App\Jobs\Order\CartCreationMailJob;
 
