@@ -552,6 +552,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
         
         // Customer coupon application
         Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
+
+		Route::post('check-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
         
         // Customer can view available coupons for them
         Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
