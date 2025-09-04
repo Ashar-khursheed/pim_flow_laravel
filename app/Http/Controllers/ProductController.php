@@ -3094,11 +3094,11 @@ class ProductController extends BaseController
 
 					// --- Delete from S3 ---
 					// Example: if $documentPath is a full URL, extract the relative path
-					$s3Path = ltrim(parse_url($documentPath, PHP_URL_PATH), '/');
-					//$s3Path = $documentPath;
-					if (Storage::disk('s3')->exists($s3Path)) {
-						Storage::disk('s3')->delete($s3Path);
-					}
+					// $s3Path = ltrim(parse_url($documentPath, PHP_URL_PATH), '/');
+					// //$s3Path = $documentPath;
+					// if (Storage::disk('s3')->exists($s3Path)) {
+					// 	Storage::disk('s3')->delete($s3Path);
+					// }
 					// Remove from array
 					unset($currentDocuments[$index]);
 					break;
@@ -3113,14 +3113,18 @@ class ProductController extends BaseController
 			}
 
 			//Reindex array
-			$currentDocuments = array_values($currentDocuments); 
-			$product->documents = json_encode($currentDocuments);	 
+			if(!empty($currentDocuments)){
+				$currentDocuments = array_values($currentDocuments); 
+				$product->documents = json_encode($currentDocuments);
+			}else{
+				$product->documents="";
+			}	 
 			$product->save();
 
 			return response()->json([
 				'success' => true,
 				'message' => 'Document deleted successfully',
-				'documents' => $currentDocuments
+				'documents' => $currentDocuments?$currentDocuments:'',
 			]);
 
 		} catch (\Exception $e) {
