@@ -32,105 +32,204 @@ class CustomerCartController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function index(Request $request)
-	{
-		$searchableColumns = ['id', 'reference_number'];
-		$sortableColumns = array_merge($searchableColumns, ['shipping_charge', 'total_amount', 'total_products', 'created_at', 'updated_at']);
+	// public function index(Request $request)
+	// {
+	// 	$searchableColumns = ['id', 'reference_number'];
+	// 	$sortableColumns = array_merge($searchableColumns, ['shipping_charge', 'total_amount', 'total_products', 'created_at', 'updated_at']);
 
-		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
-		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+	// 	$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+	// 	$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		$recordsQuery = CustomerCart::query();
-		/* Check if pagination requested */
-		if ($request->filled('page') && $request->filled('length')) {
-			/* Eager load relationships */
-			$recordsQuery->with([
-				'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-				'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-				'customerCartProducts.product.brand:id,name',
-				'customerCartProducts.product.currency:id,symbol',
-			]);
+	// 	$recordsQuery = CustomerCart::query();
+	// 	/* Check if pagination requested */
+	// 	if ($request->filled('page') && $request->filled('length')) {
+	// 		/* Eager load relationships */
+	// 		$recordsQuery->with([
+	// 			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+	// 			'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+	// 			'customerCartProducts.product.brand:id,name',
+	// 			'customerCartProducts.product.currency:id,symbol',
+	// 		]);
 
-			if ($request->has('from_date') && $request->has('to_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->whereBetween('customer_carts.created_at', [$from, $to]);
-			} elseif ($request->has('from_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$recordsQuery->where('customer_carts.created_at', '>=', $from);
-			} elseif ($request->has('to_date')) {
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->where('customer_carts.created_at', '<=', $to);
-			}
+	// 		if ($request->has('from_date') && $request->has('to_date')) {
+	// 			$from = $request->from_date . ' 00:00:00';
+	// 			$to = $request->to_date . ' 23:59:59';
+	// 			$recordsQuery->whereBetween('customer_carts.created_at', [$from, $to]);
+	// 		} elseif ($request->has('from_date')) {
+	// 			$from = $request->from_date . ' 00:00:00';
+	// 			$recordsQuery->where('customer_carts.created_at', '>=', $from);
+	// 		} elseif ($request->has('to_date')) {
+	// 			$to = $request->to_date . ' 23:59:59';
+	// 			$recordsQuery->where('customer_carts.created_at', '<=', $to);
+	// 		}
 
-			/* Global search */
-			if ($request->filled('global')) {
-				$search = $request->input('global');
-				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
-					foreach ($searchableColumns as $col) {
-						$q->orWhere("customer_carts.$col", 'like', '%' . $search . '%');
-					}
-				});
-			}
+	// 		/* Global search */
+	// 		if ($request->filled('global')) {
+	// 			$search = $request->input('global');
+	// 			$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+	// 				foreach ($searchableColumns as $col) {
+	// 					$q->orWhere("customer_carts.$col", 'like', '%' . $search . '%');
+	// 				}
+	// 			});
+	// 		}
 
-			/* Sorting */
-			$recordsQuery->orderBy($sortBy, $sortDir);
+	// 		/* Sorting */
+	// 		$recordsQuery->orderBy($sortBy, $sortDir);
 
-			/* Pagination */
-			$length = (int) $request->input('length');
-			$page = (int) $request->input('page');
+	// 		/* Pagination */
+	// 		$length = (int) $request->input('length');
+	// 		$page = (int) $request->input('page');
 
-			$totalRecords = (clone $recordsQuery)->count();
-			$totalPages = (int) ceil($totalRecords / $length);
+	// 		$totalRecords = (clone $recordsQuery)->count();
+	// 		$totalPages = (int) ceil($totalRecords / $length);
 
-			if ($page > $totalPages && $totalPages > 0) {
-				$page = 1;
-			}
+	// 		if ($page > $totalPages && $totalPages > 0) {
+	// 			$page = 1;
+	// 		}
 
-			$records = $recordsQuery
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get();
+	// 		$records = $recordsQuery
+	// 		->offset(($page - 1) * $length)
+	// 		->limit($length)
+	// 		->get();
 
-			/* Transform results */
-			$records->transform(function ($record) {
-				/* Process each product in customer cart products */
-				foreach ($record->customerCartProducts as $customerCartProduct) {
-					$product = $customerCartProduct->product;
-					if ($product) {
-						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-						$product->brand_name = $product->brand->name ?? null;
-						$product->currency_symbol = $product->currency->symbol ?? null;
-						unset($product->brand, $product->currency);
-					}
-					$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-					$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
-					? getDateRange($record->created_at, $customerCartProduct->product_supplier['delivery_days'])
-					: null;
-				}
-				foreach (['amount', 'tax_amount', 'total_amount'] as $key) {
-					if (isset($record->$key)) {
-						$record->$key = number_format($record->$key, 2, '.', '');
-					}
-				}
+	// 		/* Transform results */
+	// 		$records->transform(function ($record) {
+	// 			/* Process each product in customer cart products */
+	// 			foreach ($record->customerCartProducts as $customerCartProduct) {
+	// 				$product = $customerCartProduct->product;
+	// 				if ($product) {
+	// 					$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+	// 					$product->brand_name = $product->brand->name ?? null;
+	// 					$product->currency_symbol = $product->currency->symbol ?? null;
+	// 					unset($product->brand, $product->currency);
+	// 				}
+	// 				$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+	// 				$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
+	// 				? getDateRange($record->created_at, $customerCartProduct->product_supplier['delivery_days'])
+	// 				: null;
+	// 			}
+	// 			foreach (['amount', 'tax_amount', 'total_amount'] as $key) {
+	// 				if (isset($record->$key)) {
+	// 					$record->$key = number_format($record->$key, 2, '.', '');
+	// 				}
+	// 			}
 
-				return $record;
-			});
-		} else {
-			/* No pagination: just fetch id and reference number */
-			$records = CustomerCart::orderBy('reference_number', 'asc')->get(['id', 'reference_number']);
-			$totalRecords = $records->count();
-			$totalPages = 1;
-		}
+	// 			return $record;
+	// 		});
+	// 	} else {
+	// 		/* No pagination: just fetch id and reference number */
+	// 		$records = CustomerCart::orderBy('reference_number', 'asc')->get(['id', 'reference_number']);
+	// 		$totalRecords = $records->count();
+	// 		$totalPages = 1;
+	// 	}
 
-		return response()->json([
-			'success' => true,
-			'message' => __('msg_rec_list'),
-			'data' => $records,
-			'total_pages' => $totalPages,
-			'total_records' => $totalRecords,
-		]);
-	}
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => __('msg_rec_list'),
+	// 		'data' => $records,
+	// 		'total_pages' => $totalPages,
+	// 		'total_records' => $totalRecords,
+	// 	]);
+	// }
+public function index(Request $request)
+{
+    $searchableColumns = ['id', 'reference_number'];
+    $sortableColumns = array_merge($searchableColumns, ['shipping_charge', 'total_amount', 'total_products', 'created_at', 'updated_at']);
+
+    $sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+    $sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+    $query = CustomerCart::query()->with([
+        'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+        'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+        'customerCartProducts.product.brand:id,name',
+        'customerCartProducts.product.currency:id,symbol',
+        'customerCartProducts.vendorProductSupplier:id,product_id,vendor_id,price,sale_price,shipping_charge,delivery_days,return_policy'
+    ]);
+
+    // Date filters
+    if ($request->has('from_date') && $request->has('to_date')) {
+        $from = $request->from_date . ' 00:00:00';
+        $to = $request->to_date . ' 23:59:59';
+        $query->whereBetween('created_at', [$from, $to]);
+    } elseif ($request->has('from_date')) {
+        $from = $request->from_date . ' 00:00:00';
+        $query->where('created_at', '>=', $from);
+    } elseif ($request->has('to_date')) {
+        $to = $request->to_date . ' 23:59:59';
+        $query->where('created_at', '<=', $to);
+    }
+
+    // Global search
+    if ($request->filled('global')) {
+        $search = $request->input('global');
+        $query->where(function ($q) use ($searchableColumns, $search) {
+            foreach ($searchableColumns as $col) {
+                $q->orWhere($col, 'like', "%$search%");
+            }
+        });
+    }
+
+    // Sorting
+    $query->orderBy($sortBy, $sortDir);
+
+    // Pagination
+    $length = (int) $request->input('length', 20);
+    $page = (int) $request->input('page', 1);
+
+    $totalRecords = (clone $query)->count();
+    $totalPages = (int) ceil($totalRecords / $length);
+
+    if ($page > $totalPages && $totalPages > 0) {
+        $page = 1;
+    }
+
+    $carts = $query->offset(($page - 1) * $length)->limit($length)->get();
+
+    // Transform results
+    $carts->transform(function ($cart) {
+        $totalProducts = 0;
+        $cartAmount = 0;
+
+        foreach ($cart->customerCartProducts as $item) {
+            $product = $item->product;
+
+            if ($product) {
+                $product->images = is_array($product->images) ? $product->images : (json_decode($product->images, true) ?: []);
+                $product->brand_name = $product->brand->name ?? null;
+                $product->currency_symbol = $product->currency->symbol ?? null;
+                unset($product->brand, $product->currency);
+            }
+
+            $supplier = $item->vendorProductSupplier ?? null;
+            $unitPrice = $supplier->sale_price ?: $supplier->price ?? $item->unit_price;
+            $item->unit_price = number_format($unitPrice, 2, '.', '');
+            $item->total_amount = number_format($item->quantity * $unitPrice, 2, '.', '');
+            $totalProducts += $item->quantity;
+            $cartAmount += $item->quantity * $unitPrice;
+
+            $item->expectedShippingDate = $supplier
+                ? getDateRange($cart->created_at, $supplier->delivery_days)
+                : null;
+        }
+
+        $taxAmount = round($cartAmount * ($cart->tax_percentage / 100), 2);
+        $cart->amount = number_format($cartAmount, 2, '.', '');
+        $cart->tax_amount = number_format($taxAmount, 2, '.', '');
+        $cart->total_amount = number_format($cartAmount + $taxAmount + $cart->shipping_charge, 2, '.', '');
+        $cart->total_products = $totalProducts;
+
+        return $cart;
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => __('msg_rec_list'),
+        'data' => $carts,
+        'total_pages' => $totalPages,
+        'total_records' => $totalRecords,
+    ]);
+}
 
 	/**
 	 * @OA\Post(
