@@ -413,6 +413,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
  
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
+	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
 	
 
 	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
