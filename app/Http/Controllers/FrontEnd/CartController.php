@@ -2107,4 +2107,183 @@ class CartController extends Controller
             'updated_by' => Auth::id(),
         ]);
     }
+
+    /**
+ * Add multiple products to the cart.
+ *
+ * @OA\Post(
+ *     path="/api/frontend/cart/add-multiple",
+ *     tags={"Frontend-Cart"},
+ *     summary="Add multiple products to cart",
+ *     description="Adds an array of products with quantity to the cart for the authenticated user.",
+ *     operationId="addMultipleToCart",
+ *     security={{"bearerAuth": {}}}, 
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"products"},
+ *             @OA\Property(
+ *                 property="products",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     type="object",
+ *                     required={"product_id", "quantity"},
+ *                     @OA\Property(property="product_id", type="integer", example=1, description="ID of the product"),
+ *                     @OA\Property(property="quantity", type="integer", example=2, description="Quantity to add"),
+ *                     @OA\Property(property="vendor_id", type="integer", nullable=true, example=3, description="Optional vendor ID for supplier pricing")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Products added to cart",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Products added to cart"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     type="object",
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="user_id", type="integer", example=10),
+ *                     @OA\Property(property="product_id", type="integer", example=1),
+ *                     @OA\Property(property="quantity", type="integer", example=2),
+ *                     @OA\Property(property="currency_id", type="integer", example=1),
+ *                     @OA\Property(property="currency_title", type="string", example="$")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized user",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Unauthorized user")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+ *             @OA\Property(
+ *                 property="errors",
+ *                 type="object",
+ *                 example={"products.0.product_id": {"The product_id field is required."}}
+ *             )
+ *         )
+ *     )
+ * )
+ */
+public function addMultipleToCart(Request $request)
+{
+    $request->validate([
+        'products' => 'required|array',
+        'products.*.product_id' => 'required|exists:ec_products,id',
+        'products.*.quantity' => 'required|integer|min:1',
+        'products.*.vendor_id' => 'nullable|exists:vendors,id',
+    ]);
+
+    if (!Auth::check()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized user',
+        ], 401);
+    }
+
+    $userId = Auth::id();
+
+    // Get or create customer cart
+    $customerCart = CustomerCart::where('customer_id', $userId)->first();
+    if (!$customerCart) {
+        $customerCart = CustomerCart::create([
+            'reference_number' => $this->generateReferenceNumber(),
+            'customer_id' => $userId,
+            'customer_address_id' => 0,
+            'shipping_charge' => 0,
+            'is_lift_gate' => 0,
+            'is_residential_address' => 1,
+            'amount' => 0,
+            'tax_percentage' => 0,
+            'tax_amount' => 0,
+            'total_amount' => 0,
+            'total_products' => 0,
+            'created_by' => $userId,
+            'updated_by' => $userId,
+        ]);
+    }
+
+    $addedProducts = [];
+
+    foreach ($request->products as $item) {
+        $productId = $item['product_id'];
+        $quantity = $item['quantity'];
+        $vendorId = $item['vendor_id'] ?? null;
+
+        // Get product with supplier info
+        $product = Product::with('currency', 'productSuppliers')->find($productId);
+        if (!$product) {
+            continue; // Skip invalid product
+        }
+
+        // Select supplier
+        $supplier = $vendorId
+            ? $product->productSuppliers->where('vendor_id', $vendorId)->first()
+            : $product->productSuppliers->first();
+
+        if (!$supplier) {
+            continue; // Skip if supplier not found
+        }
+
+        $unitPrice = $supplier->sale_price ?: $supplier->price;
+        $actualVendorId = $supplier->vendor_id;
+
+        // Check if product already in cart
+        $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+            ->where('product_id', $productId)
+            ->where('vendor_id', $actualVendorId)
+            ->first();
+
+        if ($cartProduct) {
+            $cartProduct->quantity += $quantity;
+            $cartProduct->amount = $cartProduct->quantity * $unitPrice;
+            $cartProduct->total_amount = $cartProduct->amount + $cartProduct->shipping_charge;
+            $cartProduct->save();
+        } else {
+            $amount = $quantity * $unitPrice;
+            $cartProduct = CustomerCartProduct::create([
+                'customer_cart_id' => $customerCart->id,
+                'product_id' => $productId,
+                'vendor_id' => $actualVendorId,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'amount' => $amount,
+                'shipping_charge' => 0,
+                'total_amount' => $amount,
+            ]);
+        }
+
+        $addedProducts[] = [
+            'id' => $cartProduct->id,
+            'user_id' => $userId,
+            'product_id' => $cartProduct->product_id,
+            'quantity' => $cartProduct->quantity,
+            'currency_id' => $product->currency->id,
+            'currency_title' => $product->currency->symbol,
+        ];
+    }
+
+    // Update totals after adding all products
+    $this->updateCartTotals($customerCart);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Products added to cart',
+        'data' => $addedProducts,
+    ]);
+}
+
 }
