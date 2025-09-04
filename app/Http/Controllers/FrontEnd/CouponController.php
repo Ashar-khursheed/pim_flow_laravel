@@ -1128,83 +1128,40 @@ private function calculateCouponDiscount($coupon, $applicableTotal): float
  *     )
  * )
  */
-public function checkCustomerCoupon(Request $request): JsonResponse
+// GET /api/customer/check-coupon
+public function checkCustomerCoupon(Request $request)
 {
-    $request->validate([
-        'coupon_code' => 'required|string',
-    ]);
+    $couponCode = $request->query('coupon_code');
 
-    $customerId = auth()->id();
-
-    if (!$customerId) {
-        return response()->json([
-            'success' => false,
-            'data' => [
-                'coupon_valid' => false,
-                'reason' => 'User not authenticated'
-            ],
-            'message' => 'Login required to check coupon'
-        ], 401);
-    }
-
-    $coupon = Coupon::where('code', $request->coupon_code)
-                   ->where('is_active', true)
-                   ->first();
+    $coupon = Coupon::where('code', $couponCode)
+        ->where('status', 'active')
+        ->where(function ($q) {
+            $q->whereNull('expire_date')
+              ->orWhere('expire_date', '>=', now());
+        })
+        ->first();
 
     if (!$coupon) {
         return response()->json([
             'success' => false,
-            'data' => [
-                'coupon_valid' => false,
-                'reason' => 'Coupon not found or inactive'
-            ],
-            'message' => 'Invalid coupon code'
-        ], 400);
-    }
-
-    if ($coupon->expire_date && now()->greaterThan($coupon->expire_date)) {
-        return response()->json([
-            'success' => false,
-            'data' => [
-                'coupon_valid' => false,
-                'reason' => 'Coupon expired'
-            ],
-            'message' => 'Coupon expired'
-        ], 400);
-    }
-
-    // Check if customer already used it
-    $alreadyUsed = Order::where('customer_id', $customerId)
-        ->where('coupon_code', $coupon->code)
-        ->exists();
-
-    if ($coupon->usage_type === 'once' && $alreadyUsed) {
-        return response()->json([
-            'success' => false,
-            'data' => [
-                'coupon_valid' => false,
-                'reason' => 'Coupon already used by this customer'
-            ],
-            'message' => 'Coupon already used'
+            'message' => 'Invalid or expired coupon'
         ], 400);
     }
 
     return response()->json([
         'success' => true,
+        'message' => 'Coupon is valid',
         'data' => [
-            'coupon_valid' => true,
             'coupon_code' => $coupon->code,
             'coupon_name' => $coupon->name,
             'coupon_description' => $coupon->description,
             'discount_type' => $coupon->type,
             'discount_value' => $coupon->value,
-            'basis' => $coupon->basis,
-            'usage_type' => $coupon->usage_type,
-            'expire_date' => $coupon->expire_date?->format('Y-m-d H:i:s'),
-        ],
-        'message' => 'Coupon is valid for this customer'
+            'expire_date' => $coupon->expire_date,
+        ]
     ]);
 }
+
 
 
 
