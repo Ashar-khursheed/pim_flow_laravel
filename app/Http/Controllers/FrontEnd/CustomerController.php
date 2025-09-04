@@ -569,13 +569,13 @@ class CustomerController extends BaseController
 		$user = auth()->user();
 
 		$request->validate([
-			'name'             => 'required|string|max:255',
+			'name'             => 'nullable|string|max:255',
 			'business_name'    => 'nullable|string',
 			'business_licence' => 'nullable|file|mimes:pdf|max:2048',
 			'trn_number'       => 'nullable|string',
 			'vat_certificate'  => 'nullable|file|mimes:pdf|max:2048',
 
-			'email'            => 'required|email|unique:users,email,' . $user->id,
+			'email'            => 'nullable|email|unique:users,email,' . $user->id,
 			'password'         => 'nullable|string|min:6|confirmed',
 			'type'             => 'nullable|string',
 			'dob'              => 'nullable|date',
