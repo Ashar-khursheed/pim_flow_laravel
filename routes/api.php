@@ -414,7 +414,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
  
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
 	
-
+	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
 	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
 	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);	 
@@ -549,11 +549,14 @@ Route::post('frontend/compare-table-product', [CompareProductController::class, 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
 	Route::prefix('customer')->group(function () {
+
+		Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
         
         // Customer coupon application
         Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
-        
-        // Customer can view available coupons for them
+
+		Route::get('check-coupon', [F_CouponController::class, 'checkCustomerCoupon']);
+
         Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
         
         // Customer coupon history
@@ -739,7 +742,7 @@ Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
 Route::get('/frontend/country-phonecodes', [F_CountryController::class, 'getPhoneCodes']);
 
 
-Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
+
 
 Route::prefix('/frontend/blogs')->group(function () {
 	Route::get('/', [F_BlogController::class, 'index']);

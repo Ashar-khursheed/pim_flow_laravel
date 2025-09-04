@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use OpenApi\Annotations as OA;
-use App\Models\FrontEnd\Cart;
+use App\Models\FrontEnd\CustomerCart;
+use App\Models\FrontEnd\CustomerCartProduct;
 use App\Models\FrontEnd\Wishlist;
 use App\Models\FrontEnd\SaveForLater;
 use App\Models\Product;
@@ -89,61 +90,92 @@ class SaveForLaterController extends Controller
 	// 		'message' => 'Product has been moved to Save for Later.',
 	// 	], 200);
 	// }
-	public function saveForLater(Request $request)
-	{
-		$request->validate([
-			'product_id' => 'required|exists:ec_products,id',
-		]);
+public function saveForLater(Request $request)
+{
+    $request->validate([
+        'product_id' => 'required|exists:ec_products,id',
+        'vendor_id' => 'nullable|exists:vendors,id',
+    ]);
 
-		$userId = auth()->id();
+    if (!Auth::check()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Customer not authenticated.',
+        ], 401);
+    }
 
-		if (!$userId) {
-			return response()->json([
-				'message' => 'Customer not authenticated.',
-			], 401);
-		}
+    $userId = Auth::id();
+    $productId = $request->product_id;
+    $vendorId = $request->vendor_id;
 
-		// Try to find the product in the cart
-		$cartItem = Cart::where('user_id', $userId)
-			->where('product_id', $request->product_id)
-			->first();
+    // Get product with supplier info
+    $product = Product::with('productSuppliers')->find($productId);
+    if (!$product) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Product not found',
+        ], 404);
+    }
 
-		$quantity = 1;
+    // Determine actual vendor
+    $supplier = $vendorId
+        ? $product->productSuppliers->where('vendor_id', $vendorId)->first()
+        : $product->productSuppliers->first();
 
-		if ($cartItem) {
-			$quantity = $cartItem->quantity;
-			$cartItem->delete();
-		} else {
-			// If not in cart, check if it's in wishlist
-			$wishlistItem = Wishlist::where('customer_id', $userId)
-				->where('product_id', $request->product_id)
-				->first();
+    if (!$supplier) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Product supplier not found',
+        ], 404);
+    }
 
-			if ($wishlistItem) {
-			Wishlist::where('customer_id', $userId)
-			->where('product_id', $request->product_id)
-			->delete();        } else {
-				return response()->json([
-					'message' => 'Product not found in cart or wishlist.'
-				], 404);
-			}
-		}
+    $quantity = 1;
 
-		// Move to save for later
-		SaveForLater::updateOrCreate(
-			[
-				'user_id' => $userId,
-				'product_id' => $request->product_id,
-			],
-			[
-				'quantity' => $quantity,
-			]
-		);
+    // Check if product exists in the cart
+    $customerCart = CustomerCart::where('customer_id', $userId)->first();
+    $cartProduct = $customerCart
+        ? CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+            ->where('product_id', $productId)
+            ->where('vendor_id', $supplier->vendor_id)
+            ->first()
+        : null;
 
-		return response()->json([
-			'message' => 'Product has been moved to Save for Later.',
-		], 200);
-	}
+    if ($cartProduct) {
+        $quantity = $cartProduct->quantity;
+        $cartProduct->delete();
+    } else {
+        // Check if product exists in wishlist
+        $wishlistItem = Wishlist::where('customer_id', $userId)
+            ->where('product_id', $productId)
+            ->first();
+
+        if ($wishlistItem) {
+            $wishlistItem->delete();
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found in cart or wishlist.',
+            ], 404);
+        }
+    }
+
+    // Move to SaveForLater (ignore vendor_id here)
+    SaveForLater::updateOrCreate(
+        [
+            'user_id' => $userId,
+            'product_id' => $productId,
+        ],
+        [
+            'quantity' => $quantity,
+        ]
+    );
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Product has been moved to Save for Later.',
+    ], 200);
+}
+
 
 
 	/**

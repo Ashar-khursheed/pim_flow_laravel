@@ -15261,6 +15261,130 @@
                 ]
             }
         },
+        "/api/customer/check-coupon": {
+            "get": {
+                "tags": [
+                    "Customer Coupons"
+                ],
+                "summary": "Check if a coupon code is valid for the authenticated customer",
+                "description": "Validates a coupon code for existence, active status, expiry, and usage for the logged-in customer.",
+                "operationId": "696acf20db2ffa5a6fe9e3751bf9f6cc",
+                "parameters": [
+                    {
+                        "name": "coupon_code",
+                        "in": "query",
+                        "description": "The coupon code to validate",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "SUMMER2025"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Coupon is valid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Coupon is valid for this customer"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "coupon_valid": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "coupon_code": {
+                                                    "type": "string",
+                                                    "example": "SUMMER2025"
+                                                },
+                                                "coupon_name": {
+                                                    "type": "string",
+                                                    "example": "Summer Sale"
+                                                },
+                                                "coupon_description": {
+                                                    "type": "string",
+                                                    "example": "Get 20% off"
+                                                },
+                                                "discount_type": {
+                                                    "type": "string",
+                                                    "example": "percentage"
+                                                },
+                                                "discount_value": {
+                                                    "type": "number",
+                                                    "example": 20
+                                                },
+                                                "basis": {
+                                                    "type": "string",
+                                                    "example": "customer"
+                                                },
+                                                "usage_type": {
+                                                    "type": "string",
+                                                    "example": "once"
+                                                },
+                                                "expire_date": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-12-31 23:59:59"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or expired coupon",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid coupon code"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "coupon_valid": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "example": "Coupon expired"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/customer-address": {
             "get": {
                 "tags": [
@@ -28334,6 +28458,66 @@
                         "content": {
                             "application/json": {}
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/products/delete-product-document": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Delete a product document",
+                "description": "Deletes a document file related to the given product.",
+                "operationId": "6da015bacf9a3749f58e86236de1400e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id": {
+                                        "type": "string",
+                                        "example": "123"
+                                    },
+                                    "document_path": {
+                                        "type": "string",
+                                        "example": "https://horecastore-s3-storage.s3.us-west-1.amazonaws.com/production/documents/manual.pdf"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Document deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Document deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Document not found"
                     }
                 },
                 "security": [
