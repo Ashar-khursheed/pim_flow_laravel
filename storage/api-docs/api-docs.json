@@ -15781,7 +15781,7 @@
         "/frontend/update-profile": {
             "post": {
                 "tags": [
-                    "Customer"
+                    "FrontEnd-Customer"
                 ],
                 "summary": "Update customer profile",
                 "operationId": "35d64bab3ded4d5db21f2760f2fa9d38",
@@ -37437,10 +37437,6 @@
         {
             "name": "FrontEnd-Customer",
             "description": "FrontEnd-Customer"
-        },
-        {
-            "name": "Customer",
-            "description": "Customer"
         },
         {
             "name": "Frontend CustomerDocuments",

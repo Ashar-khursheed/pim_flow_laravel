@@ -537,7 +537,6 @@ class CustomerController extends BaseController
 	 * @OA\Post(
 	 *     path="/frontend/update-profile",
 	 *     tags={"FrontEnd-Customer"},
-	 *     tags={"Customer"},
 	 *     summary="Update customer profile",
 	 *     @OA\RequestBody(
 	 *         required=true,
