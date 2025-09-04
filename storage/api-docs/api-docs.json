@@ -28371,6 +28371,66 @@
                 ]
             }
         },
+        "/api/products/delete-product-document": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Delete a product document",
+                "description": "Deletes a document file related to the given product.",
+                "operationId": "6da015bacf9a3749f58e86236de1400e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id": {
+                                        "type": "string",
+                                        "example": "123"
+                                    },
+                                    "document_path": {
+                                        "type": "string",
+                                        "example": "https://horecastore-s3-storage.s3.us-west-1.amazonaws.com/production/documents/manual.pdf"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Document deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Document deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Document not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products/export": {
             "post": {
                 "tags": [
