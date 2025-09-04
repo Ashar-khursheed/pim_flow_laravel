@@ -1135,7 +1135,19 @@ public function checkCustomerCoupon(Request $request): JsonResponse
         'coupon_code' => 'required|string',
     ]);
 
-    // Find coupon
+    $customerId = auth()->id();
+
+    if (!$customerId) {
+        return response()->json([
+            'success' => false,
+            'data' => [
+                'coupon_valid' => false,
+                'reason' => 'User not authenticated'
+            ],
+            'message' => 'Login required to check coupon'
+        ], 401);
+    }
+
     $coupon = Coupon::where('code', $validated['coupon_code'])
                    ->where('is_active', true)
                    ->first();
@@ -1145,21 +1157,37 @@ public function checkCustomerCoupon(Request $request): JsonResponse
             'success' => false,
             'data' => [
                 'coupon_valid' => false,
-                'reason' => 'Coupon code not found or inactive'
+                'reason' => 'Coupon not found or inactive'
             ],
             'message' => 'Invalid coupon code'
         ], 400);
     }
 
-    // Check expiry date
+    // Check expiry
     if ($coupon->expire_date && now()->greaterThan($coupon->expire_date)) {
         return response()->json([
             'success' => false,
             'data' => [
                 'coupon_valid' => false,
-                'reason' => 'Coupon has expired'
+                'reason' => 'Coupon expired'
             ],
             'message' => 'Coupon expired'
+        ], 400);
+    }
+
+    // Check if customer already used it
+    $alreadyUsed = Order::where('customer_id', $customerId)
+        ->where('coupon_code', $coupon->code)
+        ->exists();
+
+    if ($coupon->usage_type === 'once' && $alreadyUsed) {
+        return response()->json([
+            'success' => false,
+            'data' => [
+                'coupon_valid' => false,
+                'reason' => 'Coupon already used by this customer'
+            ],
+            'message' => 'Coupon already used'
         ], 400);
     }
 
@@ -1174,12 +1202,11 @@ public function checkCustomerCoupon(Request $request): JsonResponse
             'discount_value' => $coupon->value,
             'basis' => $coupon->basis,
             'usage_type' => $coupon->usage_type,
-            'min_order_value' => $coupon->min_order_value,
-            'max_order_value' => $coupon->max_order_value,
             'expire_date' => $coupon->expire_date?->format('Y-m-d H:i:s'),
         ],
-        'message' => 'Coupon is valid'
+        'message' => 'Coupon is valid for this customer'
     ]);
 }
+
 
 }
