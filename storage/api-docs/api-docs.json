@@ -15778,6 +15778,102 @@
                 ]
             }
         },
+        "/api/frontend/update-profile": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Customer"
+                ],
+                "summary": "Update customer profile",
+                "operationId": "802d69cbd82062dff590499981ba7fea",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "customer"
+                                    },
+                                    "dob": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1990-01-01"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+971"
+                                    },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "501234567"
+                                    },
+                                    "profile_img": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "ABC Trading LLC"
+                                    },
+                                    "business_licence": {
+                                        "description": "Upload business licence (PDF only)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "trn_number": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "vat_certificate": {
+                                        "description": "Upload VAT certificate (PDF only)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/customers/change-password": {
             "post": {
                 "tags": [
