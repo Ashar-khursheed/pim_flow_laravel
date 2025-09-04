@@ -549,6 +549,8 @@ Route::post('frontend/compare-table-product', [CompareProductController::class, 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
 	Route::prefix('customer')->group(function () {
+
+		Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
         
         // Customer coupon application
         Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
@@ -741,7 +743,7 @@ Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
 Route::get('/frontend/country-phonecodes', [F_CountryController::class, 'getPhoneCodes']);
 
 
-Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
+
 
 Route::prefix('/frontend/blogs')->group(function () {
 	Route::get('/', [F_BlogController::class, 'index']);
