@@ -50,24 +50,52 @@ class CompareProductController extends Controller
      *     )
      * )
      */
-    public function getCompareTableProduct(Request $request)
-    {
-        $request->validate([
-            'product_id' => "required"
-        ]);
+   public function getCompareTableProduct(Request $request)
+{
+    $request->validate([
+        'product_id' => "required|integer"
+    ]);
 
-        $alternateProduct = AlternateProduct::where('product_id', $request->input('product_id'))->orderBy('priority', 'asc')->get();
-        $formattedProducts = $alternateProduct->map(function ($product) {
+    $mainProductId = trim($request->input('product_id'));
 
+    // get alternates
+    $alternateProduct = AlternateProduct::where('product_id', $mainProductId)
+        ->orderBy('priority', 'asc')
+        ->get();
+
+    // always include the main product
+    $allProducts = collect();
+    $allProducts->push((object)[
+        'id' => null, // alt table id not relevant for main
+        'status' => null,
+        'product_alternate_id' => $mainProductId,
+        'priority' => 0,
+        'similarity' => null,
+        'order' => 0,
+        'created_at' => null,
+        'updated_by' => null,
+        'created_by' => null,
+        'rejected_by' => null,
+        'reason' => null,
+        'brand' => null,
+    ]);
+
+    // add alternates
+    if ($alternateProduct->count() > 0) {
+        $allProducts = $allProducts->merge($alternateProduct);
+    }
+
+    if ($allProducts->count() > 0) {
+        $formattedProducts = $allProducts->map(function ($product) use ($mainProductId) {
             $products = Product::with([
                 'brand:id,name',
                 'categories:id,name',
                 'productAttributes.attributeDetails',
                 'productAttributes.measurementUnit',
-                'reviews:id'
-
+                'reviews:id,product_id,star',
+                'productSuppliers',
             ])
-                ->where('id', $product->product_alternate_id)
+                ->where('id', $product->product_alternate_id ?? $mainProductId)
                 ->select([
                     'id',
                     'name',
@@ -79,8 +107,12 @@ class CompareProductController extends Controller
                 ])
                 ->first();
 
-            $firstSupplier = $products->productSuppliers->first();
+            if (!$products) {
+                return null;
+            }
 
+            $firstSupplier = $products->productSuppliers->first();
+            $product_attributes = [];
             foreach ($products->productAttributes as $attr) {
                 $product_attributes[] = [
                     'attribute_id' => $attr->attribute_id,
@@ -90,19 +122,23 @@ class CompareProductController extends Controller
                     'measurement_unit_name' => $attr->measurementUnit->name ?? null,
                 ];
             }
+
             return [
                 'id' => $products->id,
                 'product_name' => $products->name,
                 'product_sku' => $products->sku,
                 'product_status' => $products->status,
-                'product_images' => is_array($products->images) ? $product->images : (is_array($decoded = json_decode($products->images, true)) ? $decoded : null),
+                'product_images' => is_array($products->images)
+                    ? $products->images
+                    : (is_array($decoded = json_decode($products->images, true)) ? $decoded : null),
+
                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
                 'price' => $firstSupplier ? (float) $firstSupplier->price : null,
                 'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
                 'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
                 'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
                 'best_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-                'per_unit_price' => $product->per_unit_price,
+                'per_unit_price' => $products->per_unit_price ?? null,
                 'vendor_id' => $firstSupplier->vendor_id ?? null,
                 'map' => $firstSupplier ? (float) $firstSupplier->map : null,
                 'inventory' => $firstSupplier->inventory ?? null,
@@ -114,9 +150,10 @@ class CompareProductController extends Controller
                 'avgRating' => $products->reviews?->count() > 0 ? $products->reviews->avg('star') : null,
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
 
+                // alternate table fields (null if main)
                 'alt_id' => $product->id,
                 'alt_status' => $product->status,
-                'product_alternate_id' => $product->product_alternate_id,
+                'product_alternate_id' => $product->product_alternate_id ?? $mainProductId,
                 'priority' => $product->priority,
                 'similarity' => $product->similarity,
                 'order' => $product->order,
@@ -125,17 +162,25 @@ class CompareProductController extends Controller
                 'alt_created_by' => $product->created_by,
                 'alt_rejected_by' => $product->rejected_by,
                 'reason' => $product->reason,
-                'brand' => $product->brand ? $product->brand->name : null,
+
+                'brand' => $products->brand ? $products->brand->name : null,
                 'product_attributes' => $product_attributes,
                 'categories' => $products->categories->pluck('name'),
             ];
-        });
+        })->filter();
 
         return response()->json([
             'success' => true,
-            'message' => 'Products retrieved successfully',
-            'data' => $formattedProducts,
-
+            'message' => 'Product & alternates fetched successfully',
+            'data' => $formattedProducts->values(),
         ]);
     }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'Product not found',
+        'data' => [],
+    ]);
+}
+
 }

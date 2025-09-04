@@ -275,7 +275,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
     Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
     Route::post('/coupons/{coupon}/reject', [F_CouponController::class, 'reject']);
     Route::post('/coupons/validate', [F_CouponController::class, 'validate']);
-    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
+
     Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
 
 	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
@@ -414,7 +414,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
  
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
 	
-
+	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
 	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
 	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);	 
@@ -547,6 +547,23 @@ Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'get
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
  
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
+	Route::prefix('customer')->group(function () {
+        
+        // Customer coupon application
+        Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
+
+		Route::get('check-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
+		
+        // Customer can view available coupons for them
+        Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
+        
+        // Customer coupon history
+        Route::get('coupon-history', [F_CouponController::class, 'getCustomerCouponHistory']);
+        
+        // Check if coupon code exists (without applying)
+        Route::post('check-coupon', [F_CouponController::class, 'checkCouponCode']);
+    });
     Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
     Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
     Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class);

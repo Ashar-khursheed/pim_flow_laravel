@@ -24,6 +24,8 @@ return new class extends Migration
 			$table->decimal('amount', 10, 2);
 			$table->decimal('tax_percentage', 10, 2);
 			$table->decimal('tax_amount', 10, 2);
+			$table->integer('coupon_id')->nullable();
+			$table->decimal('discount', 10, 2)->nullable();
 			$table->decimal('total_amount', 10, 2);
 			$table->integer('total_products');
 
@@ -37,6 +39,7 @@ return new class extends Migration
 			$table->enum('status', [
 				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Partially Delivered', 'Completed', 'Re-Attempt', 'Returned', 'Cancelled'
 			])->default('Pending');
+			$table->boolean('is_customer_pickup')->nullable();
 
 			$table->integer('created_by');
 			$table->integer('updated_by')->nullable();

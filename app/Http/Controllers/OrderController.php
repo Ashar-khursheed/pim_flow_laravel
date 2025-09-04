@@ -184,7 +184,7 @@ class OrderController extends Controller
 						$product->currency_symbol = $product->currency->symbol ?? null;
 						unset($product->brand, $product->currency);
 					}
-					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
 					: null;
@@ -196,7 +196,7 @@ class OrderController extends Controller
 					}
 				}
 
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -236,6 +236,9 @@ class OrderController extends Controller
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
+	 *             @OA\Property(property="coupon_id", type="integer", example=1),
+	 *             @OA\Property(property="discount", type="number", format="float", example=200),
+	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -264,6 +267,9 @@ class OrderController extends Controller
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
+			'coupon_id' => 'nullable|integer',
+			'discount' => 'nullable|numeric|min:0',
+			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -286,6 +292,7 @@ class OrderController extends Controller
 		DB::beginTransaction();
 
 		try {
+			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
 			$orderShipping = 0;
@@ -300,7 +307,7 @@ class OrderController extends Controller
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
+			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
 
@@ -325,6 +332,8 @@ class OrderController extends Controller
 				'amount' => $orderAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
+				'coupon_id' => $request->coupon_id ?? null,
+				'discount' => $discount,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
@@ -333,6 +342,7 @@ class OrderController extends Controller
 				'is_paid' => $pendingAmount <= 0,
 				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
+				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => auth()->id(),
 				'payment_link' => $paymentLink ?? null,
 			]);
@@ -377,10 +387,7 @@ class OrderController extends Controller
 			DB::commit();
 
 			// Dispatch jobs AFTER successful commit
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Order Place')->dispatch();
+			$batch = Bus::batch([])->name('Order Place')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 			$batch->add(new OrderPlacedMailJob([
@@ -410,7 +417,7 @@ class OrderController extends Controller
 				}
 
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-					->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 					: null;
@@ -423,7 +430,7 @@ class OrderController extends Controller
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}
@@ -569,7 +576,7 @@ class OrderController extends Controller
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				unset($product->brand, $product->currency);
 			}
-			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
@@ -586,7 +593,7 @@ class OrderController extends Controller
 			}
 		}
 
-		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+		foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
 				$order->$key = number_format($order->$key, 2, '.', '');
 			}
@@ -615,6 +622,8 @@ class OrderController extends Controller
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
+	 *             @OA\Property(property="coupon_id", type="integer", example=1),
+	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -662,6 +671,8 @@ class OrderController extends Controller
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
+			'coupon_id' => 'nullable|integer',
+			'discount' => 'nullable|numeric|min:0',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -684,6 +695,7 @@ class OrderController extends Controller
 		DB::beginTransaction();
 
 		try {
+			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
 			$orderShipping = 0;
@@ -697,7 +709,7 @@ class OrderController extends Controller
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
+			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
 
@@ -709,6 +721,8 @@ class OrderController extends Controller
 				'amount' => $orderAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
+				'coupon_id' => $request->coupon_id ?? null,
+				'discount' => $discount,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
@@ -767,7 +781,7 @@ class OrderController extends Controller
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
-				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
@@ -780,7 +794,7 @@ class OrderController extends Controller
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}
@@ -912,6 +926,9 @@ class OrderController extends Controller
 		$newStatusIndex = $findStatusIndex($newStatus);
 
 		if ($oldStatusIndex < $newStatusIndex - 1) {
+			// if (condition) {
+			// 	// code...
+			// }
 			return response()->json([
 				'success' => false,
 				'message' => "Invalid status update: You cannot skip directly from '{$oldStatus}' to '{$newStatus}'. Please follow the correct order flow."

@@ -17,7 +17,7 @@ return new class extends Migration
 			$table->string('quote_number')->unique();
 			$table->string('quote_name');
 			$table->integer('customer_id');
-			$table->text('customer_address_id');
+			$table->integer('customer_address_id');
 			$table->decimal('shipping_charge', 10, 2);
 			$table->decimal('amount', 10, 2);
 			$table->decimal('tax_percentage', 10, 2);

@@ -48,6 +48,8 @@
 							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
 								Your Order Has Been Reserved Successfully
 							</p>
+
+							@if($isNewCustomer)
 							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
 								To make your payment easily, we’ve created an account for you. Use the details below to log in anytime:
 								<ul style="margin: 0;">
@@ -55,6 +57,8 @@
 									<li style="font-size:14px; line-height:20px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">Password: <b>{{ $password }}</b></li>
 								</ul>
 							</p>
+							@endif
+
 							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
 								Complete Your Payment
 							</a>

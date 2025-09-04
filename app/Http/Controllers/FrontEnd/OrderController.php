@@ -131,12 +131,12 @@ class OrderController extends BaseController
 						$product->currency_symbol = $product->currency->symbol ?? null;
 						unset($product->brand, $product->currency);
 					}
-					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
 					: null;
 				}
-				foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -177,6 +177,9 @@ class OrderController extends BaseController
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
 	 *             @OA\Property(property="is_cod", type="boolean", example=false),
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
+	 *             @OA\Property(property="coupon_id", type="integer", example=1),
+	 *             @OA\Property(property="discount", type="number", format="float", example=200),
+	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -197,7 +200,6 @@ class OrderController extends BaseController
 	 */
 	public function store(Request $request)
 	{
-		logger()->info('customer order payload: ', $request->all());
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
@@ -206,6 +208,9 @@ class OrderController extends BaseController
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
 			'is_cod' => 'nullable|boolean',
+			'coupon_id' => 'nullable|integer',
+			'discount' => 'nullable|numeric|min:0',
+			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -227,6 +232,7 @@ class OrderController extends BaseController
 		DB::beginTransaction();
 
 		try {
+			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
 			$orderShipping = 0;
@@ -244,7 +250,7 @@ class OrderController extends BaseController
 			if (config('app.website') == 'UAE') {
 				$orderShipping = ($orderAmount + $taxAmount) < 300 ? 25 : 0;
 			}
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
+			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
 
@@ -269,6 +275,8 @@ class OrderController extends BaseController
 				'amount' => $orderAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
+				'coupon_id' => $request->coupon_id ?? null,
+				'discount' => $discount,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
@@ -277,6 +285,7 @@ class OrderController extends BaseController
 				'is_paid' => $pendingAmount <= 0,
 				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
+				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => 0,
 				'utm_id' => $request->utm_id,
 
@@ -335,13 +344,13 @@ class OrderController extends BaseController
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
-				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
 			}
 
-			foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}
@@ -437,7 +446,7 @@ class OrderController extends BaseController
 			}
 
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-			->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+			->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
@@ -458,7 +467,7 @@ class OrderController extends BaseController
 			$orderProduct->is_returnable = 'yes';
 		}
 
-		foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+		foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
 				$order->$key = number_format($order->$key, 2, '.', '');
 			}
@@ -726,50 +735,115 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function buyItAgain()
-	{
-		$customer = auth()->user();
+	// public function buyItAgain()
+	// {
+	// 	$customer = auth()->user();
 
-		$deliveredOrders = $customer->orders()->where('status', 'Delivered')->orderByDesc('created_at')->take(5)->with(['orderProducts.product'])->get();
+	// 	$deliveredOrders = $customer->orders()->where('status', 'Delivered')->orderByDesc('created_at')->take(5)->with(['orderProducts.product'])->get();
 
-		$products = collect();
+	// 	$products = collect();
 
-		foreach ($deliveredOrders as $order) {
-			foreach ($order->orderProducts as $orderProduct) {
-				if ($orderProduct->product) {
-					$images = null;
-					if (is_string($orderProduct->product->images)) {
-						$images = json_decode($orderProduct->product->images, true);
-					} elseif (is_array($orderProduct->product->images)) {
-						$images = $orderProduct->product->images;
-					}
+	// 	foreach ($deliveredOrders as $order) {
+	// 		foreach ($order->orderProducts as $orderProduct) {
+	// 			if ($orderProduct->product) {
+	// 				$images = null;
+	// 				if (is_string($orderProduct->product->images)) {
+	// 					$images = json_decode($orderProduct->product->images, true);
+	// 				} elseif (is_array($orderProduct->product->images)) {
+	// 					$images = $orderProduct->product->images;
+	// 				}
 
-					$products->push([
-						'product_id' => $orderProduct->product->id,
-						'name' => $orderProduct->product->name,
-						'quantity' => $orderProduct->quantity,
-						'unit_price' => $orderProduct->unit_price,
-						'images' => $images,
-						'brand_name' => $orderProduct->product->brand->name ?? null,
+	// 				$products->push([
+	// 					'product_id' => $orderProduct->product->id,
+	// 					'name' => $orderProduct->product->name,
+	// 					'quantity' => $orderProduct->quantity,
+	// 					'unit_price' => $orderProduct->unit_price,
+	// 					'images' => $images,
+	// 					'brand_name' => $orderProduct->product->brand->name ?? null,
 
-					]);
-				}
-			}
-		}
+	// 				]);
+	// 			}
+	// 		}
+	// 	}
 
-		if ($products->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No delivered orders found or no valid products available to buy again.'
-			], 404);
-		}
+	// 	if ($products->isEmpty()) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'No delivered orders found or no valid products available to buy again.'
+	// 		], 404);
+	// 	}
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Products retrieved from your previous orders.',
-			'data' => $products
-		], 200);
-	}
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Products retrieved from your previous orders.',
+	// 		'data' => $products
+	// 	], 200);
+	// }
+public function buyItAgain(Request $request)
+{
+    $customer = auth()->user();
+
+    if (!$customer) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized user',
+        ], 401);
+    }
+
+    // Fetch last 5 delivered orders with products
+    $deliveredOrders = $customer->orders()
+        ->where('status', 'Delivered')
+        ->orderByDesc('created_at')
+        ->take(5)
+        ->with(['orderProducts.product.productSuppliers', 'orderProducts.product.currency', 'orderProducts.product.brand'])
+        ->get();
+
+    $addedProducts = collect();
+
+    foreach ($deliveredOrders as $order) {
+        foreach ($order->orderProducts as $orderProduct) {
+            $product = $orderProduct->product;
+            if (!$product) {
+                continue;
+            }
+
+            // find a vendor_id if available
+            $vendorId = $product->productSuppliers->first()->vendor_id ?? null;
+
+            // build a request like addToCart expects
+            $cartRequest = new Request([
+                'product_id' => $product->id,
+                'quantity'   => $orderProduct->quantity,
+                'vendor_id'  => $vendorId,
+            ]);
+
+            // call your CartController function
+            $cartResponse = app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
+
+            $addedProducts->push([
+                'product_id' => $product->id,
+                'name'       => $product->name,
+                'quantity'   => $orderProduct->quantity,
+                'unit_price' => $orderProduct->unit_price,
+                'brand_name' => $product->brand->name ?? null,
+            ]);
+        }
+    }
+
+    if ($addedProducts->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No delivered orders found or no valid products available to buy again.'
+        ], 404);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Products added to your cart successfully.',
+        'data'    => $addedProducts,
+    ], 200);
+}
+
 
 	/**
 	 * @OA\Get(

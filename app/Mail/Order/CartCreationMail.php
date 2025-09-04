@@ -15,14 +15,16 @@ class CartCreationMail extends Mailable
 
 	public $customerCart;
 	public $randomPassword;
+	public $isNewCustomer;
 
 	/**
 	 * Create a new message instance.
 	 */
-	public function __construct(CustomerCart $customerCart, $randomPassword)
+	public function __construct(CustomerCart $customerCart, $randomPassword, $isNewCustomer)
 	{
 		$this->customerCart = $customerCart;
 		$this->randomPassword = $randomPassword;
+		$this->isNewCustomer = $isNewCustomer;
 	}
 
 	public function build()
@@ -33,6 +35,7 @@ class CartCreationMail extends Mailable
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 		$name = $customerCart->customer->name ?? 'User';
 		$username = $customerCart->customer->email;
+		$isNewCustomer = $this->isNewCustomer;
 		$password = $this->randomPassword;
 		$paymentUrl = url("/login-source");
 
@@ -111,6 +114,8 @@ class CartCreationMail extends Mailable
 		$params = [
 			'logoUrl' => $logoUrl,
 			'name' => $name,
+
+			'isNewCustomer' => $isNewCustomer,
 			'username' => $username,
 			'password' => $password,
 			'paymentUrl' => $paymentUrl,

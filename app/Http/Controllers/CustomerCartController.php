@@ -104,7 +104,7 @@ class CustomerCartController extends Controller
 						$product->currency_symbol = $product->currency->symbol ?? null;
 						unset($product->brand, $product->currency);
 					}
-					$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
 					? getDateRange($record->created_at, $customerCartProduct->product_supplier['delivery_days'])
 					: null;
@@ -146,6 +146,7 @@ class CustomerCartController extends Controller
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
 	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
 	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
+	 *             @OA\Property(property="is_new_customer", type="boolean", example=false),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(
 	 *                 property="products",
@@ -172,6 +173,7 @@ class CustomerCartController extends Controller
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
 			'is_residential_address' => 'nullable|boolean',
+			'is_new_customer' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
@@ -251,21 +253,23 @@ class CustomerCartController extends Controller
 				]);
 			}
 
-			$randomPassword = Str::random(8);
-			$hashedPassword = Hash::make($randomPassword);
-			$customerCart->customer->update(['password' => $hashedPassword]);
+			$isNewCustomer = $request->boolean('is_new_customer');
+			$randomPassword = null;
+			if ($isNewCustomer) {
+				$randomPassword = Str::random(8);
+				$hashedPassword = Hash::make($randomPassword);
+				$customerCart->customer->update(['password' => $hashedPassword]);
+			}
 
 			DB::commit();
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Cart Creation')->dispatch();
+			$batch = Bus::batch([])->name('Cart Creation')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_CART_ADD';
 			$batch->add(new CartCreationMailJob([
 				'recordId' => $customerCart->id,
 				'randomPassword' => $randomPassword,
+				'isNewCustomer' => $isNewCustomer,
 			]));
 
 			/* Load relationships */
@@ -289,7 +293,7 @@ class CustomerCartController extends Controller
 				}
 
 				$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)
-					->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
 					? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
 					: null;
@@ -376,7 +380,7 @@ class CustomerCartController extends Controller
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				unset($product->brand, $product->currency);
 			}
-			$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+			$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
 			? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
 			: null;
