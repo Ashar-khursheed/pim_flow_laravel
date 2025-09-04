@@ -15778,13 +15778,13 @@
                 ]
             }
         },
-        "/frontend/update-profile": {
+        "/api/frontend/update-profile": {
             "post": {
                 "tags": [
                     "FrontEnd-Customer"
                 ],
                 "summary": "Update customer profile",
-                "operationId": "35d64bab3ded4d5db21f2760f2fa9d38",
+                "operationId": "802d69cbd82062dff590499981ba7fea",
                 "requestBody": {
                     "required": true,
                     "content": {
