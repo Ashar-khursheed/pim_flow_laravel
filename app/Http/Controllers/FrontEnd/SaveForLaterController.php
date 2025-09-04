@@ -90,60 +90,95 @@ class SaveForLaterController extends Controller
 	// 	], 200);
 	// }
 	public function saveForLater(Request $request)
-	{
-		$request->validate([
-			'product_id' => 'required|exists:ec_products,id',
-		]);
+{
+    $request->validate([
+        'product_id' => 'required|exists:ec_products,id',
+        'vendor_id' => 'nullable|exists:vendors,id',
+    ]);
 
-		$userId = auth()->id();
+    if (!Auth::check()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Customer not authenticated.',
+        ], 401);
+    }
 
-		if (!$userId) {
-			return response()->json([
-				'message' => 'Customer not authenticated.',
-			], 401);
-		}
+    $userId = Auth::id();
+    $productId = $request->product_id;
+    $vendorId = $request->vendor_id;
 
-		// Try to find the product in the cart
-		$cartItem = Cart::where('user_id', $userId)
-			->where('product_id', $request->product_id)
-			->first();
+    // Get or create customer cart
+    $customerCart = CustomerCart::where('customer_id', $userId)->first();
 
-		$quantity = 1;
+    // Get product with supplier info
+    $product = Product::with('productSuppliers')->find($productId);
+    if (!$product) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Product not found',
+        ], 404);
+    }
 
-		if ($cartItem) {
-			$quantity = $cartItem->quantity;
-			$cartItem->delete();
-		} else {
-			// If not in cart, check if it's in wishlist
-			$wishlistItem = Wishlist::where('customer_id', $userId)
-				->where('product_id', $request->product_id)
-				->first();
+    // Determine supplier
+    $supplier = $vendorId
+        ? $product->productSuppliers->where('vendor_id', $vendorId)->first()
+        : $product->productSuppliers->first();
 
-			if ($wishlistItem) {
-			Wishlist::where('customer_id', $userId)
-			->where('product_id', $request->product_id)
-			->delete();        } else {
-				return response()->json([
-					'message' => 'Product not found in cart or wishlist.'
-				], 404);
-			}
-		}
+    if (!$supplier) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Product supplier not found',
+        ], 404);
+    }
 
-		// Move to save for later
-		SaveForLater::updateOrCreate(
-			[
-				'user_id' => $userId,
-				'product_id' => $request->product_id,
-			],
-			[
-				'quantity' => $quantity,
-			]
-		);
+    $actualVendorId = $supplier->vendor_id;
+    $quantity = 1;
 
-		return response()->json([
-			'message' => 'Product has been moved to Save for Later.',
-		], 200);
-	}
+    // Check if product exists in cart
+    $cartProduct = $customerCart
+        ? CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+            ->where('product_id', $productId)
+            ->where('vendor_id', $actualVendorId)
+            ->first()
+        : null;
+
+    if ($cartProduct) {
+        $quantity = $cartProduct->quantity;
+        $cartProduct->delete();
+    } else {
+        // Check if product exists in wishlist
+        $wishlistItem = Wishlist::where('customer_id', $userId)
+            ->where('product_id', $productId)
+            ->first();
+
+        if ($wishlistItem) {
+            $wishlistItem->delete();
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found in cart or wishlist.',
+            ], 404);
+        }
+    }
+
+    // Move to SaveForLater
+    SaveForLater::updateOrCreate(
+        [
+            'user_id' => $userId,
+            'product_id' => $productId,
+            'vendor_id' => $actualVendorId,
+        ],
+        [
+            'quantity' => $quantity,
+        ]
+    );
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Product has been moved to Save for Later.',
+    ], 200);
+}
+
 
 
 	/**
