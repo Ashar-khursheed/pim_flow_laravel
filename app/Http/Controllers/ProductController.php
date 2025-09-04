@@ -3023,4 +3023,113 @@ class ProductController extends BaseController
 			]);
 		}
 	}
+	/**
+ * @OA\Post(
+ *     path="/api/products/delete-product-document",
+ *     summary="Delete a product document",
+ *     description="Deletes a document file related to the given product.",
+ *     tags={"Products"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="product_id", type="string", example="123"),
+ *             @OA\Property(property="document_path", type="string", example="https://horecastore-s3-storage.s3.us-west-1.amazonaws.com/production/documents/manual.pdf")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Document deleted successfully",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="message", type="string", example="Document deleted")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Document not found"
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+
+
+	public function deleteProductDocument(Request $request)
+	{		 
+		$request->validate([
+			'product_id'     => 'required|string',
+			'document_path'  => 'required|string'
+		]);
+
+		try {
+			$productId    = $request->input('product_id');
+			$documentPath = $request->input('document_path');			 
+			$product = Product::find($productId);
+
+			if (!$product) {
+				return response()->json([
+					'success' => false,
+					'error'   => 'Product not found'
+				], 404);
+			}
+			 
+			$currentDocuments = $product->documents ? json_decode($product->documents, true) : [];
+
+			if (empty($currentDocuments)) {
+				return response()->json([
+					'success' => false,
+					'error'   => 'No documents found'
+				], 404);
+			}
+
+		 
+			$found = false;
+			foreach ($currentDocuments as $index => $document) {
+
+				if ($document['path'] === $documentPath) {
+					$found = true;
+
+					// --- Delete from S3 ---
+					// Example: if $documentPath is a full URL, extract the relative path
+					// $s3Path = ltrim(parse_url($documentPath, PHP_URL_PATH), '/');
+					// //$s3Path = $documentPath;
+					// if (Storage::disk('s3')->exists($s3Path)) {
+					// 	Storage::disk('s3')->delete($s3Path);
+					// }
+					// Remove from array
+					unset($currentDocuments[$index]);
+					break;
+				}
+			}
+
+			if (!$found) {
+				return response()->json([
+					'success' => false,
+					'error'   => 'Document not found'
+				], 404);
+			}
+
+			//Reindex array
+			if(!empty($currentDocuments)){
+				$currentDocuments = array_values($currentDocuments); 
+				$product->documents = json_encode($currentDocuments);
+			}else{
+				$product->documents="";
+			}	 
+			$product->save();
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Document deleted successfully',
+				'documents' => $currentDocuments?$currentDocuments:'',
+			]);
+
+		} catch (\Exception $e) {
+			return response()->json([
+				'success' => false,
+				'error'   => $e->getMessage()
+			], 500);
+		}
+	}
 }

@@ -414,7 +414,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
  
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
 	
-
+	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
 	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
 	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);	 
@@ -554,7 +554,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
         Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
 
 		Route::get('check-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
-        
+		
         // Customer can view available coupons for them
         Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
         
