@@ -226,7 +226,7 @@ public function showSaveForLater(Request $request)
             'product.currency',
             'product.sellingUnitAttribute',
             'product.productSuppliers',
-            'seoUrl'
+           'product.seoUrl', // <- move seoUrl here
         ])
         ->get();
 
