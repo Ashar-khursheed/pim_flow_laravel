@@ -788,8 +788,8 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
 Route::prefix('stripe')->group(function () {
-    Route::post('/create-payment-intent', [StripeController::class, 'createPaymentIntent']);
-    Route::post('/confirm-payment-intent', [StripeController::class, 'confirmPaymentIntent']);
+    Route::post('/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
+    Route::post('/confirm-payment-intent', [F_StripeController::class, 'confirmPaymentIntent']);
 });
 Route::post('frontend/product-errors', [F_ProductErrorController::class, 'store']);
 Route::get('frontend/product-errors', [F_ProductErrorController::class, 'index']);
