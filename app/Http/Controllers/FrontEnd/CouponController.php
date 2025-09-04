@@ -1129,12 +1129,27 @@ private function calculateCouponDiscount($coupon, $applicableTotal): float
  * )
  */
 // GET /api/customer/check-coupon
+// GET /api/customer/check-coupon
 public function checkCustomerCoupon(Request $request)
 {
+    $customerId = auth()->id(); // Logged-in customer ID
+
+    if (!$customerId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized',
+        ], 401);
+    }
+
     $couponCode = $request->query('coupon_code');
 
     $coupon = Coupon::where('code', $couponCode)
-        ->where('status', 'active')
+        ->where('is_active', true)        // active status
+        ->where('status', 'approved')    // approved in DB
+        ->where(function ($q) {
+            $q->whereNull('start_date')
+              ->orWhere('start_date', '<=', now());
+        })
         ->where(function ($q) {
             $q->whereNull('expire_date')
               ->orWhere('expire_date', '>=', now());
@@ -1144,8 +1159,22 @@ public function checkCustomerCoupon(Request $request)
     if (!$coupon) {
         return response()->json([
             'success' => false,
-            'message' => 'Invalid or expired coupon'
+            'message' => 'Invalid or expired coupon',
         ], 400);
+    }
+
+    // Check if coupon is customer-specific
+    if ($coupon->basis === 'customer') {
+        $isAssigned = $coupon->customers()
+            ->where('customer_id', $customerId)
+            ->exists();
+
+        if (!$isAssigned) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This coupon is not valid for your account',
+            ], 403);
+        }
     }
 
     return response()->json([
@@ -1158,9 +1187,12 @@ public function checkCustomerCoupon(Request $request)
             'discount_type' => $coupon->type,
             'discount_value' => $coupon->value,
             'expire_date' => $coupon->expire_date,
-        ]
+        ],
     ]);
 }
+
+
+
 
 
 
