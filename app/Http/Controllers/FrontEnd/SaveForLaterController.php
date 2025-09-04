@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use OpenApi\Annotations as OA;
-use App\Models\FrontEnd\Cart;
+use App\Models\FrontEnd\CustomerCart;
 use App\Models\FrontEnd\Wishlist;
 use App\Models\FrontEnd\SaveForLater;
 use App\Models\Product;
