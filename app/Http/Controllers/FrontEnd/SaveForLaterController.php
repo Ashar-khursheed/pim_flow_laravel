@@ -90,7 +90,7 @@ class SaveForLaterController extends Controller
 	// 		'message' => 'Product has been moved to Save for Later.',
 	// 	], 200);
 	// }
-	public function saveForLater(Request $request)
+public function saveForLater(Request $request)
 {
     $request->validate([
         'product_id' => 'required|exists:ec_products,id',
@@ -108,9 +108,6 @@ class SaveForLaterController extends Controller
     $productId = $request->product_id;
     $vendorId = $request->vendor_id;
 
-    // Get or create customer cart
-    $customerCart = CustomerCart::where('customer_id', $userId)->first();
-
     // Get product with supplier info
     $product = Product::with('productSuppliers')->find($productId);
     if (!$product) {
@@ -120,7 +117,7 @@ class SaveForLaterController extends Controller
         ], 404);
     }
 
-    // Determine supplier
+    // Determine actual vendor
     $supplier = $vendorId
         ? $product->productSuppliers->where('vendor_id', $vendorId)->first()
         : $product->productSuppliers->first();
@@ -132,14 +129,14 @@ class SaveForLaterController extends Controller
         ], 404);
     }
 
-    $actualVendorId = $supplier->vendor_id;
     $quantity = 1;
 
-    // Check if product exists in cart
+    // Check if product exists in the cart
+    $customerCart = CustomerCart::where('customer_id', $userId)->first();
     $cartProduct = $customerCart
         ? CustomerCartProduct::where('customer_cart_id', $customerCart->id)
             ->where('product_id', $productId)
-            ->where('vendor_id', $actualVendorId)
+            ->where('vendor_id', $supplier->vendor_id)
             ->first()
         : null;
 
@@ -162,12 +159,11 @@ class SaveForLaterController extends Controller
         }
     }
 
-    // Move to SaveForLater
+    // Move to SaveForLater (ignore vendor_id here)
     SaveForLater::updateOrCreate(
         [
             'user_id' => $userId,
             'product_id' => $productId,
-            'vendor_id' => $actualVendorId,
         ],
         [
             'quantity' => $quantity,
