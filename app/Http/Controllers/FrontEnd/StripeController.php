@@ -144,7 +144,7 @@ public function createPaymentIntent(Request $request)
     try {
         // Create PaymentIntent
         $paymentIntent = PaymentIntent::create([
-            'amount' => $request->amount * 100, // Stripe uses cents
+            'amount' => (int) round($request->amount * 100), // Convert to smallest unit and round
             'currency' => $request->currency ?? 'aed',
             'payment_method' => $request->payment_method_id,
             'confirmation_method' => 'manual',
@@ -157,6 +157,7 @@ public function createPaymentIntent(Request $request)
                 'order_timestamp' => now()->toISOString()
             ]
         ]);
+
 
         // Handle the payment intent status
         if ($paymentIntent->status === 'requires_action') {
