@@ -39,6 +39,7 @@ return new class extends Migration
 			$table->enum('status', [
 				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Partially Delivered', 'Completed', 'Re-Attempt', 'Returned', 'Cancelled'
 			])->default('Pending');
+			$table->boolean('is_customer_pickup')->nullable();
 
 			$table->integer('created_by');
 			$table->integer('updated_by')->nullable();

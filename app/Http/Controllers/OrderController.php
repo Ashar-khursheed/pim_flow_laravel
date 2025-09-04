@@ -238,6 +238,7 @@ class OrderController extends Controller
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
+	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -268,6 +269,7 @@ class OrderController extends Controller
 			'separate_deliveries' => 'nullable|boolean',
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
+			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -340,6 +342,7 @@ class OrderController extends Controller
 				'is_paid' => $pendingAmount <= 0,
 				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
+				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => auth()->id(),
 				'payment_link' => $paymentLink ?? null,
 			]);
@@ -923,6 +926,9 @@ class OrderController extends Controller
 		$newStatusIndex = $findStatusIndex($newStatus);
 
 		if ($oldStatusIndex < $newStatusIndex - 1) {
+			// if (condition) {
+			// 	// code...
+			// }
 			return response()->json([
 				'success' => false,
 				'message' => "Invalid status update: You cannot skip directly from '{$oldStatus}' to '{$newStatus}'. Please follow the correct order flow."
