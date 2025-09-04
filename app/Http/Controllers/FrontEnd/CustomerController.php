@@ -533,20 +533,58 @@ class CustomerController extends BaseController
 		]);
 	}
 
+	/**
+	 * @OA\Post(
+	 *     path="/frontend/update-profile",
+	 *     tags={"FrontEnd-Customer"},
+	 *     tags={"Customer"},
+	 *     summary="Update customer profile",
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"name", "email"},
+	 *                 @OA\Property(property="name", type="string", example="John Doe"),
+	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+	 *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
+	 *                 @OA\Property(property="password_confirmation", type="string", format="password", example="secret123"),
+	 *                 @OA\Property(property="type", type="string", example="customer"),
+	 *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
+	 *                 @OA\Property(property="country_code", type="string", example="+971"),
+	 *                 @OA\Property(property="mobile_number", type="string", example="501234567"),
+	 *                 @OA\Property(property="profile_img", type="string", format="binary"),
+	 *                 @OA\Property(property="business_name", type="string", example="ABC Trading LLC"),
+	 *                 @OA\Property(property="business_licence", type="string", format="binary", description="Upload business licence (PDF only)"),
+	 *                 @OA\Property(property="trn_number", type="string", example="1234567890"),
+	 *                 @OA\Property(property="vat_certificate", type="string", format="binary", description="Upload VAT certificate (PDF only)")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Profile updated successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth": {}}},
+	 * )
+	 */
 	public function updateProfile(Request $request)
 	{
 		$user = auth()->user();
 
 		$request->validate([
-			'name'          => 'sometimes|string|max:255',
-			'email'         => 'sometimes|email|unique:users,email,' . $user->id,
-			'password'      => 'sometimes|string|min:6|confirmed',
-			'type'          => 'sometimes|string',
-			'dob'           => 'sometimes|date',
-			'country_code'  => 'sometimes|string|max:10',
-			'mobile_number' => 'sometimes|string|max:20',
-			'profile_img'   => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+			'name'             => 'required|string|max:255',
+			'business_name'    => 'nullable|string',
+			'business_licence' => 'nullable|file|mimes:pdf',
+			'trn_number'       => 'nullable|string',
+			'vat_certificate'  => 'nullable|file|mimes:pdf',
+
+			'email'            => 'required|email|unique:users,email,' . $user->id,
+			'password'         => 'nullable|string|min:6|confirmed',
+			'type'             => 'nullable|string',
+			'dob'              => 'nullable|date',
+			'country_code'     => 'nullable|string|max:10',
+			'mobile_number'    => 'nullable|string|max:20',
+			'profile_img'      => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
 		]);
+
 
 		$user->fill($request->only([
 			'name',
@@ -555,30 +593,30 @@ class CustomerController extends BaseController
 			'dob',
 			'country_code',
 			'mobile_number',
+			'business_name',
+			'trn_number',
 		]));
 
 		if ($request->filled('password')) {
-			$user->password = bcrypt($request->password);
+			$user->password = Hash::make($request->password);
 		}
 
-		// S3 upload in "production/customer/" folder
 		if ($request->hasFile('profile_img')) {
-			$image = $request->file('profile_img');
+			$user->profile_img = uploadImageToWebpS3FromFile(
+				$request,
+				'profile_img',
+				env('STORAGE_ENV') . '/customer/profile_img'
+			);
+		}
 
-			// Unique filename
-			$filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+		/* Business licence PDF */
+		if ($request->hasFile('business_licence')) {
+			$user->business_licence = uploadPdfToS3FromFile($request, 'business_licence', env('STORAGE_ENV') . '/customer/business_licence');
+		}
 
-			// Upload to S3 inside production/customer/
-			$path = $image->storeAs('production/customer', $filename, 's3');
-
-			// Make it public (optional)
-			\Storage::disk('s3')->setVisibility($path, 'public');
-
-			// Get S3 full URL
-			$url = \Storage::disk('s3')->url($path);
-
-			// Save URL in database
-			$user->profile_img = $url;
+		/* VAT certificate PDF */
+		if ($request->hasFile('vat_certificate')) {
+			$user->vat_certificate = uploadPdfToS3FromFile($request, 'vat_certificate', env('STORAGE_ENV') . '/customer/vat_certificate');
 		}
 
 		$user->save();
