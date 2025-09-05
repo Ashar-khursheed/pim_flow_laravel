@@ -1075,27 +1075,27 @@ private function calculateCouponDiscount($coupon, $applicableTotal): float
     }
 }
 
-
 /**
- * @OA\Post(
+ * @OA\Get(
  *     path="/api/customer/check-coupon",
- *     summary="Check if a coupon code is valid",
- *     description="Validates a coupon code for existence, active status, and expiry date.",
+ *     summary="Check if a coupon code is valid for the authenticated customer",
+ *     description="Validates a coupon code for existence, active status, expiry, and usage for the logged-in customer.",
  *     tags={"Customer Coupons"},
  *     security={{"bearerAuth":{}}},
- *     @OA\RequestBody(
+ *     @OA\Parameter(
+ *         name="coupon_code",
+ *         in="query",
  *         required=true,
- *         @OA\JsonContent(
- *             required={"coupon_code"},
- *             @OA\Property(property="coupon_code", type="string", example="SUMMER2025")
- *         )
+ *         description="The coupon code to validate",
+ *         @OA\Schema(type="string", example="SUMMER2025")
  *     ),
  *     @OA\Response(
  *         response=200,
  *         description="Coupon is valid",
  *         @OA\JsonContent(
+ *             type="object",
  *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Coupon is valid"),
+ *             @OA\Property(property="message", type="string", example="Coupon is valid for this customer"),
  *             @OA\Property(
  *                 property="data",
  *                 type="object",
@@ -1104,11 +1104,9 @@ private function calculateCouponDiscount($coupon, $applicableTotal): float
  *                 @OA\Property(property="coupon_name", type="string", example="Summer Sale"),
  *                 @OA\Property(property="coupon_description", type="string", example="Get 20% off"),
  *                 @OA\Property(property="discount_type", type="string", example="percentage"),
- *                 @OA\Property(property="discount_value", type="number", format="float", example=20),
+ *                 @OA\Property(property="discount_value", type="number", example=20),
  *                 @OA\Property(property="basis", type="string", example="customer"),
  *                 @OA\Property(property="usage_type", type="string", example="once"),
- *                 @OA\Property(property="min_order_value", type="number", format="float", example=100.00),
- *                 @OA\Property(property="max_order_value", type="number", format="float", example=500.00),
  *                 @OA\Property(property="expire_date", type="string", format="date-time", example="2025-12-31 23:59:59")
  *             )
  *         )
@@ -1117,96 +1115,87 @@ private function calculateCouponDiscount($coupon, $applicableTotal): float
  *         response=400,
  *         description="Invalid or expired coupon",
  *         @OA\JsonContent(
+ *             type="object",
  *             @OA\Property(property="success", type="boolean", example=false),
  *             @OA\Property(property="message", type="string", example="Invalid coupon code"),
  *             @OA\Property(
  *                 property="data",
  *                 type="object",
  *                 @OA\Property(property="coupon_valid", type="boolean", example=false),
- *                 @OA\Property(property="reason", type="string", example="Coupon has expired")
+ *                 @OA\Property(property="reason", type="string", example="Coupon expired")
  *             )
  *         )
  *     )
  * )
  */
-public function checkCustomerCoupon(Request $request): JsonResponse
+// GET /api/customer/check-coupon
+// GET /api/customer/check-coupon
+public function checkCustomerCoupon(Request $request)
 {
-    $validated = $request->validate([
-        'coupon_code' => 'required|string',
-    ]);
-
-    $customerId = auth()->id();
+    $customerId = auth()->id(); // Logged-in customer ID
 
     if (!$customerId) {
         return response()->json([
             'success' => false,
-            'data' => [
-                'coupon_valid' => false,
-                'reason' => 'User not authenticated'
-            ],
-            'message' => 'Login required to check coupon'
+            'message' => 'Unauthorized',
         ], 401);
     }
 
-    $coupon = Coupon::where('code', $validated['coupon_code'])
-                   ->where('is_active', true)
-                   ->first();
+    $couponCode = $request->query('coupon_code');
+
+    $coupon = Coupon::where('code', $couponCode)
+        ->where('is_active', true)        // active status
+        ->where('status', 'approved')    // approved in DB
+        ->where(function ($q) {
+            $q->whereNull('start_date')
+              ->orWhere('start_date', '<=', now());
+        })
+        ->where(function ($q) {
+            $q->whereNull('expire_date')
+              ->orWhere('expire_date', '>=', now());
+        })
+        ->first();
 
     if (!$coupon) {
         return response()->json([
             'success' => false,
-            'data' => [
-                'coupon_valid' => false,
-                'reason' => 'Coupon not found or inactive'
-            ],
-            'message' => 'Invalid coupon code'
+            'message' => 'Invalid or expired coupon',
         ], 400);
     }
 
-    // Check expiry
-    if ($coupon->expire_date && now()->greaterThan($coupon->expire_date)) {
-        return response()->json([
-            'success' => false,
-            'data' => [
-                'coupon_valid' => false,
-                'reason' => 'Coupon expired'
-            ],
-            'message' => 'Coupon expired'
-        ], 400);
-    }
+    // Check if coupon is customer-specific
+    if ($coupon->basis === 'customer') {
+        $isAssigned = $coupon->customers()
+            ->where('customer_id', $customerId)
+            ->exists();
 
-    // Check if customer already used it
-    $alreadyUsed = Order::where('customer_id', $customerId)
-        ->where('coupon_code', $coupon->code)
-        ->exists();
-
-    if ($coupon->usage_type === 'once' && $alreadyUsed) {
-        return response()->json([
-            'success' => false,
-            'data' => [
-                'coupon_valid' => false,
-                'reason' => 'Coupon already used by this customer'
-            ],
-            'message' => 'Coupon already used'
-        ], 400);
+        if (!$isAssigned) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This coupon is not valid for your account',
+            ], 403);
+        }
     }
 
     return response()->json([
         'success' => true,
+        'message' => 'Coupon is valid',
         'data' => [
-            'coupon_valid' => true,
+              'coupon_id' => $coupon->id,
             'coupon_code' => $coupon->code,
             'coupon_name' => $coupon->name,
             'coupon_description' => $coupon->description,
             'discount_type' => $coupon->type,
             'discount_value' => $coupon->value,
-            'basis' => $coupon->basis,
-            'usage_type' => $coupon->usage_type,
-            'expire_date' => $coupon->expire_date?->format('Y-m-d H:i:s'),
+            'expire_date' => $coupon->expire_date,
         ],
-        'message' => 'Coupon is valid for this customer'
     ]);
 }
+
+
+
+
+
 
 
 }

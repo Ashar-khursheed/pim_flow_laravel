@@ -127,6 +127,7 @@ use App\Http\Controllers\FrontEnd\GlitchErrorController;
 use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventController;
 use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseClaimController;
 use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseClaimController;
+use App\Http\Controllers\FrontEnd\GetInTouchController as F_GetInTouchController;
 use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
@@ -169,9 +170,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
 });
 
 
-
-
-
+Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
 
@@ -411,15 +410,14 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
 	Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
 	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
- 
-	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
-	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
-	
 
-	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
-	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
-	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);	 
- 
+	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
+
+	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
+	Route::get('/product-report-export', [ProductReportController::class, 'index']);
+	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
+	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
+
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
@@ -546,29 +544,30 @@ Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCu
 Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
- 
+
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
 	Route::prefix('customer')->group(function () {
-        
+
+		Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
+
         // Customer coupon application
         Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
 
-		Route::get('check-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
-        
-        // Customer can view available coupons for them
+		Route::get('check-coupon', [F_CouponController::class, 'checkCustomerCoupon']);
+
         Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
-        
+
         // Customer coupon history
         Route::get('coupon-history', [F_CouponController::class, 'getCustomerCouponHistory']);
-        
+
         // Check if coupon code exists (without applying)
         Route::post('check-coupon', [F_CouponController::class, 'checkCouponCode']);
     });
     Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
     Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
     Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class);
-	
+
     Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
 	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
@@ -742,7 +741,7 @@ Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
 Route::get('/frontend/country-phonecodes', [F_CountryController::class, 'getPhoneCodes']);
 
 
-Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
+
 
 Route::prefix('/frontend/blogs')->group(function () {
 	Route::get('/', [F_BlogController::class, 'index']);
@@ -787,7 +786,10 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 });
 
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
-
+Route::prefix('stripe')->group(function () {
+    Route::post('/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
+    Route::post('/confirm-payment-intent', [F_StripeController::class, 'confirmPaymentIntent']);
+});
 Route::post('frontend/product-errors', [F_ProductErrorController::class, 'store']);
 Route::get('frontend/product-errors', [F_ProductErrorController::class, 'index']);
 Route::get('frontend/product-errors/{product_id}', [F_ProductErrorController::class, 'show']);

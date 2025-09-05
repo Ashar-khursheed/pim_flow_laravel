@@ -3023,40 +3023,36 @@ class ProductController extends BaseController
 			]);
 		}
 	}
-
-	
 	/**
- * @OA\Post(
- *     path="/api/products/delete-product-document",
- *     summary="Delete a product document",
- *     description="Deletes a document file related to the given product.",
- *     tags={"Products"},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="product_id", type="string", example="123"),
- *             @OA\Property(property="document_path", type="string", example="https://horecastore-s3-storage.s3.us-west-1.amazonaws.com/production/documents/manual.pdf")
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Document deleted successfully",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="status", type="string", example="success"),
- *             @OA\Property(property="message", type="string", example="Document deleted")
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Document not found"
- *     ),
- *     security={{"bearerAuth":{}}}
- * )
- */
-
-
+	 * @OA\Post(
+	 *     path="/api/products/delete-product-document",
+	 *     summary="Delete a product document",
+	 *     description="Deletes a document file related to the given product.",
+	 *     tags={"Products"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="product_id", type="string", example="123"),
+	 *             @OA\Property(property="document_path", type="string", example="https://horecastore-s3-storage.s3.us-west-1.amazonaws.com/production/documents/manual.pdf")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Document deleted successfully",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="status", type="string", example="success"),
+	 *             @OA\Property(property="message", type="string", example="Document deleted")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="Document not found"
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
 	public function deleteProductDocument(Request $request)
 	{		 
 		$request->validate([
@@ -3134,5 +3130,4 @@ class ProductController extends BaseController
 			], 500);
 		}
 	}
-
 }

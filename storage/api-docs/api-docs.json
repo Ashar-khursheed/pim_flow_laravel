@@ -8334,9 +8334,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -8350,16 +8348,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 199.99
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -15262,32 +15250,25 @@
             }
         },
         "/api/customer/check-coupon": {
-            "post": {
+            "get": {
                 "tags": [
                     "Customer Coupons"
                 ],
-                "summary": "Check if a coupon code is valid",
-                "description": "Validates a coupon code for existence, active status, and expiry date.",
-                "operationId": "957fac8da98c70fb66c2a94a233a2c96",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "coupon_code"
-                                ],
-                                "properties": {
-                                    "coupon_code": {
-                                        "type": "string",
-                                        "example": "SUMMER2025"
-                                    }
-                                },
-                                "type": "object"
-                            }
+                "summary": "Check if a coupon code is valid for the authenticated customer",
+                "description": "Validates a coupon code for existence, active status, expiry, and usage for the logged-in customer.",
+                "operationId": "696acf20db2ffa5a6fe9e3751bf9f6cc",
+                "parameters": [
+                    {
+                        "name": "coupon_code",
+                        "in": "query",
+                        "description": "The coupon code to validate",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "SUMMER2025"
                         }
                     }
-                },
+                ],
                 "responses": {
                     "200": {
                         "description": "Coupon is valid",
@@ -15301,7 +15282,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Coupon is valid"
+                                            "example": "Coupon is valid for this customer"
                                         },
                                         "data": {
                                             "properties": {
@@ -15327,7 +15308,6 @@
                                                 },
                                                 "discount_value": {
                                                     "type": "number",
-                                                    "format": "float",
                                                     "example": 20
                                                 },
                                                 "basis": {
@@ -15337,16 +15317,6 @@
                                                 "usage_type": {
                                                     "type": "string",
                                                     "example": "once"
-                                                },
-                                                "min_order_value": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 100
-                                                },
-                                                "max_order_value": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 500
                                                 },
                                                 "expire_date": {
                                                     "type": "string",
@@ -15384,7 +15354,7 @@
                                                 },
                                                 "reason": {
                                                     "type": "string",
-                                                    "example": "Coupon has expired"
+                                                    "example": "Coupon expired"
                                                 }
                                             },
                                             "type": "object"
@@ -15784,6 +15754,98 @@
                 "responses": {
                     "200": {
                         "description": "Search results",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/update-profile": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Customer"
+                ],
+                "summary": "Update customer profile",
+                "operationId": "802d69cbd82062dff590499981ba7fea",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "customer"
+                                    },
+                                    "dob": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1990-01-01"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+971"
+                                    },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "501234567"
+                                    },
+                                    "profile_img": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "ABC Trading LLC"
+                                    },
+                                    "business_licence": {
+                                        "description": "Upload business licence (PDF only)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "trn_number": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "vat_certificate": {
+                                        "description": "Upload VAT certificate (PDF only)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -16312,6 +16374,70 @@
                                     "type": "object"
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/get-in-touch": {
+            "post": {
+                "tags": [
+                    "FrontEnd-GetInTouch"
+                ],
+                "summary": "Save customer mesage",
+                "operationId": "ced428f3f93c2dbb227273ee65d68833",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "phone",
+                                    "topic"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "971500000000"
+                                    },
+                                    "topic": {
+                                        "type": "string",
+                                        "example": "Regarding my order"
+                                    },
+                                    "order_number": {
+                                        "type": "string",
+                                        "example": "1001"
+                                    },
+                                    "image": {
+                                        "description": "Image (jpeg, png, webp only, max 2 MB)",
+                                        "type": "file"
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Type your description"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Saved successfully",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 }
@@ -17248,6 +17374,10 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "is_customer_pickup": {
+                                        "type": "boolean",
+                                        "example": false
                                     },
                                     "products": {
                                         "type": "array",
@@ -22104,7 +22234,8 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "amount"
+                                    "amount",
+                                    "payment_method_id"
                                 ],
                                 "properties": {
                                     "amount": {
@@ -22112,6 +22243,20 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 50
+                                    },
+                                    "payment_method_id": {
+                                        "description": "Stripe Payment Method ID",
+                                        "type": "string",
+                                        "example": "pm_1234567890"
+                                    },
+                                    "currency": {
+                                        "description": "Currency code",
+                                        "type": "string",
+                                        "example": "aed"
+                                    },
+                                    "customer_info": {
+                                        "description": "Customer information",
+                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
@@ -22121,49 +22266,26 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Client secret for payment intent returned successfully",
+                        "description": "Payment intent processed successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "clientSecret": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "client_secret": {
                                             "type": "string",
                                             "example": "pi_3Nx4x4xxxx_secret_1234"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error (missing or invalid amount)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
                                         },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Stripe error or internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
+                                        "requires_action": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "payment_intent_id": {
                                             "type": "string",
-                                            "example": "Your card was declined."
+                                            "example": "pi_3Nx4x4xxxx"
                                         }
                                     },
                                     "type": "object"
@@ -25581,6 +25703,10 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "is_customer_pickup": {
+                                        "type": "boolean",
+                                        "example": false
                                     },
                                     "products": {
                                         "type": "array",
@@ -37371,6 +37497,10 @@
         {
             "name": "Geolocation",
             "description": "Geolocation"
+        },
+        {
+            "name": "FrontEnd-GetInTouch",
+            "description": "FrontEnd-GetInTouch"
         },
         {
             "name": "FrontEnd-GlitchErrors",

@@ -2900,21 +2900,22 @@ public function fetchCategories(Request $request)
             'Commercial Espresso Machines',
         ],
         'UAE' => [
-          "Work Top Refrigerators",
+         "Work Top Refrigerators",
             "Commercial Fryers",
-            "Combi Oven",
-            "Commercial Blender",
-            "Commercial Gas And Electric Cooker",
-            "Upright Freezer",
-            "Espresso Machine",
+            "Combi Ovens",
+            "Commercial Blenders",
+            "Commercial Gas And Electric Cookers",
+            "Upright Freezers",
+            "Espresso Machines",
             "Commercial Grills And Griddles",
-            "Commercial Toaster",
+            "Commercial Toasters",
             "Upright Chillers",
             "White Dinnerware",
             "Cheese",
             "Food Processors",
-            "Salamander",
-            "Salad Chiller"
+            "Salamanders",
+            "Salad Chillers"
+
 
 
         ],

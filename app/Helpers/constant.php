@@ -365,6 +365,33 @@ function uploadFileToS3($file, $path)
 	return Storage::disk('s3')->putFileAs($path, $file, $filename, 'public') ? Storage::disk('s3')->url("$path/$filename") : null;
 }
 
+/**
+ * Upload PDF file to S3 and return its URL
+ */
+function uploadPdfToS3FromFile(Request $request, string $key, string $pathPrefix)
+{
+	if (!$request->hasFile($key) || !$request->file($key)->isValid()) {
+		return null;
+	}
+
+	try {
+		$file = $request->file($key);
+		if ($file->getClientOriginalExtension() !== 'pdf') {
+			return null;
+		}
+
+		$filename   = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+		$uniqueName = $filename . '_' . time() . '.pdf';
+		$path       = "{$pathPrefix}/{$uniqueName}";
+
+		Storage::disk('s3')->put($path, file_get_contents($file->getRealPath()));
+
+		return Storage::disk('s3')->url($path);
+	} catch (\Exception $e) {
+		return null;
+	}
+}
+
 if (!function_exists('getDateRange')) {
 	function getDateRange(Carbon\Carbon|string $createdAt, string $deliveryDays): string
 	{

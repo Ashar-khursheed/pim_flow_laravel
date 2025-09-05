@@ -201,9 +201,9 @@ class ImportProductSupplierJob implements ShouldQueue
 				$rowErrors[] = "Invalid Free Shipping Option: '$free_shipping'.";
 			}
 
-			if (!empty($free_shipping) && $free_shipping === 'Yes') {
+			if (!empty($free_shipping) && $free_shipping === 'No') {
 				if (empty($shipping_charge) || $shipping_charge == 0) {
-					$rowErrors[] = "Shipping charge is required and must be greater than 0 when Free Shipping = Yes.";
+					$rowErrors[] = "Shipping charge is required and must be greater than 0 when Free Shipping = No.";
 				}
 			}
 

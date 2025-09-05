@@ -61,6 +61,7 @@ class QuoteController extends BaseController
 				'quoteProducts.product.currency:id,symbol',
 				'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
 				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+				'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
 				'quoteEmails',
 			]);
 
@@ -320,6 +321,7 @@ class QuoteController extends BaseController
 				'quoteProducts.product.brand:id,name',
 				'quoteProducts.product.currency:id,symbol',
 				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+				'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
 				'quoteEmails',
 			]);
 
@@ -336,7 +338,9 @@ class QuoteController extends BaseController
 					unset($product->brand, $product->currency);
 				}
 
-				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
+				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only([
+					'price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy'
+				]);
 
 				/* Format numeric values to 2 decimal places */
 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -404,6 +408,7 @@ class QuoteController extends BaseController
 			'quoteProducts.product.currency:id,symbol',
 			'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
 			'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
 			'quoteEmails',
 		]);
 
@@ -585,6 +590,7 @@ class QuoteController extends BaseController
 				'quoteProducts.product.brand:id,name',
 				'quoteProducts.product.currency:id,symbol',
 				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+				'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
 				'quoteEmails',
 			]);
 
