@@ -246,6 +246,31 @@ private function getCategoryWithChildren($category)
      * )
      */
    
+// public function getCategoriesWithChildren(Request $request)
+// {
+//     $filterId = $request->get('id');
+
+//     $query = Category::select(['id', 'name', 'parent_id', 'image'])
+//         ->withCount('products')
+//         ->with(['seoUrl'])
+//         ->where('status', 'published');
+
+//     if ($filterId) {
+//         $query->where(function ($q) use ($filterId) {
+//             $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+//         });
+//     }
+
+//     $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
+
+//     $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
+//         $categories = $query->get();
+//         return $this->buildCategoryTree($categories);
+//     });
+
+//     return response()->json($categoriesTree)
+//         ->header('Cache-Control', 'public, max-age=86400');
+// }
 public function getCategoriesWithChildren(Request $request)
 {
     $filterId = $request->get('id');
@@ -268,9 +293,27 @@ public function getCategoriesWithChildren(Request $request)
         return $this->buildCategoryTree($categories);
     });
 
+    // Reorder "Food and Beverage" to index 3 among parent categories
+    $foodCategoryIndex = null;
+    foreach ($categoriesTree as $index => $category) {
+        if ($category['name'] === 'Food and Beverage') {
+            $foodCategoryIndex = $index;
+            break;
+        }
+    }
+
+    if (!is_null($foodCategoryIndex)) {
+        $foodCategory = $categoriesTree[$foodCategoryIndex];
+        unset($categoriesTree[$foodCategoryIndex]);
+        // Reindex array and insert at index 2 (3rd position, 0-based index)
+        $categoriesTree = array_values($categoriesTree);
+        array_splice($categoriesTree, 2, 0, [$foodCategory]);
+    }
+
     return response()->json($categoriesTree)
         ->header('Cache-Control', 'public, max-age=86400');
 }
+
 
 private function buildCategoryTree($categories)
 {
