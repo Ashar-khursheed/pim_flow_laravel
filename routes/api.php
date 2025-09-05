@@ -416,6 +416,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
 	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
+	Route::get('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);	 
+
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
 	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);	 
  
