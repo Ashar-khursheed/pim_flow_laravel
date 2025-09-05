@@ -209,7 +209,7 @@ class SeoManagementController extends Controller
             $decoded = json_decode($filtered['schema'], true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 if (!empty($decoded['@type']) && !empty($decoded['url'])) {
-                    $baseUrl = 'https://www.thehorecastore.com/';
+                    $baseUrl = url("/");
                     if (strtolower($decoded['@type']) === 'product') {
                         $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
                     } elseif (strtolower($decoded['@type']) === 'category') {

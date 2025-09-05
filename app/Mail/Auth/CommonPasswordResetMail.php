@@ -37,8 +37,20 @@ class CommonPasswordResetMail extends Mailable
 		$backendUrl = config('app.backend_url');
 
 		$logoUrl = $backendUrl . (config('app.website') === 'UAE' ? '/uae_logo.png' : '/us_logo.png');
-		$siteUrl = config('app.website') === 'UAE' ? 'HorecaStore.ae' : 'Thehorecastore.com';
-		$siteEmail = config('app.website') === 'UAE' ? 'hello@thehorecastore.co' : 'sales@thehorecastore.com';
+
+		$siteUrl = match (config('app.website')) {
+			'US'  => 'Thehorecastore.com',
+			'UAE'  => 'HorecaStore.ae',
+			'TEST' => 'Thehorecastore.com',
+			default => 'Thehorecastore.com',
+		};
+
+		$siteEmail = match (config('app.website')) {
+			'US'  => 'sales@thehorecastore.com',
+			'UAE'  => 'hello@horecastore.ae',
+			'TEST' => 'test@thehorecastore.co',
+			default => 'test@thehorecastore.co',
+		};
 
 		$params = [
 			'name' => $name,
@@ -49,7 +61,7 @@ class CommonPasswordResetMail extends Mailable
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject('Important: Reset Your HORECA Store Password')
+		return $this->subject('Important: Reset Your HorecaStore Password')
 		->markdown('emails.auth.common-reset-password')
 		->with($params);
 	}

@@ -134,10 +134,7 @@ class CustomerController extends BaseController
 			]);
 			$customer->save();
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Welcome Mails')->dispatch();
+			$batch = Bus::batch([])->name('Welcome Mails')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_WLCM';
 			$batch->add(new WelcomeMailJob([
