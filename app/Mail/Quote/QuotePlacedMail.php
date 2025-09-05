@@ -40,8 +40,19 @@ class QuotePlacedMail extends Mailable
 		$downloadLink = config('app.url') . '/my-quotes';
 		$orderLink = config('app.url') . '/download-quotation/' . $quote->id;
 
-		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'yourquote@thehorecastore.co':'yourquote@thehorecastore.com';
+		$siteUrl = match (config('app.website')) {
+			'US'  => 'Thehorecastore.com',
+			'UAE'  => 'HorecaStore.ae',
+			'TEST' => 'Thehorecastore.com',
+			default => 'Thehorecastore.com',
+		};
+
+		$siteEmail = match (config('app.website')) {
+			'US'  => 'yourquote@thehorecastore.com',
+			'UAE'  => 'yourquote@horecastore.ae',
+			'TEST' => 'test@thehorecastore.co',
+			default => 'test@thehorecastore.co',
+		};
 
 		$mailParams = [
 			'logoUrl' => $logoUrl,

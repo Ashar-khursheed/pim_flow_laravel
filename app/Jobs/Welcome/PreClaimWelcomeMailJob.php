@@ -39,7 +39,12 @@ class PreClaimWelcomeMailJob implements ShouldQueue
 		}
 
 		if (!empty($customer)) {
-			$fromEmail = config('app.website') === 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
+			$fromEmail = match (config('app.website')) {
+				'US'  => 'sales@thehorecastore.com',
+				'UAE'  => 'hello@horecastore.ae',
+				'TEST' => 'test@thehorecastore.co',
+				default => 'test@thehorecastore.co',
+			};
 			$fromName = 'HorecaStore';
 			$replyToEmail = $fromEmail;
 

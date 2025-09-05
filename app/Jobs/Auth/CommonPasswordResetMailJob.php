@@ -39,7 +39,7 @@ class CommonPasswordResetMailJob implements ShouldQueue
 		if (!empty($customer)) {
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'sales@thehorecastore.com',
-				'UAE'  => 'hello@thehorecastore.co',
+				'UAE'  => 'hello@horecastore.ae',
 				'TEST' => 'test@thehorecastore.co',
 				default => 'test@thehorecastore.co',
 			};
