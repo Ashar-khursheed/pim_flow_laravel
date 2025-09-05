@@ -16379,6 +16379,70 @@
                 }
             }
         },
+        "/api/frontend/get-in-touch": {
+            "post": {
+                "tags": [
+                    "FrontEnd-GetInTouch"
+                ],
+                "summary": "Save customer mesage",
+                "operationId": "ced428f3f93c2dbb227273ee65d68833",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "phone",
+                                    "topic"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "971500000000"
+                                    },
+                                    "topic": {
+                                        "type": "string",
+                                        "example": "Regarding my order"
+                                    },
+                                    "order_number": {
+                                        "type": "string",
+                                        "example": "1001"
+                                    },
+                                    "image": {
+                                        "description": "Image (jpeg, png, webp only, max 2 MB)",
+                                        "type": "file"
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Type your description"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Saved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/glitch-errors": {
             "get": {
                 "tags": [
@@ -37433,6 +37497,10 @@
         {
             "name": "Geolocation",
             "description": "Geolocation"
+        },
+        {
+            "name": "FrontEnd-GetInTouch",
+            "description": "FrontEnd-GetInTouch"
         },
         {
             "name": "FrontEnd-GlitchErrors",
