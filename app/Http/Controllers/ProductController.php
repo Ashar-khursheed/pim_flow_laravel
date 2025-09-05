@@ -3116,7 +3116,6 @@ class ProductController extends BaseController
 				$product->documents="";
 			}	 
 			$product->save();
-
 			return response()->json([
 				'success' => true,
 				'message' => 'Document deleted successfully',

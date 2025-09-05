@@ -56,7 +56,7 @@ class ProductReportController extends Controller
 	 *         in="query",
 	 *         description="Enter brand id, category id",
 	 *         required=false,
-	 *         @OA\Schema(type="integer", example=14)
+	 *         @OA\Schema(type="integer", example=121)
 	 *     ),
 	 *    
 	 *
@@ -245,7 +245,6 @@ class ProductReportController extends Controller
 		$fileName = 'product_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
-
 	/**
 	 * @OA\Get(
 	 *     path="/api/product-benefit-report",
@@ -286,7 +285,7 @@ class ProductReportController extends Controller
 	 *         in="query",
 	 *         description="Enter brand id, category id",
 	 *         required=false,
-	 *         @OA\Schema(type="integer", example=14)
+	 *         @OA\Schema(type="integer", example=121)
 	 *     ),
 	 *   
 	 *     @OA\Response(
