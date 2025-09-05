@@ -352,9 +352,9 @@ class ProductReportController extends Controller
 			'vendors',
 			'productAttributes.attributeDetails',
 			'latestChildCategoryRelation:id,name',
-			 
 
-		])->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved','benefits_features']);
+
+		])->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved', 'benefits_features']);
 		/* Apply relational filters */
 		if ($request->status != 'all') {
 			$query->where('status', $request->status);
@@ -383,7 +383,7 @@ class ProductReportController extends Controller
 			->get();
 
 		/* Formatting response */
-		$formattedProducts = $products->map(function ($product) { 
+		$formattedProducts = $products->map(function ($product) {
 			$firstSupplier = $product->productSuppliers->first();
 			$data[] = [
 				'id' => $product->id,
@@ -398,7 +398,7 @@ class ProductReportController extends Controller
 				'category_name' => $product->categories->pluck('name')->implode(', '),
 				'category_count' => $product->categories->count(),
 				'atribute_count' => $product->productAttributes ? $product->productAttributes->count() : null,
-				'benefit_count' => $product->benefits_features ? count(json_decode($product->benefits_features, true)): null,
+				'benefit_count' => $product->benefits_features ? count(json_decode($product->benefits_features, true)) : null,
 				'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 
 			];
@@ -407,7 +407,7 @@ class ProductReportController extends Controller
 
 		});
 
-		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image','documents','video', 'status','brand name', 'category_name', 'category_count', 'atribute_count', 'benefit_count','price'];
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'documents', 'video', 'status', 'brand name', 'category_name', 'category_count', 'atribute_count', 'benefit_count', 'price'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
