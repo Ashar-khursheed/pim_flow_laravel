@@ -561,7 +561,7 @@ public function brandsByCategory($id): JsonResponse
 
     // Collect unique brand IDs for products in these categories
     $brandIds = Product::whereHas('categories', function ($query) use ($categoryIds) {
-            $query->whereIn('product_categories.category_id', $categoryIds);
+            $query->whereIn('id', $categoryIds); // ✅ safer than hardcoding pivot
         })
         ->pluck('brand_id')
         ->unique()
@@ -591,7 +591,7 @@ public function brandsByCategory($id): JsonResponse
                 'url'  => $brand->seoUrl->url ?? null,
             ];
         })
-        ->take(12)   // 👈 now we only keep 12 AFTER filtering
+        ->take(12)
         ->values();
 
     if ($brands->isEmpty()) {
@@ -610,20 +610,21 @@ public function brandsByCategory($id): JsonResponse
 }
 
 
-
 /**
  * Recursive helper to fetch all child category IDs
  */
 private function getAllChildCategoryIds($categoryId)
 {
     $childIds = Category::where('parent_id', $categoryId)->pluck('id');
+    $allChildIds = collect($childIds);
 
     foreach ($childIds as $childId) {
-        $childIds = $childIds->merge($this->getAllChildCategoryIds($childId));
+        $allChildIds = $allChildIds->merge($this->getAllChildCategoryIds($childId));
     }
 
-    return $childIds;
+    return $allChildIds;
 }
+
 
     /**
      * @OA\Get(
