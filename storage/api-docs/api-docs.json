@@ -8334,9 +8334,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -8350,16 +8348,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 199.99
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -15790,10 +15778,6 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "required": [
-                                    "name",
-                                    "email"
-                                ],
                                 "properties": {
                                     "name": {
                                         "type": "string",
@@ -22186,7 +22170,8 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "amount"
+                                    "amount",
+                                    "payment_method_id"
                                 ],
                                 "properties": {
                                     "amount": {
@@ -22194,6 +22179,20 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 50
+                                    },
+                                    "payment_method_id": {
+                                        "description": "Stripe Payment Method ID",
+                                        "type": "string",
+                                        "example": "pm_1234567890"
+                                    },
+                                    "currency": {
+                                        "description": "Currency code",
+                                        "type": "string",
+                                        "example": "aed"
+                                    },
+                                    "customer_info": {
+                                        "description": "Customer information",
+                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
@@ -22203,49 +22202,26 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Client secret for payment intent returned successfully",
+                        "description": "Payment intent processed successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "clientSecret": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "client_secret": {
                                             "type": "string",
                                             "example": "pi_3Nx4x4xxxx_secret_1234"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error (missing or invalid amount)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
                                         },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Stripe error or internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
+                                        "requires_action": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "payment_intent_id": {
                                             "type": "string",
-                                            "example": "Your card was declined."
+                                            "example": "pi_3Nx4x4xxxx"
                                         }
                                     },
                                     "type": "object"
