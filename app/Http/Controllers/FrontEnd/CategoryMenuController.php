@@ -246,31 +246,31 @@ private function getCategoryWithChildren($category)
      * )
      */
    
-// public function getCategoriesWithChildren(Request $request)
-// {
-//     $filterId = $request->get('id');
+public function getCategoriesWithChildren(Request $request)
+{
+    $filterId = $request->get('id');
 
-//     $query = Category::select(['id', 'name', 'parent_id', 'image'])
-//         ->withCount('products')
-//         ->with(['seoUrl'])
-//         ->where('status', 'published');
+    $query = Category::select(['id', 'name', 'parent_id', 'image'])
+        ->withCount('products')
+        ->with(['seoUrl'])
+        ->where('status', 'published');
 
-//     if ($filterId) {
-//         $query->where(function ($q) use ($filterId) {
-//             $q->where('id', $filterId)->orWhere('parent_id', $filterId);
-//         });
-//     }
+    if ($filterId) {
+        $query->where(function ($q) use ($filterId) {
+            $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+        });
+    }
 
-//     $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
+    $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
 
-//     $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
-//         $categories = $query->get();
-//         return $this->buildCategoryTree($categories);
-//     });
+    $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
+        $categories = $query->get();
+        return $this->buildCategoryTree($categories);
+    });
 
-//     return response()->json($categoriesTree)
-//         ->header('Cache-Control', 'public, max-age=86400');
-// }
+    return response()->json($categoriesTree)
+        ->header('Cache-Control', 'public, max-age=86400');
+}
 // public function getCategoriesWithChildren(Request $request)
 // {
 //     $filterId = $request->get('id');
@@ -314,81 +314,6 @@ private function getCategoryWithChildren($category)
 //         ->header('Cache-Control', 'public, max-age=86400');
 // }
 
-
-// private function buildCategoryTree($categories)
-// {
-//     // Map categories by parent_id
-//     $categoriesByParent = $categories->groupBy('parent_id');
-
-//     // Recursive function to build tree
-//     $buildTree = function($parentId) use (&$buildTree, $categoriesByParent) {
-//         $tree = [];
-//         if (isset($categoriesByParent[$parentId])) {
-//             foreach ($categoriesByParent[$parentId] as $category) {
-//                 $seoSlug = $category->seoUrl?->url ?? null;
-//                 $tree[] = [
-//                     'id' => $category->id,
-//                     'name' => $category->name,
-//                     'slug' => $seoSlug,
-//                     'parent_id' => $category->parent_id,
-//                     'productCount' => $category->products_count,
-//                     'image' => $category->image,
-//                     'children' => $buildTree($category->id),
-//                 ];
-//             }
-//         }
-//         return $tree;
-//     };
-
-//     // Only start from top-level categories (parent_id = 0)
-//     return $buildTree(0);
-// }
-public function getCategoriesWithChildren(Request $request)
-{
-    $filterId = $request->get('id');
-
-    $query = Category::select(['id', 'name', 'parent_id', 'image'])
-        ->withCount('products')
-        ->with(['seoUrl'])
-        ->where('status', 'published');
-
-    if ($filterId) {
-        $query->where(function ($q) use ($filterId) {
-            $q->where('id', $filterId)->orWhere('parent_id', $filterId);
-        });
-    }
-
-    $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
-
-    $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
-        $categories = $query->get();
-        return $this->buildCategoryTree($categories);
-    });
-
-    // Reorder "Food and Beverage" to position 3 (index 2) among parent categories
-    $foodCategoryIndex = null;
-    foreach ($categoriesTree as $index => $category) {
-        if ($category['name'] === 'Food and Beverage') {
-            $foodCategoryIndex = $index;
-            break;
-        }
-    }
-
-    if (!is_null($foodCategoryIndex) && $foodCategoryIndex !== 2) {
-        // Remove the Food and Beverage category from its current position
-        $foodCategory = $categoriesTree[$foodCategoryIndex];
-        unset($categoriesTree[$foodCategoryIndex]);
-        
-        // Reindex the array to fix gaps
-        $categoriesTree = array_values($categoriesTree);
-        
-        // Insert at index 2 (3rd position) - note: removed the array wrapper
-        array_splice($categoriesTree, 2, 0, $foodCategory);
-    }
-
-    return response()->json($categoriesTree)
-        ->header('Cache-Control', 'public, max-age=86400');
-}
 
 private function buildCategoryTree($categories)
 {
