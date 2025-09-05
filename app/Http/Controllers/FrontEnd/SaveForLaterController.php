@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use OpenApi\Annotations as OA;
-use App\Models\FrontEnd\Cart;
+use App\Models\FrontEnd\CustomerCart;
+use App\Models\FrontEnd\CustomerCartProduct;
 use App\Models\FrontEnd\Wishlist;
 use App\Models\FrontEnd\SaveForLater;
 use App\Models\Product;
@@ -89,7 +90,7 @@ class SaveForLaterController extends Controller
 	// 		'message' => 'Product has been moved to Save for Later.',
 	// 	], 200);
 	// }
-	public function saveForLater(Request $request)
+public function saveForLater(Request $request)
 {
     $request->validate([
         'product_id' => 'required|exists:ec_products,id',
@@ -107,9 +108,6 @@ class SaveForLaterController extends Controller
     $productId = $request->product_id;
     $vendorId = $request->vendor_id;
 
-    // Get or create customer cart
-    $customerCart = CustomerCart::where('customer_id', $userId)->first();
-
     // Get product with supplier info
     $product = Product::with('productSuppliers')->find($productId);
     if (!$product) {
@@ -119,7 +117,7 @@ class SaveForLaterController extends Controller
         ], 404);
     }
 
-    // Determine supplier
+    // Determine actual vendor
     $supplier = $vendorId
         ? $product->productSuppliers->where('vendor_id', $vendorId)->first()
         : $product->productSuppliers->first();
@@ -131,14 +129,14 @@ class SaveForLaterController extends Controller
         ], 404);
     }
 
-    $actualVendorId = $supplier->vendor_id;
     $quantity = 1;
 
-    // Check if product exists in cart
+    // Check if product exists in the cart
+    $customerCart = CustomerCart::where('customer_id', $userId)->first();
     $cartProduct = $customerCart
         ? CustomerCartProduct::where('customer_cart_id', $customerCart->id)
             ->where('product_id', $productId)
-            ->where('vendor_id', $actualVendorId)
+            ->where('vendor_id', $supplier->vendor_id)
             ->first()
         : null;
 
@@ -161,12 +159,11 @@ class SaveForLaterController extends Controller
         }
     }
 
-    // Move to SaveForLater
+    // Move to SaveForLater (ignore vendor_id here)
     SaveForLater::updateOrCreate(
         [
             'user_id' => $userId,
             'product_id' => $productId,
-            'vendor_id' => $actualVendorId,
         ],
         [
             'quantity' => $quantity,
@@ -211,129 +208,118 @@ class SaveForLaterController extends Controller
 	 *     )
 	 * )
 	 */
-	public function showSaveForLater(Request $request)
-	{
-		$userId = auth()->id();
-	
-		// Get wishlist product IDs
-		$wishlistProductIds = DB::table('ec_wish_lists')
-			->where('customer_id', $userId)
-			->pluck('product_id')
-			->map(fn($id) => (int) $id)
-			->toArray();
-	
-		// Fetch all saved products
-		$savedProducts = SaveForLater::where('user_id', $userId)
-			->with([
-				'product.reviews',
-				'product.currency',
-				'product.sellingUnitAttribute',
-				'product.productSuppliers',
-				'seoUrl'
-			])
-			->get();
-	
-		if ($savedProducts->isEmpty()) {
-			return response()->json([
-				'message' => 'No products saved for later.'
-			], 404);
-		}
-	
-		$productsData = $savedProducts->map(function ($item) use ($wishlistProductIds) {
-			$product = $item->product;
-	
-			if (!$product) return null;
-	
-			// Ratings
-			$totalReviews = $product->reviews->count();
-			$avgRating = $totalReviews > 0 ? round($product->reviews->avg('star'), 1) : null;
-	
-			// Images
-			$imageUrls = is_string($product->images)
-				? json_decode($product->images, true)
-				: (array) $product->images;
-	
-			// Selling type
-			$sellingType = null;
-			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-				$fullValue = $product->sellingUnitAttribute->attribute_value;
-				$attributeUnit = strpos($fullValue, '/') !== false
-					? trim(explode('/', $fullValue)[1])
-					: $fullValue;
-	
-				$sellingType = [
-					'attribute_value' => $fullValue,
-					'attribute_value_unit' => $attributeUnit,
-				];
-			}
-	
-			// Per unit price
-			$unitsPerCase = $product->per_unit_price_attributes?->firstWhere(
-					fn($attr) => $attr->attributeDetails->name === 'Units per Case'
-				);
+public function showSaveForLater(Request $request)
+{
+    $userId = auth()->id();
 
-				$packType = $product->per_unit_price_attributes?->firstWhere(
-					fn($attr) => $attr->attributeDetails->name === 'Pack Type'
-				);
+    // Get wishlist product IDs
+    $wishlistProductIds = DB::table('ec_wish_lists')
+        ->where('customer_id', $userId)
+        ->pluck('product_id')
+        ->map(fn($id) => (int) $id)
+        ->toArray();
 
-				$basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-				$perUnitPrice = null;
+    // Fetch all saved products with relationships
+    $savedProducts = SaveForLater::where('user_id', $userId)
+        ->with([
+            'product.reviews',
+            'product.currency',
+            'product.sellingUnitAttribute',
+            'product.productSuppliers',
+           'product.seoUrl', // <- move seoUrl here
+        ])
+        ->get();
 
-				if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-					$unitValue = (float) $unitsPerCase->attribute_value;
-					if ($unitValue > 0) {
-						$calculated = round($basePrice / $unitValue, 2);
-						$perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
-					}
-				}
+    if ($savedProducts->isEmpty()) {
+        return response()->json([
+            'message' => 'No products saved for later.'
+        ], 404);
+    }
 
-				$product->per_unit_price = $perUnitPrice;
+    $productsData = $savedProducts->map(function ($item) use ($wishlistProductIds) {
+        $product = $item->product;
+        if (!$product) return null;
 
-			  $currencyTitle = $product->currency->symbol ?? $product->price;
-			  $firstSupplier = $product->productSuppliers->first();
+        // Ratings
+        $totalReviews = $product->reviews->count();
+        $avgRating = $totalReviews > 0 ? round($product->reviews->avg('star'), 1) : null;
 
-	
-			return [
-				'id' => $product->id,
-				'name' => $product->name,
-				'category_url' => $product->category_url(),
-   				 'parent_category_url' => $product->parent_category_url(),
-				'sku' => $product->sku,
-				'url' => $product->seoUrl->url ?? null,
-				'total_reviews' => $totalReviews,
-				'avg_rating' => $avgRating,
-				'left_stock' => ($product->quantity ?? 0) - ($product->units_sold ?? 0),
-				'currency' =>  $currencyTitle,
-				'in_wishlist' => in_array($product->id, $wishlistProductIds),
-				'images' => $imageUrls,
-				'selling_type' => $sellingType,
-				'per_unit_price' => $product->per_unit_price ,
-				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-				'price' =>  (float) $firstSupplier->price,
-				"sale_price" => (float) $firstSupplier->sale_price,
-				"original_price"=>  (float) $firstSupplier->price,
-				'front_sale_price' => (float) $firstSupplier->sale_price,
-				 "best_price"=>  (float) $firstSupplier->price,
-				 "selling_type"=> $sellingType,
-				 "per_unit_price"=>   $product->per_unit_price,
-				 'vendor_id' => $firstSupplier->vendor_id ?? null,
-				 'map' => (float) $firstSupplier->map ?? null,
-				 'inventory' => $firstSupplier->inventory ?? null,
-				 'in_stock' => $firstSupplier->in_stock ?? null,
-				 'delivery_days' => $firstSupplier->delivery_days ?? null,
-				 'return_policy' => $firstSupplier->return_policy ?? null,
-				 'free_shipping' => $firstSupplier->free_shipping ?? null,
-				 'warranty_information' => $firstSupplier->warranty_information ?? null,
-			];
-		})->filter()->values(); // Remove nulls
-	
-		return response()->json([
-			'success' => true,
-			'message' => 'Saved for Later Products retrieved successfully.',
-			'data' => $productsData
-		], 200);
-	}
-	
+        // Images
+        $imageUrls = is_string($product->images) ? json_decode($product->images, true) : (array) $product->images;
+
+        // Selling type
+        $sellingType = null;
+        if ($product->sellingUnitAttribute?->attribute_value) {
+            $fullValue = $product->sellingUnitAttribute->attribute_value;
+            $attributeUnit = strpos($fullValue, '/') !== false
+                ? trim(explode('/', $fullValue)[1])
+                : $fullValue;
+
+            $sellingType = [
+                'attribute_value' => $fullValue,
+                'attribute_value_unit' => $attributeUnit,
+            ];
+        }
+
+        // Per unit price
+        $unitsPerCase = $product->per_unit_price_attributes?->firstWhere(
+            fn($attr) => $attr->attributeDetails->name === 'Units per Case'
+        );
+        $packType = $product->per_unit_price_attributes?->firstWhere(
+            fn($attr) => $attr->attributeDetails->name === 'Pack Type'
+        );
+        $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+        $perUnitPrice = null;
+        if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+            $unitValue = (float) $unitsPerCase->attribute_value;
+            if ($unitValue > 0) {
+                $perUnitPrice = round($basePrice / $unitValue, 2) . ' /' . ($packType?->attribute_value ?? '');
+            }
+        }
+        $product->per_unit_price = $perUnitPrice;
+
+        // Vendor info (first supplier)
+        $firstSupplier = $product->productSuppliers->first();
+
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'category_url' => $product->category_url(),
+            'parent_category_url' => $product->parent_category_url(),
+            'sku' => $product->sku,
+            'url' => $product->seoUrl->url ?? null,
+            'total_reviews' => $totalReviews,
+            'avg_rating' => $avgRating,
+            'left_stock' => ($product->quantity ?? 0) - ($product->units_sold ?? 0),
+            'currency' => $product->currency->symbol ?? null,
+            'in_wishlist' => in_array($product->id, $wishlistProductIds),
+            'images' => $imageUrls,
+            'selling_type' => $sellingType,
+            'per_unit_price' => $product->per_unit_price,
+            'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+            'price' => (float) ($firstSupplier->price ?? 0),
+            'sale_price' => (float) ($firstSupplier->sale_price ?? 0),
+            'original_price' => (float) ($firstSupplier->price ?? 0),
+            'front_sale_price' => (float) ($firstSupplier->sale_price ?? 0),
+            'best_price' => (float) ($firstSupplier->price ?? 0),
+            'vendor_id' => $firstSupplier->vendor_id ?? null,
+            'map' => (float) ($firstSupplier->map ?? 0),
+            'inventory' => $firstSupplier->inventory ?? null,
+            'in_stock' => $firstSupplier->in_stock ?? null,
+            'delivery_days' => $firstSupplier->delivery_days ?? null,
+            'return_policy' => $firstSupplier->return_policy ?? null,
+            'free_shipping' => $firstSupplier->free_shipping ?? null,
+            'warranty_information' => $firstSupplier->warranty_information ?? null,
+            'quantity' => $item->quantity ?? 1, // Include saved quantity
+        ];
+    })->filter()->values(); // Remove nulls
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Saved for Later Products retrieved successfully.',
+        'data' => $productsData
+    ], 200);
+}
 
 	
 	/**

@@ -416,6 +416,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
 	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
+	Route::get('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);	 
+
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
 	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);	 
  
@@ -787,7 +789,10 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 });
 
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
-
+Route::prefix('stripe')->group(function () {
+    Route::post('/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
+    Route::post('/confirm-payment-intent', [F_StripeController::class, 'confirmPaymentIntent']);
+});
 Route::post('frontend/product-errors', [F_ProductErrorController::class, 'store']);
 Route::get('frontend/product-errors', [F_ProductErrorController::class, 'index']);
 Route::get('frontend/product-errors/{product_id}', [F_ProductErrorController::class, 'show']);

@@ -8334,9 +8334,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -8350,16 +8348,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 199.99
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -15778,6 +15766,98 @@
                 ]
             }
         },
+        "/api/frontend/update-profile": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Customer"
+                ],
+                "summary": "Update customer profile",
+                "operationId": "802d69cbd82062dff590499981ba7fea",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "customer"
+                                    },
+                                    "dob": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1990-01-01"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+971"
+                                    },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "501234567"
+                                    },
+                                    "profile_img": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "ABC Trading LLC"
+                                    },
+                                    "business_licence": {
+                                        "description": "Upload business licence (PDF only)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "trn_number": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "vat_certificate": {
+                                        "description": "Upload VAT certificate (PDF only)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/customers/change-password": {
             "post": {
                 "tags": [
@@ -22090,7 +22170,8 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "amount"
+                                    "amount",
+                                    "payment_method_id"
                                 ],
                                 "properties": {
                                     "amount": {
@@ -22098,6 +22179,20 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 50
+                                    },
+                                    "payment_method_id": {
+                                        "description": "Stripe Payment Method ID",
+                                        "type": "string",
+                                        "example": "pm_1234567890"
+                                    },
+                                    "currency": {
+                                        "description": "Currency code",
+                                        "type": "string",
+                                        "example": "aed"
+                                    },
+                                    "customer_info": {
+                                        "description": "Customer information",
+                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
@@ -22107,49 +22202,26 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Client secret for payment intent returned successfully",
+                        "description": "Payment intent processed successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "clientSecret": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "client_secret": {
                                             "type": "string",
                                             "example": "pi_3Nx4x4xxxx_secret_1234"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error (missing or invalid amount)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
                                         },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Stripe error or internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
+                                        "requires_action": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "payment_intent_id": {
                                             "type": "string",
-                                            "example": "Your card was declined."
+                                            "example": "pi_3Nx4x4xxxx"
                                         }
                                     },
                                     "type": "object"
@@ -29307,13 +29379,13 @@
                     "Products Report"
                 ],
                 "summary": "Get product report list",
-                "description": "Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
+                "description": "Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, categories, and approval status.",
                 "operationId": "ff314864e00c70302363b737bcc06954",
                 "parameters": [
                     {
-                        "name": "page",
+                        "name": "range_from",
                         "in": "query",
-                        "description": "Page number for pagination",
+                        "description": "Starting product index (must be >= 1)",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -29321,37 +29393,28 @@
                         }
                     },
                     {
-                        "name": "per_page",
+                        "name": "range_to",
                         "in": "query",
-                        "description": "Number of products per page (default: 50)",
+                        "description": "Ending product index (max range allowed: 500 products)",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "example": 50
-                        }
-                    },
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "description": "Search term for filtering products by name, SKU, brand, store, or category",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "samsung"
+                            "example": 500
                         }
                     },
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Filter products by status (published, draft)",
-                        "required": false,
+                        "description": "Filter products by status (e.g., published, draft)",
+                        "required": true,
                         "schema": {
                             "type": "string",
                             "enum": [
+                                "all",
                                 "published",
                                 "draft"
                             ],
-                            "example": "published"
+                            "example": "all"
                         }
                     },
                     {
@@ -29365,66 +29428,356 @@
                                 0,
                                 1
                             ],
-                            "example": 1
+                            "example": ""
                         }
                     },
                     {
-                        "name": "brand",
+                        "name": "type",
                         "in": "query",
-                        "description": "Filter by brand id",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 5
-                        }
-                    },
-                    {
-                        "name": "category",
-                        "in": "query",
-                        "description": "Filter by category id",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 3
-                        }
-                    },
-                    {
-                        "name": "sort_by",
-                        "in": "query",
-                        "description": "Column to sort by (id, name, sku, brand_id, vendor_id, status)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "id"
-                        }
-                    },
-                    {
-                        "name": "sort_direction",
-                        "in": "query",
-                        "description": "Sort direction (asc or desc)",
+                        "description": "Filter type (e.g., Category, Brand)",
                         "required": false,
                         "schema": {
                             "type": "string",
                             "enum": [
-                                "asc",
-                                "desc"
+                                "Category",
+                                "Brand"
                             ],
-                            "example": "desc"
+                            "example": "Category"
+                        }
+                    },
+                    {
+                        "name": "relational_id",
+                        "in": "query",
+                        "description": "Enter brand id, category id",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 14
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Product report Excel file",
+                        "description": "Successful product report export",
                         "content": {
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 101
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "SKU12345"
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Sample Product"
+                                                    },
+                                                    "branch": {
+                                                        "type": "string",
+                                                        "example": "Delhi Branch"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "all",
+                                                            "publish",
+                                                            "draft"
+                                                        ],
+                                                        "example": "publish"
+                                                    },
+                                                    "approved": {
+                                                        "type": "integer",
+                                                        "enum": [
+                                                            0,
+                                                            1
+                                                        ],
+                                                        "example": 1
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid range values"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
                         }
                     },
                     "401": {
-                        "description": "Unauthorized"
+                        "description": "Unauthorized - Invalid or missing token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No products found for the given filters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No products found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "500": {
-                        "description": "Server error"
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Something went wrong while generating the report"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-benefit-report": {
+            "get": {
+                "tags": [
+                    "Products Report"
+                ],
+                "summary": "Product has benefit features",
+                "description": "Report of products display with id, sku, name, benefit features description, attribute count, price and graphics yes no reports published draft products.",
+                "operationId": "b89f91b78ab4265eeac4acc80ecd1ed0",
+                "parameters": [
+                    {
+                        "name": "range_from",
+                        "in": "query",
+                        "description": "Starting product index (must be >= 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "range_to",
+                        "in": "query",
+                        "description": "Ending product index (max range allowed: 500 products)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 500
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter products by status (e.g., published, draft)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "all",
+                                "published",
+                                "draft"
+                            ],
+                            "example": "all"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filter type (e.g., Category, Brand)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Category",
+                                "Brand",
+                                "Vendor"
+                            ],
+                            "example": "Category"
+                        }
+                    },
+                    {
+                        "name": "relational_id",
+                        "in": "query",
+                        "description": "Enter brand id, category id",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 14
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful product benefit report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 101
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "SKU12345"
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Sample Product"
+                                                    },
+                                                    "benefits": {
+                                                        "type": "string",
+                                                        "example": "Lightweight, Durable"
+                                                    },
+                                                    "attribute_count": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 499.99
+                                                    },
+                                                    "graphics": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "yes",
+                                                            "no"
+                                                        ],
+                                                        "example": "yes"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "all",
+                                                            "publish",
+                                                            "draft"
+                                                        ],
+                                                        "example": "publish"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid range values"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
