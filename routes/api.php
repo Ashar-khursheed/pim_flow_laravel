@@ -512,6 +512,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
 	Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
+	Route::post('/upload-pdf-compressed', [App\Http\Controllers\PdfCompressedController::class, 'uploadPdfCompressed']);
 
 
 	Route::post('/supplier-score', [SupplierScoreController::class, 'store']);

@@ -16384,7 +16384,7 @@
                 "tags": [
                     "FrontEnd-GetInTouch"
                 ],
-                "summary": "Save customer mesage",
+                "summary": "Save customer message",
                 "operationId": "ced428f3f93c2dbb227273ee65d68833",
                 "requestBody": {
                     "required": true,
@@ -26470,6 +26470,97 @@
                                                 },
                                                 "type": "object"
                                             }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/upload-pdf-compressed": {
+            "post": {
+                "tags": [
+                    "PDF File Upload"
+                ],
+                "summary": "Upload product documents from a PDF file",
+                "description": "Upload a PDF file containing product documents, process them, upload to S3, and update product records in the database.",
+                "operationId": "7e090480c04e3edbd5aa0faa9f7f1592",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "pdf_file"
+                                ],
+                                "properties": {
+                                    "pdf_file": {
+                                        "description": "PDF file containing product documents",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Documents processed successfully"
+                    },
+                    "400": {
+                        "description": "Invalid input"
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "pdf_file": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The pdf file field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error message"
                                         }
                                     },
                                     "type": "object"
@@ -37918,6 +38009,10 @@
         {
             "name": "Payments",
             "description": "Payments"
+        },
+        {
+            "name": "PDF File Upload",
+            "description": "PDF File Upload"
         },
         {
             "name": "PostPurchaseClaims",
