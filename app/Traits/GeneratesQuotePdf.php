@@ -145,7 +145,7 @@ trait GeneratesQuotePdf
 			'companyPhone' => $companyPhone,
 
 			'siteEmail' => $siteEmail,
-			'siteURL' => $siteURL,
+			'siteURL' => $siteUrl,
 
 			'customerType' => $customerType,
 			'customerBusinessName' => $customerBusinessName,
