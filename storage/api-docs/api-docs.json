@@ -24698,19 +24698,18 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Download Laravel log by date",
-                "description": "Downloads the log file for a given date in YYYY-MM-DD format",
+                "summary": "Download Laravel log by name",
                 "operationId": "bb49555c010311f7411e4de6fb711468",
                 "parameters": [
                     {
-                        "name": "date",
+                        "name": "name",
                         "in": "query",
-                        "description": "Date of the log file (YYYY-MM-DD)",
+                        "description": "Log file name without extension",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
+                            "type": "string"
+                        },
+                        "example": "test-laravel-2025-09-06"
                     }
                 ],
                 "responses": {

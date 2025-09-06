@@ -12,29 +12,27 @@ class LogDownloadController extends Controller
 	 * @OA\Get(
 	 *     path="/api/logs/download",
 	 *     tags={"Auth"},
-	 *     summary="Download Laravel log by date",
-	 *     description="Downloads the log file for a given date in YYYY-MM-DD format",
-	 *     @OA\Parameter(name="date", in="query", required=true, description="Date of the log file (YYYY-MM-DD)", @OA\Schema(type="string", format="date")),
+	 *     summary="Download Laravel log by name",
+	 *     @OA\Parameter(name="name", in="query", required=true, @OA\Schema(type="string"), description="Log file name without extension", example="test-laravel-2025-09-06"),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
 	public function downloadLog(Request $request)
 	{
-		$date = $request->query('date');
+		$name = $request->query('name');
 
-		if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-			return response()->json(['message' => 'Invalid date format. Use YYYY-MM-DD.'], 422);
+		/* Validate log name is provided */
+		if (!$name) {
+			return response()->json(['message' => 'Log name is required.'], 422);
 		}
-
-		$path = storage_path("logs/laravel-{$date}.log");
+		$path = storage_path("logs/{$name}.log");
 
 		if (!File::exists($path)) {
 			return response()->json(['message' => 'Log file does not exist.'], 404);
 		}
 
-		return response()->download($path, "laravel-{$date}.log", [
+		return response()->download($path, "{$name}.log", [
 			'Content-Type' => 'text/plain',
 		]);
 	}
 }
-

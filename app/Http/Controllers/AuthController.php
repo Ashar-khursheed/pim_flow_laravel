@@ -310,9 +310,9 @@ class AuthController extends BaseController
 			}
 
 			/* Log first and last customer IDs for debugging */
-			logger("common password first customer id: " . $customers->first()->id);
-			logger("common password last customer id: " . $customers->last()->id);
-			logger("Total customers found: " . $customers->count());
+			Log::channel('testLog')->info("common password first customer id: " . $customers->first()->id);
+			Log::channel('testLog')->info("common password last customer id: " . $customers->last()->id);
+			Log::channel('testLog')->info("Total customers found: " . $customers->count());
 
 			/* Create jobs array first to avoid multiple batch creation */
 			$jobs = [];
