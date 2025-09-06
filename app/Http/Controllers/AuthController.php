@@ -285,6 +285,7 @@ class AuthController extends BaseController
 	 *     description="Generates and emails password reset links to all registered customers.",
 	 *     tags={"Auth"},
 	 *     @OA\Response(response=200, description="Reset link sent", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}},
 	 * )
 	 */
 	public function sendAllCustomersResetLinkEmail()
@@ -293,7 +294,6 @@ class AuthController extends BaseController
 			$page = 1;
 			$limit = 5000;
 			$offset = ($page - 1) * $limit;
-
 			$customers = Customer::where('id', '<', 21467)
 			->whereNull('password')
 			->orderBy('id', 'desc')
@@ -301,26 +301,46 @@ class AuthController extends BaseController
 			->limit($limit)
 			->get();
 
-			/* Fix logger concatenation */
-			logger("common password first customer id: " . ($customers->first()?->id ?? 'none'));
-			logger("common password last customer id: " . ($customers->last()?->id ?? 'none'));
-
-			$batch = Bus::batch([])->name('Common Password Mail')->dispatch();
-
-			foreach ($customers as $customer) {
-				$batch->options['queue'] = config('app.website') . '_COMM_PWD';
-				$batch->add(new CommonPasswordResetMailJob([
-					'recordId' => $customer->id
-				]));
+			/* Check if any customers found */
+			if ($customers->isEmpty()) {
+				return response()->json([
+					'success' => false,
+					'message' => 'No customers found to send reset links.'
+				], 404);
 			}
+
+			/* Log first and last customer IDs for debugging */
+			logger("common password first customer id: " . $customers->first()->id);
+			logger("common password last customer id: " . $customers->last()->id);
+			logger("Total customers found: " . $customers->count());
+
+			/* Create jobs array first to avoid multiple batch creation */
+			$jobs = [];
+			foreach ($customers as $customer) {
+				$jobs[] = new CommonPasswordResetMailJob([
+					'recordId' => $customer->id
+				]);
+			}
+
+			/* Create single batch with all jobs and proper queue configuration */
+			$batch = Bus::batch($jobs)
+			->name('Common Password Mail')
+			->onQueue(config('app.website') . '_COMM_PWD')
+			->dispatch();
+
+			/* Log batch creation for debugging */
+			logger("Batch created with ID: " . $batch->id . " and " . count($jobs) . " jobs");
 
 			return response()->json([
 				'success' => true,
-				'message' => 'Reset link sent to all customers.'
+				'message' => 'Reset link batch created successfully.',
+				'batch_id' => $batch->id,
+				'total_jobs' => count($jobs)
 			], 200);
-		} catch (\Exception $e) {
-			Log::error('Error sending reset links to customers: ' . $e->getMessage());
 
+		} catch (\Exception $e) {
+			/* Log error details */
+			Log::error('Error sending reset links to customers: ' . $e->getMessage());
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to send reset links.',

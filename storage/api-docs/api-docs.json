@@ -2729,7 +2729,12 @@
                             "application/json": {}
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/blog-categories": {
@@ -16384,7 +16389,7 @@
                 "tags": [
                     "FrontEnd-GetInTouch"
                 ],
-                "summary": "Save customer mesage",
+                "summary": "Save customer message",
                 "operationId": "ced428f3f93c2dbb227273ee65d68833",
                 "requestBody": {
                     "required": true,
