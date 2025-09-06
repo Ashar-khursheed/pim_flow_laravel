@@ -294,7 +294,12 @@ class AuthController extends BaseController
 			$limit = 5000;
 			$offset = ($page - 1) * $limit;
 
-			$customers = Customer::orderBy('id', 'desc')->offset($offset)->limit($limit)->get();
+			$customers = Customer::where('id', '<', 21467)
+			->whereNull('password')
+			->orderBy('id', 'desc')
+			->offset($offset)
+			->limit($limit)
+			->get();
 
 			$batch = Bus::batch([])->name('Common Password Mail')->dispatch();
 
