@@ -348,18 +348,18 @@
 //     //     // $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
 //     //     //     $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
 //     //     //     $item->product->images = collect(json_decode($item->product->images, true) ?? []);
-        
-        
+
+
 //     //     //     $discountIds = $productDiscounts[$item->product->id] ?? [];
 //     //     //     $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
 //     //     //     $item->product->url = $item->product->seoUrl->url ?? null;
 
-        
+
 //     //     //     // ✅ Replace `currency` object with just symbol
 //     //     //     $symbol = optional($item->product->currency)->symbol;
-        
+
 //     //     //     $item->product->unsetRelation('currency');
-             
+
 //     //     //     $item->product->currency = $symbol;
 //     //     //     $firstSupplier = $item->product->productSuppliers->first();
 
@@ -461,8 +461,8 @@
 //     //         $item->product->selling_unit = $sellingUnit;
 //     //     });
 
-        
-        
+
+
 
 
 //     //     return response()->json([
@@ -596,7 +596,7 @@
 // {
 //     $timestamp = time();
 //     $random = uniqid();
-    
+
 //     if ($userId) {
 //         // For logged users: user-based ID
 //         return "user_{$userId}_{$timestamp}_{$random}";
@@ -759,7 +759,7 @@
 //      *     security={{"bearerAuth": {}}}
 //      * )
 //      */
- 
+
 //     public function updateCartQuantity(Request $request)
 //     {
 //         $start = microtime(true);
@@ -856,10 +856,10 @@
 //             'product_id' => 'required|exists:ec_products,id',
 //             'quantity' => 'required|integer|min:1',
 //         ]);
-    
+
 //         $productId = $request->input('product_id');
 //         $quantityToDecrease = $request->input('quantity');
-    
+
 //         // Determine if the user is logged in and retrieve the cart item
 //         $cartItem = null;
 //         if (Auth::check()) {
@@ -873,7 +873,7 @@
 //                 ->where('product_id', $productId)
 //                 ->first();
 //         }
-    
+
 //         // Check if the cart item exists
 //         if (!$cartItem) {
 //             Log::info('Cart item not found for product', [
@@ -883,7 +883,7 @@
 //             ]);
 //             return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
 //         }
-    
+
 //         // Decrease the quantity and check if it should be removed
 //        // Prevent over-decreasing: cap to actual quantity
 //         if ($quantityToDecrease >= $cartItem->quantity) {
@@ -1241,7 +1241,7 @@
 
 
 
-// } 
+// }
 
 namespace App\Http\Controllers\FrontEnd;
 
@@ -1317,7 +1317,7 @@ class CartController extends Controller
 
         // Get or create customer cart
         $customerCart = CustomerCart::where('customer_id', $userId)->first();
-        
+
         if (!$customerCart) {
             $customerCart = CustomerCart::create([
                 'reference_number' => $this->generateReferenceNumber(),
@@ -1371,7 +1371,7 @@ class CartController extends Controller
 
         if ($cartProduct) {
             Log::info('Cart item already exists', ['cartProduct' => $cartProduct]);
-            
+
             // Update quantity and amounts
             $cartProduct->quantity += $quantity;
             $cartProduct->amount = $cartProduct->quantity * $unitPrice;
@@ -1379,7 +1379,7 @@ class CartController extends Controller
             $cartProduct->save();
         } else {
             Log::info('No cart item found, creating new');
-            
+
             $amount = $quantity * $unitPrice;
             $cartProduct = CustomerCartProduct::create([
                 'customer_cart_id' => $customerCart->id,
@@ -1470,13 +1470,13 @@ class CartController extends Controller
 
         // Get customer cart
         $customerCart = CustomerCart::where('customer_id', $userId)->first();
-        
+
         if (!$customerCart) {
             return response()->json([
                 'success' => true,
                 'data' => [],
                 'cart_id' => $cartId,
-                'checkout_url' => "https://thehorecastore.com/Checkout/{$cartId}"
+                'checkout_url' => url("/Checkout/{$cartId}")
             ]);
         }
 
@@ -1513,7 +1513,7 @@ class CartController extends Controller
         // Transform cart items to match old structure
         $transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $productDiscounts, $discounts) {
             $product = $cartProduct->product;
-            
+
             // Create cart item object that matches old structure
             $cartItem = (object) [
                 'id' => $cartProduct->id,
@@ -1540,7 +1540,7 @@ class CartController extends Controller
 
             // Get supplier data for this specific cart item
             $supplier = $cartProduct->vendorProductSupplier;
-            
+
             if ($supplier) {
                 $product->vendor_sku = $supplier->vendor_sku ?? null;
                 $product->price = (float) $supplier->price;
@@ -1594,7 +1594,7 @@ class CartController extends Controller
             'success' => true,
             'data' => $transformedItems,
             'cart_id' => $cartId,
-            'checkout_url' => "https://thehorecastore.com/Checkout/{$cartId}"
+            'checkout_url' => url("/Checkout/{$cartId}")
         ]);
     }
 
@@ -1798,18 +1798,18 @@ class CartController extends Controller
         $vendorId = $request->input('vendor_id');
 
         $customerCart = CustomerCart::where('customer_id', $userId)->first();
-        
+
         if (!$customerCart) {
             return response()->json(['success' => false, 'message' => 'Cart not found']);
         }
 
         $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
             ->where('product_id', $productId);
-            
+
         if ($vendorId) {
             $cartProduct->where('vendor_id', $vendorId);
         }
-        
+
         $cartProduct = $cartProduct->first();
 
         if (!$cartProduct) {
@@ -1894,18 +1894,18 @@ class CartController extends Controller
         $vendorId = $request->input('vendor_id');
 
         $customerCart = CustomerCart::where('customer_id', $userId)->first();
-        
+
         if (!$customerCart) {
             return response()->json(['success' => false, 'message' => 'Cart not found'], 404);
         }
 
         $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
             ->where('product_id', $productId);
-            
+
         if ($vendorId) {
             $cartProduct->where('vendor_id', $vendorId);
         }
-        
+
         $cartProduct = $cartProduct->first();
 
         if (!$cartProduct) {
@@ -2079,7 +2079,7 @@ class CartController extends Controller
     {
         $timestamp = time();
         $random = uniqid();
-        
+
         if ($userId) {
             return "user_{$userId}_{$timestamp}_{$random}";
         } else {
@@ -2093,7 +2093,7 @@ class CartController extends Controller
     private function updateCartTotals(CustomerCart $customerCart)
     {
         $cartProducts = CustomerCartProduct::where('customer_cart_id', $customerCart->id)->get();
-        
+
         $totalAmount = $cartProducts->sum('amount');
         $totalQuantity = $cartProducts->sum('quantity');
         $taxAmount = $totalAmount * ($customerCart->tax_percentage / 100);
@@ -2117,7 +2117,7 @@ class CartController extends Controller
  *     summary="Add multiple products to cart",
  *     description="Adds an array of products with quantity to the cart for the authenticated user.",
  *     operationId="addMultipleToCart",
- *     security={{"bearerAuth": {}}}, 
+ *     security={{"bearerAuth": {}}},
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(

@@ -290,12 +290,13 @@ class AuthController extends BaseController
 	public function sendAllCustomersResetLinkEmail()
 	{
 		try {
-			$customers = Customer::all();
+			$page = 1;
+			$limit = 5000;
+			$offset = ($page - 1) * $limit;
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Common Password Mail')->dispatch();
+			$customers = Customer::offset($offset)->limit($limit)->get();
+
+			$batch = Bus::batch([])->name('Common Password Mail')->dispatch();
 
 			foreach ($customers as $customer) {
 				$batch->options['queue'] = config('app.website') . '_COMM_PWD';

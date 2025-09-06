@@ -38,10 +38,11 @@ class PartialOrderCancelledMailJob implements ShouldQueue
 		if (!empty($orderProduct)) {
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'orders@thehorecastore.com',
-				'UAE'  => 'orders@thehorecastore.co',
-				'TEST' => 'test_orders@thehorecastore.com',
-				default => 'orders@thehorecastore.com',
+				'UAE'  => 'orders@horecastore.ae',
+				'TEST' => 'test@thehorecastore.co',
+				default => 'test@thehorecastore.co',
 			};
+
 			$fromName = 'HorecaStore Order Updates';
 			$replyToEmail = $fromEmail;
 
