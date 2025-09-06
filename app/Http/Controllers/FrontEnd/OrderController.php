@@ -255,7 +255,7 @@ class OrderController extends BaseController
 			$pendingAmount = $totalAmount - $paidAmount;
 
 			/* Get the latest order by ID (most recent) */
-			$latestOrder = Order::orderBy('id', 'desc')->first();
+			$latestOrder = Order::orderBy('order_number', 'desc')->first();
 
 			/* Generate the next order number */
 			if ($latestOrder && is_numeric($latestOrder->order_number)) {
