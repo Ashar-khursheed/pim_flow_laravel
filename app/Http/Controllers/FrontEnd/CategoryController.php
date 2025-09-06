@@ -76,37 +76,68 @@ class CategoryController extends Controller
 	 * )
 	 */
 
-	public function index(Request $request)
-	{
-		$filterId = $request->get('id'); // Optional ID filter
-		$limit = $request->get('limit', 12); // Default limit to 12
+	// public function index(Request $request)
+	// {
+	// 	$filterId = $request->get('id'); // Optional ID filter
+	// 	$limit = $request->get('limit', 12); // Default limit to 12
 
-		if ($filterId) {
-			// Fetch the specific category and its children (parent included)
-			$categories = Category::where('status', 'published')
-			->where(function ($query) use ($filterId) {
-				$query->where('id', $filterId)
-				->orWhere('parent_id', $filterId);
-			})
-			->get();
-		} else {
-			// Fetch all categories if no ID is provided
-			$categories = Category::all();
-		}
+	// 	if ($filterId) {
+	// 		// Fetch the specific category and its children (parent included)
+	// 		$categories = Category::where('status', 'published')
+	// 		->where(function ($query) use ($filterId) {
+	// 			$query->where('id', $filterId)
+	// 			->orWhere('parent_id', $filterId);
+	// 		})
+	// 		->get();
+	// 	} else {
+	// 		// Fetch all categories if no ID is provided
+	// 		$categories = Category::all();
+	// 	}
 
-		// Transform categories into a parent-child structure
-		$categoriesTree = $this->buildTree($categories, $filterId, $limit);
+	// 	// Transform categories into a parent-child structure
+	// 	$categoriesTree = $this->buildTree($categories, $filterId, $limit);
 
-		// // Add full URLs for images (both parent and child categories)
-		// foreach ($categoriesTree as $category) {
-		// 	// $category->image = $this->getImageUrl($category->image); // Modify image for parent category
+	// 	// // Add full URLs for images (both parent and child categories)
+	// 	// foreach ($categoriesTree as $category) {
+	// 	// 	// $category->image = $this->getImageUrl($category->image); // Modify image for parent category
 
-		// 	// Recursively modify images for children and children's children
-		// 	// $this->addImageUrlsRecursively($category);
-		// }
+	// 	// 	// Recursively modify images for children and children's children
+	// 	// 	// $this->addImageUrlsRecursively($category);
+	// 	// }
 
-		return response()->json($categoriesTree) ->header('Cache-Control', 'public, max-age=86400');
-	}
+	// 	return response()->json($categoriesTree) ->header('Cache-Control', 'public, max-age=86400');
+	// }
+    public function index(Request $request)
+{
+    $filterId = $request->get('id'); // Optional ID filter
+    $limit = $request->get('limit', 12); // Default limit to 12
+
+    if ($filterId) {
+        // Fetch specific category and its children with seoUrl eager loaded
+        $categories = Category::with('seoUrl')
+            ->where('status', 'published')
+            ->where(function ($query) use ($filterId) {
+                $query->where('id', $filterId)
+                      ->orWhere('parent_id', $filterId);
+            })
+            ->get();
+    } else {
+        // Fetch all categories with seoUrl eager loaded
+        $categories = Category::with('seoUrl')->get();
+    }
+
+    // Manually add 'url' attribute from seoUrl->slug
+    foreach ($categories as $category) {
+        $category->url = $category->seoUrl ? $category->seoUrl->slug : null;
+    }
+
+    // Transform categories into a parent-child structure
+    $categoriesTree = $this->buildTree($categories, $filterId, $limit);
+
+    return response()->json($categoriesTree)
+        ->header('Cache-Control', 'public, max-age=86400');
+}
+
 
 	/**
 	 * @OA\Get(
