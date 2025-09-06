@@ -301,6 +301,10 @@ class AuthController extends BaseController
 			->limit($limit)
 			->get();
 
+			/* Fix logger concatenation */
+			logger("common password first customer id: " . ($customers->first()?->id ?? 'none'));
+			logger("common password last customer id: " . ($customers->last()?->id ?? 'none'));
+
 			$batch = Bus::batch([])->name('Common Password Mail')->dispatch();
 
 			foreach ($customers as $customer) {
