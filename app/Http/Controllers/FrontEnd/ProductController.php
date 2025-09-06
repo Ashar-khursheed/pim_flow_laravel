@@ -1634,6 +1634,7 @@ class ProductController extends Controller
 
         $categoryId = $categoryModel->id;
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
+        $allCategoryIds[] = $categoryId; // <-- include parent category
 
         $products = Product::with([
                 'reviews',
@@ -1834,6 +1835,7 @@ class ProductController extends Controller
 
         $categoryId = $categoryModel->id;
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
+        $allCategoryIds[] = $categoryId; // <-- include parent category
 
 
        $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute',  'seoUrl']) // add seoUrl here

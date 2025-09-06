@@ -176,34 +176,70 @@ class CategoryController extends Controller
 	 *     )
 	 * )
 	 */
-	public function categoryslug(Request $request, $slug)
-	{
-		$limit = $request->get('limit', 12); // Default limit to 12
+	// public function categoryslug(Request $request, $slug)
+	// {
+	// 	$limit = $request->get('limit', 12); // Default limit to 12
 
-		// Fetch the specific category by slug and its children (parent included)
-		$parentCategory = Category::where('slug', $slug)->first();
+	// 	// Fetch the specific category by slug and its children (parent included)
+	// 	$parentCategory = Category::where('slug', $slug)->first();
 
-		if (!$parentCategory) {
-			return response()->json(['message' => 'Category not found'], 404);
-		}
+	// 	if (!$parentCategory) {
+	// 		return response()->json(['message' => 'Category not found'], 404);
+	// 	}
 
-		$categories = Category::where('id', $parentCategory->id)
-		->orWhere('parent_id', $parentCategory->id)
-		->get();
+	// 	$categories = Category::where('id', $parentCategory->id)
+	// 	->orWhere('parent_id', $parentCategory->id)
+	// 	->get();
 
-		// Transform categories into a parent-child structure
-		$categoriesTree = $this->buildTree($categories, null, $limit);
+	// 	// Transform categories into a parent-child structure
+	// 	$categoriesTree = $this->buildTree($categories, null, $limit);
 
-		// Add full URLs for images (both parent and child categories)
-		// foreach ($categoriesTree as $category) {
-		// 	$category->image = $this->getImageUrl($category->image); // Modify image for parent category
+	// 	// Add full URLs for images (both parent and child categories)
+	// 	// foreach ($categoriesTree as $category) {
+	// 	// 	$category->image = $this->getImageUrl($category->image); // Modify image for parent category
 
-		// 	// Recursively modify images for children and children's children
-		// 	$this->addImageUrlsRecursively($category);
-		// }
+	// 	// 	// Recursively modify images for children and children's children
+	// 	// 	$this->addImageUrlsRecursively($category);
+	// 	// }
 
-		return response()->json($categoriesTree);
-	}
+	// 	return response()->json($categoriesTree);
+	// }
+public function categoryslug(Request $request, $slug)
+{
+    $limit = $request->get('limit', 12);
+
+    // Find seo record matching slug and relational_type 'Category'
+    $seoRecord = SeoManagement::where('slug', $slug)
+        ->where('relational_type', 'Category')
+        ->first();
+
+    if (!$seoRecord) {
+        return response()->json(['message' => 'Category not found'], 404);
+    }
+
+    // Fetch the related category by relational_id
+    $parentCategory = Category::where('id', $seoRecord->relational_id)->first();
+
+    if (!$parentCategory) {
+        return response()->json(['message' => 'Category not found'], 404);
+    }
+
+    // Fetch parent category and its children with seoUrl eager loaded
+    $categories = Category::with('seoUrl')
+        ->where('id', $parentCategory->id)
+        ->orWhere('parent_id', $parentCategory->id)
+        ->get();
+
+    // Add url property based on seoUrl->slug
+    foreach ($categories as $category) {
+        $category->url = $category->seoUrl ? $category->seoUrl->slug : null;
+    }
+
+    // Transform categories into parent-child structure
+    $categoriesTree = $this->buildTree($categories, null, $limit);
+
+    return response()->json($categoriesTree);
+}
 
 
 	/**
