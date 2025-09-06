@@ -28,7 +28,7 @@ class ProductReportController extends Controller
 	 *         in="query",
 	 *         description="Ending product index (max range allowed: 500 products)",
 	 *         required=false,
-	 *         @OA\Schema(type="integer", example=500)
+	 *         @OA\Schema(type="integer", example=5)
 	 *     ),
 	 *  @OA\Parameter(
 	 *         name="status",
@@ -56,7 +56,7 @@ class ProductReportController extends Controller
 	 *         in="query",
 	 *         description="Enter brand id, category id",
 	 *         required=false,
-	 *         @OA\Schema(type="integer", example=121)
+	 *         @OA\Schema(type="string", example=121)
 	 *     ),
 	 *    
 	 *
@@ -133,8 +133,6 @@ class ProductReportController extends Controller
 			'approved' => 'string|in:0,1',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 500),
-			'type' => 'required|string|in:Brand,Category,Vendor',
-			'relational_id' => 'required|integer',
 		]);
 
 		$query = Product::with([
@@ -179,48 +177,34 @@ class ProductReportController extends Controller
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
 
-			foreach ($product->productAttributes as $attr) {
-				$product_attributes[] = [
-					'attribute_id' => $attr->attribute_id,
-					'attribute_name' => $attr->attributeDetails->name ?? null,
-					'attribute_value' => $attr->attribute_value,
-					'measurement_unit_id' => $attr->measurement_unit_id,
-					'measurement_unit_name' => $attr->measurementUnit->name ?? null,
-				];
-			}
-
 			$brands = "";
 			if ($product->brand) {
 				$brands = Brand::withCount('products')->where('id', $product->brand->id)->first();
 			}
-			if (!empty($product_attributes)) {
-				foreach ($product_attributes as $attributes) {
 
-					$data[] = [
-						'id' => $product->id,
-						'name' => $product->name,
-						'approved' => $product->approved,
-						'sku' => $product->sku,
-						'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-						'brand_id' => optional($product->brand)->id,
-						'brand' => optional($product->brand)->name,
-						'status' => $product->status,
-						'category_id' => $product->categories->pluck('id')->implode(', '),
-						'category_name' => $product->categories->pluck('name')->implode(', '),
-						'category_count' => $product->categories->count(),
-						'product_count' => $brands ? $brands->products_count : null,
-						'attribute_id' => $attributes['attribute_id'],
-						'attribute_name' => $attributes['attribute_name'] ?? null,
-						'attribute_value' => $attributes['attribute_value'],
-						'measurement_unit_id' => $attributes['measurement_unit_id'],
-						'measurement_unit_name' => $attributes['measurement_unit_name'] ?? null,
-					];
-				}
-				return $data;
-			}
+
+			$data[] = [
+				'id' => $product->id,
+				'name' => $product->name,
+				'approved' => $product->approved,
+				'sku' => $product->sku,
+				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+				'brand_id' => optional($product->brand)->id,
+				'brand' => optional($product->brand)->name,
+				'status' => $product->status,
+				'category_id' => $product->categories->pluck('id')->implode(', '),
+				'category_name' => $product->categories->pluck('name')->implode(', '),
+				'category_count' => $product->categories->count(),
+				'product_count' => $brands ? $brands->products_count : null,
+				'attribute_count' => $product->productAttributes ? $product->productAttributes->count() : null,
+
+			];
+
+			return $data;
+
 		});
 
-		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count', 'attribute_id', 'attribute_name', 'attribute_value', 'measurement_unit_id', 'measurement_unit_name'];
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count', 'attribute_count'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();

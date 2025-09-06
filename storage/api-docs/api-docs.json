@@ -29463,7 +29463,7 @@
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "example": 500
+                            "example": 5
                         }
                     },
                     {
@@ -29515,7 +29515,7 @@
                         "description": "Enter brand id, category id",
                         "required": false,
                         "schema": {
-                            "type": "integer",
+                            "type": "string",
                             "example": 121
                         }
                     }
