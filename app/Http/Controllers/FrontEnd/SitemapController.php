@@ -344,49 +344,52 @@ $sitemaps = [
      *     )
      * )
      */
-public function getProductsSitemap()
-    {
-        $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
-            ->whereHas('seoProductUrl', function ($q) {
-                $q->whereNotNull('url');
-            })
-            ->where('status', 'published')
-            ->get(['id', 'name', 'updated_at'])
-            ->map(function ($product) {
-                return [
-                    'loc' => $product->parent_category_url() . '/' .
-                        $product->category_url() . '/' .
-                        ($product->seoProductUrl->url ?? ""),
-                    'lastmod' => $product->updated_at
-                        ? $product->updated_at->toAtomString()
-                        : now()->toAtomString(),
-                    'changefreq' => 'weekly',
-                    'priority' => '0.8',
-                ];
-            });
- 
-              $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-       
-       
-        foreach ($sitemaps as $sitemap) {
-        $xml .= '<url>';
-        $xml .= '<loc>'.$this->baseUrl.'/'. htmlspecialchars($sitemap['loc']) . '</loc>';
-        $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
-        $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
-        $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
-        $xml .= '</url>';
-    }
- 
-    $xml .= '</urlset>';
- 
+  
+    public function getProductsSitemap()
+{
+    // Cache the sitemap for 24 hours (86400 seconds)
+    $xml = Cache::remember('products_sitemap', 86400, function () {
+
+        // Start XML
+        $xmlContent = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xmlContent .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+        // Chunk products to avoid memory issues
+        Product::with([
+            'seoProductUrl:id,relational_id,relational_type,url',
+            'latestChildCategory.most_parent.seoUrl' // preload relationships used in your URL functions
+        ])
+        ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
+        ->where('status', 'published')
+        ->chunk(1000, function($products) use (&$xmlContent) {
+
+            foreach ($products as $product) {
+                // Build full product URL
+                $loc = trim($product->parent_category_url() . '/' . $product->category_url() . '/' . ($product->seoProductUrl->url ?? ''), '/');
+
+                $lastmod = $product->updated_at 
+                    ? $product->updated_at->toAtomString() 
+                    : now()->toAtomString();
+
+                $xmlContent .= "<url>
+                    <loc>" . htmlspecialchars($this->baseUrl . '/' . $loc) . "</loc>
+                    <lastmod>{$lastmod}</lastmod>
+                    <changefreq>weekly</changefreq>
+                    <priority>0.8</priority>
+                </url>";
+            }
+
+        });
+
+        $xmlContent .= '</urlset>';
+
+        return $xmlContent;
+    });
+
+    // Return XML response
     return response($xml, 200)->header('Content-Type', 'application/xml');
- 
- 
-     
- 
-    }
- 
+}
+
 
 // Alternative method using string concatenation (faster for large datasets)
 
