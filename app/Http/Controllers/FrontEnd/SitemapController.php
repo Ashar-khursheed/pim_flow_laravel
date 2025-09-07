@@ -350,7 +350,6 @@ public function getProductsSitemap()
             ->whereHas('seoProductUrl', function ($q) {
                 $q->whereNotNull('url');
             })
-            ->limit(20)
             ->where('status', 'published')
             ->get(['id', 'name', 'updated_at'])
             ->map(function ($product) {
