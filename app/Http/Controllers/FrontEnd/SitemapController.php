@@ -420,49 +420,50 @@ class SitemapController extends Controller
      *     )
      * )
      */
-    public function getProductsSitemap()
-    {
-        $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
-            ->whereHas('seoProductUrl', function ($q) {
-                $q->whereNotNull('url');
-            })
-            ->limit(10000)
-            ->where('status', 'published')
-            ->get(['id', 'name', 'updated_at'])
-            ->map(function ($product) {
-                return [
-                    'loc' => $product->parent_category_url() . '/' .
-                        $product->category_url() . '/' .
-                        ($product->seoProductUrl->url ?? ""),
-                    'lastmod' => $product->updated_at
-                        ? $product->updated_at->toAtomString()
-                        : now()->toAtomString(),
-                    'changefreq' => 'weekly',
-                    'priority' => '0.8',
-                ];
-            });
+   public function getProductsSitemap1() { return $this->generateProductsSitemap(0, 1000); }
+public function getProductsSitemap2() { return $this->generateProductsSitemap(1000, 1000); }
+public function getProductsSitemap3() { return $this->generateProductsSitemap(2000, 1000); }
+public function getProductsSitemap4() { return $this->generateProductsSitemap(3000, 1000); }
+public function getProductsSitemap5() { return $this->generateProductsSitemap(4000, 1000); }
+public function getProductsSitemap6() { return $this->generateProductsSitemap(5000, 1000); }
+public function getProductsSitemap7() { return $this->generateProductsSitemap(6000, 1000); }
+public function getProductsSitemap8() { return $this->generateProductsSitemap(7000, 1000); }
+public function getProductsSitemap9() { return $this->generateProductsSitemap(8000, 1000); }
+public function getProductsSitemap10() { return $this->generateProductsSitemap(9000, 1000); }
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+private function generateProductsSitemap($offset, $limit)
+{
+    $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
+        ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
+        ->where('status', 'published')
+        ->offset($offset)
+        ->limit($limit)
+        ->get(['id', 'name', 'updated_at'])
+        ->map(fn($product) => [
+            'loc' => $product->parent_category_url() . '/' .
+                     $product->category_url() . '/' .
+                     ($product->seoProductUrl->url ?? ""),
+            'lastmod' => $product->updated_at ? $product->updated_at->toAtomString() : now()->toAtomString(),
+            'changefreq' => 'weekly',
+            'priority' => '0.8',
+        ]);
 
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
-        foreach ($sitemaps as $sitemap) {
-            $xml .= '<url>';
-            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
-            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
-            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
-            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
-            $xml .= '</url>';
-        }
-
-        $xml .= '</urlset>';
-
-        return response($xml, 200)->header('Content-Type', 'application/xml');
-
-
-
-
+    foreach ($sitemaps as $sitemap) {
+        $xml .= '<url>';
+        $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+        $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+        $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+        $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+        $xml .= '</url>';
     }
+
+    $xml .= '</urlset>';
+
+    return response($xml, 200)->header('Content-Type', 'application/xml');
+}
 
 
     /**
