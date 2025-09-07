@@ -192,7 +192,7 @@ class AuthController extends BaseController
 		if (!$user) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Email not found.'
+				'message' => "❌ No account found with this email. Please try again or create a new account."
 			]);
 		}
 
