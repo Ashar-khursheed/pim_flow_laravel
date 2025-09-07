@@ -179,7 +179,7 @@ class SitemapController extends Controller
         $now = Carbon::now()->toAtomString();
         $sitemaps = [
             [
-                'loc' => '',
+                'loc' => '/',
                 'lastmod' => $now,
                 'changefreq' => 'daily',
                 'priority' => '1.0',
@@ -292,7 +292,8 @@ class SitemapController extends Controller
         foreach ($sitemaps as $sitemap) {
             $xml .= '<url>';
 
-            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+              $loc = ltrim($sitemap['loc'], '/');
+              $xml .= '<loc>' . rtrim($this->baseUrl, '/') . '/' . htmlspecialchars($loc) . '</loc>';
             $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
             $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
             $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
