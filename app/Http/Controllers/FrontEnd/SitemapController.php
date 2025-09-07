@@ -374,33 +374,43 @@ $sitemaps = [
     // }
 public function getProductsSitemap()
 {
-    $sitemaps = Product::with(['seoProductUrl', 'category.parentCategory'])
-        ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
-        ->where('status', 'published')
-        ->get()
-        ->map(function ($product) {
-            // Safely get parent category slug
-            $parentSlug = optional($product->category->parentCategory)->slug ?? '';
-            $categorySlug = optional($product->category)->slug ?? '';
-            $productUrl = optional($product->seoProductUrl)->url ?? '';
+    try {
+        $sitemaps = Product::with(['seoProductUrl', 'category.parent']) // Changed from 'parentCategory' to 'parent'
+            ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
+            ->where('status', 'published')
+            ->chunk(1000, function ($products) use (&$sitemaps) { // Process in chunks to avoid memory issues
+                foreach ($products as $product) {
+                    // Safely get parent category slug
+                    $parentSlug = optional($product->category->parent)->slug ?? '';
+                    $categorySlug = optional($product->category)->slug ?? '';
+                    $productUrl = optional($product->seoProductUrl)->url ?? '';
 
-            // Build full loc exactly like old function
-            $loc = $this->baseUrl . '/' . 
-                   ($parentSlug ? $parentSlug . '/' : '') . 
-                   ($categorySlug ? $categorySlug . '/' : '') . 
-                   $productUrl;
+                    // Build full loc exactly like old function
+                    $loc = $this->baseUrl . '/' . 
+                           ($parentSlug ? $parentSlug . '/' : '') . 
+                           ($categorySlug ? $categorySlug . '/' : '') . 
+                           $productUrl;
 
-            return [
-                'loc' => $loc,
-                'lastmod' => $product->updated_at
-                    ? $product->updated_at->toAtomString()
-                    : now()->toAtomString(),
-                'changefreq' => 'weekly',
-                'priority' => '0.8',
-            ];
-        });
+                    $sitemaps[] = [
+                        'loc' => $loc,
+                        'lastmod' => $product->updated_at
+                            ? $product->updated_at->toAtomString()
+                            : now()->toAtomString(),
+                        'changefreq' => 'weekly',
+                        'priority' => '0.8',
+                    ];
+                }
+            });
 
-    return $this->buildXml($sitemaps);
+        return $this->buildXml($sitemaps ?? []);
+        
+    } catch (\Exception $e) {
+        // Log the error for debugging
+        \Log::error('Products sitemap error: ' . $e->getMessage());
+        
+        // Return empty sitemap instead of 500 error
+        return $this->buildXml([]);
+    }
 }
 
 
