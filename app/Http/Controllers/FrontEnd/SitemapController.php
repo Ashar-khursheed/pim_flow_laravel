@@ -364,18 +364,24 @@ $sitemaps = [
     //     ]);
 
     // }
-    public function getProductsSitemap()
+public function getProductsSitemap()
 {
-    $sitemaps = Product::with('seoProductUrl')
+    $sitemaps = Product::with(['seoProductUrl', 'category.parentCategory'])
         ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
         ->where('status', 'published')
         ->get()
         ->map(function ($product) {
+            // safely get slugs and url
+            $parentSlug = optional($product->category->parentCategory)->slug;
+            $categorySlug = optional($product->category)->slug;
+            $productUrl = optional($product->seoProductUrl)->url;
+
+            // build full loc
+            $locParts = array_filter([$parentSlug, $categorySlug, $productUrl]); // removes nulls
+            $loc = $this->baseUrl . '/' . implode('/', $locParts);
+
             return [
-              'loc' => $this->baseUrl . '/' 
-                . ltrim($product->parent_category->slug, '/') . '/' 
-                . ltrim($product->category->slug, '/') . '/' 
-                . ltrim($product->seoProductUrl->url, '/'),
+                'loc' => $loc,
                 'lastmod' => optional($product->updated_at)->toAtomString() ?? now()->toAtomString(),
                 'changefreq' => 'weekly',
                 'priority' => '0.8',
@@ -384,7 +390,6 @@ $sitemaps = [
 
     return $this->buildXml($sitemaps);
 }
-
 
     /**
      * Get XML product Sitemap.
@@ -583,7 +588,7 @@ $sitemaps = [
             $images = collect(json_decode($product->images, true))->filter()->values();
             return $images->map(function ($image) use ($product) {
                 return [
-                    'loc' => $this->baseUrl . '/' . ltrim($image),
+                    'loc' => $image,
                     'lastmod' => optional($product->updated_at)->toAtomString() ?? now()->toAtomString(),
                     'changefreq' => 'weekly',
                     'priority' => '0.8',
