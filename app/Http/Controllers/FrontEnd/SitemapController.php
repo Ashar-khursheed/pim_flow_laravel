@@ -375,45 +375,49 @@ $sitemaps = [
 public function getProductsSitemap()
 {
     try {
-        $sitemaps = Product::with(['seoProductUrl', 'category.parent']) // Changed from 'parentCategory' to 'parent'
-            ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
+        $sitemaps = Product::with([
+                'seoProductUrl:id,relational_id,relational_type,url',
+                'categories', // Load categories for latestChildCategory()
+                'categories.seoUrl', // Load SEO URLs for categories
+                'categories.parent', // Load parent categories
+                'categories.parent.seoUrl' // Load parent SEO URLs
+            ])
+            ->whereHas('seoProductUrl', function ($q) {
+                $q->whereNotNull('url');
+            })
             ->where('status', 'published')
-            ->chunk(1000, function ($products) use (&$sitemaps) { // Process in chunks to avoid memory issues
-                foreach ($products as $product) {
-                    // Safely get parent category slug
-                    $parentSlug = optional($product->category->parent)->slug ?? '';
-                    $categorySlug = optional($product->category)->slug ?? '';
-                    $productUrl = optional($product->seoProductUrl)->url ?? '';
+            ->get(['id', 'name', 'updated_at', 'category_id'])
+            ->map(function ($product) {
+                // If you have methods that return the category paths
+                $parentCategoryPath = method_exists($product, 'getParentCategoryPath') ? 
+                    $product->getParentCategoryPath() : '';
+                $categoryPath = method_exists($product, 'getCategoryPath') ? 
+                    $product->getCategoryPath() : '';
+                
+                // Get product URL
+                $productUrl = optional($product->seoProductUrl)->url ?? '';
+                
+                // Build the full URL - adjust this based on your actual URL structure
+                $loc = $this->baseUrl . '/' . 
+                       trim($parentCategoryPath . '/' . $categoryPath . '/' . $productUrl, '/');
 
-                    // Build full loc exactly like old function
-                    $loc = $this->baseUrl . '/' . 
-                           ($parentSlug ? $parentSlug . '/' : '') . 
-                           ($categorySlug ? $categorySlug . '/' : '') . 
-                           $productUrl;
-
-                    $sitemaps[] = [
-                        'loc' => $loc,
-                        'lastmod' => $product->updated_at
-                            ? $product->updated_at->toAtomString()
-                            : now()->toAtomString(),
-                        'changefreq' => 'weekly',
-                        'priority' => '0.8',
-                    ];
-                }
+                return [
+                    'loc' => $loc,
+                    'lastmod' => $product->updated_at
+                        ? $product->updated_at->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
             });
 
-        return $this->buildXml($sitemaps ?? []);
+        return $this->buildXml($sitemaps);
         
     } catch (\Exception $e) {
-        // Log the error for debugging
         \Log::error('Products sitemap error: ' . $e->getMessage());
-        
-        // Return empty sitemap instead of 500 error
         return $this->buildXml([]);
     }
 }
-
-
 
     /**
      * Get XML product Sitemap.
