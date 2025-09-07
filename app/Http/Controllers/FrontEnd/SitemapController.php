@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\Controller;
-
+use Illuminate\Support\Facades\Cache;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Blog;
