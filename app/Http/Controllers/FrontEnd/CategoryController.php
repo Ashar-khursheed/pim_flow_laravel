@@ -209,7 +209,7 @@ public function categoryslug(Request $request, $slug)
     $limit = $request->get('limit', 12);
 
     // Find seo record matching slug and relational_type 'Category'
-    $seoRecord = SeoManagement::where('slug', $slug)
+    $seoRecord = SeoManagement::where('url', $slug)
         ->where('relational_type', 'Category')
         ->first();
 
