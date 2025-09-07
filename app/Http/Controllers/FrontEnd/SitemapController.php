@@ -184,17 +184,25 @@ class SitemapController extends Controller
     $now = Carbon::now()->toAtomString();
 
 $sitemaps = [
-    ['loc' => $this->baseUrl . '/', 'lastmod' => $now, 'changefreq' => 'daily', 'priority' => '1.0'],
-    ['loc' => $this->baseUrl . '/pages/about-us', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-    ['loc' => $this->baseUrl . '/pages/contact-us', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-    // ... other static pages
-    ['loc' => $this->baseUrl . '/categories.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-    ['loc' => $this->baseUrl . '/products.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-    ['loc' => $this->baseUrl . '/blog.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-    ['loc' => $this->baseUrl . '/brand.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-    ['loc' => $this->baseUrl . '/image.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-];
-
+        ['loc' => $this->baseUrl . '/', 'lastmod' => $now, 'changefreq' => 'daily', 'priority' => '1.0'],
+        ['loc' => $this->baseUrl . '/pages/about-us', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/pages/contact-us', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/sell-on-horeca', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/pages/return-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/pages/shipping-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/pages/cancellation-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/pages/payment-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/pages/vendor-supplier-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/pages/privacy-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/pages/terms-conditions', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/pages/extended-warranty', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/blog', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/categories.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/products.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/blog.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/brand.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+        ['loc' => $this->baseUrl . '/image.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
+    ];
 
     return $this->buildXml($sitemaps);
 }
