@@ -179,7 +179,7 @@ class SitemapController extends Controller
         $now = Carbon::now()->toAtomString();
         $sitemaps = [
             [
-                'loc' => 'https://www.horecastore.ae/',
+                'loc' => '/',
                 'lastmod' => $now,
                 'changefreq' => 'daily',
                 'priority' => '1.0',
