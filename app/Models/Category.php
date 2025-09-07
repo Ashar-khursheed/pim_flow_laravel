@@ -30,8 +30,16 @@ class Category extends Model
 	protected $table = 'categories';
 
 	protected $fillable = [
-		'name', 'parent_id', 'description', 'status', 'order',
-		'image', 'is_featured', 'icon', 'icon_image', 'slug'
+		'name',
+		'parent_id',
+		'description',
+		'status',
+		'order',
+		'image',
+		'is_featured',
+		'icon',
+		'icon_image',
+		'slug'
 	];
 
 	public function parent()
@@ -42,14 +50,14 @@ class Category extends Model
 	public function scopeLastChildCategories($query, $parentId)
 	{
 		return $query->where('parent_id', '!=', 0)
-		->whereNotIn('id', function ($subQuery) {
-			$subQuery->select('parent_id')
-			->from('categories')
-			->whereNotNull('parent_id');
-		})
-		->whereHas('parent', function ($parentQuery) use ($parentId) {
-			$parentQuery->where('parent_id', $parentId);
-		});
+			->whereNotIn('id', function ($subQuery) {
+				$subQuery->select('parent_id')
+					->from('categories')
+					->whereNotNull('parent_id');
+			})
+			->whereHas('parent', function ($parentQuery) use ($parentId) {
+				$parentQuery->where('parent_id', $parentId);
+			});
 	}
 
 	public function children()
@@ -107,10 +115,10 @@ class Category extends Model
 		// return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
 		// ->where('relational_type', 'Category');
 		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
-		->where(function ($query) {
-			$query->where('relational_type', 'Category')
-			->orWhere('relational_type', static::class);
-		});
+			->where(function ($query) {
+				$query->where('relational_type', 'Category')
+					->orWhere('relational_type', static::class);
+			});
 	}
 
 	public function subCategories()
@@ -167,9 +175,9 @@ class Category extends Model
 			'category_id',
 			'product_id'
 		)
-		->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
-		->select('ec_brands.id', 'ec_brands.name')
-		->distinct();
+			->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
+			->select('ec_brands.id', 'ec_brands.name')
+			->distinct();
 	}
 
 	public function allBrandsFromLeaves()
@@ -186,4 +194,22 @@ class Category extends Model
 			->distinct()
 			->get();
 	}
+
+
+	public function category_url()
+	{
+		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
+			 
+			->where('relational_type', 'Category');
+	}
+
+	public function getSuperParent()
+    {
+        $category = $this;
+ 
+        while ($category->parent) {
+            $category = $category->parent;
+        }
+        return (string) $category->id;
+    }
 }
