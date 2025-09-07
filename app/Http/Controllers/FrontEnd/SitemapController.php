@@ -344,40 +344,19 @@ $sitemaps = [
      *     )
      * )
      */
-    public function getProductsSitemap()
+   public function getProductsSitemap()
 {
     try {
-        $sitemaps = Product::with([
-                'seoProductUrl:id,relational_id,relational_type,url',
-                'categories',             // Load categories for category path
-                'categories.seoUrl',      // Load SEO URLs for categories
-                'categories.parent',      // Load parent categories
-                'categories.parent.seoUrl'// Load parent SEO URLs
-            ])
-            ->whereHas('seoProductUrl', function ($q) {
-                $q->whereNotNull('url');
-            })
+        $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
+            ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
             ->where('status', 'published')
-            ->get(['id', 'name', 'updated_at', 'category_id'])
+            ->get(['id', 'name', 'updated_at'])
             ->map(function ($product) {
-                // Get parent category path if method exists
-                $parentCategoryPath = method_exists($product, 'getParentCategoryPath') 
-                    ? $product->getParentCategoryPath() 
-                    : '';
-                
-                // Get category path if method exists
-                $categoryPath = method_exists($product, 'getCategoryPath') 
-                    ? $product->getCategoryPath() 
-                    : '';
-                
-                // Get product SEO URL
-                $productUrl = optional($product->seoProductUrl)->url ?? '';
-                
-                // Build full URL
-                $loc = $this->baseUrl . '/' . trim($parentCategoryPath . '/' . $categoryPath . '/' . $productUrl, '/');
-
                 return [
-                    'loc' => $loc,
+                    'loc' => $this->baseUrl . '/' .
+                        ($product->parent_category_url() ? $product->parent_category_url() . '/' : '') .
+                        ($product->category_url() ? $product->category_url() . '/' : '') .
+                        ($product->seoProductUrl->url ?? ''),
                     'lastmod' => $product->updated_at
                         ? $product->updated_at->toAtomString()
                         : now()->toAtomString(),
@@ -386,14 +365,14 @@ $sitemaps = [
                 ];
             });
 
-        // Return XML sitemap
         return $this->buildXml($sitemaps);
-        
+
     } catch (\Exception $e) {
         \Log::error('Products sitemap error: ' . $e->getMessage());
         return $this->buildXml([]);
     }
 }
+
 
 // public function getProductsSitemap()
 // {
