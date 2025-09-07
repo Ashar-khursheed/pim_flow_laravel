@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Cache;
+
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Blog;
@@ -11,26 +11,140 @@ use App\Models\Brand;
 use Carbon\Carbon;
 class SitemapController extends Controller
 {
-        private $baseUrl = 'https://www.horecastore.ae'; // 🔒 Static Base URL
+    private $baseUrl = 'https://www.horecastore.ae';
 
-    private function buildXml($sitemaps)
-{
-    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
-    foreach ($sitemaps as $sitemap) {
-        $xml .= '<url>';
-        $xml .= '<loc>' . htmlspecialchars($sitemap['loc']) . '</loc>';
-        $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
-        $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
-        $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
-        $xml .= '</url>';
+    private function buildXml()
+    {
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        $now = Carbon::now()->toAtomString();
+        $sitemaps = [
+            [
+                'loc' => 'https://www.horecastore.ae/',
+                'lastmod' => $now,
+                'changefreq' => 'daily',
+                'priority' => '1.0',
+            ],
+            [
+                'loc' => 'pages/about-us',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/contact-us',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'sell-on-horeca',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/return-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/shipping-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/cancellation-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/payment-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/vendor-supplier-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/privacy-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/terms-conditions',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/extended-warranty',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'blog',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'categories.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+
+                'loc' => 'products.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'blog.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'brand.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+
+                'loc' => 'images.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+        ];
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+
+            $xml .= '<loc>' . $this->baseUrl . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
     }
-
-    $xml .= '</urlset>';
-
-    return response($xml, 200)->header('Content-Type', 'application/xml');
-}
 
     /**
      * Get XML Sitemap.
@@ -58,154 +172,140 @@ class SitemapController extends Controller
      *     )
      * )
      */
-    // public function getSitemap()
-    // {
-    //     $now = Carbon::now()->toAtomString();
-    //     $sitemaps = [
-    //         [
-    //             'loc' => $this->baseUrl .'https://www.horecastore.ae/'),
-    //             'lastmod' => $now,
-    //             'changefreq' => 'daily',
-    //             'priority' => '1.0',
-    //         ],
-    //         [
-    //             'loc' => 'pages/about-us',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'pages/contact-us',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'sell-on-horeca',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'pages/return-policy',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'pages/shipping-policy',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'pages/cancellation-policy',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'pages/payment-policy',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'pages/vendor-supplier-policy',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'pages/privacy-policy',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'pages/terms-conditions',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'pages/extended-warranty',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'blog',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'categories.xml',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-
-    //             'loc' => 'products.xml',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'blog.xml',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-    //             'loc' => 'brand.xml',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //         [
-
-    //             'loc' => 'images.xml',
-    //             'lastmod' => $now,
-    //             'changefreq' => 'weekly',
-    //             'priority' => '0.5',
-    //         ],
-    //     ];
-    //     return response()->json([
-    //         'status' => true,
-    //         'data' => $sitemaps
-    //     ]);
-
-    // }
     public function getSitemap()
-{
-    $now = Carbon::now()->toAtomString();
+    {
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        $now = Carbon::now()->toAtomString();
+        $sitemaps = [
+            [
+                'loc' => 'https://www.horecastore.ae/',
+                'lastmod' => $now,
+                'changefreq' => 'daily',
+                'priority' => '1.0',
+            ],
+            [
+                'loc' => 'pages/about-us',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/contact-us',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'sell-on-horeca',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/return-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/shipping-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/cancellation-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/payment-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/vendor-supplier-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/privacy-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/terms-conditions',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/extended-warranty',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'blog',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'categories.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
 
-$sitemaps = [
-        ['loc' => $this->baseUrl . '/', 'lastmod' => $now, 'changefreq' => 'daily', 'priority' => '1.0'],
-        ['loc' => $this->baseUrl . '/pages/about-us', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/pages/contact-us', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/sell-on-horeca', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/pages/return-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/pages/shipping-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/pages/cancellation-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/pages/payment-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/pages/vendor-supplier-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/pages/privacy-policy', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/pages/terms-conditions', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/pages/extended-warranty', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/blog', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/categories.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/products.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/blog.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/brand.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-        ['loc' => $this->baseUrl . '/image.xml', 'lastmod' => $now, 'changefreq' => 'weekly', 'priority' => '0.5'],
-    ];
+                'loc' => 'products.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'blog.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'brand.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
 
-    return $this->buildXml($sitemaps);
-}
+                'loc' => 'images.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+        ];
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+
+            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+
+
+
+    }
 
     /**
      * Get XML categories Sitemap.
@@ -233,90 +333,66 @@ $sitemaps = [
      *     )
      * )
      */
-    // public function getCategoriesSitemap()
-    // {
-    //     $mainCategories = Category::select(['id', 'name', 'updated_at'])
-    //         ->with('seoUrl')
-    //         ->where('parent_id', 0)
-    //         ->where('status', 'published')
-    //         ->whereHas('seoUrl', function ($q) {
-    //             $q->whereNotNull('url');
-    //         })
-    //         ->get()
-    //         ->map(function ($category) {
-    //             return [
-    //                 'loc' => $category->seoUrl->url, // safe now
-    //                 'lastmod' => $category->updated_at
-    //                     ? $category->updated_at->toAtomString()
-    //                     : now()->toAtomString(),
-    //                 'changefreq' => 'weekly',
-    //                 'priority' => '0.8',
-    //             ];
-    //         });
-
-    //     $subCategories = Category::with(['seoUrl', 'parent.parent.seoUrl']) // preload seoUrls up the chain
-    //         ->whereNotNull('parent_id')
-    //         ->where('parent_id', '!=', 0)
-    //         ->whereHas('seoUrl', fn($q) => $q->whereNotNull('url'))
-    //         ->select(['id', 'name', 'updated_at', 'slug', 'parent_id'])
-    //         ->get()
-    //         ->map(function ($subcategory) {
-    //             $superParent = $subcategory->getSuperParent();
-    //             $aprentUrls = SeoManagement::select('url', 'relational_id')->where('relational_type', 'Category')->where('relational_id', $superParent)->first();
-
-    //             return [
-    //                 'loc' => $aprentUrls->url . '/' . ($subcategory->seoUrl->url ?? ''),
-    //                 'lastmod' => $subcategory->updated_at
-    //                     ? $subcategory->updated_at->toAtomString()
-    //                     : now()->toAtomString(),
-    //                 'changefreq' => 'weekly',
-    //                 'priority' => '0.8',
-    //             ];
-    //         });
-    //     $sitemaps = $mainCategories->merge($subCategories);
-    //     return response()->json([
-    //         'status' => true,
-    //         'data' => $sitemaps
-    //     ]);
-
-    // }
     public function getCategoriesSitemap()
-{
-    $mainCategories = Category::with('seoUrl')
-        ->where('parent_id', 0)
-        ->where('status', 'published')
-        ->whereHas('seoUrl', fn($q) => $q->whereNotNull('url'))
-        ->get()
-        ->map(function ($category) {
-            return [
-                'loc' => $this->baseUrl . '/' . ltrim($category->seoUrl->url),
-                'lastmod' => optional($category->updated_at)->toAtomString() ?? now()->toAtomString(),
-                'changefreq' => 'weekly',
-                'priority' => '0.8',
-            ];
-        });
+    {
+        $mainCategories = Category::select(['id', 'name', 'updated_at'])
+            ->with('seoUrl')
+            ->where('parent_id', 0)
+            ->where('status', 'published')
+            ->whereHas('seoUrl', function ($q) {
+                $q->whereNotNull('url');
+            })
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'loc' => $category->seoUrl->url, // safe now
+                    'lastmod' => $category->updated_at
+                        ? $category->updated_at->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
+            });
 
-    $subCategories = Category::with(['seoUrl', 'parent.parent.seoUrl'])
-        ->whereNotNull('parent_id')
-        ->where('status', 'published')
-        ->whereHas('seoUrl', fn($q) => $q->whereNotNull('url'))
-        ->get()
-        ->map(function ($subcategory) {
-            $superParent = $subcategory->getSuperParent();
-            $parentUrl = SeoManagement::where('relational_type', 'Category')
-                ->where('relational_id', $superParent)
-                ->value('url');
+        $subCategories = Category::with(['seoUrl', 'parent.parent.seoUrl']) // preload seoUrls up the chain
+            ->whereNotNull('parent_id')
+            ->where('parent_id', '!=', 0)
+            ->whereHas('seoUrl', fn($q) => $q->whereNotNull('url'))
+            ->select(['id', 'name', 'updated_at', 'slug', 'parent_id'])
+            ->get()
+            ->map(function ($subcategory) {
+                $superParent = $subcategory->getSuperParent();
+                $aprentUrls = SeoManagement::select('url', 'relational_id')->where('relational_type', 'Category')->where('relational_id', $superParent)->first();
 
-            return [
-                'loc' => $this->baseUrl . '/' . ltrim($parentUrl . '/' . $subcategory->seoUrl->url),
-                'lastmod' => optional($subcategory->updated_at)->toAtomString() ?? now()->toAtomString(),
-                'changefreq' => 'weekly',
-                'priority' => '0.8',
-            ];
-        });
+                return [
+                    'loc' => $aprentUrls->url . '/' . ($subcategory->seoUrl->url ?? ''),
+                    'lastmod' => $subcategory->updated_at
+                        ? $subcategory->updated_at->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
+            });
+        $sitemaps = $mainCategories->merge($subCategories);
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
 
-    return $this->buildXml($mainCategories->merge($subCategories));
-}
+            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+
+
+    }
+
 
     /**
      * Get XML product Sitemap.
@@ -344,104 +420,50 @@ $sitemaps = [
      *     )
      * )
      */
-  
     public function getProductsSitemap()
-{
-    // Cache the sitemap for 24 hours (86400 seconds)
-    $xml = Cache::remember('products_sitemap', 86400, function () {
+    {
+        $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
+            ->whereHas('seoProductUrl', function ($q) {
+                $q->whereNotNull('url');
+            })
+            ->limit(20)
+            ->where('status', 'published')
+            ->get(['id', 'name', 'updated_at'])
+            ->map(function ($product) {
+                return [
+                    'loc' => $product->parent_category_url() . '/' .
+                        $product->category_url() . '/' .
+                        ($product->seoProductUrl->url ?? ""),
+                    'lastmod' => $product->updated_at
+                        ? $product->updated_at->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
+            });
 
-        // Start XML
-        $xmlContent = '<?xml version="1.0" encoding="UTF-8"?>';
-        $xmlContent .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-
-        // Chunk products to avoid memory issues
-        Product::with([
-            'seoProductUrl:id,relational_id,relational_type,url',
-            'latestChildCategory.most_parent.seoUrl' // preload relationships used in your URL functions
-        ])
-        ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
-        ->where('status', 'published')
-        ->chunk(1000, function($products) use (&$xmlContent) {
-
-            foreach ($products as $product) {
-                // Build full product URL
-                $loc = trim($product->parent_category_url() . '/' . $product->category_url() . '/' . ($product->seoProductUrl->url ?? ''), '/');
-
-                $lastmod = $product->updated_at 
-                    ? $product->updated_at->toAtomString() 
-                    : now()->toAtomString();
-
-                $xmlContent .= "<url>
-                    <loc>" . htmlspecialchars($this->baseUrl . '/' . $loc) . "</loc>
-                    <lastmod>{$lastmod}</lastmod>
-                    <changefreq>weekly</changefreq>
-                    <priority>0.8</priority>
-                </url>";
-            }
-
-        });
-
-        $xmlContent .= '</urlset>';
-
-        return $xmlContent;
-    });
-
-    // Return XML response
-    return response($xml, 200)->header('Content-Type', 'application/xml');
-}
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
 
-// Alternative method using string concatenation (faster for large datasets)
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
 
 
 
 
-// public function getProductsSitemap()
-// {
-//     try {
-//         $sitemaps = Product::with([
-//                 'seoProductUrl:id,relational_id,relational_type,url',
-//                 'categories', // Load categories for latestChildCategory()
-//                 'categories.seoUrl', // Load SEO URLs for categories
-//                 'categories.parent', // Load parent categories
-//                 'categories.parent.seoUrl' // Load parent SEO URLs
-//             ])
-//             ->whereHas('seoProductUrl', function ($q) {
-//                 $q->whereNotNull('url');
-//             })
-//             ->where('status', 'published')
-//             ->get(['id', 'name', 'updated_at', 'category_id'])
-//             ->map(function ($product) {
-//                 // If you have methods that return the category paths
-//                 $parentCategoryPath = method_exists($product, 'getParentCategoryPath') ? 
-//                     $product->getParentCategoryPath() : '';
-//                 $categoryPath = method_exists($product, 'getCategoryPath') ? 
-//                     $product->getCategoryPath() : '';
-                
-//                 // Get product URL
-//                 $productUrl = optional($product->seoProductUrl)->url ?? '';
-                
-//                 // Build the full URL - adjust this based on your actual URL structure
-//                 $loc = $this->baseUrl . '/' . 
-//                        trim($parentCategoryPath . '/' . $categoryPath . '/' . $productUrl, '/');
+    }
 
-//                 return [
-//                     'loc' => $loc,
-//                     'lastmod' => $product->updated_at
-//                         ? $product->updated_at->toAtomString()
-//                         : now()->toAtomString(),
-//                     'changefreq' => 'weekly',
-//                     'priority' => '0.8',
-//                 ];
-//             });
-
-//         return $this->buildXml($sitemaps);
-        
-//     } catch (\Exception $e) {
-//         \Log::error('Products sitemap error: ' . $e->getMessage());
-//         return $this->buildXml([]);
-//     }
-// }
 
     /**
      * Get XML product Sitemap.
@@ -469,44 +491,39 @@ $sitemaps = [
      *     )
      * )
      */
-    // public function getBlogSitemap()
-    // {
-    //     $sitemaps = Blog::select(['name', 'slug', 'updated_at'])
-    //         ->where('status', 'published')
-    //         ->get()
-    //         ->map(function ($blog) {
-    //             return [
-    //                 'loc' => 'blog/' . $blog->slug,
-    //                 'lastmod' => $blog->updated_at
-    //                     ? $blog->updated_at->toAtomString()
-    //                     : now()->toAtomString(),
-    //                 'changefreq' => 'weekly',
-    //                 'priority' => '0.8',
-    //             ];
-    //         });
-
-    //     return response()->json([
-    //         'status' => true,
-    //         'data' => $sitemaps
-    //     ]);
-
-    // }
-
     public function getBlogSitemap()
-{
-    $sitemaps = Blog::where('status', 'published')
-        ->get()
-        ->map(function ($blog) {
-            return [
-                'loc' => $this->baseUrl . '/blog/' . $blog->slug,
-                'lastmod' => optional($blog->updated_at)->toAtomString() ?? now()->toAtomString(),
-                'changefreq' => 'weekly',
-                'priority' => '0.8',
-            ];
-        });
+    {
+        $sitemaps = Blog::select(['name', 'slug', 'updated_at'])
+            ->where('status', 'published')
+            ->get()
+            ->map(function ($blog) {
+                return [
+                    'loc' => 'blog/' . $blog->slug,
+                    'lastmod' => $blog->updated_at
+                        ? $blog->updated_at->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
+            });
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
-    return $this->buildXml($sitemaps);
-}
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+
+    }
+
 
     /**
      * Get XML product Sitemap.
@@ -534,49 +551,45 @@ $sitemaps = [
      *     )
      * )
      */
-    // public function getBrandSitemap()
-    // {
-    //     $sitemaps = Brand::select(['id', 'name', 'updated_at'])
-    //         ->whereHas('seoUrl', function ($q) {
-    //             $q->whereNotNull('url');
-    //         })
-    //         ->with('seoUrl')
-    //         ->where('status', 'published')
-    //         ->get()
-    //         ->map(function ($brand) {
-    //             return [
-    //                 'loc' => 'brands/' . ($brand->seoUrl)->url,
-    //                 'lastmod' => $brand->updated_at
-    //                     ? $brand->updated_at->toAtomString()
-    //                     : now()->toAtomString(),
-    //                 'changefreq' => 'weekly',
-    //                 'priority' => '0.8',
-    //             ];
-    //         });
-
-    //     return response()->json([
-    //         'status' => true,
-    //         'data' => $sitemaps
-    //     ]);
-
-    // }
     public function getBrandSitemap()
-{
-    $sitemaps = Brand::with('seoUrl')
-        ->where('status', 'published')
-        ->whereHas('seoUrl', fn($q) => $q->whereNotNull('url'))
-        ->get()
-        ->map(function ($brand) {
-            return [
-                'loc' => $this->baseUrl . '/brands/' . $brand->seoUrl->url,
-                'lastmod' => optional($brand->updated_at)->toAtomString() ?? now()->toAtomString(),
-                'changefreq' => 'weekly',
-                'priority' => '0.8',
-            ];
-        });
+    {
+        $sitemaps = Brand::select(['id', 'name', 'updated_at'])
+            ->whereHas('seoUrl', function ($q) {
+                $q->whereNotNull('url');
+            })
+            ->with('seoUrl')
+            ->where('status', 'published')
+            ->get()
+            ->map(function ($brand) {
+                return [
+                    'loc' => 'brands/' . ($brand->seoUrl)->url,
+                    'lastmod' => $brand->updated_at
+                        ? $brand->updated_at->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
+            });
 
-    return $this->buildXml($sitemaps);
-}
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+
+
+    }
 
     /**
      * Get XML Image Sitemap.
@@ -604,51 +617,64 @@ $sitemaps = [
      *     )
      * )
      */
-    // public function getImageSitemap()
-    // {
-    //     $sitemaps = Product::select(['id', 'name', 'images', 'updated_at'])
-    //         ->whereNotNull('images')
-    //         ->where('status', 'published')
-    //         ->get()
-    //         ->map(function ($product) {
-    //             $images = collect(json_decode($product->images, true))
-    //                 ->filter(function ($image) {
-    //                     return !empty($image);
-    //                 })
-    //                 ->values();
-
-    //             return [
-    //                 'loc' => $images,
-    //                 'lastmod' => $product->updated_at
-    //                     ? $product->updated_at->toAtomString()
-    //                     : now()->toAtomString(),
-    //                 'changefreq' => 'weekly',
-    //                 'priority' => '0.8',
-    //             ];
-    //         });
-    //     return response()->json([
-    //         'status' => true,
-    //         'data' => $sitemaps
-    //     ]);
-    // }
     public function getImageSitemap()
-{
-    $sitemaps = Product::whereNotNull('images')
-        ->where('status', 'published')
-        ->get()
-        ->flatMap(function ($product) {
-            $images = collect(json_decode($product->images, true))->filter()->values();
-            return $images->map(function ($image) use ($product) {
+    {
+        $sitemaps = Product::select(['id', 'name', 'images', 'updated_at'])
+            ->whereNotNull('images')
+            ->where('status', 'published')
+            ->limit(20)
+            ->get()
+            ->map(function ($product) {
+                $images = collect(json_decode($product->images, true))
+                    ->filter(function ($image) {
+                        return !empty($image);
+                    })
+                    ->values();
                 return [
-                    'loc' => $image,
-                    'lastmod' => optional($product->updated_at)->toAtomString() ?? now()->toAtomString(),
+                    'loc' => $images,
+                    'lastmod' => $product->updated_at
+                        ? $product->updated_at->toAtomString()
+                        : now()->toAtomString(),
                     'changefreq' => 'weekly',
                     'priority' => '0.8',
                 ];
             });
-        });
 
-    return $this->buildXml($sitemaps);
-}
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+        foreach ($sitemaps as $sitemap) {
+            $loc = $sitemap['loc'];
+
+            $loc = json_decode($loc, true);
+
+            if (is_array($loc)) {
+
+
+                foreach ($loc as $imgSlug) {
+                    $xml .= '<url>';
+                    $xml .= '<loc>' . htmlspecialchars($imgSlug) . '</loc>';
+                    $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                    $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                    $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                    $xml .= '</url>';
+                }
+            } else {
+
+                $xml .= '<url>';
+                $xml .= '<loc>' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+
+
+    }
+
 
 }
