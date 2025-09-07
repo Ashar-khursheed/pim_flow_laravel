@@ -380,17 +380,19 @@ public function getProductsSitemap()
         ->get()
         ->map(function ($product) {
             // safely get slugs and url
-            $parentSlug = optional($product->category->parentCategory)->slug;
-            $categorySlug = optional($product->category)->slug;
-            $productUrl = optional($product->seoProductUrl)->url;
+            $parentSlug = optional($product->category->parentCategory)->slug ?? '';
+            $categorySlug = optional($product->category)->slug ?? '';
+            $productUrl = optional($product->seoProductUrl)->url ?? '';
 
-            // build full loc
-            $locParts = array_filter([$parentSlug, $categorySlug, $productUrl]); // removes nulls
+            // build full loc, remove empty strings
+            $locParts = array_filter([$parentSlug, $categorySlug, $productUrl]);
             $loc = $this->baseUrl . '/' . implode('/', $locParts);
 
             return [
                 'loc' => $loc,
-                'lastmod' => optional($product->updated_at)->toAtomString() ?? now()->toAtomString(),
+                'lastmod' => $product->updated_at
+                    ? $product->updated_at->toAtomString()
+                    : now()->toAtomString(),
                 'changefreq' => 'weekly',
                 'priority' => '0.8',
             ];
@@ -398,6 +400,7 @@ public function getProductsSitemap()
 
     return $this->buildXml($sitemaps);
 }
+
 
     /**
      * Get XML product Sitemap.
