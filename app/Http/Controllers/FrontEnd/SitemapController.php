@@ -426,7 +426,7 @@ class SitemapController extends Controller
             ->whereHas('seoProductUrl', function ($q) {
                 $q->whereNotNull('url');
             })
-            ->limit(20)
+            ->limit(10000)
             ->where('status', 'published')
             ->get(['id', 'name', 'updated_at'])
             ->map(function ($product) {
