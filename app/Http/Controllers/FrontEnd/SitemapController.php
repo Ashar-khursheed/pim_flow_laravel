@@ -344,34 +344,36 @@ $sitemaps = [
      *     )
      * )
      */
-   public function getProductsSitemap()
+ public function getProductsSitemap()
 {
-    try {
-        $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
-            ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
-            ->where('status', 'published')
-            ->get(['id', 'name', 'updated_at'])
-            ->map(function ($product) {
-                return [
-                    'loc' => $this->baseUrl . '/' .
-                        ($product->parent_category_url() ? $product->parent_category_url() . '/' : '') .
-                        ($product->category_url() ? $product->category_url() . '/' : '') .
-                        ($product->seoProductUrl->url ?? ''),
+    $sitemaps = [];
+
+    Product::with('seoProductUrl')
+        ->where('status', 'published')
+        ->chunk(500, function ($products) use (&$sitemaps) {
+            foreach ($products as $product) {
+                if (!$product->seoProductUrl?->url) continue;
+
+                $loc = $this->baseUrl . '/' .
+                       ($product->parent_category_url() ? $product->parent_category_url() . '/' : '') .
+                       ($product->category_url() ? $product->category_url() . '/' : '') .
+                       $product->seoProductUrl->url;
+
+                $sitemaps[] = [
+                    'loc' => $loc,
                     'lastmod' => $product->updated_at
                         ? $product->updated_at->toAtomString()
                         : now()->toAtomString(),
                     'changefreq' => 'weekly',
                     'priority' => '0.8',
                 ];
-            });
+            }
+        });
 
-        return $this->buildXml($sitemaps);
-
-    } catch (\Exception $e) {
-        \Log::error('Products sitemap error: ' . $e->getMessage());
-        return $this->buildXml([]);
-    }
+    return response($this->buildXml($sitemaps), 200)
+        ->header('Content-Type', 'application/xml');
 }
+
 
 
 // public function getProductsSitemap()
