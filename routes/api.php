@@ -777,7 +777,19 @@ Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress'
 
 Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
 Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
-Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
+// Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
+
+Route::get('/sitemap/products-1.xml', [SitemapController::class, 'getProductsSitemap1']);
+Route::get('/sitemap/products-2.xml', [SitemapController::class, 'getProductsSitemap2']);
+Route::get('/sitemap/products-3.xml', [SitemapController::class, 'getProductsSitemap3']);
+Route::get('/sitemap/products-4.xml', [SitemapController::class, 'getProductsSitemap4']);
+Route::get('/sitemap/products-5.xml', [SitemapController::class, 'getProductsSitemap5']);
+Route::get('/sitemap/products-6.xml', [SitemapController::class, 'getProductsSitemap6']);
+Route::get('/sitemap/products-7.xml', [SitemapController::class, 'getProductsSitemap7']);
+Route::get('/sitemap/products-8.xml', [SitemapController::class, 'getProductsSitemap8']);
+Route::get('/sitemap/products-9.xml', [SitemapController::class, 'getProductsSitemap9']);
+Route::get('/sitemap/products-10.xml', [SitemapController::class, 'getProductsSitemap10']);
+
 Route::get('/frontend/blog.xml', [SitemapController::class, 'getBlogSitemap']);
 Route::get('/frontend/brand.xml', [SitemapController::class, 'getBrandSitemap']);
 Route::get('/frontend/image.xml', [SitemapController::class, 'getImageSitemap']);
