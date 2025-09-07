@@ -345,154 +345,52 @@ $sitemaps = [
      * )
      */
 public function getProductsSitemap()
-{
-    $products = Product::with('seoProductUrl:id,relational_id,relational_type,url')
-        ->whereHas('seoProductUrl', function ($q) {
-            $q->whereNotNull('url')
-              ->where('url', '!=', '');
-        })
-        ->where('status', 'published')
-        ->select(['id', 'name', 'updated_at'])
-        ->get();
-
-    // Create XML content
-    $xml = new \DOMDocument('1.0', 'UTF-8');
-    $xml->formatOutput = true;
-
-    // Create root element
-    $urlset = $xml->createElement('urlset');
-    $urlset->setAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9');
-    $xml->appendChild($urlset);
-
-    foreach ($products as $product) {
-        // Build URL parts
-        $urlParts = array_filter([
-            rtrim($this->baseUrl, '/'), // Remove trailing slash from base URL
-            $product->parent_category_url(),
-            $product->category_url(),
-            $product->seoProductUrl->url
-        ]);
-
-        $fullUrl = implode('/', $urlParts);
-
-        // Create URL element
-        $url = $xml->createElement('url');
-        
-        // Add location
-        $loc = $xml->createElement('loc', htmlspecialchars($fullUrl, ENT_XML1, 'UTF-8'));
-        $url->appendChild($loc);
-        
-        // Add lastmod
-        $lastmod = $product->updated_at 
-            ? $product->updated_at->toAtomString() 
-            : now()->toAtomString();
-        $lastmodElement = $xml->createElement('lastmod', $lastmod);
-        $url->appendChild($lastmodElement);
-        
-        // Add changefreq
-        $changefreq = $xml->createElement('changefreq', 'weekly');
-        $url->appendChild($changefreq);
-        
-        // Add priority
-        $priority = $xml->createElement('priority', '0.8');
-        $url->appendChild($priority);
-        
-        $urlset->appendChild($url);
+    {
+        $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
+            ->whereHas('seoProductUrl', function ($q) {
+                $q->whereNotNull('url');
+            })
+            ->limit(20)
+            ->where('status', 'published')
+            ->get(['id', 'name', 'updated_at'])
+            ->map(function ($product) {
+                return [
+                    'loc' => $product->parent_category_url() . '/' .
+                        $product->category_url() . '/' .
+                        ($product->seoProductUrl->url ?? ""),
+                    'lastmod' => $product->updated_at
+                        ? $product->updated_at->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
+            });
+ 
+              $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+       
+       
+        foreach ($sitemaps as $sitemap) {
+        $xml .= '<url>';
+        $xml .= '<loc>'.$this->baseUrl.'/'. htmlspecialchars($sitemap['loc']) . '</loc>';
+        $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+        $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+        $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+        $xml .= '</url>';
     }
-
-    return response($xml->saveXML(), 200, [
-        'Content-Type' => 'application/xml; charset=UTF-8',
-        'Cache-Control' => 'public, max-age=3600',
-    ]);
-}
+ 
+    $xml .= '</urlset>';
+ 
+    return response($xml, 200)->header('Content-Type', 'application/xml');
+ 
+ 
+     
+ 
+    }
+ 
 
 // Alternative method using string concatenation (faster for large datasets)
-public function getProductsSitemapString()
-{
-    $products = Product::with('seoProductUrl:id,relational_id,relational_type,url')
-        ->whereHas('seoProductUrl', function ($q) {
-            $q->whereNotNull('url')
-              ->where('url', '!=', '');
-        })
-        ->where('status', 'published')
-        ->select(['id', 'name', 'updated_at'])
-        ->get();
 
-    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-
-    foreach ($products as $product) {
-        $urlParts = array_filter([
-            rtrim($this->baseUrl, '/'),
-            $product->parent_category_url(),
-            $product->category_url(),
-            $product->seoProductUrl->url
-        ]);
-
-        $fullUrl = htmlspecialchars(implode('/', $urlParts), ENT_XML1, 'UTF-8');
-        $lastmod = $product->updated_at 
-            ? $product->updated_at->toAtomString() 
-            : now()->toAtomString();
-
-        $xml .= "  <url>\n";
-        $xml .= "    <loc>{$fullUrl}</loc>\n";
-        $xml .= "    <lastmod>{$lastmod}</lastmod>\n";
-        $xml .= "    <changefreq>weekly</changefreq>\n";
-        $xml .= "    <priority>0.8</priority>\n";
-        $xml .= "  </url>\n";
-    }
-
-    $xml .= '</urlset>';
-
-    return response($xml, 200, [
-        'Content-Type' => 'application/xml; charset=UTF-8',
-        'Cache-Control' => 'public, max-age=3600',
-    ]);
-}
-
-// Chunked version for very large datasets
-public function getProductsSitemapChunked()
-{
-    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-
-    Product::with('seoProductUrl:id,relational_id,relational_type,url')
-        ->whereHas('seoProductUrl', function ($q) {
-            $q->whereNotNull('url')
-              ->where('url', '!=', '');
-        })
-        ->where('status', 'published')
-        ->select(['id', 'name', 'updated_at'])
-        ->chunk(500, function ($products) use (&$xml) {
-            foreach ($products as $product) {
-                $urlParts = array_filter([
-                    rtrim($this->baseUrl, '/'),
-                    $product->parent_category_url(),
-                    $product->category_url(),
-                    $product->seoProductUrl->url
-                ]);
-
-                $fullUrl = htmlspecialchars(implode('/', $urlParts), ENT_XML1, 'UTF-8');
-                $lastmod = $product->updated_at 
-                    ? $product->updated_at->toAtomString() 
-                    : now()->toAtomString();
-
-                $xml .= "  <url>\n";
-                $xml .= "    <loc>{$fullUrl}</loc>\n";
-                $xml .= "    <lastmod>{$lastmod}</lastmod>\n";
-                $xml .= "    <changefreq>weekly</changefreq>\n";
-                $xml .= "    <priority>0.8</priority>\n";
-                $xml .= "  </url>\n";
-            }
-        });
-
-    $xml .= '</urlset>';
-
-    return response($xml, 200, [
-        'Content-Type' => 'application/xml; charset=UTF-8',
-        'Cache-Control' => 'public, max-age=3600',
-    ]);
-}
 
 
 
