@@ -75,8 +75,8 @@ class Product extends Model
 		'frequently_bought_together' => 'array',
 		'google_shopping_category',
 		'benefits_features' => 'array',
-		'gen_type' =>  'nullable|integer',
-		'approved' =>  'nullable|integer'
+		'gen_type' => 'nullable|integer',
+		'approved' => 'nullable|integer'
 
 	];
 
@@ -97,7 +97,8 @@ class Product extends Model
 
 	public function vendors()
 	{
-		return $this->belongsToMany(Vendor::class, 'product_suppliers', 'product_id', 'vendor_id')->withPivot(['price', 'sale_price']);;
+		return $this->belongsToMany(Vendor::class, 'product_suppliers', 'product_id', 'vendor_id')->withPivot(['price', 'sale_price']);
+		;
 	}
 
 	public function brand()
@@ -137,10 +138,10 @@ class Product extends Model
 	public function seoProductUrl()
 	{
 		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
-		->where(function ($query) {
-			$query->where('relational_type', 'Product')
-			->orWhere('relational_type', static::class);
-		});
+			->where(function ($query) {
+				$query->where('relational_type', 'Product')
+					->orWhere('relational_type', static::class);
+			});
 	}
 
 	public function productAttributes()
@@ -151,25 +152,25 @@ class Product extends Model
 	public function sellingUnitAttribute()
 	{
 		return $this->hasOne(ProductAttribute::class)
-		->whereHas('attributeDetails', function ($query) {
-			$query->where('name', 'Selling Unit');
-		});
+			->whereHas('attributeDetails', function ($query) {
+				$query->where('name', 'Selling Unit');
+			});
 	}
 
 	public function warrantyAttribute()
 	{
 		return $this->hasOne(ProductAttribute::class)
-		->whereHas('attributeDetails', function ($query) {
-			$query->where('name', 'Warranty');
-		});
+			->whereHas('attributeDetails', function ($query) {
+				$query->where('name', 'Warranty');
+			});
 	}
 
 	public function ingredientsAttribute()
 	{
 		return $this->hasOne(ProductAttribute::class)
-		->whereHas('attributeDetails', function ($query) {
-			$query->where('name', 'Ingredients');
-		});
+			->whereHas('attributeDetails', function ($query) {
+				$query->where('name', 'Ingredients');
+			});
 	}
 
 	// public function discounts(): BelongsToMany
@@ -186,10 +187,10 @@ class Product extends Model
 	public function latestChildCategoryRelation()
 	{
 		return $this->belongsToMany(Category::class, 'product_categories', 'product_id', 'category_id')
-		->whereDoesntHave('children')
-		->orderByDesc('product_categories.created_at')
-		->orderByDesc('product_categories.category_id')
-		->limit(1); // This returns a relation, usable in `with()`
+			->whereDoesntHave('children')
+			->orderByDesc('product_categories.created_at')
+			->orderByDesc('product_categories.category_id')
+			->limit(1); // This returns a relation, usable in `with()`
 	}
 
 	/* Get unique attributes associated with the product's latest category */
@@ -256,25 +257,30 @@ class Product extends Model
 		return $this->hasMany(ProductQuestion::class);
 	}
 	public function alternateProducts()
-    {
-        return $this->hasMany(AlternateProduct::class, 'product_id', 'id');
-    }
+	{
+		return $this->hasMany(AlternateProduct::class, 'product_id', 'id');
+	}
 
 	public function category_url()
-    {
-        $category = $this->latestChildCategory();
-        return $category->seoUrl ? $category->seoUrl->url : null;
-    }
- 
-    public function parent_category_url()
-    {
-        $category = $this->latestChildCategory();
-        $mostParent = $category?->most_parent;
- 
-        return $mostParent && $mostParent->seoUrl
-        ? $mostParent->seoUrl->url
-        : null;
-    }
+	{
 
-	
+		$category = $this->latestChildCategory();
+		if ($category && $category->seoUrl) {
+			return $category->seoUrl->url;
+		}
+
+		return null;
+	}
+
+	public function parent_category_url()
+	{
+		$category = $this->latestChildCategory();
+		$mostParent = $category?->most_parent;
+
+		return $mostParent && $mostParent->seoUrl
+			? $mostParent->seoUrl->url
+			: null;
+	}
+
+
 }
