@@ -344,33 +344,78 @@ $sitemaps = [
      *     )
      * )
      */
- public function getProductsSitemap()
+public function getProductsSitemap()
 {
-    $sitemaps = [];
-
-    Product::with('seoProductUrl')
+    $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
+        ->whereHas('seoProductUrl', function ($q) {
+            $q->whereNotNull('url')
+              ->where('url', '!=', ''); // Also exclude empty strings
+        })
         ->where('status', 'published')
+        ->select(['id', 'name', 'updated_at']) // Explicitly select needed columns
+        ->get()
+        ->map(function ($product) {
+            $parentCategoryUrl = $product->parent_category_url();
+            $categoryUrl = $product->category_url();
+            $seoUrl = $product->seoProductUrl->url;
+
+            // Build URL with proper handling of optional segments
+            $urlParts = array_filter([
+                $this->baseUrl,
+                $parentCategoryUrl,
+                $categoryUrl,
+                $seoUrl
+            ]);
+
+            return [
+                'loc' => implode('/', $urlParts),
+                'lastmod' => $product->updated_at
+                    ? $product->updated_at->toAtomString()
+                    : now()->toAtomString(),
+                'changefreq' => 'weekly',
+                'priority' => '0.8',
+            ];
+        });
+
+    return response($this->buildXml($sitemaps->toArray()), 200)
+        ->header('Content-Type', 'application/xml');
+}
+
+// Alternative version for large datasets using chunking with database filtering
+public function getProductsSitemapChunked()
+{
+    $sitemaps = collect();
+
+    Product::with('seoProductUrl:id,relational_id,relational_type,url')
+        ->whereHas('seoProductUrl', function ($q) {
+            $q->whereNotNull('url')
+              ->where('url', '!=', '');
+        })
+        ->where('status', 'published')
+        ->select(['id', 'name', 'updated_at'])
         ->chunk(500, function ($products) use (&$sitemaps) {
-            foreach ($products as $product) {
-                if (!$product->seoProductUrl?->url) continue;
+            $batch = $products->map(function ($product) {
+                $urlParts = array_filter([
+                    $this->baseUrl,
+                    $product->parent_category_url(),
+                    $product->category_url(),
+                    $product->seoProductUrl->url
+                ]);
 
-                $loc = $this->baseUrl . '/' .
-                       ($product->parent_category_url() ? $product->parent_category_url() . '/' : '') .
-                       ($product->category_url() ? $product->category_url() . '/' : '') .
-                       $product->seoProductUrl->url;
-
-                $sitemaps[] = [
-                    'loc' => $loc,
+                return [
+                    'loc' => implode('/', $urlParts),
                     'lastmod' => $product->updated_at
                         ? $product->updated_at->toAtomString()
                         : now()->toAtomString(),
                     'changefreq' => 'weekly',
                     'priority' => '0.8',
                 ];
-            }
+            });
+            
+            $sitemaps = $sitemaps->merge($batch);
         });
 
-    return response($this->buildXml($sitemaps), 200)
+    return response($this->buildXml($sitemaps->toArray()), 200)
         ->header('Content-Type', 'application/xml');
 }
 
