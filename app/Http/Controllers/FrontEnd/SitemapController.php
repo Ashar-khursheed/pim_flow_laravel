@@ -379,14 +379,16 @@ public function getProductsSitemap()
         ->where('status', 'published')
         ->get()
         ->map(function ($product) {
-            // safely get slugs and url
+            // Safely get parent category slug
             $parentSlug = optional($product->category->parentCategory)->slug ?? '';
             $categorySlug = optional($product->category)->slug ?? '';
             $productUrl = optional($product->seoProductUrl)->url ?? '';
 
-            // build full loc, remove empty strings
-            $locParts = array_filter([$parentSlug, $categorySlug, $productUrl]);
-            $loc = $this->baseUrl . '/' . implode('/', $locParts);
+            // Build full loc exactly like old function
+            $loc = $this->baseUrl . '/' . 
+                   ($parentSlug ? $parentSlug . '/' : '') . 
+                   ($categorySlug ? $categorySlug . '/' : '') . 
+                   $productUrl;
 
             return [
                 'loc' => $loc,
@@ -400,6 +402,7 @@ public function getProductsSitemap()
 
     return $this->buildXml($sitemaps);
 }
+
 
 
     /**
