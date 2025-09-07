@@ -344,43 +344,15 @@ $sitemaps = [
      *     )
      * )
      */
-    // public function getProductsSitemap()
-    // {
-    //     $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
-    //         ->whereHas('seoProductUrl', function ($q) {
-    //             $q->whereNotNull('url');
-    //         })
-
-    //         ->where('status', 'published')
-    //         ->get(['id', 'name', 'updated_at'])
-    //         ->map(function ($product) {
-    //             return [
-    //                 'loc' => $product->parent_category_$this->baseUrl .) . '/' .
-    //                     $product->category_$this->baseUrl .) . '/' .
-    //                     ($product->seoProductUrl->url ?? ""),
-    //                 'lastmod' => $product->updated_at
-    //                     ? $product->updated_at->toAtomString()
-    //                     : now()->toAtomString(),
-    //                 'changefreq' => 'weekly',
-    //                 'priority' => '0.8',
-    //             ];
-    //         });
-
-    //     return response()->json([
-    //         'status' => true,
-    //         'data' => $sitemaps
-    //     ]);
-
-    // }
-public function getProductsSitemap()
+    public function getProductsSitemap()
 {
     try {
         $sitemaps = Product::with([
                 'seoProductUrl:id,relational_id,relational_type,url',
-                'categories', // Load categories for latestChildCategory()
-                'categories.seoUrl', // Load SEO URLs for categories
-                'categories.parent', // Load parent categories
-                'categories.parent.seoUrl' // Load parent SEO URLs
+                'categories',             // Load categories for category path
+                'categories.seoUrl',      // Load SEO URLs for categories
+                'categories.parent',      // Load parent categories
+                'categories.parent.seoUrl'// Load parent SEO URLs
             ])
             ->whereHas('seoProductUrl', function ($q) {
                 $q->whereNotNull('url');
@@ -388,18 +360,21 @@ public function getProductsSitemap()
             ->where('status', 'published')
             ->get(['id', 'name', 'updated_at', 'category_id'])
             ->map(function ($product) {
-                // If you have methods that return the category paths
-                $parentCategoryPath = method_exists($product, 'getParentCategoryPath') ? 
-                    $product->getParentCategoryPath() : '';
-                $categoryPath = method_exists($product, 'getCategoryPath') ? 
-                    $product->getCategoryPath() : '';
+                // Get parent category path if method exists
+                $parentCategoryPath = method_exists($product, 'getParentCategoryPath') 
+                    ? $product->getParentCategoryPath() 
+                    : '';
                 
-                // Get product URL
+                // Get category path if method exists
+                $categoryPath = method_exists($product, 'getCategoryPath') 
+                    ? $product->getCategoryPath() 
+                    : '';
+                
+                // Get product SEO URL
                 $productUrl = optional($product->seoProductUrl)->url ?? '';
                 
-                // Build the full URL - adjust this based on your actual URL structure
-                $loc = $this->baseUrl . '/' . 
-                       trim($parentCategoryPath . '/' . $categoryPath . '/' . $productUrl, '/');
+                // Build full URL
+                $loc = $this->baseUrl . '/' . trim($parentCategoryPath . '/' . $categoryPath . '/' . $productUrl, '/');
 
                 return [
                     'loc' => $loc,
@@ -411,6 +386,7 @@ public function getProductsSitemap()
                 ];
             });
 
+        // Return XML sitemap
         return $this->buildXml($sitemaps);
         
     } catch (\Exception $e) {
@@ -418,6 +394,53 @@ public function getProductsSitemap()
         return $this->buildXml([]);
     }
 }
+
+// public function getProductsSitemap()
+// {
+//     try {
+//         $sitemaps = Product::with([
+//                 'seoProductUrl:id,relational_id,relational_type,url',
+//                 'categories', // Load categories for latestChildCategory()
+//                 'categories.seoUrl', // Load SEO URLs for categories
+//                 'categories.parent', // Load parent categories
+//                 'categories.parent.seoUrl' // Load parent SEO URLs
+//             ])
+//             ->whereHas('seoProductUrl', function ($q) {
+//                 $q->whereNotNull('url');
+//             })
+//             ->where('status', 'published')
+//             ->get(['id', 'name', 'updated_at', 'category_id'])
+//             ->map(function ($product) {
+//                 // If you have methods that return the category paths
+//                 $parentCategoryPath = method_exists($product, 'getParentCategoryPath') ? 
+//                     $product->getParentCategoryPath() : '';
+//                 $categoryPath = method_exists($product, 'getCategoryPath') ? 
+//                     $product->getCategoryPath() : '';
+                
+//                 // Get product URL
+//                 $productUrl = optional($product->seoProductUrl)->url ?? '';
+                
+//                 // Build the full URL - adjust this based on your actual URL structure
+//                 $loc = $this->baseUrl . '/' . 
+//                        trim($parentCategoryPath . '/' . $categoryPath . '/' . $productUrl, '/');
+
+//                 return [
+//                     'loc' => $loc,
+//                     'lastmod' => $product->updated_at
+//                         ? $product->updated_at->toAtomString()
+//                         : now()->toAtomString(),
+//                     'changefreq' => 'weekly',
+//                     'priority' => '0.8',
+//                 ];
+//             });
+
+//         return $this->buildXml($sitemaps);
+        
+//     } catch (\Exception $e) {
+//         \Log::error('Products sitemap error: ' . $e->getMessage());
+//         return $this->buildXml([]);
+//     }
+// }
 
     /**
      * Get XML product Sitemap.
