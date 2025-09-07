@@ -129,6 +129,7 @@ use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseCla
 use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseClaimController;
 use App\Http\Controllers\FrontEnd\GetInTouchController as F_GetInTouchController;
 use App\Http\Controllers\FrontEnd\CompareProductController;
+use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -168,8 +169,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
     });
 
 });
-
-
+ 
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
@@ -775,7 +775,12 @@ Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordi
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
 
 
-
+Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
+Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
+Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
+Route::get('/frontend/blog.xml', [SitemapController::class, 'getBlogSitemap']);
+Route::get('/frontend/brand.xml', [SitemapController::class, 'getBrandSitemap']);
+Route::get('/frontend/image.xml', [SitemapController::class, 'getImageSitemap']);
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
