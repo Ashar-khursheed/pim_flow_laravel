@@ -621,6 +621,9 @@ if (!function_exists('order_cc_mails')) {
 			'pm@horecastore.ae',
 			'css01@horecastore.ae',
 			'fm@horecastore.ae',
+			'cbfb@horecastore.ae',
+			'inventory@rapid-supplies.com',
+			'procurement@horecastore.ae',
 		];
 
 		$testMails = [];
