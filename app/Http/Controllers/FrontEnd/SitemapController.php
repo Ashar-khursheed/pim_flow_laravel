@@ -576,6 +576,117 @@ class SitemapController extends Controller
                 $xml .= '</url>';
             }
         }
+        $getProductsSitemap11 = $this->getProductsSitemap11();
+        if ($getProductsSitemap11) {
+            foreach ($getProductsSitemap11 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $getProductsSitemap12 = $this->getProductsSitemap12();
+        if ($getProductsSitemap12) {
+            foreach ($getProductsSitemap12 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $getProductsSitemap13 = $this->getProductsSitemap13();
+        if ($getProductsSitemap13) {
+            foreach ($getProductsSitemap13 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $getProductsSitemap14 = $this->getProductsSitemap14();
+        if ($getProductsSitemap14) {
+            foreach ($getProductsSitemap14 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $getProductsSitemap15 = $this->getProductsSitemap15();
+        if ($getProductsSitemap15) {
+            foreach ($getProductsSitemap15 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $getProductsSitemap16 = $this->getProductsSitemap16();
+        if ($getProductsSitemap16) {
+            foreach ($getProductsSitemap16 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $getProductsSitemap17 = $this->getProductsSitemap17();
+        if ($getProductsSitemap17) {
+            foreach ($getProductsSitemap17 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $getProductsSitemap18 = $this->getProductsSitemap18();
+        if ($getProductsSitemap18) {
+            foreach ($getProductsSitemap18 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $getProductsSitemap19 = $this->getProductsSitemap19();
+        if ($getProductsSitemap19) {
+            foreach ($getProductsSitemap10 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $getProductsSitemap20 = $this->getProductsSitemap20();
+        if ($getProductsSitemap20) {
+            foreach ($getProductsSitemap20 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+
 
         $xml .= '</urlset>';
 
