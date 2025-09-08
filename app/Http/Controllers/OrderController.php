@@ -563,6 +563,19 @@ class OrderController extends Controller
 			'utm'
 		]);
 
+				if ($order->payments->isEmpty()) {
+    $order->setRelation('payments', collect([
+        (object) [
+            'transaction_id' => null,
+            'amount' => null,
+            'status' => null,
+            'payment_mode' => 'Cash On Delivery',
+            'notes' => null,
+            'created_at' => null,
+        ]
+    ]));
+}
+
 		/* Mutate the data for each order product */
 		$order->created_by = $order->creator->name ?? null;
 		$order->updated_by = $order->updator->name ?? null;
