@@ -1,4 +1,4 @@
-<!-- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -29,8 +29,6 @@
     {{-- React root, pass SEO data --}}
     <div id="root" data-seo='@json($seoData)'></div>
     
-    {{-- React build JS --}}
-    @viteReactRefresh
-    @vite('resources/js/main.jsx') {{-- Or wherever your React entry is --}}
+
 </body>
-</html> -->
+</html>
