@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -33,4 +33,4 @@
     @viteReactRefresh
     @vite('resources/js/main.jsx') {{-- Or wherever your React entry is --}}
 </body>
-</html>
+</html> -->
