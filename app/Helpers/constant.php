@@ -657,3 +657,50 @@ if (!function_exists('order_cc_mails')) {
 		return $mails;
 	}
 }
+
+
+if (!function_exists('quote_cc_mails')) {
+	function quote_cc_mails() {
+		$usMails = [
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
+		];
+
+		$uaeMails = [
+			'css01@horecastore.ae',
+			'css03@horecastore.ae',
+			'css08@horecastore.ae',
+			'pm@horecastore.ae',
+		];
+
+		$testMails = [];
+
+		$localMails = [
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
+		];
+
+		switch (config('app.website')) {
+			case 'US':
+			$mails = $usMails;
+			break;
+
+			case 'UAE':
+			$mails = $uaeMails;
+			break;
+
+			case 'TEST':
+			$mails = $testMails;
+			break;
+
+			case 'Local':
+			$mails = $localMails;
+			break;
+
+			default:
+			$mails =[];
+			break;
+		}
+		return $mails;
+	}
+}
