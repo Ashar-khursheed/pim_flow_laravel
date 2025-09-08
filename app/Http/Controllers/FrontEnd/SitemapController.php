@@ -292,8 +292,8 @@ class SitemapController extends Controller
         foreach ($sitemaps as $sitemap) {
             $xml .= '<url>';
 
-              $loc = ltrim($sitemap['loc'], '/');
-              $xml .= '<loc>' . rtrim($this->baseUrl, '/') . '/' . htmlspecialchars($loc) . '</loc>';
+            $loc = ltrim($sitemap['loc'], '/');
+            $xml .= '<loc>' . rtrim($this->baseUrl, '/') . '/' . htmlspecialchars($loc) . '</loc>';
             $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
             $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
             $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
@@ -346,7 +346,7 @@ class SitemapController extends Controller
             ->get()
             ->map(function ($category) {
                 return [
-                    'loc' => $category->seoUrl->url, // safe now
+                    'loc' => $category->seoUrl->url,
                     'lastmod' => $category->updated_at
                         ? $category->updated_at->toAtomString()
                         : now()->toAtomString(),
@@ -421,50 +421,281 @@ class SitemapController extends Controller
      *     )
      * )
      */
-   public function getProductsSitemap1() { return $this->generateProductsSitemap(0, 1000); }
-public function getProductsSitemap2() { return $this->generateProductsSitemap(1000, 1000); }
-public function getProductsSitemap3() { return $this->generateProductsSitemap(2000, 1000); }
-public function getProductsSitemap4() { return $this->generateProductsSitemap(3000, 1000); }
-public function getProductsSitemap5() { return $this->generateProductsSitemap(4000, 1000); }
-public function getProductsSitemap6() { return $this->generateProductsSitemap(5000, 1000); }
-public function getProductsSitemap7() { return $this->generateProductsSitemap(6000, 1000); }
-public function getProductsSitemap8() { return $this->generateProductsSitemap(7000, 1000); }
-public function getProductsSitemap9() { return $this->generateProductsSitemap(8000, 1000); }
-public function getProductsSitemap10() { return $this->generateProductsSitemap(9000, 1000); }
+    public function getProductsSitemap()
+    {
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        $getProductsSitemap1 = $this->getProductsSitemap1();
+        if ($getProductsSitemap1) {
+            foreach ($getProductsSitemap1 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
 
-private function generateProductsSitemap($offset, $limit)
-{
-    $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
-        ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
-        ->where('status', 'published')
-        ->offset($offset)
-        ->limit($limit)
-        ->get(['id', 'name', 'updated_at'])
-        ->map(fn($product) => [
-            'loc' => $product->parent_category_url() . '/' .
-                     $product->category_url() . '/' .
-                     ($product->seoProductUrl->url ?? ""),
-            'lastmod' => $product->updated_at ? $product->updated_at->toAtomString() : now()->toAtomString(),
-            'changefreq' => 'weekly',
-            'priority' => '0.8',
-        ]);
+        $getProductsSitemap2 = $this->getProductsSitemap2();
+        if ($getProductsSitemap2) {
+            foreach ($getProductsSitemap2 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $getProductsSitemap3 = $this->getProductsSitemap3();
+        if ($getProductsSitemap3) {
+            foreach ($getProductsSitemap3 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
 
-    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        $getProductsSitemap4 = $this->getProductsSitemap4();
+        if ($getProductsSitemap4) {
+            foreach ($getProductsSitemap4 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
 
-    foreach ($sitemaps as $sitemap) {
-        $xml .= '<url>';
-        $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
-        $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
-        $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
-        $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
-        $xml .= '</url>';
+        $getProductsSitemap5 = $this->getProductsSitemap5();
+        if ($getProductsSitemap5) {
+            foreach ($getProductsSitemap5 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+
+        $getProductsSitemap6 = $this->getProductsSitemap6();
+        if ($getProductsSitemap6) {
+            foreach ($getProductsSitemap6 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+
+        $getProductsSitemap7 = $this->getProductsSitemap7();
+        if ($getProductsSitemap7) {
+            foreach ($getProductsSitemap7 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+
+        $getProductsSitemap8 = $this->getProductsSitemap8();
+        if ($getProductsSitemap8) {
+            foreach ($getProductsSitemap8 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+
+        $getProductsSitemap9 = $this->getProductsSitemap9();
+        if ($getProductsSitemap9) {
+            foreach ($getProductsSitemap9 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+
+        $getProductsSitemap10 = $this->getProductsSitemap10();
+        if ($getProductsSitemap10) {
+            foreach ($getProductsSitemap10 as $sitemap) {
+                $xml .= '<url>';
+                $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
     }
 
-    $xml .= '</urlset>';
+    public function getProductsSitemap1()
+    {
+        return $this->generateProductsSitemap(0, 1000);
+    }
+    public function getProductsSitemap2()
+    {
+        return $this->generateProductsSitemap(2000, 1000);
+    }
+    public function getProductsSitemap3()
+    {
+        return $this->generateProductsSitemap(3000, 1000);
+    }
+    public function getProductsSitemap4()
+    {
+        return $this->generateProductsSitemap(4000, 1000);
+    }
+    public function getProductsSitemap5()
+    {
+        return $this->generateProductsSitemap(5000, 1000);
+    }
+    public function getProductsSitemap6()
+    {
+        return $this->generateProductsSitemap(6000, 1000);
+    }
+    public function getProductsSitemap7()
+    {
+        return $this->generateProductsSitemap(7000, 1000);
+    }
+    public function getProductsSitemap8()
+    {
+        return $this->generateProductsSitemap(8000, 1000);
+    }
+    public function getProductsSitemap9()
+    {
+        return $this->generateProductsSitemap(9000, 1000);
+    }
+    public function getProductsSitemap10()
+    {
+        return $this->generateProductsSitemap(10000, 1000);
+    }
+    public function getProductsSitemap11()
+    {
+        return $this->generateProductsSitemap(11000, 1000);
+    }
+    public function getProductsSitemap12()
+    {
+        return $this->generateProductsSitemap(12000, 1000);
+    }
+    public function getProductsSitemap13()
+    {
+        return $this->generateProductsSitemap(13000, 1000);
+    }
+    public function getProductsSitemap14()
+    {
+        return $this->generateProductsSitemap(14000, 1000);
+    }
+    public function getProductsSitemap15()
+    {
+        return $this->generateProductsSitemap(15000, 1000);
+    }
+    public function getProductsSitemap16()
+    {
+        return $this->generateProductsSitemap(16000, 1000);
+    }
+    public function getProductsSitemap17()
+    {
+        return $this->generateProductsSitemap(17000, 1000);
+    }
+    public function getProductsSitemap18()
+    {
+        return $this->generateProductsSitemap(18000, 1000);
+    }
+    public function getProductsSitemap19()
+    {
+        return $this->generateProductsSitemap(19000, 1000);
+    }
+    public function getProductsSitemap20()
+    {
+        return $this->generateProductsSitemap(20000, 1000);
+    }
+    public function getProductsSitemap21()
+    {
+        return $this->generateProductsSitemap(21000, 1000);
+    }
+    public function getProductsSitemap22()
+    {
+        return $this->generateProductsSitemap(22000, 1000);
+    }
+    public function getProductsSitemap23()
+    {
+        return $this->generateProductsSitemap(23000, 1000);
+    }
+    public function getProductsSitemap24()
+    {
+        return $this->generateProductsSitemap(24000, 1000);
+    }
+    public function getProductsSitemap25()
+    {
+        return $this->generateProductsSitemap(25000, 1000);
+    }
+    public function getProductsSitemap26()
+    {
+        return $this->generateProductsSitemap(26000, 1000);
+    }
+    public function getProductsSitemap27()
+    {
+        return $this->generateProductsSitemap(27000, 1000);
+    }
+    public function getProductsSitemap28()
+    {
+        return $this->generateProductsSitemap(28000, 1000);
+    }
+    public function getProductsSitemap29()
+    {
+        return $this->generateProductsSitemap(29000, 1000);
+    }
+    public function getProductsSitemap30()
+    {
+        return $this->generateProductsSitemap(30000, 1000);
+    }
+    public function getProductsSitemap31()
+    {
+        return $this->generateProductsSitemap(31000, 1000);
+    }
 
-    return response($xml, 200)->header('Content-Type', 'application/xml');
-}
+    private function generateProductsSitemap($offset, $limit)
+    {
+        $totalProducts = Product::where('status', 'published')->count();
+        $sitemaps = "";
+        if ($offset < $totalProducts) {
+            $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
+                ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
+                ->where('status', 'published')
+                ->offset($offset)
+                ->limit($limit)
+                ->get(['id', 'name', 'updated_at'])
+                ->map(fn($product) => [
+                    'loc' => $product->parent_category_url() . '/' .
+                        $product->category_url() . '/' .
+                        ($product->seoProductUrl->url ?? ""),
+                    'lastmod' => $product->updated_at ? $product->updated_at->toAtomString() : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ]);
+        }
+        return $sitemaps;
+    }
 
 
     /**
@@ -521,9 +752,7 @@ private function generateProductsSitemap($offset, $limit)
         }
 
         $xml .= '</urlset>';
-
         return response($xml, 200)->header('Content-Type', 'application/xml');
-
     }
 
 
@@ -575,8 +804,6 @@ private function generateProductsSitemap($offset, $limit)
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-
-
         foreach ($sitemaps as $sitemap) {
             $xml .= '<url>';
             $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
@@ -589,15 +816,13 @@ private function generateProductsSitemap($offset, $limit)
         $xml .= '</urlset>';
 
         return response($xml, 200)->header('Content-Type', 'application/xml');
-
-
     }
 
     /**
      * Get XML Image Sitemap.
      *
      * @OA\Get(
-     *     path="/api/frontend/image.xml",
+     *     path="/api/frontend/productImage.xml",
      *     summary="Get image.xml",
      *     description="Returns the XML sitemap containing public URLs of the website.",
      *     tags={"Sitemap"},
@@ -619,12 +844,11 @@ private function generateProductsSitemap($offset, $limit)
      *     )
      * )
      */
-    public function getImageSitemap()
+    public function getProductImageSitemap()
     {
         $sitemaps = Product::select(['id', 'name', 'images', 'updated_at'])
             ->whereNotNull('images')
             ->where('status', 'published')
-            ->limit(20)
             ->get()
             ->map(function ($product) {
                 $images = collect(json_decode($product->images, true))
@@ -647,12 +871,8 @@ private function generateProductsSitemap($offset, $limit)
 
         foreach ($sitemaps as $sitemap) {
             $loc = $sitemap['loc'];
-
             $loc = json_decode($loc, true);
-
             if (is_array($loc)) {
-
-
                 foreach ($loc as $imgSlug) {
                     $xml .= '<url>';
                     $xml .= '<loc>' . htmlspecialchars($imgSlug) . '</loc>';
@@ -674,9 +894,195 @@ private function generateProductsSitemap($offset, $limit)
         $xml .= '</urlset>';
 
         return response($xml, 200)->header('Content-Type', 'application/xml');
-
-
     }
 
+    /**
+     * Get XML blog Image Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/blogImage.xml",
+     *     summary="Get blogImage.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+    public function getBlogImageSitemap()
+    {
+        $sitemaps = Blog::select(['id', 'name', 'desktop_banner', 'updated_at'])
+            ->whereNotNull('desktop_banner')
+            ->where('status', 'published')
+
+            ->get()
+            ->map(function ($blog) {
+
+                return [
+                    'loc' => $blog->desktop_banner,
+                    'lastmod' => $blog->updated_at
+                        ? $blog->updated_at->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
+            });
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+        foreach ($sitemaps as $sitemap) {
+
+
+            $xml .= '<url>';
+            $xml .= '<loc>' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+    }
+
+
+    /**
+     * Get XML Brand image Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/brandImage.xml",
+     *     summary="Get brandImage.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+    public function getBrandImageSitemap()
+    {
+        $sitemaps = Brand::select(['id', 'name', 'thumbnail', 'updated_at'])
+            ->whereNotNull('thumbnail')
+            ->where('status', 'published')
+            ->get()
+            ->map(function ($brand) {
+
+                return [
+                    'loc' => $brand->thumbnail,
+                    'lastmod' => $brand->updated_at
+                        ? $brand->updated_at->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
+            });
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+            $xml .= '<loc>' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+
+        }
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+    }
+
+
+    /**
+     * Get XML Category image Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/categoryImage.xml",
+     *     summary="Get categoryImage.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+    public function getCategoryImageSitemap()
+    {
+        $sitemaps = Category::select(['id', 'name', 'image', 'updated_at'])
+            ->whereNotNull('image')
+            ->where('status', 'published')
+            ->limit(20)
+            ->get()
+            ->map(function ($category) {
+
+                return [
+                    'loc' => $category->image,
+                    'lastmod' => $category->updated_at
+                        ? $category->updated_at->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
+            });
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+        foreach ($sitemaps as $sitemap) {
+
+            $xml .= '<url>';
+            $xml .= '<loc>' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+
+        }
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+    }
 
 }

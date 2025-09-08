@@ -22304,14 +22304,146 @@
                 }
             }
         },
-        "/api/frontend/image.xml": {
+        "/api/frontend/productImage.xml": {
             "get": {
                 "tags": [
                     "Sitemap"
                 ],
                 "summary": "Get image.xml",
                 "description": "Returns the XML sitemap containing public URLs of the website.",
-                "operationId": "d2493aff7b44c0063872a52038022869",
+                "operationId": "483ee67c765fb178831fa7ba8d5d07c5",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/blogImage.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get blogImage.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "b5ac0d8928a4bc33604185d6872a8cb1",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/brandImage.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get brandImage.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "5269898782f2b3392e0aa7aeded53c3b",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/categoryImage.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get categoryImage.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "7a3b0e9399a727841aed544084db4582",
                 "responses": {
                     "200": {
                         "description": "Sitemap XML generated successfully",
