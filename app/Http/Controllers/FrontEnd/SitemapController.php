@@ -21,7 +21,7 @@ class SitemapController extends Controller
         $now = Carbon::now()->toAtomString();
         $sitemaps = [
             [
-                'loc' => '/',
+                'loc' => '',
                 'lastmod' => $now,
                 'changefreq' => 'daily',
                 'priority' => '1.0',
@@ -125,7 +125,27 @@ class SitemapController extends Controller
             ],
             [
 
-                'loc' => 'images.xml',
+                'loc' => 'productImage.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+
+                'loc' => 'blogImage.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+
+                'loc' => 'brandImage.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ], [
+
+                'loc' => 'categoryImage.xml',
                 'lastmod' => $now,
                 'changefreq' => 'weekly',
                 'priority' => '0.5',
@@ -134,7 +154,7 @@ class SitemapController extends Controller
         foreach ($sitemaps as $sitemap) {
             $xml .= '<url>';
 
-            $xml .= '<loc>' . $this->baseUrl . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<loc>' . $this->baseUrl .'/'. htmlspecialchars($sitemap['loc']) . '</loc>';
             $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
             $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
             $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
@@ -1052,8 +1072,7 @@ class SitemapController extends Controller
     {
         $sitemaps = Category::select(['id', 'name', 'image', 'updated_at'])
             ->whereNotNull('image')
-            ->where('status', 'published')
-            ->limit(20)
+            ->where('status', 'published')           
             ->get()
             ->map(function ($category) {
 
