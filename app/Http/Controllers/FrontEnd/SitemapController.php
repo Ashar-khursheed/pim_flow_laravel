@@ -21,184 +21,6 @@ class SitemapController extends Controller
         $now = Carbon::now()->toAtomString();
         $sitemaps = [
             [
-                'loc' => '',
-                'lastmod' => $now,
-                'changefreq' => 'daily',
-                'priority' => '1.0',
-            ],
-            [
-                'loc' => 'pages/about-us',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'pages/contact-us',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'sell-on-horeca',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'pages/return-policy',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'pages/shipping-policy',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'pages/cancellation-policy',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'pages/payment-policy',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'pages/vendor-supplier-policy',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'pages/privacy-policy',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'pages/terms-conditions',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'pages/extended-warranty',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'blog',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'categories.xml',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-
-                'loc' => 'products.xml',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'blog.xml',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-                'loc' => 'brand.xml',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-
-                'loc' => 'productImage.xml',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-
-                'loc' => 'blogImage.xml',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-            [
-
-                'loc' => 'brandImage.xml',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ], [
-
-                'loc' => 'categoryImage.xml',
-                'lastmod' => $now,
-                'changefreq' => 'weekly',
-                'priority' => '0.5',
-            ],
-        ];
-        foreach ($sitemaps as $sitemap) {
-            $xml .= '<url>';
-
-            $xml .= '<loc>' . $this->baseUrl .'/'. htmlspecialchars($sitemap['loc']) . '</loc>';
-            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
-            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
-            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
-            $xml .= '</url>';
-        }
-
-        $xml .= '</urlset>';
-
-        return response($xml, 200)->header('Content-Type', 'application/xml');
-    }
-
-    /**
-     * Get XML Sitemap.
-     *
-     * @OA\Get(
-     *     path="/api/frontend/sitemap.xml",
-     *     summary="Get sitemap.xml",
-     *     description="Returns the XML sitemap containing public URLs of the website.",
-     *     tags={"Sitemap"},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Sitemap XML generated successfully",
-     *         @OA\MediaType(
-     *             mediaType="application/xml",
-     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Server error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
-     *         )
-     *     )
-     * )
-     */
-    public function getSitemap()
-    {
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-        $now = Carbon::now()->toAtomString();
-        $sitemaps = [
-            [
                 'loc' => '/',
                 'lastmod' => $now,
                 'changefreq' => 'daily',
@@ -302,8 +124,199 @@ class SitemapController extends Controller
                 'priority' => '0.5',
             ],
             [
+                'loc' => 'productImage.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'blogImage.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'brandImage.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'categoryImage.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+        ];
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
 
-                'loc' => 'images.xml',
+            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+    }
+
+    /**
+     * Get XML Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/sitemap.xml",
+     *     summary="Get sitemap.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+    public function getSitemap()
+    {
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        $now = Carbon::now()->toAtomString();
+        $sitemaps = [
+            [
+                'loc' => '',
+                'lastmod' => $now,
+                'changefreq' => 'daily',
+                'priority' => '1.0',
+            ],
+            [
+                'loc' => 'pages/about-us',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/contact-us',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'sell-on-horeca',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/return-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/shipping-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/cancellation-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/payment-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/vendor-supplier-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/privacy-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/terms-conditions',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/extended-warranty',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'blog',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'categories.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'products.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'blog.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'brand.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'productImage.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'blogImage.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'brandImage.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'categoryImage.xml',
                 'lastmod' => $now,
                 'changefreq' => 'weekly',
                 'priority' => '0.5',
@@ -1072,7 +1085,7 @@ class SitemapController extends Controller
     {
         $sitemaps = Category::select(['id', 'name', 'image', 'updated_at'])
             ->whereNotNull('image')
-            ->where('status', 'published')           
+            ->where('status', 'published')
             ->get()
             ->map(function ($category) {
 
