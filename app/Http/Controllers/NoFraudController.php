@@ -74,6 +74,166 @@ class NoFraudController extends Controller
  */
 
 
+// public function screenTransaction(Request $request)
+// {
+//     // Validate required fields
+//     $validator = Validator::make($request->all(), [
+//         'order_id' => 'required|string',
+//         'amount' => 'required|numeric|min:0.01',
+//         'billing_first_name' => 'required|string|max:100',
+//         'billing_last_name' => 'nullable|string|max:100',
+//         'billing_email' => 'required|email',
+//         'billing_phone' => 'nullable|string|max:20',
+//         'billing_address' => 'required|string|max:255',
+//         'billing_city' => 'required|string|max:100',
+//         'billing_state' => 'required|string|max:10',
+//         'billing_zip' => 'required|string|max:20',
+//         'billing_country' => 'required|string|size:2',
+//         'card_bin' => 'nullable|digits_between:6,8',
+//         'card_last4' => 'required|digits:4',
+
+
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status' => 'error',
+//             'message' => 'Validation failed',
+//             'errors' => $validator->errors()
+//         ], 400);
+//     }
+
+//     try {
+//         // Build the payload for NoFraud API
+//         $payload = [
+//             'nf-token' => env('NOFRAUD_API_KEY'),
+//             'amount' => number_format((float)$request->amount, 2, '.', ''),
+//             'currencyCode' => $request->currency_code ?? 'USD',
+//             'customerIP' => $request->ip(),
+            
+//             'billTo' => [
+//                 'firstName' => $request->billing_first_name,
+//                 'lastName' => $request->billing_last_name,
+//                 'company' => $request->billing_company ?? '',
+//                 'address' => $request->billing_address,
+//                 'city' => $request->billing_city,
+//                 'state' => $request->billing_state,
+//                 'zip' => $request->billing_zip,
+//                 'country' => $request->billing_country,
+//                 'phoneNumber' => $request->billing_phone,
+//             ],
+
+//             'shipTo' => [
+//                 'firstName' => $request->shipping_first_name ?? $request->billing_first_name,
+//                 'lastName' => $request->shipping_last_name ?? $request->billing_last_name,
+//                 'company' => $request->shipping_company ?? $request->billing_company ?? '',
+//                 'address' => $request->shipping_address ?? $request->billing_address,
+//                 'city' => $request->shipping_city ?? $request->billing_city,
+//                 'state' => $request->shipping_state ?? $request->billing_state,
+//                 'zip' => $request->shipping_zip ?? $request->billing_zip,
+//                 'country' => $request->shipping_country ?? $request->billing_country,
+//             ],
+
+//             'payment' => [
+//                 'method' => 'Credit Card',
+//                 'creditCard' => [
+//                     'last4' => $request->card_last4,
+//                     'bin' => $request->card_bin,
+//                     'cardType' => $request->card_type ?? $this->getCardTypeFromBin($request->card_bin),
+//                     'expirationDate' => $request->card_expiration ?? null,
+//                 ],
+//             ],
+
+//             'order' => [
+//                 'invoiceNumber' => $request->order_id,
+//                 'orderType' => $request->order_type ?? 'one-time',
+//                 'description' => $request->order_description ?? 'Online Order',
+//             ],
+
+//             'customer' => [
+//                 'id' => $request->customer_id ?? 'guest-' . uniqid(),
+//                 'email' => $request->billing_email,
+//                 'joinedOn' => $request->customer_joined_date ? 
+//                     date('m/d/Y', strtotime($request->customer_joined_date)) : null,
+//                 'lastSignIn' => $request->customer_last_signin ? 
+//                     date('m/d/Y', strtotime($request->customer_last_signin)) : null,
+//                 'lastPurchaseDate' => $request->customer_last_purchase ? 
+//                     date('m/d/Y', strtotime($request->customer_last_purchase)) : null,
+//                 'totalPreviousPurchases' => $request->customer_total_purchases ?? 0,
+//                 'totalPurchaseValue' => $request->customer_total_value ?? 0,
+//             ],
+//         ];
+
+//         // Remove null values to avoid API issues
+//         $payload = $this->removeNullValues($payload);
+
+
+//         // Make the API call
+//         $response = Http::timeout(30)
+//             ->withHeaders([
+//                 'Content-Type' => 'application/json',
+//                 'Accept' => 'application/json',
+//             ])
+//             ->post(config('services.nofraud.api_url'), $payload);
+
+//         if ($response->successful()) {
+//             $result = $response->json();
+            
+
+//             // Save the response to database
+//             try {
+//                 \App\Models\NoFraudResponse::create([
+//                     'order_id' => $request->order_id,
+//                    'response' => $result, // Only the 'nofraud_result' part
+//                     'created_at' => now(),
+//                 ]);
+//             } catch (\Exception $e) {
+//             }
+
+//             return response()->json([
+//                 'status' => 'success',
+//                 'decision' => $result['decision'] ?? 'unknown',
+//                 'score' => $result['score'] ?? null,
+//                 'nofraud_result' => $result,
+//             ]);
+//         }
+
+//         // Handle API errors
+//         $errorMessage = 'NoFraud API request failed';
+//         $errorDetails = $response->body();
+        
+       
+
+//         return response()->json([
+//             'status' => 'error',
+//             'message' => $errorMessage,
+//             'details' => $response->status() >= 500 ? 'Service temporarily unavailable' : $errorDetails,
+//         ], $response->status());
+
+//     } catch (\Exception $e) {
+        
+//         return response()->json([
+//             'status' => 'error',
+//             'message' => 'An unexpected error occurred while processing the transaction',
+//         ], 500);
+//     }
+// }
+
+// /**
+//  * Remove null values from array recursively
+//  */
+// private function removeNullValues($array)
+// {
+//     foreach ($array as $key => $value) {
+//         if (is_array($value)) {
+//             $array[$key] = $this->removeNullValues($value);
+//         } elseif (is_null($value)) {
+//             unset($array[$key]);
+//         }
+//     }
+//     return $array;
+// }
+
 public function screenTransaction(Request $request)
 {
     // Validate required fields
@@ -81,9 +241,9 @@ public function screenTransaction(Request $request)
         'order_id' => 'required|string',
         'amount' => 'required|numeric|min:0.01',
         'billing_first_name' => 'required|string|max:100',
-        'billing_last_name' => 'nullable|string|max:100',
+        'billing_last_name' => 'required|string|max:100',
         'billing_email' => 'required|email',
-        'billing_phone' => 'nullable|string|max:20',
+        'billing_phone' => 'required|string|max:20',
         'billing_address' => 'required|string|max:255',
         'billing_city' => 'required|string|max:100',
         'billing_state' => 'required|string|max:10',
@@ -91,8 +251,8 @@ public function screenTransaction(Request $request)
         'billing_country' => 'required|string|size:2',
         'card_bin' => 'nullable|digits_between:6,8',
         'card_last4' => 'required|digits:4',
-
-
+        'avs_result' => 'required|string',
+        'cvv_result' => 'required|string',
     ]);
 
     if ($validator->fails()) {
@@ -104,13 +264,22 @@ public function screenTransaction(Request $request)
     }
 
     try {
+        // Normalize enums for AVS/CVV
+        $avsCode = $this->normalizeAvs($request->avs_result);
+        $cvvCode = $this->normalizeCvv($request->cvv_result);
+
+        // Get real customer IP
+        $customerIp = $request->header('X-Forwarded-For') 
+            ? explode(',', $request->header('X-Forwarded-For'))[0] 
+            : $request->ip();
+
         // Build the payload for NoFraud API
         $payload = [
             'nf-token' => env('NOFRAUD_API_KEY'),
             'amount' => number_format((float)$request->amount, 2, '.', ''),
-            'currencyCode' => $request->currency_code ?? 'USD',
-            'customerIP' => $request->ip(),
-            
+            'currency_code' => $request->currency_code ?? 'USD', // ✅ fixed
+            'customerIP' => $customerIp,
+
             'billTo' => [
                 'firstName' => $request->billing_first_name,
                 'lastName' => $request->billing_last_name,
@@ -141,6 +310,8 @@ public function screenTransaction(Request $request)
                     'bin' => $request->card_bin,
                     'cardType' => $request->card_type ?? $this->getCardTypeFromBin($request->card_bin),
                     'expirationDate' => $request->card_expiration ?? null,
+                    'avsResultCode' => $avsCode, // ✅ new
+                    'cvvResultCode' => $cvvCode, // ✅ new
                 ],
             ],
 
@@ -167,24 +338,22 @@ public function screenTransaction(Request $request)
         // Remove null values to avoid API issues
         $payload = $this->removeNullValues($payload);
 
-
         // Make the API call
         $response = Http::timeout(30)
             ->withHeaders([
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ])
-            ->post(config('services.nofraud.api_url'), $payload);
+            ->post(config('services.nofraud.api_url') . '/transaction', $payload);
 
         if ($response->successful()) {
             $result = $response->json();
-            
 
             // Save the response to database
             try {
                 \App\Models\NoFraudResponse::create([
                     'order_id' => $request->order_id,
-                   'response' => $result, // Only the 'nofraud_result' part
+                    'response' => $result,
                     'created_at' => now(),
                 ]);
             } catch (\Exception $e) {
@@ -199,24 +368,44 @@ public function screenTransaction(Request $request)
         }
 
         // Handle API errors
-        $errorMessage = 'NoFraud API request failed';
-        $errorDetails = $response->body();
-        
-       
-
         return response()->json([
             'status' => 'error',
-            'message' => $errorMessage,
-            'details' => $response->status() >= 500 ? 'Service temporarily unavailable' : $errorDetails,
+            'message' => 'NoFraud API request failed',
+            'details' => $response->status() >= 500 ? 'Service temporarily unavailable' : $response->body(),
         ], $response->status());
 
     } catch (\Exception $e) {
-        
         return response()->json([
             'status' => 'error',
             'message' => 'An unexpected error occurred while processing the transaction',
         ], 500);
     }
+}
+
+/**
+ * Normalize AVS codes
+ */
+private function normalizeAvs($code)
+{
+    return match ($code) {
+        'AVS_ACCEPTED' => 'Y',
+        'AVS_REJECTED' => 'N',
+        'AVS_NOT_CHECKED' => 'U',
+        default => 'U',
+    };
+}
+
+/**
+ * Normalize CVV codes
+ */
+private function normalizeCvv($code)
+{
+    return match ($code) {
+        'CVV_ACCEPTED' => 'M',
+        'CVV_REJECTED' => 'N',
+        'CVV_NOT_CHECKED' => 'U',
+        default => 'U',
+    };
 }
 
 /**
@@ -233,6 +422,7 @@ private function removeNullValues($array)
     }
     return $array;
 }
+
 
 /**
  * Get card type from BIN
