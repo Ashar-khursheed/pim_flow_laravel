@@ -105,8 +105,19 @@ class OrderPlacedMail extends Mailable
 		$discount = $order->discount ?? 0;
 		$total = $order->total_amount ?? 0;
 
-		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'orders@thehorecastore.com';
+		$siteUrl = match (config('app.website')) {
+			'US'  => 'Thehorecastore.com',
+			'UAE'  => 'HorecaStore.ae',
+			'TEST' => 'Thehorecastore.com',
+			default => 'Thehorecastore.com',
+		};
+
+		$siteEmail = match (config('app.website')) {
+			'US'  => 'orders@thehorecastore.com',
+			'UAE'  => 'orders@horecastore.ae',
+			'TEST' => 'test@thehorecastore.co',
+			default => 'test@thehorecastore.co',
+		};
 
 		$params = [
 			'logoUrl' => $logoUrl,

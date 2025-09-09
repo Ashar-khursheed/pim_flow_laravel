@@ -270,68 +270,6 @@ class ProductController extends Controller
                             return  $alt_tags;
                         });
 
-                        // Custom sorting for documents
-                         // Custom sorting for documents
-                        //  $desiredOrder = [
-                        //     'Technical Specification Sheet',
-                        //     'Warranty Information',
-                        //     'Horeca Buying Guide',
-                        //     'Setup & Usage Instructions',
-                        //     'Product Installation Guide',
-                        //     'Installation & Elevation Diagram',
-                        //     'Spare Parts List',
-                        //     'Product Brochure',
-                        // ];
-
-                        // $documents = json_decode($product->documents, true);
-                        // if (is_array($documents)) {
-                        //     // Remove .pdf extension from titles
-                        //     foreach ($documents as &$doc) {
-                        //         $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
-                        //     }
-
-                        //     // Sort documents by desired order
-                        //     usort($documents, function ($a, $b) use ($desiredOrder) {
-                        //         $posA = array_search($a['title'], $desiredOrder);
-                        //         $posB = array_search($b['title'], $desiredOrder);
-                        //         $posA = $posA === false ? PHP_INT_MAX : $posA;
-                        //         $posB = $posB === false ? PHP_INT_MAX : $posB;
-                        //         return $posA <=> $posB;
-                        //     });
-
-                        //     $product->documents = $documents;
-                        // } else {
-                        //     $product->documents = [];
-                        // }
-
-
-                        // $documents = $product->documents;
-
-                        // // If $documents is already an array, skip decoding
-                        // if (is_string($documents)) {
-                        //     $documents = json_decode($documents, true);
-                        // }
-
-                        // // Proceed if it's a valid array
-                        // if (is_array($documents)) {
-                        //     // Remove .pdf extension from titles
-                        //     foreach ($documents as &$doc) {
-                        //         if (isset($doc['title'])) {
-                        //             $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
-                        //         }
-                        //     }
-                        //     // Sort documents based on desired order
-                        //     usort($documents, function ($a, $b) use ($desiredOrder) {
-                        //         $posA = array_search($a['title'], $desiredOrder);
-                        //         $posB = array_search($b['title'], $desiredOrder);
-                        //         $posA = $posA === false ? PHP_INT_MAX : $posA;
-                        //         $posB = $posB === false ? PHP_INT_MAX : $posB;
-                        //         return $posA <=> $posB;
-                        //     });
-
-                        //     // Save back to product
-                        //     $product->documents = $documents;
-                        // }
               $desiredOrder = [
                     'Technical Specification Sheet',
                     'Warranty Information',
@@ -494,14 +432,13 @@ class ProductController extends Controller
                     // });
                     // Get all categories including parent hierarchies
                     $allCategories = collect();
-
                     $product->categories->each(function ($category) use ($allCategories) {
-                        // Function to recursively get parent categories
+                        // Recursive closure to get parent hierarchy
                         $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
                             $parents = collect();
                             if ($cat->parent_id) {
-                                // Get parent category - adjust model name if needed
-                                $parent = Category::with('slug')->find($cat->parent_id);
+                                // Eager load seoUrl for parent
+                                $parent = Category::with('seoUrl')->find($cat->parent_id);
                                 if ($parent) {
                                     // Recursively get parent's hierarchy
                                     $parents = $parents->merge($getParentHierarchy($parent));
@@ -524,11 +461,12 @@ class ProductController extends Controller
                     // Remove duplicates and map to desired structure
                     $product->category_list = $allCategories->unique('id')->map(function ($category) {
                         return [
-                            'id' => $category->id,
+                            'id'   => $category->id,
                             'name' => $category->name,
-                            'slug' => $category->slug,
+                            'slug'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
                         ];
                     })->values();
+
                         // 👉 Add this
                     $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
                     $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
@@ -905,40 +843,42 @@ class ProductController extends Controller
                        // Get all categories including parent hierarchies
                         $allCategories = collect();
 
-                        $product->categories->each(function ($category) use ($allCategories) {
-                            // Function to recursively get parent categories
-                            $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
-                                $parents = collect();
-                                if ($cat->parent_id) {
-                                    // Get parent category - adjust model name if needed
-                                    $parent = Category::with('slug')->find($cat->parent_id);
-                                    if ($parent) {
-                                        // Recursively get parent's hierarchy
-                                        $parents = $parents->merge($getParentHierarchy($parent));
-                                        $parents->push($parent);
-                                    }
+
+                      $product->categories->each(function ($category) use ($allCategories) {
+                        // Recursive closure to get parent hierarchy
+                        $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
+                            $parents = collect();
+                            if ($cat->parent_id) {
+                                // Eager load seoUrl for parent
+                                $parent = Category::with('seoUrl')->find($cat->parent_id);
+                                if ($parent) {
+                                    // Recursively get parent's hierarchy
+                                    $parents = $parents->merge($getParentHierarchy($parent));
+                                    $parents->push($parent);
                                 }
-                                return $parents;
-                            };
+                            }
+                            return $parents;
+                        };
 
-                            // Get all parent categories
-                            $parentHierarchy = $getParentHierarchy($category);
+                        // Get all parent categories
+                        $parentHierarchy = $getParentHierarchy($category);
 
-                            // Add parents to collection
-                            $allCategories->push(...$parentHierarchy);
+                        // Add parents to collection
+                        $allCategories->push(...$parentHierarchy);
 
-                            // Add current category
-                            $allCategories->push($category);
-                        });
+                        // Add current category
+                        $allCategories->push($category);
+                    });
 
-                        // Remove duplicates and map to desired structure
-                        $product->category_list = $allCategories->unique('id')->map(function ($category) {
-                            return [
-                                'id' => $category->id,
-                                'name' => $category->name,
-                                'slug' => $category->slug,
-                            ];
-                        })->values();
+                    // Remove duplicates and map to desired structure
+                    $product->category_list = $allCategories->unique('id')->map(function ($category) {
+                        return [
+                            'id'   => $category->id,
+                            'name' => $category->name,
+                            'slug'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
+                        ];
+                    })->values();
+
 
                         $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
                         $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
@@ -1634,6 +1574,7 @@ class ProductController extends Controller
 
         $categoryId = $categoryModel->id;
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
+        $allCategoryIds[] = $categoryId; // <-- include parent category
 
         $products = Product::with([
                 'reviews',
@@ -1834,6 +1775,7 @@ class ProductController extends Controller
 
         $categoryId = $categoryModel->id;
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
+        $allCategoryIds[] = $categoryId; // <-- include parent category
 
 
        $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute',  'seoUrl']) // add seoUrl here

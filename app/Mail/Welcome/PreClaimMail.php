@@ -37,8 +37,19 @@ class PreClaimMail extends Mailable
 		$siteTollFreeContact = config('app.website') == 'UAE' ? '800 - HORECA (467-322)':'1-866-4-HORECA (1-866-446-7322)';
 		$siteInternationalContact = config('app.website') == 'UAE' ? '+971 4 224 5818':'';
 
-		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
+		$siteUrl = match (config('app.website')) {
+			'US'  => 'Thehorecastore.com',
+			'UAE'  => 'HorecaStore.ae',
+			'TEST' => 'Thehorecastore.com',
+			default => 'Thehorecastore.com',
+		};
+
+		$siteEmail = match (config('app.website')) {
+			'US'  => 'sales@thehorecastore.com',
+			'UAE'  => 'hello@horecastore.ae',
+			'TEST' => 'test@thehorecastore.co',
+			default => 'test@thehorecastore.co',
+		};
 
 		$params = [
 			'logoUrl' => $logoUrl,

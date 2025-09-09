@@ -566,6 +566,8 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'qa03@thehorecastore.com',
 			'qa04@thehorecastore.com',
 			'qa05@thehorecastore.com',
+			'css01@horecastore.ae',
+			'fm@horecastore.ae',
 		];
 
 		$testMails = [];
@@ -615,7 +617,58 @@ if (!function_exists('order_cc_mails')) {
 			'nomanpeera@horecastore.ae',
 			'imran@horecastore.ae',
 			'hello@horecastore.ae',
-			'dmm@horecastore.ae',
+			'pm@horecastore.ae',
+			'css01@horecastore.ae',
+			'fm@horecastore.ae',
+			'cbfb@horecastore.ae',
+			'inventory@rapid-supplies.com',
+			'procurement@horecastore.ae',
+		];
+
+		$testMails = [];
+
+		$localMails = [
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
+		];
+
+		switch (config('app.website')) {
+			case 'US':
+			$mails = $usMails;
+			break;
+
+			case 'UAE':
+			$mails = $uaeMails;
+			break;
+
+			case 'TEST':
+			$mails = $testMails;
+			break;
+
+			case 'Local':
+			$mails = $localMails;
+			break;
+
+			default:
+			$mails =[];
+			break;
+		}
+		return $mails;
+	}
+}
+
+
+if (!function_exists('quote_cc_mails')) {
+	function quote_cc_mails() {
+		$usMails = [
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
+		];
+
+		$uaeMails = [
+			'css01@horecastore.ae',
+			'css03@horecastore.ae',
+			'css08@horecastore.ae',
 			'pm@horecastore.ae',
 		];
 

@@ -37,8 +37,20 @@ class PreClaimWelcomeMail extends Mailable
 		$loginUrl = url("/login");
 		$rightPngURL = $backendURL. '/right.png';
 		$websiteUrl = url("/");
-		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
+
+		$siteUrl = match (config('app.website')) {
+			'US'  => 'Thehorecastore.com',
+			'UAE'  => 'HorecaStore.ae',
+			'TEST' => 'Thehorecastore.com',
+			default => 'Thehorecastore.com',
+		};
+
+		$siteEmail = match (config('app.website')) {
+			'US'  => 'sales@thehorecastore.com',
+			'UAE'  => 'hello@horecastore.ae',
+			'TEST' => 'test@thehorecastore.co',
+			default => 'test@thehorecastore.co',
+		};
 
 		$params = [
 			'logoUrl' => $logoUrl,

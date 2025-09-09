@@ -127,7 +127,9 @@ use App\Http\Controllers\FrontEnd\GlitchErrorController;
 use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventController;
 use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseClaimController;
 use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseClaimController;
+use App\Http\Controllers\FrontEnd\GetInTouchController as F_GetInTouchController;
 use App\Http\Controllers\FrontEnd\CompareProductController;
+use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -167,11 +169,8 @@ Route::middleware([CaptureUtm::class])->group(function () {
     });
 
 });
-
-
-
-
-
+ 
+Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
 
@@ -268,6 +267,7 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+    Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
     Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
     Route::apiResource('post-purchase-claims', PostPurchaseClaimController::class);
 
@@ -411,9 +411,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
 	Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
 	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
- 
+
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
-	
+
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
 	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
 	Route::get('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);	 
@@ -542,35 +542,34 @@ Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']);
-Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
 
 Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
- 
+
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
 	Route::prefix('customer')->group(function () {
 
 		Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
-        
+
         // Customer coupon application
         Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
 
 		Route::get('check-coupon', [F_CouponController::class, 'checkCustomerCoupon']);
 
         Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
-        
+
         // Customer coupon history
         Route::get('coupon-history', [F_CouponController::class, 'getCustomerCouponHistory']);
-        
+
         // Check if coupon code exists (without applying)
         Route::post('check-coupon', [F_CouponController::class, 'checkCouponCode']);
     });
     Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
     Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
     Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class);
-	
+
     Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
 	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
@@ -778,7 +777,24 @@ Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordi
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
 
 
+Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
+Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
+// Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
 
+Route::get('/frontend/products-1.xml', [SitemapController::class, 'getProductsSitemap1']);
+Route::get('/frontend/products-2.xml', [SitemapController::class, 'getProductsSitemap2']);
+Route::get('/frontend/products-3.xml', [SitemapController::class, 'getProductsSitemap3']);
+Route::get('/frontend/products-4.xml', [SitemapController::class, 'getProductsSitemap4']);
+Route::get('/frontend/products-5.xml', [SitemapController::class, 'getProductsSitemap5']);
+Route::get('/frontend/products-6.xml', [SitemapController::class, 'getProductsSitemap6']);
+Route::get('/frontend/products-7.xml', [SitemapController::class, 'getProductsSitemap7']);
+Route::get('/frontend/products-8.xml', [SitemapController::class, 'getProductsSitemap8']);
+Route::get('/frontend/products-9.xml', [SitemapController::class, 'getProductsSitemap9']);
+Route::get('/frontend/products-10.xml', [SitemapController::class, 'getProductsSitemap10']);
+
+Route::get('/frontend/blog.xml', [SitemapController::class, 'getBlogSitemap']);
+Route::get('/frontend/brand.xml', [SitemapController::class, 'getBrandSitemap']);
+Route::get('/frontend/image.xml', [SitemapController::class, 'getImageSitemap']);
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 

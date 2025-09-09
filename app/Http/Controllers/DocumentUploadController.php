@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use ZipArchive;
 use App\Models\Product;
-use Illuminate\Support\Str;
+use Illuminate\Support\Str; 
 
 class DocumentUploadController extends Controller
 {
@@ -114,7 +114,7 @@ class DocumentUploadController extends Controller
             if ($zip->open($zipFilePath) !== true) {
                 return response()->json(['error' => 'Unable to open the zip file'], 400);
             }
-            
+
             $zip->extractTo($tempPath);
             $zip->close();
 
@@ -134,7 +134,7 @@ class DocumentUploadController extends Controller
             if (File::exists($tempPath)) {
                 File::deleteDirectory($tempPath);
             }
-            
+
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -151,26 +151,26 @@ class DocumentUploadController extends Controller
     private function processExtractedDirectory($extractPath)
     {
         $processedSkus = [];
-        
+
         // Get all directories in the extracted path (each directory represents a SKU)
         $skuDirectories = File::directories($extractPath);
-        
+
         foreach ($skuDirectories as $skuDir) {
             // Get the SKU from the directory name
             $sku = basename($skuDir);
-            
+
             // Find product with this SKU using the existing Product model
             $product = Product::where('sku', $sku)->first();
-            
+
             if ($product) {
                 // Process documents for this product
                 $documentData = $this->uploadProductDocumentsToS3($skuDir, $sku);
-                
+
                 if (!empty($documentData)) {
                     // Update the product record with new document data
                     $product->documents = json_encode($documentData);
                     $product->save();
-                    
+
                     $processedSkus[] = [
                         'sku' => $sku,
                         'status' => 'success',
@@ -189,7 +189,7 @@ class DocumentUploadController extends Controller
                 ];
             }
         }
-        
+
         return $processedSkus;
     }
 
@@ -204,44 +204,44 @@ class DocumentUploadController extends Controller
     // {
     //     $s3Path = 'production/documents/';
     //     $documentData = [];
-        
+
     //     // Get all document files in the SKU directory
     //     $documentFiles = File::files($documentsDir);
-        
+
     //     // Filter for document files only
     //     $documentFiles = array_filter($documentFiles, function($file) {
     //         $extension = strtolower($file->getExtension());
     //         return in_array($extension, ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt']);
     //     });
-        
+
     //     if (empty($documentFiles)) {
     //         return $documentData;
     //     }
-        
+
     //     // Upload each document directly to S3
     //     foreach ($documentFiles as $documentFile) {
     //         // Generate a unique filename to prevent overwriting
     //         $uniqueFileName = Str::random(40) . '.' . $documentFile->getExtension();
     //         $s3FilePath = $s3Path . $uniqueFileName;
-            
+
     //         // Original filename to use as title
     //         $originalFileName = $documentFile->getFilename();
-            
+
     //         // Open file and directly upload to S3
     //         $fileStream = fopen($documentFile->getPathname(), 'r');
     //         Storage::disk('s3')->put($s3FilePath, $fileStream);
     //         fclose($fileStream);
-            
+
     //         // Get the full URL from S3 storage
     //         $documentUrl = Storage::disk('s3')->url($s3FilePath);
-            
+
     //         // Add the document data to the array
     //         $documentData[] = [
     //             'title' => $originalFileName,
     //             'path' => $documentUrl
     //         ];
     //     }
-        
+
     //     return $documentData;
     // }
     private function uploadProductDocumentsToS3($documentsDir, $sku)
@@ -253,7 +253,7 @@ class DocumentUploadController extends Controller
         $documentFiles = File::files($documentsDir);
 
         // Filter for document files only
-        $documentFiles = array_filter($documentFiles, function($file) {
+        $documentFiles = array_filter($documentFiles, function ($file) {
             $extension = strtolower($file->getExtension());
             return in_array($extension, ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt']);
         });
@@ -267,24 +267,40 @@ class DocumentUploadController extends Controller
             // Check file size (2 MB = 2,097,152 bytes)
             if ($documentFile->getSize() > 2097152) {
                 // Skip files larger than 2MB
-                continue;
+                // Generate a unique filename to prevent overwriting
+                $uniqueFileName = Str::random(length: 40) . '.' . $documentFile->getExtension();
+                $s3FilePath = $s3Path . $uniqueFileName;
+                $localInput = $documentFile->getPathname();
+                $originalFileName = $documentFile->getFilename();
+                $compressedLocalPath = $this->compressPdf($localInput, null, 'ebook');
+
+                $fileStream = fopen($compressedLocalPath, 'r');
+
+                //  Storage::disk('s3')->put($s3FilePath, $fileStream, 'public');
+                Storage::disk('s3')->put($s3FilePath, $fileStream, [
+                    'ACL' => 'public-read'
+                ]);
+                fclose($fileStream);
+                $documentUrl = Storage::disk('s3')->url($s3FilePath);
+
+
+            } else {
+
+                // Generate a unique filename to prevent overwriting
+                $uniqueFileName = Str::random(40) . '.' . $documentFile->getExtension();
+                $s3FilePath = $s3Path . $uniqueFileName;
+
+                // Original filename to use as title
+                $originalFileName = $documentFile->getFilename();
+
+                // Open file and directly upload to S3
+                $fileStream = fopen($documentFile->getPathname(), 'r');
+                Storage::disk('s3')->put($s3FilePath, $fileStream);
+                fclose($fileStream);
+
+                // Get the full URL from S3 storage
+                $documentUrl = Storage::disk('s3')->url($s3FilePath);
             }
-
-            // Generate a unique filename to prevent overwriting
-            $uniqueFileName = Str::random(40) . '.' . $documentFile->getExtension();
-            $s3FilePath = $s3Path . $uniqueFileName;
-
-            // Original filename to use as title
-            $originalFileName = $documentFile->getFilename();
-
-            // Open file and directly upload to S3
-            $fileStream = fopen($documentFile->getPathname(), 'r');
-            Storage::disk('s3')->put($s3FilePath, $fileStream);
-            fclose($fileStream);
-
-            // Get the full URL from S3 storage
-            $documentUrl = Storage::disk('s3')->url($s3FilePath);
-
             // Add the document data to the array
             $documentData[] = [
                 'title' => $originalFileName,
@@ -295,7 +311,21 @@ class DocumentUploadController extends Controller
         return $documentData;
     }
 
+    public static function compressPdf($inputPath, $outputPath, $quality = 'ebook')
+    {
+        if (!file_exists($inputPath)) {
+            return "Input file does not exist: $inputPath";
+        }
+        if (!$outputPath) {
+            $outputPath = storage_path('app/temp/compressed_' . uniqid() . '.pdf');
+        }
+        $gs = '"C:\\Program Files\\gs\\gs10.05.1\\bin\\gswin64c.exe"'; // only for use local 
+        $cmd = "$gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/$quality "
+            . "-dNOPAUSE -dBATCH -sOutputFile=\"$outputPath\" \"$inputPath\"";
+        exec($cmd . " 2>&1", $output, $return);
+        return $outputPath;
 
+    }
     /**
      * Upload individual document file to S3
      *
@@ -313,53 +343,53 @@ class DocumentUploadController extends Controller
         try {
             // Get the SKU
             $sku = $request->input('sku');
-            
+
             // Find product with this SKU
             $product = Product::where('sku', $sku)->first();
-            
+
             if (!$product) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Product not found'
                 ], 404);
             }
-            
+
             // Get the uploaded file
             $documentFile = $request->file('document_file');
             $originalFileName = $documentFile->getClientOriginalName();
-            
+
             // Generate a unique filename
             $uniqueFileName = Str::random(40) . '.' . $documentFile->getClientOriginalExtension();
             $s3FilePath = 'production/documents/' . $uniqueFileName;
-            
+
             // Upload the file to S3
             Storage::disk('s3')->put($s3FilePath, file_get_contents($documentFile->getRealPath()));
-            
+
             // Get the full URL from S3 storage
             $documentUrl = Storage::disk('s3')->url($s3FilePath);
-            
+
             // Create document data
             $newDocument = [
                 'title' => $originalFileName,
                 'path' => $documentUrl
             ];
-            
+
             // Get current documents or initialize empty array
             $currentDocuments = $product->documents ? json_decode($product->documents, true) : [];
-            
+
             // Add new document
             $currentDocuments[] = $newDocument;
-            
+
             // Update product with new documents array
             $product->documents = json_encode($currentDocuments);
             $product->save();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Document uploaded successfully',
                 'document' => $newDocument
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -386,20 +416,20 @@ class DocumentUploadController extends Controller
             // Get the SKU and document path
             $sku = $request->input('sku');
             $documentPath = $request->input('document_path');
-            
+
             // Find product with this SKU
             $product = Product::where('sku', $sku)->first();
-            
+
             if (!$product) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Product not found'
                 ], 404);
             }
-            
+
             // Get current documents
             $currentDocuments = $product->documents ? json_decode($product->documents, true) : [];
-            
+
             // Find the index of the document to delete
             $documentIndex = null;
             foreach ($currentDocuments as $index => $document) {
@@ -408,40 +438,40 @@ class DocumentUploadController extends Controller
                     break;
                 }
             }
-            
+
             if ($documentIndex === null) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Document not found'
                 ], 404);
             }
-            
+
             // Extract S3 path from URL
             $s3Path = parse_url($documentPath, PHP_URL_PATH);
             $s3Path = ltrim($s3Path, '/');
-            
+
             // Try to delete the file from S3
             if (Storage::disk('s3')->exists($s3Path)) {
                 Storage::disk('s3')->delete($s3Path);
             }
-            
+
             // Remove document from array
             array_splice($currentDocuments, $documentIndex, 1);
-            
+
             // Update product with new documents array
             $product->documents = json_encode($currentDocuments);
             $product->save();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Document deleted successfully'
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
             ], 500);
         }
-    }
+    } 
 }

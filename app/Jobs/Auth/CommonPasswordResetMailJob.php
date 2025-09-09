@@ -37,6 +37,16 @@ class CommonPasswordResetMailJob implements ShouldQueue
 		}
 
 		if (!empty($customer)) {
+			$fromEmail = match (config('app.website')) {
+				'US'  => 'sales@thehorecastore.com',
+				'UAE'  => 'hello@horecastore.ae',
+				'TEST' => 'test@thehorecastore.co',
+				default => 'test@thehorecastore.co',
+			};
+
+			$fromName = 'Horeca Store';
+			$replyToEmail = $fromEmail;
+
 			$token = Str::random(60);
 			$customer->passwordResetToken()->updateOrCreate([], [
 				'token' => Hash::make($token),
@@ -44,7 +54,14 @@ class CommonPasswordResetMailJob implements ShouldQueue
 			]);
 
 			$to = $customer->email;
-			Mail::to($to)->send(new CommonPasswordResetMail($customer, $token));
+
+			Mail::to($to)->send(
+				(
+					new CommonPasswordResetMail($customer, $token)
+				)
+				->from($fromEmail, $fromName)
+				->replyTo($replyToEmail)
+			);
 		}
 	}
 

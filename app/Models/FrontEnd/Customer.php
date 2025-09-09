@@ -41,8 +41,6 @@ class Customer extends Authenticatable
 		'created_by',
 		'is_social_login',
 		'apple_id',
-		'business_name'
-
 	];
 
 	/**

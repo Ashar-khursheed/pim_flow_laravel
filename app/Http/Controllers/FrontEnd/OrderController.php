@@ -255,7 +255,7 @@ class OrderController extends BaseController
 			$pendingAmount = $totalAmount - $paidAmount;
 
 			/* Get the latest order by ID (most recent) */
-			$latestOrder = Order::orderBy('id', 'desc')->first();
+			$latestOrder = Order::orderBy('order_number', 'desc')->first();
 
 			/* Generate the next order number */
 			if ($latestOrder && is_numeric($latestOrder->order_number)) {
@@ -414,8 +414,9 @@ class OrderController extends BaseController
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
+	
 
-		/* Mutate the data for each order product */
+				/* Mutate the data for each order product */
 		foreach ($order->orderProducts as $orderProduct) {
 			$product = $orderProduct->product;
 			if ($product) {

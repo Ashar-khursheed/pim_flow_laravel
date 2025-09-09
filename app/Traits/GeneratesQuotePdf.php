@@ -40,8 +40,20 @@ trait GeneratesQuotePdf
 		$companyStreet = config('app.website') == 'UAE' ? 'Showroom 01 - Building No 9 19th Street' : '8800 Bissonnet Street, Ste A,';
 		$companyCity = config('app.website') == 'UAE' ? 'Dubai - United Arab Emirates' : 'Houston, Texas 77074';
 		$companyPhone = config('app.website') == 'UAE' ? '(866) 446-7322' : '1 (866) 446-7322';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@thehorecastore.co':'sales@thehorecastore.com';
-		$siteURL = config('app.website') == 'UAE' ? 'www.horecastore.ae':'www.thehorecastore.com';
+
+		$siteUrl = match (config('app.website')) {
+			'US'  => 'Thehorecastore.com',
+			'UAE'  => 'HorecaStore.ae',
+			'TEST' => 'Thehorecastore.com',
+			default => 'Thehorecastore.com',
+		};
+
+		$siteEmail = match (config('app.website')) {
+			'US'  => 'sales@thehorecastore.com',
+			'UAE'  => 'hello@horecastore.ae',
+			'TEST' => 'test@thehorecastore.co',
+			default => 'test@thehorecastore.co',
+		};
 
 		$customerType = $customer->type;
 		$customerBusinessName = $customer->business_name;
@@ -133,7 +145,7 @@ trait GeneratesQuotePdf
 			'companyPhone' => $companyPhone,
 
 			'siteEmail' => $siteEmail,
-			'siteURL' => $siteURL,
+			'siteURL' => $siteUrl,
 
 			'customerType' => $customerType,
 			'customerBusinessName' => $customerBusinessName,

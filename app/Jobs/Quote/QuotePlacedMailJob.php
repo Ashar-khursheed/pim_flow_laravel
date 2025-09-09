@@ -42,9 +42,9 @@ class QuotePlacedMailJob implements ShouldQueue
 		if ($to) {
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'yourquote@thehorecastore.com',
-				'UAE'  => 'yourquote@thehorecastore.co',
-				'TEST' => 'test_yourquote@thehorecastore.com',
-				default => 'yourquote@thehorecastore.com',
+				'UAE'  => 'yourquote@horecastore.ae',
+				'TEST' => 'test@thehorecastore.co',
+				default => 'test@thehorecastore.co',
 			};
 			$fromName = 'Best Price | HorecaStore';
 			$replyToEmail = $fromEmail;
@@ -62,6 +62,19 @@ class QuotePlacedMailJob implements ShouldQueue
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)
 			);
+
+			if (config('app.website') !== 'TEST') {
+				$recipients = quote_cc_mails();
+				$to = array_shift($recipients);
+				$cc = $recipients;
+				Mail::to($to)->cc($cc)->send(
+					(
+						new QuotePlacedMail($quote)
+					)
+					->from($fromEmail, $fromName)
+					->replyTo($replyToEmail)
+				);
+			}
 		}
 	}
 

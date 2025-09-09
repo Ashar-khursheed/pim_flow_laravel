@@ -312,7 +312,7 @@ class OrderController extends Controller
 			$pendingAmount = $totalAmount - $paidAmount;
 
 			/* Get the latest order by ID (most recent) */
-			$latestOrder = Order::orderBy('id', 'desc')->first();
+			$latestOrder = Order::orderBy('order_number', 'desc')->first();
 
 			// Generate the next order number
 			if ($latestOrder && is_numeric($latestOrder->order_number)) {
@@ -562,6 +562,19 @@ class OrderController extends Controller
 			'nofraudResponse',
 			'utm'
 		]);
+
+				if ($order->payments->isEmpty()) {
+    $order->setRelation('payments', collect([
+        (object) [
+            'transaction_id' => null,
+            'amount' => null,
+            'status' => null,
+            'payment_mode' => 'Cash On Delivery',
+            'notes' => null,
+            'created_at' => null,
+        ]
+    ]));
+}
 
 		/* Mutate the data for each order product */
 		$order->created_by = $order->creator->name ?? null;
