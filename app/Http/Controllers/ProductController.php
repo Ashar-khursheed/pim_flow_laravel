@@ -118,103 +118,77 @@ class ProductController extends BaseController
 	 * )
 	 */
 	public function index(Request $request)
-	{
-		if ($request->filled('from_date') && $request->filled('to_date')) {
-			$from = $request->from_date . ' 00:00:00';
-			$to = $request->to_date . ' 23:59:59';
+{
+	if ($request->filled('from_date') && $request->filled('to_date')) {
+		$from = $request->from_date . ' 00:00:00';
+		$to = $request->to_date . ' 23:59:59';
 
-			$records = Product::whereBetween('created_at', [$from, $to])->pluck('id');
-			return response()->json([
-				'success' => true,
-				'message' => __('msg_rec_list'),
-				'data' => $records,
-			]);
-		}
+		$records = Product::whereBetween('created_at', [$from, $to])->pluck('id');
+		return response()->json([
+			'success' => true,
+			'message' => __('msg_rec_list'),
+			'data' => $records,
+		]);
+	}
 
-		$perPage = $request->input('per_page', 50);
-		$search = $request->input('search');
-		$status = $request->input('status');
-		$approved = $request->input('approved');
-		$sortBy = $request->input('sort_by', 'id');
-		$sortDirection = $request->input('sort_direction', 'desc');
+	$perPage = $request->input('per_page', 50);
+	$search = $request->input('search');
+	$status = $request->input('status');
+	$approved = $request->input('approved');
+	$sortBy = $request->input('sort_by', 'id');
+	$sortDirection = $request->input('sort_direction', 'desc');
 
-		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
-		if (!in_array($sortBy, $allowedSortColumns)) {
-			$sortBy = 'id'; // Default to id if invalid column
-		}
+	// Validate sort columns to prevent SQL injection
+	$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
+	if (!in_array($sortBy, $allowedSortColumns)) {
+		$sortBy = 'id'; // Default to id if invalid column
+	}
 
-		// Validate sort direction
-		if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
-			$sortDirection = 'desc'; // Default to descending if invalid direction
-		}
+	// Validate sort direction
+	if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+		$sortDirection = 'desc'; // Default to descending if invalid direction
+	}
 
-		$query = Product::with([
-			'brand:id,name',
-			'categories:id,name',
-			'slug:id,key,reference_id',
-			'productSuppliers',
-			'vendors'
-		])
-			->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
+	$query = Product::with([
+		'brand:id,name',
+		'categories:id,name',
+		'slug:id,key,reference_id',
+		'productSuppliers.vendor:id,name', // Updated to include vendor relationship
+		'vendors:id,name' // Make sure to select the name field
+	])
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
 
-		/* Apply search if provided */
+	/* Apply search if provided */
 
-		// Apply status filter
-		if ($status !== null) {
-			$query->where('status', $status);
-		}
-		if ($approved !== null) {
-			$query->where('approved', $approved);
-		}
+	// Apply status filter
+	if ($status !== null) {
+		$query->where('status', $status);
+	}
+	if ($approved !== null) {
+		$query->where('approved', $approved);
+	}
 
+	if ($search) {
+		$query->where(function ($q) use ($search) {
+			$q->where('name', 'like', "%{$search}%")
+				->orWhere('sku', 'like', "%{$search}%")
+				->orWhereHas('brand', function ($brandQuery) use ($search) {
+					$brandQuery->where('name', 'like', "%{$search}%");
+				})
+				->orWhereHas('categories', function ($categoryQuery) use ($search) {
+					$categoryQuery->where('name', 'like', "%{$search}%");
+				});
+		});
+	}
 
-		if ($search) {
-			$query->where(function ($q) use ($search) {
-				$q->where('name', 'like', "%{$search}%")
-					->orWhere('sku', 'like', "%{$search}%")
-					->orWhereHas('brand', function ($brandQuery) use ($search) {
-						$brandQuery->where('name', 'like', "%{$search}%");
-					})
+	$products = $query->orderBy($sortBy, $sortDirection)
+		->paginate($perPage);
 
-					->orWhereHas('categories', function ($categoryQuery) use ($search) {
-						$categoryQuery->where('name', 'like', "%{$search}%");
-					});
-			});
-		}
+	/* Formatting response */
+	$formattedProducts = $products->map(function ($product) {
+		$firstSupplier = $product->productSuppliers->first();
 
-		$products = $query->orderBy($sortBy, $sortDirection)
-			->paginate($perPage);
-
-
-		/* Formatting response */
-		$formattedProducts = $products->map(function ($product) {
-			$firstSupplier = $product->productSuppliers->first();
-
-			if (!$firstSupplier) {
-				return [
-					'id' => $product->id,
-					'name' => $product->name,
-					'gen_type' => $product->gen_type,
-					'approved' => $product->approved,
-					'sku' => $product->sku,
-					'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-					'brand' => optional($product->brand)->name,
-					'status' => $product->status,
-					'price' => null,
-					'sale_price' => null,
-					'margin' => null,
-					'margin_percent' => null,
-					'product_family' => $product->categories->pluck('name')->toArray(),
-					'taxonomy_path' => optional($product->slug)->key ?? '',
-				];
-			}
-
-			$margin = $firstSupplier->sale_price - $firstSupplier->price;
-			$marginPercent = $firstSupplier->sale_price > 0
-				? ($margin / $firstSupplier->sale_price) * 100
-				: 0;
-
+		if (!$firstSupplier) {
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
@@ -224,31 +198,55 @@ class ProductController extends BaseController
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
 				'status' => $product->status,
-				'price' => $firstSupplier->price,
-				'sale_price' => $firstSupplier->sale_price,
-				'vendor_id' => $firstSupplier->vendor_id,
-				'margin' => $margin,
-				'margin_percent' => round($marginPercent, 2),
+				'price' => null,
+				'sale_price' => null,
+				'margin' => null,
+				'margin_percent' => null,
+				'vendor_name' => null, // Added vendor_name field
 				'product_family' => $product->categories->pluck('name')->toArray(),
 				'taxonomy_path' => optional($product->slug)->key ?? '',
 			];
-		});
+		}
 
+		$margin = $firstSupplier->sale_price - $firstSupplier->price;
+		$marginPercent = $firstSupplier->sale_price > 0
+			? ($margin / $firstSupplier->sale_price) * 100
+			: 0;
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Products retrieved successfully',
-			'data' => $formattedProducts,
-			'pagination' => [
-				'total' => $products->total(),
-				'per_page' => $products->perPage(),
-				'current_page' => $products->currentPage(),
-				'last_page' => $products->lastPage(),
-				'next_page_url' => $products->nextPageUrl(),
-				'prev_page_url' => $products->previousPageUrl(),
-			],
-		]);
-	}
+		return [
+			'id' => $product->id,
+			'name' => $product->name,
+			'gen_type' => $product->gen_type,
+			'approved' => $product->approved,
+			'sku' => $product->sku,
+			'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+			'brand' => optional($product->brand)->name,
+			'status' => $product->status,
+			'price' => $firstSupplier->price,
+			'sale_price' => $firstSupplier->sale_price,
+			'vendor_id' => $firstSupplier->vendor_id,
+			'vendor_name' => $product->vendors->pluck('name')->first(), // Get first vendor name from vendors relationship
+			'margin' => $margin,
+			'margin_percent' => round($marginPercent, 2),
+			'product_family' => $product->categories->pluck('name')->toArray(),
+			'taxonomy_path' => optional($product->slug)->key ?? '',
+		];
+	});
+
+	return response()->json([
+		'success' => true,
+		'message' => 'Products retrieved successfully',
+		'data' => $formattedProducts,
+		'pagination' => [
+			'total' => $products->total(),
+			'per_page' => $products->perPage(),
+			'current_page' => $products->currentPage(),
+			'last_page' => $products->lastPage(),
+			'next_page_url' => $products->nextPageUrl(),
+			'prev_page_url' => $products->previousPageUrl(),
+		],
+	]);
+}
 
 	/**
 	 * @OA\Post(

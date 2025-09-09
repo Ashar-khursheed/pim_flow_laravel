@@ -545,18 +545,23 @@ class AbandonedCartController extends Controller
                 $query->with([
                     'product' => function($q) {
                         $q->select('id', 'sku', 'name', 'images', 'brand_id')
-                          ->with([
-                              'brand:id,name',
-                              'productSuppliers:id,product_id,price,sale_price,vendor_id'
-                          ]);
+                        ->with([
+                            'brand:id,name',
+                            'productSuppliers' => function($ps) {
+                                $ps->select('id','product_id','price','sale_price','vendor_id')
+                                    ->with([
+                                        'vendor:id,name'
+                                    ]);
+                            },
+                        ]);
                     },
-                    'vendor:id,name'
                 ]);
             }
         ])
         ->where('created_at', '<=', $threshold)
         ->where('customer_id', $customerId)
         ->get();
+
 
         if ($abandonedCarts->isEmpty()) {
             return response()->json([
