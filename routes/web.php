@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\SeoController;
 
 
-Route::get('/{any}', [SeoController::class, 'renderWithSeo'])
-    ->where('any', '.*');
+// Route::get('/{any}', [SeoController::class, 'renderWithSeo'])
+//     ->where('any', '.*');
 
 Route::get('/media/{filename}', function ($filename) {
     $path = "production/documents/{$filename}";

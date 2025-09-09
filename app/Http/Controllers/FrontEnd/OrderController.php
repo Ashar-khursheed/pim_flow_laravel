@@ -414,8 +414,9 @@ class OrderController extends BaseController
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
+	
 
-		/* Mutate the data for each order product */
+				/* Mutate the data for each order product */
 		foreach ($order->orderProducts as $orderProduct) {
 			$product = $orderProduct->product;
 			if ($product) {

@@ -42,8 +42,8 @@ class Brand extends Model
     public function seoUrl()
     {
         return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
-                    ->where('relational_type', 'Brand');
+        ->select(['id', 'url', 'relational_id']) 
+        ->whereNotNull('url')
+        ->where('relational_type', 'Brand');
     }
-
-
 }
