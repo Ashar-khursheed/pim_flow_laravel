@@ -14,11 +14,20 @@ class AnalyticsController extends Controller
     private $ga;
     private $propertyId;
 
-    public function __construct()
-    {
-        $this->ga = new GoogleAnalytics();
-        $this->propertyId = "441790093"; // Your GA4 property ID
-    }
+   public function __construct()
+{
+    $this->ga = new GoogleAnalytics();
+
+    $website = env('APP_WEBSITE', 'US'); // default US if not set
+
+    $propertyMap = [
+        'US'  => '441790093',
+        'UAE' => '378369671',
+    ];
+
+    $this->propertyId = $propertyMap[$website] ?? $propertyMap['US'];
+}
+
 
     /**
      * @OA\Get(
