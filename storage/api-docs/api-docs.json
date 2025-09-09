@@ -298,7 +298,7 @@
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Cart ID",
+                        "description": "Customer ID",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -8339,7 +8339,9 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "unit_price",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -8353,6 +8355,16 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 199.99
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -22179,7 +22191,7 @@
                 ],
                 "summary": "Get products.xml",
                 "description": "Returns the XML sitemap containing public URLs of the website.",
-                "operationId": "8a4b35836832c6da804d9d35b554f2c3",
+                "operationId": "1e4d462adaad8731bb1bbbe38a5cb9c1",
                 "responses": {
                     "200": {
                         "description": "Sitemap XML generated successfully",
