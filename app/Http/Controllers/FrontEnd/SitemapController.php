@@ -11,38 +11,17 @@ use App\Models\Brand;
 use Carbon\Carbon;
 class SitemapController extends Controller
 {
-    /**
-     * Get XML Sitemap.
-     *
-     * @OA\Get(
-     *     path="/api/frontend/sitemap.xml",
-     *     summary="Get sitemap.xml",
-     *     description="Returns the XML sitemap containing public URLs of the website.",
-     *     tags={"Sitemap"},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Sitemap XML generated successfully",
-     *         @OA\MediaType(
-     *             mediaType="application/xml",
-     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Server error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
-     *         )
-     *     )
-     * )
-     */
-    public function getSitemap()
+    private $baseUrl = 'https://www.horecastore.ae';
+
+
+    private function buildXml()
     {
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
         $now = Carbon::now()->toAtomString();
         $sitemaps = [
             [
-                'loc' => url('https://www.horecastore.ae/'),
+                'loc' => '/',
                 'lastmod' => $now,
                 'changefreq' => 'daily',
                 'priority' => '1.0',
@@ -152,12 +131,183 @@ class SitemapController extends Controller
                 'priority' => '0.5',
             ],
         ];
-        return response()->json([
-            'status' => true,
-            'data' => $sitemaps
-        ]);
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+
+            $xml .= '<loc>' . $this->baseUrl . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+    }
+
+    /**
+     * Get XML Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/sitemap.xml",
+     *     summary="Get sitemap.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+    public function getSitemap()
+    {
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        $now = Carbon::now()->toAtomString();
+        $sitemaps = [
+            [
+                'loc' => '/',
+                'lastmod' => $now,
+                'changefreq' => 'daily',
+                'priority' => '1.0',
+            ],
+            [
+                'loc' => 'pages/about-us',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/contact-us',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'sell-on-horeca',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/return-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/shipping-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/cancellation-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/payment-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/vendor-supplier-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/privacy-policy',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/terms-conditions',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages/extended-warranty',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'blog',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'categories.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+
+                'loc' => 'products.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'blog.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'brand.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+
+                'loc' => 'images.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+        ];
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+
+              $loc = ltrim($sitemap['loc'], '/');
+              $xml .= '<loc>' . rtrim($this->baseUrl, '/') . '/' . htmlspecialchars($loc) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+
+
 
     }
+
     /**
      * Get XML categories Sitemap.
      *
@@ -225,12 +375,26 @@ class SitemapController extends Controller
                 ];
             });
         $sitemaps = $mainCategories->merge($subCategories);
-        return response()->json([
-            'status' => true,
-            'data' => $sitemaps
-        ]);
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+
+            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+
 
     }
+
+
     /**
      * Get XML product Sitemap.
      *
@@ -257,34 +421,51 @@ class SitemapController extends Controller
      *     )
      * )
      */
-    public function getProductsSitemap()
-    {
-        $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
-            ->whereHas('seoProductUrl', function ($q) {
-                $q->whereNotNull('url');
-            })
+   public function getProductsSitemap1() { return $this->generateProductsSitemap(0, 1000); }
+public function getProductsSitemap2() { return $this->generateProductsSitemap(1000, 1000); }
+public function getProductsSitemap3() { return $this->generateProductsSitemap(2000, 1000); }
+public function getProductsSitemap4() { return $this->generateProductsSitemap(3000, 1000); }
+public function getProductsSitemap5() { return $this->generateProductsSitemap(4000, 1000); }
+public function getProductsSitemap6() { return $this->generateProductsSitemap(5000, 1000); }
+public function getProductsSitemap7() { return $this->generateProductsSitemap(6000, 1000); }
+public function getProductsSitemap8() { return $this->generateProductsSitemap(7000, 1000); }
+public function getProductsSitemap9() { return $this->generateProductsSitemap(8000, 1000); }
+public function getProductsSitemap10() { return $this->generateProductsSitemap(9000, 1000); }
 
-            ->where('status', 'published')
-            ->get(['id', 'name', 'updated_at'])
-            ->map(function ($product) {
-                return [
-                    'loc' => $product->parent_category_url() . '/' .
-                        $product->category_url() . '/' .
-                        ($product->seoProductUrl->url ?? ""),
-                    'lastmod' => $product->updated_at
-                        ? $product->updated_at->toAtomString()
-                        : now()->toAtomString(),
-                    'changefreq' => 'weekly',
-                    'priority' => '0.8',
-                ];
-            });
-
-        return response()->json([
-            'status' => true,
-            'data' => $sitemaps
+private function generateProductsSitemap($offset, $limit)
+{
+    $sitemaps = Product::with('seoProductUrl:id,relational_id,relational_type,url')
+        ->whereHas('seoProductUrl', fn($q) => $q->whereNotNull('url'))
+        ->where('status', 'published')
+        ->offset($offset)
+        ->limit($limit)
+        ->get(['id', 'name', 'updated_at'])
+        ->map(fn($product) => [
+            'loc' => $product->parent_category_url() . '/' .
+                     $product->category_url() . '/' .
+                     ($product->seoProductUrl->url ?? ""),
+            'lastmod' => $product->updated_at ? $product->updated_at->toAtomString() : now()->toAtomString(),
+            'changefreq' => 'weekly',
+            'priority' => '0.8',
         ]);
 
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+    foreach ($sitemaps as $sitemap) {
+        $xml .= '<url>';
+        $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+        $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+        $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+        $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+        $xml .= '</url>';
     }
+
+    $xml .= '</urlset>';
+
+    return response($xml, 200)->header('Content-Type', 'application/xml');
+}
+
 
     /**
      * Get XML product Sitemap.
@@ -327,13 +508,24 @@ class SitemapController extends Controller
                     'priority' => '0.8',
                 ];
             });
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
-        return response()->json([
-            'status' => true,
-            'data' => $sitemaps
-        ]);
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
 
     }
+
 
     /**
      * Get XML product Sitemap.
@@ -381,12 +573,26 @@ class SitemapController extends Controller
                 ];
             });
 
-        return response()->json([
-            'status' => true,
-            'data' => $sitemaps
-        ]);
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+            $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+
 
     }
+
     /**
      * Get XML Image Sitemap.
      *
@@ -418,6 +624,7 @@ class SitemapController extends Controller
         $sitemaps = Product::select(['id', 'name', 'images', 'updated_at'])
             ->whereNotNull('images')
             ->where('status', 'published')
+            ->limit(20)
             ->get()
             ->map(function ($product) {
                 $images = collect(json_decode($product->images, true))
@@ -425,7 +632,6 @@ class SitemapController extends Controller
                         return !empty($image);
                     })
                     ->values();
-
                 return [
                     'loc' => $images,
                     'lastmod' => $product->updated_at
@@ -435,9 +641,42 @@ class SitemapController extends Controller
                     'priority' => '0.8',
                 ];
             });
-        return response()->json([
-            'status' => true,
-            'data' => $sitemaps
-        ]);
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+        foreach ($sitemaps as $sitemap) {
+            $loc = $sitemap['loc'];
+
+            $loc = json_decode($loc, true);
+
+            if (is_array($loc)) {
+
+
+                foreach ($loc as $imgSlug) {
+                    $xml .= '<url>';
+                    $xml .= '<loc>' . htmlspecialchars($imgSlug) . '</loc>';
+                    $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                    $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                    $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                    $xml .= '</url>';
+                }
+            } else {
+
+                $xml .= '<url>';
+                $xml .= '<loc>' . htmlspecialchars($sitemap['loc']) . '</loc>';
+                $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+                $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+                $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+                $xml .= '</url>';
+            }
+        }
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+
+
     }
+
+
 }

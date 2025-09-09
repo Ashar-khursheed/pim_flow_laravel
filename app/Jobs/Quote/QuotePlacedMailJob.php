@@ -62,6 +62,19 @@ class QuotePlacedMailJob implements ShouldQueue
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)
 			);
+
+			if (config('app.website') !== 'TEST') {
+				$recipients = quote_cc_mails();
+				$to = array_shift($recipients);
+				$cc = $recipients;
+				Mail::to($to)->cc($cc)->send(
+					(
+						new QuotePlacedMail($quote)
+					)
+					->from($fromEmail, $fromName)
+					->replyTo($replyToEmail)
+				);
+			}
 		}
 	}
 

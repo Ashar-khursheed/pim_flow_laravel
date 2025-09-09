@@ -414,18 +414,7 @@ class OrderController extends BaseController
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
-			if ($order->payments->isEmpty()) {
-    $order->setRelation('payments', collect([
-        (object) [
-            'transaction_id' => null,
-            'amount' => null,
-            'status' => null,
-            'payment_mode' => 'Cash On Delivery',
-            'notes' => null,
-            'created_at' => null,
-        ]
-    ]));
-}
+	
 
 				/* Mutate the data for each order product */
 		foreach ($order->orderProducts as $orderProduct) {
