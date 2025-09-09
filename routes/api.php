@@ -415,10 +415,12 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
 
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
-	Route::get('/product-report-export', [ProductReportController::class, 'index']);
-	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
-	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
+	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
+	Route::get('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);	 
 
+	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
+	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);	 
+ 
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
