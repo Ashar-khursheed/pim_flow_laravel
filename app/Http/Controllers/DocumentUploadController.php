@@ -235,14 +235,15 @@ class DocumentUploadController extends Controller
                 }
             }
 
-            // Final size check - allow up to 25MB after compression
+            // Final size check - allow up to 5MB after compression (relaxed from 25MB)
             $finalFileSize = filesize($fileToUpload);
             $finalFileSizeMB = round($finalFileSize / 1048576, 2);
             
-            if ($finalFileSize > 26214400) { // 25MB
+            if ($finalFileSize > 5242880) { // 5MB
                 \Log::warning("File still too large after compression", [
                     'file' => $originalFileName,
-                    'final_size_mb' => $finalFileSizeMB
+                    'final_size_mb' => $finalFileSizeMB,
+                    'note' => 'Consider manual compression or file optimization'
                 ]);
                 return ['success' => false, 'reason' => 'file_too_large_after_compression'];
             }
