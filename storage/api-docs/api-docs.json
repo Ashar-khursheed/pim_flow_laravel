@@ -9403,7 +9403,7 @@
                             "schema": {
                                 "properties": {
                                     "zip_file": {
-                                        "description": "ZIP file containing product documents organized in folders by SKU",
+                                        "description": "ZIP file containing product documents organized in folders by SKU (max 500MB)",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -9445,6 +9445,11 @@
                                                         "description": "Number of documents processed for this SKU",
                                                         "type": "integer",
                                                         "example": 5
+                                                    },
+                                                    "compressed_count": {
+                                                        "description": "Number of PDFs that were compressed",
+                                                        "type": "integer",
+                                                        "example": 2
                                                     }
                                                 },
                                                 "type": "object"
@@ -9526,6 +9531,201 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/product/upload-single-document": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Upload single product document",
+                "description": "Upload a single document file for a specific product SKU with automatic PDF compression",
+                "operationId": "06742d1aa78042d77ab230c1af945239",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "document_file": {
+                                        "description": "Document file (PDF, DOC, DOCX, XLS, XLSX, TXT) - max 10MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "sku": {
+                                        "description": "Product SKU",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Document uploaded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Document uploaded successfully"
+                                        },
+                                        "document": {
+                                            "properties": {
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "manual.pdf"
+                                                },
+                                                "path": {
+                                                    "type": "string",
+                                                    "example": "https://s3.amazonaws.com/bucket/path/file.pdf"
+                                                },
+                                                "compressed": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "size_mb": {
+                                                    "type": "number",
+                                                    "example": 1.5
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "compressed": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product/delete-document": {
+            "delete": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Delete product document",
+                "description": "Delete a specific document from a product and remove it from S3 storage",
+                "operationId": "ce9c2fb20f0b77f67b05841ffab529ed",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "sku": {
+                                        "description": "Product SKU",
+                                        "type": "string"
+                                    },
+                                    "document_path": {
+                                        "description": "Full S3 URL of the document to delete",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Document deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Document deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/test-ghostscript": {
+            "get": {
+                "tags": [
+                    "System"
+                ],
+                "summary": "Test Ghostscript configuration",
+                "description": "Check if Ghostscript is properly installed and configured for PDF compression",
+                "operationId": "4e48d6faee8cd22257885c5af942cd2a",
+                "responses": {
+                    "200": {
+                        "description": "System configuration status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "ghostscript_status": {
+                                            "properties": {
+                                                "available": {
+                                                    "type": "boolean"
+                                                },
+                                                "path": {
+                                                    "type": "string"
+                                                },
+                                                "version": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "php_info": {
+                                            "properties": {
+                                                "max_execution_time": {
+                                                    "type": "string"
+                                                },
+                                                "memory_limit": {
+                                                    "type": "string"
+                                                },
+                                                "upload_max_filesize": {
+                                                    "type": "string"
+                                                },
+                                                "post_max_size": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/faq-categories": {
@@ -37966,6 +38166,10 @@
         {
             "name": "Dashboard",
             "description": "Dashboard"
+        },
+        {
+            "name": "System",
+            "description": "System"
         },
         {
             "name": "FAQ Categories",
