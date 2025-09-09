@@ -16300,6 +16300,124 @@
                 }
             }
         },
+        "/api/frontend/products/filters": {
+            "post": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Get Attribute List",
+                "description": "Fetch products with dynamic attribute filters",
+                "operationId": "a9e07523fb703ad95e3006706b321c98",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "description": "ID of the product category",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "page": {
+                                        "description": "Page number for pagination",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "length": {
+                                        "description": "Number of records per page",
+                                        "type": "integer",
+                                        "example": 20
+                                    },
+                                    "price_min": {
+                                        "description": "Minimum price",
+                                        "type": "number",
+                                        "example": 100
+                                    },
+                                    "price_max": {
+                                        "description": "Maximum price",
+                                        "type": "number",
+                                        "example": 1000
+                                    },
+                                    "sort_by": {
+                                        "description": "Sort field",
+                                        "type": "string",
+                                        "enum": [
+                                            "id",
+                                            "price",
+                                            "created_at"
+                                        ],
+                                        "example": "price"
+                                    },
+                                    "sort_dir": {
+                                        "description": "Sort direction",
+                                        "type": "string",
+                                        "enum": [
+                                            "asc",
+                                            "desc"
+                                        ],
+                                        "example": "asc"
+                                    },
+                                    "filters": {
+                                        "description": "Dynamic attribute filters",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "specification_name": {
+                                                    "type": "string",
+                                                    "example": "Color"
+                                                },
+                                                "specification_value": {
+                                                    "oneOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "example": "Red"
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string",
+                                                                "example": "Red"
+                                                            }
+                                                        },
+                                                        {
+                                                            "properties": {
+                                                                "min": {
+                                                                    "type": "number",
+                                                                    "example": 10
+                                                                },
+                                                                "max": {
+                                                                    "type": "number",
+                                                                    "example": 100
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/location-info": {
             "get": {
                 "tags": [
