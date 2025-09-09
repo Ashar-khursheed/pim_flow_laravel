@@ -463,7 +463,7 @@ class ProductController extends Controller
                         return [
                             'id'   => $category->id,
                             'name' => $category->name,
-                            'url'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
+                            'slug'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
                         ];
                     })->values();
 
@@ -875,7 +875,7 @@ class ProductController extends Controller
                         return [
                             'id'   => $category->id,
                             'name' => $category->name,
-                            'url'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
+                            'slug'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
                         ];
                     })->values();
 
