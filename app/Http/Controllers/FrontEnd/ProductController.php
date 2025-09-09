@@ -875,7 +875,7 @@ class ProductController extends Controller
                         return [
                             'id'   => $category->id,
                             'name' => $category->name,
-                            'slug'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
+                            'url'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
                         ];
                     })->values();
 
