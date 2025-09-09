@@ -286,6 +286,19 @@ class DocumentUploadController extends Controller
                     }
                 }
 
+                // After compression, check final file size
+                $finalFileSize = filesize($fileToUpload);
+                $finalFileSizeMB = round($finalFileSize / 1048576, 2);
+                
+                // Skip if still too large after compression (15MB limit)
+                if ($finalFileSize > 15728640) { // 15MB
+                    \Log::warning("File too large even after compression", [
+                        'file' => $originalFileName,
+                        'final_size_mb' => $finalFileSizeMB
+                    ]);
+                    continue;
+                }
+
                 // Generate a unique filename to prevent overwriting
                 $uniqueFileName = Str::random(40) . '.' . pathinfo($originalFileName, PATHINFO_EXTENSION);
                 $s3FilePath = $s3Path . $uniqueFileName;
