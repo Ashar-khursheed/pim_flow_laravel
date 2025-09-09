@@ -844,40 +844,42 @@ class ProductController extends Controller
                        // Get all categories including parent hierarchies
                         $allCategories = collect();
 
-                        $product->categories->each(function ($category) use ($allCategories) {
-                            // Function to recursively get parent categories
-                            $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
-                                $parents = collect();
-                                if ($cat->parent_id) {
-                                    // Get parent category - adjust model name if needed
-                                    $parent = Category::with('slug')->find($cat->parent_id);
-                                    if ($parent) {
-                                        // Recursively get parent's hierarchy
-                                        $parents = $parents->merge($getParentHierarchy($parent));
-                                        $parents->push($parent);
-                                    }
+
+                      $product->categories->each(function ($category) use ($allCategories) {
+                        // Recursive closure to get parent hierarchy
+                        $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
+                            $parents = collect();
+                            if ($cat->parent_id) {
+                                // Eager load seoUrl for parent
+                                $parent = Category::with('seoUrl')->find($cat->parent_id);
+                                if ($parent) {
+                                    // Recursively get parent's hierarchy
+                                    $parents = $parents->merge($getParentHierarchy($parent));
+                                    $parents->push($parent);
                                 }
-                                return $parents;
-                            };
+                            }
+                            return $parents;
+                        };
 
-                            // Get all parent categories
-                            $parentHierarchy = $getParentHierarchy($category);
+                        // Get all parent categories
+                        $parentHierarchy = $getParentHierarchy($category);
 
-                            // Add parents to collection
-                            $allCategories->push(...$parentHierarchy);
+                        // Add parents to collection
+                        $allCategories->push(...$parentHierarchy);
 
-                            // Add current category
-                            $allCategories->push($category);
-                        });
+                        // Add current category
+                        $allCategories->push($category);
+                    });
 
-                        // Remove duplicates and map to desired structure
-                        $product->category_list = $allCategories->unique('id')->map(function ($category) {
-                            return [
-                                'id'   => $category->id,
-                                'name' => $category->name,
-                                'slug'  => optional($category->seoUrl)->url ?? null, // use relation instead of slug
-                            ];
-                        })->values();
+                    // Remove duplicates and map to desired structure
+                    $product->category_list = $allCategories->unique('id')->map(function ($category) {
+                        return [
+                            'id'   => $category->id,
+                            'name' => $category->name,
+                            'url'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
+                        ];
+                    })->values();
+
 
                         $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
                         $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
