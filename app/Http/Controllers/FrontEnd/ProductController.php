@@ -432,14 +432,13 @@ class ProductController extends Controller
                     // });
                     // Get all categories including parent hierarchies
                     $allCategories = collect();
-
                     $product->categories->each(function ($category) use ($allCategories) {
-                        // Function to recursively get parent categories
+                        // Recursive closure to get parent hierarchy
                         $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
                             $parents = collect();
                             if ($cat->parent_id) {
-                                // Get parent category - adjust model name if needed
-                                $parent = Category::with('slug')->find($cat->parent_id);
+                                // Eager load seoUrl for parent
+                                $parent = Category::with('seoUrl')->find($cat->parent_id);
                                 if ($parent) {
                                     // Recursively get parent's hierarchy
                                     $parents = $parents->merge($getParentHierarchy($parent));
@@ -460,13 +459,13 @@ class ProductController extends Controller
                     });
 
                     // Remove duplicates and map to desired structure
-                  $product->category_list = $allCategories->unique('id')->map(function ($category) {
-                    return [
-                        'id'   => $category->id,
-                        'name' => $category->name,
-                        'slug'  => optional($category->seoUrl)->url ?? null, // use relation instead of slug
-                    ];
-                })->values();
+                    $product->category_list = $allCategories->unique('id')->map(function ($category) {
+                        return [
+                            'id'   => $category->id,
+                            'name' => $category->name,
+                            'url'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
+                        ];
+                    })->values();
 
                         // 👉 Add this
                     $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
@@ -876,7 +875,7 @@ class ProductController extends Controller
                         return [
                             'id'   => $category->id,
                             'name' => $category->name,
-                            'url'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
+                            'slug'  => optional($category->seoUrl)->url ?? $category->slug, // fallback if SEO URL missing
                         ];
                     })->values();
 
