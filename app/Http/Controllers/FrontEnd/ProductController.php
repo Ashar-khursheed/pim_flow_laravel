@@ -270,68 +270,6 @@ class ProductController extends Controller
                             return  $alt_tags;
                         });
 
-                        // Custom sorting for documents
-                         // Custom sorting for documents
-                        //  $desiredOrder = [
-                        //     'Technical Specification Sheet',
-                        //     'Warranty Information',
-                        //     'Horeca Buying Guide',
-                        //     'Setup & Usage Instructions',
-                        //     'Product Installation Guide',
-                        //     'Installation & Elevation Diagram',
-                        //     'Spare Parts List',
-                        //     'Product Brochure',
-                        // ];
-
-                        // $documents = json_decode($product->documents, true);
-                        // if (is_array($documents)) {
-                        //     // Remove .pdf extension from titles
-                        //     foreach ($documents as &$doc) {
-                        //         $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
-                        //     }
-
-                        //     // Sort documents by desired order
-                        //     usort($documents, function ($a, $b) use ($desiredOrder) {
-                        //         $posA = array_search($a['title'], $desiredOrder);
-                        //         $posB = array_search($b['title'], $desiredOrder);
-                        //         $posA = $posA === false ? PHP_INT_MAX : $posA;
-                        //         $posB = $posB === false ? PHP_INT_MAX : $posB;
-                        //         return $posA <=> $posB;
-                        //     });
-
-                        //     $product->documents = $documents;
-                        // } else {
-                        //     $product->documents = [];
-                        // }
-
-
-                        // $documents = $product->documents;
-
-                        // // If $documents is already an array, skip decoding
-                        // if (is_string($documents)) {
-                        //     $documents = json_decode($documents, true);
-                        // }
-
-                        // // Proceed if it's a valid array
-                        // if (is_array($documents)) {
-                        //     // Remove .pdf extension from titles
-                        //     foreach ($documents as &$doc) {
-                        //         if (isset($doc['title'])) {
-                        //             $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
-                        //         }
-                        //     }
-                        //     // Sort documents based on desired order
-                        //     usort($documents, function ($a, $b) use ($desiredOrder) {
-                        //         $posA = array_search($a['title'], $desiredOrder);
-                        //         $posB = array_search($b['title'], $desiredOrder);
-                        //         $posA = $posA === false ? PHP_INT_MAX : $posA;
-                        //         $posB = $posB === false ? PHP_INT_MAX : $posB;
-                        //         return $posA <=> $posB;
-                        //     });
-
-                        //     // Save back to product
-                        //     $product->documents = $documents;
-                        // }
               $desiredOrder = [
                     'Technical Specification Sheet',
                     'Warranty Information',
@@ -522,13 +460,14 @@ class ProductController extends Controller
                     });
 
                     // Remove duplicates and map to desired structure
-                    $product->category_list = $allCategories->unique('id')->map(function ($category) {
-                        return [
-                            'id' => $category->id,
-                            'name' => $category->name,
-                            'slug' => $category->slug,
-                        ];
-                    })->values();
+                  $product->category_list = $allCategories->unique('id')->map(function ($category) {
+                    return [
+                        'id'   => $category->id,
+                        'name' => $category->name,
+                        'slug'  => optional($category->seoUrl)->url ?? null, // use relation instead of slug
+                    ];
+                })->values();
+
                         // 👉 Add this
                     $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
                     $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
@@ -934,9 +873,9 @@ class ProductController extends Controller
                         // Remove duplicates and map to desired structure
                         $product->category_list = $allCategories->unique('id')->map(function ($category) {
                             return [
-                                'id' => $category->id,
+                                'id'   => $category->id,
                                 'name' => $category->name,
-                                'slug' => $category->slug,
+                                'slug'  => optional($category->seoUrl)->url ?? null, // use relation instead of slug
                             ];
                         })->values();
 
