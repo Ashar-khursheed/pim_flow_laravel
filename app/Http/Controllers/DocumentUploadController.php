@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 use ZipArchive;
 use App\Models\Product;
 use Illuminate\Support\Str;
+use App\Helpers\PdfHelper;
 
 class DocumentUploadController extends Controller
 {
@@ -444,4 +445,14 @@ class DocumentUploadController extends Controller
             ], 500);
         }
     }
+
+ public function compress()
+{
+    $input  = storage_path('app/public/sample.pdf');
+    $output = storage_path('app/public/sample_compressed.pdf');
+
+    $result = \App\Helpers\PdfHelper::compressPdf($input, $output, 'ebook');
+
+    return response()->json($result);
+}
 }

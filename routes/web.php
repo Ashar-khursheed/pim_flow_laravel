@@ -11,7 +11,7 @@ use App\Models\Category;
 use App\Models\Blog;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\SeoController;
-
+use App\Http\Controllers\DocumentUploadController;
 
 // Route::get('/{any}', [SeoController::class, 'renderWithSeo'])
 //     ->where('any', '.*');
@@ -56,6 +56,8 @@ Route::get('/health', function () {
         ], 500);
     }
 });
+
+Route::get('/compress-pdf', [DocumentUploadController::class, 'compress']);
 
 
 
