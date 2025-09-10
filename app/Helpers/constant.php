@@ -703,3 +703,125 @@ if (!function_exists('quote_cc_mails')) {
 		return $mails;
 	}
 }
+
+function createSmartRanges($rangefilterArray, $maxRanges = 5) {
+	$filters = [];
+
+	/* Group by attribute_name */
+	$groupedData = [];
+	foreach ($rangefilterArray as $item) {
+		$groupedData[$item['attribute_name']][] = $item;
+	}
+
+	foreach ($groupedData as $attributeName => $items) {
+		/* Extract unique values and sort them */
+		$values = array_unique(array_column($items, 'attribute_value'));
+		sort($values);
+
+		if (empty($values)) {
+			continue;
+		}
+
+		$attributeId = $items[0]['attribute_id'];
+		$unitID = $items[0]['unit_id'];
+		$unitSymbol = $items[0]['unit_symbol'];
+
+		/* Create ranges that cover all values */
+		$ranges = createOptimalRanges($values, $maxRanges);
+
+		$filters[$attributeName] = [
+			'attribute_id' => $attributeId,
+			'unit_id' => $unitID,
+			'unit_symbol' => $unitSymbol,
+			'ranges' => $ranges
+		];
+	}
+
+	return $filters;
+}
+
+function createOptimalRanges($values, $maxRanges) {
+	$valueCount = count($values);
+
+	if ($valueCount <= 1) {
+		/* Single value - create a range around it */
+		$val = (int)floor($values[0]);
+		return [['min' => $val, 'max' => $val + 1]];
+	}
+
+	if ($valueCount <= $maxRanges) {
+		/* Few values - create individual ranges */
+		return createIndividualRanges($values);
+	}
+
+	/* Many values - create distributed ranges */
+	return createDistributedRanges($values, $maxRanges);
+}
+
+function createIndividualRanges($values) {
+	$ranges = [];
+
+	foreach ($values as $value) {
+		$min = (int)floor($value);
+		$max = (int)ceil($value);
+
+		/* Ensure max is at least min + 1 for proper range */
+		if ($max <= $min) {
+			$max = $min + 1;
+		}
+
+		/* Check if this range would overlap with the previous one */
+		if (!empty($ranges)) {
+			$lastRange = end($ranges);
+			if ($min <= $lastRange['max']) {
+				/* Extend the last range instead of creating a new one */
+				$ranges[count($ranges) - 1]['max'] = $max;
+				continue;
+			}
+		}
+
+		$ranges[] = ['min' => $min, 'max' => $max];
+	}
+
+	return $ranges;
+}
+
+function createDistributedRanges($values, $maxRanges) {
+	$min = min($values);
+	$max = max($values);
+
+	/* Calculate range size */
+	$totalSpan = $max - $min;
+	$rangeSize = $totalSpan / $maxRanges;
+
+	$ranges = [];
+	$currentMin = (int)floor($min);
+
+	for ($i = 0; $i < $maxRanges; $i++) {
+		$currentMax = ($i === $maxRanges - 1)
+		? (int)ceil($max)
+		: (int)floor($currentMin + $rangeSize);
+
+		/* Ensure we have at least one value in this range */
+		$hasValueInRange = false;
+		foreach ($values as $value) {
+			if ($value >= $currentMin && $value <= $currentMax) {
+				$hasValueInRange = true;
+				break;
+			}
+		}
+
+		if ($hasValueInRange) {
+			$ranges[] = ['min' => $currentMin, 'max' => $currentMax];
+		}
+
+		$currentMin = $currentMax + 1;
+	}
+
+	/* If no ranges were created, fall back to single range */
+	if (empty($ranges)) {
+		$ranges[] = ['min' => (int)floor($min), 'max' => (int)ceil($max)];
+	}
+
+	return $ranges;
+}

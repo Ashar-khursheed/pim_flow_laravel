@@ -130,6 +130,7 @@ use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseC
 use App\Http\Controllers\FrontEnd\GetInTouchController as F_GetInTouchController;
 use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
+use App\Http\Controllers\FrontEnd\FilterController;
 use App\Http\Controllers\FrontEnd\ShippingReportController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
@@ -170,7 +171,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
     });
 
 });
- 
+
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
@@ -416,12 +417,12 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
 
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
-	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
-	Route::get('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);	 
+	Route::get('/product-report-export', [ProductReportController::class, 'index']);
+	Route::get('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
 
-	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
-	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);	 
- 
+	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
+	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
+
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
@@ -707,6 +708,9 @@ Route::get('/frontend/categories/{id}', [F_CategoryController::class, 'show']);
 Route::get('/frontend/categories/{categoryId}/products', [F_CategoryController::class, 'getProductsByCategory']);
 Route::get('/frontend/products/specification-filters', [F_CategoryController::class, 'getSpecificationFilters']);
 Route::get('/frontend/products/specification-filters1', [F_CategoryController::class, 'getSpecificationFilters1']);
+
+Route::post('/frontend/products/filters', [FilterController::class, 'index']);
+
 
 Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
 Route::get('/frontend/categories-with-children', [F_CategoryMenuController::class, 'getCategoriesWithChildren']);

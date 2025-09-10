@@ -16512,6 +16512,159 @@
                 }
             }
         },
+        "/api/frontend/products/filters": {
+            "post": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Get Filtered Products",
+                "description": "Fetch products with dynamic attribute filters",
+                "operationId": "a9e07523fb703ad95e3006706b321c98",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "description": "ID of the product category",
+                                        "type": "integer",
+                                        "example": 54
+                                    },
+                                    "page": {
+                                        "description": "Page number for pagination",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "length": {
+                                        "description": "Number of records per page",
+                                        "type": "integer",
+                                        "example": 20
+                                    },
+                                    "sort_by": {
+                                        "description": "Sort field",
+                                        "type": "string",
+                                        "enum": [
+                                            "id",
+                                            "price",
+                                            "created_at"
+                                        ],
+                                        "example": "price"
+                                    },
+                                    "sort_dir": {
+                                        "description": "Sort direction",
+                                        "type": "string",
+                                        "enum": [
+                                            "asc",
+                                            "desc"
+                                        ],
+                                        "example": "asc"
+                                    },
+                                    "applied_filters": {
+                                        "description": "General filters applied to products",
+                                        "properties": {
+                                            "priceRange": {
+                                                "properties": {
+                                                    "min_price": {
+                                                        "type": "string",
+                                                        "example": "1514.00"
+                                                    },
+                                                    "max_price": {
+                                                        "type": "string",
+                                                        "example": "2832.50"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "brand_ids": {
+                                                "description": "Array of brand IDs",
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "ratings": {
+                                                "description": "Array of rating values",
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "applied_range_filters": {
+                                        "description": "Range-based attribute filters",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "description": "Attribute ID",
+                                                    "type": "integer",
+                                                    "example": 590
+                                                },
+                                                "unit_id": {
+                                                    "description": "Measurement unit ID",
+                                                    "type": "integer",
+                                                    "example": 62
+                                                },
+                                                "ranges": {
+                                                    "properties": {
+                                                        "min": {
+                                                            "type": "integer",
+                                                            "example": 210
+                                                        },
+                                                        "max": {
+                                                            "type": "integer",
+                                                            "example": 211
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "applied_fixed_filters": {
+                                        "description": "Fixed value attribute filters",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "description": "Attribute ID",
+                                                    "type": "integer",
+                                                    "example": 225
+                                                },
+                                                "value": {
+                                                    "description": "Filter value",
+                                                    "type": "string",
+                                                    "example": "Black"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/location-info": {
             "get": {
                 "tags": [
