@@ -2093,7 +2093,7 @@ class ProductController extends BaseController
 		$product->save();
 
 		if (isset($request->status)) {
-			$validStatuses = ['draft', 'published', 'pending'];
+			$validStatuses = ['draft', 'published', 'pending','awaiting Price','temporary out of stock'];
 
 			if (!in_array($request->status, $validStatuses)) {
 				return response()->json([
