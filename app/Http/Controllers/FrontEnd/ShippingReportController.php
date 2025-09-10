@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
@@ -10,30 +9,34 @@ use App\Models\ProductSupplier;
 class ShippingReportController extends Controller
 {
     /**
-     * @OA\Get(
+     * @OA\Post(
      *     path="/api/find-shipping-charges",
      *     summary="Product shipping charges",
-     *     description="Report of products display with id, sku, name, benefit features description, attribute count, price and graphics yes no reports published draft products.",
+     *     description="Fetch products with their shipping charges by product ID(s) or slug.",
      *     tags={"Products Shipping Report"},
      *     
-     *     @OA\Parameter(
-     *         name="product_id",
-     *         in="query",
-     *         description="Filter by product ID",
+     *     @OA\RequestBody(
      *         required=false,
-     *         @OA\Schema(type="integer", example="")
-     *     ),
-     *     @OA\Parameter(
-     *         name="slug",
-     *         in="query",
-     *         description="Filter by product slug",
-     *         required=false,
-     *         @OA\Schema(type="string", example="")
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="product_id",
+     *                 type="array",
+     *                 description="Filter by multiple product IDs",
+     *                 @OA\Items(type="integer", example=101)
+     *             ),
+     *             @OA\Property(
+     *                 property="slug",
+     *                 type="string",
+     *                 description="Filter by product slug",
+     *                 example=""
+     *             )
+     *         )
      *     ),
      *      
      *     @OA\Response(
      *         response=200,
-     *         description="Successful product benefit report",
+     *         description="Successful product shipping charge report",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="success", type="boolean", example=true),
@@ -44,12 +47,7 @@ class ShippingReportController extends Controller
      *                     type="object",
      *                     @OA\Property(property="id", type="integer", example=101),
      *                     @OA\Property(property="sku", type="string", example="SKU12345"),
-     *                     @OA\Property(property="name", type="string", example="Sample Product"),
-     *                     @OA\Property(property="benefits", type="string", example="Lightweight, Durable"),
-     *                     @OA\Property(property="attribute_count", type="integer", example=5),
-     *                     @OA\Property(property="price", type="number", format="float", example=499.99),
-     *                     @OA\Property(property="graphics", type="string", enum={"yes","no"}, example="yes"),
-     *                     @OA\Property(property="status", type="string", enum={"all","publish","draft"}, example="publish")
+     *                     @OA\Property(property="shipping_charge", type="number", format="float", example=49.99)
      *                 )
      *             )
      *         )
@@ -77,6 +75,8 @@ class ShippingReportController extends Controller
     public function findShippingCharges(Request $request)
     {
         try {
+            $product_id = $request->input('product_id');
+            $slug = $request->input('slug');
             $query = Product::with([
                 'slug:id,key,reference_id',
                 'productSuppliers',
@@ -86,13 +86,12 @@ class ShippingReportController extends Controller
             ])->select(['id', 'name', 'sku', 'status', 'gen_type', 'approved']);
 
             // Filter by product_id
-            if ($request->has('product_id')) {
-                $query->where('id', $request->product_id);
+            if (!empty($product_id) && is_array($product_id)) {
+                $query->wherein('id', $product_id);
             }
 
             // Filter by slug
-            if ($request->has('slug')) {
-
+            if ($slug != null) {
                 $seoUrlCheck = SeoManagement::where('url', $request->slug)->first();
 
                 if (!$seoUrlCheck) {
@@ -121,11 +120,7 @@ class ShippingReportController extends Controller
                 $firstSupplier = $product->productSuppliers->first();
                 return [
                     'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $firstSupplier ? (float) $firstSupplier->price : null,
-                    'surcharge' => $firstSupplier ? (float) $firstSupplier->surcharge : null,
-                    'cost_per_item' => $firstSupplier ? (float) $firstSupplier->cost_per_items : null,
-                    'additional_cost' => $firstSupplier ? (float) $firstSupplier->additional_cost : null,
+                    'sku' => $product->sku,
                     'shipping_charge' => $firstSupplier ? (float) $firstSupplier->shipping_charge : null,
                 ];
             });
@@ -144,5 +139,3 @@ class ShippingReportController extends Controller
 
     }
 }
-
-
