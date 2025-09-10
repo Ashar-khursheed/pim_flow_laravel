@@ -30185,91 +30185,67 @@
             }
         },
         "/api/product-report-export": {
-            "get": {
+            "post": {
                 "tags": [
                     "Products Report"
                 ],
-                "summary": "Get product report list",
-                "description": "Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, categories, and approval status.",
-                "operationId": "ff314864e00c70302363b737bcc06954",
-                "parameters": [
-                    {
-                        "name": "range_from",
-                        "in": "query",
-                        "description": "Starting product index (must be >= 1)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "range_to",
-                        "in": "query",
-                        "description": "Ending product index (max range allowed: 500 products)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 500
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "description": "Filter products by status (e.g., published, draft)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "all",
-                                "published",
-                                "draft"
-                            ],
-                            "example": "all"
-                        }
-                    },
-                    {
-                        "name": "approved",
-                        "in": "query",
-                        "description": "Filter approved by status (0 = not approved, 1 = approved)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "enum": [
-                                0,
-                                1
-                            ],
-                            "example": ""
-                        }
-                    },
-                    {
-                        "name": "type",
-                        "in": "query",
-                        "description": "Filter type (e.g., Category, Brand)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "Category",
-                                "Brand"
-                            ],
-                            "example": "Category"
-                        }
-                    },
-                    {
-                        "name": "relational_id",
-                        "in": "query",
-                        "description": "Enter brand id, category id",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 14
+                "summary": "Export product report",
+                "description": "Exports product report as JSON (preview) or as Excel (binary file).",
+                "operationId": "2ae5e0f3ef92d4b9a4d6ce2f483a3657",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "all",
+                                            "published",
+                                            "draft"
+                                        ],
+                                        "example": "all"
+                                    },
+                                    "approved": {
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ],
+                                        "example": 1
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Category",
+                                            "Brand"
+                                        ],
+                                        "example": "Category"
+                                    },
+                                    "relational_id": {
+                                        "type": "integer",
+                                        "example": 14
+                                    },
+                                    "range_from": {
+                                        "description": "Starting product index (must be >= 1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending product index (max range allowed: 500 products)",
+                                        "type": "integer",
+                                        "example": 500
+                                    }
+                                },
+                                "type": "object"
+                            }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "200": {
-                        "description": "Successful product report export",
+                        "description": "Product report export",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -30293,27 +30269,6 @@
                                                     "name": {
                                                         "type": "string",
                                                         "example": "Sample Product"
-                                                    },
-                                                    "branch": {
-                                                        "type": "string",
-                                                        "example": "Delhi Branch"
-                                                    },
-                                                    "status": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "all",
-                                                            "publish",
-                                                            "draft"
-                                                        ],
-                                                        "example": "publish"
-                                                    },
-                                                    "approved": {
-                                                        "type": "integer",
-                                                        "enum": [
-                                                            0,
-                                                            1
-                                                        ],
-                                                        "example": 1
                                                     }
                                                 },
                                                 "type": "object"
@@ -30322,85 +30277,11 @@
                                     },
                                     "type": "object"
                                 }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request parameters",
-                        "content": {
-                            "application/json": {
+                            },
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
                                 "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Invalid range values"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - Invalid or missing token",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthorized"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "No products found for the given filters",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "No products found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Something went wrong while generating the report"
-                                        }
-                                    },
-                                    "type": "object"
+                                    "type": "string",
+                                    "format": "binary"
                                 }
                             }
                         }
