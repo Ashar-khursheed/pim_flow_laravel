@@ -22296,6 +22296,146 @@
                 }
             }
         },
+        "/api/find-shipping-charges": {
+            "get": {
+                "tags": [
+                    "Products Shipping Report"
+                ],
+                "summary": "Product shipping charges",
+                "description": "Report of products display with id, sku, name, benefit features description, attribute count, price and graphics yes no reports published draft products.",
+                "operationId": "62d9e1c04f718dcf7f8b613f01b97ed8",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": ""
+                        }
+                    },
+                    {
+                        "name": "slug",
+                        "in": "query",
+                        "description": "Filter by product slug",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful product benefit report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 101
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "SKU12345"
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Sample Product"
+                                                    },
+                                                    "benefits": {
+                                                        "type": "string",
+                                                        "example": "Lightweight, Durable"
+                                                    },
+                                                    "attribute_count": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 499.99
+                                                    },
+                                                    "graphics": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "yes",
+                                                            "no"
+                                                        ],
+                                                        "example": "yes"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "all",
+                                                            "publish",
+                                                            "draft"
+                                                        ],
+                                                        "example": "publish"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid range values"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/sitemap.xml": {
             "get": {
                 "tags": [
@@ -38346,6 +38486,10 @@
         {
             "name": "Frontend-SEO Management",
             "description": "Frontend-SEO Management"
+        },
+        {
+            "name": "Products Shipping Report",
+            "description": "Products Shipping Report"
         },
         {
             "name": "Sitemap",
