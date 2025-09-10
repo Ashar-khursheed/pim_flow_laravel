@@ -417,7 +417,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
 
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
-	Route::get('/product-report-export', [ProductReportController::class, 'index']);
+	Route::post('/product-report-export', [ProductReportController::class, 'index']);
 	Route::get('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
 
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
@@ -781,7 +781,7 @@ Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
 Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
 
-Route::get('/find-shipping-charges', [ShippingReportController::class, 'findShippingCharges']);
+Route::post('/find-shipping-charges', [ShippingReportController::class, 'findShippingCharges']);
 Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
 Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
 // Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);

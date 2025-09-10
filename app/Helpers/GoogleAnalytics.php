@@ -895,70 +895,116 @@ public function getPagePerformance($propertyId, $startDate = '30daysAgo', $endDa
         return $tokenData['access_token'];
     }
 
-    public function getRealTimeAnalytics($viewId)
-    {
-        try {
-            // Get access token
-            $accessToken = $this->getAccessToken();
+    // public function getRealTimeAnalytics($viewId)
+    // {
+    //     try {
+    //         // Get access token
+    //         $accessToken = $this->getAccessToken();
             
-            // Make API request
-            $url = "https://www.googleapis.com/analytics/v3/data/realtime";
-            $params = [
-                'ids' => 'ga:' . $viewId,
-                'metrics' => 'rt:activeUsers',
-                'dimensions' => 'rt:country,rt:deviceCategory',
-                'access_token' => $accessToken
-            ];
+    //         // Make API request
+    //         $url = "https://www.googleapis.com/analytics/v3/data/realtime";
+    //         $params = [
+    //             'ids' => 'ga:' . $viewId,
+    //             'metrics' => 'rt:activeUsers',
+    //             'dimensions' => 'rt:country,rt:deviceCategory',
+    //             'access_token' => $accessToken
+    //         ];
 
-            $curl = curl_init();
-            curl_setopt_array($curl, [
-                CURLOPT_URL => $url . '?' . http_build_query($params),
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HTTPHEADER => [
-                    'Content-Type: application/json',
-                ],
-            ]);
+    //         $curl = curl_init();
+    //         curl_setopt_array($curl, [
+    //             CURLOPT_URL => $url . '?' . http_build_query($params),
+    //             CURLOPT_RETURNTRANSFER => true,
+    //             CURLOPT_HTTPHEADER => [
+    //                 'Content-Type: application/json',
+    //             ],
+    //         ]);
 
-            $response = curl_exec($curl);
-            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            curl_close($curl);
+    //         $response = curl_exec($curl);
+    //         $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    //         curl_close($curl);
 
-            if ($httpCode !== 200) {
-                throw new \Exception('API request failed with status: ' . $httpCode . ' Response: ' . $response);
-            }
+    //         if ($httpCode !== 200) {
+    //             throw new \Exception('API request failed with status: ' . $httpCode . ' Response: ' . $response);
+    //         }
 
-            $data = json_decode($response, true);
+    //         $data = json_decode($response, true);
             
-            // Process the response
-            $processedData = [];
-            $totalActiveUsers = 0;
+    //         // Process the response
+    //         $processedData = [];
+    //         $totalActiveUsers = 0;
 
-            if (isset($data['rows']) && !empty($data['rows'])) {
-                foreach ($data['rows'] as $row) {
-                    $country = $row[0] ?? 'Unknown';
-                    $device = $row[1] ?? 'Unknown';
-                    $activeUsers = (int)($row[2] ?? 0);
+    //         if (isset($data['rows']) && !empty($data['rows'])) {
+    //             foreach ($data['rows'] as $row) {
+    //                 $country = $row[0] ?? 'Unknown';
+    //                 $device = $row[1] ?? 'Unknown';
+    //                 $activeUsers = (int)($row[2] ?? 0);
 
-                    $processedData[] = [
-                        'country' => $country,
-                        'device' => $device,
-                        'activeUsers' => $activeUsers,
-                    ];
+    //                 $processedData[] = [
+    //                     'country' => $country,
+    //                     'device' => $device,
+    //                     'activeUsers' => $activeUsers,
+    //                 ];
 
-                    $totalActiveUsers += $activeUsers;
-                }
-            }
+    //                 $totalActiveUsers += $activeUsers;
+    //             }
+    //         }
 
-            return [
-                'total_active_users' => $totalActiveUsers,
-                'data' => $processedData,
-                'timestamp' => now()->toISOString(),
-            ];
+    //         return [
+    //             'total_active_users' => $totalActiveUsers,
+    //             'data' => $processedData,
+    //             'timestamp' => now()->toISOString(),
+    //         ];
 
-        } catch (\Exception $e) {
-            throw new \Exception('Real-time Analytics Error: ' . $e->getMessage());
+    //     } catch (\Exception $e) {
+    //         throw new \Exception('Real-time Analytics Error: ' . $e->getMessage());
+    //     }
+    // }
+    public function getGA4Realtime($propertyId)
+{
+    try {
+        $accessToken = $this->getAccessToken();
+
+        $url = "https://analyticsdata.googleapis.com/v1beta/properties/{$propertyId}:runRealtimeReport";
+
+        $postData = [
+            "metrics" => [
+                ["name" => "activeUsers"]
+            ],
+            "dimensions" => [
+                ["name" => "country"],
+                ["name" => "deviceCategory"]
+            ]
+        ];
+
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($postData),
+            CURLOPT_HTTPHEADER => [
+                "Authorization: Bearer $accessToken",
+                "Content-Type: application/json",
+            ],
+        ]);
+
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+
+        if ($httpCode !== 200) {
+            throw new \Exception("GA4 API failed with status: $httpCode. Response: $response");
         }
+
+        $data = json_decode($response, true);
+
+        return $data;
+
+    } catch (\Exception $e) {
+        throw new \Exception("GA4 Realtime Error: " . $e->getMessage());
     }
+}
+
     public function getAudienceDemographics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
 {
     $client = new \Google\Client();

@@ -11,120 +11,51 @@ use Illuminate\Support\Facades\Schema;
 class ProductReportController extends Controller
 {
 	/**
-	 * @OA\Get(
-	 *     path="/api/product-report-export",
-	 *     summary="Get product report list",
-	 *     description="Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, categories, and approval status.",
-	 *     tags={"Products Report"},
-	 *     @OA\Parameter(
-	 *         name="range_from",
-	 *         in="query",
-	 *         description="Starting product index (must be >= 1)",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="range_to",
-	 *         in="query",
-	 *         description="Ending product index (max range allowed: 500 products)",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=500)
-	 *     ),
-	 *  @OA\Parameter(
-	 *         name="status",
-	 *         in="query",
-	 *         description="Filter products by status (e.g., published, draft)",
-	 *         required=true,
-	 *         @OA\Schema(type="string", enum={"all","published","draft"}, example="all")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="approved",
-	 *         in="query",
-	 *         description="Filter approved by status (0 = not approved, 1 = approved)",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", enum={0,1}, example="")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="type",
-	 *         in="query",
-	 *         description="Filter type (e.g., Category, Brand)",
-	 *         required=false,
-	 *         @OA\Schema(type="string", enum={"Category","Brand"}, example="Category")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="relational_id",
-	 *         in="query",
-	 *         description="Enter brand id, category id",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=14)
-	 *     ),
-	 *    
-	 *
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Successful product report export",
-	 *         @OA\JsonContent(
-	 *             type="object",
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(
-	 *                 property="data",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     type="object",
-	 *                     @OA\Property(property="id", type="integer", example=101),
-	 *                     @OA\Property(property="sku", type="string", example="SKU12345"),
-	 *                     @OA\Property(property="name", type="string", example="Sample Product"),
-	 *                     @OA\Property(property="branch", type="string", example="Delhi Branch"),
-	 *                     @OA\Property(property="status", type="string", enum={"all","publish","draft"}, example="publish"),
-	 *                     @OA\Property(property="approved", type="integer", enum={0,1}, example=1)
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=400,
-	 *         description="Invalid request parameters",
-	 *         @OA\JsonContent(
-	 *             type="object",
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="Invalid range values")
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=401,
-	 *         description="Unauthorized - Invalid or missing token",
-	 *         @OA\JsonContent(
-	 *             type="object",
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="Unauthorized")
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="No products found for the given filters",
-	 *         @OA\JsonContent(
-	 *             type="object",
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="No products found")
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=500,
-	 *         description="Internal server error",
-	 *         @OA\JsonContent(
-	 *             type="object",
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="Something went wrong while generating the report")
-	 *         )
-	 *     ),
-	 *
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
+ * @OA\Post(
+ *     path="/api/product-report-export",
+ *     summary="Export product report",
+ *     description="Exports product report as JSON (preview) or as Excel (binary file).",
+ *     tags={"Products Report"},
+ *     @OA\RequestBody(
+ *         required=false,
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", enum={"all","published","draft"}, example="all"),
+ *             @OA\Property(property="approved", type="integer", enum={0,1}, example=1),
+ *             @OA\Property(property="type", type="string", enum={"Category","Brand"}, example="Category"),
+ *             @OA\Property(property="relational_id", type="integer", example=14),
+ *             @OA\Property(property="range_from", type="integer", example=1, description="Starting product index (must be >= 1)"),
+ *             @OA\Property(property="range_to", type="integer", example=500, description="Ending product index (max range allowed: 500 products)")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Product report export",
+ *         @OA\MediaType(
+ *             mediaType="application/json",
+ *             @OA\Schema(
+ *                 type="object",
+ *                 @OA\Property(property="success", type="boolean", example=true),
+ *                 @OA\Property(
+ *                     property="data",
+ *                     type="array",
+ *                     @OA\Items(
+ *                         @OA\Property(property="id", type="integer", example=101),
+ *                         @OA\Property(property="sku", type="string", example="SKU12345"),
+ *                         @OA\Property(property="name", type="string", example="Sample Product")
+ *                     )
+ *                 )
+ *             )
+ *         ),
+ *         @OA\MediaType(
+ *             mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+ *             @OA\Schema(type="string", format="binary")
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+
+
 	public function index(Request $request, ExcelRepository $excelRepo)
 	{
 		/* Validate request data */
@@ -179,22 +110,13 @@ class ProductReportController extends Controller
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
 
-			foreach ($product->productAttributes as $attr) {
-				$product_attributes[] = [
-					'attribute_id' => $attr->attribute_id,
-					'attribute_name' => $attr->attributeDetails->name ?? null,
-					'attribute_value' => $attr->attribute_value,
-					'measurement_unit_id' => $attr->measurement_unit_id,
-					'measurement_unit_name' => $attr->measurementUnit->name ?? null,
-				];
-			}
+		 
 
 			$brands = "";
 			if ($product->brand) {
 				$brands = Brand::withCount('products')->where('id', $product->brand->id)->first();
 			}
-			if (!empty($product_attributes)) {
-				foreach ($product_attributes as $attributes) {
+			 
 
 					$data[] = [
 						'id' => $product->id,
@@ -209,18 +131,15 @@ class ProductReportController extends Controller
 						'category_name' => $product->categories->pluck('name')->implode(', '),
 						'category_count' => $product->categories->count(),
 						'product_count' => $brands ? $brands->products_count : null,
-						'attribute_id' => $attributes['attribute_id'],
-						'attribute_name' => $attributes['attribute_name'] ?? null,
-						'attribute_value' => $attributes['attribute_value'],
-						'measurement_unit_id' => $attributes['measurement_unit_id'],
-						'measurement_unit_name' => $attributes['measurement_unit_name'] ?? null,
+						'atribute_count' => $product->productAttributes ? $product->productAttributes->count() : null,
+					 
 					];
-				}
+				
 				return $data;
-			}
+			
 		});
 
-		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count', 'attribute_id', 'attribute_name', 'attribute_value', 'measurement_unit_id', 'measurement_unit_name'];
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count', 'atribute_count'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
