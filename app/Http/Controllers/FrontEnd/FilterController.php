@@ -243,14 +243,14 @@ class FilterController extends Controller
 		$transformedProducts = [];
 		foreach ($products as $product) {
 			$firstSupplier = $product->productSuppliers->first();
-			$fullValue = $product->sellingUnitAttribute->attribute_value;
+			$fullValue = $product->sellingUnitAttribute->attribute_value ?? null;
 
-			$attributeUnit = strpos($fullValue, '/') !== false
+			$attributeUnit = $product->sellingUnitAttribute && strpos($fullValue, '/') !== false
 			? trim(explode('/', $fullValue)[1])
 			: $fullValue;
 
 			$sellingType = [
-				'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+				'attribute_value' => $product->sellingUnitAttribute->attribute_value ?? null,
 				'attribute_value_unit' => $attributeUnit,
 			];
 			$transformedProducts[] = [
