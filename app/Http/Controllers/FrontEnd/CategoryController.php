@@ -107,7 +107,7 @@ class CategoryController extends Controller
 
 	// 	return response()->json($categoriesTree) ->header('Cache-Control', 'public, max-age=86400');
 	// }
-    public function index(Request $request)
+ public function index(Request $request)
 {
     $filterId = $request->get('id'); // Optional ID filter
     $limit = $request->get('limit', 12); // Default limit to 12
@@ -126,9 +126,10 @@ class CategoryController extends Controller
         $categories = Category::with('seoUrl')->get();
     }
 
-    // Manually add 'url' attribute from seoUrl->slug
+    // Replace slug with seoUrl->url
     foreach ($categories as $category) {
-        $category->url = $category->seoUrl ? $category->seoUrl->slug : null;
+        $category->slug = $category->seoUrl ? $category->seoUrl->url : null;
+        unset($category->seoUrl); // remove relation from JSON
     }
 
     // Transform categories into a parent-child structure
@@ -137,7 +138,6 @@ class CategoryController extends Controller
     return response()->json($categoriesTree)
         ->header('Cache-Control', 'public, max-age=86400');
 }
-
 
 	/**
 	 * @OA\Get(
