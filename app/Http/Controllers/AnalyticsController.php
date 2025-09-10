@@ -561,106 +561,106 @@ public function pagePerformance(Request $request)
      *     @OA\Response(response=500, description="Internal Server Error")
      * )
      */
-//  public function realTimeAnalytics()
-//     {
-//         try {
-//             $propertyId = '441790093';
+ public function realTimeAnalytics()
+    {
+        // try {
+        //     $propertyId = '441790093';
             
-//             // Check credentials file exists
-//             $credentialsPath = base_path('app/Script/analytics-key.json');
-//             if (!file_exists($credentialsPath)) {
-//                 throw new \Exception('Credentials file not found at: ' . $credentialsPath);
-//             }
+        //     // Check credentials file exists
+        //     $credentialsPath = base_path('app/Script/analytics-key.json');
+        //     if (!file_exists($credentialsPath)) {
+        //         throw new \Exception('Credentials file not found at: ' . $credentialsPath);
+        //     }
             
-//             // Initialize GA4 client with correct namespace
-//             $client = new BetaAnalyticsDataClient([
-//                 'credentials' => $credentialsPath
-//             ]);
+        //     // Initialize GA4 client with correct namespace
+        //     $client = new BetaAnalyticsDataClient([
+        //         'credentials' => $credentialsPath
+        //     ]);
 
-//             // Create real-time request object
-//             $request = new RunRealtimeReportRequest();
-//             $request->setProperty("properties/{$propertyId}");
+        //     // Create real-time request object
+        //     $request = new RunRealtimeReportRequest();
+        //     $request->setProperty("properties/{$propertyId}");
             
-//             // Set dimensions
-//             $request->setDimensions([
-//                 new Dimension(['name' => 'country']),
-//                 new Dimension(['name' => 'deviceCategory']),
-//             ]);
+        //     // Set dimensions
+        //     $request->setDimensions([
+        //         new Dimension(['name' => 'country']),
+        //         new Dimension(['name' => 'deviceCategory']),
+        //     ]);
             
-//             // Set metrics
-//             $request->setMetrics([
-//                 new Metric(['name' => 'activeUsers']),
-//             ]);
+        //     // Set metrics
+        //     $request->setMetrics([
+        //         new Metric(['name' => 'activeUsers']),
+        //     ]);
 
-//             $response = $client->runRealtimeReport($request);
+        //     $response = $client->runRealtimeReport($request);
             
-//             $data = [];
-//             $totalActiveUsers = 0;
+        //     $data = [];
+        //     $totalActiveUsers = 0;
 
-//             // Process real data
-//             foreach ($response->getRows() as $row) {
-//                 $dimensionValues = $row->getDimensionValues();
-//                 $metricValues = $row->getMetricValues();
+        //     // Process real data
+        //     foreach ($response->getRows() as $row) {
+        //         $dimensionValues = $row->getDimensionValues();
+        //         $metricValues = $row->getMetricValues();
                 
-//                 $country = isset($dimensionValues[0]) ? $dimensionValues[0]->getValue() : 'Unknown';
-//                 $device = isset($dimensionValues[1]) ? $dimensionValues[1]->getValue() : 'Unknown';
-//                 $activeUsers = isset($metricValues[0]) ? (int)$metricValues[0]->getValue() : 0;
+        //         $country = isset($dimensionValues[0]) ? $dimensionValues[0]->getValue() : 'Unknown';
+        //         $device = isset($dimensionValues[1]) ? $dimensionValues[1]->getValue() : 'Unknown';
+        //         $activeUsers = isset($metricValues[0]) ? (int)$metricValues[0]->getValue() : 0;
 
-//                 $data[] = [
-//                     'country' => $country,
-//                     'device' => $device,
-//                     'activeUsers' => $activeUsers,
-//                 ];
-//                 $totalActiveUsers += $activeUsers;
-//             }
+        //         $data[] = [
+        //             'country' => $country,
+        //             'device' => $device,
+        //             'activeUsers' => $activeUsers,
+        //         ];
+        //         $totalActiveUsers += $activeUsers;
+        //     }
 
-//             return response()->json([
-//                 'status' => 'success',
-//                 'total_active_users' => $totalActiveUsers,
-//                 'data' => $data,
-//                 'timestamp' => now()->toISOString(),
-//                 'is_real_data' => true,
-//                 'property_id' => $propertyId
-//             ]);
+        //     return response()->json([
+        //         'status' => 'success',
+        //         'total_active_users' => $totalActiveUsers,
+        //         'data' => $data,
+        //         'timestamp' => now()->toISOString(),
+        //         'is_real_data' => true,
+        //         'property_id' => $propertyId
+        //     ]);
 
-//         } catch (\Google\ApiCore\ValidationException $e) {
-//             return response()->json([
-//                 'status' => 'error',
-//                 'error_type' => 'validation',
-//                 'message' => 'Invalid request parameters: ' . $e->getMessage(),
-//                 'suggestions' => [
-//                     'Check if property ID is correct',
-//                     'Verify real-time reporting is enabled in GA4'
-//                 ]
-//             ], 400);
+        // } catch (\Google\ApiCore\ValidationException $e) {
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'error_type' => 'validation',
+        //         'message' => 'Invalid request parameters: ' . $e->getMessage(),
+        //         'suggestions' => [
+        //             'Check if property ID is correct',
+        //             'Verify real-time reporting is enabled in GA4'
+        //         ]
+        //     ], 400);
             
-//         } catch (\Google\ApiCore\ApiException $e) {
-//             return response()->json([
-//                 'status' => 'error',
-//                 'error_type' => 'api',
-//                 'message' => 'Google Analytics API error: ' . $e->getMessage(),
-//                 'code' => $e->getCode()
-//             ], 500);
+        // } catch (\Google\ApiCore\ApiException $e) {
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'error_type' => 'api',
+        //         'message' => 'Google Analytics API error: ' . $e->getMessage(),
+        //         'code' => $e->getCode()
+        //     ], 500);
             
-//         } catch (\Exception $e) {
-//             \Log::error('Real-time Analytics Error', [
-//                 'message' => $e->getMessage(),
-//                 'line' => $e->getLine(),
-//                 'file' => $e->getFile()
-//             ]);
+        // } catch (\Exception $e) {
+        //     \Log::error('Real-time Analytics Error', [
+        //         'message' => $e->getMessage(),
+        //         'line' => $e->getLine(),
+        //         'file' => $e->getFile()
+        //     ]);
             
-//             return response()->json([
-//                 'status' => 'error',
-//                 'error_type' => 'general',
-//                 'message' => $e->getMessage(),
-//                 'line' => $e->getLine(),
-//                 'debug_info' => [
-//                     'credentials_path' => $credentialsPath ?? 'not_set',
-//                     'credentials_exists' => isset($credentialsPath) ? file_exists($credentialsPath) : false
-//                 ]
-//             ], 500);
-//         }
-//     }
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'error_type' => 'general',
+        //         'message' => $e->getMessage(),
+        //         'line' => $e->getLine(),
+        //         'debug_info' => [
+        //             'credentials_path' => $credentialsPath ?? 'not_set',
+        //             'credentials_exists' => isset($credentialsPath) ? file_exists($credentialsPath) : false
+        //         ]
+        //     ], 500);
+        // }
+    }
 
 
 
