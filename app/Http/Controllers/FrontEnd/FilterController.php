@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Attribute;
 use App\Models\ProductAttribute;
 use App\Models\MeasurementUnit;
+use App\Models\ProductSupplier;
 
 class FilterController extends Controller
 {
@@ -107,9 +108,12 @@ class FilterController extends Controller
 			')
 		->first();
 
+		/************************* Create Default Filter ***********************/
 		$filters['priceRange'] = $priceRange->toArray();
 		$filters['brands'] = $category->allBrandsFromLeaves()->toArray();
 		$filters['ratings'] = [5, 4, 3, 2, 1];
+		/************************* Create Default Filter ***********************/
+
 
 		$categoryAttributeIds = [];
 		if ($category->subCategory && $category->subCategory->attributes_ids) {
@@ -130,8 +134,10 @@ class FilterController extends Controller
 
 		$allProductIds = $category->productIds();
 
+
+
+		/************************* Apply Default Filter ***********************/
 		$filteredProducts = Product::whereIn('id', $allProductIds);
-		/* Filter */
 		if (!empty($request->applied_filters['brand_ids'])) {
 			$filteredProducts->whereIn('brand_id', $request->applied_filters['brand_ids']);
 		}
@@ -164,8 +170,10 @@ class FilterController extends Controller
 					', [$minPrice, $maxPrice]);
 			});
 		}
+		/************************* Apply Default Filter ***********************/
 
-		/* Fixed Filters */
+
+		/************************* Apply Fixed Filter ***********************/
 		if (!empty($request->applied_fixed_filters)) {
 			foreach ($request->applied_fixed_filters as $filter) {
 				if (!empty($filter['attribute_id']) && !empty($filter['value'])) {
@@ -177,8 +185,10 @@ class FilterController extends Controller
 			}
 		}
 		$filteredProductIds = $filteredProducts->pluck('id');
+		/************************* Apply Fixed Filter ***********************/
 
-		/* Range Filter */
+
+		/************************* Apply Range Filter ***********************/
 		if (!empty($request->applied_range_filters)) {
 			$filteredProducts = Product::whereIn('id', $filteredProductIds);
 			foreach ($request->applied_range_filters as $filter) {
@@ -219,7 +229,10 @@ class FilterController extends Controller
 			->values();
 
 		}
+		/************************* Apply Range Filter ***********************/
 
+
+		/************************* Create Range Filter ***********************/
 		$measurementAttributeValues = ProductAttribute::join('measurement_units', 'product_attributes.measurement_unit_id', '=', 'measurement_units.id')
 		->join('measurement_types', 'measurement_units.measurement_type_id', '=', 'measurement_types.id')
 		->join('category_measurement_unit_priorities', 'measurement_types.id', '=', 'category_measurement_unit_priorities.measurement_type_id')
@@ -235,13 +248,13 @@ class FilterController extends Controller
 			'category_measurement_unit_priorities.measurement_unit_primary_id as primary_measurement_unit_id'
 		])
 		->get();
+
 		$measurementAttributeArray = $measurementAttributeValues->toArray();
 
 		$measurementUnitIDSymbol = MeasurementUnit::pluck('symbol', 'id')->toArray();
 		$measurementUnitIDName = MeasurementUnit::pluck('name', 'id')->toArray();
 		$attributeIDName = $categoryAttributes->pluck('name', 'id')->toArray();
 		$rangefilterArray = [];
-
 		foreach ($measurementAttributeArray as $key => $measurementAttribute) {
 			/* Check if attribute_value is not numeric */
 			if (!is_numeric($measurementAttribute['attribute_value'])) {
@@ -272,7 +285,10 @@ class FilterController extends Controller
 		}
 
 		$rangefilters = createSmartRanges($rangefilterArray, 5);
+		/************************* Create Range Filter ***********************/
 
+
+		/************************* Create Fixed Filter ***********************/
 		$otherAttributeValues = ProductAttribute::whereIn('product_id', $filteredProductIds)->whereIn('attribute_id', array_column($attributesByCategory['other'], 'id'))->get(['attribute_id', 'attribute_value']);
 		$otherAttributeArray = $otherAttributeValues->toArray();
 
@@ -313,8 +329,49 @@ class FilterController extends Controller
 				$fixedFilters[$attributeName]['values'][] = $attributeValue;
 			}
 		}
+		/************************* Create Fixed Filter ***********************/
 
-		$products = Product::whereIn('id', $filteredProductIds)->get();
+
+		/************************* Fetch Products ***********************/
+
+		$sortableColumns = ['id', 'price'];
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+		$recordsQuery = Product::whereIn('id', $filteredProductIds);
+		if ($sortBy === 'price') {
+			$recordsQuery->addSelect([
+				'best_price' => ProductSupplier::selectRaw('MIN(CASE
+					WHEN sale_price IS NOT NULL AND sale_price > 0
+					THEN sale_price
+					ELSE price
+					END)')
+				->whereColumn('product_suppliers.product_id', 'ec_products.id')
+			])
+			->orderBy('best_price', $sortDir);
+		} else {
+			$recordsQuery->orderBy("ec_products.$sortBy", $sortDir);
+		}
+
+
+		if ($request->filled('page') && $request->filled('length')) {
+			$totalRecords = (clone $recordsQuery)->count();
+			$length = (int) $request->input('length');
+			$totalPages = (int) ceil($totalRecords / $length);
+
+			$page = (int) $request->input('page');
+			/* If requested page exceeds total pages (after search), fallback to page 1 */
+			if ($page > $totalPages && $totalPages > 0) {
+				$page = 1;
+			}
+
+			$products = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get();
+		} else {
+			$products = $recordsQuery->get();
+			$totalRecords = $products->count();
+			$totalPages = 1;
+		}
+
 		$transformedProducts = [];
 		foreach ($products as $product) {
 			$firstSupplier = $product->productSuppliers->first();
@@ -360,6 +417,7 @@ class FilterController extends Controller
 				'warranty_information' => $firstSupplier->warranty_information ?? null,
 			];
 		}
+		/************************* Fetch Products ***********************/
 
 		return response()->json([
 			'success' => true,
@@ -367,8 +425,8 @@ class FilterController extends Controller
 			'rangefilters' => $rangefilters,
 			'fixedFilters' => $fixedFilters,
 			'products' => $transformedProducts,
-			// 'total_pages' => $totalPages ?? 1,
-			// 'total_records' => $totalRecords,
+			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
 		]);
 	}
 }
