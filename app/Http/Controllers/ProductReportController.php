@@ -7,111 +7,136 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Brand;
 use App\Repository\ExcelRepository;
+use Illuminate\Support\Facades\Schema;
 class ProductReportController extends Controller
 {
 	/**
 	 * @OA\Get(
 	 *     path="/api/product-report-export",
 	 *     summary="Get product report list",
-	 *     description="Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories.",
+	 *     description="Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, categories, and approval status.",
 	 *     tags={"Products Report"},
-	 *
 	 *     @OA\Parameter(
-	 *         name="page",
+	 *         name="range_from",
 	 *         in="query",
-	 *         description="Page number for pagination",
+	 *         description="Starting product index (must be >= 1)",
 	 *         required=false,
 	 *         @OA\Schema(type="integer", example=1)
 	 *     ),
 	 *     @OA\Parameter(
-	 *         name="per_page",
+	 *         name="range_to",
 	 *         in="query",
-	 *         description="Number of products per page (default: 50)",
+	 *         description="Ending product index (max range allowed: 500 products)",
 	 *         required=false,
-	 *         @OA\Schema(type="integer", example=50)
+	 *         @OA\Schema(type="integer", example=500)
 	 *     ),
-	 *     @OA\Parameter(
-	 *         name="search",
-	 *         in="query",
-	 *         description="Search term for filtering products by name, SKU, brand, store, or category",
-	 *         required=false,
-	 *         @OA\Schema(type="string", example="samsung")
-	 *     ),
-	 *     @OA\Parameter(
+	 *  @OA\Parameter(
 	 *         name="status",
 	 *         in="query",
-	 *         description="Filter products by status (published, draft)",
-	 *         required=false,
-	 *         @OA\Schema(type="string", enum={"published", "draft"}, example="published")
+	 *         description="Filter products by status (e.g., published, draft)",
+	 *         required=true,
+	 *         @OA\Schema(type="string", enum={"all","published","draft"}, example="all")
 	 *     ),
 	 *     @OA\Parameter(
 	 *         name="approved",
 	 *         in="query",
 	 *         description="Filter approved by status (0 = not approved, 1 = approved)",
 	 *         required=false,
-	 *         @OA\Schema(type="integer", enum={0,1}, example=1)
+	 *         @OA\Schema(type="integer", enum={0,1}, example="")
 	 *     ),
 	 *     @OA\Parameter(
-	 *         name="brand",
+	 *         name="type",
 	 *         in="query",
-	 *         description="Filter by brand id",
+	 *         description="Filter type (e.g., Category, Brand)",
 	 *         required=false,
-	 *         @OA\Schema(type="integer", example=5)
+	 *         @OA\Schema(type="string", enum={"Category","Brand"}, example="Category")
 	 *     ),
 	 *     @OA\Parameter(
-	 *         name="category",
+	 *         name="relational_id",
 	 *         in="query",
-	 *         description="Filter by category id",
+	 *         description="Enter brand id, category id",
 	 *         required=false,
-	 *         @OA\Schema(type="integer", example=3)
+	 *         @OA\Schema(type="integer", example=14)
 	 *     ),
-	 *     @OA\Parameter(
-	 *         name="sort_by",
-	 *         in="query",
-	 *         description="Column to sort by (id, name, sku, brand_id, vendor_id, status)",
-	 *         required=false,
-	 *         @OA\Schema(type="string", example="id")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="sort_direction",
-	 *         in="query",
-	 *         description="Sort direction (asc or desc)",
-	 *         required=false,
-	 *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
-	 *     ),
-	 *
-	 *     security={{"bearerAuth":{}}},
+	 *    
 	 *
 	 *     @OA\Response(
 	 *         response=200,
-	 *         description="Product report Excel file",
-	 *         @OA\MediaType(
-	 *             mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	 *         description="Successful product report export",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="id", type="integer", example=101),
+	 *                     @OA\Property(property="sku", type="string", example="SKU12345"),
+	 *                     @OA\Property(property="name", type="string", example="Sample Product"),
+	 *                     @OA\Property(property="branch", type="string", example="Delhi Branch"),
+	 *                     @OA\Property(property="status", type="string", enum={"all","publish","draft"}, example="publish"),
+	 *                     @OA\Property(property="approved", type="integer", enum={0,1}, example=1)
+	 *                 )
+	 *             )
 	 *         )
 	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=400,
+	 *         description="Invalid request parameters",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Invalid range values")
+	 *         )
+	 *     ),
+	 *
 	 *     @OA\Response(
 	 *         response=401,
-	 *         description="Unauthorized"
+	 *         description="Unauthorized - Invalid or missing token",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Unauthorized")
+	 *         )
 	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="No products found for the given filters",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="No products found")
+	 *         )
+	 *     ),
+	 *
 	 *     @OA\Response(
 	 *         response=500,
-	 *         description="Server error"
-	 *     )
+	 *         description="Internal server error",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Something went wrong while generating the report")
+	 *         )
+	 *     ),
+	 *
+	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
 	public function index(Request $request, ExcelRepository $excelRepo)
 	{
 		/* Validate request data */
 		$request->validate([
-			'status' => 'string|in:draft,published',
+			'status' => 'string|in:all,draft,published',
 			'approved' => 'string|in:0,1',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 500),
 			'type' => 'required|string|in:Brand,Category,Vendor',
 			'relational_id' => 'required|integer',
 		]);
-		
+
 		$query = Product::with([
 			'brand:id,name',
 			'categories:id,name',
@@ -123,7 +148,7 @@ class ProductReportController extends Controller
 
 		])->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
 		/* Apply relational filters */
-		if (!empty($request->status)) {
+		if ($request->status != 'all') {
 			$query->where('status', $request->status);
 		}
 		if ($request->approved != '') {
@@ -133,6 +158,12 @@ class ProductReportController extends Controller
 			$query->where('brand_id', $request->relational_id);
 		} elseif ($request->type == "Category") {
 			$category = Category::find($request->relational_id);
+			if (!$category) {
+				return response()->json([
+					'success' => true,
+					'message' => 'Category id not found',
+				]);
+			}
 			$leafCategories = Category::getLeafCategories($category);
 			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
 			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
@@ -200,14 +231,208 @@ class ProductReportController extends Controller
 
 		/* Fill data rows */
 		$rowIndex = 2;
-		foreach ($formattedProducts as $firstRow) {
-			foreach ($firstRow as $recordRow) {
+		if ($formattedProducts) {
+			foreach ($formattedProducts as $firstRow) {
+				if ($firstRow) {
+					foreach ($firstRow as $recordRow) {
 
-				$excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
+						$excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
+					}
+				}
 			}
 		}
 		//xlsx
 		$fileName = 'product_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/product-benefit-report",
+	 *     summary="Product has benefit features",
+	 *     description="Report of products display with id, sku, name, benefit features description, attribute count, price and graphics yes no reports published draft products.",
+	 *     tags={"Products Report"},
+	 *     
+	 *     @OA\Parameter(
+	 *         name="range_from",
+	 *         in="query",
+	 *         description="Starting product index (must be >= 1)",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="range_to",
+	 *         in="query",
+	 *         description="Ending product index (max range allowed: 500 products)",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=500)
+	 *     ),
+	 *   @OA\Parameter(
+	 *         name="status",
+	 *         in="query",
+	 *         description="Filter products by status (e.g., published, draft)",
+	 *         required=true,
+	 *         @OA\Schema(type="string", enum={"all","published","draft"}, example="all")
+	 *     ),
+	 * 		@OA\Parameter(
+	 *         name="type",
+	 *         in="query",
+	 *         description="Filter type (e.g., Category, Brand)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", enum={"Category","Brand","Vendor"}, example="Category")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="relational_id",
+	 *         in="query",
+	 *         description="Enter brand id, category id",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=14)
+	 *     ),
+	 *   
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successful product benefit report",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="id", type="integer", example=101),
+	 *                     @OA\Property(property="sku", type="string", example="SKU12345"),
+	 *                     @OA\Property(property="name", type="string", example="Sample Product"),
+	 *                     @OA\Property(property="benefits", type="string", example="Lightweight, Durable"),
+	 *                     @OA\Property(property="attribute_count", type="integer", example=5),
+	 *                     @OA\Property(property="price", type="number", format="float", example=499.99),
+	 *                     @OA\Property(property="graphics", type="string", enum={"yes","no"}, example="yes"),
+	 *                     @OA\Property(property="status", type="string", enum={"all","publish","draft"}, example="publish")
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=400,
+	 *         description="Invalid request parameters",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Invalid range values")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthorized - Invalid or missing token",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Unauthorized")
+	 *         )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+
+	public function exportBenefitReport(Request $request, ExcelRepository $excelRepo)
+	{
+		/* Validate request data */
+		$request->validate([
+			'status' => 'string|in:all,draft,published',
+			'type' => 'required|string|in:Brand,Category',
+			'relational_id' => 'required|integer',
+			'range_from' => 'required|integer|min:1',
+			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 500)
+		]);
+
+		$query = Product::with([
+			'brand:id,name',
+			'categories:id,name',
+			'slug:id,key,reference_id',
+			'productSuppliers',
+			'vendors',
+			'productAttributes.attributeDetails',
+			'latestChildCategoryRelation:id,name'
+
+		])->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
+		/* Apply relational filters */
+		if ($request->status != 'all') {
+			$query->where('status', $request->status);
+		}
+
+		if ($request->type == "Brand") {
+			$query->where('brand_id', $request->relational_id);
+		} elseif ($request->type == "Category") {
+			$category = Category::find($request->relational_id);
+			if (!$category) {
+				return response()->json([
+					'success' => true,
+					'message' => 'Category id not found',
+				]);
+			}
+			$leafCategories = Category::getLeafCategories($category);
+			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
+				$q->whereIn('category_id', $leafCategoryIds);
+			});
+		}
+
+		$products = $query->offset($request->range_from - 1)
+			->limit($request->range_to - $request->range_from + 1)
+			->orderBy('id', 'asc')
+			->get();
+
+		/* Formatting response */
+		$formattedProducts = $products->map(function ($product) {
+
+
+
+			$firstSupplier = $product->productSuppliers->first();
+
+
+			$data[] = [
+				'id' => $product->id,
+				'name' => $product->name,
+				'approved' => $product->approved,
+				'sku' => $product->sku,
+				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? "Yes" : "No",
+				'status' => $product->status,
+				'brand' => optional($product->brand)->name,
+				'category_name' => $product->categories->pluck('name')->implode(', '),
+				'category_count' => $product->categories->count(),
+				'atribute_count' => $product->productAttributes ? $product->productAttributes->count() : null,
+				'price' => $firstSupplier ? (float) $firstSupplier->price : null,
+
+			];
+
+			return $data;
+
+		});
+
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand name', 'status', 'category_name', 'category_count', 'atribute_count', 'price'];
+
+		$spreadsheet = $excelRepo->newSpreadsheet();
+		$sheet = $spreadsheet->getActiveSheet();
+		$sheet->setTitle('reports');
+
+		/* Set headers */
+		$excelRepo->setHeader($sheet, $excelHeaders);
+
+		/* Fill data rows */
+		$rowIndex = 2;
+		if ($formattedProducts) {
+			foreach ($formattedProducts as $firstRow) {
+				if ($firstRow) {
+					foreach ($firstRow as $recordRow) {
+
+						$excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
+					}
+				}
+			}
+		}
+		//xlsx
+		$fileName = 'product_benefit_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+		return $excelRepo->downloadFile($fileName, $spreadsheet);
+	}
+
 }

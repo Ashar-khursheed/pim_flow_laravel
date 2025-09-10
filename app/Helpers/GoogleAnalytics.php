@@ -81,48 +81,7 @@ class GoogleAnalytics
     /**
      * Get basic overview metrics
      */
-    // public function getOverview($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    // {
-    //     try {
-    //         $request = new RunReportRequest();
-    //         $request->setDateRanges([
-    //             new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
-    //         ]);
-    //         $request->setMetrics([
-    //             new Metric(['name' => 'sessions']),
-    //             new Metric(['name' => 'totalUsers']),
-    //             new Metric(['name' => 'newUsers']),
-    //             new Metric(['name' => 'screenPageViews']),
-    //             new Metric(['name' => 'bounceRate']),
-    //             new Metric(['name' => 'averageSessionDuration'])
-    //         ]);
-
-    //         $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
-
-    //         $row = $response->getRows()[0] ?? null;
-    //         if (!$row) {
-    //             return $this->getDefaultOverview();
-    //         }
-
-    //         $metrics = $row->getMetricValues();
-    //         $totalUsers = $this->safeGetMetric($metrics, 1, 'int', 0);
-    //         $newUsers = $this->safeGetMetric($metrics, 2, 'int', 0);
-            
-    //         return [
-    //             'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
-    //             'totalUsers' => $totalUsers,
-    //             'newUsers' => $newUsers,
-    //             'returningUsers' => max(0, $totalUsers - $newUsers),
-    //             'pageViews' => $this->safeGetMetric($metrics, 3, 'int', 0),
-    //             'bounceRate' => round($this->safeGetMetric($metrics, 4, 'float', 0) * 100, 2),
-    //             'avgSessionDuration' => $this->safeGetMetric($metrics, 5, 'float', 0),
-    //             'conversions' => 0, // Will get separately
-    //             'totalRevenue' => 0.0 // Will get separately
-    //         ];
-    //     } catch (\Exception $e) {
-    //         return $this->getDefaultOverview($e->getMessage());
-    //     }
-    // }
+ 
     public function getOverview($propertyId, $startDate = '30daysAgo', $endDate = 'today') {
     try {
         $request = new RunReportRequest();

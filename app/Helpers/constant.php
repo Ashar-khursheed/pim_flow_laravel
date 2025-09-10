@@ -617,7 +617,6 @@ if (!function_exists('order_cc_mails')) {
 			'nomanpeera@horecastore.ae',
 			'imran@horecastore.ae',
 			'hello@horecastore.ae',
-			'dmm@horecastore.ae',
 			'pm@horecastore.ae',
 			'css01@horecastore.ae',
 			'fm@horecastore.ae',
