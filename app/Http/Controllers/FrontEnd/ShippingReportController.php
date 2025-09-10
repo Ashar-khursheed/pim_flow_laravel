@@ -110,6 +110,12 @@ class ShippingReportController extends Controller
 
             $products = $query->limit(5)->orderBy('id', 'asc')->get();
 
+            if (!$products->count()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product id not found',
+                ], 404);
+            }
             // Format response
             $formattedProducts = $products->map(function ($product) {
                 $firstSupplier = $product->productSuppliers->first();
