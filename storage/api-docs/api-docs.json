@@ -8339,7 +8339,9 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "unit_price",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -8353,6 +8355,16 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 199.99
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -16305,7 +16317,7 @@
                 "tags": [
                     "Frontend-Categories"
                 ],
-                "summary": "Get Attribute List",
+                "summary": "Get Filtered Products",
                 "description": "Fetch products with dynamic attribute filters",
                 "operationId": "a9e07523fb703ad95e3006706b321c98",
                 "requestBody": {
@@ -16320,7 +16332,7 @@
                                     "category_id": {
                                         "description": "ID of the product category",
                                         "type": "integer",
-                                        "example": 1
+                                        "example": 54
                                     },
                                     "page": {
                                         "description": "Page number for pagination",
@@ -16331,16 +16343,6 @@
                                         "description": "Number of records per page",
                                         "type": "integer",
                                         "example": 20
-                                    },
-                                    "price_min": {
-                                        "description": "Minimum price",
-                                        "type": "number",
-                                        "example": 100
-                                    },
-                                    "price_max": {
-                                        "description": "Maximum price",
-                                        "type": "number",
-                                        "example": 1000
                                     },
                                     "sort_by": {
                                         "description": "Sort field",
@@ -16361,42 +16363,87 @@
                                         ],
                                         "example": "asc"
                                     },
-                                    "filters": {
-                                        "description": "Dynamic attribute filters",
+                                    "applied_filters": {
+                                        "description": "General filters applied to products",
+                                        "properties": {
+                                            "priceRange": {
+                                                "properties": {
+                                                    "min_price": {
+                                                        "type": "string",
+                                                        "example": "1514.00"
+                                                    },
+                                                    "max_price": {
+                                                        "type": "string",
+                                                        "example": "2832.50"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "brand_ids": {
+                                                "description": "Array of brand IDs",
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "ratings": {
+                                                "description": "Array of rating values",
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "applied_range_filters": {
+                                        "description": "Range-based attribute filters",
                                         "type": "array",
                                         "items": {
                                             "properties": {
-                                                "specification_name": {
-                                                    "type": "string",
-                                                    "example": "Color"
+                                                "attribute_id": {
+                                                    "description": "Attribute ID",
+                                                    "type": "integer",
+                                                    "example": 590
                                                 },
-                                                "specification_value": {
-                                                    "oneOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "example": "Red"
+                                                "unit_id": {
+                                                    "description": "Measurement unit ID",
+                                                    "type": "integer",
+                                                    "example": 62
+                                                },
+                                                "ranges": {
+                                                    "properties": {
+                                                        "min": {
+                                                            "type": "integer",
+                                                            "example": 210
                                                         },
-                                                        {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "type": "string",
-                                                                "example": "Red"
-                                                            }
-                                                        },
-                                                        {
-                                                            "properties": {
-                                                                "min": {
-                                                                    "type": "number",
-                                                                    "example": 10
-                                                                },
-                                                                "max": {
-                                                                    "type": "number",
-                                                                    "example": 100
-                                                                }
-                                                            },
-                                                            "type": "object"
+                                                        "max": {
+                                                            "type": "integer",
+                                                            "example": 211
                                                         }
-                                                    ]
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "applied_fixed_filters": {
+                                        "description": "Fixed value attribute filters",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "description": "Attribute ID",
+                                                    "type": "integer",
+                                                    "example": 225
+                                                },
+                                                "value": {
+                                                    "description": "Filter value",
+                                                    "type": "string",
+                                                    "example": "Black"
                                                 }
                                             },
                                             "type": "object"
@@ -22297,7 +22344,7 @@
                 ],
                 "summary": "Get products.xml",
                 "description": "Returns the XML sitemap containing public URLs of the website.",
-                "operationId": "8a4b35836832c6da804d9d35b554f2c3",
+                "operationId": "1e4d462adaad8731bb1bbbe38a5cb9c1",
                 "responses": {
                     "200": {
                         "description": "Sitemap XML generated successfully",

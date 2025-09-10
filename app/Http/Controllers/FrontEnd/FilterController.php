@@ -5,37 +5,68 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
+use App\Models\Attribute;
+use App\Models\ProductAttribute;
+use App\Models\MeasurementUnit;
 
 class FilterController extends Controller
 {
 	/**
 	 * @OA\Post(
 	 *     path="/api/frontend/products/filters",
-	 *     summary="Get Attribute List",
+	 *     summary="Get Filtered Products",
 	 *     description="Fetch products with dynamic attribute filters",
 	 *     tags={"Frontend-Categories"},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             required={"category_id"},
-	 *             @OA\Property(property="category_id", type="integer", example=1, description="ID of the product category"),
+	 *             @OA\Property(property="category_id", type="integer", example=54, description="ID of the product category"),
 	 *             @OA\Property(property="page", type="integer", example=1, description="Page number for pagination"),
 	 *             @OA\Property(property="length", type="integer", example=20, description="Number of records per page"),
-	 *             @OA\Property(property="price_min", type="number", example=100, description="Minimum price"),
-	 *             @OA\Property(property="price_max", type="number", example=1000, description="Maximum price"),
 	 *             @OA\Property(property="sort_by", type="string", enum={"id","price","created_at"}, example="price", description="Sort field"),
 	 *             @OA\Property(property="sort_dir", type="string", enum={"asc","desc"}, example="asc", description="Sort direction"),
-	 *             @OA\Property(property="filters", type="array", @OA\Items(
+	 *             @OA\Property(
+	 *                 property="applied_filters",
 	 *                 type="object",
-	 *                 @OA\Property(property="specification_name", type="string", example="Color"),
-	 *                 @OA\Property(property="specification_value", oneOf={
-	 *                     @OA\Schema(type="string", example="Red"),
-	 *                     @OA\Schema(type="array", @OA\Items(type="string", example="Red")),
-	 *                     @OA\Schema(type="object", @OA\Property(property="min", type="number", example=10), @OA\Property(property="max", type="number", example=100))
-	 *                 })
-	 *             ), description="Dynamic attribute filters")
+	 *                 description="General filters applied to products",
+	 *                 @OA\Property(
+	 *                     property="priceRange",
+	 *                     type="object",
+	 *                     @OA\Property(property="min_price", type="string", example="1514.00"),
+	 *                     @OA\Property(property="max_price", type="string", example="2832.50")
+	 *                 ),
+	 *                 @OA\Property(property="brand_ids", type="array", @OA\Items(type="integer", example=1), description="Array of brand IDs"),
+	 *                 @OA\Property(property="ratings", type="array", @OA\Items(type="integer", example=5), description="Array of rating values")
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="applied_range_filters",
+	 *                 type="array",
+	 *                 description="Range-based attribute filters",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="attribute_id", type="integer", example=590, description="Attribute ID"),
+	 *                     @OA\Property(property="unit_id", type="integer", example=62, description="Measurement unit ID"),
+	 *                     @OA\Property(
+	 *                         property="ranges",
+	 *                         type="object",
+	 *                         @OA\Property(property="min", type="integer", example=210),
+	 *                         @OA\Property(property="max", type="integer", example=211)
+	 *                     )
+	 *                 )
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="applied_fixed_filters",
+	 *                 type="array",
+	 *                 description="Fixed value attribute filters",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="attribute_id", type="integer", example=225, description="Attribute ID"),
+	 *                     @OA\Property(property="value", type="string", example="Black", description="Filter value")
+	 *                 )
+	 *             )
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Retrieved successfully", @OA\MediaType(mediaType="application/json")),
@@ -46,13 +77,13 @@ class FilterController extends Controller
 		/* Validate request data */
 		$request->validate([
 			'category_id' => 'required|integer|exists:categories,id',
-			'price_min' => 'nullable|numeric|min:0',
-			'price_max' => 'nullable|numeric|min:0',
-			'rating' => 'nullable|numeric|min:1|max:5',
+			'page' => 'required|integer',
+			'length' => 'required|integer',
 			'sort_by' => 'nullable|in:price',
 			'sort_dir' => 'nullable|in:asc,desc',
-			'brand_ids' => 'nullable|array',
-			'filters' => 'nullable|array',
+			'applied_filters' => 'nullable|array',
+			'applied_range_filters' => 'nullable|array',
+			'applied_fixed_filters' => 'nullable|array',
 		]);
 
 		/* Ensure only leaf (last-level) and published category is used */
@@ -80,113 +111,189 @@ class FilterController extends Controller
 		$filters['brands'] = $category->allBrandsFromLeaves()->toArray();
 		$filters['ratings'] = [5, 4, 3, 2, 1];
 
-		$allProductIds = $category->productIds();
 		$categoryAttributeIds = [];
-
 		if ($category->subCategory && $category->subCategory->attributes_ids) {
-			if (is_string($category->subCategory->attributes_ids)) {
-				$categoryAttributeIds = array_map('intval', explode(',', $category->subCategory->attributes_ids));
-			} elseif (is_array($category->subCategory->attributes_ids)) {
-				$categoryAttributeIds = array_map('intval', $category->subCategory->attributes_ids);
+			$raw = $category->subCategory->attributes_ids;
+			if (is_array($raw)) {
+				$raw = $raw[0];
 			}
+			$categoryAttributeIds = array_map('intval', explode(',', $raw));
 		}
 
-		dd($categoryAttributeIds);
+		$categoryAttributes = Attribute::whereIn('id', $categoryAttributeIds)->get(['id', 'name', 'type']);
+
+		/* Final grouped array with reset keys */
+		$attributesByCategory = [
+			'measurement' => $categoryAttributes->where('type', 'measurement')->values()->toArray(),
+			'other' => $categoryAttributes->reject(fn($attr) => $attr->type == 'measurement')->values()->toArray(),
+		];
+
+		$allProductIds = $category->productIds();
+
+		// $filteredProducts = Product::whereIn('ec_products.id', $allProductIds);
+		// if($request->applied_filters->brand_ids) {
+		// 	$filteredProducts->whereIn('ec_products.brand_id', $request->applied_filters->brand_ids)
+		// }
+		// if($request->applied_filters->ratings) {
+		// 	$filteredProducts->whereIn('ec_products.brand_id', $request->applied_filters->brand_ids)
+		// }
+
+		// whereHas(
+		// )->whereIn('ec_products.id', $allProductIds)->pluck('ec_products.id');
 
 
-		$hasGroup = $request->query('has_group', $request->input('has_group'));
 
-		if ($hasGroup !== null) {
-			$hasGroup = filter_var($hasGroup, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		$measurementAttributeValues = ProductAttribute::join('measurement_units', 'product_attributes.measurement_unit_id', '=', 'measurement_units.id')
+		->join('measurement_types', 'measurement_units.measurement_type_id', '=', 'measurement_types.id')
+		->join('category_measurement_unit_priorities', 'measurement_types.id', '=', 'category_measurement_unit_priorities.measurement_type_id')
+		->whereIn('product_attributes.product_id', $allProductIds)
+		->whereIn('product_attributes.attribute_id', array_column($attributesByCategory['measurement'], 'id'))
+		->where('category_measurement_unit_priorities.category_id', $category->id)
+		// if ($request->applied_range_filters) {
+		// 	// code...
+		// }
+		->select([
+			'product_attributes.attribute_id',
+			'product_attributes.attribute_value',
+			'product_attributes.measurement_unit_id',
+			'measurement_types.id as measurement_type_id',
+			'measurement_types.name as measurement_type_name',
+			'category_measurement_unit_priorities.measurement_unit_primary_id as primary_measurement_unit_id'
+		])
+		->get();
+		$measurementAttributeArray = $measurementAttributeValues->toArray();
+
+		$measurementUnitIDSymbol = MeasurementUnit::pluck('symbol', 'id')->toArray();
+		$measurementUnitIDName = MeasurementUnit::pluck('name', 'id')->toArray();
+		$attributeIDName = $categoryAttributes->pluck('name', 'id')->toArray();
+		$rangefilterArray = [];
+
+		foreach ($measurementAttributeArray as $key => $measurementAttribute) {
+			/* Check if attribute_value is not numeric */
+			if (!is_numeric($measurementAttribute['attribute_value'])) {
+				continue;
+			}
+
+			/* Check if conversion is needed */
+			$attributeValue = $measurementAttribute['attribute_value'];
+			if ($measurementAttribute['measurement_unit_id'] != $measurementAttribute['primary_measurement_unit_id']) {
+				$originalUnitName = $measurementUnitIDName[$measurementAttribute['measurement_unit_id']];
+				$targetUnitName = $measurementUnitIDName[$measurementAttribute['primary_measurement_unit_id']];
+				$attributeValue = convert_unit(
+					$measurementAttribute['measurement_type_name'],
+					$measurementAttribute['attribute_value'],
+					$originalUnitName,
+					$targetUnitName
+				);
+			}
+
+			$rangefilterArray[] = [
+				'attribute_id' => $measurementAttribute['attribute_id'],
+				'attribute_name' => $attributeIDName[$measurementAttribute['attribute_id']],
+				'attribute_value' => (float) $attributeValue,
+				'unit_id' => $measurementAttribute['primary_measurement_unit_id'],
+				'unit_symbol' => $measurementUnitIDSymbol[$measurementAttribute['primary_measurement_unit_id']]
+			];
 		}
 
-		$searchableColumns = ['id', 'name', 'code', 'type'];
-		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
-		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
-		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+		$rangefilters = createSmartRanges($rangefilterArray, 5);
 
-		// $recordsQuery = Attribute::with(['attributeGroup:id,name', 'attributeValues:id,attribute_id,attribute_value']);
-		$recordsQuery = Attribute::query();
+		$otherAttributeValues = ProductAttribute::whereIn('product_id', $allProductIds)->whereIn('attribute_id', array_column($attributesByCategory['other'], 'id'))->get(['attribute_id', 'attribute_value']);
+		$otherAttributeArray = $otherAttributeValues->toArray();
 
-		if ($hasGroup === false) {
-			$recordsQuery->whereNull('attribute_group_id');
-		} elseif ($hasGroup === true) {
-			$recordsQuery->whereNotNull('attribute_group_id');
-		}
+		$fixedFilters = [];
 
-		if (!empty($request->attribute_group_id)) {
-			$recordsQuery->where('attribute_group_id', $request->attribute_group_id);
-		}
+		foreach ($otherAttributeArray as $otherAttribute) {
+			$attributeName = $attributeIDName[$otherAttribute['attribute_id']];
+			$attributeValue = $otherAttribute['attribute_value'];
 
-		/* Pagination */
-		if ($request->filled('page') && $request->filled('length')) {
-			$recordsQuery->with(['attributeGroup:id,name', 'creator:id,first_name,last_name', 'updator:id,first_name,last_name']);
-
-			/* Apply global or column-specific filters */
-			if ($request->filled('global')) {
-				$search = $request->input('global');
-				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
-					foreach ($searchableColumns as $col) {
-						$q->orWhere($col, 'LIKE', '%' . $search . '%');
-					}
-				});
-			} else {
-				foreach ($searchableColumns as $col) {
-					if ($request->filled($col)) {
-						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
-					}
+			/* Check if this attribute name already exists in fixedFilters */
+			$found = false;
+			foreach ($fixedFilters as $key => $value) {
+				if ($key === $attributeName) {
+					$found = true;
+					break;
 				}
 			}
 
-			/* Apply sorting */
-			$recordsQuery->orderBy($sortBy, $sortDir);
-
-			/* Clone query for counting */
-			$totalRecords = (clone $recordsQuery)->count();
-			$length = (int) $request->input('length');
-			$totalPages = (int) ceil($totalRecords / $length);
-
-			$page = (int) $request->input('page');
-			/* If requested page exceeds total pages (after search), fallback to page 1 */
-			if ($page > $totalPages && $totalPages > 0) {
-				$page = 1;
+			/* If attribute name doesn't exist, create it */
+			if (!$found) {
+				$fixedFilters[$attributeName] = [
+					'attribute_id' => $otherAttribute['attribute_id'],
+					'values' => []
+				];
 			}
 
-			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
-				'id', 'name', 'code', 'type', 'attribute_group_id', 'created_by', 'created_at', 'updated_at'
-			]);
+			/* Check if this value already exists in the values array */
+			$valueExists = false;
+			foreach ($fixedFilters[$attributeName]['values'] as $existingValue) {
+				if ($existingValue === $attributeValue) {
+					$valueExists = true;
+					break;
+				}
+			}
 
-			/* Add attribute_group_name and created_by */
-			$records->transform(function ($record) {
-				$record->attribute_group_name = $record->attributeGroup->name ?? null;
-				unset($record->attributeGroup);
-				unset($record->attribute_group_id);
+			/* Add the value if it doesn't exist */
+			if (!$valueExists) {
+				$fixedFilters[$attributeName]['values'][] = $attributeValue;
+			}
+		}
 
-				$record->created_by = $record->creator->name ?? null;
-				unset($record->creator);
+		$products = $category->products;
+		$transformedProducts = [];
+		foreach ($products as $product) {
+			$firstSupplier = $product->productSuppliers->first();
+			$fullValue = $product->sellingUnitAttribute->attribute_value;
 
-				$record->updated_by = $record->updator->name ?? null;
-				unset($record->updator);
-				return $record;
-			});
-		} else {
-			$records = $recordsQuery->orderBy('name', 'asc')->get([
-				'id', 'name'
-			]);
-			$totalRecords = $records->count();
-			$totalPages = 1;
+			$attributeUnit = strpos($fullValue, '/') !== false
+			? trim(explode('/', $fullValue)[1])
+			: $fullValue;
+
+			$sellingType = [
+				'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+				'attribute_value_unit' => $attributeUnit,
+			];
+			$transformedProducts[] = [
+				'id' => $product->id,
+				'name' => $product->name,
+				'category_url' => $product->category_url(),
+				'parent_category_url' => $product->parent_category_url(),
+				'sku' => $product->sku,
+				'url' => $product->seoProductUrl?->url ?? null,
+				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+				'price' => $firstSupplier ? (float) $firstSupplier->price : null,
+				'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+				'total_reviews' => $product->reviews->count(),
+				'avg_rating' => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
+				'left_stock' => ($firstSupplier->quantity ?? 0) - ($product->units_sold ?? 0),
+				'currency' => $product->currency->symbol,
+						// 'in_wishlist' => $product->currency->symbol,
+				'images' => is_array($product->images) ? $product->images : (json_decode($product->images, true) ?? []),
+				'alt_tags' => is_array($product->alt_tags) ? $product->alt_tags : (json_decode($product->alt_tags, true) ?? []),
+				"original_price"=> $firstSupplier ? (float) $firstSupplier->price : null,
+				'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+				"best_price"=> $firstSupplier ? (float) $firstSupplier->price : null,
+				"selling_type"=> $sellingType,
+						// "per_unit_price"=>   $product->per_unit_price,
+				'vendor_id' => $firstSupplier->vendor_id ?? null,
+				'map' => $firstSupplier ? (float) $firstSupplier->map : null,
+				'inventory' => $firstSupplier->inventory ?? null,
+				'in_stock' => $firstSupplier->in_stock ?? null,
+				'delivery_days' => $firstSupplier->delivery_days ?? null,
+				'return_policy' => $firstSupplier->return_policy ?? null,
+				'free_shipping' => $firstSupplier->free_shipping ?? null,
+				'warranty_information' => $firstSupplier->warranty_information ?? null,
+			];
 		}
 
 		return response()->json([
 			'success' => true,
-			'message' => __("msg_rec_list"),
-			'data' => $records,
-			'total_pages' => $totalPages ?? 1,
-			'total_records' => $totalRecords,
+			'filters' => $filters,
+			'rangefilters' => $rangefilters,
+			'fixedFilters' => $fixedFilters,
+			'products' => $transformedProducts,
+			// 'total_pages' => $totalPages ?? 1,
+			// 'total_records' => $totalRecords,
 		]);
-	}
-
-	private function getCategoryBrands($categoryId) {
-
 	}
 }
