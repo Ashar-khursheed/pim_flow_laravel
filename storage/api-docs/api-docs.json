@@ -16588,12 +16588,9 @@
                                                 }
                                             },
                                             "ratings": {
-                                                "description": "Array of rating values",
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                }
+                                                "description": "Rating values",
+                                                "type": "integer",
+                                                "example": 5
                                             }
                                         },
                                         "type": "object"

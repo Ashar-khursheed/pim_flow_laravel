@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
+use App\Models\MeasurementUnit;
+
 if (!function_exists('app_constants')) {
 	function app_constants($key = null) {
 		$constants = [
@@ -320,6 +322,18 @@ if (!function_exists('convert_unit')) {
 		} catch (\Exception $e) {
 			return "Conversion error: " . $e->getMessage();
 		}
+	}
+}
+
+if (!function_exists('convert_unit_with_id')) {
+	function convert_unit_with_id(float $value, int $toUnit, int $fromUnit): float|string
+	{
+		$measurementToUnit = MeasurementUnit::find($toUnit);
+		$typeName = $measurementToUnit->type->name;
+		$toUnitName = $measurementToUnit->name;
+		$measurementFromUnit = MeasurementUnit::find($fromUnit);
+		$fromUnitName = $measurementFromUnit->name;
+		return convert_unit($typeName, $value, $fromUnitName, $toUnitName);
 	}
 }
 

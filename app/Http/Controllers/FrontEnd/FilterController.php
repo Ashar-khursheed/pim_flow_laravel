@@ -39,7 +39,7 @@ class FilterController extends Controller
 	 *                     @OA\Property(property="max_price", type="string", example="2832.50")
 	 *                 ),
 	 *                 @OA\Property(property="brand_ids", type="array", @OA\Items(type="integer", example=1), description="Array of brand IDs"),
-	 *                 @OA\Property(property="ratings", type="array", @OA\Items(type="integer", example=5), description="Array of rating values")
+	 *                 @OA\Property(property="ratings", type="integer", example=5, description="Rating values")
 	 *             ),
 	 *             @OA\Property(
 	 *                 property="applied_range_filters",
@@ -130,28 +130,102 @@ class FilterController extends Controller
 
 		$allProductIds = $category->productIds();
 
-		// $filteredProducts = Product::whereIn('ec_products.id', $allProductIds);
-		// if($request->applied_filters->brand_ids) {
-		// 	$filteredProducts->whereIn('ec_products.brand_id', $request->applied_filters->brand_ids)
-		// }
-		// if($request->applied_filters->ratings) {
-		// 	$filteredProducts->whereIn('ec_products.brand_id', $request->applied_filters->brand_ids)
-		// }
+		$filteredProducts = Product::whereIn('id', $allProductIds);
+		/* Filter */
+		if (!empty($request->applied_filters['brand_ids'])) {
+			$filteredProducts->whereIn('brand_id', $request->applied_filters['brand_ids']);
+		}
 
-		// whereHas(
-		// )->whereIn('ec_products.id', $allProductIds)->pluck('ec_products.id');
+		if (!empty($request->applied_filters['ratings'])) {
+			$rating = (int) $request->applied_filters['ratings'];
 
+			$filteredProducts->whereHas('reviews', function ($q) use ($rating) {
+				$q->select('product_id')
+				->groupBy('product_id')
+				->havingRaw('AVG(star) BETWEEN ? AND ?', [$rating, $rating + 1]);
+			});
+		}
 
+		if (
+			!empty($request->applied_filters['priceRange']) &&
+			!empty($request->applied_filters['priceRange']['min_price']) &&
+			!empty($request->applied_filters['priceRange']['max_price'])
+		) {
+			$minPrice = $request->applied_filters['priceRange']['min_price'];
+			$maxPrice = $request->applied_filters['priceRange']['max_price'];
+
+			$filteredProducts->whereHas('productSuppliers', function ($q) use ($minPrice, $maxPrice) {
+				$q->whereRaw('
+					CASE
+					WHEN product_suppliers.sale_price > 0
+					THEN product_suppliers.sale_price
+					ELSE product_suppliers.price
+					END BETWEEN ? AND ?
+					', [$minPrice, $maxPrice]);
+			});
+		}
+
+		/* Fixed Filters */
+		if (!empty($request->applied_fixed_filters)) {
+			foreach ($request->applied_fixed_filters as $filter) {
+				if (!empty($filter['attribute_id']) && !empty($filter['value'])) {
+					$filteredProducts->whereHas('productAttributes', function ($q) use ($filter) {
+						$q->where('attribute_id', $filter['attribute_id']);
+						$q->where('attribute_value', $filter['value']);
+					});
+				}
+			}
+		}
+		$filteredProductIds = $filteredProducts->pluck('id');
+
+		/* Range Filter */
+		if (!empty($request->applied_range_filters)) {
+			$filteredProducts = Product::whereIn('id', $filteredProductIds);
+			foreach ($request->applied_range_filters as $filter) {
+				if (
+					!empty($filter['attribute_id']) &&
+					!empty($filter['unit_id']) &&
+					!empty($filter['ranges']['min']) &&
+					!empty($filter['ranges']['max'])
+				) {
+					$filteredProducts->whereHas('productAttributes', function ($q) use ($filter) {
+						$q->where('attribute_id', $filter['attribute_id']);
+					});
+				}
+			}
+			$productIds = $filteredProducts->pluck('id');
+
+			$filteredProductIds = ProductAttribute::whereIn('product_id', $productIds)
+			->get()
+			->filter(function ($attr) use ($request) {
+				foreach ($request->applied_range_filters as $filter) {
+					if ($attr->attribute_id == $filter['attribute_id']) {
+						$value = $attr->measurement_unit_id == $filter['unit_id']
+						? $attr->attribute_value
+						: convert_unit_with_id($attr->attribute_value, $filter['unit_id'], $attr->measurement_unit_id);
+
+						/* Strictly check range */
+						if ($value < $filter['ranges']['min'] || $value > $filter['ranges']['max']) {
+							return false;
+						}
+
+						return true;
+					}
+				}
+				return false;
+			})
+			->pluck('product_id')
+			->unique()
+			->values();
+
+		}
 
 		$measurementAttributeValues = ProductAttribute::join('measurement_units', 'product_attributes.measurement_unit_id', '=', 'measurement_units.id')
 		->join('measurement_types', 'measurement_units.measurement_type_id', '=', 'measurement_types.id')
 		->join('category_measurement_unit_priorities', 'measurement_types.id', '=', 'category_measurement_unit_priorities.measurement_type_id')
-		->whereIn('product_attributes.product_id', $allProductIds)
+		->whereIn('product_attributes.product_id', $filteredProductIds)
 		->whereIn('product_attributes.attribute_id', array_column($attributesByCategory['measurement'], 'id'))
 		->where('category_measurement_unit_priorities.category_id', $category->id)
-		// if ($request->applied_range_filters) {
-		// 	// code...
-		// }
 		->select([
 			'product_attributes.attribute_id',
 			'product_attributes.attribute_value',
@@ -179,6 +253,7 @@ class FilterController extends Controller
 			if ($measurementAttribute['measurement_unit_id'] != $measurementAttribute['primary_measurement_unit_id']) {
 				$originalUnitName = $measurementUnitIDName[$measurementAttribute['measurement_unit_id']];
 				$targetUnitName = $measurementUnitIDName[$measurementAttribute['primary_measurement_unit_id']];
+				// dd($measurementAttribute['attribute_value'],$measurementAttribute['primary_measurement_unit_id'],$measurementAttribute['measurement_unit_id']);
 				$attributeValue = convert_unit(
 					$measurementAttribute['measurement_type_name'],
 					$measurementAttribute['attribute_value'],
@@ -198,7 +273,7 @@ class FilterController extends Controller
 
 		$rangefilters = createSmartRanges($rangefilterArray, 5);
 
-		$otherAttributeValues = ProductAttribute::whereIn('product_id', $allProductIds)->whereIn('attribute_id', array_column($attributesByCategory['other'], 'id'))->get(['attribute_id', 'attribute_value']);
+		$otherAttributeValues = ProductAttribute::whereIn('product_id', $filteredProductIds)->whereIn('attribute_id', array_column($attributesByCategory['other'], 'id'))->get(['attribute_id', 'attribute_value']);
 		$otherAttributeArray = $otherAttributeValues->toArray();
 
 		$fixedFilters = [];
@@ -239,7 +314,7 @@ class FilterController extends Controller
 			}
 		}
 
-		$products = $category->products;
+		$products = Product::whereIn('id', $filteredProductIds)->get();
 		$transformedProducts = [];
 		foreach ($products as $product) {
 			$firstSupplier = $product->productSuppliers->first();
