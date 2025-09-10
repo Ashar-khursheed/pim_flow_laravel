@@ -50,14 +50,14 @@ class Category extends Model
 	public function scopeLastChildCategories($query, $parentId)
 	{
 		return $query->where('parent_id', '!=', 0)
-			->whereNotIn('id', function ($subQuery) {
-				$subQuery->select('parent_id')
-					->from('categories')
-					->whereNotNull('parent_id');
-			})
-			->whereHas('parent', function ($parentQuery) use ($parentId) {
-				$parentQuery->where('parent_id', $parentId);
-			});
+		->whereNotIn('id', function ($subQuery) {
+			$subQuery->select('parent_id')
+			->from('categories')
+			->whereNotNull('parent_id');
+		})
+		->whereHas('parent', function ($parentQuery) use ($parentId) {
+			$parentQuery->where('parent_id', $parentId);
+		});
 	}
 
 	public function children()
@@ -115,15 +115,10 @@ class Category extends Model
 		// return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
 		// ->where('relational_type', 'Category');
 		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
-			->where(function ($query) {
-				$query->where('relational_type', 'Category')
-					->orWhere('relational_type', static::class);
-			});
-	}
-
-	public function subCategories()
-	{
-		return $this->hasMany(SubCategory::class);
+		->where(function ($query) {
+			$query->where('relational_type', 'Category')
+			->orWhere('relational_type', static::class);
+		});
 	}
 
 	public function products()
@@ -135,6 +130,11 @@ class Category extends Model
 			'product_id'
 		);
 	}
+
+	public function productIds() {
+		return $this->hasMany(ProductCategory::class, 'category_id')->pluck('product_id');
+	}
+
 	public function getAllParentsAttribute()
 	{
 		$parents = collect();
@@ -175,9 +175,9 @@ class Category extends Model
 			'category_id',
 			'product_id'
 		)
-			->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
-			->select('ec_brands.id', 'ec_brands.name')
-			->distinct();
+		->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
+		->select('ec_brands.id', 'ec_brands.name')
+		->distinct();
 	}
 
 	public function allBrandsFromLeaves()
@@ -187,29 +187,34 @@ class Category extends Model
 		$leafIds = $leafCategories->pluck('id')->toArray();
 
 		return Product::query()
-			->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
-			->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
-			->whereIn('product_categories.category_id', $leafIds)
-			->select('ec_brands.id', 'ec_brands.name')
-			->distinct()
-			->get();
+		->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
+		->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
+		->whereIn('product_categories.category_id', $leafIds)
+		->select('ec_brands.id', 'ec_brands.name')
+		->distinct()
+		->get();
 	}
 
 
 	public function category_url()
 	{
 		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
-			 
-			->where('relational_type', 'Category');
+
+		->where('relational_type', 'Category');
 	}
 
 	public function getSuperParent()
-    {
-        $category = $this;
- 
-        while ($category->parent) {
-            $category = $category->parent;
-        }
-        return (string) $category->id;
-    }
+	{
+		$category = $this;
+
+		while ($category->parent) {
+			$category = $category->parent;
+		}
+		return (string) $category->id;
+	}
+
+	public function subCategory()
+	{
+		return $this->hasOne(SubCategory::class);
+	}
 }

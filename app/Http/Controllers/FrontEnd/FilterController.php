@@ -1,0 +1,299 @@
+<?php
+
+namespace App\Http\Controllers\FrontEnd;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Attribute;
+use App\Models\ProductAttribute;
+use App\Models\MeasurementUnit;
+
+class FilterController extends Controller
+{
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/products/filters",
+	 *     summary="Get Filtered Products",
+	 *     description="Fetch products with dynamic attribute filters",
+	 *     tags={"Frontend-Categories"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"category_id"},
+	 *             @OA\Property(property="category_id", type="integer", example=54, description="ID of the product category"),
+	 *             @OA\Property(property="page", type="integer", example=1, description="Page number for pagination"),
+	 *             @OA\Property(property="length", type="integer", example=20, description="Number of records per page"),
+	 *             @OA\Property(property="sort_by", type="string", enum={"id","price","created_at"}, example="price", description="Sort field"),
+	 *             @OA\Property(property="sort_dir", type="string", enum={"asc","desc"}, example="asc", description="Sort direction"),
+	 *             @OA\Property(
+	 *                 property="applied_filters",
+	 *                 type="object",
+	 *                 description="General filters applied to products",
+	 *                 @OA\Property(
+	 *                     property="priceRange",
+	 *                     type="object",
+	 *                     @OA\Property(property="min_price", type="string", example="1514.00"),
+	 *                     @OA\Property(property="max_price", type="string", example="2832.50")
+	 *                 ),
+	 *                 @OA\Property(property="brand_ids", type="array", @OA\Items(type="integer", example=1), description="Array of brand IDs"),
+	 *                 @OA\Property(property="ratings", type="array", @OA\Items(type="integer", example=5), description="Array of rating values")
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="applied_range_filters",
+	 *                 type="array",
+	 *                 description="Range-based attribute filters",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="attribute_id", type="integer", example=590, description="Attribute ID"),
+	 *                     @OA\Property(property="unit_id", type="integer", example=62, description="Measurement unit ID"),
+	 *                     @OA\Property(
+	 *                         property="ranges",
+	 *                         type="object",
+	 *                         @OA\Property(property="min", type="integer", example=210),
+	 *                         @OA\Property(property="max", type="integer", example=211)
+	 *                     )
+	 *                 )
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="applied_fixed_filters",
+	 *                 type="array",
+	 *                 description="Fixed value attribute filters",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="attribute_id", type="integer", example=225, description="Attribute ID"),
+	 *                     @OA\Property(property="value", type="string", example="Black", description="Filter value")
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
+	public function index(Request $request)
+	{
+		/* Validate request data */
+		$request->validate([
+			'category_id' => 'required|integer|exists:categories,id',
+			'page' => 'required|integer',
+			'length' => 'required|integer',
+			'sort_by' => 'nullable|in:price',
+			'sort_dir' => 'nullable|in:asc,desc',
+			'applied_filters' => 'nullable|array',
+			'applied_range_filters' => 'nullable|array',
+			'applied_fixed_filters' => 'nullable|array',
+		]);
+
+		/* Ensure only leaf (last-level) and published category is used */
+		$category = Category::whereDoesntHave('children')->where('id', $request->category_id)->first();
+
+		if (!$category) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Only leaf-level category (categories without children) can be selected.',
+			], 422);
+		}
+
+		$filters = [];
+
+		$priceRange = Product::join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
+		->join('product_suppliers', 'ec_products.id', '=', 'product_suppliers.product_id')
+		->where('product_categories.category_id', $category->id)
+		->selectRaw('
+			MIN(CASE WHEN product_suppliers.sale_price > 0 THEN product_suppliers.sale_price ELSE product_suppliers.price END) as min_price,
+			MAX(CASE WHEN product_suppliers.sale_price > 0 THEN product_suppliers.sale_price ELSE product_suppliers.price END) as max_price
+			')
+		->first();
+
+		$filters['priceRange'] = $priceRange->toArray();
+		$filters['brands'] = $category->allBrandsFromLeaves()->toArray();
+		$filters['ratings'] = [5, 4, 3, 2, 1];
+
+		$categoryAttributeIds = [];
+		if ($category->subCategory && $category->subCategory->attributes_ids) {
+			$raw = $category->subCategory->attributes_ids;
+			if (is_array($raw)) {
+				$raw = $raw[0];
+			}
+			$categoryAttributeIds = array_map('intval', explode(',', $raw));
+		}
+
+		$categoryAttributes = Attribute::whereIn('id', $categoryAttributeIds)->get(['id', 'name', 'type']);
+
+		/* Final grouped array with reset keys */
+		$attributesByCategory = [
+			'measurement' => $categoryAttributes->where('type', 'measurement')->values()->toArray(),
+			'other' => $categoryAttributes->reject(fn($attr) => $attr->type == 'measurement')->values()->toArray(),
+		];
+
+		$allProductIds = $category->productIds();
+
+		// $filteredProducts = Product::whereIn('ec_products.id', $allProductIds);
+		// if($request->applied_filters->brand_ids) {
+		// 	$filteredProducts->whereIn('ec_products.brand_id', $request->applied_filters->brand_ids)
+		// }
+		// if($request->applied_filters->ratings) {
+		// 	$filteredProducts->whereIn('ec_products.brand_id', $request->applied_filters->brand_ids)
+		// }
+
+		// whereHas(
+		// )->whereIn('ec_products.id', $allProductIds)->pluck('ec_products.id');
+
+
+
+		$measurementAttributeValues = ProductAttribute::join('measurement_units', 'product_attributes.measurement_unit_id', '=', 'measurement_units.id')
+		->join('measurement_types', 'measurement_units.measurement_type_id', '=', 'measurement_types.id')
+		->join('category_measurement_unit_priorities', 'measurement_types.id', '=', 'category_measurement_unit_priorities.measurement_type_id')
+		->whereIn('product_attributes.product_id', $allProductIds)
+		->whereIn('product_attributes.attribute_id', array_column($attributesByCategory['measurement'], 'id'))
+		->where('category_measurement_unit_priorities.category_id', $category->id)
+		// if ($request->applied_range_filters) {
+		// 	// code...
+		// }
+		->select([
+			'product_attributes.attribute_id',
+			'product_attributes.attribute_value',
+			'product_attributes.measurement_unit_id',
+			'measurement_types.id as measurement_type_id',
+			'measurement_types.name as measurement_type_name',
+			'category_measurement_unit_priorities.measurement_unit_primary_id as primary_measurement_unit_id'
+		])
+		->get();
+		$measurementAttributeArray = $measurementAttributeValues->toArray();
+
+		$measurementUnitIDSymbol = MeasurementUnit::pluck('symbol', 'id')->toArray();
+		$measurementUnitIDName = MeasurementUnit::pluck('name', 'id')->toArray();
+		$attributeIDName = $categoryAttributes->pluck('name', 'id')->toArray();
+		$rangefilterArray = [];
+
+		foreach ($measurementAttributeArray as $key => $measurementAttribute) {
+			/* Check if attribute_value is not numeric */
+			if (!is_numeric($measurementAttribute['attribute_value'])) {
+				continue;
+			}
+
+			/* Check if conversion is needed */
+			$attributeValue = $measurementAttribute['attribute_value'];
+			if ($measurementAttribute['measurement_unit_id'] != $measurementAttribute['primary_measurement_unit_id']) {
+				$originalUnitName = $measurementUnitIDName[$measurementAttribute['measurement_unit_id']];
+				$targetUnitName = $measurementUnitIDName[$measurementAttribute['primary_measurement_unit_id']];
+				$attributeValue = convert_unit(
+					$measurementAttribute['measurement_type_name'],
+					$measurementAttribute['attribute_value'],
+					$originalUnitName,
+					$targetUnitName
+				);
+			}
+
+			$rangefilterArray[] = [
+				'attribute_id' => $measurementAttribute['attribute_id'],
+				'attribute_name' => $attributeIDName[$measurementAttribute['attribute_id']],
+				'attribute_value' => (float) $attributeValue,
+				'unit_id' => $measurementAttribute['primary_measurement_unit_id'],
+				'unit_symbol' => $measurementUnitIDSymbol[$measurementAttribute['primary_measurement_unit_id']]
+			];
+		}
+
+		$rangefilters = createSmartRanges($rangefilterArray, 5);
+
+		$otherAttributeValues = ProductAttribute::whereIn('product_id', $allProductIds)->whereIn('attribute_id', array_column($attributesByCategory['other'], 'id'))->get(['attribute_id', 'attribute_value']);
+		$otherAttributeArray = $otherAttributeValues->toArray();
+
+		$fixedFilters = [];
+
+		foreach ($otherAttributeArray as $otherAttribute) {
+			$attributeName = $attributeIDName[$otherAttribute['attribute_id']];
+			$attributeValue = $otherAttribute['attribute_value'];
+
+			/* Check if this attribute name already exists in fixedFilters */
+			$found = false;
+			foreach ($fixedFilters as $key => $value) {
+				if ($key === $attributeName) {
+					$found = true;
+					break;
+				}
+			}
+
+			/* If attribute name doesn't exist, create it */
+			if (!$found) {
+				$fixedFilters[$attributeName] = [
+					'attribute_id' => $otherAttribute['attribute_id'],
+					'values' => []
+				];
+			}
+
+			/* Check if this value already exists in the values array */
+			$valueExists = false;
+			foreach ($fixedFilters[$attributeName]['values'] as $existingValue) {
+				if ($existingValue === $attributeValue) {
+					$valueExists = true;
+					break;
+				}
+			}
+
+			/* Add the value if it doesn't exist */
+			if (!$valueExists) {
+				$fixedFilters[$attributeName]['values'][] = $attributeValue;
+			}
+		}
+
+		$products = $category->products;
+		$transformedProducts = [];
+		foreach ($products as $product) {
+			$firstSupplier = $product->productSuppliers->first();
+			$fullValue = $product->sellingUnitAttribute->attribute_value;
+
+			$attributeUnit = strpos($fullValue, '/') !== false
+			? trim(explode('/', $fullValue)[1])
+			: $fullValue;
+
+			$sellingType = [
+				'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+				'attribute_value_unit' => $attributeUnit,
+			];
+			$transformedProducts[] = [
+				'id' => $product->id,
+				'name' => $product->name,
+				'category_url' => $product->category_url(),
+				'parent_category_url' => $product->parent_category_url(),
+				'sku' => $product->sku,
+				'url' => $product->seoProductUrl?->url ?? null,
+				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+				'price' => $firstSupplier ? (float) $firstSupplier->price : null,
+				'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+				'total_reviews' => $product->reviews->count(),
+				'avg_rating' => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
+				'left_stock' => ($firstSupplier->quantity ?? 0) - ($product->units_sold ?? 0),
+				'currency' => $product->currency->symbol,
+						// 'in_wishlist' => $product->currency->symbol,
+				'images' => is_array($product->images) ? $product->images : (json_decode($product->images, true) ?? []),
+				'alt_tags' => is_array($product->alt_tags) ? $product->alt_tags : (json_decode($product->alt_tags, true) ?? []),
+				"original_price"=> $firstSupplier ? (float) $firstSupplier->price : null,
+				'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+				"best_price"=> $firstSupplier ? (float) $firstSupplier->price : null,
+				"selling_type"=> $sellingType,
+						// "per_unit_price"=>   $product->per_unit_price,
+				'vendor_id' => $firstSupplier->vendor_id ?? null,
+				'map' => $firstSupplier ? (float) $firstSupplier->map : null,
+				'inventory' => $firstSupplier->inventory ?? null,
+				'in_stock' => $firstSupplier->in_stock ?? null,
+				'delivery_days' => $firstSupplier->delivery_days ?? null,
+				'return_policy' => $firstSupplier->return_policy ?? null,
+				'free_shipping' => $firstSupplier->free_shipping ?? null,
+				'warranty_information' => $firstSupplier->warranty_information ?? null,
+			];
+		}
+
+		return response()->json([
+			'success' => true,
+			'filters' => $filters,
+			'rangefilters' => $rangefilters,
+			'fixedFilters' => $fixedFilters,
+			'products' => $transformedProducts,
+			// 'total_pages' => $totalPages ?? 1,
+			// 'total_records' => $totalRecords,
+		]);
+	}
+}
