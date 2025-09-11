@@ -14,6 +14,7 @@ use App\Traits\GeneratesQuotePdf;
 class QuotePlacedMail extends Mailable
 {
 	use Queueable, SerializesModels, GeneratesQuotePdf;
+	public $tries = 1;
 	public $quote;
 
 	/**
