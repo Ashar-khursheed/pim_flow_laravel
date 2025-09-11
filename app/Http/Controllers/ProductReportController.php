@@ -166,92 +166,73 @@ class ProductReportController extends Controller
 	}
 
 	/**
-	 * @OA\Get(
-	 *     path="/api/product-benefit-report",
-	 *     summary="Product has benefit features",
-	 *     description="Report of products display with id, sku, name, benefit features description, attribute count, price and graphics yes no reports published draft products.",
-	 *     tags={"Products Report"},
-	 *     
-	 *     @OA\Parameter(
-	 *         name="range_from",
-	 *         in="query",
-	 *         description="Starting product index (must be >= 1)",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="range_to",
-	 *         in="query",
-	 *         description="Ending product index (max range allowed: 500 products)",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=500)
-	 *     ),
-	 *   @OA\Parameter(
-	 *         name="status",
-	 *         in="query",
-	 *         description="Filter products by status (e.g., published, draft)",
-	 *         required=true,
-	 *         @OA\Schema(type="string", enum={"all","published","draft"}, example="all")
-	 *     ),
-	 * 		@OA\Parameter(
-	 *         name="type",
-	 *         in="query",
-	 *         description="Filter type (e.g., Category, Brand)",
-	 *         required=false,
-	 *         @OA\Schema(type="string", enum={"Category","Brand","Vendor"}, example="Category")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="relational_id",
-	 *         in="query",
-	 *         description="Enter brand id, category id",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=14)
-	 *     ),
-	 *   
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Successful product benefit report",
-	 *         @OA\JsonContent(
-	 *             type="object",
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(
-	 *                 property="data",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     type="object",
-	 *                     @OA\Property(property="id", type="integer", example=101),
-	 *                     @OA\Property(property="sku", type="string", example="SKU12345"),
-	 *                     @OA\Property(property="name", type="string", example="Sample Product"),
-	 *                     @OA\Property(property="benefits", type="string", example="Lightweight, Durable"),
-	 *                     @OA\Property(property="attribute_count", type="integer", example=5),
-	 *                     @OA\Property(property="price", type="number", format="float", example=499.99),
-	 *                     @OA\Property(property="graphics", type="string", enum={"yes","no"}, example="yes"),
-	 *                     @OA\Property(property="status", type="string", enum={"all","publish","draft"}, example="publish")
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=400,
-	 *         description="Invalid request parameters",
-	 *         @OA\JsonContent(
-	 *             type="object",
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="Invalid range values")
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=401,
-	 *         description="Unauthorized - Invalid or missing token",
-	 *         @OA\JsonContent(
-	 *             type="object",
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="Unauthorized")
-	 *         )
-	 *     ),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
+ * @OA\Post(
+ *     path="/api/product-benefit-report",
+ *     summary="Product has benefit features",
+ *     description="Report of products with id, sku, name, benefit features description, attribute count, price and graphics status. Supports filtering by status, category, brand, or vendor.",
+ *     tags={"Products Report"},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="application/json",
+ *             @OA\Schema(
+ *                 type="object",
+ *                 required={"status"},
+ *                 @OA\Property(property="range_from", type="integer", example=1, description="Starting product index (must be >= 1)"),
+ *                 @OA\Property(property="range_to", type="integer", example=500, description="Ending product index (max range allowed: 500 products)"),
+ *                 @OA\Property(property="status", type="string", enum={"all","published","draft"}, example="all", description="Filter products by status"),
+ *                 @OA\Property(property="type", type="string", enum={"Category","Brand","Vendor"}, example="Category", description="Filter type"),
+ *                 @OA\Property(property="relational_id", type="integer", example=14, description="Provide brand ID, category ID, or vendor ID depending on type")
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful product benefit report",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     type="object",
+ *                     @OA\Property(property="id", type="integer", example=101),
+ *                     @OA\Property(property="sku", type="string", example="SKU12345"),
+ *                     @OA\Property(property="name", type="string", example="Sample Product"),
+ *                     @OA\Property(property="benefits", type="string", example="Lightweight, Durable"),
+ *                     @OA\Property(property="attribute_count", type="integer", example=5),
+ *                     @OA\Property(property="price", type="number", format="float", example=499.99),
+ *                     @OA\Property(property="graphics", type="string", enum={"yes","no"}, example="yes"),
+ *                     @OA\Property(property="status", type="string", enum={"all","published","draft"}, example="published")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=400,
+ *         description="Invalid request parameters",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Invalid range values")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized - Invalid or missing token",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Unauthorized")
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+
 
 	public function exportBenefitReport(Request $request, ExcelRepository $excelRepo)
 	{
@@ -328,7 +309,7 @@ class ProductReportController extends Controller
 
 		});
 
-		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand name', 'status', 'category_name', 'category_count', 'atribute_count', 'price'];
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'status', 'brand name', 'category_name', 'category_count', 'atribute_count', 'price'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
