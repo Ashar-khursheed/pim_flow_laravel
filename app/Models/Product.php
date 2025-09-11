@@ -281,6 +281,4 @@ class Product extends Model
 			? $mostParent->seoUrl->url
 			: null;
 	}
-
-
 }
