@@ -131,8 +131,11 @@ class Category extends Model
 		);
 	}
 
-	public function productIds() {
-		return $this->hasMany(ProductCategory::class, 'category_id')->pluck('product_id');
+	public function productIdsFromLeafCategories()
+	{
+		$leafIds = self::getLeafCategories($this)->where('status', 'published')->pluck('id')->toArray();
+
+		return ProductCategory::whereIn('category_id', $leafIds)->pluck('product_id')->unique()->values();
 	}
 
 	public function getAllParentsAttribute()
@@ -184,12 +187,13 @@ class Category extends Model
 	{
 		$leafCategories = self::getLeafCategories($this);
 
-		$leafIds = $leafCategories->pluck('id')->toArray();
+		$leafIds = $leafCategories->where('status', 'published')->pluck('id')->toArray();
 
 		return Product::query()
 		->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
 		->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
 		->whereIn('product_categories.category_id', $leafIds)
+		->where('ec_products.status', 'published')
 		->select('ec_brands.id', 'ec_brands.name')
 		->distinct()
 		->get();
