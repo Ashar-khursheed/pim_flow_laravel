@@ -18,7 +18,8 @@ class PrerenderMiddleware
 
         foreach ($crawlers as $crawler) {
             if (stripos($userAgent, $crawler) !== false) {
-                $url = 'https://service.prerender.io/' . ltrim($request->path(), '/');
+                $url = rtrim(env('PRERENDER_URL', 'https://service.prerender.io/'), '/') 
+     . '/' . ltrim($request->fullUrl(), '/');
                 $token = env('PRERENDER_TOKEN');
                 $ch = curl_init($url);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
