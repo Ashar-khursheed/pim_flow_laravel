@@ -402,10 +402,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 
-	Route::apiResource('product-accessories', ProductAccessoriesController::class);
-	Route::get('/product-accessories/show/{id}', [ProductAccessoriesController::class, 'show']);	 
-	Route::post('/product-accessories/update/{id}', [ProductAccessoriesController::class, 'update']);
-	Route::delete('/product-accessories/delete/{id}', [ProductAccessoriesController::class, 'destroy']);
+	Route::resource('product-accessories', ProductAccessoriesController::class);	 
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
 	

@@ -16662,6 +16662,56 @@
                 }
             }
         },
+        "/api/frontend/product-accessories": {
+            "get": {
+                "tags": [
+                    "Frontend Product Accessories"
+                ],
+                "summary": "Get list of Frontend product accessories",
+                "operationId": "6eaf73ef58fa91e3b4478db517ba7d3a",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/location-info": {
             "get": {
                 "tags": [
@@ -28155,13 +28205,13 @@
                 ]
             }
         },
-        "/api/product-accessories/show/{id}": {
+        "/api/product-accessories/{id}": {
             "get": {
                 "tags": [
                     "Product Accessories"
                 ],
-                "summary": "Get a specific product accessory",
-                "operationId": "d2da85d4aab1e229221739dbf2ecac57",
+                "summary": "Show product accessory with item details",
+                "operationId": "65e6e865010492a6481e967321c7624c",
                 "parameters": [
                     {
                         "name": "id",
@@ -28206,15 +28256,13 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/product-accessories/update/{id}": {
-            "post": {
+            },
+            "put": {
                 "tags": [
                     "Product Accessories"
                 ],
-                "summary": "Update a product accessory",
-                "operationId": "577ab495c5450b65b40cdbfd4aabd0a0",
+                "summary": "Update a existing product accessory",
+                "operationId": "5878668a120e59051966c0088890387c",
                 "parameters": [
                     {
                         "name": "id",
@@ -28324,15 +28372,13 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/product-accessories/delete/{id}": {
+            },
             "delete": {
                 "tags": [
                     "Product Accessories"
                 ],
                 "summary": "Delete a product accessory",
-                "operationId": "21ea4ab4513bb72216acb86ea06a5621",
+                "operationId": "f51b4982f5b7ea4589d7f39521db492f",
                 "parameters": [
                     {
                         "name": "id",
@@ -28358,6 +28404,84 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Product accessory deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product accessory not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/{id}/edit": {
+            "get": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Fetch a product accessory for editing",
+                "operationId": "f5af5b41ca5eae0ff3b8cc55083257d6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product accessory data fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Color"
+                                        },
+                                        "accessories": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "left"
+                                                    },
+                                                    "price": {
+                                                        "type": "integer",
+                                                        "example": 44
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "isapproved": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "approved_by": {
+                                            "type": "integer",
+                                            "example": 2
                                         }
                                     },
                                     "type": "object"
@@ -38875,6 +38999,10 @@
         {
             "name": "Frontend - FAQs",
             "description": "Frontend - FAQs"
+        },
+        {
+            "name": "Frontend Product Accessories",
+            "description": "Frontend Product Accessories"
         },
         {
             "name": "Geolocation",
