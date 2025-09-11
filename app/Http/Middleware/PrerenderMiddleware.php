@@ -16,16 +16,23 @@ class PrerenderMiddleware
 
         foreach ($crawlers as $crawler) {
             if (stripos($userAgent, $crawler) !== false) {
-                // Use full URL for Prerender.io
-                $url = env('PRERENDER_URL', 'https://service.prerender.io/') . $request->fullUrl();
-                $token = env('PRERENDER_TOKEN');
+                // Correct full URL handling
+                $targetUrl = $request->fullUrl();
+                $prerenderUrl = env('PRERENDER_URL') . $targetUrl;
 
-                $ch = curl_init($url);
+                $ch = curl_init($prerenderUrl);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, ["X-Prerender-Token: $token"]);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'X-Prerender-Token: ' . env('PRERENDER_TOKEN')
+                ]);
                 $html = curl_exec($ch);
-                curl_close($ch);
 
+                if ($html === false) {
+                    // fallback if Prerender fails
+                    return $next($request);
+                }
+
+                curl_close($ch);
                 return response($html);
             }
         }
