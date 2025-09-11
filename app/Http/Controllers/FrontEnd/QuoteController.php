@@ -420,13 +420,8 @@ class QuoteController extends BaseController
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				$product->url = $product->seoProductUrl->url ?? null;
-				$product->category_url = method_exists($product, 'category_url')
-							? $product->category_url()
-							: null;
-
-						$product->parent_category_url = method_exists($product, 'parent_category_url')
-							? $product->parent_category_url()
-							: null;
+				$product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
+				$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
 				unset($product->brand, $product->currency, $product->seoProductUrl);
 			}
 			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
