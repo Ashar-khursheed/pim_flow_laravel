@@ -16662,6 +16662,56 @@
                 }
             }
         },
+        "/api/frontend/product-accessories": {
+            "get": {
+                "tags": [
+                    "Frontend Product Accessories"
+                ],
+                "summary": "Get list of Frontend product accessories",
+                "operationId": "6eaf73ef58fa91e3b4478db517ba7d3a",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/location-info": {
             "get": {
                 "tags": [
@@ -38875,6 +38925,10 @@
         {
             "name": "Frontend - FAQs",
             "description": "Frontend - FAQs"
+        },
+        {
+            "name": "Frontend Product Accessories",
+            "description": "Frontend Product Accessories"
         },
         {
             "name": "Geolocation",

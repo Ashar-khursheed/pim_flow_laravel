@@ -133,6 +133,7 @@ use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Controllers\FrontEnd\FilterController;
 use App\Http\Controllers\FrontEnd\ShippingReportController;
+use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -720,6 +721,7 @@ Route::get('/frontend/products/specification-filters', [F_CategoryController::cl
 Route::get('/frontend/products/specification-filters1', [F_CategoryController::class, 'getSpecificationFilters1']);
 
 Route::post('/frontend/products/filters', [FilterController::class, 'index']);
+Route::get('/frontend/product-accessories', [FnProductAccessoriesController::class, 'index']);
 
 
 Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
