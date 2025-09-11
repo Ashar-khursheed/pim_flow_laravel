@@ -79,6 +79,7 @@ class ProductAccessoriesController extends Controller
                 });
 
                 return [
+                    'product_id' => $accessory->product_id,
                     'accessory_id' => $accessory->id,
                     'name' => $accessory->name,
                     'isapproved' => $accessory->isapproved,
@@ -234,10 +235,30 @@ class ProductAccessoriesController extends Controller
         try {
             $accessory = ProductAccessory::with(['items', 'approvedBy', 'createdBy', 'updatedBy'])->findOrFail($id);
 
+            // Map items properly
+            $accessoryItems = $accessory->items->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'price' => $item->price,
+                ];
+            });
+
+            // Format response
+            $formattedProduct = [
+                'product_id' => $accessory->product_id,
+                'accessory_id' => $accessory->id,
+                'name' => $accessory->name,
+                'isapproved' => $accessory->isapproved,
+                'approved_by' => $accessory->approved_by,
+                'created_by' => $accessory->created_by,
+                'updated_by' => $accessory->updated_by,
+                'accessory_item' => $accessoryItems,
+            ];
             return response()->json([
                 'success' => true,
                 'message' => 'Product accessory retrieved successfully',
-                'data' => $accessory
+                'data' => $formattedProduct
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -246,53 +267,8 @@ class ProductAccessoriesController extends Controller
                 'error' => $e->getMessage()
             ], 404);
         }
-    }
-    // /**
-    //  * @OA\Get(
-    //  *     path="/api/product-accessories",
-    //  *     summary="Get a specific product accessory",
-    //  *     tags={"Product Accessories"},
-    //  *     @OA\Parameter(
-    //  *         name="id",
-    //  *         in="path",
-    //  *         required=true,
-    //  *         description="Product accessory ID",
-    //  *         @OA\Schema(type="integer")
-    //  *     ),
-    //  *     @OA\Response(
-    //  *         response=200,
-    //  *         description="Successful operation",
-    //  *         @OA\JsonContent(
-    //  *             @OA\Property(property="success", type="boolean", example=true),
-    //  *             @OA\Property(property="message", type="string", example="Product accessory retrieved successfully"),
-    //  *             @OA\Property(property="data", type="object")
-    //  *         )
-    //  *     ),
-    //  *     @OA\Response(
-    //  *         response=404,
-    //  *         description="Product accessory not found"
-    //  *     ),
-    //  *      security={{"bearerAuth":{}}}
-    //  * )
-    //  */
-    // public function edit($id): JsonResponse
-    // {
-    //     try {
-    //         $accessory = ProductAccessory::with(['items', 'approvedBy', 'createdBy', 'updatedBy'])->findOrFail($id);
 
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Product accessory retrieved successfully',
-    //             'data' => $accessory
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Product accessory not found',
-    //             'error' => $e->getMessage()
-    //         ], 404);
-    //     }
-    // }
+    }
 
     /**
      * @OA\Post(
