@@ -186,7 +186,7 @@ class ProductAccessoriesController extends Controller
             // Save all accessories at once
             $accessory->items()->createMany($accessories);
             // $accessory->items()->createMany($request->accessories);
-            $accessory->load(['product', 'createdBy']);
+            $accessory->load(['product']);
 
             return response()->json([
                 'success' => true,
@@ -204,8 +204,8 @@ class ProductAccessoriesController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/product-accessories/show/{id}",
-     *     summary="Get a specific product accessory",
+     *     path="/api/product-accessories/{id}",
+     *     summary="Show product accessory with item details",
      *     tags={"Product Accessories"},
      *     @OA\Parameter(
      *         name="id",
@@ -271,9 +271,68 @@ class ProductAccessoriesController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/product-accessories/update/{id}",
-     *     summary="Update a product accessory",
+     * @OA\Get(
+     *     path="/api/product-accessories/{id}/edit",
+     *     summary="Fetch a product accessory for editing",
+     *     tags={"Product Accessories"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Product accessory ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product accessory data fetched successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="product_id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="Color"),
+     *             @OA\Property(
+     *                 property="accessories",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="name", type="string", example="left"),
+     *                     @OA\Property(property="price", type="integer", example=44)
+     *                 )
+     *             ),
+     *             @OA\Property(property="isapproved", type="integer", example=1),
+     *             @OA\Property(property="approved_by", type="integer", example=2)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Product accessory not found"
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+
+    public function edit(Request $request, $id): JsonResponse
+    {
+        try {
+
+            $accessory = ProductAccessory::with(['items', 'approvedBy', 'updatedBy'])->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product accessory updated successfully',
+                'data' => $accessory
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update product accessory',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    /**
+     * @OA\Put(
+     *     path="/api/product-accessories/{id}",
+     *     summary="Update a existing product accessory",
      *     tags={"Product Accessories"},
      *     @OA\Parameter(
      *         name="id",
@@ -380,7 +439,7 @@ class ProductAccessoriesController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/product-accessories/delete/{id}",
+     *     path="/api/product-accessories/{id}",
      *     summary="Delete a product accessory",
      *     tags={"Product Accessories"},
      *     @OA\Parameter(
