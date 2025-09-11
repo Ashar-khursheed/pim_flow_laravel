@@ -8,7 +8,6 @@ class PrerenderMiddleware
     public function handle($request, Closure $next)
     {
         $userAgent = $request->header('User-Agent', '');
-
         $crawlers = [
             'googlebot', 'bingbot', 'yahoo', 'baiduspider',
             'facebookexternalhit', 'twitterbot', 'rogerbot', 'linkedinbot'
@@ -16,9 +15,10 @@ class PrerenderMiddleware
 
         foreach ($crawlers as $crawler) {
             if (stripos($userAgent, $crawler) !== false) {
-                // Correct full URL handling
-                $targetUrl = $request->fullUrl();
-                $prerenderUrl = env('PRERENDER_URL') . $targetUrl;
+
+                // Build full URL for Prerender.io
+                $targetUrl = $request->fullUrl(); // full URL of the current request
+                $prerenderUrl = rtrim(env('PRERENDER_URL'), '/') . '/' . $targetUrl;
 
                 $ch = curl_init($prerenderUrl);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -26,13 +26,13 @@ class PrerenderMiddleware
                     'X-Prerender-Token: ' . env('PRERENDER_TOKEN')
                 ]);
                 $html = curl_exec($ch);
+                curl_close($ch);
 
+                // If Prerender fails, fallback to normal app
                 if ($html === false) {
-                    // fallback if Prerender fails
                     return $next($request);
                 }
 
-                curl_close($ch);
                 return response($html);
             }
         }
