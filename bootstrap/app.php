@@ -18,7 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
 	$middleware->alias([
 		'user.guard' => EnsureUserGuard::class,
 		'customer.guard' => EnsureCustomerGuard::class,
+		'prerender' => \App\Http\Middleware\PrerenderMiddleware::class, // add this
+
 	]);
+	    $middleware->prepend(\App\Http\Middleware\PrerenderMiddleware::class);
+
 })
 ->withExceptions(function (Exceptions $exceptions) {
 	$exceptions->render(function (AuthenticationException $e, $request) {
