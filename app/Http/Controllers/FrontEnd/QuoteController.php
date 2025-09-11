@@ -584,6 +584,7 @@ class QuoteController extends BaseController
 				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'quoteProducts.product.brand:id,name',
 				'quoteProducts.product.currency:id,symbol',
+				'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
 				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
 				'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
 				'quoteEmails',
@@ -593,14 +594,13 @@ class QuoteController extends BaseController
 				$product = $quoteProduct->product;
 
 				if ($product) {
-					$product->images = is_array($product->images)
-					? $product->images
-					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-
+					$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 					$product->brand_name = $product->brand->name ?? null;
 					$product->currency_symbol = $product->currency->symbol ?? null;
-
-					unset($product->brand, $product->currency);
+					$product->url = $product->seoProductUrl->url ?? null;
+					$product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
+					$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
+					unset($product->brand, $product->currency, $product->seoProductUrl);
 				}
 
 				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only([
