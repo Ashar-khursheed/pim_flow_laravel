@@ -30772,75 +30772,63 @@
             }
         },
         "/api/product-benefit-report": {
-            "get": {
+            "post": {
                 "tags": [
                     "Products Report"
                 ],
                 "summary": "Product has benefit features",
-                "description": "Report of products display with id, sku, name, benefit features description, attribute count, price and graphics yes no reports published draft products.",
-                "operationId": "b89f91b78ab4265eeac4acc80ecd1ed0",
-                "parameters": [
-                    {
-                        "name": "range_from",
-                        "in": "query",
-                        "description": "Starting product index (must be >= 1)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "range_to",
-                        "in": "query",
-                        "description": "Ending product index (max range allowed: 500 products)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 500
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "description": "Filter products by status (e.g., published, draft)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "all",
-                                "published",
-                                "draft"
-                            ],
-                            "example": "all"
-                        }
-                    },
-                    {
-                        "name": "type",
-                        "in": "query",
-                        "description": "Filter type (e.g., Category, Brand)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "Category",
-                                "Brand",
-                                "Vendor"
-                            ],
-                            "example": "Category"
-                        }
-                    },
-                    {
-                        "name": "relational_id",
-                        "in": "query",
-                        "description": "Enter brand id, category id",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 14
+                "description": "Report of products with id, sku, name, benefit features description, attribute count, price and graphics status. Supports filtering by status, category, brand, or vendor.",
+                "operationId": "682a83f9819e776855d27b4bc3d5f793",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "range_from": {
+                                        "description": "Starting product index (must be >= 1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending product index (max range allowed: 500 products)",
+                                        "type": "integer",
+                                        "example": 500
+                                    },
+                                    "status": {
+                                        "description": "Filter products by status",
+                                        "type": "string",
+                                        "enum": [
+                                            "all",
+                                            "published",
+                                            "draft"
+                                        ],
+                                        "example": "all"
+                                    },
+                                    "type": {
+                                        "description": "Filter type",
+                                        "type": "string",
+                                        "enum": [
+                                            "Category",
+                                            "Brand",
+                                            "Vendor"
+                                        ],
+                                        "example": "Category"
+                                    },
+                                    "relational_id": {
+                                        "description": "Provide brand ID, category ID, or vendor ID depending on type",
+                                        "type": "integer",
+                                        "example": 14
+                                    }
+                                },
+                                "type": "object"
+                            }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "200": {
                         "description": "Successful product benefit report",
@@ -30893,10 +30881,10 @@
                                                         "type": "string",
                                                         "enum": [
                                                             "all",
-                                                            "publish",
+                                                            "published",
                                                             "draft"
                                                         ],
-                                                        "example": "publish"
+                                                        "example": "published"
                                                     }
                                                 },
                                                 "type": "object"
