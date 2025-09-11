@@ -18,7 +18,7 @@ class PrerenderMiddleware
 
                 // Build full URL for Prerender.io
                 $targetUrl = $request->fullUrl(); // full URL of the current request
-                $prerenderUrl = rtrim(env('PRERENDER_URL'), '/') . '/' . $targetUrl;
+                $prerenderUrl = 'https://service.prerender.io/' . $request->getRequestUri();
 
                 $ch = curl_init($prerenderUrl);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
