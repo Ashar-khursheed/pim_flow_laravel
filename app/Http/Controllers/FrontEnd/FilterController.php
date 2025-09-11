@@ -343,7 +343,14 @@ class FilterController extends Controller
 			/************************* Create Fixed Filter ***********************/
 		} else {
 			$filteredProductIds = $filteredProducts->pluck('id');
-			$response['categories'] = $category->children()->where('status', 'published')->get(['id', 'name']);
+			$response['categories'] = $category->children()->where('status', 'published')->with(['seoUrl:id,relational_id,relational_type,url'])->get(['id', 'name', 'icon_image'])->map(function ($child) {
+				return [
+					'id'   => $child->id,
+					'name' => $child->name,
+					'icon_image' => $child->icon_image,
+					'url'  => $child->seoUrl->url ?? null,
+				];
+			});
 		}
 
 
