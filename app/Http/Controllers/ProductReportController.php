@@ -309,7 +309,7 @@ class ProductReportController extends Controller
 
 		});
 
-		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand name', 'status', 'category_name', 'category_count', 'atribute_count', 'price'];
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'status', 'brand name', 'category_name', 'category_count', 'atribute_count', 'price'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
