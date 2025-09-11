@@ -27999,6 +27999,486 @@
                 ]
             }
         },
+        "/api/product-accessories": {
+            "get": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Get list of product accessories",
+                "operationId": "9672f68e02e1333188f81ed386599132",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "isapproved",
+                        "in": "query",
+                        "description": "Filter by approval status (0 or 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page (default: 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Create a new product accessory",
+                "operationId": "239d28670923f7c4dc55a762d3e159fd",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "name",
+                                    "accessories"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Door"
+                                    },
+                                    "accessories": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "name",
+                                                "price"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "left"
+                                                },
+                                                "price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 44
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "name": "left",
+                                                "price": 44
+                                            },
+                                            {
+                                                "name": "right",
+                                                "price": 45
+                                            },
+                                            {
+                                                "name": "top",
+                                                "price": 50
+                                            },
+                                            {
+                                                "name": "button",
+                                                "price": 52
+                                            }
+                                        ]
+                                    },
+                                    "isapproved": {
+                                        "type": "boolean",
+                                        "example": 0
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/show/{id}": {
+            "get": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Get a specific product accessory",
+                "operationId": "d2da85d4aab1e229221739dbf2ecac57",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessory retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product accessory not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/update/{id}": {
+            "post": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Update a product accessory",
+                "operationId": "577ab495c5450b65b40cdbfd4aabd0a0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Color"
+                                    },
+                                    "accessories": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "left"
+                                                },
+                                                "price": {
+                                                    "type": "integer",
+                                                    "example": 44
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "name": "left",
+                                                "price": 44
+                                            },
+                                            {
+                                                "name": "right",
+                                                "price": 45
+                                            },
+                                            {
+                                                "name": "top",
+                                                "price": 50
+                                            },
+                                            {
+                                                "name": "button",
+                                                "price": 52
+                                            }
+                                        ]
+                                    },
+                                    "isapproved": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "approved_by": {
+                                        "type": "integer",
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product accessory updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessory updated successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product accessory not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/delete/{id}": {
+            "delete": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Delete a product accessory",
+                "operationId": "21ea4ab4513bb72216acb86ea06a5621",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product accessory deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessory deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product accessory not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/item/{item_id}": {
+            "delete": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Delete a product accessory item",
+                "operationId": "9af205ec9e0b04a5193c3b3b2b31c0a6",
+                "parameters": [
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "description": "Accessory Item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product accessory item deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessory item deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Accessory item not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/status/{id}": {
+            "post": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Approve/Disapprove a product accessory",
+                "operationId": "19b303bf1438ecf125b73f0b3d33925e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "isapproved"
+                                ],
+                                "properties": {
+                                    "isapproved": {
+                                        "description": "1 for approve, 0 for disapprove",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Approval status updated successfully"
+                    },
+                    "404": {
+                        "description": "Product accessory not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products/{id}/categories": {
             "get": {
                 "tags": [
@@ -38200,6 +38680,10 @@
         {
             "name": "Products AI alternates",
             "description": "API Endpoints for Products AI alternates"
+        },
+        {
+            "name": "Product Accessories",
+            "description": "API Endpoints for Product Accessories"
         },
         {
             "name": "Categories",

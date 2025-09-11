@@ -74,6 +74,7 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\CustomerCartController;
 use App\Http\Controllers\PrePurchaseClaimController;
 use App\Http\Controllers\PostPurchaseClaimController;
+use App\Http\Controllers\ProductAccessoriesController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -400,6 +401,15 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::resource('transaction-logs', TransactionLogController::class);
 
 	Route::resource('websites', WebsiteController::class)->only(['index']);
+
+	Route::apiResource('product-accessories', ProductAccessoriesController::class);
+	Route::get('/product-accessories/show/{id}', [ProductAccessoriesController::class, 'show']);	 
+	Route::post('/product-accessories/update/{id}', [ProductAccessoriesController::class, 'update']);
+	Route::delete('/product-accessories/delete/{id}', [ProductAccessoriesController::class, 'destroy']);
+	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
+	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
+	
+
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
