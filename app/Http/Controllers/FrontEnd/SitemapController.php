@@ -106,7 +106,70 @@ class SitemapController extends Controller
             ],
             [
 
-                'loc' => 'products.xml',
+                'loc' => 'products-1.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-2.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-3.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-4.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-5.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-6.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-7.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-8.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-9.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-10.xml',
                 'lastmod' => $now,
                 'changefreq' => 'weekly',
                 'priority' => '0.5',

@@ -56,6 +56,10 @@ use App\Http\Controllers\Controller;
  *     name="Products AI alternates",
  *     description="API Endpoints for Products AI alternates"
  * )
+ *	@OA\Tag(
+ *     name="Product Accessories",
+ *     description="API Endpoints for Product Accessories"
+ * )
  * @OA\Tag(
  *     name="Categories",
  *     description="API Endpoints for Category Management"

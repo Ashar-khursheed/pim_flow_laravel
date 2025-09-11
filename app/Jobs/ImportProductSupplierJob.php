@@ -308,7 +308,7 @@ class ImportProductSupplierJob implements ShouldQueue
 				$supplier->return_policy = $return_policy;
 
 				$supplier->free_shipping = (!empty($free_shipping) && strtolower($free_shipping) === 'yes') ? 1 : 0;
-				$supplier->shipping_charge = $supplier->free_shipping == 1 ? 0 : $supplier->shipping_charge;
+				$supplier->shipping_charge = $supplier->free_shipping == 1 ? 0 : $shipping_charge;
 				$supplier->margin = $margin;
 
 				$supplier->restocking_fees = $restocking_fees !== null ? (float)$restocking_fees : null;

@@ -8,8 +8,19 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use ZipArchive;
 use App\Models\Product;
-use Illuminate\Support\Str; 
+use Illuminate\Support\Str;
+use App\Helpers\PdfHelper;
 
+/**
+ * DocumentUploadController
+ * 
+ * Handles document upload operations for products including:
+ * - Bulk document upload from ZIP files
+ * - Single document upload
+ * - Document deletion
+ * - PDF compression with quality preservation
+ * - S3 storage integration
+ */
 class DocumentUploadController extends Controller
 {
     /**
@@ -37,7 +48,7 @@ class DocumentUploadController extends Controller
      *                     property="zip_file",
      *                     type="string",
      *                     format="binary",
-     *                     description="ZIP file containing product documents organized in folders by SKU"
+     *                     description="ZIP file containing product documents organized in folders by SKU (max 500MB)"
      *                 )
      *             )
      *         )
@@ -55,7 +66,8 @@ class DocumentUploadController extends Controller
      *                     type="object",
      *                     @OA\Property(property="sku", type="string", example="ABC123"),
      *                     @OA\Property(property="status", type="string", example="success", description="success, no_documents_found, or product_not_found"),
-     *                     @OA\Property(property="document_count", type="integer", example=5, description="Number of documents processed for this SKU")
+     *                     @OA\Property(property="document_count", type="integer", example=5, description="Number of documents processed for this SKU"),
+     *                     @OA\Property(property="compressed_count", type="integer", example=2, description="Number of PDFs that were compressed")
      *                 )
      *             )
      *         )
@@ -95,9 +107,9 @@ class DocumentUploadController extends Controller
      */
     public function uploadProductDocuments(Request $request)
     {
-        // Validate the uploaded file
+        // Validate the uploaded file - increased limit to handle larger documents
         $request->validate([
-            'zip_file' => 'required|file|mimes:zip|max:102400', // 100MB max size
+            'zip_file' => 'required|file|mimes:zip|max:512000', // 500MB max size
         ]);
 
         // Create a temporary directory to extract the zip file
@@ -114,11 +126,11 @@ class DocumentUploadController extends Controller
             if ($zip->open($zipFilePath) !== true) {
                 return response()->json(['error' => 'Unable to open the zip file'], 400);
             }
-
+            
             $zip->extractTo($tempPath);
             $zip->close();
 
-            // Process the extracted directory
+            // Process the extracted directory with improved handling
             $processedSkus = $this->processExtractedDirectory($tempPath);
 
             // Clean up the temporary directory
@@ -134,7 +146,7 @@ class DocumentUploadController extends Controller
             if (File::exists($tempPath)) {
                 File::deleteDirectory($tempPath);
             }
-
+            
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -143,191 +155,336 @@ class DocumentUploadController extends Controller
     }
 
     /**
-     * Process the extracted directory structure
+     * Process the extracted directory structure with improved nested folder handling
+     * 
+     * Handles both flat structure (SKU/documents) and nested structure (SKU/SKU/documents)
      *
-     * @param string $extractPath
-     * @return array
+     * @param string $extractPath Path to the extracted ZIP contents
+     * @return array Array of processed SKU results
      */
     private function processExtractedDirectory($extractPath)
     {
         $processedSkus = [];
-
+        
         // Get all directories in the extracted path (each directory represents a SKU)
         $skuDirectories = File::directories($extractPath);
-
+        
         foreach ($skuDirectories as $skuDir) {
             // Get the SKU from the directory name
             $sku = basename($skuDir);
-
+            
             // Find product with this SKU using the existing Product model
             $product = Product::where('sku', $sku)->first();
-
+            
             if ($product) {
-                // Process documents for this product
-                $documentData = $this->uploadProductDocumentsToS3($skuDir, $sku);
-
-                if (!empty($documentData)) {
+                // Look for documents in the SKU directory and its subdirectories
+                $documentsFound = $this->findDocumentsInDirectory($skuDir, $sku);
+                
+                if (!empty($documentsFound['documents'])) {
                     // Update the product record with new document data
-                    $product->documents = json_encode($documentData);
+                    $product->documents = json_encode($documentsFound['documents']);
                     $product->save();
-
+                    
                     $processedSkus[] = [
                         'sku' => $sku,
                         'status' => 'success',
-                        'document_count' => count($documentData)
+                        'document_count' => count($documentsFound['documents']),
+                        'compressed_count' => $documentsFound['compressed_count']
                     ];
                 } else {
                     $processedSkus[] = [
                         'sku' => $sku,
-                        'status' => 'no_documents_found'
+                        'status' => 'no_documents_found',
+                        'document_count' => 0,
+                        'compressed_count' => 0
                     ];
                 }
             } else {
                 $processedSkus[] = [
                     'sku' => $sku,
-                    'status' => 'product_not_found'
+                    'status' => 'product_not_found',
+                    'document_count' => 0,
+                    'compressed_count' => 0
                 ];
             }
         }
-
+        
         return $processedSkus;
     }
 
     /**
-     * Upload documents to S3 and return array of document data
+     * Recursively find documents in directory and subdirectories
+     * 
+     * Supports nested folder structures and finds all document files recursively
      *
-     * @param string $documentsDir
-     * @param string $sku
-     * @return array
+     * @param string $directory Path to search for documents
+     * @param string $sku SKU identifier for logging
+     * @return array Array containing documents and compression count
      */
-    // private function uploadProductDocumentsToS3($documentsDir, $sku)
-    // {
-    //     $s3Path = 'production/documents/';
-    //     $documentData = [];
-
-    //     // Get all document files in the SKU directory
-    //     $documentFiles = File::files($documentsDir);
-
-    //     // Filter for document files only
-    //     $documentFiles = array_filter($documentFiles, function($file) {
-    //         $extension = strtolower($file->getExtension());
-    //         return in_array($extension, ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt']);
-    //     });
-
-    //     if (empty($documentFiles)) {
-    //         return $documentData;
-    //     }
-
-    //     // Upload each document directly to S3
-    //     foreach ($documentFiles as $documentFile) {
-    //         // Generate a unique filename to prevent overwriting
-    //         $uniqueFileName = Str::random(40) . '.' . $documentFile->getExtension();
-    //         $s3FilePath = $s3Path . $uniqueFileName;
-
-    //         // Original filename to use as title
-    //         $originalFileName = $documentFile->getFilename();
-
-    //         // Open file and directly upload to S3
-    //         $fileStream = fopen($documentFile->getPathname(), 'r');
-    //         Storage::disk('s3')->put($s3FilePath, $fileStream);
-    //         fclose($fileStream);
-
-    //         // Get the full URL from S3 storage
-    //         $documentUrl = Storage::disk('s3')->url($s3FilePath);
-
-    //         // Add the document data to the array
-    //         $documentData[] = [
-    //             'title' => $originalFileName,
-    //             'path' => $documentUrl
-    //         ];
-    //     }
-
-    //     return $documentData;
-    // }
-    private function uploadProductDocumentsToS3($documentsDir, $sku)
+    private function findDocumentsInDirectory($directory, $sku)
     {
-        $s3Path = 'production/documents/';
-        $documentData = [];
-
-        // Get all document files in the SKU directory
-        $documentFiles = File::files($documentsDir);
-
+        $allDocuments = [];
+        $compressedCount = 0;
+        
+        // Get all files recursively from directory and subdirectories
+        $items = File::allFiles($directory);
+        
         // Filter for document files only
-        $documentFiles = array_filter($documentFiles, function ($file) {
+        $documentFiles = array_filter($items, function($file) {
             $extension = strtolower($file->getExtension());
             return in_array($extension, ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt']);
         });
 
         if (empty($documentFiles)) {
-            return $documentData;
+            return ['documents' => [], 'compressed_count' => 0];
         }
 
-        // Upload each document directly to S3
+        // Process each document file
         foreach ($documentFiles as $documentFile) {
-            // Check file size (2 MB = 2,097,152 bytes)
-            if ($documentFile->getSize() > 2097152) {
-                // Skip files larger than 2MB
-                // Generate a unique filename to prevent overwriting
-                $uniqueFileName = Str::random(length: 40) . '.' . $documentFile->getExtension();
-                $s3FilePath = $s3Path . $uniqueFileName;
-                $localInput = $documentFile->getPathname();
-                $originalFileName = $documentFile->getFilename();
-                $compressedLocalPath = $this->compressPdf($localInput, null, 'ebook');
-
-                $fileStream = fopen($compressedLocalPath, 'r');
-
-                //  Storage::disk('s3')->put($s3FilePath, $fileStream, 'public');
-                Storage::disk('s3')->put($s3FilePath, $fileStream, [
-                    'ACL' => 'public-read'
-                ]);
-                fclose($fileStream);
-                $documentUrl = Storage::disk('s3')->url($s3FilePath);
-
-
-            } else {
-
-                // Generate a unique filename to prevent overwriting
-                $uniqueFileName = Str::random(40) . '.' . $documentFile->getExtension();
-                $s3FilePath = $s3Path . $uniqueFileName;
-
-                // Original filename to use as title
-                $originalFileName = $documentFile->getFilename();
-
-                // Open file and directly upload to S3
-                $fileStream = fopen($documentFile->getPathname(), 'r');
-                Storage::disk('s3')->put($s3FilePath, $fileStream);
-                fclose($fileStream);
-
-                // Get the full URL from S3 storage
-                $documentUrl = Storage::disk('s3')->url($s3FilePath);
+            $result = $this->processDocumentFile($documentFile, $sku);
+            
+            if ($result['success']) {
+                $allDocuments[] = $result['document'];
+                if ($result['compressed']) {
+                    $compressedCount++;
+                }
             }
-            // Add the document data to the array
-            $documentData[] = [
-                'title' => $originalFileName,
-                'path' => $documentUrl
-            ];
         }
-
-        return $documentData;
+        
+        return [
+            'documents' => $allDocuments,
+            'compressed_count' => $compressedCount
+        ];
     }
 
-    public static function compressPdf($inputPath, $outputPath, $quality = 'ebook')
-    {
-        if (!file_exists($inputPath)) {
-            return "Input file does not exist: $inputPath";
-        }
-        if (!$outputPath) {
-            $outputPath = storage_path('app/temp/compressed_' . uniqid() . '.pdf');
-        }
-        $gs = '"C:\\Program Files\\gs\\gs10.05.1\\bin\\gswin64c.exe"'; // only for use local 
-        $cmd = "$gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/$quality "
-            . "-dNOPAUSE -dBATCH -sOutputFile=\"$outputPath\" \"$inputPath\"";
-        exec($cmd . " 2>&1", $output, $return);
-        return $outputPath;
-
-    }
     /**
-     * Upload individual document file to S3
+     * Process individual document file with improved size handling and quality preservation
+     * 
+     * Features:
+     * - Smart PDF compression with quality preservation
+     * - Multiple compression levels testing
+     * - Size optimization targeting 1-2MB
+     * - Quality-first approach
+     *
+     * @param \SplFileInfo $documentFile File to process
+     * @param string $sku SKU identifier for logging
+     * @return array Processing result with success status and document data
+     */
+    private function processDocumentFile($documentFile, $sku)
+    {
+        $originalFileName = $documentFile->getFilename();
+        $extension = strtolower($documentFile->getExtension());
+        $fileToUpload = $documentFile->getPathname();
+        $compressed = false;
+        
+        // Log file info for debugging
+        \Log::info("Processing document", [
+            'sku' => $sku,
+            'file' => $originalFileName,
+            'size_mb' => round($documentFile->getSize() / 1048576, 2),
+            'extension' => $extension,
+            'path' => $documentFile->getPathname()
+        ]);
+
+        // Create temporary directory for compression
+        $compressedDir = storage_path('app/temp/compressed/' . Str::random(10));
+        File::makeDirectory($compressedDir, 0755, true);
+
+        try {
+            // Check initial file size - increased limit to 50MB before compression
+            $initialSize = $documentFile->getSize();
+            $initialSizeMB = round($initialSize / 1048576, 2);
+            
+            // Skip files larger than 50MB initially
+            if ($initialSize > 52428800) { // 50MB
+                \Log::warning("File too large to process", [
+                    'sku' => $sku,
+                    'file' => $originalFileName,
+                    'size_mb' => $initialSizeMB
+                ]);
+                return ['success' => false, 'reason' => 'file_too_large'];
+            }
+
+            // Attempt compression for PDFs - target 1-2MB with better quality
+            if ($extension === 'pdf') {
+                $compressedFileName = pathinfo($originalFileName, PATHINFO_FILENAME) . '_compressed.pdf';
+                
+                // Target size range: 1-2MB
+                $targetMinSize = 1048576;  // 1MB
+                $targetMaxSize = 2097152;  // 2MB
+                
+                // Try different compression levels with quality preservation
+                $compressionLevels = [
+                    'printer',  // Best quality, larger size
+                    'ebook',    // Good balance
+                    'screen'    // Smallest size, lower quality
+                ];
+                
+                $bestCompression = null;
+                $bestSize = $initialSize;
+                $foundTargetRange = false;
+                
+                foreach ($compressionLevels as $level) {
+                    $tempCompressedPath = $compressedDir . '/' . $level . '_' . $compressedFileName;
+                    $compressionResult = PdfHelper::compressPdf($fileToUpload, $tempCompressedPath, $level);
+                    
+                    if (is_array($compressionResult) && 
+                        $compressionResult['exit_code'] === 0 && 
+                        file_exists($tempCompressedPath)) {
+                        
+                        $compressedSize = filesize($tempCompressedPath);
+                        
+                        // Check if we hit the target range (1-2MB)
+                        if ($compressedSize >= $targetMinSize && $compressedSize <= $targetMaxSize) {
+                            $bestSize = $compressedSize;
+                            $bestCompression = $tempCompressedPath;
+                            $foundTargetRange = true;
+                            
+                            \Log::info("PDF compression hit target range with good quality", [
+                                'sku' => $sku,
+                                'file' => $originalFileName,
+                                'level' => $level,
+                                'size_mb' => round($compressedSize / 1048576, 2)
+                            ]);
+                            break; // Found perfect size with best quality, stop here
+                        }
+                        
+                        // If not in target range, keep track but continue to try better quality options
+                        if ($compressedSize < $bestSize && $compressedSize > 0) {
+                            $bestSize = $compressedSize;
+                            $bestCompression = $tempCompressedPath;
+                        }
+                    }
+                }
+                
+                // Only use compression if file is significantly large (>3MB) or we found good compression
+                $shouldCompress = ($initialSize > 3145728) || $foundTargetRange; // 3MB threshold
+                
+                if ($bestCompression && $bestSize < $initialSize && $shouldCompress) {
+                    $fileToUpload = $bestCompression;
+                    $compressed = true;
+                    
+                    $finalSizeMB = round($bestSize / 1048576, 2);
+                    $compressionRatio = round((1 - $bestSize / $initialSize) * 100, 2);
+                    
+                    \Log::info("PDF compressed successfully", [
+                        'sku' => $sku,
+                        'original_file' => $originalFileName,
+                        'original_size_mb' => $initialSizeMB,
+                        'compressed_size_mb' => $finalSizeMB,
+                        'compression_ratio' => $compressionRatio . '%',
+                        'in_target_range' => $foundTargetRange ? 'yes (1-2MB)' : 'no',
+                        'quality_preserved' => 'yes'
+                    ]);
+                } else {
+                    \Log::info("PDF compression skipped - file already optimal size", [
+                        'sku' => $sku,
+                        'file' => $originalFileName,
+                        'original_size_mb' => $initialSizeMB,
+                        'reason' => !$shouldCompress ? 'file_under_3mb' : 'compression_ineffective'
+                    ]);
+                }
+            }
+
+            // Final size check - allow up to 5MB after compression
+            $finalFileSize = filesize($fileToUpload);
+            $finalFileSizeMB = round($finalFileSize / 1048576, 2);
+            
+            if ($finalFileSize > 5242880) { // 5MB
+                \Log::warning("File still too large after compression", [
+                    'sku' => $sku,
+                    'file' => $originalFileName,
+                    'final_size_mb' => $finalFileSizeMB,
+                    'note' => 'Consider manual compression or file optimization'
+                ]);
+                return ['success' => false, 'reason' => 'file_too_large_after_compression'];
+            }
+
+            // Generate a unique filename to prevent overwriting
+            $uniqueFileName = Str::random(40) . '.' . pathinfo($originalFileName, PATHINFO_EXTENSION);
+            $s3FilePath = 'production/documents/' . $uniqueFileName;
+
+            // Upload file to S3 using stream for memory efficiency
+            $fileStream = fopen($fileToUpload, 'r');
+            if ($fileStream === false) {
+                \Log::error("Failed to open file for upload", [
+                    'sku' => $sku,
+                    'file' => $fileToUpload
+                ]);
+                return ['success' => false, 'reason' => 'file_read_error'];
+            }
+            
+            Storage::disk('s3')->put($s3FilePath, $fileStream);
+            fclose($fileStream);
+
+            // Get the full URL from S3 storage
+            $documentUrl = Storage::disk('s3')->url($s3FilePath);
+
+            return [
+                'success' => true,
+                'document' => [
+                    'title' => $originalFileName,
+                    'path' => $documentUrl,
+                    'compressed' => $compressed,
+                    'size_mb' => $finalFileSizeMB
+                ],
+                'compressed' => $compressed
+            ];
+
+        } finally {
+            // Always clean up compressed files directory
+            if (File::exists($compressedDir)) {
+                File::deleteDirectory($compressedDir);
+            }
+        }
+    }
+
+    /**
+     * Upload individual document file to S3 with PDF compression
+     *
+     * @OA\Post(
+     *     path="/api/product/upload-single-document",
+     *     summary="Upload single product document",
+     *     description="Upload a single document file for a specific product SKU with automatic PDF compression",
+     *     tags={"Products"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="document_file",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Document file (PDF, DOC, DOCX, XLS, XLSX, TXT) - max 10MB"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="sku",
+     *                     type="string",
+     *                     description="Product SKU"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Document uploaded successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Document uploaded successfully"),
+     *             @OA\Property(
+     *                 property="document",
+     *                 type="object",
+     *                 @OA\Property(property="title", type="string", example="manual.pdf"),
+     *                 @OA\Property(property="path", type="string", example="https://s3.amazonaws.com/bucket/path/file.pdf"),
+     *                 @OA\Property(property="compressed", type="boolean", example=true),
+     *                 @OA\Property(property="size_mb", type="number", example=1.5)
+     *             ),
+     *             @OA\Property(property="compressed", type="boolean", example=true)
+     *         )
+     *     )
+     * )
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -343,53 +500,116 @@ class DocumentUploadController extends Controller
         try {
             // Get the SKU
             $sku = $request->input('sku');
-
+            
             // Find product with this SKU
             $product = Product::where('sku', $sku)->first();
-
+            
             if (!$product) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Product not found'
                 ], 404);
             }
-
+            
             // Get the uploaded file
             $documentFile = $request->file('document_file');
             $originalFileName = $documentFile->getClientOriginalName();
+            $extension = strtolower($documentFile->getClientOriginalExtension());
+            $fileToUpload = $documentFile->getRealPath();
+            $compressed = false;
 
-            // Generate a unique filename
-            $uniqueFileName = Str::random(40) . '.' . $documentFile->getClientOriginalExtension();
-            $s3FilePath = 'production/documents/' . $uniqueFileName;
+            // Create temporary directory for compression
+            $tempDir = storage_path('app/temp/single/' . Str::random(10));
+            File::makeDirectory($tempDir, 0755, true);
 
-            // Upload the file to S3
-            Storage::disk('s3')->put($s3FilePath, file_get_contents($documentFile->getRealPath()));
+            try {
+                // Compress PDF files using the same logic as bulk upload
+                if ($extension === 'pdf') {
+                    $initialSize = $documentFile->getSize();
+                    $targetMinSize = 1048576;  // 1MB
+                    $targetMaxSize = 2097152;  // 2MB
+                    
+                    $compressionLevels = ['printer', 'ebook', 'screen'];
+                    $bestCompression = null;
+                    $bestSize = $initialSize;
+                    $foundTargetRange = false;
+                    
+                    foreach ($compressionLevels as $level) {
+                        $compressedFileName = pathinfo($originalFileName, PATHINFO_FILENAME) . '_compressed_' . $level . '.pdf';
+                        $compressedFilePath = $tempDir . '/' . $compressedFileName;
+                        
+                        $compressionResult = PdfHelper::compressPdf($fileToUpload, $compressedFilePath, $level);
+                        
+                        if (is_array($compressionResult) && 
+                            $compressionResult['exit_code'] === 0 && 
+                            file_exists($compressedFilePath)) {
+                            
+                            $compressedSize = filesize($compressedFilePath);
+                            
+                            if ($compressedSize >= $targetMinSize && $compressedSize <= $targetMaxSize) {
+                                $bestSize = $compressedSize;
+                                $bestCompression = $compressedFilePath;
+                                $foundTargetRange = true;
+                                break;
+                            }
+                            
+                            if ($compressedSize < $bestSize && $compressedSize > 0) {
+                                $bestSize = $compressedSize;
+                                $bestCompression = $compressedFilePath;
+                            }
+                        }
+                    }
+                    
+                    $shouldCompress = ($initialSize > 3145728) || $foundTargetRange;
+                    
+                    if ($bestCompression && $bestSize < $initialSize && $shouldCompress) {
+                        $fileToUpload = $bestCompression;
+                        $compressed = true;
+                    }
+                }
 
-            // Get the full URL from S3 storage
-            $documentUrl = Storage::disk('s3')->url($s3FilePath);
+                // Generate a unique filename
+                $uniqueFileName = Str::random(40) . '.' . $extension;
+                $s3FilePath = 'production/documents/' . $uniqueFileName;
+                
+                // Upload the file to S3
+                Storage::disk('s3')->put($s3FilePath, file_get_contents($fileToUpload));
+                
+                // Get the full URL from S3 storage
+                $documentUrl = Storage::disk('s3')->url($s3FilePath);
+                
+                // Create document data
+                $newDocument = [
+                    'title' => $originalFileName,
+                    'path' => $documentUrl,
+                    'compressed' => $compressed,
+                    'size_mb' => round(filesize($fileToUpload) / 1048576, 2)
+                ];
+                
+                // Get current documents or initialize empty array
+                $currentDocuments = $product->documents ? json_decode($product->documents, true) : [];
+                
+                // Add new document
+                $currentDocuments[] = $newDocument;
+                
+                // Update product with new documents array
+                $product->documents = json_encode($currentDocuments);
+                $product->save();
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Document uploaded successfully',
+                    'document' => $newDocument,
+                    'compressed' => $compressed
+                ]);
 
-            // Create document data
-            $newDocument = [
-                'title' => $originalFileName,
-                'path' => $documentUrl
-            ];
-
-            // Get current documents or initialize empty array
-            $currentDocuments = $product->documents ? json_decode($product->documents, true) : [];
-
-            // Add new document
-            $currentDocuments[] = $newDocument;
-
-            // Update product with new documents array
-            $product->documents = json_encode($currentDocuments);
-            $product->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Document uploaded successfully',
-                'document' => $newDocument
-            ]);
-
+            } finally {
+                // Clean up temporary directory
+                if (File::exists($tempDir)) {
+                    File::deleteDirectory($tempDir);
+                }
+            }
+            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -400,6 +620,29 @@ class DocumentUploadController extends Controller
 
     /**
      * Delete a document from a product
+     *
+     * @OA\Delete(
+     *     path="/api/product/delete-document",
+     *     summary="Delete product document",
+     *     description="Delete a specific document from a product and remove it from S3 storage",
+     *     tags={"Products"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="sku", type="string", description="Product SKU"),
+     *             @OA\Property(property="document_path", type="string", description="Full S3 URL of the document to delete")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Document deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Document deleted successfully")
+     *         )
+     *     )
+     * )
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -416,20 +659,20 @@ class DocumentUploadController extends Controller
             // Get the SKU and document path
             $sku = $request->input('sku');
             $documentPath = $request->input('document_path');
-
+            
             // Find product with this SKU
             $product = Product::where('sku', $sku)->first();
-
+            
             if (!$product) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Product not found'
                 ], 404);
             }
-
+            
             // Get current documents
             $currentDocuments = $product->documents ? json_decode($product->documents, true) : [];
-
+            
             // Find the index of the document to delete
             $documentIndex = null;
             foreach ($currentDocuments as $index => $document) {
@@ -438,40 +681,92 @@ class DocumentUploadController extends Controller
                     break;
                 }
             }
-
+            
             if ($documentIndex === null) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Document not found'
                 ], 404);
             }
-
+            
             // Extract S3 path from URL
             $s3Path = parse_url($documentPath, PHP_URL_PATH);
             $s3Path = ltrim($s3Path, '/');
-
+            
             // Try to delete the file from S3
             if (Storage::disk('s3')->exists($s3Path)) {
                 Storage::disk('s3')->delete($s3Path);
             }
-
+            
             // Remove document from array
             array_splice($currentDocuments, $documentIndex, 1);
-
+            
             // Update product with new documents array
             $product->documents = json_encode($currentDocuments);
             $product->save();
-
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Document deleted successfully'
             ]);
-
+            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
             ], 500);
         }
-    } 
+    }
+
+    /**
+     * Test Ghostscript availability and system configuration
+     * 
+     * @OA\Get(
+     *     path="/api/test-ghostscript",
+     *     summary="Test Ghostscript configuration",
+     *     description="Check if Ghostscript is properly installed and configured for PDF compression",
+     *     tags={"System"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="System configuration status",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="ghostscript_status",
+     *                 type="object",
+     *                 @OA\Property(property="available", type="boolean"),
+     *                 @OA\Property(property="path", type="string"),
+     *                 @OA\Property(property="version", type="string")
+     *             ),
+     *             @OA\Property(
+     *                 property="php_info",
+     *                 type="object",
+     *                 @OA\Property(property="max_execution_time", type="string"),
+     *                 @OA\Property(property="memory_limit", type="string"),
+     *                 @OA\Property(property="upload_max_filesize", type="string"),
+     *                 @OA\Property(property="post_max_size", type="string")
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function testGhostscript()
+    {
+        $result = PdfHelper::checkGhostscriptAvailability();
+        
+        return response()->json([
+            'ghostscript_status' => $result,
+            'php_info' => [
+                'max_execution_time' => ini_get('max_execution_time'),
+                'memory_limit' => ini_get('memory_limit'),
+                'upload_max_filesize' => ini_get('upload_max_filesize'),
+                'post_max_size' => ini_get('post_max_size'),
+                'current_time' => date('Y-m-d H:i:s'),
+                'server_os' => PHP_OS
+            ],
+            's3_config' => [
+                'disk_configured' => config('filesystems.disks.s3') ? true : false,
+                'bucket' => config('filesystems.disks.s3.bucket', 'not_configured')
+            ]
+        ]);
+    }
 }

@@ -24,7 +24,6 @@ use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
 use App\Services\ExcelImporterService;
 
-
 class ProductController extends BaseController
 {
 	/**
@@ -2094,7 +2093,7 @@ class ProductController extends BaseController
 		$product->save();
 
 		if (isset($request->status)) {
-			$validStatuses = ['draft', 'published', 'pending'];
+			$validStatuses = ['draft', 'published', 'pending','awaiting Price','temporary out of stock'];
 
 			if (!in_array($request->status, $validStatuses)) {
 				return response()->json([
@@ -3054,7 +3053,7 @@ class ProductController extends BaseController
 
 
 	public function deleteProductDocument(Request $request)
-	{		 
+	{
 		$request->validate([
 			'product_id'     => 'required|string',
 			'document_path'  => 'required|string'
@@ -3062,7 +3061,7 @@ class ProductController extends BaseController
 
 		try {
 			$productId    = $request->input('product_id');
-			$documentPath = $request->input('document_path');			 
+			$documentPath = $request->input('document_path');
 			$product = Product::find($productId);
 
 			if (!$product) {
@@ -3071,7 +3070,7 @@ class ProductController extends BaseController
 					'error'   => 'Product not found'
 				], 404);
 			}
-			 
+
 			$currentDocuments = $product->documents ? json_decode($product->documents, true) : [];
 
 			if (empty($currentDocuments)) {
@@ -3081,7 +3080,7 @@ class ProductController extends BaseController
 				], 404);
 			}
 
-		 
+
 			$found = false;
 			foreach ($currentDocuments as $index => $document) {
 
@@ -3110,11 +3109,11 @@ class ProductController extends BaseController
 
 			//Reindex array
 			if(!empty($currentDocuments)){
-				$currentDocuments = array_values($currentDocuments); 
+				$currentDocuments = array_values($currentDocuments);
 				$product->documents = json_encode($currentDocuments);
 			}else{
 				$product->documents="";
-			}	 
+			}
 			$product->save();
 
 			return response()->json([

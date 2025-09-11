@@ -14,6 +14,7 @@ use App\Traits\GeneratesQuotePdf;
 class QuotePlacedMail extends Mailable
 {
 	use Queueable, SerializesModels, GeneratesQuotePdf;
+	public $tries = 1;
 	public $quote;
 
 	/**
@@ -33,7 +34,7 @@ class QuotePlacedMail extends Mailable
 		$quoteNumber = $quote->quote_number;
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
-		$name = $quote->customer->type === 'Private' ? $quote->customer->name : $quote->customer->business_name;
+		$name = strtolower(optional($quote->customer)->type) === 'private' ? $quote->customer->name : $quote->customer->business_name;
 		$rightPngURL = $backendURL. '/right.png';
 		$mailIconURL = $backendURL. '/right.png';
 

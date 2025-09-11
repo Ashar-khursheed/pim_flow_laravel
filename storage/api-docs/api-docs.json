@@ -9403,7 +9403,7 @@
                             "schema": {
                                 "properties": {
                                     "zip_file": {
-                                        "description": "ZIP file containing product documents organized in folders by SKU",
+                                        "description": "ZIP file containing product documents organized in folders by SKU (max 500MB)",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -9445,6 +9445,11 @@
                                                         "description": "Number of documents processed for this SKU",
                                                         "type": "integer",
                                                         "example": 5
+                                                    },
+                                                    "compressed_count": {
+                                                        "description": "Number of PDFs that were compressed",
+                                                        "type": "integer",
+                                                        "example": 2
                                                     }
                                                 },
                                                 "type": "object"
@@ -9526,6 +9531,201 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/product/upload-single-document": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Upload single product document",
+                "description": "Upload a single document file for a specific product SKU with automatic PDF compression",
+                "operationId": "06742d1aa78042d77ab230c1af945239",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "document_file": {
+                                        "description": "Document file (PDF, DOC, DOCX, XLS, XLSX, TXT) - max 10MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "sku": {
+                                        "description": "Product SKU",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Document uploaded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Document uploaded successfully"
+                                        },
+                                        "document": {
+                                            "properties": {
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "manual.pdf"
+                                                },
+                                                "path": {
+                                                    "type": "string",
+                                                    "example": "https://s3.amazonaws.com/bucket/path/file.pdf"
+                                                },
+                                                "compressed": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "size_mb": {
+                                                    "type": "number",
+                                                    "example": 1.5
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "compressed": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product/delete-document": {
+            "delete": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Delete product document",
+                "description": "Delete a specific document from a product and remove it from S3 storage",
+                "operationId": "ce9c2fb20f0b77f67b05841ffab529ed",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "sku": {
+                                        "description": "Product SKU",
+                                        "type": "string"
+                                    },
+                                    "document_path": {
+                                        "description": "Full S3 URL of the document to delete",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Document deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Document deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/test-ghostscript": {
+            "get": {
+                "tags": [
+                    "System"
+                ],
+                "summary": "Test Ghostscript configuration",
+                "description": "Check if Ghostscript is properly installed and configured for PDF compression",
+                "operationId": "4e48d6faee8cd22257885c5af942cd2a",
+                "responses": {
+                    "200": {
+                        "description": "System configuration status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "ghostscript_status": {
+                                            "properties": {
+                                                "available": {
+                                                    "type": "boolean"
+                                                },
+                                                "path": {
+                                                    "type": "string"
+                                                },
+                                                "version": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "php_info": {
+                                            "properties": {
+                                                "max_execution_time": {
+                                                    "type": "string"
+                                                },
+                                                "memory_limit": {
+                                                    "type": "string"
+                                                },
+                                                "upload_max_filesize": {
+                                                    "type": "string"
+                                                },
+                                                "post_max_size": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/faq-categories": {
@@ -16312,6 +16512,156 @@
                 }
             }
         },
+        "/api/frontend/products/filters": {
+            "post": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Get Filtered Products",
+                "description": "Fetch products with dynamic attribute filters",
+                "operationId": "a9e07523fb703ad95e3006706b321c98",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "description": "ID of the product category",
+                                        "type": "integer",
+                                        "example": 54
+                                    },
+                                    "page": {
+                                        "description": "Page number for pagination",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "length": {
+                                        "description": "Number of records per page",
+                                        "type": "integer",
+                                        "example": 20
+                                    },
+                                    "sort_by": {
+                                        "description": "Sort field",
+                                        "type": "string",
+                                        "enum": [
+                                            "id",
+                                            "price",
+                                            "created_at"
+                                        ],
+                                        "example": "price"
+                                    },
+                                    "sort_dir": {
+                                        "description": "Sort direction",
+                                        "type": "string",
+                                        "enum": [
+                                            "asc",
+                                            "desc"
+                                        ],
+                                        "example": "asc"
+                                    },
+                                    "applied_filters": {
+                                        "description": "General filters applied to products",
+                                        "properties": {
+                                            "priceRange": {
+                                                "properties": {
+                                                    "min_price": {
+                                                        "type": "string",
+                                                        "example": "1514.00"
+                                                    },
+                                                    "max_price": {
+                                                        "type": "string",
+                                                        "example": "2832.50"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "brand_ids": {
+                                                "description": "Array of brand IDs",
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "ratings": {
+                                                "description": "Rating values",
+                                                "type": "integer",
+                                                "example": 5
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "applied_range_filters": {
+                                        "description": "Range-based attribute filters",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "description": "Attribute ID",
+                                                    "type": "integer",
+                                                    "example": 590
+                                                },
+                                                "unit_id": {
+                                                    "description": "Measurement unit ID",
+                                                    "type": "integer",
+                                                    "example": 62
+                                                },
+                                                "ranges": {
+                                                    "properties": {
+                                                        "min": {
+                                                            "type": "integer",
+                                                            "example": 210
+                                                        },
+                                                        "max": {
+                                                            "type": "integer",
+                                                            "example": 211
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "applied_fixed_filters": {
+                                        "description": "Fixed value attribute filters",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "description": "Attribute ID",
+                                                    "type": "integer",
+                                                    "example": 225
+                                                },
+                                                "value": {
+                                                    "description": "Filter value",
+                                                    "type": "string",
+                                                    "example": "Black"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/location-info": {
             "get": {
                 "tags": [
@@ -22096,6 +22446,120 @@
                 }
             }
         },
+        "/api/find-shipping-charges": {
+            "post": {
+                "tags": [
+                    "Products Shipping Report"
+                ],
+                "summary": "Product shipping charges",
+                "description": "Fetch products with their shipping charges by product ID(s) or slug.",
+                "operationId": "a3003257fda06e2d089ff081915f288a",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id": {
+                                        "description": "Filter by multiple product IDs",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 101
+                                        }
+                                    },
+                                    "slug": {
+                                        "description": "Filter by product slug",
+                                        "type": "string",
+                                        "example": ""
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful product shipping charge report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 101
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "SKU12345"
+                                                    },
+                                                    "shipping_charge": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 49.99
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid range values"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/sitemap.xml": {
             "get": {
                 "tags": [
@@ -27535,6 +27999,486 @@
                 ]
             }
         },
+        "/api/product-accessories": {
+            "get": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Get list of product accessories",
+                "operationId": "9672f68e02e1333188f81ed386599132",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "isapproved",
+                        "in": "query",
+                        "description": "Filter by approval status (0 or 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page (default: 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Create a new product accessory",
+                "operationId": "239d28670923f7c4dc55a762d3e159fd",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "name",
+                                    "accessories"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Door"
+                                    },
+                                    "accessories": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "name",
+                                                "price"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "left"
+                                                },
+                                                "price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 44
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "name": "left",
+                                                "price": 44
+                                            },
+                                            {
+                                                "name": "right",
+                                                "price": 45
+                                            },
+                                            {
+                                                "name": "top",
+                                                "price": 50
+                                            },
+                                            {
+                                                "name": "button",
+                                                "price": 52
+                                            }
+                                        ]
+                                    },
+                                    "isapproved": {
+                                        "type": "boolean",
+                                        "example": 0
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/show/{id}": {
+            "get": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Get a specific product accessory",
+                "operationId": "d2da85d4aab1e229221739dbf2ecac57",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessory retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product accessory not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/update/{id}": {
+            "post": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Update a product accessory",
+                "operationId": "577ab495c5450b65b40cdbfd4aabd0a0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Color"
+                                    },
+                                    "accessories": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "left"
+                                                },
+                                                "price": {
+                                                    "type": "integer",
+                                                    "example": 44
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "name": "left",
+                                                "price": 44
+                                            },
+                                            {
+                                                "name": "right",
+                                                "price": 45
+                                            },
+                                            {
+                                                "name": "top",
+                                                "price": 50
+                                            },
+                                            {
+                                                "name": "button",
+                                                "price": 52
+                                            }
+                                        ]
+                                    },
+                                    "isapproved": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "approved_by": {
+                                        "type": "integer",
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product accessory updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessory updated successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product accessory not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/delete/{id}": {
+            "delete": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Delete a product accessory",
+                "operationId": "21ea4ab4513bb72216acb86ea06a5621",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product accessory deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessory deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product accessory not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/item/{item_id}": {
+            "delete": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Delete a product accessory item",
+                "operationId": "9af205ec9e0b04a5193c3b3b2b31c0a6",
+                "parameters": [
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "description": "Accessory Item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product accessory item deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessory item deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Accessory item not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/status/{id}": {
+            "post": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Approve/Disapprove a product accessory",
+                "operationId": "19b303bf1438ecf125b73f0b3d33925e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "isapproved"
+                                ],
+                                "properties": {
+                                    "isapproved": {
+                                        "description": "1 for approve, 0 for disapprove",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Approval status updated successfully"
+                    },
+                    "404": {
+                        "description": "Product accessory not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products/{id}/categories": {
             "get": {
                 "tags": [
@@ -29718,91 +30662,67 @@
             }
         },
         "/api/product-report-export": {
-            "get": {
+            "post": {
                 "tags": [
                     "Products Report"
                 ],
-                "summary": "Get product report list",
-                "description": "Report of products with id, sku, name, and branch name. Can search across product name, SKU, brand, status, categories, and approval status.",
-                "operationId": "ff314864e00c70302363b737bcc06954",
-                "parameters": [
-                    {
-                        "name": "range_from",
-                        "in": "query",
-                        "description": "Starting product index (must be >= 1)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "range_to",
-                        "in": "query",
-                        "description": "Ending product index (max range allowed: 500 products)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 500
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "description": "Filter products by status (e.g., published, draft)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "all",
-                                "published",
-                                "draft"
-                            ],
-                            "example": "all"
-                        }
-                    },
-                    {
-                        "name": "approved",
-                        "in": "query",
-                        "description": "Filter approved by status (0 = not approved, 1 = approved)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "enum": [
-                                0,
-                                1
-                            ],
-                            "example": ""
-                        }
-                    },
-                    {
-                        "name": "type",
-                        "in": "query",
-                        "description": "Filter type (e.g., Category, Brand)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "Category",
-                                "Brand"
-                            ],
-                            "example": "Category"
-                        }
-                    },
-                    {
-                        "name": "relational_id",
-                        "in": "query",
-                        "description": "Enter brand id, category id",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 14
+                "summary": "Export product report",
+                "description": "Exports product report as JSON (preview) or as Excel (binary file).",
+                "operationId": "2ae5e0f3ef92d4b9a4d6ce2f483a3657",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "all",
+                                            "published",
+                                            "draft"
+                                        ],
+                                        "example": "all"
+                                    },
+                                    "approved": {
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ],
+                                        "example": 1
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Category",
+                                            "Brand"
+                                        ],
+                                        "example": "Category"
+                                    },
+                                    "relational_id": {
+                                        "type": "integer",
+                                        "example": 14
+                                    },
+                                    "range_from": {
+                                        "description": "Starting product index (must be >= 1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending product index (max range allowed: 500 products)",
+                                        "type": "integer",
+                                        "example": 500
+                                    }
+                                },
+                                "type": "object"
+                            }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "200": {
-                        "description": "Successful product report export",
+                        "description": "Product report export",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -29826,27 +30746,6 @@
                                                     "name": {
                                                         "type": "string",
                                                         "example": "Sample Product"
-                                                    },
-                                                    "branch": {
-                                                        "type": "string",
-                                                        "example": "Delhi Branch"
-                                                    },
-                                                    "status": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "all",
-                                                            "publish",
-                                                            "draft"
-                                                        ],
-                                                        "example": "publish"
-                                                    },
-                                                    "approved": {
-                                                        "type": "integer",
-                                                        "enum": [
-                                                            0,
-                                                            1
-                                                        ],
-                                                        "example": 1
                                                     }
                                                 },
                                                 "type": "object"
@@ -29855,85 +30754,11 @@
                                     },
                                     "type": "object"
                                 }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request parameters",
-                        "content": {
-                            "application/json": {
+                            },
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
                                 "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Invalid range values"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - Invalid or missing token",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthorized"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "No products found for the given filters",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "No products found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Something went wrong while generating the report"
-                                        }
-                                    },
-                                    "type": "object"
+                                    "type": "string",
+                                    "format": "binary"
                                 }
                             }
                         }
@@ -37857,6 +38682,10 @@
             "description": "API Endpoints for Products AI alternates"
         },
         {
+            "name": "Product Accessories",
+            "description": "API Endpoints for Product Accessories"
+        },
+        {
             "name": "Categories",
             "description": "API Endpoints for Category Management"
         },
@@ -37966,6 +38795,10 @@
         {
             "name": "Dashboard",
             "description": "Dashboard"
+        },
+        {
+            "name": "System",
+            "description": "System"
         },
         {
             "name": "FAQ Categories",
@@ -38142,6 +38975,10 @@
         {
             "name": "Frontend-SEO Management",
             "description": "Frontend-SEO Management"
+        },
+        {
+            "name": "Products Shipping Report",
+            "description": "Products Shipping Report"
         },
         {
             "name": "Sitemap",

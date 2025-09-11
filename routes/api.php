@@ -74,6 +74,7 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\CustomerCartController;
 use App\Http\Controllers\PrePurchaseClaimController;
 use App\Http\Controllers\PostPurchaseClaimController;
+use App\Http\Controllers\ProductAccessoriesController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -130,6 +131,8 @@ use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseC
 use App\Http\Controllers\FrontEnd\GetInTouchController as F_GetInTouchController;
 use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
+use App\Http\Controllers\FrontEnd\FilterController;
+use App\Http\Controllers\FrontEnd\ShippingReportController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -169,7 +172,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
     });
 
 });
- 
+
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
@@ -399,6 +402,15 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 
+	Route::apiResource('product-accessories', ProductAccessoriesController::class);
+	Route::get('/product-accessories/show/{id}', [ProductAccessoriesController::class, 'show']);	 
+	Route::post('/product-accessories/update/{id}', [ProductAccessoriesController::class, 'update']);
+	Route::delete('/product-accessories/delete/{id}', [ProductAccessoriesController::class, 'destroy']);
+	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
+	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
+	
+
+
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
 	Route::post('/products/export', [ProductExportController::class, 'export']);
@@ -415,12 +427,12 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
 
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
-	Route::get('/product-report-export', [ProductReportController::class, 'index']);	 
-	Route::get('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);	 
+	Route::post('/product-report-export', [ProductReportController::class, 'index']);
+	Route::get('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
 
-	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);	 
-	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);	 
- 
+	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
+	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
+
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
@@ -707,6 +719,9 @@ Route::get('/frontend/categories/{categoryId}/products', [F_CategoryController::
 Route::get('/frontend/products/specification-filters', [F_CategoryController::class, 'getSpecificationFilters']);
 Route::get('/frontend/products/specification-filters1', [F_CategoryController::class, 'getSpecificationFilters1']);
 
+Route::post('/frontend/products/filters', [FilterController::class, 'index']);
+
+
 Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
 Route::get('/frontend/categories-with-children', [F_CategoryMenuController::class, 'getCategoriesWithChildren']);
 
@@ -776,7 +791,7 @@ Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
 Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
 
-
+Route::post('/find-shipping-charges', [ShippingReportController::class, 'findShippingCharges']);
 Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
 Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
 // Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
