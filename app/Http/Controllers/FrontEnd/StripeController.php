@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
+use App\Models\PaymentManagement;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 class StripeController extends Controller
@@ -218,24 +219,29 @@ class StripeController extends Controller
 
         ]);
 
-        $totalAmount = $request->amount;
+        $totalAmount = ($request->amount) * 100;
         $itemName = $request->itemName;
         $currency = $request->currency;
         $order_id = $request->order_id;
 
-
+        $success_url = url('/api/stripe/paymentSuccess') . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancel_url = url('/api/stripe/paymentCancel');
         $res = Http::withOptions(['verify' => false])
             ->withToken(env('STRIPE_TEST_SECRET'))
             ->asForm()
-            ->post('https://api.stripe.com/v1/payment_links', [
+            ->post('https://api.stripe.com/v1/checkout/sessions', [
+                'payment_method_types[]' => 'card',
                 'line_items[0][price_data][currency]' => $currency,
                 'line_items[0][price_data][unit_amount]' => $totalAmount,
                 'line_items[0][price_data][product_data][name]' => $itemName,
                 'line_items[0][quantity]' => 1,
-
+                'mode' => 'payment',
+                'success_url' => $success_url,
+                'cancel_url' => $cancel_url,
+                'metadata[order_id]' => $order_id,
             ]);
-        $body = $res->json();
 
+        $body = $res->json();
         if (!isset($body['url'])) {
             return response()->json(['error' => $body], 500);
         }
@@ -257,8 +263,7 @@ class StripeController extends Controller
         ];
         // You now have a permanent payment link
         return response()->json([
-            'payment_url' => $body['url'],
-            'data' => $data
+            'payment_url' => $body['url'],             
         ]);
 
     }
@@ -276,8 +281,83 @@ class StripeController extends Controller
      */
     public function paymentSuccess(Request $request)
     {
-        // Update DB history if needed
-        return response()->json(['message' => 'Payment Successful!']);
+
+
+        $sessionId = $request->get('session_id');
+        if (!$sessionId) {
+            return response()->json(['error' => 'Missing session_id'], 400);
+        }
+        // Fetch session details from Stripe
+        $res = Http::withOptions(['verify' => false])
+            ->withToken(env('STRIPE_TEST_SECRET'))
+            ->get("https://api.stripe.com/v1/checkout/sessions/{$sessionId}");
+
+        $data = $res->json();
+        $id = $data['id'];
+        $amount_total = $data['amount_total'];
+        $created = date('Y-m-d', strtotime($data['created']));
+        $currency = $data['currency'];
+        $mode = $data['mode'];
+        $payment_intent = $data['payment_intent'];
+        $order_id = $data['metadata']['order_id'];
+        $customer_details = $data['customer_details'];
+        $payment_method_types = $data['payment_method_types']['0'];
+        $payment_status = $data['payment_status'];
+        $status = $data['status'];
+        if($status=='complete'){
+            $status = "Completed";
+        }elseif($status=='success'){
+            $status = "Completed";
+        }elseif($status=="processing"){
+            $status ="Pending";
+        }elseif($status=="canceled"){
+            $status ="Failed";    
+        }elseif($status=="failed"){
+            $status ="Failed";        
+        }elseif($status=="expired"){
+            $status ="Failed";        
+        }elseif($status=="succeeded"){
+            $status ="Completed";
+        }else{
+             $status ="Completed";
+        }
+        $email = $data['customer_details']['email'];
+        $name = $data['customer_details']['name'];
+        $phone = $data['customer_details']['phone'];
+        $city = $data['customer_details']['address']['city'];
+        $country = $data['customer_details']['address']['country'];
+        $line1 = $data['customer_details']['address']['line1'];
+        $postal_code = $data['customer_details']['address']['postal_code'];
+        $state = $data['customer_details']['address']['state'];
+
+        $paymentIntent = Http::withOptions(['verify' => false])
+        
+            ->withToken(env('STRIPE_TEST_SECRET'))
+        ->get("https://api.stripe.com/v1/payment_intents/{$payment_intent}")
+        ->json(); 
+
+        PaymentManagement::create([
+            'order_id' => $order_id,
+            'transaction_id' => $payment_intent,
+            'payment_mode' => 'Credit Card',
+            'payment_method' => 'Stripe',
+            'amount' => $amount_total / 100,
+            'status' => $status,
+            'payment_date' => date('Y-m-d H:i:s'),
+            'notes' => 'Payment marked through link',
+            'payment_details' => ''
+        ]);
+
+
+
+        // Example response
+        return response()->json([
+            'order_id' => $order_id ?? null,
+            'amount' => ($amount_total / 100),
+            'currency' => $currency,
+            'status' => $status,
+        ]);
+
     }
 
     /**
@@ -311,16 +391,23 @@ class StripeController extends Controller
             $itemName = "Order #" . $order->order_number;
         }
         $currency = "USD";
+         $success_url = url('/api/stripe/paymentSuccess') . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancel_url = url('/api/stripe/paymentCancel');
         $res = Http::withOptions(['verify' => false])
             ->withToken(env('STRIPE_TEST_SECRET'))
             ->asForm()
-            ->post('https://api.stripe.com/v1/payment_links', [
+            ->post('https://api.stripe.com/v1/checkout/sessions', [
+                'payment_method_types[]' => 'card',
                 'line_items[0][price_data][currency]' => $currency,
                 'line_items[0][price_data][unit_amount]' => $totalAmount,
                 'line_items[0][price_data][product_data][name]' => $itemName,
                 'line_items[0][quantity]' => 1,
-
+                'mode' => 'payment',
+                'success_url' => $success_url,
+                'cancel_url' => $cancel_url,
+                'metadata[order_id]' => $order->id,
             ]);
+
         $body = $res->json();
         if (!isset($body['url'])) {
             return;
