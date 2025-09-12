@@ -294,7 +294,7 @@ class AuthController extends BaseController
 			$page = 1;
 			$limit = 5000;
 			$offset = ($page - 1) * $limit;
-			$customers = Customer::where('id', '<', 1460)
+			$customers = Customer::where('id', '<', 1)
 			->whereNull('password')
 			->orderBy('id', 'desc')
 			->offset($offset)
