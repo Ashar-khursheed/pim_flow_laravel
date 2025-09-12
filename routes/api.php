@@ -577,7 +577,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
     });
     Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
     Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
-    Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class);
+    Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class)
+    ->names('frontend.post-purchase-claims');
 
     Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
