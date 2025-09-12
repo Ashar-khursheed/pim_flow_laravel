@@ -1,6 +1,5 @@
 <?php
 namespace App\Http\Middleware;
-use App\Http\Middleware\PrerenderMiddleware;
 
 use Closure;
 
