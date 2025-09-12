@@ -204,7 +204,8 @@ class StripeController extends Controller
      *             @OA\Property(property="requires_action", type="boolean", example=false),
      *             @OA\Property(property="payment_intent_id", type="string", example="pi_3Nx4x4xxxx")
      *         )
-     *     )
+     *     ),
+     *   security={{"bearerAuth":{}}}
      * )
      */
     public function createStripePaymentLink(Request $request)
