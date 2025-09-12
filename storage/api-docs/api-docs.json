@@ -17818,16 +17818,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 199.99
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -17952,11 +17942,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 3
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 249.99
                                                 }
                                             },
                                             "type": "object"
@@ -26524,16 +26509,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 199.99
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -26680,16 +26655,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 199.99
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
