@@ -222,7 +222,8 @@ class StripeController extends Controller
         $currency = $request->currency;
         $order_id = $request->order_id;
 
-
+        $successUrl = "api/stripe/paymentSuccess";
+        $cancelUrl = "api/stripe/paymentCancel";
         $res = Http::withOptions(['verify' => false])
             ->withToken(env('STRIPE_TEST_SECRET'))
             ->asForm()
@@ -230,8 +231,7 @@ class StripeController extends Controller
                 'line_items[0][price_data][currency]' => $currency,
                 'line_items[0][price_data][unit_amount]' => $totalAmount,
                 'line_items[0][price_data][product_data][name]' => $itemName,
-                'line_items[0][quantity]' => 1,
-
+                'line_items[0][quantity]' => 1,                
             ]);
         $body = $res->json();
 
@@ -309,7 +309,7 @@ class StripeController extends Controller
         } else {
             $itemName = "Order #" . $order->order_number;
         }
-
+        $currency = "USD";
         $res = Http::withOptions(['verify' => false])
             ->withToken(env('STRIPE_TEST_SECRET'))
             ->asForm()
@@ -318,7 +318,6 @@ class StripeController extends Controller
                 'line_items[0][price_data][unit_amount]' => $totalAmount,
                 'line_items[0][price_data][product_data][name]' => $itemName,
                 'line_items[0][quantity]' => 1,
-
             ]);
         $body = $res->json();
         if (!isset($body['url'])) {
