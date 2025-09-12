@@ -23076,6 +23076,115 @@
                 }
             }
         },
+        "/api/stripe/create-stripe-payment-link": {
+            "post": {
+                "tags": [
+                    "Stripe"
+                ],
+                "summary": "Create Stripe Payment link",
+                "description": "Creates a Stripe PaymentIntent for a one-time payment.",
+                "operationId": "createPaymentLink",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount",
+                                    "order_id"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "description": "Payment amount in dollars",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150
+                                    },
+                                    "order_id": {
+                                        "description": "Stripe Payment Method ID",
+                                        "type": "string",
+                                        "example": "pm_1234567890"
+                                    },
+                                    "currency": {
+                                        "description": "Currency code",
+                                        "type": "string",
+                                        "example": "usd"
+                                    },
+                                    "itemName": {
+                                        "description": "product name",
+                                        "type": "string",
+                                        "example": "product name"
+                                    },
+                                    "customer_info": {
+                                        "description": "Customer information",
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment intent processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "client_secret": {
+                                            "type": "string",
+                                            "example": "pi_3Nx4x4xxxx_secret_1234"
+                                        },
+                                        "requires_action": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "payment_intent_id": {
+                                            "type": "string",
+                                            "example": "pi_3Nx4x4xxxx"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/stripe/paymentSuccess": {
+            "get": {
+                "tags": [
+                    "Stripe"
+                ],
+                "summary": "Stripe Payment Success Redirect",
+                "operationId": "e81b711861e71006fd50c1fccc7baa6c",
+                "responses": {
+                    "200": {
+                        "description": "Payment was successful"
+                    }
+                }
+            }
+        },
+        "/api/stripe/paymentCancel": {
+            "get": {
+                "tags": [
+                    "Stripe"
+                ],
+                "summary": "Stripe Payment Cancel Redirect",
+                "operationId": "f21a6484a56dc87680f5362e0704f647",
+                "responses": {
+                    "200": {
+                        "description": "Payment was cancelled"
+                    }
+                }
+            }
+        },
         "/api/frontend/support-categories": {
             "get": {
                 "tags": [
