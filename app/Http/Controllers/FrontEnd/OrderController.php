@@ -188,8 +188,6 @@ class OrderController extends BaseController
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
 	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="unit_price", type="number", format="float", example=199.99),
-	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
 	 *                 )
 	 *             )
 	 *         )
@@ -215,8 +213,6 @@ class OrderController extends BaseController
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
-			'products.*.unit_price' => 'required|numeric|min:0',
-			'products.*.shipping_charge' => 'required|numeric|min:0',
 		]);
 
 		$customerId = auth()->id();
@@ -232,15 +228,31 @@ class OrderController extends BaseController
 		DB::beginTransaction();
 
 		try {
+			/* Collect all product supplier details in one go */
+			$productDetails = [];
+			foreach ($request->products as $product) {
+				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+				if (!$fetchedDetail) {
+					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+				}
+				$productDetails[] = [
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'unit_price' => $fetchedDetail->unit_price,
+					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+				];
+			}
+
 			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
 			$orderShipping = 0;
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$totalProducts += $product['quantity'];
 				$orderAmount += $product['quantity'] * $product['unit_price'];
-				$orderShipping += config('app.website') == 'US' ? $product['shipping_charge'] : 0;
+				$orderShipping += $product['shipping_charge'];
 			}
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
@@ -250,6 +262,7 @@ class OrderController extends BaseController
 			if (config('app.website') == 'UAE') {
 				$orderShipping = ($orderAmount + $taxAmount) < 300 ? 25 : 0;
 			}
+
 			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
@@ -291,7 +304,7 @@ class OrderController extends BaseController
 
 			]);
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
 				OrderProduct::create([
 					'order_id' => $order->id,
@@ -414,7 +427,7 @@ class OrderController extends BaseController
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
-	
+
 
 				/* Mutate the data for each order product */
 		foreach ($order->orderProducts as $orderProduct) {
@@ -502,7 +515,6 @@ class OrderController extends BaseController
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
 	 *                     @OA\Property(property="quantity", type="integer", example=3),
-	 *                     @OA\Property(property="unit_price", type="number", format="float", example=249.99)
 	 *                 )
 	 *             )
 	 *         )
@@ -542,7 +554,6 @@ class OrderController extends BaseController
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
-			'products.*.unit_price' => 'required|numeric|min:0',
 		]);
 
 		$customerId = auth()->id();
@@ -559,10 +570,26 @@ class OrderController extends BaseController
 		DB::beginTransaction();
 
 		try {
+			/* Collect all product supplier details in one go */
+			$productDetails = [];
+			foreach ($request->products as $product) {
+				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+				if (!$fetchedDetail) {
+					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+				}
+				$productDetails[] = [
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'unit_price' => $fetchedDetail->unit_price,
+					'shipping_charge' => $fetchedDetail->shipping_charge ?? 0,
+				];
+			}
+
 			$totalProducts = 0;
 			$totalAmount = 0;
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$totalProducts += $product['quantity'];
 				$totalAmount += $product['quantity'] * $product['unit_price'];
 			}
@@ -580,7 +607,7 @@ class OrderController extends BaseController
 			/* Delete existing products and re-insert */
 			OrderProduct::where('order_id', $order->id)->delete();
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
 				OrderProduct::create([
 					'order_id' => $order->id,

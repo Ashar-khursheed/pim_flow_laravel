@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 use App\Models\MeasurementUnit;
+use App\Models\ProductSupplier;
 
 if (!function_exists('app_constants')) {
 	function app_constants($key = null) {
@@ -836,6 +837,23 @@ function createDistributedRanges($values, $maxRanges) {
 	if (empty($ranges)) {
 		$ranges[] = ['min' => (int)floor($min), 'max' => (int)ceil($max)];
 	}
-
 	return $ranges;
+}
+
+function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier {
+	$productSupplier = ProductSupplier::where('product_id', $productID)->where('vendor_id', $vendorID)
+	->selectRaw('
+		CASE
+		WHEN sale_price > 0 AND sale_price < price THEN sale_price
+		ELSE price
+		END as unit_price,
+		shipping_charge
+		')
+	->first();
+
+	if ($productSupplier) {
+		$productSupplier->shipping_charge = $productSupplier->shipping_charge ?? 0;
+	}
+
+	return $productSupplier;
 }
