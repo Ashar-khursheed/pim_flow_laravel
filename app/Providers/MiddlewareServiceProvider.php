@@ -16,7 +16,8 @@ class MiddlewareServiceProvider extends ServiceProvider
 public function boot()
 {
     $kernel = $this->app->make(Kernel::class);
-    $kernel->pushMiddleware(\CodebarAg\LaravelPrerender\Middleware\PrerenderMiddleware::class);
+    $kernel->pushMiddleware(\App\Http\Middleware\PrerenderMiddleware::class);
+
 }
 
 }

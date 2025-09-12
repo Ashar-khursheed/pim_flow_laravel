@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureCustomerGuard;
 use App\Http\Middleware\PrerenderMiddleware; // import your custom middleware
 use Illuminate\Auth\AuthenticationException;
 
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
