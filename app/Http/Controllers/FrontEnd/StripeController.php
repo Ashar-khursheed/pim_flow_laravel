@@ -180,7 +180,7 @@ class StripeController extends Controller
      *     path="/api/stripe/create-stripe-payment-link",
      *     summary="Create Stripe Payment link",
      *     description="Creates a Stripe PaymentIntent for a one-time payment.",
-     *     operationId="createPaymentLink",
+     *     operationId="createStripePaymentLink",
      *     tags={"Stripe"},
      *     
      *     @OA\RequestBody(
