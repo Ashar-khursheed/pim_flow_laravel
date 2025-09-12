@@ -326,8 +326,5 @@ class StripeController extends Controller
         } else {
             return $body['url'];
         }
-
     }
-
-
 }

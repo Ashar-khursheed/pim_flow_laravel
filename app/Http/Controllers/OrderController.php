@@ -405,7 +405,6 @@ class OrderController extends Controller
 				try {
 					$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
 						->createPaymentLink($order);
-
 					if ($paymentLink) {
 						$order->payment_link = $paymentLink;
 						$order->save();
