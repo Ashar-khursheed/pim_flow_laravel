@@ -8716,11 +8716,31 @@
                                     },
                                     "profile_img_url": {
                                         "type": "string",
-                                        "example": "www.example.com"
+                                        "example": "https://example.com/image.png"
                                     },
                                     "profile_img": {
-                                        "description": "Profile image (jpeg, png, webp only, max 1 mb)",
+                                        "description": "Profile image (jpeg, jpg, png, webp only, max 1MB)",
                                         "type": "file"
+                                    },
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "Acme Corporation"
+                                    },
+                                    "business_licence": {
+                                        "description": "Business licence PDF (max 2MB)",
+                                        "type": "file"
+                                    },
+                                    "trn_number": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "vat_certificate": {
+                                        "description": "VAT certificate PDF (max 2MB)",
+                                        "type": "file"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "vendor"
                                     }
                                 },
                                 "type": "object"
