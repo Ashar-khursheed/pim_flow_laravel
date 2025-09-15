@@ -646,7 +646,7 @@ class AbandonedCartController extends Controller
     ->orWhereHas('customerCarts', function ($q) use ($startDate, $endDate) {
         $q->whereBetween('created_at', [$startDate, $endDate])
           ->orWhereBetween('updated_at', [$startDate, $endDate])
-          ->orWhereHas('products', function ($p) use ($startDate, $endDate) {
+          ->orWhereHas('customerCartProducts', function ($p) use ($startDate, $endDate) {
               $p->whereBetween('created_at', [$startDate, $endDate])
                 ->orWhereBetween('updated_at', [$startDate, $endDate]);
           });
