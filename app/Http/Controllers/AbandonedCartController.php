@@ -632,35 +632,42 @@ class AbandonedCartController extends Controller
      *     )
      * )
      */
-    public function getCustomersByDateRange(Request $request)
-    {
-        // Validate input dates
-        $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
+public function getCustomersByDateRange(Request $request)
+{
+    // Validate input dates
+    $request->validate([
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+    ]);
 
-        $startDate = Carbon::parse($request->start_date)->startOfDay();
-        $endDate = Carbon::parse($request->end_date)->endOfDay();
+    $startDate = Carbon::parse($request->start_date)->startOfDay();
+    $endDate = Carbon::parse($request->end_date)->endOfDay();
 
-        // Fetch distinct customer_ids from customer_carts created within the date range
-        $customerIds = CustomerCart::whereBetween('created_at', [$startDate, $endDate])
-         ->select('customer_id')
+    // Fetch distinct customer_ids from carts
+    $customerIds = CustomerCart::whereBetween('created_at', [$startDate, $endDate])
+        ->select('customer_id')
         ->distinct()
         ->pluck('customer_id');
 
-        if ($customerIds->isEmpty()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'No customers found with carts in this date range'
-            ], 404);
-        }
-
+    if ($customerIds->isEmpty()) {
         return response()->json([
-            'status' => true,
-            'data' => $customerIds,
-        ]);
+            'status' => false,
+            'message' => 'No customers found with carts in this date range'
+        ], 404);
     }
+
+    // Fetch fresh customer data (no cache)
+    $customers = Customer::whereIn('id', $customerIds)
+        ->orderBy('created_at', 'desc') // latest customers first
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'count' => $customers->count(),
+        'data' => $customers,
+    ]);
+}
+
 
     /**
      * Transform cart data to maintain the same response structure
