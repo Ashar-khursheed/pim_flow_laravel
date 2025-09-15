@@ -632,34 +632,31 @@ class AbandonedCartController extends Controller
      *     )
      * )
      */
-    public function getCustomersByDateRange(Request $request)
-    {
-        // Validate input dates
-        $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
+  public function getCustomersByDateRange(Request $request)
+{
+    $request->validate([
+        'start_date' => 'required|date',
+        'end_date'   => 'required|date|after_or_equal:start_date',
+    ]);
 
-        $startDate = Carbon::parse($request->start_date)->startOfDay();
-        $endDate = Carbon::parse($request->end_date)->endOfDay();
+    $startDate = Carbon::parse($request->start_date)->startOfDay();
+    $endDate   = Carbon::parse($request->end_date)->endOfDay();
 
-        // Fetch distinct customer_ids from customer_carts created within the date range
-        $customerIds = CustomerCart::whereBetween('created_at', [$startDate, $endDate])
-            ->distinct()
-            ->pluck('customer_id');
+    $customers = Customer::whereBetween('updated_at', [$startDate, $endDate])
+        ->orWhereHas('carts', function ($q) use ($startDate, $endDate) {
+            $q->whereBetween('updated_at', [$startDate, $endDate]);
+        })
+        ->orWhereHas('customer_address', function ($q) use ($startDate, $endDate) {
+            $q->whereBetween('updated_at', [$startDate, $endDate]);
+        })
+        ->pluck('id');
 
-        if ($customerIds->isEmpty()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'No customers found with carts in this date range'
-            ], 404);
-        }
+    return response()->json([
+        'status' => true,
+        'data'   => $customers,
+    ]);
+}
 
-        return response()->json([
-            'status' => true,
-            'data' => $customerIds,
-        ]);
-    }
 
     /**
      * Transform cart data to maintain the same response structure
