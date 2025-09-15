@@ -389,7 +389,7 @@ class OrderController extends Controller
 				'created_by' => auth()->id()
 			]);
 
-			if (config('app.website') == 'UAE') {
+			if (config('app.website') == 'UAE' && (!empty($order->is_reserved)) ){
 				$paymentLink = null;
 				try {
 					$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)
