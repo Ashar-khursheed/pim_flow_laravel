@@ -29,22 +29,46 @@ class ExcelRepository
 	 *
 	 * @param Worksheet $activeSheet
 	 * @param array $headerArray
+	 * @param array $highlightedAttribute
 	 * @return void
 	 */
-	public function setHeader(Worksheet $activeSheet, array $headerArray): void
+	public function setHeader(Worksheet $activeSheet, array $headerArray, array $highlightedAttribute = []): void
 	{
-		$styleArray = [
+		$baseStyleArray = [
 			'alignment' => [
 				'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
 				'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
 			],
 		];
 
+		$highlightedStyleArray = [
+			'alignment' => [
+				'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+				'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+			],
+			'fill' => [
+				'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+				'startColor' => [
+					'rgb' => 'FFFF00',
+				],
+			],
+			'font' => [
+				'bold' => true,
+			],
+		];
+
 		$row = 1;
 		$col = 'A';
+
 		foreach ($headerArray as $header) {
 			$activeSheet->setCellValue($col . $row, $header);
-			$activeSheet->getStyle($col . $row)->applyFromArray($styleArray);
+
+			if (in_array($header, $highlightedAttribute)) {
+				$activeSheet->getStyle($col . $row)->applyFromArray($highlightedStyleArray);
+			} else {
+				$activeSheet->getStyle($col . $row)->applyFromArray($baseStyleArray);
+			}
+
 			$col++;
 		}
 	}
