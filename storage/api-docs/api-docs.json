@@ -28819,6 +28819,45 @@
                 ]
             }
         },
+        "/api/get-product-list": {
+            "get": {
+                "tags": [
+                    "Product List"
+                ],
+                "summary": "Get list of product list",
+                "operationId": "fe67dcbfb2802a62af09ea663d3fa3c1",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products/{id}/categories": {
             "get": {
                 "tags": [
@@ -39383,6 +39422,10 @@
         {
             "name": "PrePurchaseClaims",
             "description": "PrePurchaseClaims"
+        },
+        {
+            "name": "Product List",
+            "description": "Product List"
         },
         {
             "name": "Products Category Update",
