@@ -645,8 +645,9 @@ class AbandonedCartController extends Controller
 
         // Fetch distinct customer_ids from customer_carts created within the date range
         $customerIds = CustomerCart::whereBetween('created_at', [$startDate, $endDate])
-            ->distinct()
-            ->pluck('customer_id');
+         ->select('customer_id')
+        ->distinct()
+        ->pluck('customer_id');
 
         if ($customerIds->isEmpty()) {
             return response()->json([
