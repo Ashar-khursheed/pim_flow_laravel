@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Doctrine\Common\Annotations\Annotation\Required;
 use Illuminate\Http\Request;
 use App\Models\ProductAccessory;
+use App\Models\Product;
 use App\Models\AccessoryItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -604,4 +605,54 @@ class ProductAccessoriesController extends Controller
             ], 404);
         }
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/get-product-list",
+     *     summary="Get list of product list",
+     *     tags={"Product List"},      
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Product accessories retrieved successfully"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *      security={{"bearerAuth":{}}}
+     * )
+     */
+    public function getProductList(Request $request)
+    {
+        try {
+            $products = Product::where('status', 'published')->get(); // also eager load product if needed
+
+            if (!empty($products)) {
+                foreach ($products as $key => $val) {
+                    $product_list[$key] = array(
+                        'id' => $val->id,
+                        'name' => $val->name,
+                        'sku' => $val->sku,
+                    );
+                }
+            }
+            $data['product_list'] = $product_list;
+
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product list',
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve product accessories',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+    }
+
 }
