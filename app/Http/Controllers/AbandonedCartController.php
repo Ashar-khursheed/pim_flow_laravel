@@ -632,43 +632,34 @@ class AbandonedCartController extends Controller
      *     )
      * )
      */
-public function getCustomersByDateRange(Request $request)
-{
-    $request->validate([
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
-    ]);
+    public function getCustomersByDateRange(Request $request)
+    {
+        // Validate input dates
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
 
-    $startDate = Carbon::parse($request->start_date)->startOfDay();
-    $endDate = Carbon::parse($request->end_date)->endOfDay();
+        $startDate = Carbon::parse($request->start_date)->startOfDay();
+        $endDate = Carbon::parse($request->end_date)->endOfDay();
 
-    // Force DB query each time (disable query cache)
-    $customerIds = CustomerCart::whereBetween('created_at', [$startDate, $endDate])
-        ->select('customer_id')
-        ->distinct()
-        ->pluck('customer_id')
-        ->toBase(); // ensure raw DB collection (not cached Eloquent)
+        // Fetch distinct customer_ids from customer_carts created within the date range
+        $customerIds = CustomerCart::whereBetween('created_at', [$startDate, $endDate])
+            ->distinct()
+            ->pluck('customer_id');
 
-    if ($customerIds->isEmpty()) {
+        if ($customerIds->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No customers found with carts in this date range'
+            ], 404);
+        }
+
         return response()->json([
-            'status' => false,
-            'message' => 'No customers found with carts in this date range'
-        ], 404);
+            'status' => true,
+            'data' => $customerIds,
+        ]);
     }
-
-    // Always fetch from DB
-    $customers = Customer::whereIn('id', $customerIds)
-        ->orderBy('created_at', 'desc')
-        ->get()
-        ->fresh(); // forces new DB data for models
-
-    return response()->json([
-        'status' => true,
-        'count' => $customers->count(),
-        'data' => $customers,
-    ]);
-}
-
 
     /**
      * Transform cart data to maintain the same response structure
