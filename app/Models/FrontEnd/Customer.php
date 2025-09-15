@@ -117,7 +117,7 @@ public function customerCartProducts()
     return $this->hasMany(CustomerCartProduct::class, 'customer_id', 'id');
 }
 
-public function customerCart()
+public function customerCarts()
 {
     return $this->hasMany(CustomerCart::class, 'customer_id', 'id');
 }
