@@ -634,7 +634,6 @@ class AbandonedCartController extends Controller
      */
 public function getCustomersByDateRange(Request $request)
 {
-    // Validate input dates
     $request->validate([
         'start_date' => 'required|date',
         'end_date' => 'required|date|after_or_equal:start_date',
@@ -643,11 +642,12 @@ public function getCustomersByDateRange(Request $request)
     $startDate = Carbon::parse($request->start_date)->startOfDay();
     $endDate = Carbon::parse($request->end_date)->endOfDay();
 
-    // Fetch distinct customer_ids from carts
+    // Force DB query each time (disable query cache)
     $customerIds = CustomerCart::whereBetween('created_at', [$startDate, $endDate])
         ->select('customer_id')
         ->distinct()
-        ->pluck('customer_id');
+        ->pluck('customer_id')
+        ->toBase(); // ensure raw DB collection (not cached Eloquent)
 
     if ($customerIds->isEmpty()) {
         return response()->json([
@@ -656,10 +656,11 @@ public function getCustomersByDateRange(Request $request)
         ], 404);
     }
 
-    // Fetch fresh customer data (no cache)
+    // Always fetch from DB
     $customers = Customer::whereIn('id', $customerIds)
-        ->orderBy('created_at', 'desc') // latest customers first
-        ->get();
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->fresh(); // forces new DB data for models
 
     return response()->json([
         'status' => true,
