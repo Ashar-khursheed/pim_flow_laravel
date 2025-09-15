@@ -643,12 +643,15 @@ class AbandonedCartController extends Controller
     $endDate   = Carbon::parse($request->end_date)->endOfDay();
 
     $customers = Customer::whereBetween('updated_at', [$startDate, $endDate])
-        ->orWhereHas('carts', function ($q) use ($startDate, $endDate) {
+        ->orWhereHas('customerCart', function ($q) use ($startDate, $endDate) {
             $q->whereBetween('updated_at', [$startDate, $endDate]);
         })
-      ->orWhereHas('customerAddress', function ($q) use ($startDate, $endDate) {
-         $q->whereBetween('updated_at', [$startDate, $endDate]);
-                })
+        ->orWhereHas('customerCartProducts', function ($q) use ($startDate, $endDate) {
+            $q->whereBetween('updated_at', [$startDate, $endDate]);
+        })
+        ->orWhereHas('customerAddress', function ($q) use ($startDate, $endDate) {
+            $q->whereBetween('updated_at', [$startDate, $endDate]);
+        })
         ->pluck('id');
 
     return response()->json([

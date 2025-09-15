@@ -108,9 +108,18 @@ class Customer extends Authenticatable
 	}
 	// App/Models/FrontEnd/Customer.php
 
-public function carts()
+// public function carts()
+// {
+//     return $this->hasMany(Cart::class, 'user_id', 'id');
+// }
+public function customerCartProducts()
 {
-    return $this->hasMany(Cart::class, 'user_id', 'id');
+    return $this->hasMany(CustomerCartProduct::class, 'customer_id', 'id');
+}
+
+public function customerCart()
+{
+    return $this->hasMany(CustomerCart::class, 'customer_id', 'id');
 }
 
 
