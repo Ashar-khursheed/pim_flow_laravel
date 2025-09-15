@@ -549,18 +549,18 @@ class AbandonedCartController extends Controller
                             'brand:id,name',
                             'productSuppliers' => function($ps) {
                                 $ps->select('id','product_id','price','sale_price','vendor_id')
-                                    ->with([
-                                        'vendor:id,name'
-                                    ]);
+                                    ->with(['vendor:id,name']);
                             },
                         ]);
                     },
                 ]);
             }
         ])
-        ->where('created_at', '<=', $threshold)
         ->where('customer_id', $customerId)
+        // remove or adjust threshold
+        // ->where('created_at', '<=', $threshold)
         ->get();
+
 
 
         if ($abandonedCarts->isEmpty()) {
