@@ -396,6 +396,7 @@ class OrderController extends Controller
 						->generatePaymentLink($order);
 
 					if ($paymentLink) {
+						$order = Order::find($order->id);
 						$order->payment_link = $paymentLink;
 						$order->save();
 					}
@@ -410,6 +411,7 @@ class OrderController extends Controller
 						->createPaymentLink($order);
 
 					if ($paymentLink) {
+						$order = Order::find($order->id);
 						$order->payment_link = $paymentLink;
 						$order->save();
 					}

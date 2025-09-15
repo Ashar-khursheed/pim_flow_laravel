@@ -610,7 +610,14 @@ class ProductAccessoriesController extends Controller
      * @OA\Get(
      *     path="/api/get-product-list",
      *     summary="Get list of product list",
-     *     tags={"Product List"},      
+     *     tags={"Product List"},   
+     *      @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Search term for filtering products by name",
+     *         required=false,
+     *         @OA\Schema(type="string", example="samsung")
+     *     ),   
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -626,8 +633,15 @@ class ProductAccessoriesController extends Controller
     public function getProductList(Request $request)
     {
         try {
-            $products = Product::where('status', 'published')->get(); // also eager load product if needed
+            $query = Product::select('id', 'name', 'sku')->where('status', 'published');
+            if ($request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
 
+                });
+            }
+            $products = $query->orderBy('name', 'asc')->get();
             if (!empty($products)) {
                 foreach ($products as $key => $val) {
                     $product_list[$key] = array(
@@ -654,5 +668,4 @@ class ProductAccessoriesController extends Controller
         }
 
     }
-
 }

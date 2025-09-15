@@ -28826,6 +28826,18 @@
                 ],
                 "summary": "Get list of product list",
                 "operationId": "fe67dcbfb2802a62af09ea663d3fa3c1",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term for filtering products by name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "samsung"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful operation",
