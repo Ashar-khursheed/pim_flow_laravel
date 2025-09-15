@@ -646,9 +646,9 @@ class AbandonedCartController extends Controller
         ->orWhereHas('carts', function ($q) use ($startDate, $endDate) {
             $q->whereBetween('updated_at', [$startDate, $endDate]);
         })
-        ->orWhereHas('customer_address', function ($q) use ($startDate, $endDate) {
-            $q->whereBetween('updated_at', [$startDate, $endDate]);
-        })
+      ->orWhereHas('addresses', function ($q) use ($startDate, $endDate) {
+         $q->whereBetween('updated_at', [$startDate, $endDate]);
+                })
         ->pluck('id');
 
     return response()->json([
