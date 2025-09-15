@@ -226,7 +226,9 @@
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans',  sans-serif; ">Shipping</td>
-												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($shippingCharge, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif;" align="right">
+													{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : '<span style="color: green;">Free</span>' !!}
+												</td>
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans',  sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
