@@ -495,6 +495,20 @@ class AttributeController extends BaseController
 
 		$parentCategory = Category::findOrFail($request->parent_category_id);
 
+		$categoryAttributes = [];
+		if (!$parentCategory->children()->exists()) {
+			$categoryAttributeIds = [];
+			if ($parentCategory->subCategory && $parentCategory->subCategory->attributes_ids) {
+				$raw = $parentCategory->subCategory->attributes_ids;
+				if (is_array($raw)) {
+					$raw = $raw[0];
+				}
+				$categoryAttributeIds = array_map('intval', explode(',', $raw));
+			}
+
+			$categoryAttributes = Attribute::whereIn('id', $categoryAttributeIds)->pluck('name')->toArray();
+		}
+
 		/* Get leaf categories */
 		$leafCategories = Category::getLeafCategories($parentCategory);
 		$leafCategoryIds = $leafCategories->pluck('id')->toArray();
@@ -561,8 +575,17 @@ class AttributeController extends BaseController
 		$sheet = $spreadsheet->getActiveSheet();
 		$sheet->setTitle('Attributes');
 
+		$highlightedAttribute = [];
+		foreach ($categoryAttributes as $attribute) {
+			$highlightedAttribute[] = $attribute;
+			$measurementUnit = $attribute . ' Measurement Unit';
+			if (in_array($measurementUnit, $attributeNames)) {
+				$highlightedAttribute[] = $measurementUnit;
+			}
+		}
+
 		/* Set headers */
-		$excelRepo->setHeader($sheet, $header);
+		$excelRepo->setHeader($sheet, $header, $highlightedAttribute);
 
 		/* Populate data */
 		$measurementNameIds = MeasurementUnit::pluck('name', 'id')->toArray();
