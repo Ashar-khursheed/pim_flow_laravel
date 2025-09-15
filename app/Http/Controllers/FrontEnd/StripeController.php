@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use App\Models\PaymentManagement;
+use App\Models\FrontEnd\Order;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 class StripeController extends Controller
@@ -223,7 +224,13 @@ class StripeController extends Controller
         $itemName = $request->itemName;
         $currency = $request->currency;
         $order_id = $request->order_id;
-
+        $payment = Order::where('id', $order_id)->first();
+        if (!$payment) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid order_id, not found in records'
+            ], 404);
+        }
         $success_url = url('/api/stripe/paymentSuccess') . '?session_id={CHECKOUT_SESSION_ID}';
         $cancel_url = url('/api/stripe/paymentCancel');
         $res = Http::withOptions(['verify' => false])
@@ -263,7 +270,7 @@ class StripeController extends Controller
         ];
         // You now have a permanent payment link
         return response()->json([
-            'payment_url' => $body['url'],             
+            'payment_url' => $body['url'],
         ]);
 
     }
@@ -304,22 +311,22 @@ class StripeController extends Controller
         $payment_method_types = $data['payment_method_types']['0'];
         $payment_status = $data['payment_status'];
         $status = $data['status'];
-        if($status=='complete'){
+        if ($status == 'complete') {
             $status = "Completed";
-        }elseif($status=='success'){
+        } elseif ($status == 'success') {
             $status = "Completed";
-        }elseif($status=="processing"){
-            $status ="Pending";
-        }elseif($status=="canceled"){
-            $status ="Failed";    
-        }elseif($status=="failed"){
-            $status ="Failed";        
-        }elseif($status=="expired"){
-            $status ="Failed";        
-        }elseif($status=="succeeded"){
-            $status ="Completed";
-        }else{
-             $status ="Completed";
+        } elseif ($status == "processing") {
+            $status = "Pending";
+        } elseif ($status == "canceled") {
+            $status = "Failed";
+        } elseif ($status == "failed") {
+            $status = "Failed";
+        } elseif ($status == "expired") {
+            $status = "Failed";
+        } elseif ($status == "succeeded") {
+            $status = "Completed";
+        } else {
+            $status = "Completed";
         }
         $email = $data['customer_details']['email'];
         $name = $data['customer_details']['name'];
@@ -331,10 +338,10 @@ class StripeController extends Controller
         $state = $data['customer_details']['address']['state'];
 
         $paymentIntent = Http::withOptions(['verify' => false])
-        
+
             ->withToken(env('STRIPE_TEST_SECRET'))
-        ->get("https://api.stripe.com/v1/payment_intents/{$payment_intent}")
-        ->json(); 
+            ->get("https://api.stripe.com/v1/payment_intents/{$payment_intent}")
+            ->json();
 
         PaymentManagement::create([
             'order_id' => $order_id,
@@ -391,7 +398,7 @@ class StripeController extends Controller
             $itemName = "Order #" . $order->order_number;
         }
         $currency = "USD";
-         $success_url = url('/api/stripe/paymentSuccess') . '?session_id={CHECKOUT_SESSION_ID}';
+        $success_url = url('/api/stripe/paymentSuccess') . '?session_id={CHECKOUT_SESSION_ID}';
         $cancel_url = url('/api/stripe/paymentCancel');
         $res = Http::withOptions(['verify' => false])
             ->withToken(env('STRIPE_TEST_SECRET'))
