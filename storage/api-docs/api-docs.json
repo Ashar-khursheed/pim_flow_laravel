@@ -18545,6 +18545,119 @@
                 ]
             }
         },
+        "/api/frontend/payments/cash-delivery": {
+            "post": {
+                "tags": [
+                    "Frontend-Payment History"
+                ],
+                "summary": "Create a new cash delivery payment",
+                "description": "Create a new cash delivery payment record for an authenticated customer",
+                "operationId": "createCashPayment",
+                "requestBody": {
+                    "description": "Payment data with optional file attachment",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "order_id",
+                                    "payment_mode",
+                                    "amount",
+                                    "status",
+                                    "payment_date"
+                                ],
+                                "properties": {
+                                    "order_id": {
+                                        "type": "integer",
+                                        "example": 123
+                                    },
+                                    "transaction_id": {
+                                        "type": "string",
+                                        "example": "TXN456789"
+                                    },
+                                    "payment_mode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Bank Transfer",
+                                            "Stripe",
+                                            "Razorpay",
+                                            "Cash on Delivery"
+                                        ],
+                                        "example": "Cash on Delivery"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 299.99
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "completed",
+                                            "failed",
+                                            "cancelled",
+                                            "refunded"
+                                        ],
+                                        "example": "completed"
+                                    },
+                                    "rider_name": {
+                                        "type": "string",
+                                        "example": "Jon Jones"
+                                    },
+                                    "payment_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-06-24"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "First installment paid"
+                                    },
+                                    "payment_details": {
+                                        "description": "Additional payment gateway details",
+                                        "properties": {
+                                            "bank": {
+                                                "type": "string",
+                                                "example": "XYZ Bank"
+                                            },
+                                            "ref": {
+                                                "type": "string",
+                                                "example": "12345XYZ"
+                                            },
+                                            "gateway_response": {
+                                                "type": "string",
+                                                "example": "success"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "payment_img": {
+                                        "description": "Upload receipt or proof of payment",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment created successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/post-purchase-claims": {
             "get": {
                 "tags": [
@@ -23138,10 +23251,6 @@
                                         "description": "product name",
                                         "type": "string",
                                         "example": "product name"
-                                    },
-                                    "customer_info": {
-                                        "description": "Customer information",
-                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
