@@ -192,8 +192,7 @@ class StripeController extends Controller
      *             @OA\Property(property="amount", type="number", format="float", example=150.0, description="Payment amount in dollars"),
      *             @OA\Property(property="order_id", type="string", example="pm_1234567890", description="Stripe Payment Method ID"),
      *             @OA\Property(property="currency", type="string", example="usd", description="Currency code"),
-     *             @OA\Property(property="itemName", type="string", example="product name", description="product name"),
-     *             @OA\Property(property="customer_info", type="object", description="Customer information")
+     *             @OA\Property(property="itemName", type="string", example="product name", description="product name") 
      *         )
      *     ),
      *     
@@ -355,7 +354,18 @@ class StripeController extends Controller
             'payment_details' => ''
         ]);
 
+        $order = Order::where('id', $order_id)->first();
+		if (!$order) {
+			return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+		}
 
+		// Mark order as paid and remove payment link
+		$order->update([
+			'is_paid' => true,
+			'paid_amount' => $amount_total / 100,
+			'pending_amount' => 0,
+			'payment_link' => null
+		]);
 
         // Example response
         return response()->json([

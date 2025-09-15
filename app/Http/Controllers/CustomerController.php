@@ -195,86 +195,190 @@ class CustomerController extends Controller
 			'data' => $customer
 		]);
 	}
+/**
+ * @OA\Post(
+ *     path="/api/customers/{id}",
+ *     summary="Update a customer",
+ *     tags={"Customers"},
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"_method", "name", "email"},
+ *                 @OA\Property(property="_method", type="string", example="PUT"),
+ *                 @OA\Property(property="name", type="string", example="John Doe"),
+ *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+ *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
+ *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
+ *                 @OA\Property(property="country_code", type="string", example="+91"),
+ *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
+ *                 @OA\Property(property="profile_img_url", type="string", example="https://example.com/image.png"),
+ *                 @OA\Property(
+ *                     property="profile_img",
+ *                     type="file",
+ *                     description="Profile image (jpeg, jpg, png, webp only, max 1MB)"
+ *                 ),
+ *
+ *                 @OA\Property(property="business_name", type="string", example="Acme Corporation"),
+ *                 @OA\Property(
+ *                     property="business_licence",
+ *                     type="file",
+ *                     description="Business licence PDF (max 2MB)"
+ *                 ),
+ *                 @OA\Property(property="trn_number", type="string", example="1234567890"),
+ *                 @OA\Property(
+ *                     property="vat_certificate",
+ *                     type="file",
+ *                     description="VAT certificate PDF (max 2MB)"
+ *                 ),
+ *
+ *                 @OA\Property(property="type", type="string", example="vendor")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Updated successfully",
+ *         @OA\MediaType(mediaType="application/json")
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
 
-	/**
-	 * @OA\Post(
-	 *     path="/api/customers/{id}",
-	 *     summary="Update a customer",
-	 *     tags={"Customers"},
-	 *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 required={"_method", "name", "email"},
-	 *                 @OA\Property(property="_method", type="string", example="PUT"),
-	 *                 @OA\Property(property="name", type="string", example="John Doe"),
-	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
-	 *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
-	 *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
-	 *                 @OA\Property(property="country_code", type="string", example="+91"),
-	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
-	 *                 @OA\Property(property="profile_img_url", type="string", example="www.example.com"),
-	 *                 @OA\Property(property="profile_img", type="file", description="Profile image (jpeg, png, webp only, max 1 mb)"),
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
+	// public function update(Request $request, $id)
+	// {
+	// 	$customer = Customer::find($id);
+
+	// 	if (!$customer) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => __("err_exist")
+	// 		]);
+	// 	}
+
+	// 	$validatedData = $request->validate([
+	// 		'name' => 'required|string|max:255',
+	// 		'email' => 'required|string|email|max:255|unique:customers,email,'.$id,
+	// 		'password' => 'nullable|string|min:8',
+	// 		'type' => 'nullable|string',
+	// 		'dob' => 'nullable|date',
+	// 		'country_code' => 'nullable|string',
+	// 		'mobile_number' => 'nullable|string|max:20',
+	// 		'profile_img_url' => 'nullable',
+	// 		'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
+	// 	]);
+
+	// 	if ($request->hasFile('profile_img')) {
+	// 		$validatedData['profile_img'] = uploadImageToWebpS3FromFile(
+	// 			$request,
+	// 			'profile_img',
+	// 			env('STORAGE_ENV') . '/customer/profile_img'
+	// 		);
+	// 	} elseif (!empty($validatedData['profile_img_url'])) {
+	// 		$validatedData['profile_img'] = $validatedData['profile_img_url'];
+	// 	} else {
+	// 		unset($validatedData['profile_img']); // Don't update this field at all
+	// 	}
+
+
+
+	// 	if (isset($validatedData['password'])) {
+	// 		$validatedData['password'] = Hash::make($validatedData['password']);
+	// 	} else {
+	// 		unset($validatedData['password']);
+	// 	}
+
+	// 	$customer->update($validatedData);
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Customer updated successfully',
+	// 		'data' => $customer
+	// 	]);
+	// }
 	public function update(Request $request, $id)
-	{
-		$customer = Customer::find($id);
+{
+    $customer = Customer::find($id);
 
-		if (!$customer) {
-			return response()->json([
-				'success' => false,
-				'message' => __("err_exist")
-			]);
-		}
+    if (!$customer) {
+        return response()->json([
+            'success' => false,
+            'message' => __("err_exist")
+        ]);
+    }
 
-		$validatedData = $request->validate([
-			'name' => 'required|string|max:255',
-			'email' => 'required|string|email|max:255|unique:customers,email,'.$id,
-			'password' => 'nullable|string|min:8',
-			'type' => 'nullable|string',
-			'dob' => 'nullable|date',
-			'country_code' => 'nullable|string',
-			'mobile_number' => 'nullable|string|max:20',
-			'profile_img_url' => 'nullable',
-			'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
-		]);
+    $validatedData = $request->validate([
+        'name'             => 'required|string|max:255',
+        'email'            => 'required|string|email|max:255|unique:customers,email,' . $id,
+        'password'         => 'nullable|string|min:8',
+        'type'             => 'nullable|string',
+        'dob'              => 'nullable|date',
+        'country_code'     => 'nullable|string|max:10',
+        'mobile_number'    => 'nullable|string|max:20',
+        'profile_img_url'  => 'nullable',
+        'profile_img'      => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
 
-		if ($request->hasFile('profile_img')) {
-			$validatedData['profile_img'] = uploadImageToWebpS3FromFile(
-				$request,
-				'profile_img',
-				env('STORAGE_ENV') . '/customer/profile_img'
-			);
-		} elseif (!empty($validatedData['profile_img_url'])) {
-			$validatedData['profile_img'] = $validatedData['profile_img_url'];
-		} else {
-			unset($validatedData['profile_img']); // Don't update this field at all
-		}
+        // New fields
+        'business_name'    => 'nullable|string',
+        'business_licence' => 'nullable|file|mimes:pdf|max:2048',
+        'trn_number'       => 'nullable|string',
+        'vat_certificate'  => 'nullable|file|mimes:pdf|max:2048',
+    ]);
 
+    /* Profile Image */
+    if ($request->hasFile('profile_img')) {
+        $validatedData['profile_img'] = uploadImageToWebpS3FromFile(
+            $request,
+            'profile_img',
+            env('STORAGE_ENV') . '/customer/profile_img'
+        );
+    } elseif (!empty($validatedData['profile_img_url'])) {
+        $validatedData['profile_img'] = $validatedData['profile_img_url'];
+    } else {
+        unset($validatedData['profile_img']);
+    }
 
+    /* Business licence PDF */
+    if ($request->hasFile('business_licence')) {
+        $validatedData['business_licence'] = uploadPdfToS3FromFile(
+            $request,
+            'business_licence',
+            env('STORAGE_ENV') . '/customer/business_licence'
+        );
+    }
 
-		if (isset($validatedData['password'])) {
-			$validatedData['password'] = Hash::make($validatedData['password']);
-		} else {
-			unset($validatedData['password']);
-		}
+    /* VAT certificate PDF */
+    if ($request->hasFile('vat_certificate')) {
+        $validatedData['vat_certificate'] = uploadPdfToS3FromFile(
+            $request,
+            'vat_certificate',
+            env('STORAGE_ENV') . '/customer/vat_certificate'
+        );
+    }
 
-		$customer->update($validatedData);
+    /* Password */
+    if (isset($validatedData['password'])) {
+        $validatedData['password'] = Hash::make($validatedData['password']);
+    } else {
+        unset($validatedData['password']);
+    }
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Customer updated successfully',
-			'data' => $customer
-		]);
-	}
+    $customer->update($validatedData);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Customer updated successfully',
+        'data' => $customer
+    ]);
+}
+
 
 	/**
 	 * @OA\Delete(

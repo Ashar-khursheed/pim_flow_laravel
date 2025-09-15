@@ -687,6 +687,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::delete('/frontend/remove-from-save-for-later/{product_id}', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
 
 	Route::apiResource('/frontend/payments',  F_PaymentManagementController::class);
+	Route::post('/frontend/payments/cash-delivery',  [F_PaymentManagementController::class,'paymentCashDelivery']);
 
 
 	Route::prefix('/frontend/blogs')->group(function () {
