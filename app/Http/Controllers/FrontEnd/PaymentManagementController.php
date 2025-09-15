@@ -422,8 +422,7 @@ class PaymentManagementController extends Controller
                     'message' => 'Authentication required.'
                 ], 401);
             }
-
-            $validated['customer_id'] = auth()->id();
+           
             $validated['created_by'] = auth()->id();
             $validated['rider_name'] = $request->rider_name;
 
