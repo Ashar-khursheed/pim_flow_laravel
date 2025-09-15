@@ -34,6 +34,7 @@ class Order extends Model
 		'paid_amount',
 		'pending_amount',
 		'status',
+		'is_reserved',
 		'is_customer_pickup',
 		'created_by',
 		'updated_by',

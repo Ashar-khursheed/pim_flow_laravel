@@ -17792,6 +17792,10 @@
                                         "format": "float",
                                         "example": 200
                                     },
+                                    "is_reserved": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "is_customer_pickup": {
                                         "type": "boolean",
                                         "example": false
@@ -26596,6 +26600,10 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "is_reserved": {
+                                        "type": "boolean",
+                                        "example": false
                                     },
                                     "is_customer_pickup": {
                                         "type": "boolean",
