@@ -362,7 +362,7 @@ class OrderController extends Controller
 				'is_reserved' => $request->boolean('is_reserved'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => auth()->id(),
-				'payment_link' => $paymentLink ?? null,
+				'payment_link' => $paymentLink ?? null			 
 			]);
 
 			foreach ($productDetails as $product) {
@@ -389,7 +389,11 @@ class OrderController extends Controller
 				'created_by' => auth()->id()
 			]);
 
-			if (config('app.website') == 'UAE' && (!empty($order->is_reserved)) ){
+			$gateways = paymentGateway();
+			$paymentMode = "CCAvenue";
+
+			if (config('app.website') == 'UAE' && (!empty($order->is_reserved)) && in_array($paymentMode, $gateways)) {
+
 				$paymentLink = null;
 				try {
 					$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)
@@ -403,7 +407,23 @@ class OrderController extends Controller
 				} catch (\Exception $e) {
 				}
 
+			} else if (config('app.website') == 'UAE' && (!empty($order->is_reserved)) && in_array($paymentMode, $gateways)) {
+ 
+				// Generate payment link BEFORE committing transaction
+				$paymentLink = null;
+				try {
+					$paymentLink = app(\App\Http\Controllers\FrontEnd\CCavenueController::class)
+						->createCCavenuePaymentLink($order);
+
+					if ($paymentLink) {
+						$order = Order::find($order->id);
+						$order->payment_link = $paymentLink;
+						$order->save();
+					}
+				} catch (\Exception $e) {
+				}
 			} else {
+
 				// Generate payment link BEFORE committing transaction
 				$paymentLink = null;
 				try {
@@ -417,6 +437,7 @@ class OrderController extends Controller
 					}
 				} catch (\Exception $e) {
 				}
+
 			}
 
 			DB::commit();

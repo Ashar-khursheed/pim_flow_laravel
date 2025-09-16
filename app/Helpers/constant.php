@@ -18,7 +18,8 @@ use App\Models\MeasurementUnit;
 use App\Models\ProductSupplier;
 
 if (!function_exists('app_constants')) {
-	function app_constants($key = null) {
+	function app_constants($key = null)
+	{
 		$constants = [
 			'DELIVERY_DAYS' => [
 				'1 to 2 Days',
@@ -66,7 +67,8 @@ if (!function_exists('app_constants')) {
 }
 
 if (!function_exists('product_constants')) {
-	function product_constants($key = null) {
+	function product_constants($key = null)
+	{
 		$constants = [
 			'HEADER_MAP1' => [
 				"id" => "Id",
@@ -158,7 +160,8 @@ if (!function_exists('product_constants')) {
 
 
 if (!function_exists('product_import_constants')) {
-	function product_import_constants($key = null) {
+	function product_import_constants($key = null)
+	{
 		$constants = [
 			'ID' => [
 				'Id' => 'id',
@@ -260,7 +263,8 @@ if (!function_exists('product_import_constants')) {
 }
 
 if (!function_exists('seo_import_constants')) {
-	function seo_import_constants($key = null) {
+	function seo_import_constants($key = null)
+	{
 		$constants = [
 			'ALL_FIELDS' => [
 				'Relational Name' => 'relational_name',
@@ -395,9 +399,9 @@ function uploadPdfToS3FromFile(Request $request, string $key, string $pathPrefix
 			return null;
 		}
 
-		$filename   = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+		$filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
 		$uniqueName = $filename . '_' . time() . '.pdf';
-		$path       = "{$pathPrefix}/{$uniqueName}";
+		$path = "{$pathPrefix}/{$uniqueName}";
 
 		Storage::disk('s3')->put($path, file_get_contents($file->getRealPath()));
 
@@ -411,8 +415,8 @@ if (!function_exists('getDateRange')) {
 	function getDateRange(Carbon\Carbon|string $createdAt, string $deliveryDays): string
 	{
 		$createdAt = $createdAt instanceof \Carbon\Carbon
-		? $createdAt->copy()
-		: \Carbon\Carbon::parse($createdAt);
+			? $createdAt->copy()
+			: \Carbon\Carbon::parse($createdAt);
 
 		$deliveryDays = trim($deliveryDays);
 		$isWeekFormat = str_contains($deliveryDays, 'Week');
@@ -456,8 +460,8 @@ if (!function_exists('getDateRange')) {
 		}
 
 		return $isRange
-		? $startDate->format('D, F j') . ' - ' . $endDate->format('D, F j')
-		: $startDate->format('D, F j');
+			? $startDate->format('D, F j') . ' - ' . $endDate->format('D, F j')
+			: $startDate->format('D, F j');
 	}
 }
 
@@ -468,13 +472,34 @@ function convertNumberToWords($amount, $currencyMain = 'U.S. Dollars', $currency
 	$decimal = round(($amount - $number) * 100);
 
 	$words = [
-		0 => 'Zero', 1 => 'One', 2 => 'Two', 3 => 'Three', 4 => 'Four',
-		5 => 'Five', 6 => 'Six', 7 => 'Seven', 8 => 'Eight', 9 => 'Nine',
-		10 => 'Ten', 11 => 'Eleven', 12 => 'Twelve', 13 => 'Thirteen',
-		14 => 'Fourteen', 15 => 'Fifteen', 16 => 'Sixteen',
-		17 => 'Seventeen', 18 => 'Eighteen', 19 => 'Nineteen',
-		20 => 'Twenty', 30 => 'Thirty', 40 => 'Forty', 50 => 'Fifty',
-		60 => 'Sixty', 70 => 'Seventy', 80 => 'Eighty', 90 => 'Ninety'
+		0 => 'Zero',
+		1 => 'One',
+		2 => 'Two',
+		3 => 'Three',
+		4 => 'Four',
+		5 => 'Five',
+		6 => 'Six',
+		7 => 'Seven',
+		8 => 'Eight',
+		9 => 'Nine',
+		10 => 'Ten',
+		11 => 'Eleven',
+		12 => 'Twelve',
+		13 => 'Thirteen',
+		14 => 'Fourteen',
+		15 => 'Fifteen',
+		16 => 'Sixteen',
+		17 => 'Seventeen',
+		18 => 'Eighteen',
+		19 => 'Nineteen',
+		20 => 'Twenty',
+		30 => 'Thirty',
+		40 => 'Forty',
+		50 => 'Fifty',
+		60 => 'Sixty',
+		70 => 'Seventy',
+		80 => 'Eighty',
+		90 => 'Ninety'
 	];
 
 	$units = ['', 'Thousand', 'Million', 'Billion'];
@@ -560,7 +585,8 @@ function getBase64Image($url)
 }
 
 if (!function_exists('glitch_error_reporting_mails')) {
-	function glitch_error_reporting_mails() {
+	function glitch_error_reporting_mails()
+	{
 		$usMails = [
 			'noman.peera@thehorecastore.com',
 			'ofm@thehorecastore.com',
@@ -594,31 +620,32 @@ if (!function_exists('glitch_error_reporting_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-			$mails = $usMails;
-			break;
+				$mails = $usMails;
+				break;
 
 			case 'UAE':
-			$mails = $uaeMails;
-			break;
+				$mails = $uaeMails;
+				break;
 
 			case 'TEST':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'Local':
-			$mails = $localMails;
-			break;
+				$mails = $localMails;
+				break;
 
 			default:
-			$mails =[];
-			break;
+				$mails = [];
+				break;
 		}
 		return $mails;
 	}
 }
 
 if (!function_exists('order_cc_mails')) {
-	function order_cc_mails() {
+	function order_cc_mails()
+	{
 		$usMails = [
 			'ofm@thehorecastore.com',
 			'noman.peera@thehorecastore.com',
@@ -649,24 +676,24 @@ if (!function_exists('order_cc_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-			$mails = $usMails;
-			break;
+				$mails = $usMails;
+				break;
 
 			case 'UAE':
-			$mails = $uaeMails;
-			break;
+				$mails = $uaeMails;
+				break;
 
 			case 'TEST':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'Local':
-			$mails = $localMails;
-			break;
+				$mails = $localMails;
+				break;
 
 			default:
-			$mails =[];
-			break;
+				$mails = [];
+				break;
 		}
 		return $mails;
 	}
@@ -674,7 +701,8 @@ if (!function_exists('order_cc_mails')) {
 
 
 if (!function_exists('quote_cc_mails')) {
-	function quote_cc_mails() {
+	function quote_cc_mails()
+	{
 		$usMails = [
 			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
@@ -696,30 +724,31 @@ if (!function_exists('quote_cc_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-			$mails = $usMails;
-			break;
+				$mails = $usMails;
+				break;
 
 			case 'UAE':
-			$mails = $uaeMails;
-			break;
+				$mails = $uaeMails;
+				break;
 
 			case 'TEST':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'Local':
-			$mails = $localMails;
-			break;
+				$mails = $localMails;
+				break;
 
 			default:
-			$mails =[];
-			break;
+				$mails = [];
+				break;
 		}
 		return $mails;
 	}
 }
 
-function createSmartRanges($rangefilterArray, $maxRanges = 5) {
+function createSmartRanges($rangefilterArray, $maxRanges = 5)
+{
 	$filters = [];
 
 	/* Group by attribute_name */
@@ -755,12 +784,13 @@ function createSmartRanges($rangefilterArray, $maxRanges = 5) {
 	return $filters;
 }
 
-function createOptimalRanges($values, $maxRanges) {
+function createOptimalRanges($values, $maxRanges)
+{
 	$valueCount = count($values);
 
 	if ($valueCount <= 1) {
 		/* Single value - create a range around it */
-		$val = (int)floor($values[0]);
+		$val = (int) floor($values[0]);
 		return [['min' => $val, 'max' => $val + 1]];
 	}
 
@@ -773,12 +803,13 @@ function createOptimalRanges($values, $maxRanges) {
 	return createDistributedRanges($values, $maxRanges);
 }
 
-function createIndividualRanges($values) {
+function createIndividualRanges($values)
+{
 	$ranges = [];
 
 	foreach ($values as $value) {
-		$min = (int)floor($value);
-		$max = (int)ceil($value);
+		$min = (int) floor($value);
+		$max = (int) ceil($value);
 
 		/* Ensure max is at least min + 1 for proper range */
 		if ($max <= $min) {
@@ -801,7 +832,8 @@ function createIndividualRanges($values) {
 	return $ranges;
 }
 
-function createDistributedRanges($values, $maxRanges) {
+function createDistributedRanges($values, $maxRanges)
+{
 	$min = min($values);
 	$max = max($values);
 
@@ -810,12 +842,12 @@ function createDistributedRanges($values, $maxRanges) {
 	$rangeSize = $totalSpan / $maxRanges;
 
 	$ranges = [];
-	$currentMin = (int)floor($min);
+	$currentMin = (int) floor($min);
 
 	for ($i = 0; $i < $maxRanges; $i++) {
 		$currentMax = ($i === $maxRanges - 1)
-		? (int)ceil($max)
-		: (int)floor($currentMin + $rangeSize);
+			? (int) ceil($max)
+			: (int) floor($currentMin + $rangeSize);
 
 		/* Ensure we have at least one value in this range */
 		$hasValueInRange = false;
@@ -835,25 +867,44 @@ function createDistributedRanges($values, $maxRanges) {
 
 	/* If no ranges were created, fall back to single range */
 	if (empty($ranges)) {
-		$ranges[] = ['min' => (int)floor($min), 'max' => (int)ceil($max)];
+		$ranges[] = ['min' => (int) floor($min), 'max' => (int) ceil($max)];
 	}
 	return $ranges;
 }
 
-function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier {
+function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier
+{
 	$productSupplier = ProductSupplier::where('product_id', $productID)->where('vendor_id', $vendorID)
-	->selectRaw('
+		->selectRaw('
 		CASE
 		WHEN sale_price > 0 AND sale_price < price THEN sale_price
 		ELSE price
 		END as unit_price,
 		shipping_charge
 		')
-	->first();
+		->first();
 
 	if ($productSupplier) {
 		$productSupplier->shipping_charge = $productSupplier->shipping_charge ?? 0;
 	}
 
 	return $productSupplier;
+}
+
+
+if (!function_exists('paymentGateway')) {
+	function paymentGateway()
+	{
+		$gateways = array(
+			'Stripe',
+			'PayPal',
+			'Square',
+			'Razorpay',
+			'CCAvenue',
+			'PayU',
+			'Instamojo',
+			'BillDesk',
+		);
+		return $gateways;
+	}
 }

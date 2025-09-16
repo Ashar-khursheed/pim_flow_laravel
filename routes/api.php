@@ -402,11 +402,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 
-	Route::resource('product-accessories', ProductAccessoriesController::class);	 
+	Route::resource('product-accessories', ProductAccessoriesController::class);
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
-	Route::get('/get-product-list', [ProductAccessoriesController::class, 'getProductList']);
-	
 
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
@@ -469,6 +467,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('flash-sales', FlashSaleController::class);
 
 
+    Route::get('/seo-management/check-url', [SeoManagementController::class, 'checkURL']);
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
 	Route::post('/seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);

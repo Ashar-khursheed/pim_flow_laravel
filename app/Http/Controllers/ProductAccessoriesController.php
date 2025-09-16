@@ -160,7 +160,7 @@ class ProductAccessoriesController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'product_id' => 'required|integer|exists:ec_products,id',
-                'name' => 'required|string|max:255|unique:ec_products,name',
+                'name' => 'required|string|max:255',
                 'accessories' => 'required|array',
                 'isapproved' => 'sometimes|boolean'
             ]);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 class SeoManagement extends Model
 {
@@ -40,15 +41,26 @@ class SeoManagement extends Model
 		'cat_desc',
 		'banner_image_alt_text',
 		'banner_image_file',
-		'banner_slug',                 // ✅ NEW FIELD
-		'popularTag_details',         // ✅ NEW FIELD
+		'banner_slug',
+		'popularTag_details',
 	];
+
+	protected static function boot()
+	{
+		parent::boot();
+		Relation::enforceMorphMap([
+			'Product'  => \App\Models\Product::class,
+			'Category' => \App\Models\Category::class,
+			'Brand'    => \App\Models\Brand::class,
+			'Blog'     => \App\Models\Blog::class,
+		]);
+	}
 
 	public function relational()
 	{
 		return $this->morphTo();
 	}
-	
+
 	protected $casts = [
 		'popular_tags' => 'array',
 		'tags' => 'array',
