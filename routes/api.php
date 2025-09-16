@@ -405,6 +405,10 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::resource('product-accessories', ProductAccessoriesController::class);
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2b6dc5f83374f70b2db2454c476846afa94cbb62
 
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);

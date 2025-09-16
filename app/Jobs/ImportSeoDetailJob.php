@@ -42,6 +42,8 @@ class ImportSeoDetailJob implements ShouldQueue
 
 	public function handle()
 	{
+		$allUrls = SeoManagement::pluck('url')->all();
+
 		$log = TransactionLog::where('identifier', $this->batch()->id)->first();
 		if (!$log) {
 			Log::error('Transaction log not found for batch ID: ' . $this->batch()->id);
@@ -185,7 +187,6 @@ class ImportSeoDetailJob implements ShouldQueue
 				'Brand' => Brand::class,
 				'Blog' => Blog::class,
 			};
-			$relational_type = $model;
 
 			if (!empty($relational_id)) {
 				$exist = $model::find($relational_id);
@@ -198,7 +199,7 @@ class ImportSeoDetailJob implements ShouldQueue
 			if ($exist) {
 				$relational_id = $exist->id;
 			} else {
-				$rowError[] = class_basename($relational_type) . " does not exist for the given relational identifier." .
+				$rowError[] = $relational_type . " does not exist for the given relational identifier." .
 				" [Provided relational_id: " . ($relational_id ?? 'NULL') . ", relational_name: '" . ($relational_name ?? 'NULL') . "']";
 				$errorArray[] = [
 					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
@@ -487,7 +488,7 @@ class ImportSeoDetailJob implements ShouldQueue
 	private function generateSchema(SeoManagement $seo)
 	{
 		// Check if the type is 'Product' and relational_id is available
-		if ($seo->relational_type === 'App\Models\Product' && $seo->relational_id) {
+		if ($seo->relational_type === 'Product' && $seo->relational_id) {
 			// Fetch product data from products table
 			$product = Product::find($seo->relational_id);
 
@@ -534,7 +535,7 @@ class ImportSeoDetailJob implements ShouldQueue
 		// If not a product, return the generic WebPage schema
 		return [
 			"@context" => "https://schema.org",
-			"@type" => str_replace('App\\Models\\', '', $seo->relational_type) ?? 'WebPage',
+			"@type" => $seo->relational_type ?? 'WebPage',
 			"url" => $seo->url,
 			"name" => $seo->meta_title,
 			"description" => $seo->meta_description,
