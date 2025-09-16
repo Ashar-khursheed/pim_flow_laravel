@@ -362,8 +362,7 @@ class OrderController extends Controller
 				'is_reserved' => $request->boolean('is_reserved'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => auth()->id(),
-				'payment_link' => $paymentLink ?? null,
-				'paymentMode' => $paymentLink ?? null,
+				'payment_link' => $paymentLink ?? null			 
 			]);
 
 			foreach ($productDetails as $product) {
@@ -391,7 +390,7 @@ class OrderController extends Controller
 			]);
 
 			$gateways = paymentGateway();
-			$paymentMode = "ccavenue";
+			$paymentMode = "CCAvenue";
 
 			if (config('app.website') == 'UAE' && (!empty($order->is_reserved)) && in_array($paymentMode, $gateways)) {
 
@@ -409,7 +408,7 @@ class OrderController extends Controller
 				}
 
 			} else if (config('app.website') == 'UAE' && (!empty($order->is_reserved)) && in_array($paymentMode, $gateways)) {
-
+ 
 				// Generate payment link BEFORE committing transaction
 				$paymentLink = null;
 				try {

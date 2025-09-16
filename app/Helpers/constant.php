@@ -857,3 +857,19 @@ function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier 
 
 	return $productSupplier;
 }
+
+
+
+function paymentGateway(){
+$gateways =array(
+'Stripe',
+'PayPal',
+'Square',
+'Razorpay',
+'CCAvenue',
+'PayU', 
+'Instamojo',
+'BillDesk',
+);
+return $gateways;
+}
