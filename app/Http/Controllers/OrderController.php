@@ -270,6 +270,7 @@ class OrderController extends Controller
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 			'is_reserved' => 'nullable|boolean',
+			'is_payment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
