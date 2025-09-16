@@ -100,10 +100,9 @@ class AppServiceProvider extends ServiceProvider
 		Product::observe(TransactionLogObserver::class);
 		Category::observe(TransactionLogObserver::class);
 
-		  if (app()->environment('production')) {
-                URL::forceScheme('https');
-        }
-
+		if (app()->environment('production')) {
+			URL::forceScheme('https');
+		}
 
 		// AppKeyword::observe(TransactionLogObserver::class);
 		// AppKeywordTranslation::observe(TransactionLogObserver::class);
