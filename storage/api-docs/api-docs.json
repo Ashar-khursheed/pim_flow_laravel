@@ -34247,6 +34247,55 @@
                 ]
             }
         },
+        "/api/seo-management/check-url": {
+            "get": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Check URL slug availability and existence",
+                "description": "Validates if a URL slug is available or already exists for SEO management across different content types",
+                "operationId": "checkUrlSlugAvailability",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Product",
+                                "Category",
+                                "Brand",
+                                "Blog"
+                            ],
+                            "example": "Product"
+                        }
+                    },
+                    {
+                        "name": "url",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "kitchen-equipment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "URL availability checked successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/sliders": {
             "get": {
                 "tags": [
