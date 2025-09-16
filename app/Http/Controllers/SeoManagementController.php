@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Str;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
@@ -1227,12 +1228,11 @@ class SeoManagementController extends Controller
 		]);
 
 		/* Determine the full class name based on relational_type */
-		// $modelClass = 'App\\Models\\' . $request->relational_type;
-		$modelClass =  $request->relational_type;
+		$modelClass = Str::startsWith($request->relational_type, 'App\\Models\\') ? $request->relational_type : 'App\\Models\\' . $request->relational_type;
 
 		/* Fetch records with related secondary keywords */
 		$records = SeoManagement::with('secondaryKeywordDetails')
-		->where('relational_type', $modelClass)
+		->where('relational_type', $request->relational_type)
 		->offset($request->range_from - 1)
 		->limit($request->range_to - $request->range_from + 1)
 		->orderBy('id', 'asc')
@@ -1269,11 +1269,10 @@ class SeoManagementController extends Controller
 		$rowIndex = 2;
 		foreach ($records as $record) {
 			/* Convert full model class to base name (e.g., App\Models\Category → Category) */
-			$relationalTypeName = class_basename($record->relational_type);
+			$relationalTypeName = Str::startsWith($record->relational_type, 'App\\Models\\') ? class_basename($record->relational_type) : $record->relational_type;
 
 			/* Fetch the relational name based on relational_type and relational_id */
-			// $relationalName = $modelClass::find($record->relational_id)->name ?? 'N/A';
-			$relationalName=$modelClass = $request->relational_type; // like 'Category'
+			$relationalName = $modelClass::find($record->relational_id)->name ?? 'N/A';
 
 			/* Process secondary keywords */
 			if ($record->secondaryKeywordDetails->isNotEmpty()) {
