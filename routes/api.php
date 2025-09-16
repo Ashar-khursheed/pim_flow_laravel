@@ -336,7 +336,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('blog-categories', BlogCategoryController::class);
 	Route::post('/blogs/{id}', [BlogController::class, 'update']);
 	Route::apiResource('blogs', BlogController::class);
-
+	
 	Route::get('/product-questions/{product_id}', [ProductQuestionController::class, 'index']);
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);

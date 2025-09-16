@@ -239,6 +239,7 @@ class OrderController extends Controller
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
+	 *             @OA\Property(property="is_payment", type="boolean", example=false),
 	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
 	 *             @OA\Property(
 	 *                 property="products",
@@ -360,9 +361,10 @@ class OrderController extends Controller
 				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
 				'is_reserved' => $request->boolean('is_reserved'),
+				'is_payment' => $request->boolean('is_payment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => auth()->id(),
-				'payment_link' => $paymentLink ?? null			 
+				'payment_link' => $paymentLink ?? null
 			]);
 
 			foreach ($productDetails as $product) {
@@ -389,31 +391,12 @@ class OrderController extends Controller
 				'created_by' => auth()->id()
 			]);
 
-			$gateways = paymentGateway();
-			$paymentMode = "CCAvenue";
 
-			if (config('app.website') == 'UAE' && (!empty($order->is_reserved)) && in_array($paymentMode, $gateways)) {
-
+			if (config('app.website') == 'UAE' && (!empty($order->is_reserved)) && (!empty($order->is_payment))) {
 				$paymentLink = null;
 				try {
 					$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)
 						->generatePaymentLink($order);
-
-					if ($paymentLink) {
-						$order = Order::find($order->id);
-						$order->payment_link = $paymentLink;
-						$order->save();
-					}
-				} catch (\Exception $e) {
-				}
-
-			} else if (config('app.website') == 'UAE' && (!empty($order->is_reserved)) && in_array($paymentMode, $gateways)) {
- 
-				// Generate payment link BEFORE committing transaction
-				$paymentLink = null;
-				try {
-					$paymentLink = app(\App\Http\Controllers\FrontEnd\CCavenueController::class)
-						->createCCavenuePaymentLink($order);
 
 					if ($paymentLink) {
 						$order = Order::find($order->id);
@@ -427,8 +410,8 @@ class OrderController extends Controller
 				// Generate payment link BEFORE committing transaction
 				$paymentLink = null;
 				try {
-					$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
-						->createPaymentLink($order);
+					$paymentLink = app(\App\Http\Controllers\FrontEnd\CCavenueController::class)
+						->createCCavenuePaymentLink($order);
 
 					if ($paymentLink) {
 						$order = Order::find($order->id);
@@ -437,7 +420,6 @@ class OrderController extends Controller
 					}
 				} catch (\Exception $e) {
 				}
-
 			}
 
 			DB::commit();
