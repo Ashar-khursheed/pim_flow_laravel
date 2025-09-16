@@ -1342,4 +1342,34 @@ public function update(Request $request, $relational_type, $id)
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
 
+	/**
+	 * @OA\Get(
+	 *     path="/api/seo-management/check-url",
+	 *     summary="Check URL slug availability and existence",
+	 *     description="Validates if a URL slug is available or already exists for SEO management across different content types",
+	 *     operationId="checkUrlSlugAvailability",
+	 *     tags={"SEO Management"},
+	 *     @OA\Parameter(name="type", in="query", required=true, @OA\Schema(type="string", enum={"Product", "Category", "Brand", "Blog"}, example="Product")),
+	 *     @OA\Parameter(name="url", in="query", required=true, @OA\Schema(type="string", example="kitchen-equipment")),
+	 *     @OA\Response(response=200, description="URL availability checked successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function checkUrl(Request $request)
+	{
+		$request->validate([
+			'type' => 'required|string|in:Product,Category,Brand,Blog',
+			'url' => 'required|string'
+		]);
+
+		$seoRecord = SeoManagement::where('relational_type', $request->type)->where('url', $request->url)->first();
+		if ($seoRecord) {
+			// code...
+		} else {
+			return response()->json([
+				'success' => true,
+				'data' => "No duplicate record found.",
+			], 200);
+		}
+	}
 }
