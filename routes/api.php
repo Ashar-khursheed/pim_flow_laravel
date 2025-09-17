@@ -129,6 +129,7 @@ use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventCont
 use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseClaimController;
 use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseClaimController;
 use App\Http\Controllers\FrontEnd\GetInTouchController as F_GetInTouchController;
+use App\Http\Controllers\InquiryController  as F_InquiryController;
 use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Controllers\FrontEnd\FilterController;
@@ -845,6 +846,21 @@ Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);
 
 Route::get('/frontend/google-reviews', [F_GoogleReviewController::class, 'getReviews']);
+
+Route::prefix('frontend/inquiries')->group(function () {
+    // 📄 List inquiries with search, sorting, and pagination
+    Route::get('/', [F_InquiryController::class, 'index']);
+
+    // ➕ Create new inquiry (form submission)
+    Route::post('/', [F_InquiryController::class, 'store']);
+
+    // 👁 Get single inquiry by ID
+    Route::get('/{id}', [F_InquiryController::class, 'show']);
+
+    // ❌ Delete inquiry by ID
+    Route::delete('/{id}', [F_InquiryController::class, 'destroy']);
+});
+
 
 // Create banner
 Route::get('/frontend/menu-banners', [F_MenuBannerController::class, 'index']);
