@@ -28445,19 +28445,75 @@
                     {
                         "name": "isapproved",
                         "in": "query",
-                        "description": "Filter by approval status (0 or 1)",
+                        "description": "Filter by approver status (0 or 1)",
                         "required": false,
                         "schema": {
-                            "type": "integer"
+                            "type": "string",
+                            "enum": [
+                                0,
+                                1
+                            ],
+                            "example": "all"
                         }
                     },
                     {
-                        "name": "per_page",
+                        "name": "search",
                         "in": "query",
-                        "description": "Items per page (default: 15)",
+                        "description": "Search by SKU",
                         "required": false,
                         "schema": {
-                            "type": "integer"
+                            "type": "string",
+                            "example": ""
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "example": 20
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by (id, name, isapprover)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "isapprover"
+                            ],
+                            "example": "id"
+                        }
+                    },
+                    {
+                        "name": "sort_direction",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
                         }
                     }
                 ],
