@@ -118,7 +118,7 @@ public function index(Request $request): JsonResponse
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function store(Request $request): JsonResponse
+   public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
@@ -131,29 +131,20 @@ public function index(Request $request): JsonResponse
             'files.*' => 'file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
         ]);
 
-        $storedFiles = [];
-            if ($request->hasFile('files')) {
-            $uploadedFiles = [];
-
+        $uploadedFiles = []; // Changed variable name for consistency
+        
+        if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
                 // Store in S3 inside production/inquiries
                 $path = $file->store("production/inquiries", 's3');
-
-                // Use original name as title (or you can make a custom input for title if needed)
                 $title = $file->getClientOriginalName();
-
+                
                 $uploadedFiles[] = [
                     'title' => $title,
-                    'path'  => Storage::disk('s3')->url($path), // Full S3 URL
+                    'path'  => Storage::disk('s3')->url($path),
                 ];
             }
-
-                $input['files'] = $uploadedFiles;
-            } else {
-                // Keep it empty if no files uploaded
-                $input['files'] = [];
-            }
-
+        }
 
         $inquiry = Inquiry::create([
             'full_name' => $validated['full_name'],
@@ -162,7 +153,7 @@ public function index(Request $request): JsonResponse
             'company_name' => $validated['company_name'],
             'restaurant_type' => $validated['restaurant_type'],
             'notes' => $validated['notes'] ?? null,
-            'files' => $storedFiles,
+            'files' => $uploadedFiles, // Fixed: use $uploadedFiles instead of $storedFiles
         ]);
 
         return response()->json($inquiry, 201);
