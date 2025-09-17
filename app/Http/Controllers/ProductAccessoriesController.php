@@ -30,15 +30,43 @@ class ProductAccessoriesController extends Controller
      *         name="isapproved",
      *         in="query",
      *         required=false,
-     *         description="Filter by approval status (0 or 1)",
-     *         @OA\Schema(type="integer")
+     *         description="Filter by approver status (0 or 1)",
+     *         @OA\Schema(type="string", enum={0, 1}, example="all")
      *     ),
      *     @OA\Parameter(
-     *         name="per_page",
+     *         name="search",
      *         in="query",
      *         required=false,
-     *         description="Items per page (default: 15)",
-     *         @OA\Schema(type="integer")
+     *         description="Search by SKU",
+     *         @OA\Schema(type="string", example="")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         description="Page number for pagination",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="length",
+     *         in="query",
+     *         required=false,
+     *         description="Number of records per page",
+     *         @OA\Schema(type="integer", minimum=1, example=20)
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_by",
+     *         in="query",
+     *         required=false,
+     *         description="Column to sort by (id, name, isapprover)",
+     *         @OA\Schema(type="string", enum={"id", "name", "isapprover"}, example="id")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_direction",
+     *         in="query",
+     *         required=false,
+     *         description="Sort direction (asc or desc)",
+     *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -49,28 +77,39 @@ class ProductAccessoriesController extends Controller
      *             @OA\Property(property="data", type="object")
      *         )
      *     ),
-     *      security={{"bearerAuth":{}}}
+     *     security={{"bearerAuth":{}}}
      * )
      */
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = ProductAccessory::with(['items', 'product']); // also eager load product if needed
-
-            // Apply filters
-            if ($request->has('product_id')) {
-                $query->where('product_id', $request->product_id);
+            $query = ProductAccessory::with(['items', 'product']);            
+            if ($request->input('product_id') != "" && $request->input('product_id') != null) {
+                $query->where('product_id', $request->input('product_id'));
             }
 
-            if ($request->has('isapproved')) {
+          
+            if ($request->input('isapproved') != "all") {
                 $query->where('isapproved', $request->isapproved);
             }
 
-            $perPage = $request->get('per_page', 15);
-            $accessories = $query->orderBy('created_at', 'desc')->paginate($perPage);
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {                   
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('id', 'like', "%{$search}%");
+                });
+            }
+
+            $searchableColumns = ['id', 'product_id', 'name', 'isapproved'];
+            $sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
+            $sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+            $sortDir = strtolower($request->input('sort_direction', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+            $perPage = $request->get('length', 15);
+            $accessories = $query->orderBy($sortBy, $sortDir)->paginate($perPage);
 
             $formattedProducts = $accessories->getCollection()->map(function ($accessory) {
-
                 $accessoryItems = $accessory->items->map(function ($item) {
                     return [
                         'id' => $item->id,
@@ -108,7 +147,6 @@ class ProductAccessoriesController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-
     }
 
     /**
@@ -637,7 +675,8 @@ class ProductAccessoriesController extends Controller
             if ($request->search) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
+                    $q->where('name', 'like', "%{$search}%")
+                        ->where('id', 'like', "%{$search}%");
 
                 });
             }
