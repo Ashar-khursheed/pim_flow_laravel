@@ -185,7 +185,7 @@ class OrderController extends BaseController
 	 *                 property="products",
 	 *                 type="array",
 	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
+	 *                     required={"product_id", "vendor_id", "quantity"},
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
 	 *                     @OA\Property(property="quantity", type="integer", example=5),
@@ -505,16 +505,15 @@ class OrderController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"customer_address_id", "shipping_charge", "products"},
+	 *             required={"customer_address_id", "products"},
 	 *             @OA\Property(property="customer_address_id", type="integer", example="4"),
-	 *             @OA\Property(property="shipping_charge", type="number", format="float", example=75.00),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=false),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=true),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
 	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity", "unit_price"},
+	 *                     required={"product_id", "vendor_id", "quantity"},
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
 	 *                     @OA\Property(property="quantity", type="integer", example=3),
