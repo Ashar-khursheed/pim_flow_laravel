@@ -664,6 +664,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/cart/add-multiple', [F_CartController::class, 'addMultipleToCart']);
 	Route::get('/frontend/cart-summary', [F_CartController::class, 'cartSummary']);
 	Route::get('/frontend/cart/total-products', [F_CartController::class, 'totalProductsInCart']);
+	Route::delete('/frontend/cart/delete', [F_CartController::class, 'deleteFromCart']);
+	
 
 
 
