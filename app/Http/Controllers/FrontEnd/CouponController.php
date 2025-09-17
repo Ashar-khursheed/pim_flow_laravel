@@ -268,7 +268,7 @@ public function index(Request $request): JsonResponse
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
             'product_ids' => 'nullable|array',
-            'product_ids.*' => 'exists:products,id',
+            'product_ids.*' => 'exists:ec_products,id',
         ]);
 
         $coupon->update($validated);
