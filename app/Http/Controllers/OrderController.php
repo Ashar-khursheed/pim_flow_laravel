@@ -411,7 +411,7 @@ class OrderController extends Controller
 				// Generate payment link BEFORE committing transaction
 				$paymentLink = null;
 				try {
-					$paymentLink = app(\App\Http\Controllers\FrontEnd\CCavenueController::class)
+					$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)
 						->createCCavenuePaymentLink($order);
 
 					if ($paymentLink) {
