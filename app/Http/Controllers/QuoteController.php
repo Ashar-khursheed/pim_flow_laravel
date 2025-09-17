@@ -163,7 +163,7 @@ class QuoteController extends BaseController
 					}
 				}
 
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -202,23 +202,21 @@ class QuoteController extends BaseController
 	 *             @OA\Property(property="customer_id", type="integer", example=1),
 	 *             @OA\Property(property="customer_address_id", type="integer", example=1),
 	 *             @OA\Property(property="tax_percentage", type="number", format="float", example=5),
-	 *             @OA\Property(property="discount_percentage", type="number", format="float", example=5),
+	 *             @OA\Property(property="coupon_id", type="integer", example=1),
+	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(property="status", type="string",  example="Pending"),
 	 *             @OA\Property(property="expired_at", type="string", format="date", example="2025-08-09"),
 	 *             @OA\Property(property="payment_terms", type="string", example="Credit Card"),
 	 *             @OA\Property(property="customer_notes", type="string", example="The need for my inner purpose."),
 	 *             @OA\Property(property="internal_notes", type="string", example="Please deliver between 9am-5pm."),
-	 *             @OA\Property(property="send_customer_email", type="boolean", example=true),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
 	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
+	 *                     required={"product_id", "vendor_id", "quantity"},
 	 *                     @OA\Property(property="product_id", type="integer", example=2001),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
 	 *                     @OA\Property(property="quantity", type="integer", example=2),
-	 *                     @OA\Property(property="unit_price", type="number", format="float", example=4000),
-	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
 	 *                 )
 	 *             ),
 	 *             @OA\Property(
@@ -241,15 +239,14 @@ class QuoteController extends BaseController
 			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'tax_percentage' => 'required|numeric|min:0',
-			'discount_percentage' => 'nullable|numeric|min:0',
+			'coupon_id' => 'nullable|integer',
+			'discount' => 'nullable|numeric|min:0',
 			'status' => 'required|in:Pending,Revised',
 			'expired_at' => 'nullable|date',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
-			'products.*.unit_price' => 'required|numeric|min:0',
-			'products.*.shipping_charge' => 'required|numeric|min:0',
 			'emails' => 'array',
 			'emails.*' => 'email',
 		]);
@@ -270,11 +267,27 @@ class QuoteController extends BaseController
 		DB::beginTransaction();
 
 		try {
+			$productDetails = [];
+			foreach ($request->products as $product) {
+				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+				if (!$fetchedDetail) {
+					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+				}
+				$productDetails[] = [
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'unit_price' => $fetchedDetail->unit_price,
+					'shipping_charge' => config('app.website') == 'UAE' ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+				];
+			}
+
+			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$quoteAmount = 0;
 			$quoteShipping = 0;
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$totalProducts += $product['quantity'];
 				$quoteAmount += $product['quantity'] * $product['unit_price'];
 				$quoteShipping += $product['shipping_charge'];
@@ -303,17 +316,11 @@ class QuoteController extends BaseController
 			}
 
 			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
+			if (config('app.website') == 'UAE') {
+				$quoteShipping = ($quoteAmount + $taxAmount) < 300 ? 25 : 0;
+			}
+			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping - $discount;
 
-			if ($request->discount_percentage) {
-				$discountPercentage = $request->discount_percentage;
-				$discountAmount = round($totalAmount * ($request->discount_percentage / 100), 2);
-				$amountAfterDiscount = $totalAmount - $discountAmount;
- 			} else {
- 				$discountPercentage = null;
-				$discountAmount = null;
-				$amountAfterDiscount = null;
- 			}
 			$quote = Quote::create([
 				'quote_number' => $quoteNumber,
 				'quote_name' => $request->quote_name,
@@ -323,12 +330,11 @@ class QuoteController extends BaseController
 				'amount' => $quoteAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
+
+				'coupon_id' => $request->coupon_id ?? null,
+				'discount' => $discount,
+
 				'total_amount' => $totalAmount,
-
-				'discount_percentage' => $discountPercentage,
-				'discount_amount' => $discountAmount,
-				'amount_after_discount' => $amountAfterDiscount,
-
 				'total_products' => $totalProducts,
 				'payment_terms' => $request->payment_terms,
 				'customer_notes' => $request->customer_notes,
@@ -338,7 +344,7 @@ class QuoteController extends BaseController
 				'created_by' => auth()->id(),
 			]);
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
 				$quote->quoteProducts()->create([
 					'product_id' => $product['product_id'],
@@ -355,10 +361,6 @@ class QuoteController extends BaseController
 				$quote->quoteEmails()->create([
 					'email' => $email,
 				]);
-			}
-
-			foreach ($quote->quoteEmails as $quoteEmail) {
-				// $quoteEmail->notify(new QuotePlacedMail($quote));
 			}
 
 			DB::commit();
@@ -401,7 +403,7 @@ class QuoteController extends BaseController
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount'] as $key) {
 				if (isset($quote->$key)) {
 					$quote->$key = number_format($quote->$key, 2, '.', '');
 				}
@@ -489,7 +491,7 @@ class QuoteController extends BaseController
 			}
 		}
 
-		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
+		foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount'] as $key) {
 			if (isset($quote->$key)) {
 				$quote->$key = number_format($quote->$key, 2, '.', '');
 			}
@@ -512,6 +514,8 @@ class QuoteController extends BaseController
 	 *         @OA\JsonContent(
 	 *             required={"tax_percentage", "products"},
 	 *             @OA\Property(property="tax_percentage", type="number", format="float", example=5),
+	 *             @OA\Property(property="coupon_id", type="integer", example=1),
+	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(property="payment_terms", type="string", example="Credit Card"),
 	 *             @OA\Property(property="customer_notes", type="string", example="The need for my inner purpose."),
 	 *             @OA\Property(property="internal_notes", type="string", example="Please deliver between 9am-5pm."),
@@ -521,12 +525,10 @@ class QuoteController extends BaseController
 	 *                 property="products",
 	 *                 type="array",
 	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
+	 *                     required={"product_id", "vendor_id", "quantity"},
 	 *                     @OA\Property(property="product_id", type="integer", example=2001),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=2),
-	 *                     @OA\Property(property="unit_price", type="number", format="float", example=4000),
-	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
+	 *                     @OA\Property(property="quantity", type="integer", example=2)
 	 *                 )
 	 *             ),
 	 *         )
@@ -548,35 +550,59 @@ class QuoteController extends BaseController
 
 		$request->validate([
 			'tax_percentage' => 'required|numeric|min:0',
+			'coupon_id' => 'nullable|integer',
+			'discount' => 'nullable|numeric|min:0',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
-			'products.*.unit_price' => 'required|numeric|min:0',
-			'products.*.shipping_charge' => 'required|numeric|min:0',
 		]);
 
 		DB::beginTransaction();
 
 		try {
+			/* Collect all product supplier details in one go */
+			$productDetails = [];
+			foreach ($request->products as $product) {
+				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+				if (!$fetchedDetail) {
+					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+				}
+				$productDetails[] = [
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'unit_price' => $fetchedDetail->unit_price,
+					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+				];
+			}
+
+			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$quoteAmount = 0;
 			$quoteShipping = 0;
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$totalProducts += $product['quantity'];
 				$quoteAmount += $product['quantity'] * $product['unit_price'];
 				$quoteShipping += $product['shipping_charge'];
 			}
 
 			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
+
+			if (config('app.website') == 'UAE') {
+				$quoteShipping = ($quoteAmount + $taxAmount) < 300 ? 25 : 0;
+			}
+
+			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping - $discount;
 
 			$quote->update([
 				'shipping_charge' => $quoteShipping,
 				'amount' => $quoteAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
+				'coupon_id' => $request->coupon_id ?? null,
+				'discount' => $discount,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'payment_terms' => $request->payment_terms,
@@ -591,18 +617,17 @@ class QuoteController extends BaseController
 			$quote->quoteProducts()->delete();
 
 			/* Insert updated products */
-			foreach ($request->products as $product) {
-				$amount = $product['quantity'] * $product['unit_price'];
-				$totalAmount = $amount + $product['shipping_charge'];
+			foreach ($productDetails as $product) {
+				$total = $product['quantity'] * $product['unit_price'];
 
 				$quote->quoteProducts()->create([
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $product['unit_price'],
-					'amount' => $amount,
+					'amount' => $total,
 					'shipping_charge' => $product['shipping_charge'],
-					'total_amount' => $totalAmount,
+					'total_amount' => $total + $product['shipping_charge'],
 				]);
 			}
 
@@ -650,7 +675,7 @@ class QuoteController extends BaseController
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount'] as $key) {
 				if (isset($quote->$key)) {
 					$quote->$key = number_format($quote->$key, 2, '.', '');
 				}
