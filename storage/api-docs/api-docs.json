@@ -17812,6 +17812,10 @@
                                         "format": "float",
                                         "example": 200
                                     },
+                                    "is_reserved": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "is_customer_pickup": {
                                         "type": "boolean",
                                         "example": false
@@ -17822,9 +17826,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -17838,16 +17840,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 199.99
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -17930,18 +17922,12 @@
                             "schema": {
                                 "required": [
                                     "customer_address_id",
-                                    "shipping_charge",
                                     "products"
                                 ],
                                 "properties": {
                                     "customer_address_id": {
                                         "type": "integer",
                                         "example": "4"
-                                    },
-                                    "shipping_charge": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 75
                                     },
                                     "ship_all_at_once": {
                                         "type": "boolean",
@@ -17957,8 +17943,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -17972,11 +17957,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 3
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 249.99
                                                 }
                                             },
                                             "type": "object"
@@ -18547,6 +18527,119 @@
                     },
                     "404": {
                         "description": "Payment not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/payments/cash-delivery": {
+            "post": {
+                "tags": [
+                    "Frontend-Payment History"
+                ],
+                "summary": "Create a new cash delivery payment",
+                "description": "Create a new cash delivery payment record for an authenticated customer",
+                "operationId": "createCashPayment",
+                "requestBody": {
+                    "description": "Payment data with optional file attachment",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "order_id",
+                                    "payment_mode",
+                                    "amount",
+                                    "status",
+                                    "payment_date"
+                                ],
+                                "properties": {
+                                    "order_id": {
+                                        "type": "integer",
+                                        "example": 123
+                                    },
+                                    "transaction_id": {
+                                        "type": "string",
+                                        "example": "TXN456789"
+                                    },
+                                    "payment_mode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Bank Transfer",
+                                            "Stripe",
+                                            "Razorpay",
+                                            "Cash on Delivery"
+                                        ],
+                                        "example": "Cash on Delivery"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 299.99
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "completed",
+                                            "failed",
+                                            "cancelled",
+                                            "refunded"
+                                        ],
+                                        "example": "completed"
+                                    },
+                                    "rider_name": {
+                                        "type": "string",
+                                        "example": "Jon Jones"
+                                    },
+                                    "payment_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-06-24"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "First installment paid"
+                                    },
+                                    "payment_details": {
+                                        "description": "Additional payment gateway details",
+                                        "properties": {
+                                            "bank": {
+                                                "type": "string",
+                                                "example": "XYZ Bank"
+                                            },
+                                            "ref": {
+                                                "type": "string",
+                                                "example": "12345XYZ"
+                                            },
+                                            "gateway_response": {
+                                                "type": "string",
+                                                "example": "success"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "payment_img": {
+                                        "description": "Upload receipt or proof of payment",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment created successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
                     }
                 },
                 "security": [
@@ -23111,6 +23204,116 @@
                 }
             }
         },
+        "/api/stripe/create-stripe-payment-link": {
+            "post": {
+                "tags": [
+                    "Stripe"
+                ],
+                "summary": "Create Stripe Payment link",
+                "description": "Creates a Stripe PaymentIntent for a one-time payment.",
+                "operationId": "createStripePaymentLink",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount",
+                                    "order_id"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "description": "Payment amount in dollars",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150
+                                    },
+                                    "order_id": {
+                                        "description": "Stripe Payment Method ID",
+                                        "type": "string",
+                                        "example": "pm_1234567890"
+                                    },
+                                    "currency": {
+                                        "description": "Currency code",
+                                        "type": "string",
+                                        "example": "usd"
+                                    },
+                                    "itemName": {
+                                        "description": "product name",
+                                        "type": "string",
+                                        "example": "product name"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment intent processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "client_secret": {
+                                            "type": "string",
+                                            "example": "pi_3Nx4x4xxxx_secret_1234"
+                                        },
+                                        "requires_action": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "payment_intent_id": {
+                                            "type": "string",
+                                            "example": "pi_3Nx4x4xxxx"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/stripe/paymentSuccess": {
+            "get": {
+                "tags": [
+                    "Stripe"
+                ],
+                "summary": "Stripe Payment Success Redirect",
+                "operationId": "e81b711861e71006fd50c1fccc7baa6c",
+                "responses": {
+                    "200": {
+                        "description": "Payment was successful"
+                    }
+                }
+            }
+        },
+        "/api/stripe/paymentCancel": {
+            "get": {
+                "tags": [
+                    "Stripe"
+                ],
+                "summary": "Stripe Payment Cancel Redirect",
+                "operationId": "f21a6484a56dc87680f5362e0704f647",
+                "responses": {
+                    "200": {
+                        "description": "Payment was cancelled"
+                    }
+                }
+            }
+        },
         "/api/frontend/support-categories": {
             "get": {
                 "tags": [
@@ -26472,7 +26675,6 @@
                                 "required": [
                                     "customer_id",
                                     "customer_address_id",
-                                    "shipping_charge",
                                     "products"
                                 ],
                                 "properties": {
@@ -26518,6 +26720,14 @@
                                         "format": "float",
                                         "example": 200
                                     },
+                                    "is_reserved": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_payment": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "is_customer_pickup": {
                                         "type": "boolean",
                                         "example": false
@@ -26528,9 +26738,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -26544,16 +26752,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 199.99
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -26684,9 +26882,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -26700,16 +26896,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 199.99
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -28614,6 +28800,57 @@
                     },
                     "404": {
                         "description": "Product accessory not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/get-product-list": {
+            "get": {
+                "tags": [
+                    "Product List"
+                ],
+                "summary": "Get list of product list",
+                "operationId": "fe67dcbfb2802a62af09ea663d3fa3c1",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term for filtering products by name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "samsung"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -34247,6 +34484,55 @@
                 ]
             }
         },
+        "/api/seo-management/check-url": {
+            "get": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Check URL slug availability and existence",
+                "description": "Validates if a URL slug is available or already exists for SEO management across different content types",
+                "operationId": "checkUrlSlugAvailability",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Product",
+                                "Category",
+                                "Brand",
+                                "Blog"
+                            ],
+                            "example": "Product"
+                        }
+                    },
+                    {
+                        "name": "url",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "kitchen-equipment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "URL availability checked successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/sliders": {
             "get": {
                 "tags": [
@@ -39187,6 +39473,10 @@
         {
             "name": "PrePurchaseClaims",
             "description": "PrePurchaseClaims"
+        },
+        {
+            "name": "Product List",
+            "description": "Product List"
         },
         {
             "name": "Products Category Update",

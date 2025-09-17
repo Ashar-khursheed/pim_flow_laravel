@@ -34,11 +34,13 @@ class Order extends Model
 		'paid_amount',
 		'pending_amount',
 		'status',
+		'is_reserved',
 		'is_customer_pickup',
 		'created_by',
 		'updated_by',
 		'utm_id',
-		'payment_link'
+		'payment_link',
+		'is_payment'
 	];
 
 	public function creator()

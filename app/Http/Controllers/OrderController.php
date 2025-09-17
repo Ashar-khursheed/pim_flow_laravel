@@ -107,15 +107,15 @@ class OrderController extends Controller
 			if ($request->has('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
-					break;
+						$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+						break;
 					case 'Unpaid':
-					$recordsQuery->where('orders.paid_amount', 0);
-					break;
+						$recordsQuery->where('orders.paid_amount', 0);
+						break;
 					case 'Partially Paid':
-					$recordsQuery->where('orders.paid_amount', '>', 0)
-					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
-					break;
+						$recordsQuery->where('orders.paid_amount', '>', 0)
+							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+						break;
 				}
 			}
 
@@ -151,9 +151,9 @@ class OrderController extends Controller
 			}
 
 			$records = $recordsQuery
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get();
+				->offset(($page - 1) * $length)
+				->limit($length)
+				->get();
 
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
@@ -186,8 +186,8 @@ class OrderController extends Controller
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
+						? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+						: null;
 
 					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
 						if (isset($orderProduct->$key)) {
@@ -227,7 +227,7 @@ class OrderController extends Controller
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"customer_id", "customer_address_id", "shipping_charge", "products"},
+	 *             required={"customer_id", "customer_address_id", "products"},
 	 *             @OA\Property(property="customer_id", type="integer", example=1),
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
 	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
@@ -238,17 +238,17 @@ class OrderController extends Controller
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
+	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
+	 *             @OA\Property(property="is_payment", type="boolean", example=false),
 	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
 	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
+	 *                     required={"product_id", "vendor_id", "quantity"},
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="unit_price", type="number", format="float", example=199.99),
-	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
+	 *                     @OA\Property(property="quantity", type="integer", example=5)
 	 *                 )
 	 *             )
 	 *         )
@@ -269,13 +269,13 @@ class OrderController extends Controller
 			'separate_deliveries' => 'nullable|boolean',
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
+			'is_reserved' => 'nullable|boolean',
+			'is_payment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
-			'products.*.unit_price' => 'required|numeric|min:0',
-			'products.*.shipping_charge' => 'required|numeric|min:0',
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
@@ -292,21 +292,40 @@ class OrderController extends Controller
 		DB::beginTransaction();
 
 		try {
+			/* Collect all product supplier details in one go */
+			$productDetails = [];
+			foreach ($request->products as $product) {
+				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+				if (!$fetchedDetail) {
+					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+				}
+				$productDetails[] = [
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'unit_price' => $fetchedDetail->unit_price,
+					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+				];
+			}
+
 			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
 			$orderShipping = 0;
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$totalProducts += $product['quantity'];
 				$orderAmount += $product['quantity'] * $product['unit_price'];
 				$orderShipping += $product['shipping_charge'];
 			}
-
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+
+			if (config('app.website') == 'UAE') {
+				$orderShipping = ($orderAmount + $taxAmount) < 300 ? 25 : 0;
+			}
 			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
@@ -342,12 +361,14 @@ class OrderController extends Controller
 				'is_paid' => $pendingAmount <= 0,
 				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
+				'is_reserved' => $request->boolean('is_reserved'),
+				'is_payment' => $request->boolean('is_payment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => auth()->id(),
-				'payment_link' => $paymentLink ?? null,
+				'payment_link' => $paymentLink ?? null
 			]);
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
 				OrderProduct::create([
 					'order_id' => $order->id,
@@ -371,17 +392,35 @@ class OrderController extends Controller
 				'created_by' => auth()->id()
 			]);
 
-			// Generate payment link BEFORE committing transaction
-			$paymentLink = null;
-			try {
-				$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
-					->createPaymentLink($order);
 
-				if ($paymentLink) {
-					$order->payment_link = $paymentLink;
-					$order->save();
+			if (config('app.website') == 'UAE' && (!empty($order->is_reserved)) && (!empty($order->is_payment))) {
+				$paymentLink = null;
+				try {
+					$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)
+						->generatePaymentLink($order);
+
+					if ($paymentLink) {
+						$order = Order::find($order->id);
+						$order->payment_link = $paymentLink;
+						$order->save();
+					}
+				} catch (\Exception $e) {
 				}
-			} catch (\Exception $e) {
+			} else {
+
+				// Generate payment link BEFORE committing transaction
+				$paymentLink = null;
+				try {
+					$paymentLink = app(\App\Http\Controllers\FrontEnd\CCavenueController::class)
+						->createCCavenuePaymentLink($order);
+
+					if ($paymentLink) {
+						$order = Order::find($order->id);
+						$order->payment_link = $paymentLink;
+						$order->save();
+					}
+				} catch (\Exception $e) {
+				}
 			}
 
 			DB::commit();
@@ -563,18 +602,18 @@ class OrderController extends Controller
 			'utm'
 		]);
 
-				if ($order->payments->isEmpty()) {
-    $order->setRelation('payments', collect([
-        (object) [
-            'transaction_id' => null,
-            'amount' => null,
-            'status' => null,
-            'payment_mode' => 'Cash On Delivery',
-            'notes' => null,
-            'created_at' => null,
-        ]
-    ]));
-}
+		if ($order->payments->isEmpty()) {
+			$order->setRelation('payments', collect([
+				(object) [
+					'transaction_id' => null,
+					'amount' => null,
+					'status' => null,
+					'payment_mode' => 'Cash On Delivery',
+					'notes' => null,
+					'created_at' => null,
+				]
+			]));
+		}
 
 		/* Mutate the data for each order product */
 		$order->created_by = $order->creator->name ?? null;
@@ -591,11 +630,11 @@ class OrderController extends Controller
 			}
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-			: null;
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 
-			$orderProduct -> nofraudResponse->response ?? null;
-			$orderProduct-> nofraud_decision = $data['decision'] ?? null;
+			$orderProduct->nofraudResponse->response ?? null;
+			$orderProduct->nofraud_decision = $data['decision'] ?? null;
 			unset($orderProduct->nofraudResponse);
 
 			/* Format numeric values to 2 decimal places */
@@ -641,12 +680,10 @@ class OrderController extends Controller
 	 *                 property="products",
 	 *                 type="array",
 	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
+	 *                     required={"product_id", "vendor_id", "quantity"},
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="unit_price", type="number", format="float", example=199.99),
-	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
+	 *                     @OA\Property(property="quantity", type="integer", example=5)
 	 *                 )
 	 *             )
 	 *         )
@@ -667,7 +704,13 @@ class OrderController extends Controller
 		}
 
 		$allowedStatuses = [
-			'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship'
+			'Pending',
+			'Confirmed',
+			'Supplier Delivery',
+			'International',
+			'Export',
+			'On hold',
+			'Ready to ship'
 		];
 
 		if (!in_array($order->status, $allowedStatuses)) {
@@ -690,8 +733,6 @@ class OrderController extends Controller
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
-			'products.*.unit_price' => 'required|numeric|min:0',
-			'products.*.shipping_charge' => 'required|numeric|min:0',
 		]);
 
 		$customerId = $order->customer_id;
@@ -708,12 +749,28 @@ class OrderController extends Controller
 		DB::beginTransaction();
 
 		try {
+			/* Collect all product supplier details in one go */
+			$productDetails = [];
+			foreach ($request->products as $product) {
+				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+				if (!$fetchedDetail) {
+					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+				}
+				$productDetails[] = [
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'unit_price' => $fetchedDetail->unit_price,
+					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+				];
+			}
+
 			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
 			$orderShipping = 0;
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$totalProducts += $product['quantity'];
 				$orderAmount += $product['quantity'] * $product['unit_price'];
 				$orderShipping += $product['shipping_charge'];
@@ -722,6 +779,11 @@ class OrderController extends Controller
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+
+			if (config('app.website') == 'UAE') {
+				$orderShipping = ($orderAmount + $taxAmount) < 300 ? 25 : 0;
+			}
+
 			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
@@ -749,7 +811,7 @@ class OrderController extends Controller
 			/* Delete existing products and re-insert */
 			OrderProduct::where('order_id', $order->id)->delete();
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
 				OrderProduct::create([
 					'order_id' => $order->id,
@@ -796,8 +858,8 @@ class OrderController extends Controller
 				}
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
+					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 
 				/* Format numeric values to 2 decimal places */
 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -860,7 +922,7 @@ class OrderController extends Controller
 
 		$request->validate([
 			'status' => 'required|string|in:Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Cancelled',
-			'notes'  => 'nullable|string'
+			'notes' => 'nullable|string'
 		]);
 
 		$oldStatus = $order->status;
@@ -889,10 +951,10 @@ class OrderController extends Controller
 
 			/* Add tracking */
 			OrderTracking::create([
-				'order_id'    => $order->id,
-				'status'      => "Order status changed to {$newStatus} by backend panel",
+				'order_id' => $order->id,
+				'status' => "Order status changed to {$newStatus} by backend panel",
 				'description' => "Order status changed from {$oldStatus} to {$newStatus}." . ($request->notes ? " {$request->notes}" : ''),
-				'created_by'  => auth()->id(),
+				'created_by' => auth()->id(),
 			]);
 
 			$batch = Bus::batch([])->before(function (Batch $batch) {
@@ -923,7 +985,7 @@ class OrderController extends Controller
 			'Delivered'
 		];
 
-		$findStatusIndex = function($status) use ($otherStatus) {
+		$findStatusIndex = function ($status) use ($otherStatus) {
 			foreach ($otherStatus as $index => $step) {
 				if (is_array($step) && in_array($status, $step)) {
 					return $index;
@@ -947,7 +1009,7 @@ class OrderController extends Controller
 				'message' => "Invalid status update: You cannot skip directly from '{$oldStatus}' to '{$newStatus}'. Please follow the correct order flow."
 			]);
 		} elseif ($oldStatusIndex == $newStatusIndex) {
-			if($oldStatus == $newStatus) {
+			if ($oldStatus == $newStatus) {
 				return response()->json([
 					'success' => false,
 					'message' => "Order is already in '{$oldStatus}' status. Please choose a different status."
@@ -999,10 +1061,10 @@ class OrderController extends Controller
 
 		/* Add tracking */
 		OrderTracking::create([
-			'order_id'    => $order->id,
-			'status'      => "Order status changed to {$newStatus} by backend panel",
+			'order_id' => $order->id,
+			'status' => "Order status changed to {$newStatus} by backend panel",
 			'description' => "Order status changed from {$oldStatus} to {$newStatus}." . ($request->notes ? " {$request->notes}" : ''),
-			'created_by'  => auth()->id(),
+			'created_by' => auth()->id(),
 		]);
 
 		if (in_array($newStatus, ['Confirmed', 'Out for delivery', 'Delivered', 'Cancelled'])) {
@@ -1108,12 +1170,12 @@ class OrderController extends Controller
 
 			/* Add tracking entry */
 			OrderTracking::create([
-				'order_id'   => $order->id,
-				'status'     => "Order status changed to {$newStatus} by backend panel",
+				'order_id' => $order->id,
+				'status' => "Order status changed to {$newStatus} by backend panel",
 				'description' => "Order product status changed from {$oldStatus} to {$newStatus}." . ($request->notes ? " {$request->notes}" : ''),
-				'metadata'   => json_encode([
+				'metadata' => json_encode([
 					'order_product_id' => $orderProduct->id,
-					'product_name'     => $orderProduct->product->name ?? '',
+					'product_name' => $orderProduct->product->name ?? '',
 				]),
 				'created_by' => auth()->id(),
 			]);
@@ -1149,12 +1211,12 @@ class OrderController extends Controller
 			'Confirmed',
 			['Supplier Delivery', 'International', 'Export', 'On hold'],
 			'Ready to ship',
-			['Pickups','Partially Pickups'],
-			['Out for delivery','Partially Out for delivery'],
-			['Delivered','Partially Delivered'],
+			['Pickups', 'Partially Pickups'],
+			['Out for delivery', 'Partially Out for delivery'],
+			['Delivered', 'Partially Delivered'],
 		];
 
-		$findStatusIndex = function($status) use ($otherStatus) {
+		$findStatusIndex = function ($status) use ($otherStatus) {
 			foreach ($otherStatus as $index => $step) {
 				if (is_array($step) && in_array($status, $step)) {
 					return $index;
@@ -1175,7 +1237,7 @@ class OrderController extends Controller
 				'message' => "Invalid status update: You cannot skip directly from '{$oldStatus}' to '{$newStatus}'. Please follow the correct order flow."
 			]);
 		} elseif ($oldStatusIndex == $newStatusIndex) {
-			if($oldStatus == $newStatus) {
+			if ($oldStatus == $newStatus) {
 				return response()->json([
 					'success' => false,
 					'message' => "Order product is already in '{$oldStatus}' status. Please choose a different status."
@@ -1243,12 +1305,12 @@ class OrderController extends Controller
 
 		/* Add tracking entry */
 		OrderTracking::create([
-			'order_id'   => $order->id,
-			'status'     => 'Order product status changed to ' . $newStatus . ' by backend panel',
+			'order_id' => $order->id,
+			'status' => 'Order product status changed to ' . $newStatus . ' by backend panel',
 			'description' => "Order product status changed from {$oldStatus} to {$newStatus}." . ($request->notes ? " {$request->notes}" : ''),
-			'metadata'   => json_encode([
+			'metadata' => json_encode([
 				'order_product_id' => $orderProduct->id,
-				'product_name'     => $orderProduct->product->name ?? '',
+				'product_name' => $orderProduct->product->name ?? '',
 			]),
 			'created_by' => auth()->id(),
 		]);
@@ -1335,8 +1397,8 @@ class OrderController extends Controller
 			/* Process each product */
 			foreach ($request->products as $productData) {
 				$orderProduct = OrderProduct::where('id', $productData['order_product_id'])
-				->where('order_id', $order->id)
-				->firstOrFail();
+					->where('order_id', $order->id)
+					->firstOrFail();
 
 				if ($productData['quantity'] > $orderProduct->remaining_quantity) {
 					throw new \Exception("Cannot ship more than remaining quantity for product ID {$orderProduct->id}");
@@ -1360,10 +1422,10 @@ class OrderController extends Controller
 
 			/* Add tracking entry */
 			OrderTracking::create([
-				'order_id'   => $order->id,
-				'shipment_id'   => $shipment->id,
-				'status'     => 'Order shipment created by backend panel',
-				'description'=> 'Order Shipment created with tracking number: ' . $request->tracking_number,
+				'order_id' => $order->id,
+				'shipment_id' => $shipment->id,
+				'status' => 'Order shipment created by backend panel',
+				'description' => 'Order Shipment created with tracking number: ' . $request->tracking_number,
 				'created_by' => auth()->id(),
 			]);
 

@@ -336,7 +336,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('blog-categories', BlogCategoryController::class);
 	Route::post('/blogs/{id}', [BlogController::class, 'update']);
 	Route::apiResource('blogs', BlogController::class);
-
+	
 	Route::get('/product-questions/{product_id}', [ProductQuestionController::class, 'index']);
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
@@ -402,10 +402,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 
-	Route::resource('product-accessories', ProductAccessoriesController::class);	 
+	Route::resource('product-accessories', ProductAccessoriesController::class);
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
-	
 
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
@@ -468,6 +467,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('flash-sales', FlashSaleController::class);
 
 
+    Route::get('/seo-management/check-url', [SeoManagementController::class, 'checkURL']);
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
 	Route::post('/seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);
@@ -689,6 +689,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::delete('/frontend/remove-from-save-for-later/{product_id}', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
 
 	Route::apiResource('/frontend/payments',  F_PaymentManagementController::class);
+	Route::post('/frontend/payments/cash-delivery',  [F_PaymentManagementController::class,'paymentCashDelivery']);
 
 
 	Route::prefix('/frontend/blogs')->group(function () {
@@ -819,6 +820,9 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
 
+Route::post('/stripe/create-stripe-payment-link', [F_StripeController::class, 'createStripePaymentLink']);
+Route::get('/stripe/paymentSuccess', [F_StripeController::class, 'paymentSuccess']);
+Route::get('/stripe/paymentCancel', [F_StripeController::class, 'paymentCancel']);
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
 Route::prefix('stripe')->group(function () {
     Route::post('/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
