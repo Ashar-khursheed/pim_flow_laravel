@@ -16,6 +16,8 @@ class Quote extends Model
 		'amount',
 		'tax_percentage',
 		'tax_amount',
+		'coupon_id',
+		'discount',
 		'total_amount',
 		'total_products',
 		'payment_terms',
