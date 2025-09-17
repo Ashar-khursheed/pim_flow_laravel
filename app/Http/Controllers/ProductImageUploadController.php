@@ -115,7 +115,7 @@
 //             if ($zip->open($zipFilePath) !== true) {
 //                 return response()->json(['error' => 'Unable to open the zip file'], 400);
 //             }
-            
+
 //             $zip->extractTo($tempPath);
 //             $zip->close();
 
@@ -135,7 +135,7 @@
 //             if (File::exists($tempPath)) {
 //                 File::deleteDirectory($tempPath);
 //             }
-            
+
 //             return response()->json([
 //                 'success' => false,
 //                 'error' => $e->getMessage()
@@ -149,7 +149,7 @@
 //      * @param string $extractPath
 //      * @return array
 //      */
- 
+
 //     private function processExtractedDirectory($extractPath)
 // {
 //     $processedSkus = [];
@@ -231,23 +231,23 @@
 //         $s3Path = $storageEnv . '/products/images/';
 //         $imageUrls = [];
 //         $errors = [];
-        
+
 //         // Get all files in the SKU directory
 //         $files = File::files($imagesDir);
-        
+
 //         // Filter for webp files only
 //         $imageFiles = [];
 //         foreach ($files as $file) {
 //             $extension = strtolower($file->getExtension());
-            
+
 //             if ($extension !== 'webp') {
 //                 $errors[] = "File {$file->getFilename()} in SKU folder {$sku} is not a webp image.";
 //                 continue;
 //             }
-            
+
 //             $imageFiles[] = $file;
 //         }
-        
+
 //         if (empty($imageFiles)) {
 //             $errors[] = "No webp image files found in SKU folder {$sku}.";
 //             return [
@@ -255,7 +255,7 @@
 //                 'errors' => $errors
 //             ];
 //         }
-        
+
 //         // Upload each valid image to S3
 //         foreach ($imageFiles as $imageFile) {
 //             try {
@@ -265,38 +265,38 @@
 //                     $errors[] = "Could not read image information for {$imageFile->getFilename()} in SKU folder {$sku}.";
 //                     continue;
 //                 }
-                
+
 //                 $width = $imageInfo[0];
 //                 $height = $imageInfo[1];
-                
+
 //                 if ($width !== 1000 || $height !== 1000) {
 //                     $errors[] = "Image {$imageFile->getFilename()} in SKU folder {$sku} has dimensions {$width}x{$height}, but must be exactly 1000x1000.";
 //                     continue;
 //                 }
-                
+
 //                 // Generate a unique filename to prevent overwriting
 //                 $uniqueFileName = $sku . '_' . Str::random(20) . '.webp';
 //                 $s3FilePath = $s3Path . $uniqueFileName;
-                
+
 //                 // Open file and directly upload to S3
 //                 $fileStream = fopen($imageFile->getPathname(), 'r');
 //                 Storage::disk('s3')->put($s3FilePath, $fileStream);
 //                 fclose($fileStream);
-                
+
 //                 // Get the full URL from S3 storage
 //                 $imageUrl = Storage::disk('s3')->url($s3FilePath);
-                
+
 //                 // Add the full URL to the image URLs array
 //                 $imageUrls[] = $imageUrl;
 //             } catch (\Exception $e) {
 //                 $errors[] = "Error processing image {$imageFile->getFilename()} in SKU folder {$sku}: {$e->getMessage()}";
 //             }
 //         }
-        
+
 //         if (empty($imageUrls)) {
 //             $errors[] = "No valid images found in SKU folder {$sku} that meet the required criteria (webp format, 1000x1000 dimensions).";
 //         }
-        
+
 //         return [
 //             'imageUrls' => $imageUrls,
 //             'errors' => $errors
@@ -323,7 +323,7 @@ class ProductImageUploadController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
 
-     /**
+    /**
      * Upload product images from a zip file.
      *
      * @OA\Post(
@@ -419,7 +419,7 @@ class ProductImageUploadController extends Controller
             if ($zip->open($zipFilePath) !== true) {
                 return response()->json(['error' => 'Unable to open the zip file'], 400);
             }
-            
+
             $zip->extractTo($tempPath);
             $zip->close();
 
@@ -439,7 +439,7 @@ class ProductImageUploadController extends Controller
             if (File::exists($tempPath)) {
                 File::deleteDirectory($tempPath);
             }
-            
+
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -458,21 +458,21 @@ class ProductImageUploadController extends Controller
     {
         // Replace spaces with underscores and remove/replace problematic characters
         $sanitized = str_replace(' ', '_', $sku);
-        
+
         // Remove or replace other special characters that could cause URL issues
         $sanitized = preg_replace('/[^a-zA-Z0-9_-]/', '_', $sanitized);
-        
+
         // Remove multiple consecutive underscores
         $sanitized = preg_replace('/_+/', '_', $sanitized);
-        
+
         // Trim underscores from start and end
         $sanitized = trim($sanitized, '_');
-        
+
         // Ensure it's not empty after sanitization
         if (empty($sanitized)) {
             $sanitized = 'unknown_sku';
         }
-        
+
         return $sanitized;
     }
 
@@ -502,7 +502,7 @@ class ProductImageUploadController extends Controller
         foreach ($skuDirectories as $skuDir) {
             // Get the original SKU from the directory name
             $originalSku = basename($skuDir);
-            
+
             // Sanitize SKU for filename usage
             $sanitizedSku = $this->sanitizeSku($originalSku);
 
@@ -532,13 +532,15 @@ class ProductImageUploadController extends Controller
                         'status' => empty($result['errors']) ? 'success' : 'partial_success',
                         'image_count' => count($result['imageUrls']),
                         'errors' => $result['errors'],
-                        'sanitized_sku' => $sanitizedSku // Optional: include for debugging
+                        'sanitized_sku' => $sanitizedSku,
+                        'image_url' => $result['imageUrls']
                     ];
                 } else {
                     $processedSkus[] = [
                         'sku' => $originalSku,
                         'status' => 'no_valid_images_found',
-                        'errors' => $result['errors']
+                        'errors' => $result['errors'],
+                        'image_url' => $result['imageUrls']
                     ];
                 }
             } else {
@@ -566,23 +568,22 @@ class ProductImageUploadController extends Controller
         $s3Path = $storageEnv . '/products/images/';
         $imageUrls = [];
         $errors = [];
-        
         // Get all files in the SKU directory
         $files = File::files($imagesDir);
-        
+
         // Filter for webp files only
         $imageFiles = [];
         foreach ($files as $file) {
             $extension = strtolower($file->getExtension());
-            
+
             if ($extension !== 'webp') {
                 $errors[] = "File {$file->getFilename()} in SKU folder {$originalSku} is not a webp image.";
                 continue;
             }
-            
+
             $imageFiles[] = $file;
         }
-        
+
         if (empty($imageFiles)) {
             $errors[] = "No webp image files found in SKU folder {$originalSku}.";
             return [
@@ -590,7 +591,7 @@ class ProductImageUploadController extends Controller
                 'errors' => $errors
             ];
         }
-        
+
         // Upload each valid image to S3
         foreach ($imageFiles as $index => $imageFile) {
             try {
@@ -600,39 +601,160 @@ class ProductImageUploadController extends Controller
                     $errors[] = "Could not read image information for {$imageFile->getFilename()} in SKU folder {$originalSku}.";
                     continue;
                 }
-                
+
                 $width = $imageInfo[0];
                 $height = $imageInfo[1];
-                
-                if ($width !== 1000 || $height !== 1000) {
+
+                if ($width > 1000 || $height > 1000) {
                     $errors[] = "Image {$imageFile->getFilename()} in SKU folder {$originalSku} has dimensions {$width}x{$height}, but must be exactly 1000x1000.";
                     continue;
                 }
-                
+
+                // Generate a unique filename using sanitized SKU
+                $uniqueFileName = $sanitizedSku . '_' . ($index + 1) . '_' . Str::random(10) . '.webp';
+                $s3FilePath = $s3Path . $uniqueFileName;
+
+                // Create temporary file path for compressed image
+                $tempCompressedPath = storage_path('app/temp/' . $uniqueFileName);
+
+                // Ensure temp directory exists
+                if (!File::exists(dirname($tempCompressedPath))) {
+                    File::makeDirectory(dirname($tempCompressedPath), 0755, true);
+                }
+
+                // Load the WebP image
+                $srcImage = imagecreatefromwebp($imageFile->getPathname());
+
+                if ($srcImage === false) {
+                    $errors[] = "Failed to load WebP image {$imageFile->getFilename()} for compression.";
+                    continue;
+                }
+
+                // Save compressed WebP to temporary path
+                $compressionSuccess = imagewebp($srcImage, $tempCompressedPath, 80); 
+                imagedestroy($srcImage);
+
+                if (!$compressionSuccess) {
+                    $errors[] = "Failed to compress WebP image {$imageFile->getFilename()}.";
+                    continue;
+                }
+
+                // Upload compressed file to S3
+                $fileStream = fopen($tempCompressedPath, 'r');
+                if ($fileStream === false) {
+                    $errors[] = "Failed to open compressed image file for upload: {$imageFile->getFilename()}";
+                    continue;
+                }
+
+                Storage::disk('s3')->put($s3FilePath, $fileStream);
+                fclose($fileStream);
+
+                // Clean up temporary file
+                if (File::exists($tempCompressedPath)) {
+                    File::delete($tempCompressedPath);
+                }
+
+                // Get the full URL from S3 storage
+                $imageUrl = Storage::disk('s3')->url($s3FilePath);
+
+                // Add the full URL to the image URLs array
+                $imageUrls[] = $imageUrl;
+
+            } catch (\Exception $e) {
+                $errors[] = "Error processing image {$imageFile->getFilename()} in SKU folder {$originalSku}: {$e->getMessage()}";
+
+                // Clean up temporary file in case of exception
+                if (isset($tempCompressedPath) && File::exists($tempCompressedPath)) {
+                    File::delete($tempCompressedPath);
+                }
+            }
+        }
+
+        if (empty($imageUrls)) {
+            $errors[] = "No valid images found in SKU folder {$originalSku} that meet the required criteria (webp format, 1000x1000 dimensions).";
+        }
+
+        return [
+            'imageUrls' => $imageUrls,
+            'errors' => $errors
+        ];
+    }
+    private function uploadProductImagesToS3_old($imagesDir, $originalSku, $sanitizedSku)
+    {
+        $storageEnv = env('STORAGE_ENV');
+        $s3Path = $storageEnv . '/products/images/';
+        $imageUrls = [];
+        $errors = [];
+
+        // Get all files in the SKU directory
+        $files = File::files($imagesDir);
+
+        // Filter for webp files only
+        $imageFiles = [];
+        foreach ($files as $file) {
+            $extension = strtolower($file->getExtension());
+
+            if ($extension !== 'webp') {
+                $errors[] = "File {$file->getFilename()} in SKU folder {$originalSku} is not a webp image.";
+                //continue;
+            }
+
+            $imageFiles[] = $file;
+        }
+
+        if (empty($imageFiles)) {
+            $errors[] = "No webp image files found in SKU folder {$originalSku}.";
+            return [
+                'imageUrls' => $imageUrls,
+                'errors' => $errors
+            ];
+        }
+
+        // Upload each valid image to S3
+        foreach ($imageFiles as $index => $imageFile) {
+            try {
+                // Verify image dimensions using PHP's built-in GD library
+                $imageInfo = getimagesize($imageFile->getPathname());
+                if ($imageInfo === false) {
+                    $errors[] = "Could not read image information for {$imageFile->getFilename()} in SKU folder {$originalSku}.";
+                    //continue;
+                }
+
+                $width = $imageInfo[0];
+                $height = $imageInfo[1];
+
+                if ($width !== 1000 || $height !== 1000) {
+                    $errors[] = "Image {$imageFile->getFilename()} in SKU folder {$originalSku} has dimensions {$width}x{$height}, but must be exactly 1000x1000.";
+                    //continue;
+                }
+
                 // Generate a unique filename using sanitized SKU
                 // Include index to maintain order and avoid collisions
                 $uniqueFileName = $sanitizedSku . '_' . ($index + 1) . '_' . Str::random(10) . '.webp';
                 $s3FilePath = $s3Path . $uniqueFileName;
-                
+
+
                 // Open file and directly upload to S3
                 $fileStream = fopen($imageFile->getPathname(), 'r');
                 Storage::disk('s3')->put($s3FilePath, $fileStream);
                 fclose($fileStream);
-                
+
                 // Get the full URL from S3 storage
                 $imageUrl = Storage::disk('s3')->url($s3FilePath);
-                
+
                 // Add the full URL to the image URLs array
                 $imageUrls[] = $imageUrl;
+
+
             } catch (\Exception $e) {
                 $errors[] = "Error processing image {$imageFile->getFilename()} in SKU folder {$originalSku}: {$e->getMessage()}";
             }
         }
-        
+
         if (empty($imageUrls)) {
             $errors[] = "No valid images found in SKU folder {$originalSku} that meet the required criteria (webp format, 1000x1000 dimensions).";
         }
-        
+
         return [
             'imageUrls' => $imageUrls,
             'errors' => $errors
