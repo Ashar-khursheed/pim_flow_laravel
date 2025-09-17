@@ -170,7 +170,7 @@ public function store(Request $request): JsonResponse
 
         return response()->json([
             'success' => true,
-            'message' => '🎉 Thank you for your inquiry! We\'ve received your information and will get back to you shortly. Your journey with us begins now!',
+            'message' => 'Thank you for your inquiry! We\'ve received your information and will get back to you shortly. Your journey with us begins now!',
             'data' => $inquiry
         ], 201);
         
