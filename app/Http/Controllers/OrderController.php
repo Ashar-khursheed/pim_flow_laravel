@@ -411,7 +411,7 @@ class OrderController extends Controller
 				// Generate payment link BEFORE committing transaction
 				$paymentLink = null;
 				try {
-					$paymentLink = app(\App\Http\Controllers\FrontEnd\CCavenueController::class)
+					$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)
 						->createCCavenuePaymentLink($order);
 
 					if ($paymentLink) {
@@ -420,6 +420,11 @@ class OrderController extends Controller
 						$order->save();
 					}
 				} catch (\Exception $e) {
+						\Log::error('CCAvenue Payment Link generation failed', [
+						'order_id' => $order->id,
+						'error' => $e->getMessage(),
+						'trace' => $e->getTraceAsString()
+						]);
 				}
 			}
 
