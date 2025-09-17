@@ -3,7 +3,7 @@ namespace App\Http\Controllers\FrontEnd;
 
 
 use App\Http\Controllers\Controller;
-use App\Models\Inquiry;
+use App\Models\Frontend\Inquiry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
