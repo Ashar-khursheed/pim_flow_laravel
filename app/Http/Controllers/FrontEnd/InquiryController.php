@@ -132,15 +132,28 @@ public function index(Request $request): JsonResponse
         ]);
 
         $storedFiles = [];
-        if ($request->hasFile('files')) {
+            if ($request->hasFile('files')) {
+            $uploadedFiles = [];
+
             foreach ($request->file('files') as $file) {
-                $path = $file->storePublicly(
-                    "inquiries",
-                    'public'
-                );
-                $storedFiles[] = Storage::disk('public')->url($path);
+                // Store in S3 inside production/inquiries
+                $path = $file->store("production/inquiries", 's3');
+
+                // Use original name as title (or you can make a custom input for title if needed)
+                $title = $file->getClientOriginalName();
+
+                $uploadedFiles[] = [
+                    'title' => $title,
+                    'path'  => Storage::disk('s3')->url($path), // Full S3 URL
+                ];
             }
-        }
+
+                $input['files'] = $uploadedFiles;
+            } else {
+                // Keep it empty if no files uploaded
+                $input['files'] = [];
+            }
+
 
         $inquiry = Inquiry::create([
             'full_name' => $validated['full_name'],
