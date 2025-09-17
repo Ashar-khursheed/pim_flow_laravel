@@ -130,21 +130,27 @@ public function store(Request $request): JsonResponse
             'company_name' => 'required|string|max:255',
             'restaurant_type' => 'required|string|max:255',
             'notes' => 'nullable|string',
-            'files' => 'nullable|array',        // Keep this
-            'files.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:10240', // Add nullable
+            'files' => 'nullable', // Remove array requirement to handle both single and array
+            'files.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
         ]);
 
         \Log::info('Validation passed');
 
         $uploadedFiles = [];
         
-        // Handle both files[] and files formats
-        $files = $request->file('files') ?? $request->file('files'); // This handles both
+        // Get files from request
+        $files = $request->file('files');
         
-        if ($files && is_array($files)) {
+        if ($files) {
             \Log::info('Files detected, processing uploads');
+            
+            // Convert single file to array for consistent processing
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+            
             foreach ($files as $file) {
-                if ($file && $file->isValid()) { // Add validation check
+                if ($file && $file->isValid()) {
                     $path = $file->store("production/inquiries", 's3');
                     $title = $file->getClientOriginalName();
                     
