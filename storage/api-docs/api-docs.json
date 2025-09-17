@@ -17826,9 +17826,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -17924,18 +17922,12 @@
                             "schema": {
                                 "required": [
                                     "customer_address_id",
-                                    "shipping_charge",
                                     "products"
                                 ],
                                 "properties": {
                                     "customer_address_id": {
                                         "type": "integer",
                                         "example": "4"
-                                    },
-                                    "shipping_charge": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 75
                                     },
                                     "ship_all_at_once": {
                                         "type": "boolean",
@@ -17951,8 +17943,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -26684,7 +26675,6 @@
                                 "required": [
                                     "customer_id",
                                     "customer_address_id",
-                                    "shipping_charge",
                                     "products"
                                 ],
                                 "properties": {
@@ -26748,9 +26738,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -26894,9 +26882,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
