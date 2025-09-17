@@ -3,7 +3,7 @@ namespace App\Http\Controllers\FrontEnd;
 
 
 use App\Http\Controllers\Controller;
-use App\Models\Inquiry;
+use App\Models\FrontEnd\Inquiry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -89,37 +89,39 @@ public function index(Request $request): JsonResponse
     return response()->json($inquiries);
 }
 
-    /**
-     * @OA\Post(
-     *     path="/api/frontend/inquiries",
-     *     tags={"Inquiries"},
-     *     summary="Submit a new inquiry",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *             @OA\Schema(
-     *                 required={"full_name","phone","email","company_name","restaurant_type"},
-     *                 @OA\Property(property="full_name", type="string", example="Jhon Smith"),
-     *                 @OA\Property(property="phone", type="string", example="+1 (234) 567-8900"),
-     *                 @OA\Property(property="email", type="string", example="you@example.com"),
-     *                 @OA\Property(property="company_name", type="string", example="Bella’s Italian Bistro"),
-     *                 @OA\Property(property="restaurant_type", type="string", example="Italian"),
-     *                 @OA\Property(
-     *                     property="files[]",
-     *                     type="array",
-     *                     @OA\Items(type="string", format="binary")
-     *                 ),
-     *                 @OA\Property(property="notes", type="string", example="Attach menu if available")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Inquiry created"),
-     *     @OA\Response(response=422, description="Validation error")
-     * )
-     */
-    public function store(Request $request): JsonResponse
-    {
+  /**
+ * @OA\Post(
+ *     path="/api/frontend/inquiries",
+ *     tags={"Inquiries"},
+ *     summary="Submit a new inquiry",
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"full_name","phone","email","company_name","restaurant_type"},
+ *                 @OA\Property(property="full_name", type="string", example="John Smith"),
+ *                 @OA\Property(property="phone", type="string", example="+1 (234) 567-8900"),
+ *                 @OA\Property(property="email", type="string", example="you@example.com"),
+ *                 @OA\Property(property="company_name", type="string", example="Bella's Italian Bistro"),
+ *                 @OA\Property(property="restaurant_type", type="string", example="Italian"),
+ *                 @OA\Property(
+ *                     property="files",
+ *                     type="array",
+ *                     @OA\Items(type="string", format="binary")
+ *                 ),
+ *                 @OA\Property(property="notes", type="string", example="Attach menu if available")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response=201, description="Inquiry created"),
+ *     @OA\Response(response=422, description="Validation error")
+ * )
+ */
+public function store(Request $request): JsonResponse
+{
+    try {
+        
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
             'phone' => 'required|string|max:50',
@@ -127,33 +129,34 @@ public function index(Request $request): JsonResponse
             'company_name' => 'required|string|max:255',
             'restaurant_type' => 'required|string|max:255',
             'notes' => 'nullable|string',
-            'files' => 'nullable|array',
-            'files.*' => 'file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
+            'files' => 'nullable', // Remove array requirement to handle both single and array
+            'files.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
         ]);
 
-        $storedFiles = [];
-            if ($request->hasFile('files')) {
-            $uploadedFiles = [];
-
-            foreach ($request->file('files') as $file) {
-                // Store in S3 inside production/inquiries
-                $path = $file->store("production/inquiries", 's3');
-
-                // Use original name as title (or you can make a custom input for title if needed)
-                $title = $file->getClientOriginalName();
-
-                $uploadedFiles[] = [
-                    'title' => $title,
-                    'path'  => Storage::disk('s3')->url($path), // Full S3 URL
-                ];
+        $uploadedFiles = [];
+        
+        // Get files from request
+        $files = $request->file('files');
+        
+        if ($files) {
+            
+            // Convert single file to array for consistent processing
+            if (!is_array($files)) {
+                $files = [$files];
             }
-
-                $input['files'] = $uploadedFiles;
-            } else {
-                // Keep it empty if no files uploaded
-                $input['files'] = [];
+            
+            foreach ($files as $file) {
+                if ($file && $file->isValid()) {
+                    $path = $file->store("production/inquiries", 's3');
+                    $title = $file->getClientOriginalName();
+                    
+                    $uploadedFiles[] = [
+                        'title' => $title,
+                        'path'  => Storage::disk('s3')->url($path),
+                    ];
+                }
             }
-
+        }
 
         $inquiry = Inquiry::create([
             'full_name' => $validated['full_name'],
@@ -162,11 +165,30 @@ public function index(Request $request): JsonResponse
             'company_name' => $validated['company_name'],
             'restaurant_type' => $validated['restaurant_type'],
             'notes' => $validated['notes'] ?? null,
-            'files' => $storedFiles,
+            'files' => $uploadedFiles,
         ]);
 
-        return response()->json($inquiry, 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Thank you for your inquiry! We\'ve received your information and will get back to you shortly. Your journey with us begins now!',
+            'data' => $inquiry
+        ], 201);
+        
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Please check the information you provided and try again.',
+            'errors' => $e->errors()
+        ], 422);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Oops! Something went wrong on our end. Please try again in a moment.',
+            'error' => 'Server error occurred'
+        ], 500);
     }
+}
 
     /**
      * @OA\Get(
