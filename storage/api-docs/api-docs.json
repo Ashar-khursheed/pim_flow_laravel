@@ -17101,6 +17101,182 @@
                 }
             }
         },
+        "/api/frontend/inquiries": {
+            "get": {
+                "tags": [
+                    "Inquiries"
+                ],
+                "summary": "List inquiries with search, sorting, and pagination",
+                "operationId": "c5d67f9986b720987054f12c38e3ca30",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by full name, phone, email, or company name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by (id, full_name, email, created_at, etc.)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated inquiry list"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Inquiries"
+                ],
+                "summary": "Submit a new inquiry",
+                "operationId": "bf8d88b56501486823252af25378a039",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "full_name",
+                                    "phone",
+                                    "email",
+                                    "company_name",
+                                    "restaurant_type"
+                                ],
+                                "properties": {
+                                    "full_name": {
+                                        "type": "string",
+                                        "example": "Jhon Smith"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+1 (234) 567-8900"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "you@example.com"
+                                    },
+                                    "company_name": {
+                                        "type": "string",
+                                        "example": "Bella’s Italian Bistro"
+                                    },
+                                    "restaurant_type": {
+                                        "type": "string",
+                                        "example": "Italian"
+                                    },
+                                    "files[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Attach menu if available"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Inquiry created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/frontend/inquiries/{id}": {
+            "get": {
+                "tags": [
+                    "Inquiries"
+                ],
+                "summary": "Get single inquiry",
+                "operationId": "4686b5f7aeb4ee602766021e1bb6389a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Inquiry found"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Inquiries"
+                ],
+                "summary": "Delete an inquiry",
+                "operationId": "99fd4eeb8abf44bc57de1f7dbca03dc7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                }
+            }
+        },
         "/api/frontend/invoices": {
             "get": {
                 "tags": [
@@ -39329,6 +39505,10 @@
         {
             "name": "Google Reviews",
             "description": "Google Reviews"
+        },
+        {
+            "name": "Inquiries",
+            "description": "Inquiries"
         },
         {
             "name": "Frontend Invoices",
