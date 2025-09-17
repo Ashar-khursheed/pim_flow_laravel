@@ -118,8 +118,11 @@ public function index(Request $request): JsonResponse
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-   public function store(Request $request): JsonResponse
-    {
+ public function store(Request $request): JsonResponse
+{
+    try {
+        \Log::info('Starting inquiry creation', ['request_data' => $request->all()]);
+        
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
             'phone' => 'required|string|max:50',
@@ -131,11 +134,13 @@ public function index(Request $request): JsonResponse
             'files.*' => 'file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
         ]);
 
-        $uploadedFiles = []; // Changed variable name for consistency
+        \Log::info('Validation passed');
+
+        $uploadedFiles = [];
         
         if ($request->hasFile('files')) {
+            \Log::info('Files detected, processing uploads');
             foreach ($request->file('files') as $file) {
-                // Store in S3 inside production/inquiries
                 $path = $file->store("production/inquiries", 's3');
                 $title = $file->getClientOriginalName();
                 
@@ -144,6 +149,7 @@ public function index(Request $request): JsonResponse
                     'path'  => Storage::disk('s3')->url($path),
                 ];
             }
+            \Log::info('Files uploaded successfully', ['files' => $uploadedFiles]);
         }
 
         $inquiry = Inquiry::create([
@@ -153,11 +159,22 @@ public function index(Request $request): JsonResponse
             'company_name' => $validated['company_name'],
             'restaurant_type' => $validated['restaurant_type'],
             'notes' => $validated['notes'] ?? null,
-            'files' => $uploadedFiles, // Fixed: use $uploadedFiles instead of $storedFiles
+            'files' => $uploadedFiles,
         ]);
 
+        \Log::info('Inquiry created successfully', ['inquiry_id' => $inquiry->id]);
+
         return response()->json($inquiry, 201);
+        
+    } catch (\Exception $e) {
+        \Log::error('Inquiry creation failed', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json(['error' => 'Server error occurred'], 500);
     }
+}
 
     /**
      * @OA\Get(
