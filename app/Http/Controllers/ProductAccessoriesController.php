@@ -680,7 +680,7 @@ class ProductAccessoriesController extends Controller
 
                 });
             }
-            $product_list="";
+            $product_list=[];
             $products = $query->orderBy('name', 'asc')->get();
             if (!empty($products)) {
                 foreach ($products as $key => $val) {
