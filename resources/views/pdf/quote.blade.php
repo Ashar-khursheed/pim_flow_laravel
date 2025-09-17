@@ -285,6 +285,13 @@ $pageNumber = 1;
 										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
 										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
 									</tr>
+
+									@if ($discount > 0)
+									<tr>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">Discount</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
+									</tr>
+									@endif
 								</tbody>
 							</table>
 						</div>

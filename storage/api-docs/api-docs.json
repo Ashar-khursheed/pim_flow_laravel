@@ -20985,6 +20985,15 @@
                                         "format": "float",
                                         "example": 5
                                     },
+                                    "coupon_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "discount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
+                                    },
                                     "payment_terms": {
                                         "type": "string",
                                         "example": "Credit Card"
@@ -20997,19 +21006,13 @@
                                         "type": "string",
                                         "example": "Please deliver between 9am-5pm."
                                     },
-                                    "send_customer_email": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
                                     "products": {
                                         "type": "array",
                                         "items": {
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -21023,16 +21026,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 2
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 4000
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -21141,6 +21134,15 @@
                                         "format": "float",
                                         "example": 5
                                     },
+                                    "coupon_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "discount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
+                                    },
                                     "payment_terms": {
                                         "type": "string",
                                         "example": "Credit Card"
@@ -21159,9 +21161,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -21175,16 +21175,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 2
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 4000
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -21197,7 +21187,7 @@
                     }
                 },
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Updated successfully",
                         "content": {
                             "application/json": {}
@@ -32557,10 +32547,14 @@
                                         "format": "float",
                                         "example": 5
                                     },
-                                    "discount_percentage": {
+                                    "coupon_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "discount": {
                                         "type": "number",
                                         "format": "float",
-                                        "example": 5
+                                        "example": 200
                                     },
                                     "status": {
                                         "type": "string",
@@ -32583,19 +32577,13 @@
                                         "type": "string",
                                         "example": "Please deliver between 9am-5pm."
                                     },
-                                    "send_customer_email": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
                                     "products": {
                                         "type": "array",
                                         "items": {
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -32609,16 +32597,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 2
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 4000
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -32717,6 +32695,15 @@
                                         "format": "float",
                                         "example": 5
                                     },
+                                    "coupon_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "discount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
+                                    },
                                     "payment_terms": {
                                         "type": "string",
                                         "example": "Credit Card"
@@ -32744,9 +32731,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -32760,16 +32745,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 2
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 4000
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"

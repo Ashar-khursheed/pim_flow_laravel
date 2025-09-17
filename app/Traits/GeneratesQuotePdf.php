@@ -120,6 +120,7 @@ trait GeneratesQuotePdf
 		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'Sales Tax';
 		$taxPercent = $quote->tax_percentage;
 		$taxAmount = $quote->tax_amount ?? 0;
+		$discount = $quote->discount ?? 0;
 		$total = $quote->total_amount ?? 0;
 
 		$totalInWords = config('app.website') == 'UAE'
@@ -170,6 +171,7 @@ trait GeneratesQuotePdf
 			'taxName' => $taxName,
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
+			'discount' => $discount,
 			'total' => $total,
 			'totalInWords' => $totalInWords,
 			'payNowUrl' => $payNowUrl,
