@@ -358,8 +358,7 @@ class CCavenueController extends Controller
     }
     public function createCCavenuePaymentLink($order)
     {
-        $workingKey = env('CCAVENUE_WORKING_KEY');
-        $accessCode = env('CCAVENUE_ACCESS_CODE');
+
         $customerAddress = CustomerAddress::find($order->customer_address_id);
         $customer = Customer::find($order->customer_id);
         $orderList = array();
@@ -378,11 +377,48 @@ class CCavenueController extends Controller
         $orderList['delivery_tel'] = $customer->mobile_number;
         $orderList['delivery_zip'] = "";
 
+
+        $allowedKeys = [
+            'order_id',
+            'currency',
+            'amount',
+            'redirect_url',
+            'cancel_url',
+            'language',
+            'billing_name',
+            'billing_address',
+            'billing_city',
+            'billing_state',
+            'billing_zip',
+            'billing_country',
+            'billing_tel',
+            'billing_email',
+            'delivery_name',
+            'delivery_address',
+            'delivery_city',
+            'delivery_state',
+            'delivery_zip',
+            'delivery_country',
+            'delivery_tel',
+            'merchant_param1',
+            'merchant_param2',
+            'merchant_param3',
+            'merchant_param4',
+            'merchant_param5',
+            'promo_code',
+            'customer_identifier'
+        ];
         $merchantId = $this->ccavenueService->getMerchantId();
-        $merchant_data = "merchant_id={$merchantId}&";
+
+        // Build merchant data string - start with merchant_id
+        $merchantData = "merchant_id={$merchantId}";
+
         foreach ($orderList as $key => $value) {
-            $merchant_data .= $key . '=' . urlencode($value) . '&';
+            if (in_array($key, $allowedKeys) && !empty($value)) {
+                $merchantData .= "&{$key}={$value}";
+            }
         }
+
         $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
         foreach ($requiredFields as $field) {
             if (empty($orderList[$field])) {
@@ -390,7 +426,7 @@ class CCavenueController extends Controller
             }
         }
 
-        $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchant_data);
+        $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
         return $paymentUrl;
 
     }
