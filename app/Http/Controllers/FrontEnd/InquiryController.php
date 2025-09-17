@@ -89,36 +89,36 @@ public function index(Request $request): JsonResponse
     return response()->json($inquiries);
 }
 
-    /**
-     * @OA\Post(
-     *     path="/api/frontend/inquiries",
-     *     tags={"Inquiries"},
-     *     summary="Submit a new inquiry",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *             @OA\Schema(
-     *                 required={"full_name","phone","email","company_name","restaurant_type"},
-     *                 @OA\Property(property="full_name", type="string", example="Jhon Smith"),
-     *                 @OA\Property(property="phone", type="string", example="+1 (234) 567-8900"),
-     *                 @OA\Property(property="email", type="string", example="you@example.com"),
-     *                 @OA\Property(property="company_name", type="string", example="Bella’s Italian Bistro"),
-     *                 @OA\Property(property="restaurant_type", type="string", example="Italian"),
-     *                 @OA\Property(
-     *                     property="files[]",
-     *                     type="array",
-     *                     @OA\Items(type="string", format="binary")
-     *                 ),
-     *                 @OA\Property(property="notes", type="string", example="Attach menu if available")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Inquiry created"),
-     *     @OA\Response(response=422, description="Validation error")
-     * )
-     */
- public function store(Request $request): JsonResponse
+  /**
+ * @OA\Post(
+ *     path="/api/frontend/inquiries",
+ *     tags={"Inquiries"},
+ *     summary="Submit a new inquiry",
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"full_name","phone","email","company_name","restaurant_type"},
+ *                 @OA\Property(property="full_name", type="string", example="John Smith"),
+ *                 @OA\Property(property="phone", type="string", example="+1 (234) 567-8900"),
+ *                 @OA\Property(property="email", type="string", example="you@example.com"),
+ *                 @OA\Property(property="company_name", type="string", example="Bella's Italian Bistro"),
+ *                 @OA\Property(property="restaurant_type", type="string", example="Italian"),
+ *                 @OA\Property(
+ *                     property="files",
+ *                     type="array",
+ *                     @OA\Items(type="string", format="binary")
+ *                 ),
+ *                 @OA\Property(property="notes", type="string", example="Attach menu if available")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response=201, description="Inquiry created"),
+ *     @OA\Response(response=422, description="Validation error")
+ * )
+ */
+public function store(Request $request): JsonResponse
 {
     try {
         \Log::info('Starting inquiry creation', ['request_data' => $request->all()]);
@@ -130,24 +130,29 @@ public function index(Request $request): JsonResponse
             'company_name' => 'required|string|max:255',
             'restaurant_type' => 'required|string|max:255',
             'notes' => 'nullable|string',
-            'files' => 'nullable|array',
-            'files.*' => 'file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
+            'files' => 'nullable|array',        // Keep this
+            'files.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:10240', // Add nullable
         ]);
 
         \Log::info('Validation passed');
 
         $uploadedFiles = [];
         
-        if ($request->hasFile('files')) {
+        // Handle both files[] and files formats
+        $files = $request->file('files') ?? $request->file('files'); // This handles both
+        
+        if ($files && is_array($files)) {
             \Log::info('Files detected, processing uploads');
-            foreach ($request->file('files') as $file) {
-                $path = $file->store("production/inquiries", 's3');
-                $title = $file->getClientOriginalName();
-                
-                $uploadedFiles[] = [
-                    'title' => $title,
-                    'path'  => Storage::disk('s3')->url($path),
-                ];
+            foreach ($files as $file) {
+                if ($file && $file->isValid()) { // Add validation check
+                    $path = $file->store("production/inquiries", 's3');
+                    $title = $file->getClientOriginalName();
+                    
+                    $uploadedFiles[] = [
+                        'title' => $title,
+                        'path'  => Storage::disk('s3')->url($path),
+                    ];
+                }
             }
             \Log::info('Files uploaded successfully', ['files' => $uploadedFiles]);
         }
@@ -165,6 +170,10 @@ public function index(Request $request): JsonResponse
         \Log::info('Inquiry created successfully', ['inquiry_id' => $inquiry->id]);
 
         return response()->json($inquiry, 201);
+        
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        \Log::error('Validation failed', ['errors' => $e->errors()]);
+        return response()->json(['errors' => $e->errors()], 422);
         
     } catch (\Exception $e) {
         \Log::error('Inquiry creation failed', [
