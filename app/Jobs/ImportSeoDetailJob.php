@@ -42,8 +42,6 @@ class ImportSeoDetailJob implements ShouldQueue
 
 	public function handle()
 	{
-		$allUrls = SeoManagement::pluck('url')->all();
-
 		$log = TransactionLog::where('identifier', $this->batch()->id)->first();
 		if (!$log) {
 			Log::error('Transaction log not found for batch ID: ' . $this->batch()->id);
@@ -57,6 +55,9 @@ class ImportSeoDetailJob implements ShouldQueue
 		// Ensure Errors key exists and is an array
 		if (!isset($descArray["Errors"]) || !is_array($descArray["Errors"])) {
 			$descArray["Errors"] = [];
+		}
+		if (!isset($descArray["Duplication Errors"]) || !is_array($descArray["Duplication Errors"])) {
+			$descArray["Duplication Errors"] = [];
 		}
 
 		$errorArray = [];
@@ -288,6 +289,7 @@ class ImportSeoDetailJob implements ShouldQueue
 		DB::beginTransaction();
 
 		try {
+			$duplicationError = [];
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
 
@@ -305,24 +307,36 @@ class ImportSeoDetailJob implements ShouldQueue
 				}
 
 				// Create/update the SEO record first
-				$seo = SeoManagement::updateOrCreate(
-					[
-						'relational_id' => $primaryData['relational_id'],
-						'relational_type' => $primaryData['relational_type']
-					],
-					$primaryData
-				);
-
-
-				// Process secondary keywords
-				foreach ($group['secondary'] as $secondary) {
-					SeoSecondaryKeyword::updateOrCreate(
+				$seoRecord = SeoManagement::where('url', $primaryData['url'])
+				->where(function ($query) use ($primaryData) {
+					$query->where('relational_id', '!=', $primaryData['relational_id'])
+					->orWhere('relational_type', '!=', $primaryData['relational_type']);
+				})
+				->first();
+				if ($seoRecord) {
+					$duplicationError[] = [
+						"Relational ID" => $primaryData['relational_id'],
+						"Error" => "The URL '{$primaryData['url']}' is already assigned to {$seoRecord->relational_type} '{$seoRecord->relational->name}'.",
+					];
+				} else {
+					$seo = SeoManagement::updateOrCreate(
 						[
-							'primary_keyword_id' => $seo->id,
-							'secondary_keyword' => $secondary['secondary_keyword'],
+							'relational_id' => $primaryData['relational_id'],
+							'relational_type' => $primaryData['relational_type']
 						],
-						['monthly_search_volume' => $secondary['monthly_search_volume']]
+						$primaryData
 					);
+
+					// Process secondary keywords
+					foreach ($group['secondary'] as $secondary) {
+						SeoSecondaryKeyword::updateOrCreate(
+							[
+								'primary_keyword_id' => $seo->id,
+								'secondary_keyword' => $secondary['secondary_keyword'],
+							],
+							['monthly_search_volume' => $secondary['monthly_search_volume']]
+						);
+					}
 				}
 			}
 
@@ -330,6 +344,7 @@ class ImportSeoDetailJob implements ShouldQueue
 			$descArray["Success Count"] += $success;
 			$descArray["Failed Count"] += $failed;
 			$descArray["Errors"] = array_merge($descArray["Errors"], $errorArray);
+			$descArray["Duplication Errors"] = array_merge($descArray["Duplication Errors"], $duplicationError);
 
 			$log->update([
 				'description' => json_encode($descArray),
