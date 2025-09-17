@@ -121,7 +121,6 @@ public function index(Request $request): JsonResponse
 public function store(Request $request): JsonResponse
 {
     try {
-        \Log::info('Starting inquiry creation', ['request_data' => $request->all()]);
         
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
@@ -134,15 +133,12 @@ public function store(Request $request): JsonResponse
             'files.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
         ]);
 
-        \Log::info('Validation passed');
-
         $uploadedFiles = [];
         
         // Get files from request
         $files = $request->file('files');
         
         if ($files) {
-            \Log::info('Files detected, processing uploads');
             
             // Convert single file to array for consistent processing
             if (!is_array($files)) {
@@ -160,7 +156,6 @@ public function store(Request $request): JsonResponse
                     ];
                 }
             }
-            \Log::info('Files uploaded successfully', ['files' => $uploadedFiles]);
         }
 
         $inquiry = Inquiry::create([
@@ -173,21 +168,25 @@ public function store(Request $request): JsonResponse
             'files' => $uploadedFiles,
         ]);
 
-        \Log::info('Inquiry created successfully', ['inquiry_id' => $inquiry->id]);
-
-        return response()->json($inquiry, 201);
+        return response()->json([
+            'success' => true,
+            'message' => '🎉 Thank you for your inquiry! We\'ve received your information and will get back to you shortly. Your journey with us begins now!',
+            'data' => $inquiry
+        ], 201);
         
     } catch (\Illuminate\Validation\ValidationException $e) {
-        \Log::error('Validation failed', ['errors' => $e->errors()]);
-        return response()->json(['errors' => $e->errors()], 422);
+        return response()->json([
+            'success' => false,
+            'message' => 'Please check the information you provided and try again.',
+            'errors' => $e->errors()
+        ], 422);
         
     } catch (\Exception $e) {
-        \Log::error('Inquiry creation failed', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-        
-        return response()->json(['error' => 'Server error occurred'], 500);
+        return response()->json([
+            'success' => false,
+            'message' => 'Oops! Something went wrong on our end. Please try again in a moment.',
+            'error' => 'Server error occurred'
+        ], 500);
     }
 }
 
