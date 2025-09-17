@@ -12,7 +12,7 @@ use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 
-class CCavenueController extends Controller
+class CcavenueController extends Controller
 {
     protected $ccavenueService;
 
@@ -357,15 +357,14 @@ class CCavenueController extends Controller
         }
     }
     public function createCCavenuePaymentLink($order)
-    {
-        $workingKey = env('CCAVENUE_WORKING_KEY');
-        $accessCode = env('CCAVENUE_ACCESS_CODE');
+    {         
+        $url = config('app.url');
         $customerAddress = CustomerAddress::find($order->customer_address_id);
         $customer = Customer::find($order->customer_id);
         $orderList = array();
         $orderList['order_id'] = $order->id;
-        $orderList['redirect_url'] = url('/payment/success');
-        $orderList['cancel_url'] = url('/payment/cancel');
+        $orderList['redirect_url'] = $url.'/payment/success';
+        $orderList['cancel_url'] = $url.'/payment/cancel';
         $orderList['currency'] = "AED";
         $orderList['amount'] = $order->amount;
         $orderList['language'] = "EN";
@@ -378,11 +377,26 @@ class CCavenueController extends Controller
         $orderList['delivery_tel'] = $customer->mobile_number;
         $orderList['delivery_zip'] = "";
 
+
+        $allowedKeys = [
+            'order_id',
+            'currency',
+            'amount',
+            'redirect_url',
+            'cancel_url',
+            'language'            
+        ];
         $merchantId = $this->ccavenueService->getMerchantId();
-        $merchant_data = "merchant_id={$merchantId}&";
+
+        // Build merchant data string - start with merchant_id
+        $merchantData = "merchant_id={$merchantId}";
+
         foreach ($orderList as $key => $value) {
-            $merchant_data .= $key . '=' . urlencode($value) . '&';
+            if (in_array($key, $allowedKeys) && !empty($value)) {
+                $merchantData .= "&{$key}={$value}";
+            }
         }
+
         $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
         foreach ($requiredFields as $field) {
             if (empty($orderList[$field])) {
@@ -390,7 +404,7 @@ class CCavenueController extends Controller
             }
         }
 
-        $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchant_data);
+        $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
         return $paymentUrl;
 
     }

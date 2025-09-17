@@ -232,8 +232,10 @@ class StripeController extends Controller
         }
         $success_url = url('/api/stripe/paymentSuccess') . '?session_id={CHECKOUT_SESSION_ID}';
         $cancel_url = url('/api/stripe/paymentCancel');
+         $stripeSecret = config('services.stripe.secret');
+     
         $res = Http::withOptions(['verify' => false])
-            ->withToken(env('STRIPE_TEST_SECRET'))
+            ->withToken($stripeSecret)
             ->asForm()
             ->post('https://api.stripe.com/v1/checkout/sessions', [
                 'payment_method_types[]' => 'card',
@@ -293,9 +295,10 @@ class StripeController extends Controller
         if (!$sessionId) {
             return response()->json(['error' => 'Missing session_id'], 400);
         }
+         $stripeSecret = config('services.stripe.secret');
         // Fetch session details from Stripe
         $res = Http::withOptions(['verify' => false])
-            ->withToken(env('STRIPE_TEST_SECRET'))
+            ->withToken($stripeSecret)
             ->get("https://api.stripe.com/v1/checkout/sessions/{$sessionId}");
 
         $data = $res->json();
@@ -335,10 +338,10 @@ class StripeController extends Controller
         $line1 = $data['customer_details']['address']['line1'];
         $postal_code = $data['customer_details']['address']['postal_code'];
         $state = $data['customer_details']['address']['state'];
-
+        $stripeSecret = config('services.stripe.secret');
         $paymentIntent = Http::withOptions(['verify' => false])
 
-            ->withToken(env('STRIPE_TEST_SECRET'))
+            ->withToken($stripeSecret)
             ->get("https://api.stripe.com/v1/payment_intents/{$payment_intent}")
             ->json();
 
@@ -407,11 +410,14 @@ class StripeController extends Controller
         } else {
             $itemName = "Order #" . $order->order_number;
         }
+
+      
+        $stripeSecret = config('services.stripe.secret');       
         $currency = "USD";
         $success_url = url('/api/stripe/paymentSuccess') . '?session_id={CHECKOUT_SESSION_ID}';
         $cancel_url = url('/api/stripe/paymentCancel');
         $res = Http::withOptions(['verify' => false])
-            ->withToken(env('STRIPE_TEST_SECRET'))
+            ->withToken($stripeSecret)
             ->asForm()
             ->post('https://api.stripe.com/v1/checkout/sessions', [
                 'payment_method_types[]' => 'card',

@@ -180,6 +180,7 @@ class OrderController extends BaseController
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
+	 *             @OA\Property(property="is_payment", type="boolean", example=false),
 	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
 	 *             @OA\Property(
 	 *                 property="products",
@@ -210,6 +211,7 @@ class OrderController extends BaseController
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 			'is_reserved' => 'nullable|boolean',
+			'is_payment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
@@ -301,6 +303,7 @@ class OrderController extends BaseController
 				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
 				'is_reserved' => $request->boolean('is_reserved'),
+				'is_payment' => $request->boolean('is_payment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => 0,
 				'utm_id' => $request->utm_id,

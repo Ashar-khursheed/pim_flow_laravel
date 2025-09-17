@@ -17816,6 +17816,10 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "is_payment": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "is_customer_pickup": {
                                         "type": "boolean",
                                         "example": false
