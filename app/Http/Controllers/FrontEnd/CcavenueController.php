@@ -12,7 +12,7 @@ use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 
-class CCavenueController extends Controller
+class CcavenueController extends Controller
 {
     protected $ccavenueService;
 
