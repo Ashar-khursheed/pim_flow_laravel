@@ -405,6 +405,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::resource('product-accessories', ProductAccessoriesController::class);
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
+	Route::get('/get-product-list', [ProductAccessoriesController::class, 'getProductList']);
 
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
