@@ -676,10 +676,11 @@ class ProductAccessoriesController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                        ->where('id', 'like', "%{$search}%");
+                        ->orWhere('id', 'like', "%{$search}%");
 
                 });
             }
+            $product_list="";
             $products = $query->orderBy('name', 'asc')->get();
             if (!empty($products)) {
                 foreach ($products as $key => $val) {
