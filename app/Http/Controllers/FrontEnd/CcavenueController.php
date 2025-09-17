@@ -357,14 +357,14 @@ class CcavenueController extends Controller
         }
     }
     public function createCCavenuePaymentLink($order)
-    {
-
+    {         
+        $url = config('app.url');
         $customerAddress = CustomerAddress::find($order->customer_address_id);
         $customer = Customer::find($order->customer_id);
         $orderList = array();
         $orderList['order_id'] = $order->id;
-        $orderList['redirect_url'] = url('/payment/success');
-        $orderList['cancel_url'] = url('/payment/cancel');
+        $orderList['redirect_url'] = $url.'/payment/success';
+        $orderList['cancel_url'] = $url.'/payment/cancel';
         $orderList['currency'] = "AED";
         $orderList['amount'] = $order->amount;
         $orderList['language'] = "EN";
