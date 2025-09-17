@@ -420,6 +420,11 @@ class OrderController extends Controller
 						$order->save();
 					}
 				} catch (\Exception $e) {
+						\Log::error('CCAvenue Payment Link generation failed', [
+						'order_id' => $order->id,
+						'error' => $e->getMessage(),
+						'trace' => $e->getTraceAsString()
+						]);
 				}
 			}
 
