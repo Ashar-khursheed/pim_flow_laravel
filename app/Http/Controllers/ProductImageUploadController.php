@@ -562,7 +562,7 @@ class ProductImageUploadController extends Controller
      * @param string $sanitizedSku Sanitized SKU for filename
      * @return array
      */
-    private function uploadProductImagesToS3($imagesDir, $originalSku, $sanitizedSku)
+    private function uploadProductImagesToS3_old($imagesDir, $originalSku, $sanitizedSku)
     {
         $storageEnv = env('STORAGE_ENV');
         $s3Path = $storageEnv . '/products/images/';
@@ -679,7 +679,7 @@ class ProductImageUploadController extends Controller
             'errors' => $errors
         ];
     }
-    private function uploadProductImagesToS3_old($imagesDir, $originalSku, $sanitizedSku)
+    private function uploadProductImagesToS3($imagesDir, $originalSku, $sanitizedSku)
     {
         $storageEnv = env('STORAGE_ENV');
         $s3Path = $storageEnv . '/products/images/';

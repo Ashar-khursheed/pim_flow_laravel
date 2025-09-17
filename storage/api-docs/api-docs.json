@@ -17180,7 +17180,7 @@
                                 "properties": {
                                     "full_name": {
                                         "type": "string",
-                                        "example": "Jhon Smith"
+                                        "example": "John Smith"
                                     },
                                     "phone": {
                                         "type": "string",
@@ -17192,13 +17192,13 @@
                                     },
                                     "company_name": {
                                         "type": "string",
-                                        "example": "Bella’s Italian Bistro"
+                                        "example": "Bella's Italian Bistro"
                                     },
                                     "restaurant_type": {
                                         "type": "string",
                                         "example": "Italian"
                                     },
-                                    "files[]": {
+                                    "files": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",

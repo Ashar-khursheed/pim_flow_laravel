@@ -129,7 +129,7 @@ use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventCont
 use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseClaimController;
 use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseClaimController;
 use App\Http\Controllers\FrontEnd\GetInTouchController as F_GetInTouchController;
-use App\Http\Controllers\InquiryController  as F_InquiryController;
+use App\Http\Controllers\FrontEnd\InquiryController  as F_InquiryController;
 use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Controllers\FrontEnd\FilterController;
