@@ -176,7 +176,6 @@ class OrderController extends BaseController
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
 	 *             @OA\Property(property="is_cod", type="boolean", example=false),
-	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
@@ -268,8 +267,6 @@ class OrderController extends BaseController
 			}
 
 			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
-			$paidAmount = $request->paid_amount ?? 0;
-			$pendingAmount = $totalAmount - $paidAmount;
 
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();
@@ -298,9 +295,7 @@ class OrderController extends BaseController
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
 				'separate_deliveries' => $request->get('separate_deliveries', false),
-				'paid_amount' => $paidAmount,
-				'is_paid' => $pendingAmount <= 0,
-				'pending_amount' => $pendingAmount,
+				'pending_amount' => $totalAmount,
 				'status' => 'Pending',
 				'is_reserved' => $request->boolean('is_reserved'),
 				'is_payment' => $request->boolean('is_payment'),

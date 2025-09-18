@@ -17974,11 +17974,6 @@
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "paid_amount": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 199.99
-                                    },
                                     "coupon_id": {
                                         "type": "integer",
                                         "example": 1
@@ -18268,7 +18263,7 @@
         "/api/frontend/payments": {
             "get": {
                 "tags": [
-                    "Frontend-Payment History"
+                    "Frontend-Payments"
                 ],
                 "summary": "Get all payments with search, sort, and pagination",
                 "operationId": "d63c8a68eda5aa3c025fec14d228b3eb",
@@ -18323,13 +18318,12 @@
             },
             "post": {
                 "tags": [
-                    "Frontend-Payment History"
+                    "Frontend-Payments"
                 ],
                 "summary": "Create a new payment",
                 "description": "Create a new payment record for an authenticated customer",
                 "operationId": "createPayment",
                 "requestBody": {
-                    "description": "Payment data",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -18348,41 +18342,24 @@
                                         "example": 123
                                     },
                                     "transaction_id": {
-                                        "description": "Unique transaction identifier from payment gateway",
+                                        "description": "Unique transaction identifier",
                                         "type": "string",
                                         "example": "TXN456789"
                                     },
                                     "payment_mode": {
                                         "description": "Method of payment",
                                         "type": "string",
-                                        "enum": [
-                                            "Credit Card",
-                                            "Debit Card",
-                                            "PayPal",
-                                            "Bank Transfer",
-                                            "Cash",
-                                            "Stripe",
-                                            "Razorpay"
-                                        ],
                                         "example": "Credit Card"
                                     },
                                     "amount": {
                                         "description": "Payment amount",
                                         "type": "number",
                                         "format": "float",
-                                        "minimum": 0.01,
                                         "example": 299.99
                                     },
                                     "status": {
                                         "description": "Payment status",
                                         "type": "string",
-                                        "enum": [
-                                            "pending",
-                                            "completed",
-                                            "failed",
-                                            "cancelled",
-                                            "refunded"
-                                        ],
                                         "example": "completed"
                                     },
                                     "payment_date": {
@@ -18394,8 +18371,7 @@
                                     "notes": {
                                         "description": "Additional notes about the payment",
                                         "type": "string",
-                                        "example": "First installment paid",
-                                        "nullable": true
+                                        "example": "First installment paid"
                                     },
                                     "payment_details": {
                                         "description": "Additional payment gateway details",
@@ -18404,8 +18380,7 @@
                                             "bank": "XYZ Bank",
                                             "ref": "12345XYZ",
                                             "gateway_response": "success"
-                                        },
-                                        "nullable": true
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -18415,154 +18390,9 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Payment created successfully",
+                        "description": "Created successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "order_id": {
-                                            "type": "integer",
-                                            "example": 123
-                                        },
-                                        "customer_id": {
-                                            "type": "integer",
-                                            "example": 45
-                                        },
-                                        "transaction_id": {
-                                            "type": "string",
-                                            "example": "TXN456789"
-                                        },
-                                        "payment_mode": {
-                                            "type": "string",
-                                            "example": "Credit Card"
-                                        },
-                                        "amount": {
-                                            "type": "number",
-                                            "format": "float",
-                                            "example": 299.99
-                                        },
-                                        "status": {
-                                            "type": "string",
-                                            "example": "completed"
-                                        },
-                                        "payment_date": {
-                                            "type": "string",
-                                            "format": "date",
-                                            "example": "2024-06-24"
-                                        },
-                                        "notes": {
-                                            "type": "string",
-                                            "example": "First installment paid"
-                                        },
-                                        "payment_details": {
-                                            "type": "object",
-                                            "example": {
-                                                "bank": "XYZ Bank",
-                                                "ref": "12345XYZ"
-                                            }
-                                        },
-                                        "created_at": {
-                                            "type": "string",
-                                            "format": "date-time",
-                                            "example": "2024-06-24T10:30:00.000000Z"
-                                        },
-                                        "updated_at": {
-                                            "type": "string",
-                                            "format": "date-time",
-                                            "example": "2024-06-24T10:30:00.000000Z"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request - Validation errors",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "type": "object",
-                                            "example": {
-                                                "order_id": [
-                                                    "The order id field is required."
-                                                ],
-                                                "status": [
-                                                    "The status field is required."
-                                                ],
-                                                "payment_date": [
-                                                    "The payment date field is required."
-                                                ]
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - Invalid or missing authentication token",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Unprocessable Entity - Validation failed",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Something went wrong while creating the payment."
-                                        },
-                                        "error": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -18576,7 +18406,7 @@
         "/api/frontend/payments/{id}": {
             "get": {
                 "tags": [
-                    "Frontend-Payment History"
+                    "Frontend-Payments"
                 ],
                 "summary": "Get a single payment",
                 "operationId": "7813adfa61bef8dd454edae65387352d",
@@ -18593,10 +18423,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Payment details"
-                    },
-                    "404": {
-                        "description": "Payment not found"
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -18607,7 +18437,7 @@
             },
             "put": {
                 "tags": [
-                    "Frontend-Payment History"
+                    "Frontend-Payments"
                 ],
                 "summary": "Update a payment",
                 "operationId": "528e54c518ec4365d59895d1ec3a90db",
@@ -18686,7 +18516,7 @@
             },
             "delete": {
                 "tags": [
-                    "Frontend-Payment History"
+                    "Frontend-Payments"
                 ],
                 "summary": "Delete a payment",
                 "operationId": "093ba4470d3f0e87ca8e37888b059acb",
@@ -18719,7 +18549,7 @@
         "/api/frontend/payments/cash-delivery": {
             "post": {
                 "tags": [
-                    "Frontend-Payment History"
+                    "Frontend-Payments"
                 ],
                 "summary": "Create a new cash delivery payment",
                 "description": "Create a new cash delivery payment record for an authenticated customer",
@@ -39558,8 +39388,8 @@
             "description": "FrontEnd-Orders"
         },
         {
-            "name": "Frontend-Payment History",
-            "description": "Frontend-Payment History"
+            "name": "Frontend-Payments",
+            "description": "Frontend-Payments"
         },
         {
             "name": "FrontEnd-PostPurchaseClaims",

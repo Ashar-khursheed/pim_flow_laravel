@@ -15,463 +15,342 @@ use App\Jobs\Order\OrderPlacedMailJob;
 
 class PaymentManagementController extends Controller
 {
-    /**
-     * @OA\Get(
-     *     path="/api/frontend/payments",
-     *     summary="Get all payments with search, sort, and pagination",
-     *     tags={"Frontend-Payment History"},
-     *     security={{"bearerAuth": {}}},
-     *     @OA\Parameter(name="search", in="query", description="Search term", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="sort_by", in="query", description="Column to sort by", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="sort_order", in="query", description="Sort order (asc or desc)", @OA\Schema(type="string", enum={"asc", "desc"})),
-     *     @OA\Parameter(name="per_page", in="query", description="Items per page", @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Paginated list of payments")
-     * )
-     */
-    public function index(Request $request)
-    {
-        $query = PaymentManagement::query();
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/payments",
+	 *     summary="Get all payments with search, sort, and pagination",
+	 *     tags={"Frontend-Payments"},
+	 *     @OA\Parameter(name="search", in="query", description="Search term", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column to sort by", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_order", in="query", description="Sort order (asc or desc)", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *     @OA\Parameter(name="per_page", in="query", description="Items per page", @OA\Schema(type="integer")),
+	 *     @OA\Response(response=200, description="Paginated list of payments"),
+	 *     security={{"bearerAuth": {}}},
+	 * )
+	 */
+	public function index(Request $request)
+	{
+		$query = PaymentManagement::query();
 
-        // Search logic
-        if ($search = $request->get('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('order_id', 'like', "%$search%")
-                    ->orWhere('transaction_id', 'like', "%$search%")
-                    ->orWhere('payment_mode', 'like', "%$search%")
-                    ->orWhere('status', 'like', "%$search%");
-            });
-        }
+		// Search logic
+		if ($search = $request->get('search')) {
+			$query->where(function ($q) use ($search) {
+				$q->where('order_id', 'like', "%$search%")
+				->orWhere('transaction_id', 'like', "%$search%")
+				->orWhere('payment_mode', 'like', "%$search%")
+				->orWhere('status', 'like', "%$search%");
+			});
+		}
 
-        // Sorting logic
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
+		// Sorting logic
+		$sortBy = $request->get('sort_by', 'created_at');
+		$sortOrder = $request->get('sort_order', 'desc');
+		$query->orderBy($sortBy, $sortOrder);
 
-        // Pagination logic
-        $perPage = $request->get('per_page', 15);
-        $payments = $query->paginate($perPage);
+		// Pagination logic
+		$perPage = $request->get('per_page', 15);
+		$payments = $query->paginate($perPage);
 
-        return response()->json($payments);
-    }
+		return response()->json($payments);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/payments",
+	 *     summary="Create a new payment",
+	 *     description="Create a new payment record for an authenticated customer",
+	 *     operationId="createPayment",
+	 *     tags={"Frontend-Payments"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"order_id", "payment_mode", "amount", "status", "payment_date"},
+	 *             @OA\Property(property="order_id", type="integer", description="ID of the order this payment is for", example=123),
+	 *             @OA\Property(property="transaction_id", type="string", description="Unique transaction identifier", example="TXN456789"),
+	 *             @OA\Property(property="payment_mode", type="string", description="Method of payment", example="Credit Card"),
+	 *             @OA\Property(property="amount", type="number", format="float", description="Payment amount", example=299.99),
+	 *             @OA\Property(property="status", type="string", description="Payment status", example="completed"),
+	 *             @OA\Property(property="payment_date", type="string", format="date", description="Date when payment was made", example="2024-06-24"),
+	 *             @OA\Property(property="notes", type="string", description="Additional notes about the payment", example="First installment paid"),
+	 *             @OA\Property(
+	 *                 property="payment_details",
+	 *                 type="object",
+	 *                 description="Additional payment gateway details",
+	 *                 example={"bank":"XYZ Bank","ref":"12345XYZ","gateway_response":"success"}
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function store(Request $request): JsonResponse
+	{
+		try {
+			$validated = $request->validate([
+				'order_id' => 'required|integer|exists:orders,id',
+				'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id',
+				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay',
+				'amount' => 'required|numeric|min:0.01|max:999999.99',
+				'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
+				'payment_date' => 'required|date|before_or_equal:today',
+				'notes' => 'nullable|string|max:1000',
+				'payment_details' => 'nullable|array|max:2000',
+				'payment_method' => 'nullable|string|max:255'
+			]);
+
+			if (isset($validated['payment_details'])) {
+				$validated['payment_details'] = json_encode($validated['payment_details']);
+			}
+
+			/* Create payment */
+			$payment = PaymentManagement::create($validated);
+
+			/* Update order amounts */
+			$order = $payment->order;
+			$newPaidAmount = $order->paid_amount + $request->amount;
+			$pendingAmount = $order->total_amount - $newPaidAmount;
+
+			$order->update([
+				'paid_amount' => $newPaidAmount,
+				'pending_amount' => $pendingAmount,
+				'is_paid' => $pendingAmount <= 0,
+			]);
+
+			return response()->json([
+				'message' => 'Payment recorded successfully.',
+				'data'    => $payment
+			], 201);
 
 
-    /**
-     * @OA\Post(
-     *     path="/api/frontend/payments",
-     *     summary="Create a new payment",
-     *     description="Create a new payment record for an authenticated customer",
-     *     operationId="createPayment",
-     *     tags={"Frontend-Payment History"},
-     *     security={{"bearerAuth": {}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         description="Payment data",
-     *         @OA\JsonContent(
-     *             required={"order_id", "payment_mode", "amount", "status", "payment_date"},
-     *             @OA\Property(
-     *                 property="order_id",
-     *                 type="integer",
-     *                 description="ID of the order this payment is for",
-     *                 example=123
-     *             ),
-     *             @OA\Property(
-     *                 property="transaction_id",
-     *                 type="string",
-     *                 description="Unique transaction identifier from payment gateway",
-     *                 example="TXN456789"
-     *             ),
-     *             @OA\Property(
-     *                 property="payment_mode",
-     *                 type="string",
-     *                 description="Method of payment",
-     *                 example="Credit Card",
-     *                 enum={"Credit Card", "Debit Card", "PayPal", "Bank Transfer", "Cash", "Stripe", "Razorpay"}
-     *             ),
-     *             @OA\Property(
-     *                 property="amount",
-     *                 type="number",
-     *                 format="float",
-     *                 description="Payment amount",
-     *                 example=299.99,
-     *                 minimum=0.01
-     *             ),
-     *             @OA\Property(
-     *                 property="status",
-     *                 type="string",
-     *                 description="Payment status",
-     *                 example="completed",
-     *                 enum={"pending", "completed", "failed", "cancelled", "refunded"}
-     *             ),
-     *             @OA\Property(
-     *                 property="payment_date",
-     *                 type="string",
-     *                 format="date",
-     *                 description="Date when payment was made",
-     *                 example="2024-06-24"
-     *             ),
-     *             @OA\Property(
-     *                 property="notes",
-     *                 type="string",
-     *                 description="Additional notes about the payment",
-     *                 example="First installment paid",
-     *                 nullable=true
-     *             ),
-     *             @OA\Property(
-     *                 property="payment_details",
-     *                 type="object",
-     *                 description="Additional payment gateway details",
-     *                 example={"bank":"XYZ Bank","ref":"12345XYZ","gateway_response":"success"},
-     *                 nullable=true
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Payment created successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="order_id", type="integer", example=123),
-     *             @OA\Property(property="customer_id", type="integer", example=45),
-     *             @OA\Property(property="transaction_id", type="string", example="TXN456789"),
-     *             @OA\Property(property="payment_mode", type="string", example="Credit Card"),
-     *             @OA\Property(property="amount", type="number", format="float", example=299.99),
-     *             @OA\Property(property="status", type="string", example="completed"),
-     *             @OA\Property(property="payment_date", type="string", format="date", example="2024-06-24"),
-     *             @OA\Property(property="notes", type="string", example="First installment paid"),
-     *             @OA\Property(property="payment_details", type="object", example={"bank":"XYZ Bank","ref":"12345XYZ"}),
-     *             @OA\Property(property="created_at", type="string", format="date-time", example="2024-06-24T10:30:00.000000Z"),
-     *             @OA\Property(property="updated_at", type="string", format="date-time", example="2024-06-24T10:30:00.000000Z")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Bad Request - Validation errors",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
-     *             @OA\Property(
-     *                 property="errors",
-     *                 type="object",
-     *                 example={
-     *                     "order_id": {"The order id field is required."},
-     *                     "status": {"The status field is required."},
-     *                     "payment_date": {"The payment date field is required."}
-     *                 }
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized - Invalid or missing authentication token",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Unprocessable Entity - Validation failed",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
-     *             @OA\Property(property="errors", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Internal Server Error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Something went wrong while creating the payment."),
-     *             @OA\Property(property="error", type="string")
-     *         )
-     *     )
-     * )
-     */
-    public function store(Request $request): JsonResponse
-    {
-        try {
-            // Validate the incoming request
-            $validated = $request->validate([
-                'order_id' => 'required|integer|exists:orders,id', // Ensure order exists
-                'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id', // Ensure unique transaction
-                'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay',
-                'amount' => 'required|numeric|min:0.01|max:999999.99',
-                'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
-                'payment_date' => 'required|date|before_or_equal:today',
-                'notes' => 'nullable|string|max:1000',
-                'payment_details' => 'nullable|array|max:2000',
-                'payment_method' => 'nullable|string|max:255'
-            ]);
+		} catch (\Exception $e) {
+			return response()->json([
+				'message' => 'Something went wrong while creating the payment.',
+				'error' => $e->getMessage()
+			], 500);
+		}
+	}
 
-            // Add authenticated user ID (assumes customer authentication)
-            if (!auth()->check()) {
-                return response()->json([
-                    'message' => 'Authentication required.'
-                ], 401);
-            }
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/payments/{id}",
+	 *     summary="Get a single payment",
+	 *     tags={"Frontend-Payments"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Payment ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Details retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function show($id)
+	{
+		$payment = PaymentManagement::findOrFail($id);
+		return response()->json($payment);
+	}
 
-            $validated['customer_id'] = auth()->id();
+	/**
+	 * @OA\Put(
+	 *     path="/api/frontend/payments/{id}",
+	 *     summary="Update a payment",
+	 *     tags={"Frontend-Payments"},
+	 *     security={{"bearerAuth": {}}},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Payment ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="order_id", type="integer", example=123),
+	 *             @OA\Property(property="transaction_id", type="string", example="TXN456789"),
+	 *             @OA\Property(property="payment_mode", type="string", example="PayPal"),
+	 *             @OA\Property(property="amount", type="number", format="float", example=199.99),
+	 *             @OA\Property(property="status", type="string", example="pending"),
+	 *             @OA\Property(property="payment_date", type="string", format="date", example="2024-06-24"),
+	 *             @OA\Property(property="notes", type="string", example="Awaiting confirmation"),
+	 *             @OA\Property(property="payment_details", type="object", example={"paypal_email":"user@example.com"})
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Payment updated"),
+	 *     @OA\Response(response=404, description="Payment not found")
+	 * )
+	 */
+	public function update(Request $request, $id)
+	{
+		$payment = PaymentManagement::findOrFail($id);
 
-            if (isset($validated['payment_details'])) {
-                $validated['payment_details'] = json_encode($validated['payment_details']);
-            }
+		$validated = $request->validate([
+			'order_id' => 'sometimes|required|integer',
+			'transaction_id' => 'nullable|string',
+			'payment_mode' => 'sometimes|required|string',
+			'amount' => 'sometimes|required|numeric',
+			'status' => 'sometimes|required|string',
+			'payment_date' => 'sometimes|required|date',
+			'notes' => 'nullable|string',
+			'payment_details' => 'nullable|json',
+			'payment_method' => 'nullable|string'
+		]);
 
-            // Create the payment record
-            $payment = PaymentManagement::create($validated);
+		$payment->update($validated);
 
-            $batch = Bus::batch([])->before(function (Batch $batch) {
+		return response()->json($payment);
+	}
 
-            })->catch(function (Batch $batch, Throwable $e) {
+	/**
+	 * @OA\Delete(
+	 *     path="/api/frontend/payments/{id}",
+	 *     summary="Delete a payment",
+	 *     tags={"Frontend-Payments"},
+	 *     security={{"bearerAuth": {}}},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Payment ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Payment deleted"),
+	 *     @OA\Response(response=404, description="Payment not found")
+	 * )
+	 */
+	public function destroy($id)
+	{
+		$payment = PaymentManagement::findOrFail($id);
+		$payment->delete();
 
-            })->finally(function (Batch $batch) {
+		return response()->json(['message' => 'Payment deleted successfully']);
+	}
 
-            })->name('Order Place')->dispatch();
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/payments/cash-delivery",
+	 *     summary="Create a new cash delivery payment",
+	 *     description="Create a new cash delivery payment record for an authenticated customer",
+	 *     operationId="createCashPayment",
+	 *     tags={"Frontend-Payments"},
+	 *     security={{"bearerAuth": {}}},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         description="Payment data with optional file attachment",
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"order_id", "payment_mode", "amount", "status", "payment_date"},
+	 *                 @OA\Property(property="order_id", type="integer", example=123),
+	 *                 @OA\Property(property="transaction_id", type="string", example="TXN456789"),
+	 *                 @OA\Property(property="payment_mode", type="string", enum={"Bank Transfer","Stripe","Razorpay","Cash on Delivery"}, example="Cash on Delivery"),
+	 *                 @OA\Property(property="amount", type="number", format="float", example=299.99),
+	 *                 @OA\Property(property="status", type="string", enum={"pending","completed","failed","cancelled","refunded"}, example="completed"),
+	 *                 @OA\Property(property="rider_name", type="string", example="Jon Jones"),
+	 *                 @OA\Property(property="payment_date", type="string", format="date", example="2024-06-24"),
+	 *                 @OA\Property(property="notes", type="string", example="First installment paid"),
+	 *                  @OA\Property(
+	 *                     property="payment_details",
+	 *                     type="object",
+	 *                     description="Additional payment gateway details",
+	 *                     @OA\Property(property="bank", type="string", example="XYZ Bank"),
+	 *                     @OA\Property(property="ref", type="string", example="12345XYZ"),
+	 *                     @OA\Property(property="gateway_response", type="string", example="success")
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="payment_img",
+	 *                     description="Upload receipt or proof of payment",
+	 *                     type="string",
+	 *                     format="binary"
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=201,
+	 *         description="Payment created successfully",
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthorized - Invalid or missing authentication token"
+	 *     )
+	 * )
+	 */
 
-            $batch->options['queue'] = config('app.website') . '_ORD_PLC';
-            $batch->add(new OrderPlacedMailJob([
-                'recordId' => $validated['order_id']
-            ]));
+	public function paymentCashDelivery(Request $request)
+	{ //dd($request->all());
+		try {
+			// Validate the incoming request
+			$validated = $request->validate([
+				'order_id' => 'required|integer|exists:orders,id', // Ensure order exists
+				'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id', // Ensure unique transaction
+				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay',
+				'amount' => 'required|numeric|min:0.01|max:999999.99',
+				'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
+				'payment_date' => 'required|date|before_or_equal:today',
+				'notes' => 'nullable|string|max:1000',
+				'payment_details' => 'nullable|json|max:2000',
+				'payment_method' => 'nullable|string|max:255'
+			]);
 
-            // Return success response with 201 status
-            return response()->json([
-                'message' => 'Payment created successfully.',
-                'data' => $payment
-            ], 201);
+			// Add authenticated user ID (assumes customer authentication)
+			if (!auth()->check()) {
+				return response()->json([
+					'message' => 'Authentication required.'
+				], 401);
+			}
 
-        } catch (ValidationException $e) {
-            // Handle validation errors
-            return response()->json([
-                'message' => 'The given data was invalid.',
-                'errors' => $e->errors()
-            ], 422);
+			$validated['created_by'] = auth()->id();
+			$validated['rider_name'] = $request->rider_name;
 
-        } catch (\Exception $e) {
-            // Handle any other errors
-            return response()->json([
-                'message' => 'Something went wrong while creating the payment.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-    /**
-     * @OA\Get(
-     *     path="/api/frontend/payments/{id}",
-     *     summary="Get a single payment",
-     *     tags={"Frontend-Payment History"},
-     *     security={{"bearerAuth": {}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="Payment ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Payment details"),
-     *     @OA\Response(response=404, description="Payment not found")
-     * )
-     */
-    public function show($id)
-    {
-        $payment = PaymentManagement::findOrFail($id);
-        return response()->json($payment);
-    }
+			if (isset($validated['payment_details'])) {
+				$validated['payment_details'] = json_encode($validated['payment_details']);
+			}
 
-    /**
-     * @OA\Put(
-     *     path="/api/frontend/payments/{id}",
-     *     summary="Update a payment",
-     *     tags={"Frontend-Payment History"},
-     *     security={{"bearerAuth": {}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="Payment ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="order_id", type="integer", example=123),
-     *             @OA\Property(property="transaction_id", type="string", example="TXN456789"),
-     *             @OA\Property(property="payment_mode", type="string", example="PayPal"),
-     *             @OA\Property(property="amount", type="number", format="float", example=199.99),
-     *             @OA\Property(property="status", type="string", example="pending"),
-     *             @OA\Property(property="payment_date", type="string", format="date", example="2024-06-24"),
-     *             @OA\Property(property="notes", type="string", example="Awaiting confirmation"),
-     *             @OA\Property(property="payment_details", type="object", example={"paypal_email":"user@example.com"})
-     *         )
-     *     ),
-     *     @OA\Response(response=200, description="Payment updated"),
-     *     @OA\Response(response=404, description="Payment not found")
-     * )
-     */
-    public function update(Request $request, $id)
-    {
-        $payment = PaymentManagement::findOrFail($id);
+			$validated['payment_img'] = uploadImageToWebpS3FromFile(
+				$request,
+				'payment_img',
+				env('STORAGE_ENV') . '/customer/payment'
+			);
 
-        $validated = $request->validate([
-            'order_id' => 'sometimes|required|integer',
-            'transaction_id' => 'nullable|string',
-            'payment_mode' => 'sometimes|required|string',
-            'amount' => 'sometimes|required|numeric',
-            'status' => 'sometimes|required|string',
-            'payment_date' => 'sometimes|required|date',
-            'notes' => 'nullable|string',
-            'payment_details' => 'nullable|json',
-            'payment_method' => 'nullable|string'
-        ]);
+			// Create the payment record
+			$payment = PaymentManagement::create($validated);
 
-        $payment->update($validated);
+			$batch = Bus::batch([])->before(function (Batch $batch) {
 
-        return response()->json($payment);
-    }
+			})->catch(function (Batch $batch, Throwable $e) {
 
-    /**
-     * @OA\Delete(
-     *     path="/api/frontend/payments/{id}",
-     *     summary="Delete a payment",
-     *     tags={"Frontend-Payment History"},
-     *     security={{"bearerAuth": {}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="Payment ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Payment deleted"),
-     *     @OA\Response(response=404, description="Payment not found")
-     * )
-     */
-    public function destroy($id)
-    {
-        $payment = PaymentManagement::findOrFail($id);
-        $payment->delete();
+			})->finally(function (Batch $batch) {
 
-        return response()->json(['message' => 'Payment deleted successfully']);
-    }
+			})->name('Order Place')->dispatch();
 
-    /**
-     * @OA\Post(
-     *     path="/api/frontend/payments/cash-delivery",
-     *     summary="Create a new cash delivery payment",
-     *     description="Create a new cash delivery payment record for an authenticated customer",
-     *     operationId="createCashPayment",
-     *     tags={"Frontend-Payment History"},
-     *     security={{"bearerAuth": {}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         description="Payment data with optional file attachment",
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *             @OA\Schema(
-     *                 required={"order_id", "payment_mode", "amount", "status", "payment_date"},
-     *                 @OA\Property(property="order_id", type="integer", example=123),
-     *                 @OA\Property(property="transaction_id", type="string", example="TXN456789"),
-     *                 @OA\Property(property="payment_mode", type="string", enum={"Bank Transfer","Stripe","Razorpay","Cash on Delivery"}, example="Cash on Delivery"),
-     *                 @OA\Property(property="amount", type="number", format="float", example=299.99),
-     *                 @OA\Property(property="status", type="string", enum={"pending","completed","failed","cancelled","refunded"}, example="completed"),
-     *                 @OA\Property(property="rider_name", type="string", example="Jon Jones"),
-     *                 @OA\Property(property="payment_date", type="string", format="date", example="2024-06-24"),
-     *                 @OA\Property(property="notes", type="string", example="First installment paid"),
-     *                  @OA\Property(
-     *                     property="payment_details",
-     *                     type="object",
-     *                     description="Additional payment gateway details",
-     *                     @OA\Property(property="bank", type="string", example="XYZ Bank"),
-     *                     @OA\Property(property="ref", type="string", example="12345XYZ"),
-     *                     @OA\Property(property="gateway_response", type="string", example="success")
-     *                 ),
-     *                 @OA\Property(
-     *                     property="payment_img",
-     *                     description="Upload receipt or proof of payment",
-     *                     type="string",
-     *                     format="binary"
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Payment created successfully",
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized - Invalid or missing authentication token"
-     *     )
-     * )
-     */
+			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+			$batch->add(new OrderPlacedMailJob([
+				'recordId' => $validated['order_id']
+			]));
 
-    public function paymentCashDelivery(Request $request)
-    { //dd($request->all());
-        try {
-            // Validate the incoming request
-            $validated = $request->validate([
-                'order_id' => 'required|integer|exists:orders,id', // Ensure order exists
-                'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id', // Ensure unique transaction
-                'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay',
-                'amount' => 'required|numeric|min:0.01|max:999999.99',
-                'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
-                'payment_date' => 'required|date|before_or_equal:today',
-                'notes' => 'nullable|string|max:1000',
-                'payment_details' => 'nullable|json|max:2000',
-                'payment_method' => 'nullable|string|max:255'
-            ]);
+			// Return success response with 201 status
+			return response()->json([
+				'message' => 'Payment created successfully.',
+				'data' => $payment
+			], 201);
 
-            // Add authenticated user ID (assumes customer authentication)
-            if (!auth()->check()) {
-                return response()->json([
-                    'message' => 'Authentication required.'
-                ], 401);
-            }
-           
-            $validated['created_by'] = auth()->id();
-            $validated['rider_name'] = $request->rider_name;
+		} catch (ValidationException $e) {
+			// Handle validation errors
+			return response()->json([
+				'message' => 'The given data was invalid.',
+				'errors' => $e->errors()
+			], 422);
 
-            if (isset($validated['payment_details'])) {
-                $validated['payment_details'] = json_encode($validated['payment_details']);
-            }
-
-            $validated['payment_img'] = uploadImageToWebpS3FromFile(
-                $request,
-                'payment_img',
-                env('STORAGE_ENV') . '/customer/payment'
-            );
-
-            // Create the payment record
-            $payment = PaymentManagement::create($validated);
-
-            $batch = Bus::batch([])->before(function (Batch $batch) {
-
-            })->catch(function (Batch $batch, Throwable $e) {
-
-            })->finally(function (Batch $batch) {
-
-            })->name('Order Place')->dispatch();
-
-            $batch->options['queue'] = config('app.website') . '_ORD_PLC';
-            $batch->add(new OrderPlacedMailJob([
-                'recordId' => $validated['order_id']
-            ]));
-
-            // Return success response with 201 status
-            return response()->json([
-                'message' => 'Payment created successfully.',
-                'data' => $payment
-            ], 201);
-
-        } catch (ValidationException $e) {
-            // Handle validation errors
-            return response()->json([
-                'message' => 'The given data was invalid.',
-                'errors' => $e->errors()
-            ], 422);
-
-        } catch (\Exception $e) {
-            // Handle any other errors
-            return response()->json([
-                'message' => 'Something went wrong while creating the payment.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
+		} catch (\Exception $e) {
+			// Handle any other errors
+			return response()->json([
+				'message' => 'Something went wrong while creating the payment.',
+				'error' => $e->getMessage()
+			], 500);
+		}
+	}
 }
