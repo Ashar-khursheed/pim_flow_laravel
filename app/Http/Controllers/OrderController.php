@@ -235,7 +235,6 @@ class OrderController extends Controller
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
-	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
@@ -321,14 +320,14 @@ class OrderController extends Controller
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
-			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+			$discountedAmount = $orderAmount - $discount;
+			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
 			if (config('app.website') == 'UAE') {
-				$orderShipping = ($orderAmount + $taxAmount) < 300 ? 25 : 0;
+				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
-			$paidAmount = $request->paid_amount ?? 0;
-			$pendingAmount = $totalAmount - $paidAmount;
+
+			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();
@@ -357,9 +356,7 @@ class OrderController extends Controller
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
 				'separate_deliveries' => $request->get('separate_deliveries', false),
-				'paid_amount' => $paidAmount,
-				'is_paid' => $pendingAmount <= 0,
-				'pending_amount' => $pendingAmount,
+				'pending_amount' => $totalAmount,
 				'status' => 'Pending',
 				'is_reserved' => $request->boolean('is_reserved'),
 				'is_payment' => $request->boolean('is_payment'),
@@ -783,13 +780,14 @@ class OrderController extends Controller
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
-			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+			$discountedAmount = $orderAmount - $discount;
+			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
 			if (config('app.website') == 'UAE') {
-				$orderShipping = ($orderAmount + $taxAmount) < 300 ? 25 : 0;
+				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
+			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 			$paidAmount = $request->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
 

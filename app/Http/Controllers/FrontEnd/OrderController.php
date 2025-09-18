@@ -260,13 +260,14 @@ class OrderController extends BaseController
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
-			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+			$discountedAmount = $orderAmount - $discount;
+			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
 			if (config('app.website') == 'UAE') {
-				$orderShipping = ($orderAmount + $taxAmount) < 300 ? 25 : 0;
+				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping - $discount;
+			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();
@@ -523,149 +524,149 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function update(Request $request, $orderId)
-	{
-		$allowedStatuses = [
-			'Pending'
-		];
+	// public function update(Request $request, $orderId)
+	// {
+	// 	$allowedStatuses = [
+	// 		'Pending'
+	// 	];
 
-		$order = Order::with('orderProducts')->find($orderId);
+	// 	$order = Order::with('orderProducts')->find($orderId);
 
-		if (!$order) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Order not found'
-			], 404);
-		}
+	// 	if (!$order) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Order not found'
+	// 		], 404);
+	// 	}
 
-		if (!in_array($order->status, $allowedStatuses)) {
-			return response()->json([
-				'success' => false,
-				'message' => 'This order has already been confirmed or processed and cannot be updated.'
-			], 400);
-		}
+	// 	if (!in_array($order->status, $allowedStatuses)) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'This order has already been confirmed or processed and cannot be updated.'
+	// 		], 400);
+	// 	}
 
-		$request->validate([
-			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
-			'shipping_charge' => 'required|numeric|min:0',
-			'ship_all_at_once' => 'nullable|boolean',
-			'separate_deliveries' => 'nullable|boolean',
-			'products' => 'required|array|min:1',
-			'products.*.product_id' => 'required|integer|exists:ec_products,id',
-			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
-			'products.*.quantity' => 'required|integer|min:1',
-		]);
+	// 	$request->validate([
+	// 		'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+	// 		'shipping_charge' => 'required|numeric|min:0',
+	// 		'ship_all_at_once' => 'nullable|boolean',
+	// 		'separate_deliveries' => 'nullable|boolean',
+	// 		'products' => 'required|array|min:1',
+	// 		'products.*.product_id' => 'required|integer|exists:ec_products,id',
+	// 		'products.*.vendor_id' => 'required|integer|exists:vendors,id',
+	// 		'products.*.quantity' => 'required|integer|min:1',
+	// 	]);
 
-		$customerId = auth()->id();
+	// 	$customerId = auth()->id();
 
-		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
+	// 	$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
 
-		if (!$address) {
-			return response()->json([
-				'success' => false,
-				'message' => 'The selected address does not belong to the customer.'
-			], 422);
-		}
+	// 	if (!$address) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'The selected address does not belong to the customer.'
+	// 		], 422);
+	// 	}
 
-		DB::beginTransaction();
+	// 	DB::beginTransaction();
 
-		try {
-			/* Collect all product supplier details in one go */
-			$productDetails = [];
-			foreach ($request->products as $product) {
-				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
-				if (!$fetchedDetail) {
-					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
-				}
-				$productDetails[] = [
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => $fetchedDetail->shipping_charge ?? 0,
-				];
-			}
+	// 	try {
+	// 		/* Collect all product supplier details in one go */
+	// 		$productDetails = [];
+	// 		foreach ($request->products as $product) {
+	// 			$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+	// 			if (!$fetchedDetail) {
+	// 				throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+	// 			}
+	// 			$productDetails[] = [
+	// 				'product_id' => $product['product_id'],
+	// 				'vendor_id' => $product['vendor_id'],
+	// 				'quantity' => $product['quantity'],
+	// 				'unit_price' => $fetchedDetail->unit_price,
+	// 				'shipping_charge' => $fetchedDetail->shipping_charge ?? 0,
+	// 			];
+	// 		}
 
-			$totalProducts = 0;
-			$totalAmount = 0;
+	// 		$totalProducts = 0;
+	// 		$totalAmount = 0;
 
-			foreach ($productDetails as $product) {
-				$totalProducts += $product['quantity'];
-				$totalAmount += $product['quantity'] * $product['unit_price'];
-			}
+	// 		foreach ($productDetails as $product) {
+	// 			$totalProducts += $product['quantity'];
+	// 			$totalAmount += $product['quantity'] * $product['unit_price'];
+	// 		}
 
-			$order->update([
-				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $request->shipping_charge,
-				'total_amount' => $totalAmount,
-				'total_products' => $totalProducts,
-				'ship_all_at_once' => $request->get('ship_all_at_once', true),
-				'separate_deliveries' => $request->get('separate_deliveries', false),
-				'pending_amount' => $totalAmount,
-			]);
+	// 		$order->update([
+	// 			'customer_address_id' => $request->customer_address_id,
+	// 			'shipping_charge' => $request->shipping_charge,
+	// 			'total_amount' => $totalAmount,
+	// 			'total_products' => $totalProducts,
+	// 			'ship_all_at_once' => $request->get('ship_all_at_once', true),
+	// 			'separate_deliveries' => $request->get('separate_deliveries', false),
+	// 			'pending_amount' => $totalAmount,
+	// 		]);
 
-			/* Delete existing products and re-insert */
-			OrderProduct::where('order_id', $order->id)->delete();
+	// 		/* Delete existing products and re-insert */
+	// 		OrderProduct::where('order_id', $order->id)->delete();
 
-			foreach ($productDetails as $product) {
-				$total = $product['quantity'] * $product['unit_price'];
-				OrderProduct::create([
-					'order_id' => $order->id,
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'shipped_quantity' => 0,
-					'remaining_quantity' => $product['quantity'],
-					'unit_price' => $product['unit_price'],
-					'total_amount' => $total,
-					'status' => 'Pending',
-				]);
-			}
+	// 		foreach ($productDetails as $product) {
+	// 			$total = $product['quantity'] * $product['unit_price'];
+	// 			OrderProduct::create([
+	// 				'order_id' => $order->id,
+	// 				'product_id' => $product['product_id'],
+	// 				'vendor_id' => $product['vendor_id'],
+	// 				'quantity' => $product['quantity'],
+	// 				'shipped_quantity' => 0,
+	// 				'remaining_quantity' => $product['quantity'],
+	// 				'unit_price' => $product['unit_price'],
+	// 				'total_amount' => $total,
+	// 				'status' => 'Pending',
+	// 			]);
+	// 		}
 
-			OrderTracking::create([
-				'order_id' => $order->id,
-				'status' => 'Order Updated By Customer',
-				'description' => 'Order has been successfully updated',
-			]);
+	// 		OrderTracking::create([
+	// 			'order_id' => $order->id,
+	// 			'status' => 'Order Updated By Customer',
+	// 			'description' => 'Order has been successfully updated',
+	// 		]);
 
-			DB::commit();
+	// 		DB::commit();
 
-			/* Reload updated order data */
-			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
-				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
-				'orderProducts.product.brand:id,name',
-				'tracking'
-			]);
+	// 		/* Reload updated order data */
+	// 		$order->load([
+	// 			'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
+	// 			'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+	// 			'orderProducts.product.brand:id,name',
+	// 			'tracking'
+	// 		]);
 
-			/* Mutate */
-			foreach ($order->orderProducts as $orderProduct) {
-				$product = $orderProduct->product;
+	// 		/* Mutate */
+	// 		foreach ($order->orderProducts as $orderProduct) {
+	// 			$product = $orderProduct->product;
 
-				if ($product) {
-					$product->images = json_decode($product->images);
-					if ($product->brand) {
-						$product->brand_name = $product->brand->name;
-					}
-					unset($product->brand);
-				}
-			}
+	// 			if ($product) {
+	// 				$product->images = json_decode($product->images);
+	// 				if ($product->brand) {
+	// 					$product->brand_name = $product->brand->name;
+	// 				}
+	// 				unset($product->brand);
+	// 			}
+	// 		}
 
-			return response()->json([
-				'success' => true,
-				'message' => 'Order updated successfully',
-				'data' => $order
-			], 200);
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => 'Order updated successfully',
+	// 			'data' => $order
+	// 		], 200);
 
-		} catch (\Exception $e) {
-			DB::rollBack();
+	// 	} catch (\Exception $e) {
+	// 		DB::rollBack();
 
-			return response()->json([
-				'success' => false,
-				'message' => 'Failed to update order: ' . $e->getMessage()
-			], 500);
-		}
-	}
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Failed to update order: ' . $e->getMessage()
+	// 		], 500);
+	// 	}
+	// }
 
 	/**
 	 * @OA\Put(
