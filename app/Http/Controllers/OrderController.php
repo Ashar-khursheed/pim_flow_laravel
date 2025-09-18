@@ -441,12 +441,12 @@ class OrderController extends Controller
 			DB::commit();
 
 			if (config('app.website') == 'UAE' && $request->boolean('is_reserved')) {
-				// $batch = Bus::batch([])->name('Order Reserved')->dispatch();
+				$batch = Bus::batch([])->name('Order Reserved')->dispatch();
 
-				// $batch->options['queue'] = config('app.website') . '_ORD_RES';
-				// $batch->add(new OrderReservedMailJob([
-				// 	'recordId' => $order->id
-				// ]));
+				$batch->options['queue'] = config('app.website') . '_ORD_RES';
+				$batch->add(new OrderReservedMailJob([
+					'recordId' => $order->id
+				]));
 			}
 			if (!$request->boolean('is_reserved')) {
 				$batch = Bus::batch([])->name('Order Place')->dispatch();
