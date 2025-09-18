@@ -40,7 +40,7 @@ class CartCreationMail extends Mailable
 		$paymentUrl = url("/login-source");
 
 		$referenceNumber = $customerCart->reference_number;
-		$customerCartDate = Carbon::parse($customerCart->created_at)->format('D, M d, Y');
+		$createdAt = Carbon::parse($customerCart->created_at)->format('D, M d, Y');
 		$currency = config('app.website') == 'UAE' ? 'AED' : '$';
 
 		$customerAddress = $customerCart->customerAddress;
@@ -132,7 +132,7 @@ class CartCreationMail extends Mailable
 			'paymentUrl' => $paymentUrl,
 
 			'referenceNumber' => $referenceNumber,
-			'customerCartDate' => $customerCartDate,
+			'createdAt' => $createdAt,
 			'currency' => $currency,
 
 			'address' => $address,

@@ -94,7 +94,7 @@
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
-													{{ $customerCartDate }}
+													{{ $createdAt }}
 												</td>
 											</tr>
 											<tr>
