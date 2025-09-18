@@ -27499,6 +27499,14 @@
                                                 "type": "string",
                                                 "example": "12345XYZ"
                                             },
+                                            "amount": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "currency": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
                                             "gateway_response": {
                                                 "type": "string",
                                                 "example": "success"

@@ -177,6 +177,8 @@ class PaymentHistoryController extends Controller
 	 *                     description="Additional payment gateway details",
 	 *                     @OA\Property(property="bank", type="string", example="XYZ Bank"),
 	 *                     @OA\Property(property="ref", type="string", example="12345XYZ"),
+	 *                     @OA\Property(property="amount", type="string", example=""),
+	 *                     @OA\Property(property="currency", type="string", example=""),
 	 *                     @OA\Property(property="gateway_response", type="string", example="success")
 	 *                 ),
 	 *                 @OA\Property(
@@ -200,7 +202,7 @@ class PaymentHistoryController extends Controller
 	 */
 
 	public function store(Request $request)
-	{   //dd($request->all());
+	{    
 		try {
 			// Validate the incoming request
 			$validated = $request->validate([
@@ -211,7 +213,7 @@ class PaymentHistoryController extends Controller
 				'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
 				'payment_date' => 'required|date|before_or_equal:today',
 				'notes' => 'nullable|string|max:1000',
-				'payment_details' => 'nullable|json|max:2000',
+				'payment_details' => 'nullable|array|max:2000',
 				'payment_method' => 'nullable|string|max:255'
 			]);
 
