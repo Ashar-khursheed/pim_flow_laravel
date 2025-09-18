@@ -28,4 +28,17 @@ class PaymentManagement extends Model
     {
         return $this->belongsTo(Order::class);
     }
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+    public function user()
+    {
+    return $this->belongsTo(User::class, 'created_by'); // adjust foreign key if needed
+    }
 }

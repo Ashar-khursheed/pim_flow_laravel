@@ -27292,18 +27292,18 @@
                 ]
             }
         },
-        "/api/payment/payment-history": {
+        "/api/delivery/payment-history": {
             "get": {
                 "tags": [
-                    "Payment History"
+                    "Delivery Payment History"
                 ],
-                "summary": "Get list of payment history",
-                "operationId": "eee3c7dfbb173b03d61ef57087bde425",
+                "summary": "Get list of delivery payment history",
+                "operationId": "6310119e789cc0c1cc4b886d9f441da3",
                 "parameters": [
                     {
                         "name": "order_id",
                         "in": "query",
-                        "description": "Filter by product ID",
+                        "description": "Filter by order ID",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -27312,7 +27312,7 @@
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Filter by approver status (0 or 1)",
+                        "description": "Filter by status",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -27330,7 +27330,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search by order id",
+                        "description": "Search by order id, transaction_id",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -27348,14 +27348,14 @@
                         }
                     },
                     {
-                        "name": "length",
+                        "name": "per_page",
                         "in": "query",
                         "description": "Number of records per page",
                         "required": false,
                         "schema": {
                             "type": "integer",
                             "minimum": 1,
-                            "example": 20
+                            "example": 10
                         }
                     },
                     {
@@ -27421,7 +27421,7 @@
             },
             "post": {
                 "tags": [
-                    "Payment History"
+                    "Delivery Payment History"
                 ],
                 "summary": "Create a new cash delivery payment",
                 "description": "Create a new cash delivery payment record for an authenticated customer",
@@ -27532,18 +27532,18 @@
                 ]
             }
         },
-        "/api/payment/payment-history/{id}": {
+        "/api/delivery/payment-history/{id}": {
             "get": {
                 "tags": [
-                    "Payment History"
+                    "Delivery Payment History"
                 ],
                 "summary": "Edit get Payment History",
-                "operationId": "dd5271376ebf71c0e6a746bfaed895af",
+                "operationId": "8c147ed8af35ba4ce9c4b0f3a0f9be70",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Payment History ID",
+                        "description": "Delivery Payment History order ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -39246,8 +39246,8 @@
             "description": "API Endpoints for Product Accessories"
         },
         {
-            "name": "Payment History",
-            "description": "Get list of payment history"
+            "name": "Delivery Payment History",
+            "description": "Get list of Delivery Payment History"
         },
         {
             "name": "Categories",

@@ -75,6 +75,7 @@ use App\Http\Controllers\CustomerCartController;
 use App\Http\Controllers\PrePurchaseClaimController;
 use App\Http\Controllers\PostPurchaseClaimController;
 use App\Http\Controllers\ProductAccessoriesController;
+use App\Http\Controllers\PaymentHistoryController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -403,7 +404,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 
-	Route::resource('/payment/payment-delivery', ProductAccessoriesController::class);
+	Route::resource('/delivery/payment-history', PaymentHistoryController::class);
 	Route::resource('product-accessories', ProductAccessoriesController::class);
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);

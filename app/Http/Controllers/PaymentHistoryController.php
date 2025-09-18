@@ -20,28 +20,28 @@ class PaymentHistoryController extends Controller
 {
     /**
      * @OA\Get(
-     *     path="/api/payment/payment-history",
-     *     summary="Get list of payment history",
-     *     tags={"Payment History"},
+     *     path="/api/delivery/payment-history",
+     *     summary="Get list of delivery payment history",
+     *     tags={"Delivery Payment History"},
      *     @OA\Parameter(
      *         name="order_id",
      *         in="query",
      *         required=false,
-     *         description="Filter by product ID",
+     *         description="Filter by order ID",
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="status",
      *         in="query",
      *         required=false,
-     *         description="Filter by approver status (0 or 1)",
+     *         description="Filter by status",
      *         @OA\Schema(type="string", enum={"pending","completed","failed","cancelled","refunded","all"}, example="all")
      *     ),
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
      *         required=false,
-     *         description="Search by order id",
+     *         description="Search by order id, transaction_id",
      *         @OA\Schema(type="string", example="")
      *     ),
      *     @OA\Parameter(
@@ -52,11 +52,11 @@ class PaymentHistoryController extends Controller
      *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\Parameter(
-     *         name="length",
+     *         name="per_page",
      *         in="query",
      *         required=false,
      *         description="Number of records per page",
-     *         @OA\Schema(type="integer", minimum=1, example=20)
+     *         @OA\Schema(type="integer", minimum=1, example=10)
      *     ),
      *     @OA\Parameter(
      *         name="sort_by",
@@ -84,11 +84,9 @@ class PaymentHistoryController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    public function index(Request $request): JsonResponse
-    {
-        try {
-
-            $query = PaymentManagement::select('*');            
+    public function index(Request $request)
+    {          
+            $query = PaymentManagement::with(['createdBy','updatedBy']);            
             if ($request->input('order_id') != "" ) {
                 $query->where('order_id', $request->input('order_id'));
             }
@@ -110,21 +108,29 @@ class PaymentHistoryController extends Controller
             $sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
             $sortDir = strtolower($request->input('sort_direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-            $perPage = $request->get('length', 15);
+            $perPage = $request->get('per_page', 15);
             $paymentManagement = $query->orderBy($sortBy, $sortDir)->paginate($perPage);
 
             $formattedProducts = $paymentManagement->getCollection()->map(function ($pyment) {
               
-
+ 
                 return [
                     'id' => $pyment->id,
-                    'order_id' => $pyment->product_id,
-                    'accessory_id' => $pyment->id,
-                    'name' => $pyment->name,
-                    'isapproved' => $pyment->isapproved,
-                    'approved_by' => $pyment->approved_by,
-                    'created_by' => $pyment->created_by,
-                    'updated_by' => $pyment->updated_by,
+                    'payment_method' => $pyment->payment_method,
+                    'order_id' => $pyment->order_id,
+                    'transaction_id' => $pyment->transaction_id,
+                    'payment_mode' => $pyment->payment_mode,
+                    'amount' => $pyment->amount,
+                    'status' => $pyment->status,
+                    'notes' => $pyment->notes,
+                    'payment_details' => json_decode($pyment->payment_details),
+                    'payment_img' => $pyment->payment_img,
+                    'rider_name' => $pyment->rider_name,
+                    'payment_date' => date('d-m-Y h:i:s',strtotime($pyment->payment_date)),
+                    'created_by' => $pyment->createdBy?->username??null,
+                    'updated_by' => $pyment->updatedBy?->username??null,
+                    'created_at' => date('d-m-Y',strtotime($pyment->created_at)),
+                    'updated_at' => date('d-m-Y',strtotime($pyment->updated_at)),
                     
                 ];
             });
@@ -139,22 +145,16 @@ class PaymentHistoryController extends Controller
                     'data' => $formattedProducts,
                 ]
             ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to retrieve Payment history',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+         
     }
 
     /**
 	 * @OA\Post(
-	 *     path="/api/payment/payment-history",
+	 *     path="/api/delivery/payment-history",
 	 *     summary="Create a new cash delivery payment",
 	 *     description="Create a new cash delivery payment record for an authenticated customer",
 	 *     operationId="createCashPayment",
-	 *     tags={"Payment History"},
+	 *     tags={"Delivery Payment History"},
 	 *     security={{"bearerAuth": {}}},
 	 *     @OA\RequestBody(
 	 *         required=true,
@@ -200,7 +200,7 @@ class PaymentHistoryController extends Controller
 	 */
 
 	public function store(Request $request)
-	{  
+	{   //dd($request->all());
 		try {
 			// Validate the incoming request
 			$validated = $request->validate([
@@ -222,11 +222,11 @@ class PaymentHistoryController extends Controller
 				], 401);
 			}
 
-			$validated['created_by'] = auth()->id();
+			$validated['created_by'] = auth::id();
 			$validated['rider_name'] = $request->rider_name;
 
 			if (isset($validated['payment_details'])) {
-				$validated['payment_details'] = json_encode($validated['payment_details']);
+				$validated['payment_details'] =json_encode($validated['payment_details']);
 			}
 
 			$validated['payment_img'] = uploadImageToWebpS3FromFile(
@@ -234,22 +234,10 @@ class PaymentHistoryController extends Controller
 				'payment_img',
 				env('STORAGE_ENV') . '/customer/payment'
 			);
-
+ 
 			// Create the payment record
 			$payment = PaymentManagement::create($validated);
-
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-
-			})->catch(function (Batch $batch, Throwable $e) {
-
-			})->finally(function (Batch $batch) {
-
-			})->name('Order Place')->dispatch();
-
-			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
-			$batch->add(new OrderPlacedMailJob([
-				'recordId' => $validated['order_id']
-			]));
+		 
 
 			// Return success response with 201 status
 			return response()->json([
@@ -275,14 +263,14 @@ class PaymentHistoryController extends Controller
  
     /**
      * @OA\Get(
-     *     path="/api/payment/payment-history/{id}",
+     *     path="/api/delivery/payment-history/{id}",
      *     summary="Edit get Payment History",
-     *     tags={"Payment History"},
+     *     tags={"Delivery Payment History"},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
-     *         description="Payment History ID",
+     *         description="Delivery Payment History order ID",
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
@@ -301,35 +289,41 @@ class PaymentHistoryController extends Controller
      *      security={{"bearerAuth":{}}}
      * )
      */
-    public function show($id): JsonResponse
+    public function show($id)
     {
         try {
-            $accessory = ProductAccessory::with(['items', 'approvedBy', 'createdBy', 'updatedBy'])->findOrFail($id);
-
+            
+            $paymentManagement = PaymentManagement::with(['createdBy','updatedBy'])->where('order_id',$id)->get();   
+ 
             // Map items properly
-            $accessoryItems = $accessory->items->map(function ($item) {
+            $paymentManagementList = $paymentManagement->map(function ($pyment) {
+           
                 return [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'price' => $item->price,
+                    'id' => $pyment->id,
+                    'payment_method' => $pyment->payment_method,
+                    'order_id' => $pyment->order_id,
+                    'transaction_id' => $pyment->transaction_id,
+                    'payment_mode' => $pyment->payment_mode,
+                    'amount' => $pyment->amount,
+                    'status' => $pyment->status,
+                    'notes' => $pyment->notes,
+                    'payment_details' => json_decode($pyment->payment_details),
+                    'payment_img' => $pyment->payment_img,
+                    'rider_name' => $pyment->rider_name,
+                    'payment_date' => date('d-m-Y h:i:s',strtotime($pyment->payment_date)),
+                    'created_by' => $pyment->createdBy?->username??null,
+                    'updated_by' => $pyment->updatedBy?->username??null,
+                    'created_at' => date('d-m-Y',strtotime($pyment->created_at)),
+                    'updated_at' => date('d-m-Y',strtotime($pyment->updated_at)),
+                    
                 ];
             });
 
-            // Format response
-            $formattedProduct = [
-                'product_id' => $accessory->product_id,
-                'accessory_id' => $accessory->id,
-                'name' => $accessory->name,
-                'isapproved' => $accessory->isapproved,
-                'approved_by' => $accessory->approved_by,
-                'created_by' => $accessory->created_by,
-                'updated_by' => $accessory->updated_by,
-                'accessory_item' => $accessoryItems,
-            ];
+           
             return response()->json([
                 'success' => true,
-                'message' => 'Payment History retrieved successfully',
-                'data' => $formattedProduct
+                'message' => 'Payment History successfully',
+                'data' => $paymentManagementList
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -340,7 +334,5 @@ class PaymentHistoryController extends Controller
         }
 
     }
-       
- 
-    
+           
 }

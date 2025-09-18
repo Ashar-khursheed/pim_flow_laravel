@@ -61,8 +61,8 @@ use App\Http\Controllers\Controller;
  *     description="API Endpoints for Product Accessories"
  * )
  *	@OA\Tag(
- *     name="Payment History",
- *     description="Get list of payment history"
+ *     name="Delivery Payment History",
+ *     description="Get list of Delivery Payment History"
  * )
  * @OA\Tag(
  *     name="Categories",
