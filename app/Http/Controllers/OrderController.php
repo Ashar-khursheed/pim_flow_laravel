@@ -403,7 +403,7 @@ class OrderController extends Controller
 			]);
 
 
-			if (config('app.website') == 'UAE' && $request->boolean('is_reserved')) {
+			if (in_array(config('app.website'), ['UAE', 'TEST']) && $request->boolean('is_reserved')) {
 				$paymentLink = null;
 				if ($request->boolean('is_payment')) {
 					try {
