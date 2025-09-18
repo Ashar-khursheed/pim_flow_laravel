@@ -18462,119 +18462,6 @@
                 ]
             }
         },
-        "/api/frontend/payments/cash-delivery": {
-            "post": {
-                "tags": [
-                    "Frontend-Payments"
-                ],
-                "summary": "Create a new cash delivery payment",
-                "description": "Create a new cash delivery payment record for an authenticated customer",
-                "operationId": "createCashPayment",
-                "requestBody": {
-                    "description": "Payment data with optional file attachment",
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "order_id",
-                                    "payment_mode",
-                                    "amount",
-                                    "status",
-                                    "payment_date"
-                                ],
-                                "properties": {
-                                    "order_id": {
-                                        "type": "integer",
-                                        "example": 123
-                                    },
-                                    "transaction_id": {
-                                        "type": "string",
-                                        "example": "TXN456789"
-                                    },
-                                    "payment_mode": {
-                                        "type": "string",
-                                        "enum": [
-                                            "Bank Transfer",
-                                            "Stripe",
-                                            "Razorpay",
-                                            "Cash on Delivery"
-                                        ],
-                                        "example": "Cash on Delivery"
-                                    },
-                                    "amount": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 299.99
-                                    },
-                                    "status": {
-                                        "type": "string",
-                                        "enum": [
-                                            "pending",
-                                            "completed",
-                                            "failed",
-                                            "cancelled",
-                                            "refunded"
-                                        ],
-                                        "example": "completed"
-                                    },
-                                    "rider_name": {
-                                        "type": "string",
-                                        "example": "Jon Jones"
-                                    },
-                                    "payment_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2024-06-24"
-                                    },
-                                    "notes": {
-                                        "type": "string",
-                                        "example": "First installment paid"
-                                    },
-                                    "payment_details": {
-                                        "description": "Additional payment gateway details",
-                                        "properties": {
-                                            "bank": {
-                                                "type": "string",
-                                                "example": "XYZ Bank"
-                                            },
-                                            "ref": {
-                                                "type": "string",
-                                                "example": "12345XYZ"
-                                            },
-                                            "gateway_response": {
-                                                "type": "string",
-                                                "example": "success"
-                                            }
-                                        },
-                                        "type": "object"
-                                    },
-                                    "payment_img": {
-                                        "description": "Upload receipt or proof of payment",
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Payment created successfully"
-                    },
-                    "401": {
-                        "description": "Unauthorized - Invalid or missing authentication token"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/api/frontend/post-purchase-claims": {
             "get": {
                 "tags": [
@@ -27396,6 +27283,299 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/payment/payment-history": {
+            "get": {
+                "tags": [
+                    "Payment History"
+                ],
+                "summary": "Get list of payment history",
+                "operationId": "eee3c7dfbb173b03d61ef57087bde425",
+                "parameters": [
+                    {
+                        "name": "order_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by approver status (0 or 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "completed",
+                                "failed",
+                                "cancelled",
+                                "refunded",
+                                "all"
+                            ],
+                            "example": "all"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by order id",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "example": 20
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by (id, order_id, status)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "order_id",
+                                "status"
+                            ],
+                            "example": "id"
+                        }
+                    },
+                    {
+                        "name": "sort_direction",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Payment History"
+                ],
+                "summary": "Create a new cash delivery payment",
+                "description": "Create a new cash delivery payment record for an authenticated customer",
+                "operationId": "createCashPayment",
+                "requestBody": {
+                    "description": "Payment data with optional file attachment",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "order_id",
+                                    "payment_mode",
+                                    "amount",
+                                    "status",
+                                    "payment_date"
+                                ],
+                                "properties": {
+                                    "order_id": {
+                                        "type": "integer",
+                                        "example": 123
+                                    },
+                                    "transaction_id": {
+                                        "type": "string",
+                                        "example": "TXN456789"
+                                    },
+                                    "payment_mode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Bank Transfer",
+                                            "Stripe",
+                                            "Razorpay",
+                                            "Cash on Delivery",
+                                            "CCAvenue"
+                                        ],
+                                        "example": "Cash on Delivery"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 299.99
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "completed",
+                                            "failed",
+                                            "cancelled",
+                                            "refunded"
+                                        ],
+                                        "example": "completed"
+                                    },
+                                    "rider_name": {
+                                        "type": "string",
+                                        "example": "Jon Jones"
+                                    },
+                                    "payment_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-06-24"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "First installment paid"
+                                    },
+                                    "payment_details": {
+                                        "description": "Additional payment gateway details",
+                                        "properties": {
+                                            "bank": {
+                                                "type": "string",
+                                                "example": "XYZ Bank"
+                                            },
+                                            "ref": {
+                                                "type": "string",
+                                                "example": "12345XYZ"
+                                            },
+                                            "gateway_response": {
+                                                "type": "string",
+                                                "example": "success"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "payment_img": {
+                                        "description": "Upload receipt or proof of payment",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment created successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/payment/payment-history/{id}": {
+            "get": {
+                "tags": [
+                    "Payment History"
+                ],
+                "summary": "Edit get Payment History",
+                "operationId": "dd5271376ebf71c0e6a746bfaed895af",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment History ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payment History retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Payment History not found"
                     }
                 },
                 "security": [
@@ -39063,6 +39243,10 @@
         {
             "name": "Product Accessories",
             "description": "API Endpoints for Product Accessories"
+        },
+        {
+            "name": "Payment History",
+            "description": "Get list of payment history"
         },
         {
             "name": "Categories",
