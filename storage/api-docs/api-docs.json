@@ -28228,14 +28228,14 @@
                         }
                     },
                     {
-                        "name": "length",
+                        "name": "per_page",
                         "in": "query",
                         "description": "Number of records per page",
                         "required": false,
                         "schema": {
                             "type": "integer",
                             "minimum": 1,
-                            "example": 20
+                            "example": 10
                         }
                     },
                     {
