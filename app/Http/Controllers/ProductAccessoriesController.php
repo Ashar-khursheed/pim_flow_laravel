@@ -31,13 +31,13 @@ class ProductAccessoriesController extends Controller
      *         in="query",
      *         required=false,
      *         description="Filter by approver status (0 or 1)",
-     *         @OA\Schema(type="string", enum={0, 1}, example="all")
+     *         @OA\Schema(type="string", enum={"false", "true","all"}, example="all")
      *     ),
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
      *         required=false,
-     *         description="Search by SKU",
+     *         description="Search by id, name",
      *         @OA\Schema(type="string", example="")
      *     ),
      *     @OA\Parameter(
@@ -48,11 +48,11 @@ class ProductAccessoriesController extends Controller
      *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\Parameter(
-     *         name="length",
+     *         name="per_page",
      *         in="query",
      *         required=false,
      *         description="Number of records per page",
-     *         @OA\Schema(type="integer", minimum=1, example=20)
+     *         @OA\Schema(type="integer", minimum=1, example=10)
      *     ),
      *     @OA\Parameter(
      *         name="sort_by",
@@ -83,7 +83,7 @@ class ProductAccessoriesController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = ProductAccessory::with(['items', 'product']);            
+            $query = ProductAccessory::with(['items', 'product','createdBy','updatedBy', 'approvedBy']);            
             if ($request->input('product_id') != "" && $request->input('product_id') != null) {
                 $query->where('product_id', $request->input('product_id'));
             }
@@ -106,9 +106,9 @@ class ProductAccessoriesController extends Controller
             $sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
             $sortDir = strtolower($request->input('sort_direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-            $perPage = $request->get('length', 15);
+            $perPage = $request->get('per_page', 10);
             $accessories = $query->orderBy($sortBy, $sortDir)->paginate($perPage);
-
+ 
             $formattedProducts = $accessories->getCollection()->map(function ($accessory) {
                 $accessoryItems = $accessory->items->map(function ($item) {
                     return [
@@ -117,15 +117,18 @@ class ProductAccessoriesController extends Controller
                         'price' => $item->price,
                     ];
                 });
+              
 
                 return [
                     'product_id' => $accessory->product_id,
                     'accessory_id' => $accessory->id,
                     'name' => $accessory->name,
                     'isapproved' => $accessory->isapproved,
-                    'approved_by' => $accessory->approved_by,
-                    'created_by' => $accessory->created_by,
-                    'updated_by' => $accessory->updated_by,
+                    'approved_by' => $accessory->approvedBy?->username??null,
+                    'created_by' => $accessory->createdBy?->username??null,
+                    'updated_by' => $accessory->updatedBy?->username??null,
+                    'created_at' => date('d-m-Y',strtotime($accessory->created_at)),
+                    'updated_at' => date('d-m-Y',strtotime($accessory->updated_at)),
                     'accessory_item' => $accessoryItems,
                 ];
             });

@@ -366,7 +366,7 @@ class CcavenueController extends Controller
         $orderList['redirect_url'] = $url.'/payment/success';
         $orderList['cancel_url'] = $url.'/payment/cancel';
         $orderList['currency'] = "AED";
-        $orderList['amount'] = $order->amount;
+        $orderList['amount'] = $order->total_amount;
         $orderList['language'] = "EN";
         $orderList['tax_percentage'] = $order->tax_percentage;
         $orderList['billing_city'] = $customerAddress->city;
