@@ -83,19 +83,19 @@ class ProductAccessoriesController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = ProductAccessory::with(['items', 'product','createdBy','updatedBy', 'approvedBy']);            
+            $query = ProductAccessory::with(['items', 'product', 'createdBy', 'updatedBy', 'approvedBy']);
+
             if ($request->input('product_id') != "" && $request->input('product_id') != null) {
                 $query->where('product_id', $request->input('product_id'));
             }
 
-          
             if ($request->input('isapproved') != "all") {
                 $query->where('isapproved', $request->isapproved);
             }
 
             if ($request->filled('search')) {
                 $search = $request->search;
-                $query->where(function ($q) use ($search) {                   
+                $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('id', 'like', "%{$search}%");
                 });
@@ -107,9 +107,24 @@ class ProductAccessoriesController extends Controller
             $sortDir = strtolower($request->input('sort_direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
             $perPage = $request->get('per_page', 10);
-            $accessories = $query->orderBy($sortBy, $sortDir)->paginate($perPage);
- 
-            $formattedProducts = $accessories->getCollection()->map(function ($accessory) {
+            $page = $request->get('page', 1);
+
+
+            $totalRecords = (clone $query)->count();
+            $totalPages = (int) ceil($totalRecords / $perPage);
+
+
+            if ($page > $totalPages && $totalPages > 0) {
+                $page = 1;
+            }
+
+
+            $accessories = $query->orderBy($sortBy, $sortDir)
+                ->offset(($page - 1) * $perPage)
+                ->limit($perPage)
+                ->get();
+
+            $formattedProducts = $accessories->map(function ($accessory) {
                 $accessoryItems = $accessory->items->map(function ($item) {
                     return [
                         'id' => $item->id,
@@ -117,29 +132,29 @@ class ProductAccessoriesController extends Controller
                         'price' => $item->price,
                     ];
                 });
-              
 
                 return [
                     'product_id' => $accessory->product_id,
                     'accessory_id' => $accessory->id,
                     'name' => $accessory->name,
                     'isapproved' => $accessory->isapproved,
-                    'approved_by' => $accessory->approvedBy?->username??null,
-                    'created_by' => $accessory->createdBy?->username??null,
-                    'updated_by' => $accessory->updatedBy?->username??null,
-                    'created_at' => date('d-m-Y',strtotime($accessory->created_at)),
-                    'updated_at' => date('d-m-Y',strtotime($accessory->updated_at)),
+                    'approved_by' => $accessory->approvedBy?->username ?? null,
+                    'created_by' => $accessory->createdBy?->username ?? null,
+                    'updated_by' => $accessory->updatedBy?->username ?? null,
+                    'created_at' => date('d-m-Y', strtotime($accessory->created_at)),
+                    'updated_at' => date('d-m-Y', strtotime($accessory->updated_at)),
                     'accessory_item' => $accessoryItems,
                 ];
             });
 
             return response()->json([
                 'success' => true,
-                'message' => 'Product accessories retrieved successfully',
+                'message' => __("msg_rec_list"),
                 'data' => [
-                    'current_page' => $accessories->currentPage(),
-                    'per_page' => $accessories->perPage(),
-                    'total' => $accessories->total(),
+                    'current_page' => (int) $page,
+                    'per_page' => (int) $perPage,
+                    'total_pages' => $totalPages,
+                    'total_records' => $totalRecords,
                     'data' => $formattedProducts,
                 ]
             ]);
@@ -226,9 +241,7 @@ class ProductAccessoriesController extends Controller
             })->toArray();
 
             // Save all accessories at once
-            $accessory->items()->createMany($accessories);
-            // $accessory->items()->createMany($request->accessories);
-            $accessory->load(['product']);
+            $accessory->items()->createMany($accessories);             
 
             return response()->json([
                 'success' => true,
@@ -683,7 +696,7 @@ class ProductAccessoriesController extends Controller
 
                 });
             }
-            $product_list=[];
+            $product_list = [];
             $products = $query->orderBy('name', 'asc')->get();
             if (!empty($products)) {
                 foreach ($products as $key => $val) {

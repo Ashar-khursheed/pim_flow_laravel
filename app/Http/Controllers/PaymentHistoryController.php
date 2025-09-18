@@ -85,182 +85,194 @@ class PaymentHistoryController extends Controller
      * )
      */
     public function index(Request $request)
-    {          
-            $query = PaymentManagement::with(['createdBy','updatedBy']);            
-            if ($request->input('order_id') != "" ) {
-                $query->where('order_id', $request->input('order_id'));
-            }
-          
-            if ($request->input('status') != "all") {
-                $query->where('status', $request->status);
-            }
+    {
+        $query = PaymentManagement::with(['createdBy', 'updatedBy']);
+        if ($request->input('order_id') != "") {
+            $query->where('order_id', $request->input('order_id'));
+        }
 
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {                   
-                    $q->where('order_id', 'like', "%{$search}%")
-                        ->orWhere('transaction_id', 'like', "%{$search}%");
-                });
-            }
+        if ($request->input('status') != "all") {
+            $query->where('status', $request->status);
+        }
 
-            $searchableColumns = ['id', 'order_id', 'status', 'transaction_id'];
-            $sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
-            $sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
-            $sortDir = strtolower($request->input('sort_direction', 'desc')) === 'asc' ? 'asc' : 'desc';
-
-            $perPage = $request->get('per_page', 15);
-            $paymentManagement = $query->orderBy($sortBy, $sortDir)->paginate($perPage);
-
-            $formattedProducts = $paymentManagement->getCollection()->map(function ($pyment) {
-              
- 
-                return [
-                    'id' => $pyment->id,
-                    'payment_method' => $pyment->payment_method,
-                    'order_id' => $pyment->order_id,
-                    'transaction_id' => $pyment->transaction_id,
-                    'payment_mode' => $pyment->payment_mode,
-                    'amount' => $pyment->amount,
-                    'status' => $pyment->status,
-                    'notes' => $pyment->notes,
-                    'payment_details' => json_decode($pyment->payment_details),
-                    'payment_img' => $pyment->payment_img,
-                    'rider_name' => $pyment->rider_name,
-                    'payment_date' => date('d-m-Y h:i:s',strtotime($pyment->payment_date)),
-                    'created_by' => $pyment->createdBy?->username??null,
-                    'updated_by' => $pyment->updatedBy?->username??null,
-                    'created_at' => date('d-m-Y',strtotime($pyment->created_at)),
-                    'updated_at' => date('d-m-Y',strtotime($pyment->updated_at)),
-                    
-                ];
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_id', 'like', "%{$search}%")
+                    ->orWhere('transaction_id', 'like', "%{$search}%");
             });
+        }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Product accessories retrieved successfully',
-                'data' => [
-                    'current_page' => $paymentManagement->currentPage(),
-                    'per_page' => $paymentManagement->perPage(),
-                    'total' => $paymentManagement->total(),
-                    'data' => $formattedProducts,
-                ]
-            ]);
-         
+        $searchableColumns = ['id', 'order_id', 'status', 'transaction_id'];
+        $sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
+        $sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+        $sortDir = strtolower($request->input('sort_direction', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $perPage = $request->get('per_page', 15);
+        $page = $request->get('page', 1);
+
+        // Clone query for counting BEFORE applying pagination
+        $totalRecords = (clone $query)->count();
+        $totalPages = (int) ceil($totalRecords / $perPage);
+
+        // If requested page exceeds total pages, fallback to page 1
+        if ($page > $totalPages && $totalPages > 0) {
+            $page = 1;
+        }
+
+        // Apply sorting and pagination to get the results
+        $paymentManagement = $query->orderBy($sortBy, $sortDir)
+            ->offset(($page - 1) * $perPage)
+            ->limit($perPage)
+            ->get();
+
+        $formattedProducts = $paymentManagement->map(function ($pyment) {
+            return [
+                'id' => $pyment->id,
+                'payment_method' => $pyment->payment_method,
+                'order_id' => $pyment->order_id,
+                'transaction_id' => $pyment->transaction_id,
+                'payment_mode' => $pyment->payment_mode,
+                'amount' => $pyment->amount,
+                'status' => $pyment->status,
+                'notes' => $pyment->notes,
+                'payment_details' => json_decode($pyment->payment_details),
+                'payment_img' => $pyment->payment_img,
+                'rider_name' => $pyment->rider_name,
+                'payment_date' => date('d-m-Y h:i:s', strtotime($pyment->payment_date)),
+                'created_by' => $pyment->createdBy?->username ?? null,
+                'updated_by' => $pyment->updatedBy?->username ?? null,
+                'created_at' => date('d-m-Y', strtotime($pyment->created_at)),
+                'updated_at' => date('d-m-Y', strtotime($pyment->updated_at)),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => __("msg_rec_list"),
+            'data' => [
+                'current_page' => (int) $page,
+                'per_page' => (int) $perPage,
+                'total_pages' => $totalPages,
+                'total_records' => $totalRecords,
+                'data' => $formattedProducts,
+            ]
+        ]);
     }
 
     /**
-	 * @OA\Post(
-	 *     path="/api/delivery/payment-history",
-	 *     summary="Create a new cash delivery payment",
-	 *     description="Create a new cash delivery payment record for an authenticated customer",
-	 *     operationId="createCashPayment",
-	 *     tags={"Delivery Payment History"},
-	 *     security={{"bearerAuth": {}}},
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         description="Payment data with optional file attachment",
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 required={"order_id", "payment_mode", "amount", "status", "payment_date"},
-	 *                 @OA\Property(property="order_id", type="integer", example=123),
-	 *                 @OA\Property(property="transaction_id", type="string", example="TXN456789"),
-	 *                 @OA\Property(property="payment_mode", type="string", enum={"Bank Transfer","Stripe","Razorpay","Cash on Delivery","CCAvenue"}, example="Cash on Delivery"),
-	 *                 @OA\Property(property="amount", type="number", format="float", example=299.99),
-	 *                 @OA\Property(property="status", type="string", enum={"pending","completed","failed","cancelled","refunded"}, example="completed"),
-	 *                 @OA\Property(property="rider_name", type="string", example="Jon Jones"),
-	 *                 @OA\Property(property="payment_date", type="string", format="date", example="2024-06-24"),
-	 *                 @OA\Property(property="notes", type="string", example="First installment paid"),
-	 *                  @OA\Property(
-	 *                     property="payment_details",
-	 *                     type="object",
-	 *                     description="Additional payment gateway details",
-	 *                     @OA\Property(property="bank", type="string", example="XYZ Bank"),
-	 *                     @OA\Property(property="ref", type="string", example="12345XYZ"),
-	 *                     @OA\Property(property="gateway_response", type="string", example="success")
-	 *                 ),
-	 *                 @OA\Property(
-	 *                     property="payment_img",
-	 *                     description="Upload receipt or proof of payment",
-	 *                     type="string",
-	 *                     format="binary"
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=201,
-	 *         description="Payment created successfully",
-	 *     ),
-	 *     @OA\Response(
-	 *         response=401,
-	 *         description="Unauthorized - Invalid or missing authentication token"
-	 *     )
-	 * )
-	 */
+     * @OA\Post(
+     *     path="/api/delivery/payment-history",
+     *     summary="Create a new cash delivery payment",
+     *     description="Create a new cash delivery payment record for an authenticated customer",
+     *     operationId="createCashPayment",
+     *     tags={"Delivery Payment History"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Payment data with optional file attachment",
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"order_id", "payment_mode", "amount", "status", "payment_date"},
+     *                 @OA\Property(property="order_id", type="integer", example=123),
+     *                 @OA\Property(property="transaction_id", type="string", example="TXN456789"),
+     *                 @OA\Property(property="payment_mode", type="string", enum={"Bank Transfer","Stripe","Razorpay","Cash on Delivery","CCAvenue"}, example="Cash on Delivery"),
+     *                 @OA\Property(property="amount", type="number", format="float", example=299.99),
+     *                 @OA\Property(property="status", type="string", enum={"pending","completed","failed","cancelled","refunded"}, example="completed"),
+     *                 @OA\Property(property="rider_name", type="string", example="Jon Jones"),
+     *                 @OA\Property(property="payment_date", type="string", format="date", example="2024-06-24"),
+     *                 @OA\Property(property="notes", type="string", example="First installment paid"),
+     *                  @OA\Property(
+     *                     property="payment_details",
+     *                     type="object",
+     *                     description="Additional payment gateway details",
+     *                     @OA\Property(property="bank", type="string", example="XYZ Bank"),
+     *                     @OA\Property(property="ref", type="string", example="12345XYZ"),
+     *                     @OA\Property(property="gateway_response", type="string", example="success")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="payment_img",
+     *                     description="Upload receipt or proof of payment",
+     *                     type="string",
+     *                     format="binary"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Payment created successfully",
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized - Invalid or missing authentication token"
+     *     )
+     * )
+     */
 
-	public function store(Request $request)
-	{    
-		try {
-			// Validate the incoming request
-			$validated = $request->validate([
-				'order_id' => 'required|integer|exists:orders,id', // Ensure order exists
-				'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id', // Ensure unique transaction
-				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay',
-				'amount' => 'required|numeric|min:0.01|max:999999.99',
-				'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
-				'payment_date' => 'required|date|before_or_equal:today',
-				'notes' => 'nullable|string|max:1000',
-				'payment_details' => 'nullable|json|max:2000',
-				'payment_method' => 'nullable|string|max:255'
-			]);
+    public function store(Request $request)
+    {
+        try {
+            // Validate the incoming request
+            $validated = $request->validate([
+                'order_id' => 'required|integer|exists:orders,id', // Ensure order exists
+                'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id', // Ensure unique transaction
+                'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay',
+                'amount' => 'required|numeric|min:0.01|max:999999.99',
+                'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
+                'payment_date' => 'required|date|before_or_equal:today',
+                'notes' => 'nullable|string|max:1000',
+                'payment_details' => 'nullable|json|max:2000',
+                'payment_method' => 'nullable|string|max:255'
+            ]);
 
-			// Add authenticated user ID (assumes customer authentication)
-			if (!auth()->check()) {
-				return response()->json([
-					'message' => 'Authentication required.'
-				], 401);
-			}
+            // Add authenticated user ID (assumes customer authentication)
+            if (!auth()->check()) {
+                return response()->json([
+                    'message' => 'Authentication required.'
+                ], 401);
+            }
 
-			$validated['created_by'] = auth::id();
-			$validated['rider_name'] = $request->rider_name;
+            $validated['created_by'] = auth::id();
+            $validated['rider_name'] = $request->rider_name;
 
-			if (isset($validated['payment_details'])) {
-				$validated['payment_details'] =$validated['payment_details'];
-			}
+            if (isset($validated['payment_details'])) {
+                $validated['payment_details'] = $validated['payment_details'];
+            }
 
-			$validated['payment_img'] = uploadImageToWebpS3FromFile(
-				$request,
-				'payment_img',
-				env('STORAGE_ENV') . '/customer/payment'
-			);
- 
-			// Create the payment record
-			$payment = PaymentManagement::create($validated);
-		 
+            $validated['payment_img'] = uploadImageToWebpS3FromFile(
+                $request,
+                'payment_img',
+                env('STORAGE_ENV') . '/customer/payment'
+            );
 
-			// Return success response with 201 status
-			return response()->json([
-				'message' => 'Payment created successfully.',
-				'data' => $payment
-			], 201);
+            // Create the payment record
+            $payment = PaymentManagement::create($validated);
 
-		} catch (ValidationException $e) {
-			// Handle validation errors
-			return response()->json([
-				'message' => 'The given data was invalid.',
-				'errors' => $e->errors()
-			], 422);
 
-		} catch (\Exception $e) {
-			// Handle any other errors
-			return response()->json([
-				'message' => 'Something went wrong while creating the payment.',
-				'error' => $e->getMessage()
-			], 500);
-		}
-	}
- 
+            // Return success response with 201 status
+            return response()->json([
+                'message' => 'Payment created successfully.',
+                'data' => $payment
+            ], 201);
+
+        } catch (ValidationException $e) {
+            // Handle validation errors
+            return response()->json([
+                'message' => 'The given data was invalid.',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            // Handle any other errors
+            return response()->json([
+                'message' => 'Something went wrong while creating the payment.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * @OA\Get(
      *     path="/api/delivery/payment-history/{id}",
@@ -292,12 +304,12 @@ class PaymentHistoryController extends Controller
     public function show($id)
     {
         try {
-            
-            $paymentManagement = PaymentManagement::with(['createdBy','updatedBy'])->where('order_id',$id)->get();   
- 
+
+            $paymentManagement = PaymentManagement::with(['createdBy', 'updatedBy'])->where('order_id', $id)->get();
+
             // Map items properly
             $paymentManagementList = $paymentManagement->map(function ($pyment) {
-           
+
                 return [
                     'id' => $pyment->id,
                     'payment_method' => $pyment->payment_method,
@@ -310,16 +322,16 @@ class PaymentHistoryController extends Controller
                     'payment_details' => json_decode($pyment->payment_details),
                     'payment_img' => $pyment->payment_img,
                     'rider_name' => $pyment->rider_name,
-                    'payment_date' => date('d-m-Y h:i:s',strtotime($pyment->payment_date)),
-                    'created_by' => $pyment->createdBy?->username??null,
-                    'updated_by' => $pyment->updatedBy?->username??null,
-                    'created_at' => date('d-m-Y',strtotime($pyment->created_at)),
-                    'updated_at' => date('d-m-Y',strtotime($pyment->updated_at)),
-                    
+                    'payment_date' => date('d-m-Y h:i:s', strtotime($pyment->payment_date)),
+                    'created_by' => $pyment->createdBy?->username ?? null,
+                    'updated_by' => $pyment->updatedBy?->username ?? null,
+                    'created_at' => date('d-m-Y', strtotime($pyment->created_at)),
+                    'updated_at' => date('d-m-Y', strtotime($pyment->updated_at)),
+
                 ];
             });
 
-           
+
             return response()->json([
                 'success' => true,
                 'message' => 'Payment History successfully',
@@ -334,5 +346,5 @@ class PaymentHistoryController extends Controller
         }
 
     }
-           
+
 }
