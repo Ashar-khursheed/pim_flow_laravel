@@ -31,8 +31,9 @@ class OrderReservedMail extends Mailable
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 		$name = $order->customer->name ?? 'User';
 		$username = $order->customer->email;
-		$isNewCustomer = $this->isNewCustomer;
-		$password = $this->randomPassword;
+		$isNewCustomer = false;
+		$password = null;
+
 		$paymentUrl = $order->customer->payment_link ?? url("/");
 
 		$referenceNumber = $order->order_number;
