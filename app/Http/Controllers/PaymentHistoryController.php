@@ -200,7 +200,7 @@ class PaymentHistoryController extends Controller
 	 */
 
 	public function store(Request $request)
-	{   //dd($request->all());
+	{    
 		try {
 			// Validate the incoming request
 			$validated = $request->validate([
@@ -226,7 +226,7 @@ class PaymentHistoryController extends Controller
 			$validated['rider_name'] = $request->rider_name;
 
 			if (isset($validated['payment_details'])) {
-				$validated['payment_details'] =json_encode($validated['payment_details']);
+				$validated['payment_details'] =$validated['payment_details'];
 			}
 
 			$validated['payment_img'] = uploadImageToWebpS3FromFile(
