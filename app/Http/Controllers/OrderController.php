@@ -441,7 +441,7 @@ class OrderController extends Controller
 
 			DB::commit();
 
-			if (config('app.website') == 'UAE' && $request->boolean('is_reserved')) {
+			if (in_array(config('app.website'), ['UAE', 'TEST']) && $request->boolean('is_reserved')) {
 				$batch = Bus::batch([])->name('Order Reserved')->dispatch();
 
 				$batch->options['queue'] = config('app.website') . '_ORD_RES';
