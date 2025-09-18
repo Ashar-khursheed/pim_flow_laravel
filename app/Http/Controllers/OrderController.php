@@ -39,6 +39,7 @@ class OrderController extends Controller
 	 *     tags={"Orders"},
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="is_reserved", in="query", description="Filter by reserved orders (true/false)", @OA\Schema(type="boolean", example=true)),
 	 *     @OA\Parameter(name="status", in="query", description="Filter by order status.", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="payment_status", in="query", description="Filter by payment status.", @OA\Schema(type="string", enum={"Paid", "Unpaid", "Partially Paid"})),
 	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
@@ -60,6 +61,12 @@ class OrderController extends Controller
 
 			if ($request->has('status')) {
 				$recordsQuery->where('status', $request->status);
+			}
+
+			if ($request->has('is_reserved')) {
+				$recordsQuery->where('is_reserved', $request->boolean('is_reserved'));
+			} else {
+				$recordsQuery->where('is_reserved', false);
 			}
 
 			$recordsQuery = $recordsQuery->whereBetween('created_at', [$from, $to])->pluck('id');
@@ -117,6 +124,12 @@ class OrderController extends Controller
 							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
 						break;
 				}
+			}
+
+			if ($request->has('is_reserved')) {
+				$recordsQuery->where('orders.is_reserved', $request->boolean('is_reserved'));
+			} else {
+				$recordsQuery->where('orders.is_reserved', false);
 			}
 
 			if ($request->filled('global')) {
@@ -332,7 +345,6 @@ class OrderController extends Controller
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();
 
-			// Generate the next order number
 			if ($latestOrder && is_numeric($latestOrder->order_number)) {
 				$orderNumber = (int) $latestOrder->order_number + 1;
 			} else {
