@@ -8,8 +8,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
 use App\Models\FrontEnd\Quote;
 use App\Models\FrontEnd\CustomerAddress;
+
+use App\Jobs\Quote\QuotePlacedMailJob;
 
 class QuoteController extends BaseController
 {
@@ -365,6 +370,13 @@ class QuoteController extends BaseController
 
 			DB::commit();
 
+			$batch = Bus::batch([])->name('Quote Mails')->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_QOT_PLC';
+			$batch->add(new QuotePlacedMailJob([
+				'recordId' => $quote->id
+			]));
+
 			$quote->load([
 				'customer:id,name,email,type,country_code,mobile_number',
 				'customerAddress',
@@ -632,6 +644,13 @@ class QuoteController extends BaseController
 			}
 
 			DB::commit();
+
+			$batch = Bus::batch([])->name('Quote Mails')->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_QOT_PLC';
+			$batch->add(new QuotePlacedMailJob([
+				'recordId' => $quote->id
+			]));
 
 			$quote->load([
 				'customer:id,name,email,type,country_code,mobile_number',
