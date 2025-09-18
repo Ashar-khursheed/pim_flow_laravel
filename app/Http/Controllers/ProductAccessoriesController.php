@@ -48,11 +48,11 @@ class ProductAccessoriesController extends Controller
      *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\Parameter(
-     *         name="length",
+     *         name="per_page",
      *         in="query",
      *         required=false,
      *         description="Number of records per page",
-     *         @OA\Schema(type="integer", minimum=1, example=20)
+     *         @OA\Schema(type="integer", minimum=1, example=10)
      *     ),
      *     @OA\Parameter(
      *         name="sort_by",
@@ -106,7 +106,7 @@ class ProductAccessoriesController extends Controller
             $sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
             $sortDir = strtolower($request->input('sort_direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-            $perPage = $request->get('length', 15);
+            $perPage = $request->get('per_page', 10);
             $accessories = $query->orderBy($sortBy, $sortDir)->paginate($perPage);
  
             $formattedProducts = $accessories->getCollection()->map(function ($accessory) {
