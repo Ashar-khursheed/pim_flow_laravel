@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
 use App\Jobs\Order\OrderPlacedMailJob;
+use App\Jobs\Order\OrderReservedMailJob;
 use App\Jobs\Order\OrderConfirmationMailJob;
 use App\Jobs\Order\OutDeliveryMailJob;
 use App\Jobs\Order\OrderDeliveredMailJob;
