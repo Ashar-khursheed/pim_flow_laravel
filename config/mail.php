@@ -58,7 +58,7 @@ return [
                     'timeout' => env('MAIL_SSL_TIMEOUT', 120),
                 ],
             ],
-            'ping_threshold' => 10,
+            'ping_threshold' => 60,
         ],
 
         'ses' => [
@@ -131,5 +131,5 @@ return [
     |--------------------------------------------------------------------------
     |
     */
-    'ping_threshold' => 10,
+    'ping_threshold' => 60,
 ];
