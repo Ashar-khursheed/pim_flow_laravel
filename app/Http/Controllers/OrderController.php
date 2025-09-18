@@ -421,8 +421,7 @@ class OrderController extends Controller
 					}
 				} else {
 					try {
-						$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)
-						->createCCavenuePaymentLink($order);
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
 
 						if ($paymentLink) {
 							$order = Order::find($order->id);
