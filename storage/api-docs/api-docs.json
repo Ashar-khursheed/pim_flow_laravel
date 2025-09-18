@@ -18072,90 +18072,6 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "put": {
-                "tags": [
-                    "FrontEnd-Orders"
-                ],
-                "summary": "Update an existing order (if not yet confirmed)",
-                "operationId": "b88757624ec0e7800c63b3da133e8c62",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Order ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "customer_address_id",
-                                    "products"
-                                ],
-                                "properties": {
-                                    "customer_address_id": {
-                                        "type": "integer",
-                                        "example": "4"
-                                    },
-                                    "ship_all_at_once": {
-                                        "type": "boolean",
-                                        "example": false
-                                    },
-                                    "separate_deliveries": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "products": {
-                                        "type": "array",
-                                        "items": {
-                                            "required": [
-                                                "product_id",
-                                                "vendor_id",
-                                                "quantity"
-                                            ],
-                                            "properties": {
-                                                "product_id": {
-                                                    "type": "integer",
-                                                    "example": 101
-                                                },
-                                                "vendor_id": {
-                                                    "type": "integer",
-                                                    "example": 22
-                                                },
-                                                "quantity": {
-                                                    "type": "integer",
-                                                    "example": 3
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Updated successfully",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
             }
         },
         "/api/frontend/orders/{id}/status": {
@@ -26705,11 +26621,6 @@
                                     "separate_deliveries": {
                                         "type": "boolean",
                                         "example": false
-                                    },
-                                    "paid_amount": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 199.99
                                     },
                                     "coupon_id": {
                                         "type": "integer",

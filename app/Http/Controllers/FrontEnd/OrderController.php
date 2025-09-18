@@ -431,7 +431,7 @@ class OrderController extends BaseController
 		]);
 
 
-				/* Mutate the data for each order product */
+		/* Mutate the data for each order product */
 		foreach ($order->orderProducts as $orderProduct) {
 			$product = $orderProduct->product;
 			if ($product) {
@@ -443,12 +443,12 @@ class OrderController extends BaseController
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
 				$product->category_url = method_exists($product, 'category_url')
-					? $product->category_url()
-					: null;
+				? $product->category_url()
+				: null;
 
 				$product->parent_category_url = method_exists($product, 'parent_category_url')
-					? $product->parent_category_url()
-					: null;
+				? $product->parent_category_url()
+				: null;
 
 
 			// 🔹 Fetch SEO URL directly without relation
@@ -495,35 +495,35 @@ class OrderController extends BaseController
 		]);
 	}
 
-	/**
-	 * @OA\Put(
-	 *     path="/api/frontend/orders/{id}",
-	 *     summary="Update an existing order (if not yet confirmed)",
-	 *     tags={"FrontEnd-Orders"},
-	 *     @OA\Parameter(name="id", in="path", required=true, description="Order ID", @OA\Schema(type="integer")),
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             required={"customer_address_id", "products"},
-	 *             @OA\Property(property="customer_address_id", type="integer", example="4"),
-	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=false),
-	 *             @OA\Property(property="separate_deliveries", type="boolean", example=true),
-	 *             @OA\Property(
-	 *                 property="products",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity"},
-	 *                     @OA\Property(property="product_id", type="integer", example=101),
-	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=3),
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
+	// /**
+	//  * @OA\Put(
+	//  *     path="/api/frontend/orders/{id}",
+	//  *     summary="Update an existing order (if not yet confirmed)",
+	//  *     tags={"FrontEnd-Orders"},
+	//  *     @OA\Parameter(name="id", in="path", required=true, description="Order ID", @OA\Schema(type="integer")),
+	//  *     @OA\RequestBody(
+	//  *         required=true,
+	//  *         @OA\JsonContent(
+	//  *             required={"customer_address_id", "products"},
+	//  *             @OA\Property(property="customer_address_id", type="integer", example="4"),
+	//  *             @OA\Property(property="ship_all_at_once", type="boolean", example=false),
+	//  *             @OA\Property(property="separate_deliveries", type="boolean", example=true),
+	//  *             @OA\Property(
+	//  *                 property="products",
+	//  *                 type="array",
+	//  *                 @OA\Items(
+	//  *                     required={"product_id", "vendor_id", "quantity"},
+	//  *                     @OA\Property(property="product_id", type="integer", example=101),
+	//  *                     @OA\Property(property="vendor_id", type="integer", example=22),
+	//  *                     @OA\Property(property="quantity", type="integer", example=3),
+	//  *                 )
+	//  *             )
+	//  *         )
+	//  *     ),
+	//  *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
+	//  *     security={{"bearerAuth":{}}}
+	//  * )
+	//  */
 	// public function update(Request $request, $orderId)
 	// {
 	// 	$allowedStatuses = [
@@ -720,13 +720,7 @@ class OrderController extends BaseController
 		$order->orderProducts()->update(['status' => $request->status]);
 
 		if ($request->status == 'Cancelled') {
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-
-			})->catch(function (Batch $batch, Throwable $e) {
-
-			})->finally(function (Batch $batch) {
-
-			})->name('Order Mails')->dispatch();
+			$batch = Bus::batch([])->name('Order Mails')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
 			$batch->add(new OrderCancelledMailJob([
@@ -764,115 +758,61 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	// public function buyItAgain()
-	// {
-	// 	$customer = auth()->user();
+	public function buyItAgain(Request $request)
+	{
+		// Fetch last 5 delivered orders with products
+		$deliveredOrders = $customer->orders()
+		->where('status', 'Delivered')
+		->orderByDesc('created_at')
+		->take(5)
+		->with(['orderProducts.product.productSuppliers', 'orderProducts.product.currency', 'orderProducts.product.brand'])
+		->get();
 
-	// 	$deliveredOrders = $customer->orders()->where('status', 'Delivered')->orderByDesc('created_at')->take(5)->with(['orderProducts.product'])->get();
+		$addedProducts = collect();
 
-	// 	$products = collect();
+		foreach ($deliveredOrders as $order) {
+			foreach ($order->orderProducts as $orderProduct) {
+				$product = $orderProduct->product;
+				if (!$product) {
+					continue;
+				}
 
-	// 	foreach ($deliveredOrders as $order) {
-	// 		foreach ($order->orderProducts as $orderProduct) {
-	// 			if ($orderProduct->product) {
-	// 				$images = null;
-	// 				if (is_string($orderProduct->product->images)) {
-	// 					$images = json_decode($orderProduct->product->images, true);
-	// 				} elseif (is_array($orderProduct->product->images)) {
-	// 					$images = $orderProduct->product->images;
-	// 				}
+				// find a vendor_id if available
+				$vendorId = $product->productSuppliers->first()->vendor_id ?? null;
 
-	// 				$products->push([
-	// 					'product_id' => $orderProduct->product->id,
-	// 					'name' => $orderProduct->product->name,
-	// 					'quantity' => $orderProduct->quantity,
-	// 					'unit_price' => $orderProduct->unit_price,
-	// 					'images' => $images,
-	// 					'brand_name' => $orderProduct->product->brand->name ?? null,
+				// build a request like addToCart expects
+				$cartRequest = new Request([
+					'product_id' => $product->id,
+					'quantity'   => $orderProduct->quantity,
+					'vendor_id'  => $vendorId,
+				]);
 
-	// 				]);
-	// 			}
-	// 		}
-	// 	}
+				// call your CartController function
+				$cartResponse = app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
 
-	// 	if ($products->isEmpty()) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'No delivered orders found or no valid products available to buy again.'
-	// 		], 404);
-	// 	}
+				$addedProducts->push([
+					'product_id' => $product->id,
+					'name'       => $product->name,
+					'quantity'   => $orderProduct->quantity,
+					'unit_price' => $orderProduct->unit_price,
+					'brand_name' => $product->brand->name ?? null,
+				]);
+			}
+		}
 
-	// 	return response()->json([
-	// 		'success' => true,
-	// 		'message' => 'Products retrieved from your previous orders.',
-	// 		'data' => $products
-	// 	], 200);
-	// }
-public function buyItAgain(Request $request)
-{
-    $customer = auth()->user();
+		if ($addedProducts->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No delivered orders found or no valid products available to buy again.'
+			], 404);
+		}
 
-    if (!$customer) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Unauthorized user',
-        ], 401);
-    }
-
-    // Fetch last 5 delivered orders with products
-    $deliveredOrders = $customer->orders()
-        ->where('status', 'Delivered')
-        ->orderByDesc('created_at')
-        ->take(5)
-        ->with(['orderProducts.product.productSuppliers', 'orderProducts.product.currency', 'orderProducts.product.brand'])
-        ->get();
-
-    $addedProducts = collect();
-
-    foreach ($deliveredOrders as $order) {
-        foreach ($order->orderProducts as $orderProduct) {
-            $product = $orderProduct->product;
-            if (!$product) {
-                continue;
-            }
-
-            // find a vendor_id if available
-            $vendorId = $product->productSuppliers->first()->vendor_id ?? null;
-
-            // build a request like addToCart expects
-            $cartRequest = new Request([
-                'product_id' => $product->id,
-                'quantity'   => $orderProduct->quantity,
-                'vendor_id'  => $vendorId,
-            ]);
-
-            // call your CartController function
-            $cartResponse = app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
-
-            $addedProducts->push([
-                'product_id' => $product->id,
-                'name'       => $product->name,
-                'quantity'   => $orderProduct->quantity,
-                'unit_price' => $orderProduct->unit_price,
-                'brand_name' => $product->brand->name ?? null,
-            ]);
-        }
-    }
-
-    if ($addedProducts->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No delivered orders found or no valid products available to buy again.'
-        ], 404);
-    }
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Products added to your cart successfully.',
-        'data'    => $addedProducts,
-    ], 200);
-}
-
+		return response()->json([
+			'success' => true,
+			'message' => 'Products added to your cart successfully.',
+			'data'    => $addedProducts,
+		], 200);
+	}
 
 	/**
 	 * @OA\Get(
