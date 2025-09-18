@@ -375,7 +375,7 @@ class OrderController extends Controller
 				'is_payment' => $request->boolean('is_payment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => auth()->id(),
-				'payment_link' => $paymentLink ?? null
+				'payment_link' => null
 			]);
 
 			foreach ($productDetails as $product) {
@@ -503,8 +503,7 @@ class OrderController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
-				'data' => $order,
-				'payment_link' => $paymentLink
+				'data' => $order
 			], 201);
 
 		} catch (\Exception $e) {
