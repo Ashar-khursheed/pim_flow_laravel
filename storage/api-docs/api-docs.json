@@ -28200,8 +28200,9 @@
                         "schema": {
                             "type": "string",
                             "enum": [
-                                0,
-                                1
+                                "false",
+                                "true",
+                                "all"
                             ],
                             "example": "all"
                         }
@@ -28209,7 +28210,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search by SKU",
+                        "description": "Search by id, name",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -28227,14 +28228,14 @@
                         }
                     },
                     {
-                        "name": "length",
+                        "name": "per_page",
                         "in": "query",
                         "description": "Number of records per page",
                         "required": false,
                         "schema": {
                             "type": "integer",
                             "minimum": 1,
-                            "example": 20
+                            "example": 10
                         }
                     },
                     {
