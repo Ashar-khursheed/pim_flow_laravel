@@ -33,7 +33,7 @@ class OrderReservedMail extends Mailable
 		$username = $order->customer->email;
 		$isNewCustomer = $this->isNewCustomer;
 		$password = $this->randomPassword;
-		$paymentUrl = $order->customer->payment_link ?? url(/);
+		$paymentUrl = $order->customer->payment_link ?? url("/");
 
 		$referenceNumber = $order->order_number;
 		$createdAt = Carbon::parse($order->created_at)->format('D, M d, Y');
