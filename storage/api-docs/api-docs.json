@@ -28200,8 +28200,9 @@
                         "schema": {
                             "type": "string",
                             "enum": [
-                                0,
-                                1
+                                "false",
+                                "true",
+                                "all"
                             ],
                             "example": "all"
                         }
@@ -28209,7 +28210,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search by SKU",
+                        "description": "Search by id, name",
                         "required": false,
                         "schema": {
                             "type": "string",
