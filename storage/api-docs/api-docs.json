@@ -27301,9 +27301,9 @@
                 "operationId": "6310119e789cc0c1cc4b886d9f441da3",
                 "parameters": [
                     {
-                        "name": "order_id",
+                        "name": "order_number",
                         "in": "query",
-                        "description": "Filter by order ID",
+                        "description": "Filter by order number",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -27433,14 +27433,14 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "order_id",
+                                    "order_number",
                                     "payment_mode",
                                     "amount",
                                     "status",
                                     "payment_date"
                                 ],
                                 "properties": {
-                                    "order_id": {
+                                    "order_number": {
                                         "type": "integer",
                                         "example": 123
                                     },
@@ -30929,7 +30929,7 @@
                     "Products"
                 ],
                 "summary": "Upload product images from zip file",
-                "description": "Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database. Only webp images with dimensions 1000x1000 are allowed.",
+                "description": "Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database. All images are automatically converted to WebP format, resized to 1000x1000, and compressed to under 100KB.",
                 "operationId": "e3e5a4a2e8a7e47751553cf5c9ec8909",
                 "requestBody": {
                     "required": true,
@@ -30938,7 +30938,7 @@
                             "schema": {
                                 "properties": {
                                     "zip_file": {
-                                        "description": "ZIP file containing product images organized in folders by SKU. Only webp images with dimensions 1000x1000 are allowed.",
+                                        "description": "ZIP file containing product images organized in folders by SKU. Supports JPG, PNG, WebP, GIF, BMP, TIFF formats. All will be converted to WebP 1000x1000 under 100KB.",
                                         "type": "string",
                                         "format": "binary"
                                     }
