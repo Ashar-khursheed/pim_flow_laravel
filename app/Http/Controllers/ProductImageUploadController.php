@@ -722,7 +722,7 @@ class ProductImageUploadController extends Controller
      * @param string $sanitizedSku Sanitized SKU for filename
      * @return array
      */
-    private function uploadProductImagesToS3_old($imagesDir, $originalSku, $sanitizedSku)
+    private function uploadProductImagesToS3($imagesDir, $originalSku, $sanitizedSku)
     {
         $storageEnv = env('STORAGE_ENV');
         $s3Path = $storageEnv . '/products/images/';
@@ -819,9 +819,6 @@ class ProductImageUploadController extends Controller
             'errors' => $errors
         ];
     }
-<<<<<<< HEAD
-    private function uploadProductImagesToS3($imagesDir, $originalSku, $sanitizedSku)
-=======
 
     /**
      * Enhanced image processing with aggressive compression for large files
@@ -1154,5 +1151,17 @@ class ProductImageUploadController extends Controller
         }
     }
 
-
+    /**
+     * Legacy method - kept for backward compatibility but not used
+     * The new processAndCompressImage method handles all compression needs
+     */
+    private function uploadProductImagesToS3_old($imagesDir, $originalSku, $sanitizedSku)
+    {
+        // This method is deprecated - use uploadProductImagesToS3 instead
+        // Kept for reference only
+        return [
+            'imageUrls' => [],
+            'errors' => ['Legacy method - use new compression system']
+        ];
+    }
 }
