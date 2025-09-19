@@ -237,9 +237,9 @@ class PaymentHistoryController extends Controller
             $validated['created_by'] = auth::id();
             $validated['rider_name'] = $request->rider_name;
 
-            if (isset($validated['payment_details'])) {
-                $validated['payment_details'] = $validated['payment_details'];
-            }
+            // if (isset($validated['payment_details'])) {
+            //     $validated['payment_details'] = $validated['payment_details'];
+            // }
 
             $validated['payment_img'] = uploadImageToWebpS3FromFile(
                 $request,
@@ -253,6 +253,7 @@ class PaymentHistoryController extends Controller
 
             // Return success response with 201 status
             return response()->json([
+                'success' => true,
                 'message' => 'Payment created successfully.',
                 'data' => $payment
             ], 201);
@@ -260,6 +261,7 @@ class PaymentHistoryController extends Controller
         } catch (ValidationException $e) {
             // Handle validation errors
             return response()->json([
+                'success' => false,
                 'message' => 'The given data was invalid.',
                 'errors' => $e->errors()
             ], 422);
