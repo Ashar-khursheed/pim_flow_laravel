@@ -22154,6 +22154,189 @@
                 }
             }
         },
+        "/api/frontend/search-logs": {
+            "get": {
+                "tags": [
+                    "SearchLogs"
+                ],
+                "summary": "Get list of search logs with filtering, pagination and sorting",
+                "operationId": "429a8ef61f37a379422d4e9fa1d5c311",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by term",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Field to sort by (id, created_at, search_term)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of results per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of logs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "search_term": {
+                                                        "type": "string",
+                                                        "example": "laptop"
+                                                    },
+                                                    "product_id": {
+                                                        "type": "integer",
+                                                        "example": 123
+                                                    },
+                                                    "ip_address": {
+                                                        "type": "string",
+                                                        "example": "192.168.1.10"
+                                                    },
+                                                    "user_agent": {
+                                                        "type": "string",
+                                                        "example": "Mozilla/5.0"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "SearchLogs"
+                ],
+                "summary": "Store a search or click log",
+                "operationId": "28104da5ad1935459e6cb4b2efb2d18a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "search_term": {
+                                        "type": "string",
+                                        "example": "laptop"
+                                    },
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 123
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Log stored successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Log stored successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "search_term": {
+                                                    "type": "string",
+                                                    "example": "laptop"
+                                                },
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": null
+                                                },
+                                                "ip_address": {
+                                                    "type": "string",
+                                                    "example": "192.168.1.10"
+                                                },
+                                                "user_agent": {
+                                                    "type": "string",
+                                                    "example": "Mozilla/5.0"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/seo-management": {
             "get": {
                 "tags": [
@@ -39621,6 +39804,10 @@
         {
             "name": "Frontend-Search",
             "description": "Frontend-Search"
+        },
+        {
+            "name": "SearchLogs",
+            "description": "SearchLogs"
         },
         {
             "name": "Frontend-SEO Management",
