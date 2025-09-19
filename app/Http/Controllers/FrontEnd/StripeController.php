@@ -413,9 +413,10 @@ class StripeController extends Controller
 
       
         $stripeSecret = config('services.stripe.secret');       
-        $currency = "USD";
-        $success_url = url('/api/stripe/paymentSuccess') . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = url('/api/stripe/paymentCancel');
+        $currency = "AED";
+        $success_url = url('');
+        $cancel_url = url('');
+        $res = Http::withOptions(['verify' => false]);      
         $res = Http::withOptions(['verify' => false])
             ->withToken($stripeSecret)
             ->asForm()
