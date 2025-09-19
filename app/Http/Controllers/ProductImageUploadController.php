@@ -459,7 +459,6 @@
 //     }
 // }
 
-
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -831,9 +830,16 @@ class ProductImageUploadController extends Controller
     private function processAndCompressImage($imagePath, $sku)
     {
         try {
+            // Verify the file exists and is readable
+            if (!File::exists($imagePath) || !is_readable($imagePath)) {
+                error_log("Image file not readable: {$imagePath}");
+                return false;
+            }
+
             // Get image information
             $imageInfo = getimagesize($imagePath);
             if ($imageInfo === false) {
+                error_log("Could not get image size for: {$imagePath}");
                 return false;
             }
 
@@ -841,33 +847,43 @@ class ProductImageUploadController extends Controller
             $originalHeight = $imageInfo[1];
             $imageType = $imageInfo[2];
 
+            // Log image details for debugging
+            error_log("Processing image: {$imagePath} - {$originalWidth}x{$originalHeight} - Type: {$imageType}");
+
             // Create image resource based on file type (ALL will be converted to WebP)
+            $sourceImage = false;
             switch ($imageType) {
                 case IMAGETYPE_JPEG:
-                    $sourceImage = imagecreatefromjpeg($imagePath);
+                    $sourceImage = @imagecreatefromjpeg($imagePath);
                     break;
                 case IMAGETYPE_PNG:
-                    $sourceImage = imagecreatefrompng($imagePath);
+                    $sourceImage = @imagecreatefrompng($imagePath);
                     break;
                 case IMAGETYPE_WEBP:
-                    $sourceImage = imagecreatefromwebp($imagePath);
+                    $sourceImage = @imagecreatefromwebp($imagePath);
                     break;
                 case IMAGETYPE_GIF:
-                    $sourceImage = imagecreatefromgif($imagePath);
+                    $sourceImage = @imagecreatefromgif($imagePath);
                     break;
                 case IMAGETYPE_BMP:
-                    $sourceImage = imagecreatefrombmp($imagePath);
+                    if (function_exists('imagecreatefrombmp')) {
+                        $sourceImage = @imagecreatefrombmp($imagePath);
+                    } else {
+                        $sourceImage = @imagecreatefromstring(file_get_contents($imagePath));
+                    }
                     break;
                 case IMAGETYPE_TIFF_II:
                 case IMAGETYPE_TIFF_MM:
-                    // Note: TIFF support may require ImageMagick
-                    $sourceImage = imagecreatefromstring(file_get_contents($imagePath));
+                    // TIFF support using imagecreatefromstring
+                    $sourceImage = @imagecreatefromstring(file_get_contents($imagePath));
                     break;
                 default:
+                    error_log("Unsupported image type: {$imageType} for file: {$imagePath}");
                     return false;
             }
 
             if ($sourceImage === false) {
+                error_log("Failed to create image resource from: {$imagePath}");
                 return false;
             }
 
@@ -875,6 +891,12 @@ class ProductImageUploadController extends Controller
             $targetWidth = 1000;
             $targetHeight = 1000;
             $targetImage = imagecreatetruecolor($targetWidth, $targetHeight);
+
+            if ($targetImage === false) {
+                imagedestroy($sourceImage);
+                error_log("Failed to create target image canvas");
+                return false;
+            }
 
             // Set background to white (in case of transparency)
             $white = imagecolorallocate($targetImage, 255, 255, 255);
@@ -884,16 +906,22 @@ class ProductImageUploadController extends Controller
             $aspectRatio = $originalWidth / $originalHeight;
             
             if ($aspectRatio > 1) {
-                // Landscape image
+                // Landscape image - fit to width
                 $newWidth = $targetWidth;
-                $newHeight = $targetWidth / $aspectRatio;
+                $newHeight = intval($targetWidth / $aspectRatio);
                 $offsetX = 0;
-                $offsetY = ($targetHeight - $newHeight) / 2;
-            } else {
-                // Portrait or square image
+                $offsetY = intval(($targetHeight - $newHeight) / 2);
+            } elseif ($aspectRatio < 1) {
+                // Portrait image - fit to height
                 $newHeight = $targetHeight;
-                $newWidth = $targetHeight * $aspectRatio;
-                $offsetX = ($targetWidth - $newWidth) / 2;
+                $newWidth = intval($targetHeight * $aspectRatio);
+                $offsetX = intval(($targetWidth - $newWidth) / 2);
+                $offsetY = 0;
+            } else {
+                // Square image - fit to canvas
+                $newWidth = $targetWidth;
+                $newHeight = $targetHeight;
+                $offsetX = 0;
                 $offsetY = 0;
             }
 
