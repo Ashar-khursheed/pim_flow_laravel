@@ -20,71 +20,88 @@ class UserController extends BaseController
 	 *     path="/api/users",
 	 *     summary="Get list of users",
 	 *     tags={"Users"},
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
-	 *         example=1,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="length",
-	 *         in="query",
-	 *         description="Number of records per page.",
-	 *         required=true,
-	 *         example=20,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function index(Request $request)
 	{
-		if (!auth()->user()->can('list user')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
+		 if (!auth()->user()->can('list user')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
+        $records = User::with('roles:id,name');
+
+		  /* Global Search */
+    if ($request->filled('global')) {
+        $searchTerm = $request->input('global');
+        $records = $records->where(function ($query) use ($searchTerm) {
+            $query->where('username', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhere('first_name', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhere('email', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhere('id', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhereHas('roles', function ($roleQuery) use ($searchTerm) {
+                      $roleQuery->where('name', 'LIKE', '%' . $searchTerm . '%');
+                  });
+        });
+    }
+		/* Sorting */
+		if ($request->filled('sort_by')) {
+		$sortBy = $request->input('sort_by');
+		$sortDir = $request->input('sort_dir', 'asc');
+
+		// Validate sort direction
+		if (!in_array($sortDir, ['asc', 'desc'])) {
+		$sortDir = 'asc';
 		}
-		$records = User::with('roles:id,name');
 
-		/* Pagination */
-		if ($request->filled('page') && $request->filled('length')) {
-			$page = (int) $request->input('page');
-			$length = (int) $request->input('length');
-			$totalRecords = $records->count();
-			$totalPages = ceil($totalRecords / $length);
-
-			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
-		} else {
-			$records = $records->get();
-			$totalRecords = $records->count();
+		// Validate sort column
+		if (in_array($sortBy, ['id','first_name', 'username', 'created_at', 'updated_at'])) {
+		$records = $records->orderBy($sortBy, $sortDir);
+		}
 		}
 
-		$records->each(function ($user) {
-			$role = $user->roles->first();
-			if ($role) {
-				$user->role_id = $role->id;
-				$user->role_name = $role->name;
-			}
-			$user->makeHidden('roles');
-		});
 
-		return response()->json([
-			'success' => true,
-			'message' => __("msg_rec_list"),
-			'data' => $records,
-			'total_pages' => $totalPages ?? 1,
-			'total_records' => $totalRecords,
-		]);
+        /* Pagination */
+        if ($request->filled('page') && $request->filled('length')) {
+            $page = (int) $request->input('page');
+            $length = (int) $request->input('length');
+            $totalRecords = $records->count();
+            $totalPages = ceil($totalRecords / $length);
+
+            $records = $records->offset(($page - 1) * $length)->limit($length)->get();
+        } else {
+            $records = $records->get();
+            $totalRecords = $records->count();
+        }
+
+        $records->each(function ($user) {
+            $role = $user->roles->first();
+            if ($role) {
+                $user->role_id = $role->id;
+                $user->role_name = $role->name;
+            }
+            $user->makeHidden('roles');
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => __("msg_rec_list"),
+			'current_page' => (int) $page,
+			'per_page' => (int) $length,
+            'total_pages' => $totalPages ?? 1,
+            'total_records' => $totalRecords,
+            'data' => $records,
+
+		 
+        ]);
 	}
 
 	/**
@@ -120,20 +137,20 @@ class UserController extends BaseController
 			]);
 		}
 		$validatedData = $request->validate([
-			'username'    => 'required|string|max:255|unique:users,username',
-			'email'       => 'required|string|email|max:255|unique:users,email',
-			'password'    => 'required|string|min:8',
-			'first_name'  => 'required|string|max:255',
-			'last_name'   => 'required|string|max:255',
-			'role'        => 'required|string|exists:roles,name',
+			'username' => 'required|string|max:255|unique:users,username',
+			'email' => 'required|string|email|max:255|unique:users,email',
+			'password' => 'required|string|min:8',
+			'first_name' => 'required|string|max:255',
+			'last_name' => 'required|string|max:255',
+			'role' => 'required|string|exists:roles,name',
 		]);
 
 		$user = User::create([
-			'username'   => $validatedData['username'],
-			'email'      => $validatedData['email'],
-			'password'   => Hash::make($validatedData['password']),
+			'username' => $validatedData['username'],
+			'email' => $validatedData['email'],
+			'password' => Hash::make($validatedData['password']),
 			'first_name' => $validatedData['first_name'] ?? null,
-			'last_name'  => $validatedData['last_name'] ?? null,
+			'last_name' => $validatedData['last_name'] ?? null,
 		]);
 
 		$user->syncRoles([$validatedData['role']]);
@@ -141,7 +158,7 @@ class UserController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'User created successfully.',
-			'data'    => $user->load('roles'),
+			'data' => $user->load('roles'),
 		], 201);
 	}
 
@@ -241,12 +258,12 @@ class UserController extends BaseController
 
 		/* Validate request data */
 		$validatedData = $request->validate([
-			'username'    => 'required|string|max:255|unique:users,username,' . $userId,
-			'email'       => 'required|string|email|max:255|unique:users,email,' . $userId,
-			'password'    => 'nullable|string|min:8',
-			'first_name'  => 'required|string|max:255',
-			'last_name'   => 'required|string|max:255',
-			'role'        => 'required|string|exists:roles,name',
+			'username' => 'required|string|max:255|unique:users,username,' . $userId,
+			'email' => 'required|string|email|max:255|unique:users,email,' . $userId,
+			'password' => 'nullable|string|min:8',
+			'first_name' => 'required|string|max:255',
+			'last_name' => 'required|string|max:255',
+			'role' => 'required|string|exists:roles,name',
 		]);
 
 		DB::beginTransaction();
