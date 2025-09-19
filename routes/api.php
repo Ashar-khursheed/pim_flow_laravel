@@ -131,6 +131,7 @@ use App\Http\Controllers\FrontEnd\PrePurchaseClaimController as F_PrePurchaseCla
 use App\Http\Controllers\FrontEnd\PostPurchaseClaimController as F_PostPurchaseClaimController;
 use App\Http\Controllers\FrontEnd\GetInTouchController as F_GetInTouchController;
 use App\Http\Controllers\FrontEnd\InquiryController  as F_InquiryController;
+use App\Http\Controllers\FrontEnd\SearchLogController as F_SearchLogController ;
 use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Controllers\FrontEnd\FilterController;
@@ -140,6 +141,8 @@ use App\Models\Lead;
 use App\Models\Utm;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+// routes/api.php
+
 
 Route::middleware([CaptureUtm::class])->group(function () {
 
@@ -863,6 +866,13 @@ Route::prefix('frontend/inquiries')->group(function () {
     Route::delete('/{id}', [F_InquiryController::class, 'destroy']);
 });
 
+
+
+// POST when user searches or clicks
+Route::post('/frontend/search-logs', [F_SearchLogController::class, 'store']);
+
+// GET logs for analytics
+Route::get('/frontend/search-logs', [F_SearchLogController::class, 'index']);
 
 // Create banner
 Route::get('/frontend/menu-banners', [F_MenuBannerController::class, 'index']);
