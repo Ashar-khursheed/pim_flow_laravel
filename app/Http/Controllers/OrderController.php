@@ -115,15 +115,15 @@ class OrderController extends Controller
 			if ($request->has('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
-					break;
+						$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+						break;
 					case 'Unpaid':
-					$recordsQuery->where('orders.paid_amount', 0);
-					break;
+						$recordsQuery->where('orders.paid_amount', 0);
+						break;
 					case 'Partially Paid':
-					$recordsQuery->where('orders.paid_amount', '>', 0)
-					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
-					break;
+						$recordsQuery->where('orders.paid_amount', '>', 0)
+							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+						break;
 				}
 			}
 
@@ -165,9 +165,9 @@ class OrderController extends Controller
 			}
 
 			$records = $recordsQuery
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get();
+				->offset(($page - 1) * $length)
+				->limit($length)
+				->get();
 
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
@@ -200,8 +200,8 @@ class OrderController extends Controller
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
+						? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+						: null;
 
 					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
 						if (isset($orderProduct->$key)) {
@@ -292,8 +292,8 @@ class OrderController extends Controller
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
-		->where('customer_id', $request->customer_id)
-		->first();
+			->where('customer_id', $request->customer_id)
+			->first();
 
 		if (!$address) {
 			return response()->json([
@@ -409,7 +409,7 @@ class OrderController extends Controller
 			});
 
 
-			if (in_array(config('app.website'), ['UAE', 'TEST']) && $request->boolean('is_reserved')) {
+			if (in_array(config('app.website'), ['UAE', 'TEST', 'US']) && $request->boolean('is_reserved')) {
 				$paymentLink = null;
 				if ($request->boolean('is_payment')) {
 					try {
@@ -426,6 +426,27 @@ class OrderController extends Controller
 							'trace' => $e->getTraceAsString()
 						]);
 					}
+
+				} else if (config('app.website') == 'US') {
+
+					try {
+
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
+							->createPaymentLink($order);
+						if ($paymentLink) {
+							$order = Order::find($order->id);
+							$order->payment_link = $paymentLink;
+							$order->save();
+						}
+					} catch (\Exception $e) {
+						\Log::error('Square Payment Link generation failed', [
+							'order_id' => $order->id,
+							'error' => $e->getMessage(),
+							'trace' => $e->getTraceAsString()
+						]);
+					}
+
+
 				} else {
 					try {
 						$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
@@ -479,18 +500,18 @@ class OrderController extends Controller
 				$product = $orderProduct->product;
 				if ($product) {
 					$product->images = is_array($product->images)
-					? $product->images
-					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+						? $product->images
+						: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 					$product->brand_name = $product->brand->name ?? null;
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
 
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-				->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+					->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
+					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 
 				// Format numeric values to 2 decimal places - FIXED variable name
 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -660,8 +681,8 @@ class OrderController extends Controller
 			}
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-			: null;
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 
 			$orderProduct->nofraudResponse->response ?? null;
 			$orderProduct->nofraud_decision = $data['decision'] ?? null;
@@ -889,8 +910,8 @@ class OrderController extends Controller
 				}
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
+					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 
 				/* Format numeric values to 2 decimal places */
 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -1428,8 +1449,8 @@ class OrderController extends Controller
 			/* Process each product */
 			foreach ($request->products as $productData) {
 				$orderProduct = OrderProduct::where('id', $productData['order_product_id'])
-				->where('order_id', $order->id)
-				->firstOrFail();
+					->where('order_id', $order->id)
+					->firstOrFail();
 
 				if ($productData['quantity'] > $orderProduct->remaining_quantity) {
 					throw new \Exception("Cannot ship more than remaining quantity for product ID {$orderProduct->id}");
