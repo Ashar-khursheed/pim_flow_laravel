@@ -266,10 +266,14 @@ class PaymentHistoryController extends Controller
 			$validated['order_id'] = $order->id;
 			$validated['created_by'] = auth::id();
 			$validated['rider_name'] = $request->rider_name;
+			$total_amount = $order->total_amount;
+  			if( $total_amount < $request->amount){
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Paid amount is greater than total amount '.$total_amount,
 
-			// if (isset($validated['payment_details'])) {
-			//     $validated['payment_details'] = $validated['payment_details'];
-			// }
+                ], 401);
+            }
 
 			$validated['payment_img'] = uploadImageToWebpS3FromFile(
 				$request,
@@ -284,7 +288,7 @@ class PaymentHistoryController extends Controller
 			// Return success response with 201 status
 			return response()->json([
 				'success' => true,
-				'message' => 'Payment created successfully.',
+				'message' => 'The payment has been successfully.',
 				'data' => $payment
 			], 201);
 
