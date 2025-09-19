@@ -168,7 +168,7 @@ class PaymentHistoryController extends Controller
 				'payment_details' => $payment->payment_details ? json_decode($payment->payment_details, true) : null,
 				'payment_img' => $payment->payment_img,
 				'rider_name' => $payment->rider_name,
-				'payment_date' => $payment->payment_date ? date('d-m-Y H:i:s', strtotime($payment->payment_date)) : null,
+				'payment_date' => $payment->payment_date ? date('d-m-Y', strtotime($payment->payment_date)) : null,
 				'created_by' => $payment->createdBy?->username ?? null,
 				'updated_by' => $payment->updatedBy?->username ?? null,
 				'created_at' => date('d-m-Y H:i:s', strtotime($payment->created_at)),
