@@ -402,6 +402,12 @@ class OrderController extends Controller
 				'created_by' => auth()->id()
 			]);
 
+			/* Remove all customer's carts along with their products */
+			$order->customer->customerCarts->each(function ($cart) {
+				$cart->customerCartProducts()->delete();
+				$cart->delete();
+			});
+
 
 			if (in_array(config('app.website'), ['UAE', 'TEST']) && $request->boolean('is_reserved')) {
 				$paymentLink = null;

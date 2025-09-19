@@ -329,6 +329,13 @@ class OrderController extends BaseController
 				'description' => 'Order has been successfully created',
 			]);
 
+			/* Remove all customer's carts along with their products */
+			$order->customer->customerCarts->each(function ($cart) {
+				$cart->customerCartProducts()->delete();
+				$cart->delete();
+			});
+
+
 			DB::commit();
 
 			if ($request->boolean('is_cod')) {
