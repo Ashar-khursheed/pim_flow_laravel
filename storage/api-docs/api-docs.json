@@ -14568,11 +14568,11 @@
                         }
                     },
                     {
-                        "name": "is_active",
+                        "name": "global",
                         "in": "query",
-                        "description": "Filter by active status",
+                        "description": "Global search across all coupon fields",
                         "schema": {
-                            "type": "boolean"
+                            "type": "string"
                         }
                     },
                     {
@@ -14581,7 +14581,46 @@
                         "description": "Items per page",
                         "schema": {
                             "type": "integer",
-                            "default": 15
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "code",
+                                "title",
+                                "discount_amount",
+                                "created_at",
+                                "updated_at",
+                                "expires_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction",
+                        "schema": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
                         }
                     }
                 ],
@@ -14595,11 +14634,17 @@
                                         "success": {
                                             "type": "boolean"
                                         },
-                                        "data": {
-                                            "type": "object"
-                                        },
                                         "message": {
                                             "type": "string"
+                                        },
+                                        "total_pages": {
+                                            "type": "integer"
+                                        },
+                                        "total_records": {
+                                            "type": "integer"
+                                        },
+                                        "data": {
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"

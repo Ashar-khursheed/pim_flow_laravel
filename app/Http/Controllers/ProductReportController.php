@@ -110,13 +110,13 @@ class ProductReportController extends Controller
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
 
-		 
+
 
 			$brands = "";
 			if ($product->brand) {
 				$brands = Brand::withCount('products')->where('id', $product->brand->id)->first();
 			}
-			 
+
 
 					$data[] = [
 						'id' => $product->id,
@@ -131,15 +131,15 @@ class ProductReportController extends Controller
 						'category_name' => $product->categories->pluck('name')->implode(', '),
 						'category_count' => $product->categories->count(),
 						'product_count' => $brands ? $brands->products_count : null,
-						'atribute_count' => $product->productAttributes ? $product->productAttributes->count() : null,
-					 
+						'attribute_count' => $product->productAttributes ? $product->productAttributes->count() : null,
+
 					];
-				
+
 				return $data;
-			
+
 		});
 
-		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count', 'atribute_count'];
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'brand id', 'brand', 'status', 'category_id', 'category_name', 'category_count', 'product_count', 'attribute_count'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
@@ -300,7 +300,7 @@ class ProductReportController extends Controller
 				'brand' => optional($product->brand)->name,
 				'category_name' => $product->categories->pluck('name')->implode(', '),
 				'category_count' => $product->categories->count(),
-				'atribute_count' => $product->productAttributes ? $product->productAttributes->count() : null,
+				'attribute_count' => $product->productAttributes ? $product->productAttributes->count() : null,
 				'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 
 			];
@@ -309,7 +309,7 @@ class ProductReportController extends Controller
 
 		});
 
-		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'status', 'brand name', 'category_name', 'category_count', 'atribute_count', 'price'];
+		$excelHeaders = ['id', 'name', 'approved', 'sku', 'image', 'status', 'brand name', 'category_name', 'category_count', 'attribute_count', 'price'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
