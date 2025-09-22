@@ -1843,53 +1843,55 @@ class ProductController extends BaseController
 		// } else {
 		// 	unset($input['images']); // preserve existing
 		// }
-	if ($request->has('images') && !empty(array_filter($request->images))) {
-    if ($canModifyImages) {
-        $finalImages = [];
-        $manager = new ImageManager(new Driver()); // ✅ Initialize once
 
-        foreach ($request->images as $key => $image) {
-            if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-                // ✅ If already a valid URL, keep as is
-                $finalImages[] = $image;
+		if ($request->has('images') && !empty(array_filter($request->images))) {
+			if ($canModifyImages) {
+				$finalImages = [];
+				$manager = new ImageManager(new Driver()); // ✅ Initialize once
 
-            } elseif ($request->hasFile("images.$key")) {
-                $file = $request->file("images.$key");
+				foreach ($request->images as $key => $image) {
+					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+						// ✅ If already a valid URL, keep as is
+						$finalImages[] = $image;
 
-                // ✅ Load image with Intervention v3
-                $img = $manager->read($file->getRealPath())
-                    ->scale(width: 1000); // keep aspect ratio, max width 1000px
+					} elseif ($request->hasFile("images.$key")) {
+						$file = $request->file("images.$key");
 
-                // ✅ Dynamically adjust quality to keep under 100 KB
-                $quality = 90;
-                do {
-                    $encoded = $img->toJpeg($quality);
-                    $size = strlen($encoded); // bytes
-                    $quality -= 5;
-                } while ($size > 102400 && $quality > 10);
+						// ✅ Load image with Intervention v3
+						$img = $manager->read($file->getRealPath())
+							->scale(width: 1000); // keep aspect ratio, max width 1000px
 
-                // ✅ Save compressed image to temp file
-                $tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
-                file_put_contents($tempPath, $encoded);
+						// ✅ Dynamically adjust quality to keep under 100 KB
+						$quality = 90;
+						do {
+							$encoded = $img->toWebp($quality); // 🔄 now WebP instead of JPEG
+							$size = strlen($encoded); // bytes
+							$quality -= 5;
+						} while ($size > 102400 && $quality > 10);
 
-                // ✅ Upload to S3
-                $path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
-                $finalImages[] = Storage::disk('s3')->url($path);
+						// ✅ Save compressed image to temp file
+						$tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
+						file_put_contents($tempPath, $encoded);
 
-                // ✅ Cleanup
-                @unlink($tempPath);
-            }
-        }
+						// ✅ Upload to S3
+						$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
+						$finalImages[] = Storage::disk('s3')->url($path);
 
-        if (!empty($finalImages)) {
-            $input['images'] = json_encode($finalImages);
-        }
-    } else {
-        unset($input['images']);
-    }
-} else {
-    unset($input['images']); // preserve existing
-}
+						// ✅ Cleanup
+						@unlink($tempPath);
+					}
+				}
+
+				if (!empty($finalImages)) {
+					$input['images'] = json_encode($finalImages);
+				}
+			} else {
+				unset($input['images']);
+			}
+		} else {
+			unset($input['images']); // preserve existing
+		}
+
 
 
 		// Handle videos with role-based permission - CORRECTED VERSION
