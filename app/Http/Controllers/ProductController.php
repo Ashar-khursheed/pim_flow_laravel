@@ -23,6 +23,7 @@ use App\Models\Attribute;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
 use App\Services\ExcelImporterService;
+use Intervention\Image\Facades\Image;
 
 class ProductController extends BaseController
 {
@@ -1812,34 +1813,79 @@ class ProductController extends BaseController
 		$documentPath = 'production/documents';
 
 		// Handle images with role-based permission - CORRECTED VERSION
-		if ($request->has('images') && !empty(array_filter($request->images))) {
-			if ($canModifyImages) {
-				$finalImages = [];
-				foreach ($request->images as $key => $image) {
-					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-						$finalImages[] = $image;
-					} elseif ($request->hasFile("images.$key")) {
-						$file = $request->file("images.$key");
-						// ✅ Check file size (max 100 KB)
-						if ($file->getSize() > 102400) {
-							return response()->json([
-								'success' => false,
-								'message' => 'Image size must not exceed 100 KB.'
-							], 400);
-						}
-						$path = $file->store($imagePath, 's3');
-						$finalImages[] = Storage::disk('s3')->url($path);
-					}
+		// if ($request->has('images') && !empty(array_filter($request->images))) {
+		// 	if ($canModifyImages) {
+		// 		$finalImages = [];
+		// 		foreach ($request->images as $key => $image) {
+		// 			if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+		// 				$finalImages[] = $image;
+		// 			} elseif ($request->hasFile("images.$key")) {
+		// 				$file = $request->file("images.$key");
+		// 				// ✅ Check file size (max 100 KB)
+		// 				if ($file->getSize() > 102400) {
+		// 					return response()->json([
+		// 						'success' => false,
+		// 						'message' => 'Image size must not exceed 100 KB.'
+		// 					], 400);
+		// 				}
+		// 				$path = $file->store($imagePath, 's3');
+		// 				$finalImages[] = Storage::disk('s3')->url($path);
+		// 			}
+		// 		}
+		// 		if (!empty($finalImages)) {
+		// 			$input['images'] = json_encode($finalImages);
+		// 		}
+		// 	} else {
+		// 		unset($input['images']);
+		// 	}
+		// } else {
+		// 	unset($input['images']); // preserve existing
+		// }
+
+
+	if ($request->has('images') && !empty(array_filter($request->images))) {
+		if ($canModifyImages) {
+			$finalImages = [];
+			foreach ($request->images as $key => $image) {
+				if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+					$finalImages[] = $image;
+				} elseif ($request->hasFile("images.$key")) {
+					$file = $request->file("images.$key");
+
+					// Load image with Intervention
+					$img = Image::make($file);
+
+					// ✅ Resize max 1000x1000 while keeping aspect ratio
+					$img->resize(1000, 1000, function ($constraint) {
+						$constraint->aspectRatio();
+						$constraint->upsize();
+					});
+
+					// ✅ Compress iteratively to WebP until ≤ 100 KB
+					$quality = 90;
+					do {
+						$compressed = (string) $img->encode('webp', $quality);
+						$size = strlen($compressed);
+						$quality -= 5;
+					} while ($size > 102400 && $quality > 10);
+
+					// ✅ Save to S3 as .webp
+					$filename = uniqid() . '.webp';
+					Storage::disk('s3')->put($imagePath . '/' . $filename, $compressed, 'public');
+
+					$finalImages[] = Storage::disk('s3')->url($imagePath . '/' . $filename);
 				}
-				if (!empty($finalImages)) {
-					$input['images'] = json_encode($finalImages);
-				}
-			} else {
-				unset($input['images']);
+			}
+
+			if (!empty($finalImages)) {
+				$input['images'] = json_encode($finalImages);
 			}
 		} else {
-			unset($input['images']); // preserve existing
+			unset($input['images']);
 		}
+	} else {
+		unset($input['images']); // preserve existing
+	}
 
 
 		// Handle videos with role-based permission - CORRECTED VERSION
