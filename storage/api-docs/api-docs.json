@@ -8388,9 +8388,9 @@
                 "operationId": "9d678efe34a8a30237b9259db1890073",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "customer_id",
                         "in": "path",
-                        "description": "Cart ID",
+                        "description": "Customer ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -8410,16 +8410,18 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/carts/{customer_id}": {
             "delete": {
                 "tags": [
                     "Carts"
                 ],
                 "summary": "Delete a cart",
-                "operationId": "94edba2e35d86637902c45b8505b8957",
+                "operationId": "3c567fd7af0ef9f7b15249a15a03e4af",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "customer_id",
                         "in": "path",
                         "required": true,
                         "schema": {
