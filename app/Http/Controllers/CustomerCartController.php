@@ -153,12 +153,10 @@ class CustomerCartController extends Controller
 	 *                 property="products",
 	 *                 type="array",
 	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
+	 *                     required={"product_id", "vendor_id", "quantity"},
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="unit_price", type="number", format="float", example=199.99),
-	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
+	 *                     @OA\Property(property="quantity", type="integer", example=5)
 	 *                 )
 	 *             )
 	 *         )
@@ -180,8 +178,6 @@ class CustomerCartController extends Controller
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
-			'products.*.unit_price' => 'required|numeric|min:0',
-			'products.*.shipping_charge' => 'required|numeric|min:0',
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
@@ -198,11 +194,26 @@ class CustomerCartController extends Controller
 		DB::beginTransaction();
 
 		try {
+			/* Collect all product supplier details in one go */
+			$productDetails = [];
+			foreach ($request->products as $product) {
+				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+				if (!$fetchedDetail) {
+					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+				}
+				$productDetails[] = [
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'unit_price' => $fetchedDetail->unit_price,
+					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+				];
+			}
+
 			$totalProducts = 0;
 			$cartAmount = 0;
 			$cartShipping = 0;
-
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$totalProducts += $product['quantity'];
 				$cartAmount += $product['quantity'] * $product['unit_price'];
 				$cartShipping += $product['shipping_charge'];
@@ -212,6 +223,11 @@ class CustomerCartController extends Controller
 			$cartAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$taxAmount = round($cartAmount * ($request->tax_percentage / 100), 2);
+
+			if (config('app.website') == 'UAE') {
+				$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+			}
+
 			$totalAmount = $cartAmount + $taxAmount + $cartShipping;
 
 			/* Get the latest cart by ID (most recent) */
@@ -240,7 +256,7 @@ class CustomerCartController extends Controller
 				'created_by' => auth()->id(),
 			]);
 
-			foreach ($request->products as $product) {
+			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
 				CustomerCartProduct::create([
 					'customer_cart_id' => $customerCart->id,
