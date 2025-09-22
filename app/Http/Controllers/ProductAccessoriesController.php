@@ -687,7 +687,7 @@ class ProductAccessoriesController extends Controller
     public function getProductList(Request $request)
     {
         try {
-            $query = Product::select('id', 'name', 'sku')->where('status', 'published');
+            $query = Product::select('id', 'name', 'sku');
             if ($request->search) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
