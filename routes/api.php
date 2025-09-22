@@ -826,10 +826,12 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
+Route::post('/ccavenue/thanks', [F_CCavenueController::class, 'paymentSuccess']);
+Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
 
 Route::post('/stripe/create-stripe-payment-link', [F_StripeController::class, 'createStripePaymentLink']);
-Route::get('/stripe/paymentSuccess', [F_StripeController::class, 'paymentSuccess']);
-Route::get('/stripe/paymentCancel', [F_StripeController::class, 'paymentCancel']);
+Route::get('/stripe/thanks', [F_StripeController::class, 'paymentSuccess']);
+Route::get('/stripe/failed', [F_StripeController::class, 'paymentFailed']);
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
 Route::prefix('stripe')->group(function () {
     Route::post('/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
