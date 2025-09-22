@@ -80,7 +80,7 @@ class ProductAccessoriesController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    public function index(Request $request): JsonResponse
+   public function index(Request $request): JsonResponse
     {
         try {
             $query = ProductAccessory::with(['items', 'product', 'createdBy', 'updatedBy', 'approvedBy']);
@@ -97,7 +97,10 @@ class ProductAccessoriesController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('id', 'like', "%{$search}%");
+                        ->orWhere('id', 'like', "%{$search}%")
+                        ->orWhereHas('product', function ($q2) use ($search) {
+                            $q2->where('sku', 'like', "%{$search}%"); // ✅ Search by product SKU
+                        });
                 });
             }
 
@@ -109,15 +112,12 @@ class ProductAccessoriesController extends Controller
             $perPage = $request->get('per_page', 10);
             $page = $request->get('page', 1);
 
-
             $totalRecords = (clone $query)->count();
             $totalPages = (int) ceil($totalRecords / $perPage);
-
 
             if ($page > $totalPages && $totalPages > 0) {
                 $page = 1;
             }
-
 
             $accessories = $query->orderBy($sortBy, $sortDir)
                 ->offset(($page - 1) * $perPage)
@@ -135,6 +135,7 @@ class ProductAccessoriesController extends Controller
 
                 return [
                     'product_id' => $accessory->product_id,
+                    'sku' => $accessory->product?->sku ?? null, // ✅ SKU from related product
                     'accessory_id' => $accessory->id,
                     'name' => $accessory->name,
                     'isapproved' => $accessory->isapproved,
@@ -166,6 +167,7 @@ class ProductAccessoriesController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * @OA\Post(
