@@ -400,7 +400,7 @@ class CustomerCartController extends Controller
 	public function show($customer_id)
 	{
 		$customerCart = CustomerCart::where([
-			'customer_id' => $request->customer_id
+			'customer_id' => $customer_id
 		])->first();
 
 		if (!$customerCart) {
