@@ -37,7 +37,7 @@ class ProductAccessoriesController extends Controller
      *         name="search",
      *         in="query",
      *         required=false,
-     *         description="Search by id, name",
+     *         description="Search by id, name,sku",
      *         @OA\Schema(type="string", example="")
      *     ),
      *     @OA\Parameter(
@@ -85,45 +85,57 @@ class ProductAccessoriesController extends Controller
         try {
             $query = ProductAccessory::with(['items', 'product', 'createdBy', 'updatedBy', 'approvedBy']);
 
+            // Filter by product_id if provided
             if ($request->input('product_id') != "" && $request->input('product_id') != null) {
                 $query->where('product_id', $request->input('product_id'));
             }
 
+            // Filter by approval status if not 'all'
             if ($request->input('isapproved') != "all") {
-                $query->where('isapproved', $request->isapproved);
+                $query->where('isapproved', $request->input('isapproved'));
             }
 
+            // Enhanced search logic for name, SKU, or ID
             if ($request->filled('search')) {
-                $search = $request->search;
+                $search = $request->input('search');
                 $query->where(function ($q) use ($search) {
+                    // Search by accessory name
                     $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('id', 'like', "%{$search}%");
+                        // Search by accessory ID
+                        ->orWhere('id', 'like', "%{$search}%")
+                        // Search by product SKU (moved inside the main search condition)
+                        ->orWhereHas('product', function ($subQuery) use ($search) {
+                            $subQuery->where('sku', 'like', "%{$search}%");
+                        });
                 });
             }
 
-            $searchableColumns = ['id', 'product_id', 'name', 'isapproved'];
+            // Define searchable and sortable columns
+            $searchableColumns = ['id', 'product_id', 'name', 'sku', 'isapproved'];
             $sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
             $sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
             $sortDir = strtolower($request->input('sort_direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
+            // Pagination parameters
             $perPage = $request->get('per_page', 10);
             $page = $request->get('page', 1);
 
-
+            // Calculate total records and pages
             $totalRecords = (clone $query)->count();
             $totalPages = (int) ceil($totalRecords / $perPage);
 
-
+            // Adjust page if it exceeds total pages
             if ($page > $totalPages && $totalPages > 0) {
                 $page = 1;
             }
 
-
+            // Fetch paginated results
             $accessories = $query->orderBy($sortBy, $sortDir)
                 ->offset(($page - 1) * $perPage)
                 ->limit($perPage)
                 ->get();
 
+            // Format the response data
             $formattedProducts = $accessories->map(function ($accessory) {
                 $accessoryItems = $accessory->items->map(function ($item) {
                     return [
@@ -137,6 +149,7 @@ class ProductAccessoriesController extends Controller
                     'product_id' => $accessory->product_id,
                     'accessory_id' => $accessory->id,
                     'name' => $accessory->name,
+                    'sku' => $accessory->product->sku, // Added SKU to response
                     'isapproved' => $accessory->isapproved,
                     'approved_by' => $accessory->approvedBy?->username ?? null,
                     'created_by' => $accessory->createdBy?->username ?? null,
@@ -241,7 +254,7 @@ class ProductAccessoriesController extends Controller
             })->toArray();
 
             // Save all accessories at once
-            $accessory->items()->createMany($accessories);             
+            $accessory->items()->createMany($accessories);
 
             return response()->json([
                 'success' => true,
@@ -285,10 +298,10 @@ class ProductAccessoriesController extends Controller
      *      security={{"bearerAuth":{}}}
      * )
      */
-    public function show($id): JsonResponse
+    public function show($id)
     {
         try {
-            $accessory = ProductAccessory::with(['items', 'approvedBy', 'createdBy', 'updatedBy'])->findOrFail($id);
+            $accessory = ProductAccessory::with(['items', 'product', 'approvedBy', 'createdBy', 'updatedBy'])->findOrFail($id);
 
             // Map items properly
             $accessoryItems = $accessory->items->map(function ($item) {
@@ -304,6 +317,7 @@ class ProductAccessoriesController extends Controller
                 'product_id' => $accessory->product_id,
                 'accessory_id' => $accessory->id,
                 'name' => $accessory->name,
+                'sku' => $accessory->product->sku,
                 'isapproved' => $accessory->isapproved,
                 'approved_by' => $accessory->approved_by,
                 'created_by' => $accessory->created_by,
@@ -687,11 +701,12 @@ class ProductAccessoriesController extends Controller
     public function getProductList(Request $request)
     {
         try {
-            $query = Product::select('id', 'name', 'sku')->where('status', 'published');
+            $query = Product::select('id', 'name', 'sku');
             if ($request->search) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('sku', 'like', "%{$search}%")
                         ->orWhere('id', 'like', "%{$search}%");
 
                 });

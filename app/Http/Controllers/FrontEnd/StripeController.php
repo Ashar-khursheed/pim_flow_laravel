@@ -356,22 +356,25 @@ class StripeController extends Controller
         $payment_method_types = $data['payment_method_types']['0'];
         $payment_status = $data['payment_status'];
         $status = $data['status'];
-        if ($status == 'complete') {
-            $status = "Completed";
-        } elseif ($status == 'success') {
-            $status = "Completed";
-        } elseif ($status == "processing") {
-            $status = "Pending";
-        } elseif ($status == "canceled") {
-            $status = "Failed";
-        } elseif ($status == "failed") {
-            $status = "Failed";
-        } elseif ($status == "expired") {
-            $status = "Failed";
-        } elseif ($status == "succeeded") {
-            $status = "Completed";
-        } else {
-            $status = "Completed";
+        switch ($status) {
+            case 'complete':
+            case 'Success':
+            case 'succeeded':
+                $status = "Completed";
+                break;
+            case 'processing':
+                $status = "Pending";
+                break;
+            case 'canceled':
+            case 'failed':
+            case 'expired':
+                $status = "Failed";
+                break;
+            case 'Invalid':
+                $status = "Invalid";
+                break;
+            default:
+                $status = "Pending";
         }
         $email = $data['customer_details']['email'];
         $name = $data['customer_details']['name'];
@@ -413,7 +416,7 @@ class StripeController extends Controller
                     'pending_amount' => $order->pending_amount - ($amount_total / 100),
                     'payment_link' => null,
                     'is_reserved' => false,
-                   
+
                 ]);
             } else {
                 $order->update([
@@ -422,7 +425,7 @@ class StripeController extends Controller
                     'pending_amount' => $order->pending_amount - ($amount_total / 100),
                     'payment_link' => null,
                     'is_reserved' => false,
-                     
+
                 ]);
 
             }
@@ -472,22 +475,25 @@ class StripeController extends Controller
         $payment_method_types = $data['payment_method_types']['0'];
         $payment_status = $data['payment_status'];
         $status = $data['status'];
-        if ($status == 'complete') {
-            $status = "Completed";
-        } elseif ($status == 'success') {
-            $status = "Completed";
-        } elseif ($status == "processing") {
-            $status = "Pending";
-        } elseif ($status == "canceled") {
-            $status = "Failed";
-        } elseif ($status == "failed") {
-            $status = "Failed";
-        } elseif ($status == "expired") {
-            $status = "Failed";
-        } elseif ($status == "succeeded") {
-            $status = "Completed";
-        } else {
-            $status = "Failed";
+        switch ($status) {
+            case 'complete':
+            case 'Success':
+            case 'succeeded':
+                $status = "Completed";
+                break;
+            case 'processing':
+                $status = "Pending";
+                break;
+            case 'canceled':
+            case 'failed':
+            case 'expired':
+                $status = "Failed";
+                break;
+            case 'Invalid':
+                $status = "Invalid";
+                break;
+            default:
+                $status = "Pending";
         }
         $email = $data['customer_details']['email'];
         $name = $data['customer_details']['name'];

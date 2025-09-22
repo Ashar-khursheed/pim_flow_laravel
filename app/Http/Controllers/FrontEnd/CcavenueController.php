@@ -481,24 +481,25 @@ class CcavenueController extends Controller
                 return response()->json(['success' => false, 'message' => 'Order not found'], 404);
             }
             $status = $information->order_status;
-            if ($status == 'complete') {
-                $status = "Completed";
-            } elseif ($status == 'Success') {
-                $status = "Completed";
-            } elseif ($status == "processing") {
-                $status = "Pending";
-            } elseif ($status == "canceled") {
-                $status = "Failed";
-            } elseif ($status == "failed") {
-                $status = "Failed";
-            } elseif ($status == "expired") {
-                $status = "Failed";
-            } elseif ($status == "succeeded") {
-                $status = "Completed";
-            } elseif ($status == "Invalid") {
-                $status = "Invalid";
-            }else{
-                $status = "Pending";
+            switch ($status) {
+                case 'complete':
+                case 'Success':
+                case 'succeeded':
+                    $status = "Completed";
+                    break;
+                case 'processing':
+                    $status = "Pending";
+                    break;
+                case 'canceled':
+                case 'failed':
+                case 'expired':
+                    $status = "Failed";
+                    break;
+                case 'Invalid':
+                    $status = "Invalid";
+                    break;
+                default:
+                    $status = "Pending";
             }
         }
 
@@ -622,28 +623,29 @@ class CcavenueController extends Controller
                 return response()->json(['success' => false, 'message' => 'Order not found'], 404);
             }
             $status = $information->order_status;
-            if ($status == 'complete') {
-                $status = "Completed";
-            } elseif ($status == 'success') {
-                $status = "Completed";
-            } elseif ($status == "processing") {
-                $status = "Pending";
-            } elseif ($status == "canceled") {
-                $status = "Failed";
-            } elseif ($status == "failed") {
-                $status = "Failed";
-            } elseif ($status == "expired") {
-                $status = "Failed";
-            } elseif ($status == "succeeded") {
-                $status = "Completed";
-            } elseif ($status == "Invalid") {
-                $status = "Failed";
-            } else{
-                $status = "Pending";
+            switch ($status) {
+                case 'complete':
+                case 'Success':
+                case 'succeeded':
+                    $status = "Completed";
+                    break;
+                case 'processing':
+                    $status = "Pending";
+                    break;
+                case 'canceled':
+                case 'failed':
+                case 'expired':
+                    $status = "Failed";
+                    break;
+                case 'Invalid':
+                    $status = "Invalid";
+                    break;
+                default:
+                    $status = "Pending";
             }
-            
+
         }
-       
+
 
 
         PaymentManagement::create([
