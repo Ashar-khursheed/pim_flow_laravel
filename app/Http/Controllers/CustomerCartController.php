@@ -13,6 +13,7 @@ use Illuminate\Bus\Batch;
 use App\Models\FrontEnd\CustomerCart;
 use App\Models\FrontEnd\CustomerCartProduct;
 use App\Models\FrontEnd\CustomerAddress;
+use App\Models\FrontEnd\Customer;
 use App\Jobs\Order\CartCreationMailJob;
 
 class CustomerCartController extends Controller
@@ -181,8 +182,8 @@ class CustomerCartController extends Controller
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
-			->where('customer_id', $request->customer_id)
-			->first();
+		->where('customer_id', $request->customer_id)
+		->first();
 
 		if (!$address) {
 			return response()->json([
@@ -233,28 +234,63 @@ class CustomerCartController extends Controller
 			/* Get the latest cart by ID (most recent) */
 			$latestCart = CustomerCart::orderBy('id', 'desc')->first();
 
-			// Generate the next cart reference number
-			if ($latestCart && is_numeric($latestCart->reference_number)) {
-				$referenceNumber = (int) $latestCart->reference_number + 1;
-			} else {
-				$website = config('app.website');
-				$referenceNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+			/* Get the latest cart by ID (most recent) */
+			$customerCart = CustomerCart::firstOrNew([
+				'customer_id' => $request->customer_id
+			]);
+
+			if (!$customerCart->exists) {
+				/* New record → generate reference number */
+				if ($latestCart && is_numeric($latestCart->reference_number)) {
+					$referenceNumber = (int) $latestCart->reference_number + 1;
+				} else {
+					$website = config('app.website');
+					$referenceNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+				}
+
+				$customerCart->reference_number = $referenceNumber;
+				$customerCart->created_by = auth()->id();
 			}
 
-			$customerCart = CustomerCart::create([
-				'reference_number' => $referenceNumber,
-				'customer_id' => $request->customer_id,
-				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $cartShipping,
-				'is_lift_gate' => $request->is_lift_gate,
-				'is_residential_address' => $request->is_residential_address,
-				'amount' => $cartAmount,
-				'tax_percentage' => $request->tax_percentage,
-				'tax_amount' => $taxAmount,
-				'total_amount' => $totalAmount,
-				'total_products' => $totalProducts,
-				'created_by' => auth()->id(),
-			]);
+			/* Always update these fields */
+			$customerCart->customer_address_id    = $request->customer_address_id;
+			$customerCart->shipping_charge        = $cartShipping;
+			$customerCart->is_lift_gate           = $request->is_lift_gate;
+			$customerCart->is_residential_address = $request->is_residential_address;
+			$customerCart->amount                 = $cartAmount;
+			$customerCart->tax_percentage         = $request->tax_percentage;
+			$customerCart->tax_amount             = $taxAmount;
+			$customerCart->total_amount           = $totalAmount;
+			$customerCart->total_products         = $totalProducts;
+			$customerCart->updated_by             = auth()->id();
+
+			$customerCart->save();
+
+			// // Generate the next cart reference number
+			// if ($latestCart && is_numeric($latestCart->reference_number)) {
+			// 	$referenceNumber = (int) $latestCart->reference_number + 1;
+			// } else {
+			// 	$website = config('app.website');
+			// 	$referenceNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+			// }
+
+			// $customerCart = CustomerCart::create([
+			// 	'reference_number' => $referenceNumber,
+			// 	'customer_id' => $request->customer_id,
+			// 	'customer_address_id' => $request->customer_address_id,
+			// 	'shipping_charge' => $cartShipping,
+			// 	'is_lift_gate' => $request->is_lift_gate,
+			// 	'is_residential_address' => $request->is_residential_address,
+			// 	'amount' => $cartAmount,
+			// 	'tax_percentage' => $request->tax_percentage,
+			// 	'tax_amount' => $taxAmount,
+			// 	'total_amount' => $totalAmount,
+			// 	'total_products' => $totalProducts,
+			// 	'created_by' => auth()->id(),
+			// ]);
+
+			/* Delete existing products and re-insert */
+			CustomerCartProduct::where('customer_cart_id', $customerCart->id)->delete();
 
 			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
@@ -303,18 +339,18 @@ class CustomerCartController extends Controller
 				$product = $customerCartProduct->product;
 				if ($product) {
 					$product->images = is_array($product->images)
-						? $product->images
-						: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+					? $product->images
+					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 					$product->brand_name = $product->brand->name ?? null;
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
 
 				$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)
-					->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+				->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
-					? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
-					: null;
+				? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
+				: null;
 
 				// Format numeric values to 2 decimal places - FIXED variable name
 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -352,18 +388,20 @@ class CustomerCartController extends Controller
 	 *     tags={"Carts"},
 	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(
-	 *         name="id",
+	 *         name="customer_id",
 	 *         in="path",
-	 *         description="Cart ID",
+	 *         description="Customer ID",
 	 *         required=true,
 	 *         @OA\Schema(type="integer")
 	 *     ),
 	 *     @OA\Response(response=200, description="Retrieved successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
-	public function show($id)
+	public function show($customer_id)
 	{
-		$customerCart = CustomerCart::find($id);
+		$customerCart = CustomerCart::where([
+			'customer_id' => $request->customer_id
+		])->first();
 
 		if (!$customerCart) {
 			return response()->json([
@@ -433,31 +471,33 @@ class CustomerCartController extends Controller
 
 	/**
 	 * @OA\Delete(
-	 *     path="/api/carts/{id}",
+	 *     path="/api/carts/{customer_id}",
 	 *     summary="Delete a cart",
 	 *     tags={"Carts"},
-	 *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="customer_id", in="path", required=true, @OA\Schema(type="integer")),
 	 *     @OA\Response(response=200, description="Deleted successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function destroy($id)
+	public function destroy($customer_id)
 	{
-		$customerCart = CustomerCart::find($id);
+		$customer = Customer::find($customer_id);
 
-		if (!$customerCart) {
+		if (!$customer) {
 			return response()->json([
 				'success' => false,
-				'message' => __("err_exist")
-			]);
+				'message' => 'Customer not found',
+			], 404);
 		}
 
-		$customerCart->customerCartProducts()->delete();
-		$customerCart->delete();
+		$customer->customerCarts->each(function ($cart) {
+			$cart->customerCartProducts()->delete();
+			$cart->delete();
+		});
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Cart deleted successfully',
+			'message' => 'All carts deleted successfully for customer',
 		]);
 	}
 }
