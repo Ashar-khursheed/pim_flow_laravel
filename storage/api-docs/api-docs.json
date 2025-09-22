@@ -13911,6 +13911,34 @@
                 }
             }
         },
+        "/api/ccavenue/thanks": {
+            "post": {
+                "tags": [
+                    "CCAvenue"
+                ],
+                "summary": "ccavenue Payment Success Redirect",
+                "operationId": "2f8de33400e008495bdeb3cc710b5f5f",
+                "responses": {
+                    "200": {
+                        "description": "Payment was successful"
+                    }
+                }
+            }
+        },
+        "/api/ccavenue/failed": {
+            "post": {
+                "tags": [
+                    "CCAvenue"
+                ],
+                "summary": "CCAvenue Payment Cancel Redirect",
+                "operationId": "4ceca77797fe7b34ac915a970b44464a",
+                "responses": {
+                    "200": {
+                        "description": "Payment was cancelled"
+                    }
+                }
+            }
+        },
         "/api/frontend/company-profiles": {
             "get": {
                 "tags": [
@@ -14535,6 +14563,7 @@
                         "schema": {
                             "type": "string",
                             "enum": [
+                                "all",
                                 "pending",
                                 "approved",
                                 "rejected"
@@ -14548,6 +14577,7 @@
                         "schema": {
                             "type": "string",
                             "enum": [
+                                "all",
                                 "customer",
                                 "category",
                                 "product",
@@ -23305,13 +23335,13 @@
                 ]
             }
         },
-        "/api/stripe/paymentSuccess": {
+        "/api/stripe/thanks": {
             "get": {
                 "tags": [
                     "Stripe"
                 ],
                 "summary": "Stripe Payment Success Redirect",
-                "operationId": "e81b711861e71006fd50c1fccc7baa6c",
+                "operationId": "38356105e0f8eb4ae825a9cfa3d48f2a",
                 "responses": {
                     "200": {
                         "description": "Payment was successful"
@@ -23319,13 +23349,13 @@
                 }
             }
         },
-        "/api/stripe/paymentCancel": {
+        "/api/stripe/failed": {
             "get": {
                 "tags": [
                     "Stripe"
                 ],
                 "summary": "Stripe Payment Cancel Redirect",
-                "operationId": "f21a6484a56dc87680f5362e0704f647",
+                "operationId": "56b5980fef9a15b45f2be57b62fd4a5d",
                 "responses": {
                     "200": {
                         "description": "Payment was cancelled"
