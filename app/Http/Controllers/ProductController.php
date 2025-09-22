@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\File;
