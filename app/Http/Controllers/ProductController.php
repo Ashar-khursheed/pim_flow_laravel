@@ -1122,6 +1122,7 @@ class ProductController extends BaseController
 
 
 			// Replace your existing manual upload code with this:
+		// Replace your existing manual upload code with this:
 		if ($request->has('images') && !empty(array_filter($request->images))) {
 			if ($canModifyImages) {
 				$finalImages = [];
@@ -2520,12 +2521,6 @@ class ProductController extends BaseController
 		}
 	}
 
-
-	
-/**
- * Sanitize SKU for use in filenames and URLs
- * (Copy from ProductImageUploadController if not already present)
- */
 private function sanitizeSku($sku)
 {
     $sanitized = str_replace(' ', '_', $sku);
@@ -2542,23 +2537,28 @@ private function sanitizeSku($sku)
 
 /**
  * Process and compress image - ALWAYS converts to WebP 1000x1000 under 100KB
- * (Copy all the image processing methods from ProductImageUploadController)
  */
 private function processAndCompressImage($imagePath, $sku)
 {
     try {
+        // Check if GD extension is loaded
+        if (!extension_loaded('gd')) {
+            error_log("GD extension is not loaded");
+            return false;
+        }
+
         // Set memory limit for large images
         $originalMemoryLimit = ini_get('memory_limit');
         ini_set('memory_limit', '1024M');
 
         // Verify file exists and is readable
-        if (!File::exists($imagePath) || !is_readable($imagePath)) {
+        if (!file_exists($imagePath) || !is_readable($imagePath)) {
             error_log("Image file not readable: {$imagePath}");
             return false;
         }
 
         $fileSize = filesize($imagePath);
-        $imageInfo = getimagesize($imagePath);
+        $imageInfo = @getimagesize($imagePath);
         
         if ($imageInfo === false) {
             error_log("Could not get image size for: {$imagePath}");
@@ -2568,6 +2568,8 @@ private function processAndCompressImage($imagePath, $sku)
         $originalWidth = $imageInfo[0];
         $originalHeight = $imageInfo[1];
         $imageType = $imageInfo[2];
+
+        error_log("Processing image: {$imagePath} - {$originalWidth}x{$originalHeight} - Size: {$fileSize} bytes - Type: {$imageType}");
 
         // Create image resource
         $sourceImage = $this->createImageResource($imagePath, $imageType);
@@ -2583,6 +2585,7 @@ private function processAndCompressImage($imagePath, $sku)
         $targetImage = imagecreatetruecolor($targetWidth, $targetHeight);
         if ($targetImage === false) {
             imagedestroy($sourceImage);
+            error_log("Failed to create target image canvas");
             return false;
         }
 
@@ -2596,19 +2599,26 @@ private function processAndCompressImage($imagePath, $sku)
         );
 
         // Resize with high quality
-        imagecopyresampled(
+        $resampleResult = imagecopyresampled(
             $targetImage, $sourceImage,
             $resizeData['offsetX'], $resizeData['offsetY'], 0, 0,
             $resizeData['newWidth'], $resizeData['newHeight'],
             $originalWidth, $originalHeight
         );
 
+        if (!$resampleResult) {
+            error_log("Failed to resample image");
+            imagedestroy($sourceImage);
+            imagedestroy($targetImage);
+            return false;
+        }
+
         imagedestroy($sourceImage);
 
-        // Create temp file
+        // Create temp directory if it doesn't exist
         $tempDir = storage_path('app/temp');
-        if (!File::exists($tempDir)) {
-            File::makeDirectory($tempDir, 0755, true);
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
         }
 
         $tempFilePath = $tempDir . '/' . Str::random(10) . '_compressed.webp';
@@ -2620,11 +2630,15 @@ private function processAndCompressImage($imagePath, $sku)
         ini_set('memory_limit', $originalMemoryLimit);
 
         if (!$success) {
-            if (File::exists($tempFilePath)) {
-                File::delete($tempFilePath);
+            if (file_exists($tempFilePath)) {
+                unlink($tempFilePath);
             }
+            error_log("Failed to compress image under 100KB");
             return false;
         }
+
+        $finalSize = filesize($tempFilePath);
+        error_log("Successfully compressed {$imagePath} to {$finalSize} bytes");
 
         return $tempFilePath;
 
@@ -2638,8 +2652,8 @@ private function processAndCompressImage($imagePath, $sku)
         if (isset($targetImage) && is_resource($targetImage)) {
             imagedestroy($targetImage);
         }
-        if (isset($tempFilePath) && File::exists($tempFilePath)) {
-            File::delete($tempFilePath);
+        if (isset($tempFilePath) && file_exists($tempFilePath)) {
+            unlink($tempFilePath);
         }
         if (isset($originalMemoryLimit)) {
             ini_set('memory_limit', $originalMemoryLimit);
@@ -2649,214 +2663,223 @@ private function processAndCompressImage($imagePath, $sku)
     }
 }
 
-	/**
-	 * Create image resource from file based on type
-	 */
-	private function createImageResource($imagePath, $imageType)
-	{
-		switch ($imageType) {
-			case IMAGETYPE_JPEG:
-			return @imagecreatefromjpeg($imagePath);
-			case IMAGETYPE_PNG:
-			return @imagecreatefrompng($imagePath);
-			case IMAGETYPE_WEBP:
-			return @imagecreatefromwebp($imagePath);
-			case IMAGETYPE_GIF:
-			return @imagecreatefromgif($imagePath);
-			case IMAGETYPE_BMP:
-			if (function_exists('imagecreatefrombmp')) {
-				return @imagecreatefrombmp($imagePath);
-			} else {
-				return @imagecreatefromstring(file_get_contents($imagePath));
-			}
-			case IMAGETYPE_TIFF_II:
-			case IMAGETYPE_TIFF_MM:
-			return @imagecreatefromstring(file_get_contents($imagePath));
-			default:
-			return false;
-		}
-	}
+/**
+ * Create image resource from file based on type
+ */
+private function createImageResource($imagePath, $imageType)
+{
+    switch ($imageType) {
+        case IMAGETYPE_JPEG:
+            return @imagecreatefromjpeg($imagePath);
+        case IMAGETYPE_PNG:
+            return @imagecreatefrompng($imagePath);
+        case IMAGETYPE_WEBP:
+            if (function_exists('imagecreatefromwebp')) {
+                return @imagecreatefromwebp($imagePath);
+            }
+            return false;
+        case IMAGETYPE_GIF:
+            return @imagecreatefromgif($imagePath);
+        case IMAGETYPE_BMP:
+            if (function_exists('imagecreatefrombmp')) {
+                return @imagecreatefrombmp($imagePath);
+            } else {
+                return @imagecreatefromstring(file_get_contents($imagePath));
+            }
+        case IMAGETYPE_TIFF_II:
+        case IMAGETYPE_TIFF_MM:
+            return @imagecreatefromstring(file_get_contents($imagePath));
+        default:
+            error_log("Unsupported image type: {$imageType}");
+            return false;
+    }
+}
 
-	/**
-	 * Calculate resize dimensions maintaining aspect ratio for 1000x1000 canvas
-	 */
-	private function calculateResizeDimensions($originalWidth, $originalHeight, $targetWidth, $targetHeight)
-	{
-		$aspectRatio = $originalWidth / $originalHeight;
+/**
+ * Calculate resize dimensions maintaining aspect ratio for 1000x1000 canvas
+ */
+private function calculateResizeDimensions($originalWidth, $originalHeight, $targetWidth, $targetHeight)
+{
+    $aspectRatio = $originalWidth / $originalHeight;
 
-		if ($aspectRatio > 1) {
-			// Landscape image - fit to width
-			$newWidth = $targetWidth;
-			$newHeight = intval($targetWidth / $aspectRatio);
-			$offsetX = 0;
-			$offsetY = intval(($targetHeight - $newHeight) / 2);
-		} elseif ($aspectRatio < 1) {
-			// Portrait image - fit to height
-			$newHeight = $targetHeight;
-			$newWidth = intval($targetHeight * $aspectRatio);
-			$offsetX = intval(($targetWidth - $newWidth) / 2);
-			$offsetY = 0;
-		} else {
-			// Square image - fit to canvas
-			$newWidth = $targetWidth;
-			$newHeight = $targetHeight;
-			$offsetX = 0;
-			$offsetY = 0;
-		}
+    if ($aspectRatio > 1) {
+        // Landscape image - fit to width
+        $newWidth = $targetWidth;
+        $newHeight = intval($targetWidth / $aspectRatio);
+        $offsetX = 0;
+        $offsetY = intval(($targetHeight - $newHeight) / 2);
+    } elseif ($aspectRatio < 1) {
+        // Portrait image - fit to height
+        $newHeight = $targetHeight;
+        $newWidth = intval($targetHeight * $aspectRatio);
+        $offsetX = intval(($targetWidth - $newWidth) / 2);
+        $offsetY = 0;
+    } else {
+        // Square image - fit to canvas
+        $newWidth = $targetWidth;
+        $newHeight = $targetHeight;
+        $offsetX = 0;
+        $offsetY = 0;
+    }
 
-		return [
-			'newWidth' => $newWidth,
-			'newHeight' => $newHeight,
-			'offsetX' => $offsetX,
-			'offsetY' => $offsetY
-		];
-	}
+    return [
+        'newWidth' => $newWidth,
+        'newHeight' => $newHeight,
+        'offsetX' => $offsetX,
+        'offsetY' => $offsetY
+    ];
+}
 
-	/**
-	 * Compress image with advanced techniques for 1000x1000 WebP under 100KB
-	 */
-	private function compressImageAdaptively($targetImage, $tempFilePath, $originalFileSize)
-	{
-		$maxFileSize = 100 * 1024; // 100KB target
+/**
+ * Compress image with adaptive quality for 1000x1000 WebP under 100KB
+ */
+private function compressImageAdaptively($targetImage, $tempFilePath, $originalFileSize)
+{
+    $maxFileSize = 100 * 1024; // 100KB target
 
-		// For large source files, we need to be very aggressive with compression
-		// since we're maintaining 1000x1000 resolution
-		if ($originalFileSize > 1024 * 1024) { // > 1MB - be very aggressive
-			$qualityLevels = [45, 40, 35, 30, 25, 20, 18, 15, 12, 10, 8, 6, 5, 3, 1];
-		} elseif ($originalFileSize > 700 * 1024) { // > 700KB - be aggressive
-			$qualityLevels = [55, 50, 45, 40, 35, 30, 25, 22, 20, 18, 15, 12, 10, 8, 5];
-		} else { // Smaller files - normal quality range
-			$qualityLevels = [90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 20];
-		}
+    // Check if WebP is supported
+    if (!function_exists('imagewebp')) {
+        error_log("WebP support is not available");
+        return false;
+    }
 
-		foreach ($qualityLevels as $quality) {
-			if (imagewebp($targetImage, $tempFilePath, $quality)) {
-				$fileSize = filesize($tempFilePath);
+    // Determine quality levels based on original file size
+    if ($originalFileSize > 1024 * 1024) { // > 1MB - be very aggressive
+        $qualityLevels = [45, 40, 35, 30, 25, 20, 18, 15, 12, 10, 8, 6, 5, 3, 1];
+    } elseif ($originalFileSize > 700 * 1024) { // > 700KB - be aggressive
+        $qualityLevels = [55, 50, 45, 40, 35, 30, 25, 22, 20, 18, 15, 12, 10, 8, 5];
+    } else { // Smaller files - normal quality range
+        $qualityLevels = [90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 20];
+    }
 
-				error_log("Trying quality {$quality}: resulted in {$fileSize} bytes (target: {$maxFileSize})");
+    foreach ($qualityLevels as $quality) {
+        $result = @imagewebp($targetImage, $tempFilePath, $quality);
+        
+        if ($result && file_exists($tempFilePath)) {
+            $fileSize = filesize($tempFilePath);
+            error_log("Trying quality {$quality}: resulted in {$fileSize} bytes (target: {$maxFileSize})");
 
-				if ($fileSize <= $maxFileSize) {
-					return true; // Success!
-				}
-			} else {
-				error_log("Failed to save WebP with quality {$quality}");
-			}
-		}
+            if ($fileSize <= $maxFileSize && $fileSize > 0) {
+                return true; // Success!
+            }
+        } else {
+            error_log("Failed to save WebP with quality {$quality}");
+        }
+    }
 
-		// If still not compressed enough, try additional optimization techniques
-		return $this->tryAdvancedCompression($targetImage, $tempFilePath, $maxFileSize);
-	}
+    // If still not compressed enough, try advanced techniques
+    return $this->tryAdvancedCompression($targetImage, $tempFilePath, $maxFileSize);
+}
 
-	/**
-	 * Advanced compression techniques for stubborn large images
-	 * Applies additional optimization while maintaining 1000x1000 size
-	 */
-	private function tryAdvancedCompression($targetImage, $tempFilePath, $maxFileSize)
-	{
-		try {
-			// Try extremely low quality levels with additional processing
-			$extremeQualityLevels = [3, 2, 1];
+/**
+ * Advanced compression techniques for stubborn large images
+ */
+private function tryAdvancedCompression($targetImage, $tempFilePath, $maxFileSize)
+{
+    try {
+        $extremeQualityLevels = [3, 2, 1];
 
-			foreach ($extremeQualityLevels as $quality) {
-				// Create a copy for additional processing
-				$optimizedImage = imagecreatetruecolor(1000, 1000);
+        foreach ($extremeQualityLevels as $quality) {
+            // Create a copy for additional processing
+            $optimizedImage = imagecreatetruecolor(1000, 1000);
+            if ($optimizedImage === false) {
+                continue;
+            }
 
-				// Set white background
-				$white = imagecolorallocate($optimizedImage, 255, 255, 255);
-				imagefill($optimizedImage, 0, 0, $white);
+            // Set white background
+            $white = imagecolorallocate($optimizedImage, 255, 255, 255);
+            imagefill($optimizedImage, 0, 0, $white);
 
-				// Copy the image
-				imagecopy($optimizedImage, $targetImage, 0, 0, 0, 0, 1000, 1000);
+            // Copy the image
+            imagecopy($optimizedImage, $targetImage, 0, 0, 0, 0, 1000, 1000);
 
-				// Apply slight blur to reduce file size (helps with compression)
-				imagefilter($optimizedImage, IMG_FILTER_GAUSSIAN_BLUR);
+            // Apply slight blur to reduce file size
+            imagefilter($optimizedImage, IMG_FILTER_GAUSSIAN_BLUR);
 
-				// Try saving with this extremely low quality
-				if (imagewebp($optimizedImage, $tempFilePath, $quality)) {
-					$fileSize = filesize($tempFilePath);
-					error_log("Advanced compression - Quality {$quality}: {$fileSize} bytes");
+            // Try saving with extremely low quality
+            $result = @imagewebp($optimizedImage, $tempFilePath, $quality);
+            
+            if ($result && file_exists($tempFilePath)) {
+                $fileSize = filesize($tempFilePath);
+                error_log("Advanced compression - Quality {$quality}: {$fileSize} bytes");
 
-					if ($fileSize <= $maxFileSize) {
-						imagedestroy($optimizedImage);
-						return true;
-					}
-				}
+                if ($fileSize <= $maxFileSize && $fileSize > 0) {
+                    imagedestroy($optimizedImage);
+                    return true;
+                }
+            }
 
-				imagedestroy($optimizedImage);
-			}
+            imagedestroy($optimizedImage);
+        }
 
-			// Last resort: Try reducing color palette while maintaining size
-			return $this->tryColorReduction($targetImage, $tempFilePath, $maxFileSize);
+        // Last resort: color reduction
+        return $this->tryColorReduction($targetImage, $tempFilePath, $maxFileSize);
 
-		} catch (\Exception $e) {
-			error_log("Advanced compression failed: " . $e->getMessage());
-			return false;
-		}
-	}
+    } catch (\Exception $e) {
+        error_log("Advanced compression failed: " . $e->getMessage());
+        return false;
+    }
+}
 
-	/**
-	 * Final attempt: Reduce color palette for extreme compression
-	 */
-	private function tryColorReduction($targetImage, $tempFilePath, $maxFileSize)
-	{
-		try {
-			// Create palette-based image for extreme compression
-			$paletteLevels = [64, 32, 16, 8]; // Number of colors in palette
+/**
+ * Final attempt: Reduce color palette for extreme compression
+ */
+private function tryColorReduction($targetImage, $tempFilePath, $maxFileSize)
+{
+    try {
+        $paletteLevels = [64, 32, 16, 8]; // Number of colors in palette
 
-			foreach ($paletteLevels as $colors) {
-				// Create palette version
-				$paletteImage = imagecreatetruecolor(1000, 1000);
+        foreach ($paletteLevels as $colors) {
+            // Create palette version
+            $paletteImage = imagecreatetruecolor(1000, 1000);
+            if ($paletteImage === false) {
+                continue;
+            }
 
-				// Set white background
-				$white = imagecolorallocate($paletteImage, 255, 255, 255);
-				imagefill($paletteImage, 0, 0, $white);
+            // Set white background
+            $white = imagecolorallocate($paletteImage, 255, 255, 255);
+            imagefill($paletteImage, 0, 0, $white);
 
-				// Copy original
-				imagecopy($paletteImage, $targetImage, 0, 0, 0, 0, 1000, 1000);
+            // Copy original
+            imagecopy($paletteImage, $targetImage, 0, 0, 0, 0, 1000, 1000);
 
-				// Convert to palette to reduce colors
-				imagetruecolortopalette($paletteImage, false, $colors);
+            // Convert to palette to reduce colors
+            imagetruecolortopalette($paletteImage, false, $colors);
 
-				// Convert back to truecolor for WebP saving
-				$finalImage = imagecreatetruecolor(1000, 1000);
-				imagecopy($finalImage, $paletteImage, 0, 0, 0, 0, 1000, 1000);
+            // Convert back to truecolor for WebP saving
+            $finalImage = imagecreatetruecolor(1000, 1000);
+            if ($finalImage === false) {
+                imagedestroy($paletteImage);
+                continue;
+            }
+            
+            imagecopy($finalImage, $paletteImage, 0, 0, 0, 0, 1000, 1000);
 
-				// Try saving with very low quality
-				if (imagewebp($finalImage, $tempFilePath, 1)) {
-					$fileSize = filesize($tempFilePath);
-					error_log("Color reduction ({$colors} colors): {$fileSize} bytes");
+            // Try saving with very low quality
+            $result = @imagewebp($finalImage, $tempFilePath, 1);
+            
+            if ($result && file_exists($tempFilePath)) {
+                $fileSize = filesize($tempFilePath);
+                error_log("Color reduction ({$colors} colors): {$fileSize} bytes");
 
-					if ($fileSize <= $maxFileSize) {
-						imagedestroy($paletteImage);
-						imagedestroy($finalImage);
-						return true;
-					}
-				}
+                if ($fileSize <= $maxFileSize && $fileSize > 0) {
+                    imagedestroy($paletteImage);
+                    imagedestroy($finalImage);
+                    return true;
+                }
+            }
 
-				imagedestroy($paletteImage);
-				imagedestroy($finalImage);
-			}
+            imagedestroy($paletteImage);
+            imagedestroy($finalImage);
+        }
 
-			error_log("All compression attempts failed - image cannot be compressed to under 100KB while maintaining 1000x1000");
-			return false;
+        error_log("All compression attempts failed - image cannot be compressed to under 100KB while maintaining 1000x1000");
+        return false;
 
-		} catch (\Exception $e) {
-			error_log("Color reduction failed: " . $e->getMessage());
-			return false;
-		}
-	}
+    } catch (\Exception $e) {
+        error_log("Color reduction failed: " . $e->getMessage());
+        return false;
+    }
+}
 
-	/**
-	 * Legacy method - kept for backward compatibility but not used
-	 * The new processAndCompressImage method handles all compression needs
-	 */
-	private function uploadProductImagesToS3_old($imagesDir, $originalSku, $sanitizedSku)
-	{
-		// This method is deprecated - use uploadProductImagesToS3 instead
-		// Kept for reference only
-		return [
-			'imageUrls' => [],
-			'errors' => ['Legacy method - use new compression system']
-		];
-	}
 }
