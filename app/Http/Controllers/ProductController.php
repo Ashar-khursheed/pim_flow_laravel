@@ -23,7 +23,9 @@ use App\Models\Attribute;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
 use App\Services\ExcelImporterService;
-use Intervention\Image\Facades\Image;
+// use Intervention\Image\Facades\Image;
+use Intervention\Image\ImageManagerStatic as Image;
+
 
 class ProductController extends BaseController
 {
@@ -1842,54 +1844,54 @@ class ProductController extends BaseController
 		// 	unset($input['images']); // preserve existing
 		// }
 		if ($request->has('images') && !empty(array_filter($request->images))) {
-		if ($canModifyImages) {
-			$finalImages = [];
+    if ($canModifyImages) {
+        $finalImages = [];
 
-			foreach ($request->images as $key => $image) {
-				if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-					// Keep URL as is
-					$finalImages[] = $image;
+        foreach ($request->images as $key => $image) {
+            if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+                // Keep URL as is
+                $finalImages[] = $image;
 
-				} elseif ($request->hasFile("images.$key")) {
-					$file = $request->file("images.$key");
+            } elseif ($request->hasFile("images.$key")) {
+                $file = $request->file("images.$key");
 
-					// Load image with Intervention
-					$img = Image::make($file->getRealPath())
-						->resize(1000, 1000, function ($constraint) {
-							$constraint->aspectRatio();
-							$constraint->upsize(); // prevent enlarging
-						});
+                // Load image with Intervention
+                $img = Image::make($file->getRealPath())
+                    ->resize(1000, 1000, function ($constraint) {
+                        $constraint->aspectRatio();
+                        $constraint->upsize(); // prevent enlarging
+                    });
 
-					// Dynamically adjust quality to keep under 100 KB
-					$quality = 90;
-					do {
-						$encoded = (string) $img->encode('jpg', $quality);
-						$size = strlen($encoded); // in bytes
-						$quality -= 5;
-					} while ($size > 102400 && $quality > 10);
+                // Dynamically adjust quality to keep under 100 KB
+                $quality = 90;
+                do {
+                    $encoded = (string) $img->encode('jpg', $quality);
+                    $size = strlen($encoded); // in bytes
+                    $quality -= 5;
+                } while ($size > 102400 && $quality > 10);
 
-					// Save compressed image to temp
-					$tempPath = sys_get_temp_dir() . '/' . uniqid() . '.jpg';
-					file_put_contents($tempPath, $encoded);
+                // Save compressed image to temp
+                $tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.jpg';
+                file_put_contents($tempPath, $encoded);
 
-					// Upload to S3
-					$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
-					$finalImages[] = Storage::disk('s3')->url($path);
+                // Upload to S3
+                $path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
+                $finalImages[] = Storage::disk('s3')->url($path);
 
-					// Clean up temp file
-					@unlink($tempPath);
-				}
-			}
+                // Clean up temp file
+                @unlink($tempPath);
+            }
+        }
 
-			if (!empty($finalImages)) {
-				$input['images'] = json_encode($finalImages);
-			}
-		} else {
-			unset($input['images']);
-		}
-	} else {
-		unset($input['images']); // preserve existing
-	}
+        if (!empty($finalImages)) {
+            $input['images'] = json_encode($finalImages);
+        }
+    } else {
+        unset($input['images']);
+    }
+} else {
+    unset($input['images']); // preserve existing
+}
 
 
 		// Handle videos with role-based permission - CORRECTED VERSION
