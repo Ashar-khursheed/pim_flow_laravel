@@ -31,77 +31,87 @@ class UserController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		 if (!auth()->user()->can('list user')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
-        $records = User::with('roles:id,name');
 
-		  /* Global Search */
-    if ($request->filled('global')) {
-        $searchTerm = $request->input('global');
-        $records = $records->where(function ($query) use ($searchTerm) {
-            $query->where('username', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('first_name', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('email', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('id', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhereHas('roles', function ($roleQuery) use ($searchTerm) {
-                      $roleQuery->where('name', 'LIKE', '%' . $searchTerm . '%');
-                  });
-        });
-    }
+		$userRole = auth()->user()->getRoleNames()->first() ?? null;
+
+		if (!auth()->user()->can('update user') || !in_array($userRole, ['Admin', 'Super Admin'])) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
+
+		if (!auth()->user()->can('list user')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
+		$records = User::with('roles:id,name');
+
+		/* Global Search */
+		if ($request->filled('global')) {
+			$searchTerm = $request->input('global');
+			$records = $records->where(function ($query) use ($searchTerm) {
+				$query->where('username', 'LIKE', '%' . $searchTerm . '%')
+					->orWhere('first_name', 'LIKE', '%' . $searchTerm . '%')
+					->orWhere('email', 'LIKE', '%' . $searchTerm . '%')
+					->orWhere('id', 'LIKE', '%' . $searchTerm . '%')
+					->orWhereHas('roles', function ($roleQuery) use ($searchTerm) {
+						$roleQuery->where('name', 'LIKE', '%' . $searchTerm . '%');
+					});
+			});
+		}
 		/* Sorting */
 		if ($request->filled('sort_by')) {
-		$sortBy = $request->input('sort_by');
-		$sortDir = $request->input('sort_dir', 'asc');
+			$sortBy = $request->input('sort_by');
+			$sortDir = $request->input('sort_dir', 'asc');
 
-		// Validate sort direction
-		if (!in_array($sortDir, ['asc', 'desc'])) {
-		$sortDir = 'asc';
+			// Validate sort direction
+			if (!in_array($sortDir, ['asc', 'desc'])) {
+				$sortDir = 'asc';
+			}
+
+			// Validate sort column
+			if (in_array($sortBy, ['id', 'first_name', 'username', 'created_at', 'updated_at'])) {
+				$records = $records->orderBy($sortBy, $sortDir);
+			}
 		}
 
-		// Validate sort column
-		if (in_array($sortBy, ['id','first_name', 'username', 'created_at', 'updated_at'])) {
-		$records = $records->orderBy($sortBy, $sortDir);
+
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			$page = (int) $request->input('page');
+			$length = (int) $request->input('length');
+			$totalRecords = $records->count();
+			$totalPages = ceil($totalRecords / $length);
+
+			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
+		} else {
+			$records = $records->get();
+			$totalRecords = $records->count();
 		}
-		}
 
+		$records->each(function ($user) {
+			$role = $user->roles->first();
+			if ($role) {
+				$user->role_id = $role->id;
+				$user->role_name = $role->name;
+			}
+			$user->makeHidden('roles');
+		});
 
-        /* Pagination */
-        if ($request->filled('page') && $request->filled('length')) {
-            $page = (int) $request->input('page');
-            $length = (int) $request->input('length');
-            $totalRecords = $records->count();
-            $totalPages = ceil($totalRecords / $length);
-
-            $records = $records->offset(($page - 1) * $length)->limit($length)->get();
-        } else {
-            $records = $records->get();
-            $totalRecords = $records->count();
-        }
-
-        $records->each(function ($user) {
-            $role = $user->roles->first();
-            if ($role) {
-                $user->role_id = $role->id;
-                $user->role_name = $role->name;
-            }
-            $user->makeHidden('roles');
-        });
-
-        return response()->json([
-            'success' => true,
-            'message' => __("msg_rec_list"),
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_rec_list"),
 			'current_page' => (int) $page,
 			'per_page' => (int) $length,
-            'total_pages' => $totalPages ?? 1,
-            'total_records' => $totalRecords,
-            'data' => $records,
+			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
+			'data' => $records,
 
-		 
-        ]);
+
+		]);
 	}
 
 	/**
@@ -241,13 +251,7 @@ class UserController extends BaseController
 	 */
 	public function update(Request $request, $userId)
 	{
-		if (!auth()->user()->can('update user')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
-
+		$currentUserRole = auth()->user()->getRoleNames()->first() ?? null;
 		$user = User::find($userId);
 		if (!$user) {
 			return response()->json([
@@ -256,58 +260,94 @@ class UserController extends BaseController
 			]);
 		}
 
-		/* Validate request data */
-		$validatedData = $request->validate([
-			'username' => 'required|string|max:255|unique:users,username,' . $userId,
-			'email' => 'required|string|email|max:255|unique:users,email,' . $userId,
-			'password' => 'nullable|string|min:8',
-			'first_name' => 'required|string|max:255',
-			'last_name' => 'required|string|max:255',
-			'role' => 'required|string|exists:roles,name',
-		]);
+		$currentUser = auth()->user();
+		$userRole = $user->roles->first()->name ?? null;
 
-		DB::beginTransaction();
-		try {
-			/* Check if password is being updated */
-			if (!empty($validatedData['password'])) {
-				/* Revoke all existing tokens */
-				$user->tokens()->delete();
-				$validatedData['password'] = Hash::make($validatedData['password']);
-			} else {
-				$validatedData['password'] = $user->password;
-			}
-			/* Save the user */
-			$user->syncRoles($validatedData['role'])->update([
-				'username' => $validatedData['username'],
-				'email' => $validatedData['email'],
-				'password' => $validatedData['password'],
-				'first_name' => $validatedData['first_name'],
-				'last_name' => $validatedData['last_name'],
+		if (
+			// Super Admin can update anyone
+			$currentUserRole === 'Super Admin' ||
+				// Admin can update anyone except Super Admin and themselves
+			($currentUserRole === 'Admin' && $userRole !== 'Super Admin' && $user->id !== $currentUser->id) ||
+
+			(in_array($currentUserRole, [
+				'Ecommerce Manager',
+				'SEO Manager',
+				'Content Writing Manager',
+				'Marketing Manager',
+				'Graphic Designer Manager',
+				'Ecommerce Specialist',
+				'Content Writer',
+				'SEO Specialist',
+				'Graphic Designer',
+				'Finance Department'
+			]) && $user->id === $currentUser->id) ||
+
+			(auth()->user()->can('update user') && $userRole !== 'Super Admin' && $user->id !== $currentUser->id)
+		) {
+
+
+			/* Validate request data */
+			$validatedData = $request->validate([
+				'username' => 'required|string|max:255|unique:users,username,' . $userId,
+				'email' => 'required|string|email|max:255|unique:users,email,' . $userId,
+				'password' => 'nullable|string|min:8',
+				'first_name' => 'required|string|max:255',
+				'last_name' => 'required|string|max:255',
+				'role' => 'required|string|exists:roles,name',
 			]);
 
-			$role = $user->roles->first();
-			if ($role) {
-				$user->role_id = $role->id;
-				$user->role_name = $role->name;
+			DB::beginTransaction();
+			try {
+				/* Check if password is being updated */
+				if (!empty($validatedData['password'])) {
+					/* Revoke all existing tokens */
+					$user->tokens()->delete();
+					$validatedData['password'] = Hash::make($validatedData['password']);
+				} else {
+					$validatedData['password'] = $user->password;
+				}
+				/* Save the user */
+				$user->syncRoles($validatedData['role'])->update([
+					'username' => $validatedData['username'],
+					'email' => $validatedData['email'],
+					'password' => $validatedData['password'],
+					'first_name' => $validatedData['first_name'],
+					'last_name' => $validatedData['last_name'],
+				]);
+
+				$role = $user->roles->first();
+				if ($role) {
+					$user->role_id = $role->id;
+					$user->role_name = $role->name;
+				}
+
+				DB::commit();
+
+				/* Return success response */
+				return response()->json([
+					'success' => true,
+					'message' => __("msg_update"),
+					'data' => $user
+				]);
+
+
+			} catch (\Exception $e) {
+				DB::rollBack();
+
+				return response()->json([
+					'success' => false,
+					'message' => __("err_update"),
+					'error' => $e->getMessage()
+				], 500);
 			}
-
-			DB::commit();
-
-			/* Return success response */
-			return response()->json([
-				'success' => true,
-				'message' => __("msg_update"),
-				'data' => $user
-			]);
-		} catch (\Exception $e) {
-			DB::rollBack();
+		} else {
 
 			return response()->json([
 				'success' => false,
-				'message' => __("err_update"),
-				'error' => $e->getMessage()
-			], 500);
+				'message' => "You don't have permission to access this module.",
+			]);
 		}
+
 	}
 
 	/**
