@@ -8339,9 +8339,7 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity",
-                                                "unit_price",
-                                                "shipping_charge"
+                                                "quantity"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -8355,16 +8353,6 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 199.99
-                                                },
-                                                "shipping_charge": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
