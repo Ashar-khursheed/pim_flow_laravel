@@ -916,8 +916,8 @@ class CouponController extends Controller
         $validated = $request->validate([
             'coupon_code' => 'required|string',
             'cart_items' => 'required|array|min:1',
-            'cart_items.*.product_id' => 'required|integer|exists:ec_products,id',
-            'cart_items.*.category_id' => 'required|integer|exists:categories,id',
+            'cart_items.*.product_id' => 'nullable|integer|exists:ec_products,id',
+            'cart_items.*.category_id' => 'nullable|integer|exists:categories,id',
             'cart_items.*.quantity' => 'required|integer|min:1',
             'cart_items.*.price' => 'required|numeric|min:0',
             'cart_items.*.subtotal' => 'required|numeric|min:0',
