@@ -412,7 +412,8 @@ class StripeController extends Controller
                     'paid_amount' => $amount_total / 100,
                     'pending_amount' => $order->pending_amount - ($amount_total / 100),
                     'payment_link' => null,
-                    'status' => $status
+                    'is_reserved' => false,
+                   
                 ]);
             } else {
                 $order->update([
@@ -420,7 +421,8 @@ class StripeController extends Controller
                     'paid_amount' => $order->paid_amount + ($amount_total / 100),
                     'pending_amount' => $order->pending_amount - ($amount_total / 100),
                     'payment_link' => null,
-                    'status' => $status
+                    'is_reserved' => false,
+                     
                 ]);
 
             }

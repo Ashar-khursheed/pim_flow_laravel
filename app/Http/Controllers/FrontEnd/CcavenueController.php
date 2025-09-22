@@ -497,6 +497,8 @@ class CcavenueController extends Controller
                 $status = "Completed";
             } elseif ($status == "Invalid") {
                 $status = "Invalid";
+            }else{
+                $status = "Pending";
             }
         }
 
@@ -508,7 +510,7 @@ class CcavenueController extends Controller
                     'paid_amount' => $order->paid_amount + $information->amount,
                     'pending_amount' => $order->pending_amount - $information->amount,
                     'payment_link' => null,
-                    'status' => $status
+                    'is_reserved' => false,
                 ]);
             } else {
                 $order->update([
@@ -516,7 +518,7 @@ class CcavenueController extends Controller
                     'paid_amount' => $order->paid_amount + $information->amount,
                     'pending_amount' => $order->pending_amount - $information->amount,
                     'payment_link' => null,
-                    'status' => $status
+                    'is_reserved' => false,
                 ]);
 
             }
@@ -636,9 +638,10 @@ class CcavenueController extends Controller
                 $status = "Completed";
             } elseif ($status == "Invalid") {
                 $status = "Failed";
-            } else {
-                $status = "Completed";
+            } else{
+                $status = "Pending";
             }
+            
         }
        
 
