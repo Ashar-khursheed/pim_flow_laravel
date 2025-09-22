@@ -406,8 +406,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::resource('transaction-logs', TransactionLogController::class);
 
 	Route::resource('websites', WebsiteController::class)->only(['index']);
-
 	Route::resource('/delivery/payment-history', PaymentHistoryController::class);
+	
+	Route::get('/delivery/get-price-ordernumber', [PaymentHistoryController::class,'getPriceOrderNumber']);
 	Route::resource('product-accessories', ProductAccessoriesController::class);
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
