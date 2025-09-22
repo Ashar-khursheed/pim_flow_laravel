@@ -8379,13 +8379,13 @@
                 ]
             }
         },
-        "/api/carts/{id}": {
+        "/api/carts/{customer_id}": {
             "get": {
                 "tags": [
                     "Carts"
                 ],
                 "summary": "Get cart details",
-                "operationId": "9d678efe34a8a30237b9259db1890073",
+                "operationId": "01177ba8293c42dbae683f65ccc6e655",
                 "parameters": [
                     {
                         "name": "customer_id",
@@ -8410,9 +8410,7 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/carts/{customer_id}": {
+            },
             "delete": {
                 "tags": [
                     "Carts"
