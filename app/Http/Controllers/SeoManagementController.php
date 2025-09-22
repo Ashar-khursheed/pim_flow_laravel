@@ -305,6 +305,22 @@ class SeoManagementController extends Controller
 
 			$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
 
+			
+			// Create/update the SEO record first
+			$seoRecord = SeoManagement::where('url', $request->url)
+			->where(function ($query) use (  $request) {
+				$query->where('relational_id', '!=', $request->relational_id)
+				->orWhere('relational_type', '!=', $request->relational_type);
+			})
+			->first();
+
+			if ($seoRecord) {
+				return response()->json([
+					'success' => false,
+					'message' => "The URL '{$request->url}' is already assigned to {$seoRecord->relational_type} '{$seoRecord->relational->name}'.",
+				], 403);
+			}
+
 			if (!empty($validated['popular_tags'])) {
 				if (is_string($validated['popular_tags'])) {
 					$decoded = json_decode($validated['popular_tags'], true);
@@ -766,6 +782,21 @@ class SeoManagementController extends Controller
 		$validated = $request->validate($rules);
 
 		$seo = SeoManagement::findOrFail($id);
+
+		// Create/update the SEO record first
+		$seoRecord = SeoManagement::where('url', $request->url)
+		->where(function ($query) use (  $request) {
+			$query->where('relational_id', '!=', $request->relational_id)
+			->orWhere('relational_type', '!=', $request->relational_type);
+		})
+		->first();
+
+		if ($seoRecord) {
+			return response()->json([
+				'success' => false,
+				'message' => "The URL '{$request->url}' is already assigned to {$seoRecord->relational_type} '{$seoRecord->relational->name}'.",
+			], 403);
+		}
 
 		if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
 			return response()->json([
