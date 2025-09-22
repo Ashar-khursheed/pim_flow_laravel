@@ -383,7 +383,7 @@ class CustomerCartController extends Controller
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/carts/{id}",
+	 *     path="/api/carts/{customer_id}",
 	 *     summary="Get cart details",
 	 *     tags={"Carts"},
 	 *     security={{"bearerAuth":{}}},
