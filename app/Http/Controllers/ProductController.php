@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
-
+use Illuminate\Support\Facades\File;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Tax;
