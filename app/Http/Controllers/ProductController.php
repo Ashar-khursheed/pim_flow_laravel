@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
-use Illuminate\Support\Facades\File;
+
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Tax;
@@ -23,7 +23,6 @@ use App\Models\Attribute;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
 use App\Services\ExcelImporterService;
-use Intervention\Image\Laravel\Facades\Image;
 
 class ProductController extends BaseController
 {
@@ -808,7 +807,729 @@ class ProductController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+	// public function update(Request $request, $productId)
+	// {
+	// 	/* Log the incoming request for debugging */
 
+	// 	$product = Product::find($productId);
+
+	// 	if (!$product) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Product does not exist.'
+	// 		]);
+	// 	}
+
+	// 	$user = auth()->user();
+	// 	$userRole = $user ? $user->getRoleNames()->first() : null;
+
+	// 	// Restriction for approved products
+	// 	if ($product->approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'This product is approved and can only be updated by Super Admin or Admin.'
+	// 		], 403);
+	// 	}
+
+	// 	// Get the authenticated user and their role
+	// 	$user = auth()->user();
+	// 	$userRole = $user ? $user->getRoleNames()->first() : null;
+	// 	$allowedRoles = [
+	// 		'Super Admin',
+	// 		 'Admin',
+	// 		'Graphic Designer Manager'
+	// 	];  // Define which roles can modify images
+	// 	$canModifyImages = $userRole && in_array($userRole, $allowedRoles);
+
+	// 	$contentAllowedRoles = [
+	// 		'Super Admin',
+	// 		'Admin',
+	// 		'Content Writing Manager',
+	// 		'Content Writer',
+	// 		'Ecommerce Specialist',
+	// 	];
+	// 	$canModifyContent = $userRole && in_array($userRole, $contentAllowedRoles);
+
+	// 	/* Handle categories - IMPROVED VERSION */
+	// 	if ($request->has('categories')) {
+
+
+	// 		$categories = $request->input('categories');
+
+	// 		// Handle cases where categories might be sent as a JSON string
+	// 		if (is_string($categories) && (
+	// 			strpos($categories, '[') === 0 ||
+	// 			strpos($categories, '{') === 0
+	// 		)) {
+	// 			$categories = json_decode($categories, true);
+	// 		}
+	// 		// Handle comma-separated string format
+	// 		else if (is_string($categories) && strpos($categories, ',') !== false) {
+	// 			$categories = array_map('trim', explode(',', $categories));
+	// 		}
+	// 		// Handle single value
+	// 		else if (is_string($categories) && is_numeric($categories)) {
+	// 			$categories = [(int)$categories];
+	// 		}
+
+	// 		// Ensure we have a valid array
+	// 		if (is_array($categories)) {
+	// 			// Convert all values to integers to ensure proper comparison
+	// 			$categories = array_map('intval', array_filter($categories));
+	// 			$product->categories()->sync($categories);
+	// 		} else {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'Categories must be provided as a valid array of category IDs.'
+	// 			], 400);
+	// 		}
+	// 	}
+
+	// 	if ($request->product_attributes) {
+	// 		$productAttributes = is_array($request->product_attributes) ? $request->product_attributes : json_decode($request->product_attributes, true);
+
+	// 		if (is_array($productAttributes) && count($productAttributes) > 0) {
+	// 			$productAttributes = array_filter($productAttributes, function ($value) {
+	// 				return !is_null($value) && $value !== '';
+	// 			});
+
+	// 			$existingProductAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+
+	// 			$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
+
+	// 			if (!empty($attributesToDelete)) {
+	// 				$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
+	// 			}
+
+	// 			foreach ($productAttributes as $attributeId => $attributeValue) {
+	// 				$existingAttribute = Attribute::find($attributeId);
+	// 				if (!$existingAttribute) {
+	// 					return response()->json([
+	// 						'success' => false,
+	// 						'message' => "Attribute ID: $attributeId does not exist."
+	// 					]);
+	// 				}
+
+	// 				$value = null;
+	// 				$measurementUnitID = null;
+
+	// 				if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
+	// 					$value = $attributeValue['value'] ?? null;
+	// 					$measurementUnitID = $attributeValue['measurement_id'] ?? null;
+
+	// 					/* Validation: Either both should be present, or both should be empty (for delete) */
+	// 					if (($value && !$measurementUnitID) || (!$value && $measurementUnitID)) {
+	// 						$messages = [];
+
+	// 						if (empty($value)) {
+	// 							$messages[] = "Value not defined for attribute: {$existingAttribute->name}";
+	// 						}
+	// 						if (empty($measurementUnitID)) {
+	// 							$messages[] = "Measurement Unit not defined or invalid for attribute: {$existingAttribute->name}";
+	// 						}
+
+	// 						return response()->json([
+	// 							'success' => false,
+	// 							'message' => implode(' | ', $messages)
+	// 						], 400);
+	// 					}
+
+	// 					if (!$value && !$measurementUnitID) {
+	// 						/* Both missing = delete the existing attribute */
+	// 						$product->productAttributes()
+	// 						->where('attribute_id', $attributeId)
+	// 						->delete();
+	// 					} else {
+	// 						/* Both exist = update or create attribute */
+	// 						$product->productAttributes()->updateOrCreate(
+	// 							['attribute_id' => $attributeId],
+	// 							[
+	// 								'attribute_value' => $value,
+	// 								'measurement_unit_id' => $measurementUnitID
+	// 							]
+	// 						);
+	// 					}
+	// 				} else {
+	// 					$value = $attributeValue;
+
+	// 					if (empty($value)) {
+	// 						/* Delete non-measurement attribute if empty */
+	// 						$product->productAttributes()
+	// 						->where('attribute_id', $attributeId)
+	// 						->delete();
+	// 					} else {
+	// 						/* Update or create normal attribute */
+	// 						$product->productAttributes()->updateOrCreate(
+	// 							['attribute_id' => $attributeId],
+	// 							[
+	// 								'attribute_value' => $value,
+	// 								'measurement_unit_id' => null
+	// 							]
+	// 						);
+	// 					}
+	// 				}
+
+	// 				if ($existingAttribute->type === 'select') {
+	// 					if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
+	// 						$existingAttribute->attributeValues()->create([
+	// 							'attribute_value' => $value
+	// 						]);
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+
+	// 	// Handle FAQs with content writer permission check
+	// 	if ($request->has('faqs')) {
+	// 		$faqs = $request->input('faqs', []);
+	// 		$hasNewFaqData = false;
+
+	// 		// Decode if it's a JSON string
+	// 		if (is_string($faqs)) {
+	// 			$decoded = json_decode($faqs, true);
+	// 			if (json_last_error() !== JSON_ERROR_NONE) {
+	// 				return response()->json([
+	// 					'success' => false,
+	// 					'message' => 'Invalid JSON format for faqs.'
+	// 				], 400);
+	// 			}
+	// 			$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
+	// 		}
+
+	// 		// Fetch existing FAQs for comparison
+	// 		$existingFaqs = Faq::where('product_id', $product->id)->get()->keyBy('id');
+	// 		$processedFaqIds = [];
+
+	// 		// Check if there are actual changes
+	// 		if (is_array($faqs) && !empty($faqs)) {
+	// 			foreach ($faqs as $faqData) {
+	// 				$id = $faqData['id'] ?? null;
+	// 				$question = trim($faqData['question'] ?? '');
+	// 				$answer = trim($faqData['answer'] ?? '');
+
+	// 				// Create or update
+	// 				if ($id && isset($existingFaqs[$id])) {
+	// 					$existing = $existingFaqs[$id];
+	// 					if (
+	// 						$existing->question !== $question ||
+	// 						$existing->answer !== $answer ||
+	// 						$existing->category_id != ($faqData['category_id'] ?? null)
+	// 					) {
+	// 						$hasNewFaqData = true;
+	// 						break;
+	// 					}
+	// 				} elseif (!empty($question) || !empty($answer)) {
+	// 					$hasNewFaqData = true;
+	// 					break;
+	// 				}
+	// 			}
+	// 		}
+
+	// 		// If user is trying to modify and has no permission
+	// 		if ($hasNewFaqData && !$canModifyContent) {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'You do not have permission to modify product FAQs.'
+	// 			], 403);
+	// 		}
+
+	// 		// If no real changes or user has permission, continue saving
+	// 		if ($canModifyContent && is_array($faqs)) {
+	// 			foreach ($faqs as $faqData) {
+	// 				if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+	// 					if (!empty($faqData['id'])) {
+	// 						$faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
+	// 						if ($faq) {
+	// 							$faq->update([
+	// 								'question' => $faqData['question'],
+	// 								'answer' => $faqData['answer'],
+	// 								'category_id' => $faqData['category_id'] ?? null,
+	// 								'status' => 'published',
+	// 							]);
+	// 							$processedFaqIds[] = $faq->id;
+	// 						}
+	// 					} else {
+	// 						$newFaq = Faq::create([
+	// 							'product_id' => $product->id,
+	// 							'question' => $faqData['question'],
+	// 							'answer' => $faqData['answer'],
+	// 							'category_id' => $faqData['category_id'] ?? null,
+	// 							'status' => 'published',
+	// 						]);
+	// 						$processedFaqIds[] = $newFaq->id;
+	// 					}
+	// 				}
+	// 			}
+
+	// 			// Remove deleted FAQs
+	// 			$existingFaqIds = $existingFaqs->keys()->toArray();
+	// 			$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
+	// 			if (!empty($faqsToDelete)) {
+	// 				Faq::where('product_id', $product->id)
+	// 				->whereIn('id', $faqsToDelete)
+	// 				->delete();
+	// 			}
+	// 		}
+	// 	}
+
+
+	// 	/* Get all input data except '_method' */
+	// 	$input = $request->except('_method', 'status');
+	// 	/* Remove 'faqs' from the input before validation */
+
+	// 	$fieldsToUnset = ['faqs', 'categories']; /* Added categories to fields to unset */
+
+	// 	foreach ($fieldsToUnset as $field) {
+	// 		unset($input[$field]);
+	// 	}
+
+	// 	$imagePath = 'production/products';
+	// 	$videoPath = 'production/videos';
+	// 	$documentPath = 'production/documents';
+
+	// 	// Handle images with role-based permission
+	// 	// Handle images with role-based permission - FIXED VERSION
+	// 	// if ($request->has('images')) {
+	// 	// 	if ($canModifyImages) {
+	// 	// 		$finalImages = [];
+	// 	// 		foreach ($request->images as $key => $image) {
+	// 	// 			if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+	// 	// 			// It's a URL, keep it as is
+	// 	// 				$finalImages[] = $image;
+	// 	// 			} elseif ($request->hasFile("images.$key")) {
+	// 	// 			// It's an uploaded file, store it to S3
+	// 	// 				$file = $request->file("images.$key");
+	// 	// 				$path = $file->store($imagePath, 's3');
+	// 	// 				$finalImages[] = Storage::disk('s3')->url($path);
+	// 	// 			}
+	// 	// 		// else ignore invalid inputs
+	// 	// 		}
+
+	// 	// 	// Save as JSON with unescaped slashes
+	// 	// 		$input['images'] = json_encode($finalImages);
+	// 	// 	} else {
+	// 	// 	// User tried to modify images but doesn't have permission - check if they're uploading files
+	// 	// 		$hasNewImageFiles = false;
+	// 	// 		foreach ($request->images as $key => $image) {
+	// 	// 			if ($request->hasFile("images.$key")) {
+	// 	// 				$hasNewImageFiles = true;
+	// 	// 				break;
+	// 	// 			}
+	// 	// 		}
+
+	// 	// 		if ($hasNewImageFiles) {
+	// 	// 			return response()->json([
+	// 	// 				'success' => false,
+	// 	// 				'message' => 'You do not have permission to modify product images.'
+	// 	// 			], 403);
+	// 	// 		}
+
+	// 	// 	// Remove from input to prevent overwriting existing images
+	// 	// 		unset($input['images']);
+	// 	// 	}
+	// 	// }
+	// 	// If images not in request at all, existing images are preserved automatically
+
+	// 	// Handle videos with role-based permission - FIXED VERSION
+	// 	// if ($request->has('video_path')) {
+	// 	// 	if ($canModifyImages) {
+	// 	// 		$finalVideos = [];
+	// 	// 		$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+	// 	// 		foreach ($videoPaths as $key => $video) {
+	// 	// 			if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
+	// 	// 			// It's a URL, keep as is
+	// 	// 				$finalVideos[] = $video;
+	// 	// 			} elseif ($request->hasFile("video_path.$key")) {
+	// 	// 			// It's an uploaded file, upload to S3
+	// 	// 				$file = $request->file("video_path.$key");
+	// 	// 				$path = $file->store($videoPath, 's3');
+	// 	// 				$finalVideos[] = Storage::disk('s3')->url($path);
+	// 	// 			}
+	// 	// 		// ignore invalid inputs
+	// 	// 		}
+
+	// 	// 		$input['video_path'] = json_encode($finalVideos);
+	// 	// 	} else {
+	// 	// 	// User tried to modify videos but doesn't have permission - check if they're uploading files
+	// 	// 		$hasNewVideoFiles = false;
+	// 	// 		$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+	// 	// 		foreach ($videoPaths as $key => $video) {
+	// 	// 			if ($request->hasFile("video_path.$key")) {
+	// 	// 				$hasNewVideoFiles = true;
+	// 	// 				break;
+	// 	// 			}
+	// 	// 		}
+
+	// 	// 		if ($hasNewVideoFiles) {
+	// 	// 			return response()->json([
+	// 	// 				'success' => false,
+	// 	// 				'message' => 'You do not have permission to modify product videos.'
+	// 	// 			], 403);
+	// 	// 		}
+
+	// 	// 	// Remove from input to prevent overwriting existing videos
+	// 	// 		unset($input['video_path']);
+	// 	// 	}
+
+	// 	// }
+	// 	// Handle images with role-based permission - FIXED VERSION
+	// 	// Handle images with role-based permission - CORRECTED VERSION
+	// 	if ($request->has('images')) {
+	// 	if ($canModifyImages) {
+	// 		$finalImages = [];
+	// 		foreach ($request->images as $key => $image) {
+	// 			if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+	// 				// It's a URL, keep it as is
+	//             $finalImages[] = $image;
+	//         } elseif ($request->hasFile("images.$key")) {
+	//             // It's an uploaded file, store it to S3
+	//             $file = $request->file("images.$key");
+	//             $path = $file->store($imagePath, 's3');
+	//             $finalImages[] = Storage::disk('s3')->url($path);
+	//         }
+	//         // else ignore invalid inputs
+	//     }
+
+	//     // Save as JSON with unescaped slashes
+	//     $input['images'] = json_encode($finalImages);
+	// 	} else {
+	// 		// User tried to modify images but doesn't have permission - check if they're uploading files
+	//     $hasNewImageFiles = false;
+	//     foreach ($request->images as $key => $image) {
+	//         if ($request->hasFile("images.$key")) {
+	//             $hasNewImageFiles = true;
+	//             break;
+	//         }
+	//     }
+
+	//     if ($hasNewImageFiles) {
+	//         return response()->json([
+	//             'success' => false,
+	//             'message' => 'You do not have permission to modify product images.'
+	//         ], 403);
+	//     }
+
+	//     // Remove from input to prevent overwriting existing images
+	//     unset($input['images']);
+	// 		}
+	// 	} else {
+	// 		// If images not in request, preserve existing images
+	// 		unset($input['images']);
+	// 	}
+
+	// 	// Handle videos with role-based permission - CORRECTED VERSION
+	// 	if ($request->has('video_path')) {
+	// 		if ($canModifyImages) {
+	//     $finalVideos = [];
+	//     $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+	//     foreach ($videoPaths as $key => $video) {
+	//         if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
+	//             // It's a URL, keep as is
+	//             $finalVideos[] = $video;
+	//         } elseif ($request->hasFile("video_path.$key")) {
+	//             // It's an uploaded file, upload to S3
+	//             $file = $request->file("video_path.$key");
+	//             $path = $file->store($videoPath, 's3');
+	//             $finalVideos[] = Storage::disk('s3')->url($path);
+	//         }
+	//         // ignore invalid inputs
+	//     }
+
+	//     $input['video_path'] = json_encode($finalVideos);
+	//  else {
+	//     // User tried to modify videos but doesn't have permission - check if they're uploading files
+	//     $hasNewVideoFiles = false;
+	//     $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+	//     foreach ($videoPaths as $key => $video) {
+	//         if ($request->hasFile("video_path.$key")) {
+	//             $hasNewVideoFiles = true;
+	//             break;
+	//         }
+	//     }
+
+	//     if ($hasNewVideoFiles) {
+	//         return response()->json([
+	//             'success' => false,
+	//             'message' => 'You do not have permission to modify product videos.'
+	//         ], 403);
+	//     }
+
+	//     // Remove from input to prevent overwriting existing videos
+	//     unset($input['video_path']);
+	// 	}
+	// 	} else {
+	// 		// If videos not in request, preserve existing videos
+	// 		unset($input['video_path']);
+	// 	}
+	// 				// Handle document upload (keeping existing logic)
+	// 			$existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
+	// 	$existingDocs = is_array($existingDocs) ? $existingDocs : [];
+
+	// 	if ($request->hasFile('documents')) {
+	// 		$uploadedDocs = [];
+	// 		foreach ($request->file('documents') as $doc) {
+	// 			$path = $doc->store($documentPath, 's3');
+
+	// 			/* Check if the title is provided, if not, use the document's name */
+	// 			$title = $request->input('title', $doc->getClientOriginalName()); /* default to original name if title is empty */
+
+	// 			/* If title is still empty, use the document name as title */
+	// 			if (empty($title)) {
+	// 				$title = basename($doc->getClientOriginalName());  /* Use document name if title is empty */
+	// 			}
+
+	// 			/* Create an array with title and path for each uploaded document */
+	// 			$uploadedDocs[] = [
+	// 				'title' => $title,
+	// 				'path' => Storage::disk('s3')->url($path)
+	// 			];
+	// 		}
+
+	// 		/* Merge with existing documents */
+	// 		$input['documents'] = array_merge($existingDocs, $uploadedDocs);
+	// 	} else {
+	// 		/* Retain existing documents if no new files are uploaded */
+	// 		$input['documents'] = $existingDocs;
+	// 	}
+
+	// 	/* Convert to JSON with unescaped slashes */
+	// 	$input['documents'] = json_encode($input['documents']);
+
+	// 	$input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+	// 	$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+
+	// 	/* List of valid fields allowed for updating */
+	// 	$validArray = [ "sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "images", "video_path", "documents", "brand_id", "views", "units_sold", "google_shopping_category", "google_shopping_mpn", "order", "benefits_features" , "gen_type" , "approved"];
+
+	// 	unset($input['product_attributes']);
+	// 	unset($input['vendor_id']);
+
+	// 	$input = array_intersect_key($input, array_flip($validArray));
+
+	// 	/* Initialize an error array to store validation errors */
+	// 	$rowError = [];
+
+
+	// 	if ($request->has('benefits_features')) {
+	// 		$benefitsInput = $request->input('benefits_features');
+
+	// 		if ($canModifyContent) {
+	// 				// Decode and validate input
+	// 			if (is_string($benefitsInput)) {
+	// 				$decoded = json_decode($benefitsInput, true);
+	// 				if (json_last_error() === JSON_ERROR_NONE) {
+	// 					$newBenefits = $decoded;
+	// 				} else {
+	// 					return response()->json([
+	// 						'success' => false,
+	// 						'message' => 'Invalid JSON format for benefits_features.'
+	// 					], 400);
+	// 				}
+	// 			} elseif (is_array($benefitsInput)) {
+	// 				$newBenefits = $benefitsInput;
+	// 			} else {
+	// 				return response()->json([
+	// 					'success' => false,
+	// 					'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+	// 				], 400);
+	// 			}
+
+	// 				// Ensure it's an array
+	// 			if (!is_array($newBenefits)) {
+	// 				$newBenefits = [];
+	// 			}
+
+	// 				// Get existing saved benefits
+	// 			$existingBenefits = json_decode($product->benefits_features, true);
+	// 			if (!is_array($existingBenefits)) {
+	// 				$existingBenefits = [];
+	// 			}
+
+	// 				// Only save if changed
+	// 			if ($newBenefits !== $existingBenefits) {
+	// 				$input['benefits_features'] = json_encode($newBenefits);
+	// 			} else {
+	// 					// No change, so ignore it
+	// 				unset($input['benefits_features']);
+	// 			}
+	// 		} else {
+	// 				// User tried to modify benefits but doesn't have permission
+	// 			unset($input['benefits_features']);
+	// 		}
+	// 	}
+
+	// 	if ($request->has('description')) {
+	// 		if ($canModifyContent) {
+	// 			$descriptionInput = $request->input('description');
+
+	// 				// Decode and validate input
+	// 			if (is_string($descriptionInput)) {
+	// 				$decoded = json_decode($descriptionInput, true);
+	// 				if (json_last_error() === JSON_ERROR_NONE) {
+	// 					$newDescription = $decoded;
+	// 				} else {
+	// 					return response()->json([
+	// 						'success' => false,
+	// 						'message' => 'Invalid JSON format for description.'
+	// 					], 400);
+	// 				}
+	// 			} elseif (is_array($descriptionInput)) {
+	// 				$newDescription = $descriptionInput;
+	// 			} else {
+	// 				return response()->json([
+	// 					'success' => false,
+	// 					'message' => 'Invalid description format. Must be JSON string or array.'
+	// 				], 400);
+	// 			}
+
+	// 				// Ensure it's an array
+	// 			if (!is_array($newDescription)) {
+	// 				$newDescription = [];
+	// 			}
+
+	// 				// Save the description
+	// 			$input['description'] = json_encode($newDescription);
+	// 		} else {
+	// 				// User tried to modify description but doesn't have permission
+	// 				// For now, let's just remove it from input to prevent overwriting
+	// 				// This matches the behavior when no actual change is detected
+	// 			unset($input['description']);
+	// 		}
+	// 	}
+
+	// 	/* Tax ID validation */
+	// 	if (isset($input['tax_id'])) {
+	// 		$taxArray = Tax::pluck("id")->toArray();
+	// 		if (!is_numeric($input['tax_id']) || !in_array((int) $input['tax_id'], $taxArray)) {
+	// 			$rowError[] = "Invalid tax value. Please select a valid tax ID.";
+	// 		} else {
+	// 			$product->tax_id = (int) $input['tax_id'];
+	// 			unset($input['tax_id']); /* Remove processed field */
+	// 		}
+	// 	}
+
+	// 	/* Currency ID validation */
+	// 	if (isset($input['currency_id'])) {
+	// 		$currencyArray = Currency::pluck("id")->toArray();
+	// 		if (!is_numeric($input['currency_id']) || !in_array((int) $input['currency_id'], $currencyArray)) {
+	// 			$rowError[] = "Invalid currency value. Please select a valid currency ID.";
+	// 		} else {
+	// 			$product->currency_id = (int) $input['currency_id'];
+	// 			unset($input['currency_id']); /* Remove processed field */
+	// 		}
+	// 	}
+
+	// 	/* Unit ID validation for length, weight, and shipping */
+
+	// 	if (isset($input['google_shopping_category'])) {
+	// 		$product->google_shopping_category = $input['google_shopping_category'];
+	// 		unset($input['google_shopping_category']);
+	// 	}
+
+	// 	if (isset($input['google_shopping_mpn'])) {
+	// 		$product->google_shopping_mpn = $input['google_shopping_mpn'];
+	// 		unset($input['google_shopping_mpn']);
+	// 	}
+
+	// 	/* Brand ID validation */
+	// 	if (isset($input['brand_id'])) {
+	// 		$brandArray = Brand::pluck("id")->toArray();
+	// 		if (!is_numeric($input['brand_id']) || !in_array((int) $input['brand_id'], $brandArray)) {
+	// 			$brandList = implode(', ', $brandArray);
+	// 			$rowError[] = "Invalid brand value. Valid brand IDs are: " . $brandList;
+	// 		} else {
+	// 			$product->brand_id = (int) $input['brand_id'];
+	// 			unset($input['brand_id']); /* Remove processed field */
+	// 		}
+	// 	}
+
+	// 	/* If any validation errors exist, return them */
+	// 	if (!empty($rowError)) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => $rowError
+	// 		]);
+	// 	}
+
+	// 	/* Assign remaining valid fields to the product */
+	// 	foreach ($input as $key => $value) {
+	// 		$product->$key = $value;
+	// 	}
+
+	// 	/* Save the product */
+	// 	$product->save();
+
+	// 	if (isset($request->status)) {
+	// 		$validStatuses = ['draft', 'published', 'pending'];
+
+	// 		if (!in_array($request->status, $validStatuses)) {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => "Invalid status value. Allowed values: draft, published, pending."
+	// 			]);
+	// 		}
+
+	// 		if ($request->status === 'published') {
+
+	// 			// Reload full product with required relationships
+	// 			$product = Product::with(['productAttributes', 'sellingUnitAttribute', 'productSuppliers'])->find($product->id);
+	// 			$rowError = [];
+
+	// 			/* Validate images */
+	// 			$images = is_array($product->images) ? $product->images : json_decode($product->images, true);
+	// 			if (empty($images) || count($images) === 0) {
+	// 				$rowError[] = "At least one product image is required to publish.";
+	// 			}
+
+	// 			/* Validate benefits */
+	// 			$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
+	// 			if (empty($benefits) || count($benefits) < 5) {
+	// 				$rowError[] = "At least 5 benefits & features are required to publish.";
+	// 			}
+
+	// 			/* Validate attributes */
+	// 			if ($product->productAttributes->count() < 5) {
+	// 				$rowError[] = "At least 5 product attributes are required to publish.";
+	// 			}
+
+	// 			/* Validate selling unit */
+	// 			if (!$product->sellingUnitAttribute) {
+	// 				$rowError[] = "The 'Selling Unit' attribute is required to publish.";
+	// 			}
+
+	// 			/* Validate product suppliers */
+	// 			if ($product->productSuppliers->isEmpty()) {
+	// 				$rowError[] = "At least one vendor price detail is required to publish.";
+	// 			}
+
+	// 			if ($product->productSuppliers->contains(fn ($supplier) => $supplier->in_stock !== 1)) {
+	// 				$rowError[] = "All vendor price entries must have 'in_stock' set to Yes.";
+	// 			}
+
+	// 			if (!empty($rowError)) {
+	// 				return response()->json([
+	// 					'success' => false,
+	// 					'message' => implode(', ', $rowError)
+	// 				]);
+	// 			}
+	// 		}
+
+	// 		/* Passed all validations, now update the status */
+	// 		$product->status = $request->status;
+	// 		$product->save();
+	// 	}
+
+	// 	$product = Product::find($product->id);
+
+	// 	/* Return success response */
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Product updated successfully.',
+	// 		'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
+	// 		'faq' => $faqs ?? null,
+	// 	]);
+	// }
 	public function update(Request $request, $productId)
 	{
 		/* Log the incoming request for debugging */
@@ -1091,138 +1812,25 @@ class ProductController extends BaseController
 		$documentPath = 'production/documents';
 
 		// Handle images with role-based permission - CORRECTED VERSION
-		// if ($request->has('images') && !empty(array_filter($request->images))) {
-		// 	if ($canModifyImages) {
-		// 		$finalImages = [];
-		// 		foreach ($request->images as $key => $image) {
-		// 			if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-		// 				$finalImages[] = $image;
-		// 			} elseif ($request->hasFile("images.$key")) {
-		// 				$file = $request->file("images.$key");
-		// 				// ✅ Check file size (max 100 KB)
-		// 				if ($file->getSize() > 102400) {
-		// 					return response()->json([
-		// 						'success' => false,
-		// 						'message' => 'Image size must not exceed 100 KB.'
-		// 					], 400);
-		// 				}
-		// 				$path = $file->store($imagePath, 's3');
-		// 				$finalImages[] = Storage::disk('s3')->url($path);
-		// 			}
-		// 		}
-		// 		if (!empty($finalImages)) {
-		// 			$input['images'] = json_encode($finalImages);
-		// 		}
-		// 	} else {
-		// 		unset($input['images']);
-		// 	}
-		// } else {
-		// 	unset($input['images']); // preserve existing
-		// }
-
-
-			// Replace your existing manual upload code with this:
-		// Replace your existing manual upload code with this:
 		if ($request->has('images') && !empty(array_filter($request->images))) {
 			if ($canModifyImages) {
 				$finalImages = [];
-				$uploadErrors = [];
-				
 				foreach ($request->images as $key => $image) {
-					try {
-						// Handle existing URL images (keep as is)
-						if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-							$finalImages[] = $image;
-						} 
-						// Handle new file uploads with compression
-						elseif ($request->hasFile("images.$key")) {
-							$file = $request->file("images.$key");
-							
-							// Validate file type
-							$allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'tiff'];
-							$extension = strtolower($file->getClientOriginalExtension());
-							
-							if (!in_array($extension, $allowedExtensions)) {
-								$uploadErrors[] = "File {$file->getClientOriginalName()} is not a supported image format. Supported: JPG, PNG, WebP, GIF, BMP, TIFF.";
-								continue;
-							}
-							
-							// Process and compress the image (converts to WebP and resizes to 1000x1000)
-							$compressedImagePath = $this->processAndCompressImage($file->getPathname(), $product->sku ?? 'manual_upload');
-							
-							if ($compressedImagePath === false) {
-								$uploadErrors[] = "Failed to process image {$file->getClientOriginalName()}.";
-								continue;
-							}
-							
-							// Check if compressed file is under 100KB
-							$fileSize = filesize($compressedImagePath);
-							if ($fileSize > 100 * 1024) {
-								$uploadErrors[] = "Image {$file->getClientOriginalName()} is still over 100KB after compression ({$fileSize} bytes).";
-								// Clean up temporary file
-								if (File::exists($compressedImagePath)) {
-									File::delete($compressedImagePath);
-								}
-								continue;
-							}
-							
-							// Generate unique filename for S3 (always .webp)
-							$sanitizedSku = $this->sanitizeSku($product->sku ?? 'product');
-							$uniqueFileName = $sanitizedSku . '_' . time() . '_' . Str::random(8) . '.webp';
-							$s3FilePath = $imagePath . $uniqueFileName;
-							
-							// Upload compressed file to S3
-							$fileStream = fopen($compressedImagePath, 'r');
-							if ($fileStream === false) {
-								$uploadErrors[] = "Failed to open compressed image file for upload: {$file->getClientOriginalName()}";
-								if (File::exists($compressedImagePath)) {
-									File::delete($compressedImagePath);
-								}
-								continue;
-							}
-							
-							Storage::disk('s3')->put($s3FilePath, $fileStream);
-							fclose($fileStream);
-							
-							// Clean up temporary file
-							if (File::exists($compressedImagePath)) {
-								File::delete($compressedImagePath);
-							}
-							
-							// Get the full URL from S3
-							$imageUrl = Storage::disk('s3')->url($s3FilePath);
-							$finalImages[] = $imageUrl;
+					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+						$finalImages[] = $image;
+					} elseif ($request->hasFile("images.$key")) {
+						$file = $request->file("images.$key");
+						// ✅ Check file size (max 100 KB)
+						if ($file->getSize() > 102400) {
+							return response()->json([
+								'success' => false,
+								'message' => 'Image size must not exceed 100 KB.'
+							], 400);
 						}
-					} catch (\Exception $e) {
-						$uploadErrors[] = "Error processing image: " . $e->getMessage();
-						
-						// Clean up temporary file in case of exception
-						if (isset($compressedImagePath) && File::exists($compressedImagePath)) {
-							File::delete($compressedImagePath);
-						}
+						$path = $file->store($imagePath, 's3');
+						$finalImages[] = Storage::disk('s3')->url($path);
 					}
 				}
-				
-				// Return error if there were upload issues
-				if (!empty($uploadErrors) && empty($finalImages)) {
-					return response()->json([
-						'success' => false,
-						'message' => 'All image uploads failed.',
-						'errors' => $uploadErrors
-					], 400);
-				}
-				
-				// Return partial success if some images failed
-				if (!empty($uploadErrors) && !empty($finalImages)) {
-					return response()->json([
-						'success' => true,
-						'message' => 'Some images uploaded successfully, but some failed.',
-						'uploaded_images' => $finalImages,
-						'errors' => $uploadErrors
-					], 200);
-				}
-				
-				// Set images if we have any
 				if (!empty($finalImages)) {
 					$input['images'] = json_encode($finalImages);
 				}
@@ -1232,6 +1840,7 @@ class ProductController extends BaseController
 		} else {
 			unset($input['images']); // preserve existing
 		}
+
 
 		// Handle videos with role-based permission - CORRECTED VERSION
 		if ($request->has('video_path')) {
@@ -2520,366 +3129,4 @@ class ProductController extends BaseController
 			], 500);
 		}
 	}
-
-private function sanitizeSku($sku)
-{
-    $sanitized = str_replace(' ', '_', $sku);
-    $sanitized = preg_replace('/[^a-zA-Z0-9_-]/', '_', $sanitized);
-    $sanitized = preg_replace('/_+/', '_', $sanitized);
-    $sanitized = trim($sanitized, '_');
-    
-    if (empty($sanitized)) {
-        $sanitized = 'unknown_sku';
-    }
-    
-    return $sanitized;
-}
-
-/**
- * Process and compress image - ALWAYS converts to WebP 1000x1000 under 100KB
- */
-private function processAndCompressImage($imagePath, $sku)
-{
-    try {
-        // Check if GD extension is loaded
-        if (!extension_loaded('gd')) {
-            error_log("GD extension is not loaded");
-            return false;
-        }
-
-        // Set memory limit for large images
-        $originalMemoryLimit = ini_get('memory_limit');
-        ini_set('memory_limit', '1024M');
-
-        // Verify file exists and is readable
-        if (!file_exists($imagePath) || !is_readable($imagePath)) {
-            error_log("Image file not readable: {$imagePath}");
-            return false;
-        }
-
-        $fileSize = filesize($imagePath);
-        $imageInfo = @getimagesize($imagePath);
-        
-        if ($imageInfo === false) {
-            error_log("Could not get image size for: {$imagePath}");
-            return false;
-        }
-
-        $originalWidth = $imageInfo[0];
-        $originalHeight = $imageInfo[1];
-        $imageType = $imageInfo[2];
-
-        error_log("Processing image: {$imagePath} - {$originalWidth}x{$originalHeight} - Size: {$fileSize} bytes - Type: {$imageType}");
-
-        // Create image resource
-        $sourceImage = $this->createImageResource($imagePath, $imageType);
-        if ($sourceImage === false) {
-            error_log("Failed to create image resource from: {$imagePath}");
-            return false;
-        }
-
-        // Create 1000x1000 canvas
-        $targetWidth = 1000;
-        $targetHeight = 1000;
-        
-        $targetImage = imagecreatetruecolor($targetWidth, $targetHeight);
-        if ($targetImage === false) {
-            imagedestroy($sourceImage);
-            error_log("Failed to create target image canvas");
-            return false;
-        }
-
-        // Set white background
-        $white = imagecolorallocate($targetImage, 255, 255, 255);
-        imagefill($targetImage, 0, 0, $white);
-
-        // Calculate resize dimensions maintaining aspect ratio
-        $resizeData = $this->calculateResizeDimensions(
-            $originalWidth, $originalHeight, $targetWidth, $targetHeight
-        );
-
-        // Resize with high quality
-        $resampleResult = imagecopyresampled(
-            $targetImage, $sourceImage,
-            $resizeData['offsetX'], $resizeData['offsetY'], 0, 0,
-            $resizeData['newWidth'], $resizeData['newHeight'],
-            $originalWidth, $originalHeight
-        );
-
-        if (!$resampleResult) {
-            error_log("Failed to resample image");
-            imagedestroy($sourceImage);
-            imagedestroy($targetImage);
-            return false;
-        }
-
-        imagedestroy($sourceImage);
-
-        // Create temp directory if it doesn't exist
-        $tempDir = storage_path('app/temp');
-        if (!file_exists($tempDir)) {
-            mkdir($tempDir, 0755, true);
-        }
-
-        $tempFilePath = $tempDir . '/' . Str::random(10) . '_compressed.webp';
-
-        // Compress image adaptively
-        $success = $this->compressImageAdaptively($targetImage, $tempFilePath, $fileSize);
-        
-        imagedestroy($targetImage);
-        ini_set('memory_limit', $originalMemoryLimit);
-
-        if (!$success) {
-            if (file_exists($tempFilePath)) {
-                unlink($tempFilePath);
-            }
-            error_log("Failed to compress image under 100KB");
-            return false;
-        }
-
-        $finalSize = filesize($tempFilePath);
-        error_log("Successfully compressed {$imagePath} to {$finalSize} bytes");
-
-        return $tempFilePath;
-
-    } catch (\Exception $e) {
-        error_log("Exception in processAndCompressImage: " . $e->getMessage());
-        
-        // Cleanup
-        if (isset($sourceImage) && is_resource($sourceImage)) {
-            imagedestroy($sourceImage);
-        }
-        if (isset($targetImage) && is_resource($targetImage)) {
-            imagedestroy($targetImage);
-        }
-        if (isset($tempFilePath) && file_exists($tempFilePath)) {
-            unlink($tempFilePath);
-        }
-        if (isset($originalMemoryLimit)) {
-            ini_set('memory_limit', $originalMemoryLimit);
-        }
-
-        return false;
-    }
-}
-
-/**
- * Create image resource from file based on type
- */
-private function createImageResource($imagePath, $imageType)
-{
-    switch ($imageType) {
-        case IMAGETYPE_JPEG:
-            return @imagecreatefromjpeg($imagePath);
-        case IMAGETYPE_PNG:
-            return @imagecreatefrompng($imagePath);
-        case IMAGETYPE_WEBP:
-            if (function_exists('imagecreatefromwebp')) {
-                return @imagecreatefromwebp($imagePath);
-            }
-            return false;
-        case IMAGETYPE_GIF:
-            return @imagecreatefromgif($imagePath);
-        case IMAGETYPE_BMP:
-            if (function_exists('imagecreatefrombmp')) {
-                return @imagecreatefrombmp($imagePath);
-            } else {
-                return @imagecreatefromstring(file_get_contents($imagePath));
-            }
-        case IMAGETYPE_TIFF_II:
-        case IMAGETYPE_TIFF_MM:
-            return @imagecreatefromstring(file_get_contents($imagePath));
-        default:
-            error_log("Unsupported image type: {$imageType}");
-            return false;
-    }
-}
-
-/**
- * Calculate resize dimensions maintaining aspect ratio for 1000x1000 canvas
- */
-private function calculateResizeDimensions($originalWidth, $originalHeight, $targetWidth, $targetHeight)
-{
-    $aspectRatio = $originalWidth / $originalHeight;
-
-    if ($aspectRatio > 1) {
-        // Landscape image - fit to width
-        $newWidth = $targetWidth;
-        $newHeight = intval($targetWidth / $aspectRatio);
-        $offsetX = 0;
-        $offsetY = intval(($targetHeight - $newHeight) / 2);
-    } elseif ($aspectRatio < 1) {
-        // Portrait image - fit to height
-        $newHeight = $targetHeight;
-        $newWidth = intval($targetHeight * $aspectRatio);
-        $offsetX = intval(($targetWidth - $newWidth) / 2);
-        $offsetY = 0;
-    } else {
-        // Square image - fit to canvas
-        $newWidth = $targetWidth;
-        $newHeight = $targetHeight;
-        $offsetX = 0;
-        $offsetY = 0;
-    }
-
-    return [
-        'newWidth' => $newWidth,
-        'newHeight' => $newHeight,
-        'offsetX' => $offsetX,
-        'offsetY' => $offsetY
-    ];
-}
-
-/**
- * Compress image with adaptive quality for 1000x1000 WebP under 100KB
- */
-private function compressImageAdaptively($targetImage, $tempFilePath, $originalFileSize)
-{
-    $maxFileSize = 100 * 1024; // 100KB target
-
-    // Check if WebP is supported
-    if (!function_exists('imagewebp')) {
-        error_log("WebP support is not available");
-        return false;
-    }
-
-    // Determine quality levels based on original file size
-    if ($originalFileSize > 1024 * 1024) { // > 1MB - be very aggressive
-        $qualityLevels = [45, 40, 35, 30, 25, 20, 18, 15, 12, 10, 8, 6, 5, 3, 1];
-    } elseif ($originalFileSize > 700 * 1024) { // > 700KB - be aggressive
-        $qualityLevels = [55, 50, 45, 40, 35, 30, 25, 22, 20, 18, 15, 12, 10, 8, 5];
-    } else { // Smaller files - normal quality range
-        $qualityLevels = [90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 20];
-    }
-
-    foreach ($qualityLevels as $quality) {
-        $result = @imagewebp($targetImage, $tempFilePath, $quality);
-        
-        if ($result && file_exists($tempFilePath)) {
-            $fileSize = filesize($tempFilePath);
-            error_log("Trying quality {$quality}: resulted in {$fileSize} bytes (target: {$maxFileSize})");
-
-            if ($fileSize <= $maxFileSize && $fileSize > 0) {
-                return true; // Success!
-            }
-        } else {
-            error_log("Failed to save WebP with quality {$quality}");
-        }
-    }
-
-    // If still not compressed enough, try advanced techniques
-    return $this->tryAdvancedCompression($targetImage, $tempFilePath, $maxFileSize);
-}
-
-/**
- * Advanced compression techniques for stubborn large images
- */
-private function tryAdvancedCompression($targetImage, $tempFilePath, $maxFileSize)
-{
-    try {
-        $extremeQualityLevels = [3, 2, 1];
-
-        foreach ($extremeQualityLevels as $quality) {
-            // Create a copy for additional processing
-            $optimizedImage = imagecreatetruecolor(1000, 1000);
-            if ($optimizedImage === false) {
-                continue;
-            }
-
-            // Set white background
-            $white = imagecolorallocate($optimizedImage, 255, 255, 255);
-            imagefill($optimizedImage, 0, 0, $white);
-
-            // Copy the image
-            imagecopy($optimizedImage, $targetImage, 0, 0, 0, 0, 1000, 1000);
-
-            // Apply slight blur to reduce file size
-            imagefilter($optimizedImage, IMG_FILTER_GAUSSIAN_BLUR);
-
-            // Try saving with extremely low quality
-            $result = @imagewebp($optimizedImage, $tempFilePath, $quality);
-            
-            if ($result && file_exists($tempFilePath)) {
-                $fileSize = filesize($tempFilePath);
-                error_log("Advanced compression - Quality {$quality}: {$fileSize} bytes");
-
-                if ($fileSize <= $maxFileSize && $fileSize > 0) {
-                    imagedestroy($optimizedImage);
-                    return true;
-                }
-            }
-
-            imagedestroy($optimizedImage);
-        }
-
-        // Last resort: color reduction
-        return $this->tryColorReduction($targetImage, $tempFilePath, $maxFileSize);
-
-    } catch (\Exception $e) {
-        error_log("Advanced compression failed: " . $e->getMessage());
-        return false;
-    }
-}
-
-/**
- * Final attempt: Reduce color palette for extreme compression
- */
-private function tryColorReduction($targetImage, $tempFilePath, $maxFileSize)
-{
-    try {
-        $paletteLevels = [64, 32, 16, 8]; // Number of colors in palette
-
-        foreach ($paletteLevels as $colors) {
-            // Create palette version
-            $paletteImage = imagecreatetruecolor(1000, 1000);
-            if ($paletteImage === false) {
-                continue;
-            }
-
-            // Set white background
-            $white = imagecolorallocate($paletteImage, 255, 255, 255);
-            imagefill($paletteImage, 0, 0, $white);
-
-            // Copy original
-            imagecopy($paletteImage, $targetImage, 0, 0, 0, 0, 1000, 1000);
-
-            // Convert to palette to reduce colors
-            imagetruecolortopalette($paletteImage, false, $colors);
-
-            // Convert back to truecolor for WebP saving
-            $finalImage = imagecreatetruecolor(1000, 1000);
-            if ($finalImage === false) {
-                imagedestroy($paletteImage);
-                continue;
-            }
-            
-            imagecopy($finalImage, $paletteImage, 0, 0, 0, 0, 1000, 1000);
-
-            // Try saving with very low quality
-            $result = @imagewebp($finalImage, $tempFilePath, 1);
-            
-            if ($result && file_exists($tempFilePath)) {
-                $fileSize = filesize($tempFilePath);
-                error_log("Color reduction ({$colors} colors): {$fileSize} bytes");
-
-                if ($fileSize <= $maxFileSize && $fileSize > 0) {
-                    imagedestroy($paletteImage);
-                    imagedestroy($finalImage);
-                    return true;
-                }
-            }
-
-            imagedestroy($paletteImage);
-            imagedestroy($finalImage);
-        }
-
-        error_log("All compression attempts failed - image cannot be compressed to under 100KB while maintaining 1000x1000");
-        return false;
-
-    } catch (\Exception $e) {
-        error_log("Color reduction failed: " . $e->getMessage());
-        return false;
-    }
-}
-
 }
