@@ -284,6 +284,16 @@ class PaymentHistoryController extends Controller
 			// Create the payment record
 			$payment = PaymentManagement::create($validated);
 
+			/* Update order amounts */
+			$order = $payment->order;
+			$newPaidAmount = $order->paid_amount + $request->amount;
+			$pendingAmount = $order->total_amount - $newPaidAmount;
+
+			$order->update([
+				'paid_amount' => $newPaidAmount,
+				'pending_amount' => $pendingAmount,
+				'is_paid' => $pendingAmount <= 0,
+			]);
 
 			// Return success response with 201 status
 			return response()->json([
