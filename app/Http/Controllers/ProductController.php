@@ -23,7 +23,7 @@ use App\Models\Attribute;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
 use App\Services\ExcelImporterService;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\Laravel\Facades\Image;
 
 class ProductController extends BaseController
 {
