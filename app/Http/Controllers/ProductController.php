@@ -1869,7 +1869,7 @@ class ProductController extends BaseController
                 } while ($size > 102400 && $quality > 10);
 
                 // ✅ Save compressed image to temp file
-                $tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.jpg';
+                $tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
                 file_put_contents($tempPath, $encoded);
 
                 // ✅ Upload to S3
