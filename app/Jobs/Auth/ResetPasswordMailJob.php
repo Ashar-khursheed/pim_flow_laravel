@@ -21,12 +21,12 @@ class ResetPasswordMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 	public $timeout = 600;
-	public $customerId;
+	public $recordId;
 	public $userType;
 
 	public function __construct($data)
 	{
-		$this->customerId = $data['recordId'];
+		$this->recordId = $data['recordId'];
 		$this->userType = $data['userType'];
 	}
 
@@ -34,10 +34,10 @@ class ResetPasswordMailJob implements ShouldQueue
 	{
 		try {
 			if ($this->userType === 'customer') {
-				$entity = Customer::find($this->customerId);
+				$entity = Customer::find($this->recordId);
 				$type = 'customer';
 			} elseif ($this->userType === 'user') {
-				$entity = User::find($this->userId);
+				$entity = User::find($this->recordId);
 				$type = 'user';
 			} else {
 				throw new \Exception("Invalid user type: {$this->userType}");
