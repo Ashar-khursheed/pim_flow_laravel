@@ -425,13 +425,13 @@ class CustomerCartController extends Controller
 			/* Decode images if stored as JSON string */
 			$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 
-			$supplier = collect(optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']));
+			$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
 
 			$unitPrice = 0;
 			$shippingCharge = 0;
 			if ($supplier) {
-				$unitPrice = ($supplier->sale_price > 0 && $supplier->sale_price < $supplier->price) ? $supplier->sale_price : $supplier->price;
-				$shippingCharge = $supplier->shipping_charge ?? 0;
+				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
+				$shippingCharge = $supplier['shipping_charge'] ?? 0;
 			}
 
 			$quantity = $customerCartProduct->quantity ?? 0;
