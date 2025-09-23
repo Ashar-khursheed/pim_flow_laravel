@@ -27831,6 +27831,56 @@
                 ]
             }
         },
+        "/api/delivery/get-price-ordernumber": {
+            "get": {
+                "tags": [
+                    "Delivery Payment History"
+                ],
+                "summary": "Get price by order number",
+                "operationId": "438ade6e0a970101f64f654f100c1f8a",
+                "parameters": [
+                    {
+                        "name": "order_number",
+                        "in": "query",
+                        "description": "Filter by order number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/post-purchase-claims": {
             "get": {
                 "tags": [
@@ -28636,7 +28686,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search by id, name",
+                        "description": "Search by id, name,sku",
                         "required": false,
                         "schema": {
                             "type": "string",
