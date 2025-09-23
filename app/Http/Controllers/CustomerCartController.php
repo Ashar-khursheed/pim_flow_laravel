@@ -48,9 +48,8 @@ class CustomerCartController extends Controller
 			/* Eager load relationships */
 			$recordsQuery->with([
 				'customer:id,name,email,country_code,mobile_number',
-				'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-				'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-				'customerCartProducts.product.brand:id,name',
+				'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
+				'customerCartProducts.product:id,name,images,sku,currency_id,barcode',
 				'customerCartProducts.product.currency:id,symbol',
 			]);
 
