@@ -129,7 +129,8 @@ class CustomerCartController extends Controller
 
 					/* Push product data */
 					$cartProducts[] = [
-						'id'            => $product->id,
+						'product_id'      => $customerCartProduct->product_id,
+						'vendor_id'       => $customerCartProduct->vendor_id,
 						'image'           => $image,
 						'name'            => $product->name,
 						'currency_symbol' => $product->currency->symbol ?? null,
@@ -381,6 +382,8 @@ class CustomerCartController extends Controller
 
 				/* Push product data */
 				$cartProducts[] = [
+					'product_id'      => $customerCartProduct->product_id,
+					'vendor_id'       => $customerCartProduct->vendor_id,
 					'name'            => $product->name,
 					'image'           => $image,
 					'sku'             => $product->sku,
@@ -485,6 +488,8 @@ class CustomerCartController extends Controller
 
 			/* Push product data */
 			$cartProducts[] = [
+				'product_id'      => $customerCartProduct->product_id,
+				'vendor_id'       => $customerCartProduct->vendor_id,
 				'name'            => $product->name,
 				'image'           => $image,
 				'sku'             => $product->sku,
