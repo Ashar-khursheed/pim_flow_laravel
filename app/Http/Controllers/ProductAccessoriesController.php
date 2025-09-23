@@ -80,7 +80,7 @@ class ProductAccessoriesController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    public function index(Request $request): JsonResponse
+   public function index(Request $request): JsonResponse
     {
         try {
             $query = ProductAccessory::with(['items', 'product', 'createdBy', 'updatedBy', 'approvedBy']);
@@ -147,9 +147,9 @@ class ProductAccessoriesController extends Controller
 
                 return [
                     'product_id' => $accessory->product_id,
+                    'sku' => $accessory->product?->sku ?? null,  
                     'accessory_id' => $accessory->id,
-                    'name' => $accessory->name,
-                    'sku' => $accessory->product->sku, // Added SKU to response
+                    'name' => $accessory->name,               
                     'isapproved' => $accessory->isapproved,
                     'approved_by' => $accessory->approvedBy?->username ?? null,
                     'created_by' => $accessory->createdBy?->username ?? null,
@@ -179,6 +179,7 @@ class ProductAccessoriesController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * @OA\Post(
