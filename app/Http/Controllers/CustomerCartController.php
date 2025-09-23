@@ -445,7 +445,7 @@ class CustomerCartController extends Controller
 			/* Push product data */
 			$cartProducts[] = [
 				'name'            => $product->name,
-				'images'          => $images,
+				'image'           => $image,
 				'sku'             => $product->sku,
 				'currency_symbol' => $product->currency->symbol ?? null,
 				'quantity'        => $quantity,
