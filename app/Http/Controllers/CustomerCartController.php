@@ -399,65 +399,99 @@ class CustomerCartController extends Controller
 	 */
 	public function show($customer_id)
 	{
-		$customerCart = CustomerCart::where([
-			'customer_id' => $customer_id
-		])->first();
+		$customerCart = CustomerCart::where('customer_id', $customer_id)
+		->with([
+			'customerAddress',
+			'customerCartProducts.product.currency:id,symbol',
+			'customerCartProducts.vendorProductSupplier:id,product_id,price,sale_price,shipping_charge,delivery_days,return_policy',
+		])
+		->first();
 
 		if (!$customerCart) {
 			return response()->json([
-				'success' => false,
-				'message' => "Customer cart not found."
+				'success' => true,
+				'data' => []
 			]);
 		}
 
-		/* Load relationships */
-		$customerCart->load([
-			'customer:id,name,email,type,country_code,mobile_number',
-			'customerAddress',
-			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-			'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-			'customerCartProducts.product.brand:id,name',
-			'customerCartProducts.product.currency:id,symbol',
-			'customerCartProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-			'creator',
-			'updator',
-		]);
-
-		/* Mutate the data for each customer cart product */
-		$customerCart->created_by = $customerCart->creator->name ?? null;
-		$customerCart->updated_by = $customerCart->updator->name ?? null;
-		unset($record->creator, $record->updator);
+		$totalProducts = 0;
+		$cartAmount = 0;
+		$cartShipping = 0;
+		$cartProducts = [];
 
 		foreach ($customerCart->customerCartProducts as $customerCartProduct) {
 			$product = $customerCartProduct->product;
-			if ($product) {
-				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-				$product->brand_name = $product->brand->name ?? null;
-				$product->currency_symbol = $product->currency->symbol ?? null;
-				unset($product->brand, $product->currency);
-			}
-			$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-			$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
-			? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
-			: null;
+			if (!$product) continue;
 
-			/* Format numeric values to 2 decimal places */
-			foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-				if (isset($quoteProduct->$key)) {
-					$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
-				}
+			/* Decode images if stored as JSON string */
+			$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+
+			$supplier = $customerCartProduct->vendorProductSupplier;
+
+			$unitPrice = 0;
+			$shippingCharge = 0;
+			if ($supplier) {
+				$unitPrice = ($supplier->sale_price > 0 && $supplier->sale_price < $supplier->price) ? $supplier->sale_price : $supplier->price;
+				$shippingCharge = $supplier->shipping_charge ?? 0;
 			}
+
+			$quantity = $customerCartProduct->quantity ?? 0;
+			$subTotal = $quantity * $unitPrice;
+
+			$totalProducts += $quantity;
+			$cartAmount += $subTotal;
+			$cartShipping += $shippingCharge;
+
+			/* Push product data */
+			$cartProducts[] = [
+				'name'            => $product->name,
+				'images'          => $images,
+				'sku'             => $product->sku,
+				'currency_symbol' => $product->currency->symbol ?? null,
+				'quantity'        => $quantity,
+				'unit_price'      => number_format($unitPrice, 2, '.', ''),
+				'sub_total'       => number_format($subTotal, 2, '.', ''),
+				'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
+			];
 		}
 
-		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
-			if (isset($customerCart->$key)) {
-				$customerCart->$key = number_format($customerCart->$key, 2, '.', '');
-			}
+		/* Add surcharges */
+		if ($customerCart->is_lift_gate) {
+			$cartAmount += 75;
 		}
+		if ($customerCart->is_residential_address) {
+			$cartAmount += 199;
+		}
+
+		/* Tax calculations */
+		$taxPercentage = $customerCart->tax_percentage ?? 0;
+		$taxAmount = round(($cartAmount * $taxPercentage) / 100, 2);
+
+		/* Website-specific shipping rules */
+		if (config('app.website') == 'UAE') {
+			$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+		}
+
+		$totalAmount = $cartAmount + $taxAmount + $cartShipping;
+
+		/* Prepare cart summary */
+		$carts = [
+			'reference_number'       => $customerCart->reference_number,
+			'address'                => $customerCart->customerAddress,
+			'is_lift_gate'           => $customerCart->is_lift_gate,
+			'is_residential_address' => $customerCart->is_residential_address,
+			'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
+			'amount'                 => number_format($cartAmount, 2, '.', ''),
+			'tax_percentage'         => $taxPercentage,
+			'tax_amount'             => number_format($taxAmount, 2, '.', ''),
+			'total_amount'           => number_format($totalAmount, 2, '.', ''),
+			'total_products'         => $totalProducts,
+			'products'               => $cartProducts,
+		];
 
 		return response()->json([
 			'success' => true,
-			'data' => $customerCart
+			'data' => $carts
 		]);
 	}
 
