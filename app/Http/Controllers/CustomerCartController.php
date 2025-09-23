@@ -403,7 +403,6 @@ class CustomerCartController extends Controller
 		->with([
 			'customerAddress',
 			'customerCartProducts.product.currency:id,symbol',
-			'customerCartProducts.vendorProductSupplier:id,product_id,price,sale_price,shipping_charge,delivery_days,return_policy',
 		])
 		->first();
 
