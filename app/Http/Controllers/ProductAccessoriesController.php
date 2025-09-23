@@ -80,7 +80,7 @@ class ProductAccessoriesController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    public function index(Request $request): JsonResponse
+   public function index(Request $request): JsonResponse
     {
         try {
             $query = ProductAccessory::with(['items', 'product', 'createdBy', 'updatedBy', 'approvedBy']);
@@ -101,11 +101,9 @@ class ProductAccessoriesController extends Controller
                 $query->where(function ($q) use ($search) {
                     // Search by accessory name
                     $q->where('name', 'like', "%{$search}%")
-                        // Search by accessory ID
                         ->orWhere('id', 'like', "%{$search}%")
-                        // Search by product SKU (moved inside the main search condition)
-                        ->orWhereHas('product', function ($subQuery) use ($search) {
-                            $subQuery->where('sku', 'like', "%{$search}%");
+                        ->orWhereHas('product', function ($q2) use ($search) {
+                            $q2->where('sku', 'like', "%{$search}%"); // ✅ Search by product SKU
                         });
                 });
             }
@@ -120,16 +118,13 @@ class ProductAccessoriesController extends Controller
             $perPage = $request->get('per_page', 10);
             $page = $request->get('page', 1);
 
-            // Calculate total records and pages
             $totalRecords = (clone $query)->count();
             $totalPages = (int) ceil($totalRecords / $perPage);
 
-            // Adjust page if it exceeds total pages
             if ($page > $totalPages && $totalPages > 0) {
                 $page = 1;
             }
 
-            // Fetch paginated results
             $accessories = $query->orderBy($sortBy, $sortDir)
                 ->offset(($page - 1) * $perPage)
                 ->limit($perPage)
@@ -147,9 +142,9 @@ class ProductAccessoriesController extends Controller
 
                 return [
                     'product_id' => $accessory->product_id,
+                    'sku' => $accessory->product?->sku ?? null, // ✅ SKU from related product
                     'accessory_id' => $accessory->id,
-                    'name' => $accessory->name,
-                    'sku' => $accessory->product->sku, // Added SKU to response
+                    'name' => $accessory->name,               
                     'isapproved' => $accessory->isapproved,
                     'approved_by' => $accessory->approvedBy?->username ?? null,
                     'created_by' => $accessory->createdBy?->username ?? null,
@@ -179,6 +174,7 @@ class ProductAccessoriesController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * @OA\Post(
