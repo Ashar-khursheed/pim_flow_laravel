@@ -117,6 +117,12 @@ class PaymentManagementController extends Controller
 				'is_paid' => $pendingAmount <= 0,
 			]);
 
+			$batch = Bus::batch([])->name('Order Place in payment mgmt')->dispatch();
+			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+			$batch->add(new OrderPlacedMailJob([
+				'recordId' => $validated['order_id']
+			]));
+
 			return response()->json([
 				'message' => 'Payment recorded successfully.',
 				'data'    => $payment
@@ -228,6 +234,4 @@ class PaymentManagementController extends Controller
 
 		return response()->json(['message' => 'Payment deleted successfully']);
 	}
-
-	
 }
