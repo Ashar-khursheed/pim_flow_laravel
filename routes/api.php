@@ -136,6 +136,7 @@ use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Controllers\FrontEnd\FilterController;
 use App\Http\Controllers\FrontEnd\ShippingReportController;
+use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -563,6 +564,7 @@ Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']
 Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
+Route::get('frontend/product-accessories', [FnProductAccessoriesController::class, 'index']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
