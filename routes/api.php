@@ -180,7 +180,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
 
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
-Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
+// Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
     $url = $request->query('url');
