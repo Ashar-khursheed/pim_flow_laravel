@@ -20,7 +20,7 @@ return new class extends Migration
 			$table->integer('customer_address_id');
 			$table->decimal('shipping_charge', 10, 2);
 			$table->decimal('amount', 10, 2);
-			$table->decimal('tax_percentage', 10, 2);
+			$table->decimal('tax_percentage', 10, 4);
 			$table->decimal('tax_amount', 10, 2);
 			$table->decimal('total_amount', 10, 2);
 
