@@ -20,7 +20,7 @@ return new class extends Migration
 			$table->boolean('is_lift_gate')->nullable();
 			$table->boolean('is_residential_address')->nullable();
 			$table->decimal('amount', 10, 2);
-			$table->decimal('tax_percentage', 10, 2);
+			$table->decimal('tax_percentage', 10, 4);
 			$table->decimal('tax_amount', 10, 2);
 			$table->decimal('total_amount', 10, 2);
 			$table->integer('total_products');
