@@ -14535,6 +14535,7 @@
                         "schema": {
                             "type": "string",
                             "enum": [
+                                "all",
                                 "pending",
                                 "approved",
                                 "rejected"
@@ -14548,6 +14549,7 @@
                         "schema": {
                             "type": "string",
                             "enum": [
+                                "all",
                                 "customer",
                                 "category",
                                 "product",
@@ -23137,6 +23139,90 @@
                                                 "type": "string",
                                                 "example": "Card declined"
                                             }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/auth/Stax": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Process a checkout payment",
+                "description": "Takes a Stax.js payment token and amount, then processes the charge via Stax API.",
+                "operationId": "checkout",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "token",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "token": {
+                                        "description": "Payment token from Stax.js",
+                                        "type": "string",
+                                        "example": "tok_abc123XYZ"
+                                    },
+                                    "amount": {
+                                        "description": "Charge amount in USD",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100.5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful transaction",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "transaction": {
+                                            "type": "object",
+                                            "example": {
+                                                "id": "txn_12345",
+                                                "status": "succeeded",
+                                                "amount": 100.5,
+                                                "currency": "USD"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed transaction",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Card declined"
                                         }
                                     },
                                     "type": "object"
@@ -33534,6 +33620,56 @@
                 ]
             }
         },
+        "/api/report/stats/reserved": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get order report within a date range",
+                "operationId": "866b2c71258d5b1b8e993ad7349b6285",
+                "parameters": [
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/report/utms": {
             "get": {
                 "tags": [
@@ -39818,6 +39954,10 @@
             "description": "Square Payment"
         },
         {
+            "name": "Payments",
+            "description": "Payments"
+        },
+        {
             "name": "Stripe",
             "description": "Stripe"
         },
@@ -39860,10 +40000,6 @@
         {
             "name": "Orders",
             "description": "Orders"
-        },
-        {
-            "name": "Payments",
-            "description": "Payments"
         },
         {
             "name": "PostPurchaseClaims",

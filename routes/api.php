@@ -136,6 +136,8 @@ use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Controllers\FrontEnd\FilterController;
 use App\Http\Controllers\FrontEnd\ShippingReportController;
+use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
+
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -706,6 +708,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
 	});
 
+
+
 });
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
@@ -886,3 +890,4 @@ Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerControl
 	Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
      ->where('from', '.*');
 
+	Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
