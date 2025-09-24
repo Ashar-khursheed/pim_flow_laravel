@@ -136,6 +136,7 @@ use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Controllers\FrontEnd\FilterController;
 use App\Http\Controllers\FrontEnd\ShippingReportController;
+use App\Http\Controllers\FrontEnd\CustomerCartController as F_CustomerCartController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -341,7 +342,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('blog-categories', BlogCategoryController::class);
 	Route::post('/blogs/{id}', [BlogController::class, 'update']);
 	Route::apiResource('blogs', BlogController::class);
-	
+
 	Route::get('/product-questions/{product_id}', [ProductQuestionController::class, 'index']);
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
@@ -407,7 +408,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 	Route::resource('/delivery/payment-history', PaymentHistoryController::class);
-	
+
 	Route::get('/delivery/get-price-ordernumber', [PaymentHistoryController::class,'getPriceOrderNumber']);
 	Route::resource('product-accessories', ProductAccessoriesController::class);
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
@@ -565,6 +566,8 @@ Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'get
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+    Route::apiResource('frontend/carts', F_CustomerCartController::class);
+
 	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
 	Route::prefix('customer')->group(function () {
 
@@ -673,7 +676,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/cart-summary', [F_CartController::class, 'cartSummary']);
 	Route::get('/frontend/cart/total-products', [F_CartController::class, 'totalProductsInCart']);
 	Route::delete('/frontend/cart/delete', [F_CartController::class, 'deleteFromCart']);
-	
+
 
 
 
