@@ -694,7 +694,8 @@ class ProductAccessoriesController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('id', 'like', "%{$search}%");
+                        ->orWhere('id', 'like', "%{$search}%")
+                         ->orWhere('sku', 'like', "%{$search}%");
 
                 });
             }
