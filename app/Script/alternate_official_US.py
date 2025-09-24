@@ -563,14 +563,20 @@ def main():
     product_id_list = [1683];
 
     #test branch
+    # db_config = {
+    #     "host": "pim-flow-db.ch0qsm2uacmv.us-west-1.rds.amazonaws.com",
+    #     "port": 3306,
+    #     "database": "pim_flow_db",
+    #     "user": "admin",
+    #     "password": "Yellowgrapes3322"
+    # }
     db_config = {
-        "host": "pim-flow-db.ch0qsm2uacmv.us-west-1.rds.amazonaws.com",
-        "port": 3306,
-        "database": "pim_flow_db",
-        "user": "admin",
-        "password": "Yellowgrapes3322"
+        "host": os.getenv("DB_HOST"),
+        "port": int(os.getenv("DB_PORT", 3306)),  # default 3306
+        "database": os.getenv("DB_NAME"),
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASSWORD")
     }
-
     
     # db_config = {
     #     "host": "horecadb.ch0qsm2uacmv.us-west-1.rds.amazonaws.com",
