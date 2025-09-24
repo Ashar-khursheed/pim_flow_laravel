@@ -573,8 +573,8 @@ def main():
     db_config = {
         "host": os.getenv("DB_HOST"),
         "port": int(os.getenv("DB_PORT", 3306)),  # default 3306
-        "database": os.getenv("DB_NAME"),
-        "user": os.getenv("DB_USER"),
+        "database": os.getenv("DB_DATABASE"),
+        "user": os.getenv("DB_USERNAME"),
         "password": os.getenv("DB_PASSWORD")
     }
     
