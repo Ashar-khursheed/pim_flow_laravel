@@ -318,6 +318,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::apiResource('payments', PaymentController::class);
 	Route::get('report/orders', [ReportController::class, 'index']);
+	Route::get('report/stats/reserved', [ReportController::class, 'reservedOrders']);
 	Route::get('report/utms', [ReportController::class, 'indexUtms']);
 	Route::get('report/customer-utms', [ReportController::class, 'indexCustomerUtms']);
 
