@@ -14223,6 +14223,61 @@
                 }
             }
         },
+        "/api/frontend/python/compare-alternate-products": {
+            "post": {
+                "tags": [
+                    "Compare Alternate Products"
+                ],
+                "summary": "Run Python Alternate Product Generator",
+                "operationId": "68d25a7467ffca5db250770205c8a1f6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id_list": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Job executed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Alternate products saved to DB"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/contact-directories": {
             "get": {
                 "tags": [
@@ -39903,6 +39958,10 @@
         {
             "name": "Compare Products",
             "description": "Compare Products"
+        },
+        {
+            "name": "Compare Alternate Products",
+            "description": "Compare Alternate Products"
         },
         {
             "name": "Frontend ContactDirectory",
