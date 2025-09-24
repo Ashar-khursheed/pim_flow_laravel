@@ -376,15 +376,14 @@ class CustomerCartController extends Controller
 
 	/**
 	 * @OA\Delete(
-	 *     path="/api/frontend/carts/{customer_id}",
+	 *     path="/api/frontend/carts",
 	 *     summary="Delete a cart",
 	 *     tags={"Frontend-Carts"},
-	 *     @OA\Parameter(name="customer_id", in="path", required=true, @OA\Schema(type="integer")),
 	 *     @OA\Response(response=200, description="Deleted successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function destroy()
+	public function destroyAll()
 	{
 		auth()->user()->customerCarts->each(function ($cart) {
 			$cart->customerCartProducts()->delete();
