@@ -16081,25 +16081,13 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/frontend/carts/{customer_id}": {
+            },
             "delete": {
                 "tags": [
                     "Frontend-Carts"
                 ],
                 "summary": "Delete a cart",
-                "operationId": "b531c96e25afc5220c655a855c36172c",
-                "parameters": [
-                    {
-                        "name": "customer_id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "operationId": "3ccda7fc95ca66fb597e2a6388e6456b",
                 "responses": {
                     "200": {
                         "description": "Deleted successfully",

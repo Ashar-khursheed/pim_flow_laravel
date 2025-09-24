@@ -568,7 +568,9 @@ Route::post('frontend/compare-table-product', [CompareProductController::class, 
 Route::get('frontend/product-accessories', [FnProductAccessoriesController::class, 'index']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+    Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
     Route::apiResource('frontend/carts', F_CustomerCartController::class);
+
 
 	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
 	Route::prefix('customer')->group(function () {
