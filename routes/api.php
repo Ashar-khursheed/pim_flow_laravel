@@ -281,7 +281,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
     Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
     Route::apiResource('post-purchase-claims', PostPurchaseClaimController::class);
 
-    Route::apiResource('/coupons', F_CouponController::class);
+    Route::apiResource('/coupons', F_CouponController::class)	;
     Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
     Route::post('/coupons/{coupon}/reject', [F_CouponController::class, 'reject']);
     Route::post('/coupons/validate', [F_CouponController::class, 'validate']);
@@ -627,11 +627,13 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/products/{id}/fbt', [F_FbtProductController::class, 'getFbtProducts']);
 	Route::get('/frontend/products/{id}/dif', [F_DiffProductController::class, 'getDiffProducts']);
 	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
-	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
+	// Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
+		Route::apiResource('frontend/customer-address', F_CustomerAddressController::class)
+			->names('frontend.customer-address');
 
 	Route::get('/frontend/quotes/{id}/email-pdf', [F_QuoteController::class, 'emailPdf']);
 	Route::get('/frontend/quotes/{id}/download-pdf', [F_QuoteController::class, 'downloadPdf']);
-	Route::apiResource('frontend/quotes', F_QuoteController::class);
+	Route::apiResource('frontend/quotes', F_QuoteController::class)	->names('frontend.quotes');
 
 
 	Route::get('frontend/orders/tracking', [F_OrderController::class, 'orderTracking']);
@@ -639,7 +641,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
 	Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);
 	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
-	Route::apiResource('frontend/orders', F_OrderController::class);
+	Route::apiResource('frontend/orders', F_OrderController::class)	->names('frontend.orders');
 
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
 
@@ -703,7 +705,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
 	Route::delete('/frontend/remove-from-save-for-later/{product_id}', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
 
-	Route::apiResource('/frontend/payments',  F_PaymentManagementController::class);
+	Route::apiResource('/frontend/payments',  F_PaymentManagementController::class)	->names('frontend.payments');
 	Route::post('/frontend/payments/cash-delivery',  [F_PaymentManagementController::class,'paymentCashDelivery']);
 
 
