@@ -32,6 +32,7 @@ class QuotePlacedMail extends Mailable
 		$pdfParams = $this->generateQuotePdfParams($quote->id);
 
 		$quoteNumber = $quote->quote_number;
+		$quoteName = $quote->quote_name;
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 		$name = strtolower(optional($quote->customer)->type) === 'private' ? $quote->customer->name : $quote->customer->business_name;
@@ -68,10 +69,12 @@ class QuotePlacedMail extends Mailable
 
 		$pdf = Pdf::loadView('pdf.quote', $pdfParams);
 
+		$quoteName = "HorecaStore_Quote_{$name}_{$quoteName}_{$quoteNumber}.pdf";
+
 		$mail = $this->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Generated")
 		->markdown('emails.quotes.quote-placed')
 		->with($mailParams)
-		->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
+		->attachData($pdf->output(), $quoteName, [
 			'mime' => 'application/pdf',
 		]);
 
