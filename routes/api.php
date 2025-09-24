@@ -634,7 +634,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::get('/frontend/quotes/{id}/email-pdf', [F_QuoteController::class, 'emailPdf']);
 	Route::get('/frontend/quotes/{id}/download-pdf', [F_QuoteController::class, 'downloadPdf']);
-	Route::apiResource('frontend/quotes', F_QuoteController::class)	->names('frontend.quotes');
+	Route::apiResource('frontend/quotes', F_QuoteController::class)->names('frontend.quotes');
 
 
 	Route::get('frontend/orders/tracking', [F_OrderController::class, 'orderTracking']);
