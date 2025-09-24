@@ -137,6 +137,7 @@ use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Controllers\FrontEnd\FilterController;
 use App\Http\Controllers\FrontEnd\ShippingReportController;
 use App\Http\Controllers\FrontEnd\CustomerCartController as F_CustomerCartController;
+use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -181,7 +182,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
 
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
-Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
+// Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
     $url = $request->query('url');
@@ -564,6 +565,7 @@ Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']
 Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
+Route::get('frontend/product-accessories', [FnProductAccessoriesController::class, 'index']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
     Route::apiResource('frontend/carts', F_CustomerCartController::class);
