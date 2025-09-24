@@ -28,7 +28,7 @@ return new class extends Migration
 			$table->dropColumn(['coupon_id', 'discount']);
 
 			$table->decimal('discount_percentage', 10, 2)->nullable()->after('tax_amount');
-			$table->decimal('discount_amount', 10, 2)->nullable()->after('discount_percentage');
+			$table->decimal('discount_amount', 10, 4)->nullable()->after('discount_percentage');
 			$table->decimal('amount_after_discount', 10, 2)->nullable()->after('discount_amount');
 		});
 	}
