@@ -619,7 +619,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/products/{id}/fbt', [F_FbtProductController::class, 'getFbtProducts']);
 	Route::get('/frontend/products/{id}/dif', [F_DiffProductController::class, 'getDiffProducts']);
 	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
-	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
+	// Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
+		Route::apiResource('frontend/customer-address', F_CustomerAddressController::class)
+			->names('frontend.customer-address');
 
 	Route::get('/frontend/quotes/{id}/email-pdf', [F_QuoteController::class, 'emailPdf']);
 	Route::get('/frontend/quotes/{id}/download-pdf', [F_QuoteController::class, 'downloadPdf']);
