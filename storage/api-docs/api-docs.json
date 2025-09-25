@@ -27869,11 +27869,11 @@
                         "schema": {
                             "type": "string",
                             "enum": [
-                                "pending",
-                                "completed",
-                                "failed",
-                                "cancelled",
-                                "refunded",
+                                "Pending",
+                                "Completed",
+                                "Failed",
+                                "Cancelled",
+                                "Refunded",
                                 "all"
                             ],
                             "example": "all"

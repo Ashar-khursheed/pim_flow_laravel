@@ -36,7 +36,7 @@ class PaymentHistoryController extends Controller
 	 *         in="query",
 	 *         required=false,
 	 *         description="Filter by status",
-	 *         @OA\Schema(type="string", enum={"pending","completed","failed","cancelled","refunded","all"}, example="all")
+	 *         @OA\Schema(type="string", enum={"Pending","Completed","Failed","Cancelled","Refunded","all"}, example="all")
 	 *     ),
 	 *     @OA\Parameter(
 	 *         name="search",
