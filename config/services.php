@@ -94,6 +94,12 @@ return [
         'api_url' => env('NOFRAUD_API_URL', 'https://api.nofraud.com/'),
     ],
 
+    'stax' => [
+        'base_url' => env('STAX_BASE_URL'),
+        'api_key'  => env('STAX_API_KEY'),
+    ],
+
+
 
 
 ];

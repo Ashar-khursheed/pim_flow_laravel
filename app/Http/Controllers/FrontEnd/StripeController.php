@@ -292,10 +292,10 @@ class StripeController extends Controller
         $url = config('app.url');
         $stripeSecret = config('services.stripe.secret');
         $currency = "AED";
-        // $success_url = $url.'/api/stripe/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
-        // $cancel_url = $url.'/api/stripe/failed';
-        $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = url('/api/stripe/failed');
+         $success_url = $url.'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
+         $cancel_url = $url.'/failed';
+        // $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
+        // $cancel_url = url('/api/stripe/failed');
         $res = Http::withOptions(['verify' => false]);
         $res = Http::withOptions(['verify' => false])
             ->withToken($stripeSecret)

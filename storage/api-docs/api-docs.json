@@ -23399,6 +23399,90 @@
                 }
             }
         },
+        "/api/frontend/auth/Stax": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Process a checkout payment",
+                "description": "Takes a Stax.js payment token and amount, then processes the charge via Stax API.",
+                "operationId": "checkout",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "token",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "token": {
+                                        "description": "Payment token from Stax.js",
+                                        "type": "string",
+                                        "example": "tok_abc123XYZ"
+                                    },
+                                    "amount": {
+                                        "description": "Charge amount in USD",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100.5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful transaction",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "transaction": {
+                                            "type": "object",
+                                            "example": {
+                                                "id": "txn_12345",
+                                                "status": "succeeded",
+                                                "amount": 100.5,
+                                                "currency": "USD"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed transaction",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Card declined"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/stripe/create-payment-intent": {
             "post": {
                 "tags": [
@@ -33074,6 +33158,266 @@
                 ]
             }
         },
+        "/api/product-variants": {
+            "get": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Get Product Variants List",
+                "description": "Fetches a list of product-variants.",
+                "operationId": "366bef6a3396519bcd0c3b694ba6f891",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "published",
+                                "draft",
+                                "pending"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Create a new product variant",
+                "operationId": "3621292a6830e507fcc07c6a62e2ce04",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "label"
+                                ],
+                                "properties": {
+                                    "parent_id": {
+                                        "type": "integer",
+                                        "example": 1683
+                                    },
+                                    "child_id": {
+                                        "type": "integer",
+                                        "example": 1683
+                                    },
+                                    "attribute_id": {
+                                        "type": "integer",
+                                        "example": 9
+                                    },
+                                    "label": {
+                                        "type": "string",
+                                        "example": "Red Color"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Color"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "422": {
+                        "description": "Validation Failed"
+                    },
+                    "500": {
+                        "description": "Server Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-variants/{id}": {
+            "put": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Update an existing Product Variant",
+                "operationId": "e251f19fef379cfa30abf65f47e02e48",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product Variant ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "label"
+                                ],
+                                "properties": {
+                                    "parent_id": {
+                                        "type": "integer",
+                                        "example": 1683
+                                    },
+                                    "child_id": {
+                                        "type": "integer",
+                                        "example": 21191
+                                    },
+                                    "attribute_id": {
+                                        "type": "integer",
+                                        "example": 9
+                                    },
+                                    "label": {
+                                        "type": "string",
+                                        "example": "Red Color"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Color"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product Variant updated successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Product Variant not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Server Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Delete a product variant",
+                "operationId": "5b69650da1378dc73652e90875a0ac87",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/quotes": {
             "get": {
                 "tags": [
@@ -33793,6 +34137,56 @@
                 ],
                 "summary": "Get order report within a date range",
                 "operationId": "9bf64e1ca9dd4e22c271418173a24b54",
+                "parameters": [
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/report/stats/reserved": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get order report within a date range",
+                "operationId": "866b2c71258d5b1b8e993ad7349b6285",
                 "parameters": [
                     {
                         "name": "from_date",
@@ -39801,6 +40195,10 @@
             "description": "Get list of Delivery Payment History"
         },
         {
+            "name": "Product Variants",
+            "description": "API Endpoints for managing product variants"
+        },
+        {
             "name": "Categories",
             "description": "API Endpoints for Category Management"
         },
@@ -40128,6 +40526,10 @@
             "description": "Square Payment"
         },
         {
+            "name": "Payments",
+            "description": "Payments"
+        },
+        {
             "name": "Stripe",
             "description": "Stripe"
         },
@@ -40170,10 +40572,6 @@
         {
             "name": "Orders",
             "description": "Orders"
-        },
-        {
-            "name": "Payments",
-            "description": "Payments"
         },
         {
             "name": "PostPurchaseClaims",

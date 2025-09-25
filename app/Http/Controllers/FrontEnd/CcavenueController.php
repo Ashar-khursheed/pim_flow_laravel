@@ -368,11 +368,11 @@ class CcavenueController extends Controller
         $customer = Customer::find($order->customer_id);
         $orderList = array();
         $orderList['order_id'] = $order->id;
-        // $orderList['redirect_url'] = $url.'api/gateway/thanks';
-        // $orderList['cancel_url'] = $url.'api/gateway/failed';
+        $orderList['redirect_url'] = $url.'/thanks';
+        $orderList['cancel_url'] = $url.'/failed';
 
-        $orderList['redirect_url'] = url('api/ccavenue/thanks');
-        $orderList['cancel_url'] = url('api/ccavenue/failed');
+        // $orderList['redirect_url'] = url('api/ccavenue/thanks');
+        // $orderList['cancel_url'] = url('api/ccavenue/failed');
         $orderList['currency'] = "AED";
         $orderList['amount'] = $order->total_amount;
         $orderList['language'] = "EN";

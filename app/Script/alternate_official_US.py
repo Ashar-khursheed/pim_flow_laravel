@@ -372,14 +372,17 @@ Respond ONLY with the JSON.
 
 
 def process_index(i, imp_df):
+
     query = imp_df.loc[i, "product_name"]
     x = imp_df.loc[imp_df["product_name"] == query, "sub_category"]
-
+    y = imp_df.loc[imp_df["product_name"] == query, "product_type"]
     if x.empty:
         filtered_rows = pd.DataFrame()
     else:
-        product_type = x.unique()
-        filtered_rows = imp_df[imp_df["sub_category"].isin(product_type)].copy()
+        sub_category = x.unique()
+        product_type = y.unique()
+        filtered_rows = imp_df[imp_df["sub_category"].isin(sub_category)].copy()
+        filtered_rows = filtered_rows[filtered_rows["product_type"].isin(product_type)].copy()
         filtered_rows.reset_index(drop=True, inplace=True)
 
     keywords = llm_attribute_extractor(query)
