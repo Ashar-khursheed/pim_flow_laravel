@@ -265,13 +265,14 @@ class QuoteController extends BaseController
 				$quoteShipping += $product['shipping_charge'];
 			}
 
-			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
+			$discountedAmount = $quoteAmount - $discount;
+			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
 			if (config('app.website') == 'UAE') {
-				$quoteShipping = ($quoteAmount + $taxAmount) < 300 ? 25 : 0;
+				$quoteShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
-			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping - $discount;
+			$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
 
 			/* Generate new quote number */
 			$latestQuote = Quote::whereRaw("quote_number REGEXP '^QT[0-9]+$'")
@@ -567,13 +568,14 @@ class QuoteController extends BaseController
 				$quoteAmount += $product['quantity'] * $product['unit_price'];
 				$quoteShipping += $product['shipping_charge'];
 			}
-			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
+			$discountedAmount = $quoteAmount - $discount;
+			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
 			if (config('app.website') == 'UAE') {
-				$quoteShipping = ($quoteAmount + $taxAmount) < 300 ? 25 : 0;
+				$quoteShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
-			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping - $discount;
+			$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
 
 			$quote->update([
 				'quote_name' => $request->quote_name,

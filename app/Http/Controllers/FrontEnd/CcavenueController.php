@@ -9,8 +9,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 use App\Models\FrontEnd\CustomerAddress;
 use App\Models\FrontEnd\Customer;
+use App\Models\PaymentManagement;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
+use App\Models\FrontEnd\Order;
+use App\Helpers\CcavenueHelper;
+use Illuminate\Support\Facades\Http;
+
 
 class CcavenueController extends Controller
 {
@@ -239,7 +244,7 @@ class CcavenueController extends Controller
      *     )
      * )
      */
-    public function handleResponse(Request $request): JsonResponse
+    public function handleResponse(Request $request)
     {
         try {
             $encResponse = $request->input('encResp');
@@ -357,14 +362,17 @@ class CcavenueController extends Controller
         }
     }
     public function createCCavenuePaymentLink($order)
-    {         
+    {
         $url = config('app.url');
         $customerAddress = CustomerAddress::find($order->customer_address_id);
         $customer = Customer::find($order->customer_id);
         $orderList = array();
         $orderList['order_id'] = $order->id;
-        $orderList['redirect_url'] = $url;
-        $orderList['cancel_url'] = $url;
+        $orderList['redirect_url'] = $url.'/thanks';
+        $orderList['cancel_url'] = $url.'/failed';
+
+        // $orderList['redirect_url'] = url('api/ccavenue/thanks');
+        // $orderList['cancel_url'] = url('api/ccavenue/failed');
         $orderList['currency'] = "AED";
         $orderList['amount'] = $order->total_amount;
         $orderList['language'] = "EN";
@@ -384,7 +392,7 @@ class CcavenueController extends Controller
             'amount',
             'redirect_url',
             'cancel_url',
-            'language'            
+            'language'
         ];
         $merchantId = $this->ccavenueService->getMerchantId();
 
@@ -406,6 +414,269 @@ class CcavenueController extends Controller
 
         $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
         return $paymentUrl;
+
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/ccavenue/thanks",
+     *     summary="ccavenue Payment Success Redirect",
+     *     tags={"CCAvenue"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment was successful"
+     *     )
+     * )
+     */
+    public function paymentSuccess(Request $request)
+    {
+
+        $workingKey = env('CCAVENUE_WORKING_KEY');
+        $accessCode = env('CCAVENUE_ACCESS_CODE');
+        $encResponse = $request->encResp;
+        //This is the response sent by the CCAvenue Server
+        $rcvdString = CcavenueHelper::decrypt($encResponse, $workingKey);
+        //Crypto Decryption used as per the specified working key.
+
+        $order_status = "";
+        $decryptValues = explode('&', $rcvdString);
+        $dataSize = sizeof($decryptValues);
+
+        for ($i = 0; $i < $dataSize; $i++) {
+            $information = explode('=', $decryptValues[$i]);
+            if ($i == 3)
+                $order_status = $information[1];
+        }
+
+        if ($order_status === "Success") {
+            $msg = "Thank you for registering with us. We will be sending you the registration slip very soon on your email id.";
+
+        } else if ($order_status === "Aborted") {
+            $msg = "Sorry, you have not been registered with us.However,the transaction has been declined & Security Error. Illegal access detected.";
+
+        } else if ($order_status === "Failure") {
+            $msg = "Sorry, you have not been registered with us.However,the transaction has been declined.";
+        } else {
+            $msg = "Sorry, you have not been registered with us.However,the transaction has been declined & Security Error. Illegal access detected " . $order_status;
+
+        }
+
+
+
+
+        $information = array();
+        foreach ($decryptValues as $value) {
+            $t = explode('=', $value);
+            $information[$t[0]] = urldecode($t[1]);
+        }
+        $information = json_decode(json_encode($information));
+
+
+        $status = $order_status;
+        if (isset($information)) {
+
+
+            $order = Order::where('id', $information->order_id)->first();
+            if (!$order) {
+                return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+            }
+            $status = $information->order_status;
+            switch ($status) {
+                case 'complete':
+                case 'Success':
+                case 'succeeded':
+                    $status = "Completed";
+                    break;
+                case 'processing':
+                    $status = "Pending";
+                    break;
+                case 'canceled':
+                case 'failed':
+                case 'expired':
+                    $status = "Failed";
+                    break;
+                case 'Invalid':
+                    $status = "Invalid";
+                    break;
+                default:
+                    $status = "Pending";
+            }
+        }
+
+        if ($information->order_status == 'Success') {
+            if ($order->amount_total == $information->amount) {
+                // Mark order as paid and remove payment link
+                $order->update([
+                    'is_paid' => true,
+                    'paid_amount' => $order->paid_amount + $information->amount,
+                    'pending_amount' => $order->pending_amount - $information->amount,
+                    'payment_link' => null,
+                    'is_reserved' => false,
+                ]);
+            } else {
+                $order->update([
+                    'is_paid' => false,
+                    'paid_amount' => $order->paid_amount + $information->amount,
+                    'pending_amount' => $order->pending_amount - $information->amount,
+                    'payment_link' => null,
+                    'is_reserved' => false,
+                ]);
+
+            }
+        }
+
+        PaymentManagement::create([
+            'order_id' => $information->order_id,
+            'transaction_id' => $information->tracking_id,
+            'payment_mode' => $information->payment_mode,
+            'payment_method' => 'ccavenue',
+            'amount' => $information->amount,
+            'status' => $status,
+            'payment_date' => date('Y-m-d H:i:s'),
+            'notes' => $information->status_message,
+            'payment_details' => ''
+        ]);
+
+        if ($information) {
+
+            return response()->json([
+                'success' => true,
+                'message' => $msg,
+                'data' => $information
+            ]);
+
+        } else {
+
+            return response()->json([
+                'success' => false,
+                'message' => $msg,
+                'data' => $information
+            ]);
+        }
+
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/ccavenue/failed",
+     *     summary="CCAvenue Payment Cancel Redirect",
+     *     tags={"CCAvenue"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment was cancelled"
+     *     )
+     * )
+     */
+    public function paymentFailed(Request $request)
+    {
+        $workingKey = env('CCAVENUE_WORKING_KEY');
+        $accessCode = env('CCAVENUE_ACCESS_CODE');
+        $encResponse = $request->encResp;
+
+
+        //This is the response sent by the CCAvenue Server
+        $rcvdString = CcavenueHelper::decrypt($encResponse, $workingKey);
+
+
+        //Crypto Decryption used as per the specified working key.
+
+        $order_status = "";
+        $decryptValues = explode('&', $rcvdString);
+        $dataSize = sizeof($decryptValues);
+
+        for ($i = 0; $i < $dataSize; $i++) {
+            $information = explode('=', $decryptValues[$i]);
+            if ($i == 3)
+                $order_status = $information[1];
+        }
+
+        if ($order_status === "Success") {
+            $msg = "Thank you for registering with us. We will be sending you the registration slip very soon on your email id.";
+
+        } else if ($order_status === "Aborted") {
+            $msg = "Sorry, you have not been registered with us.However,the transaction has been declined & Security Error. Illegal access detected.";
+
+        } else if ($order_status === "Failure") {
+            $msg = "Sorry, you have not been registered with us.However,the transaction has been declined.";
+        } else {
+            $msg = "Sorry, you have not been registered with us.However,the transaction has been declined & Security Error. Illegal access detected " . $order_status;
+
+        }
+
+
+
+
+        $information = array();
+        foreach ($decryptValues as $value) {
+            $t = explode('=', $value);
+            $information[$t[0]] = urldecode($t[1]);
+        }
+        $information = json_decode(json_encode($information));
+
+
+        $status = $order_status;
+        if (isset($information)) {
+
+
+            $order = Order::where('id', $information->order_id)->first();
+            if (!$order) {
+                return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+            }
+            $status = $information->order_status;
+            switch ($status) {
+                case 'complete':
+                case 'Success':
+                case 'succeeded':
+                    $status = "Completed";
+                    break;
+                case 'processing':
+                    $status = "Pending";
+                    break;
+                case 'canceled':
+                case 'failed':
+                case 'expired':
+                    $status = "Failed";
+                    break;
+                case 'Invalid':
+                    $status = "Invalid";
+                    break;
+                default:
+                    $status = "Pending";
+            }
+
+        }
+
+
+
+        PaymentManagement::create([
+            'order_id' => $information->order_id,
+            'transaction_id' => $information->tracking_id,
+            'payment_mode' => $information->payment_mode,
+            'payment_method' => 'ccavenue',
+            'amount' => $information->amount,
+            'status' => $status,
+            'payment_date' => date('Y-m-d H:i:s'),
+            'notes' => $information->status_message,
+            'payment_details' => ''
+        ]);
+
+
+        if ($information) {
+
+            return response()->json([
+                'success' => true,
+                'message' => $msg,
+                'data' => $information
+            ]);
+
+        } else {
+
+            return response()->json([
+                'success' => false,
+                'message' => $msg,
+                'data' => $information
+            ]);
+        }
 
     }
 

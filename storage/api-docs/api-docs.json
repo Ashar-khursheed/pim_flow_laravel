@@ -8379,18 +8379,18 @@
                 ]
             }
         },
-        "/api/carts/{id}": {
+        "/api/carts/{customer_id}": {
             "get": {
                 "tags": [
                     "Carts"
                 ],
                 "summary": "Get cart details",
-                "operationId": "9d678efe34a8a30237b9259db1890073",
+                "operationId": "01177ba8293c42dbae683f65ccc6e655",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "customer_id",
                         "in": "path",
-                        "description": "Cart ID",
+                        "description": "Customer ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -8416,10 +8416,10 @@
                     "Carts"
                 ],
                 "summary": "Delete a cart",
-                "operationId": "94edba2e35d86637902c45b8505b8957",
+                "operationId": "3c567fd7af0ef9f7b15249a15a03e4af",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "customer_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -13911,6 +13911,34 @@
                 }
             }
         },
+        "/api/ccavenue/thanks": {
+            "post": {
+                "tags": [
+                    "CCAvenue"
+                ],
+                "summary": "ccavenue Payment Success Redirect",
+                "operationId": "2f8de33400e008495bdeb3cc710b5f5f",
+                "responses": {
+                    "200": {
+                        "description": "Payment was successful"
+                    }
+                }
+            }
+        },
+        "/api/ccavenue/failed": {
+            "post": {
+                "tags": [
+                    "CCAvenue"
+                ],
+                "summary": "CCAvenue Payment Cancel Redirect",
+                "operationId": "4ceca77797fe7b34ac915a970b44464a",
+                "responses": {
+                    "200": {
+                        "description": "Payment was cancelled"
+                    }
+                }
+            }
+        },
         "/api/frontend/company-profiles": {
             "get": {
                 "tags": [
@@ -14193,6 +14221,61 @@
                         "description": "Bad request"
                     }
                 }
+            }
+        },
+        "/api/frontend/python/compare-alternate-products": {
+            "post": {
+                "tags": [
+                    "Compare Alternate Products"
+                ],
+                "summary": "Run Python Alternate Product Generator",
+                "operationId": "68d25a7467ffca5db250770205c8a1f6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id_list": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Job executed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Alternate products saved to DB"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/contact-directories": {
@@ -15899,6 +15982,173 @@
                 "responses": {
                     "200": {
                         "description": "Default address updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/carts": {
+            "get": {
+                "tags": [
+                    "Frontend-Carts"
+                ],
+                "summary": "Get all carts with pagination and filters",
+                "operationId": "08b8882c9037f2236e7cb3990e7a3213",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "reference_number",
+                                "shipping_charge",
+                                "total_amount",
+                                "total_products",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Frontend-Carts"
+                ],
+                "summary": "Create a new cart",
+                "operationId": "3a5860c524752bdace4ec3bc6ca0657b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "products"
+                                ],
+                                "properties": {
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": "1"
+                                    },
+                                    "tax_percentage": {
+                                        "type": "number",
+                                        "example": 5
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Frontend-Carts"
+                ],
+                "summary": "Delete a cart",
+                "operationId": "3ccda7fc95ca66fb597e2a6388e6456b",
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -23391,13 +23641,13 @@
                 ]
             }
         },
-        "/api/stripe/paymentSuccess": {
+        "/api/stripe/thanks": {
             "get": {
                 "tags": [
                     "Stripe"
                 ],
                 "summary": "Stripe Payment Success Redirect",
-                "operationId": "e81b711861e71006fd50c1fccc7baa6c",
+                "operationId": "38356105e0f8eb4ae825a9cfa3d48f2a",
                 "responses": {
                     "200": {
                         "description": "Payment was successful"
@@ -23405,13 +23655,13 @@
                 }
             }
         },
-        "/api/stripe/paymentCancel": {
+        "/api/stripe/failed": {
             "get": {
                 "tags": [
                     "Stripe"
                 ],
                 "summary": "Stripe Payment Cancel Redirect",
-                "operationId": "f21a6484a56dc87680f5362e0704f647",
+                "operationId": "56b5980fef9a15b45f2be57b62fd4a5d",
                 "responses": {
                     "200": {
                         "description": "Payment was cancelled"
@@ -27887,6 +28137,56 @@
                 ]
             }
         },
+        "/api/delivery/get-price-ordernumber": {
+            "get": {
+                "tags": [
+                    "Delivery Payment History"
+                ],
+                "summary": "Get price by order number",
+                "operationId": "438ade6e0a970101f64f654f100c1f8a",
+                "parameters": [
+                    {
+                        "name": "order_number",
+                        "in": "query",
+                        "description": "Filter by order number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/post-purchase-claims": {
             "get": {
                 "tags": [
@@ -28692,7 +28992,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search by id, name",
+                        "description": "Search by id, name,sku",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -32849,6 +33149,266 @@
                 "responses": {
                     "200": {
                         "description": "Batch started successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-variants": {
+            "get": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Get Product Variants List",
+                "description": "Fetches a list of product-variants.",
+                "operationId": "366bef6a3396519bcd0c3b694ba6f891",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "published",
+                                "draft",
+                                "pending"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Create a new product variant",
+                "operationId": "3621292a6830e507fcc07c6a62e2ce04",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "label"
+                                ],
+                                "properties": {
+                                    "parent_id": {
+                                        "type": "integer",
+                                        "example": 1683
+                                    },
+                                    "child_id": {
+                                        "type": "integer",
+                                        "example": 1683
+                                    },
+                                    "attribute_id": {
+                                        "type": "integer",
+                                        "example": 9
+                                    },
+                                    "label": {
+                                        "type": "string",
+                                        "example": "Red Color"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Color"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "422": {
+                        "description": "Validation Failed"
+                    },
+                    "500": {
+                        "description": "Server Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-variants/{id}": {
+            "put": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Update an existing Product Variant",
+                "operationId": "e251f19fef379cfa30abf65f47e02e48",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product Variant ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "label"
+                                ],
+                                "properties": {
+                                    "parent_id": {
+                                        "type": "integer",
+                                        "example": 1683
+                                    },
+                                    "child_id": {
+                                        "type": "integer",
+                                        "example": 21191
+                                    },
+                                    "attribute_id": {
+                                        "type": "integer",
+                                        "example": 9
+                                    },
+                                    "label": {
+                                        "type": "string",
+                                        "example": "Red Color"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Color"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product Variant updated successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Product Variant not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Server Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Delete a product variant",
+                "operationId": "5b69650da1378dc73652e90875a0ac87",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not Found"
                     }
                 },
                 "security": [
@@ -39635,6 +40195,10 @@
             "description": "Get list of Delivery Payment History"
         },
         {
+            "name": "Product Variants",
+            "description": "API Endpoints for managing product variants"
+        },
+        {
             "name": "Categories",
             "description": "API Endpoints for Category Management"
         },
@@ -39794,6 +40358,10 @@
             "description": "Compare Products"
         },
         {
+            "name": "Compare Alternate Products",
+            "description": "Compare Alternate Products"
+        },
+        {
             "name": "Frontend ContactDirectory",
             "description": "Frontend ContactDirectory"
         },
@@ -39816,6 +40384,10 @@
         {
             "name": "Frontend-Customer-Address",
             "description": "Frontend-Customer-Address"
+        },
+        {
+            "name": "Frontend-Carts",
+            "description": "Frontend-Carts"
         },
         {
             "name": "FrontEnd-Customer",

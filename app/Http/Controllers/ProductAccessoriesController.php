@@ -37,7 +37,7 @@ class ProductAccessoriesController extends Controller
      *         name="search",
      *         in="query",
      *         required=false,
-     *         description="Search by id, name",
+     *         description="Search by id, name,sku",
      *         @OA\Schema(type="string", example="")
      *     ),
      *     @OA\Parameter(
@@ -85,17 +85,21 @@ class ProductAccessoriesController extends Controller
         try {
             $query = ProductAccessory::with(['items', 'product', 'createdBy', 'updatedBy', 'approvedBy']);
 
+            // Filter by product_id if provided
             if ($request->input('product_id') != "" && $request->input('product_id') != null) {
                 $query->where('product_id', $request->input('product_id'));
             }
 
+            // Filter by approval status if not 'all'
             if ($request->input('isapproved') != "all") {
-                $query->where('isapproved', $request->isapproved);
+                $query->where('isapproved', $request->input('isapproved'));
             }
 
+            // Enhanced search logic for name, SKU, or ID
             if ($request->filled('search')) {
-                $search = $request->search;
+                $search = $request->input('search');
                 $query->where(function ($q) use ($search) {
+                    // Search by accessory name
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('id', 'like', "%{$search}%")
                         ->orWhereHas('product', function ($q2) use ($search) {
@@ -104,11 +108,13 @@ class ProductAccessoriesController extends Controller
                 });
             }
 
-            $searchableColumns = ['id', 'product_id', 'name', 'isapproved'];
+            // Define searchable and sortable columns
+            $searchableColumns = ['id', 'product_id', 'name', 'sku', 'isapproved'];
             $sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
             $sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
             $sortDir = strtolower($request->input('sort_direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
+            // Pagination parameters
             $perPage = $request->get('per_page', 10);
             $page = $request->get('page', 1);
 
@@ -124,6 +130,7 @@ class ProductAccessoriesController extends Controller
                 ->limit($perPage)
                 ->get();
 
+            // Format the response data
             $formattedProducts = $accessories->map(function ($accessory) {
                 $accessoryItems = $accessory->items->map(function ($item) {
                     return [
@@ -135,9 +142,10 @@ class ProductAccessoriesController extends Controller
 
                 return [
                     'product_id' => $accessory->product_id,
-                    'sku' => $accessory->product?->sku ?? null, // ✅ SKU from related product
+                    'sku' => $accessory->product?->sku ?? null,  
                     'accessory_id' => $accessory->id,
                     'name' => $accessory->name,
+                    'product_name' => $accessory->product->name,
                     'isapproved' => $accessory->isapproved,
                     'approved_by' => $accessory->approvedBy?->username ?? null,
                     'created_by' => $accessory->createdBy?->username ?? null,
@@ -201,7 +209,7 @@ class ProductAccessoriesController extends Controller
      *                 @OA\Property(property="isapproved", type="boolean", example=0)
      *             )
      *         )
-     *     ),        
+     *     ),
      *     @OA\Response(
      *         response=201,
      *         description="Success",
@@ -243,7 +251,7 @@ class ProductAccessoriesController extends Controller
             })->toArray();
 
             // Save all accessories at once
-            $accessory->items()->createMany($accessories);             
+            $accessory->items()->createMany($accessories);
 
             return response()->json([
                 'success' => true,
@@ -287,10 +295,10 @@ class ProductAccessoriesController extends Controller
      *      security={{"bearerAuth":{}}}
      * )
      */
-    public function show($id): JsonResponse
+    public function show($id)
     {
         try {
-            $accessory = ProductAccessory::with(['items', 'approvedBy', 'createdBy', 'updatedBy'])->findOrFail($id);
+            $accessory = ProductAccessory::with(['items', 'product', 'approvedBy', 'createdBy', 'updatedBy'])->findOrFail($id);
 
             // Map items properly
             $accessoryItems = $accessory->items->map(function ($item) {
@@ -306,6 +314,8 @@ class ProductAccessoriesController extends Controller
                 'product_id' => $accessory->product_id,
                 'accessory_id' => $accessory->id,
                 'name' => $accessory->name,
+                'product_name' => $accessory->product->name,
+                'sku' => $accessory->product->sku,
                 'isapproved' => $accessory->isapproved,
                 'approved_by' => $accessory->approved_by,
                 'created_by' => $accessory->created_by,
@@ -417,7 +427,7 @@ class ProductAccessoriesController extends Controller
      *                     {"name":"top","price":50},
      *                     {"name":"button","price":52}
      *                 }
-     *             ),  
+     *             ),
      *             @OA\Property(property="isapproved", type="integer", example=1),
      *             @OA\Property(property="approved_by", type="integer", example=2)
      *         )
@@ -461,7 +471,7 @@ class ProductAccessoriesController extends Controller
             }
 
             $accessory = ProductAccessory::findOrFail($id);
-
+ 
             // Update main accessory
             $accessory->update([
                 'product_id' => $request->product_id,
@@ -666,14 +676,14 @@ class ProductAccessoriesController extends Controller
      * @OA\Get(
      *     path="/api/get-product-list",
      *     summary="Get list of product list",
-     *     tags={"Product List"},   
+     *     tags={"Product List"},
      *      @OA\Parameter(
      *         name="search",
      *         in="query",
      *         description="Search term for filtering products by name",
      *         required=false,
      *         @OA\Schema(type="string", example="samsung")
-     *     ),   
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",

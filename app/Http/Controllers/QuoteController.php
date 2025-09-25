@@ -320,11 +320,13 @@ class QuoteController extends BaseController
 				}
 			}
 
-			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
+			$discountedAmount = $quoteAmount - $discount;
+
+			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 			if (config('app.website') == 'UAE') {
-				$quoteShipping = ($quoteAmount + $taxAmount) < 300 ? 25 : 0;
+				$quoteShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
-			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping - $discount;
+			$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
 
 			$quote = Quote::create([
 				'quote_number' => $quoteNumber,
@@ -600,13 +602,14 @@ class QuoteController extends BaseController
 				$quoteShipping += $product['shipping_charge'];
 			}
 
-			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
+			$discountedAmount = $quoteAmount - $discount;
+			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
 			if (config('app.website') == 'UAE') {
-				$quoteShipping = ($quoteAmount + $taxAmount) < 300 ? 25 : 0;
+				$quoteShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
-			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping - $discount;
+			$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
 
 			$quote->update([
 				'shipping_charge' => $quoteShipping,

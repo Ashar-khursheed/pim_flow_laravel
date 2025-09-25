@@ -13,6 +13,7 @@ use Illuminate\Bus\Batch;
 use App\Models\FrontEnd\CustomerCart;
 use App\Models\FrontEnd\CustomerCartProduct;
 use App\Models\FrontEnd\CustomerAddress;
+use App\Models\FrontEnd\Customer;
 use App\Jobs\Order\CartCreationMailJob;
 
 class CustomerCartController extends Controller
@@ -47,9 +48,8 @@ class CustomerCartController extends Controller
 			/* Eager load relationships */
 			$recordsQuery->with([
 				'customer:id,name,email,country_code,mobile_number',
-				'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-				'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-				'customerCartProducts.product.brand:id,name',
+				'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
+				'customerCartProducts.product:id,name,images,sku,currency_id,barcode',
 				'customerCartProducts.product.currency:id,symbol',
 			]);
 
@@ -92,29 +92,87 @@ class CustomerCartController extends Controller
 			$records = $recordsQuery
 			->offset(($page - 1) * $length)
 			->limit($length)
-			->get();
+			->get(['id', 'reference_number', 'customer_id', 'is_lift_gate', 'is_residential_address', 'total_amount', 'total_products', 'created_at']);
 
 			/* Transform results */
 			$records->transform(function ($record) {
 				/* Process each product in customer cart products */
+
+				$totalProducts = 0;
+				$cartAmount = 0;
+				$cartShipping = 0;
+				$cartProducts = [];
+
 				foreach ($record->customerCartProducts as $customerCartProduct) {
 					$product = $customerCartProduct->product;
-					if ($product) {
-						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-						$product->brand_name = $product->brand->name ?? null;
-						$product->currency_symbol = $product->currency->symbol ?? null;
-						unset($product->brand, $product->currency);
+					if (!$product) continue;
+
+					/* Decode images if stored as JSON string */
+					$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+					$image = $images[0] ?? null;
+
+					$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
+
+					$unitPrice = 0;
+					$shippingCharge = 0;
+					if ($supplier) {
+						$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
+						$shippingCharge = $supplier['shipping_charge'] ?? 0;
 					}
-					$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-					$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
-					? getDateRange($record->created_at, $customerCartProduct->product_supplier['delivery_days'])
-					: null;
+
+					$quantity = $customerCartProduct->quantity ?? 0;
+					$subTotal = $quantity * $unitPrice;
+
+					$totalProducts += $quantity;
+					$cartAmount += $subTotal;
+					$cartShipping += $shippingCharge;
+
+					/* Push product data */
+					$cartProducts[] = [
+						'product_id'      => $customerCartProduct->product_id,
+						'vendor_id'       => $customerCartProduct->vendor_id,
+						'image'           => $image,
+						'name'            => $product->name,
+						'currency_symbol' => $product->currency->symbol ?? null,
+						'unit_price'      => number_format($unitPrice, 2, '.', ''),
+						'quantity'        => $quantity,
+						'sub_total'       => number_format($subTotal, 2, '.', ''),
+						'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
+					];
 				}
-				foreach (['amount', 'tax_amount', 'total_amount'] as $key) {
-					if (isset($record->$key)) {
-						$record->$key = number_format($record->$key, 2, '.', '');
-					}
+
+				/* Add surcharges */
+				if ($record->is_lift_gate) {
+					$cartAmount += 75;
 				}
+				if ($record->is_residential_address) {
+					$cartAmount += 199;
+				}
+
+				/* Tax calculations */
+				$taxPercentage = $record->tax_percentage ?? 0;
+				$taxAmount = round(($cartAmount * $taxPercentage) / 100, 2);
+
+				/* Website-specific shipping rules */
+				if (config('app.website') == 'UAE') {
+					$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+				}
+
+				$totalAmount = $cartAmount + $taxAmount + $cartShipping;
+
+				/* Prepare cart summary */
+				$record = [
+					'reference_number'       => $record->reference_number,
+					'customer'               => $record->customer,
+					'is_lift_gate'           => $record->is_lift_gate,
+					'is_residential_address' => $record->is_residential_address,
+					'amount'                 => number_format($cartAmount, 2, '.', ''),
+					'tax_amount'             => number_format($taxAmount, 2, '.', ''),
+					'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
+					'total_amount'           => number_format($totalAmount, 2, '.', ''),
+					'total_products'         => $totalProducts,
+					'products'               => $cartProducts,
+				];
 
 				return $record;
 			});
@@ -181,8 +239,8 @@ class CustomerCartController extends Controller
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
-			->where('customer_id', $request->customer_id)
-			->first();
+		->where('customer_id', $request->customer_id)
+		->first();
 
 		if (!$address) {
 			return response()->json([
@@ -233,28 +291,40 @@ class CustomerCartController extends Controller
 			/* Get the latest cart by ID (most recent) */
 			$latestCart = CustomerCart::orderBy('id', 'desc')->first();
 
-			// Generate the next cart reference number
-			if ($latestCart && is_numeric($latestCart->reference_number)) {
-				$referenceNumber = (int) $latestCart->reference_number + 1;
-			} else {
-				$website = config('app.website');
-				$referenceNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+			/* Get the latest cart by ID (most recent) */
+			$customerCart = CustomerCart::firstOrNew([
+				'customer_id' => $request->customer_id
+			]);
+
+			if (!$customerCart->exists) {
+				/* New record → generate reference number */
+				if ($latestCart && is_numeric($latestCart->reference_number)) {
+					$referenceNumber = (int) $latestCart->reference_number + 1;
+				} else {
+					$website = config('app.website');
+					$referenceNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+				}
+
+				$customerCart->reference_number = $referenceNumber;
+				$customerCart->created_by = auth()->id();
 			}
 
-			$customerCart = CustomerCart::create([
-				'reference_number' => $referenceNumber,
-				'customer_id' => $request->customer_id,
-				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $cartShipping,
-				'is_lift_gate' => $request->is_lift_gate,
-				'is_residential_address' => $request->is_residential_address,
-				'amount' => $cartAmount,
-				'tax_percentage' => $request->tax_percentage,
-				'tax_amount' => $taxAmount,
-				'total_amount' => $totalAmount,
-				'total_products' => $totalProducts,
-				'created_by' => auth()->id(),
-			]);
+			/* Always update these fields */
+			$customerCart->customer_address_id    = $request->customer_address_id;
+			$customerCart->shipping_charge        = $cartShipping;
+			$customerCart->is_lift_gate           = $request->is_lift_gate;
+			$customerCart->is_residential_address = $request->is_residential_address;
+			$customerCart->amount                 = $cartAmount;
+			$customerCart->tax_percentage         = $request->tax_percentage;
+			$customerCart->tax_amount             = $taxAmount;
+			$customerCart->total_amount           = $totalAmount;
+			$customerCart->total_products         = $totalProducts;
+			$customerCart->updated_by             = auth()->id();
+
+			$customerCart->save();
+
+			/* Delete existing products and re-insert */
+			CustomerCartProduct::where('customer_cart_id', $customerCart->id)->delete();
 
 			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
@@ -289,51 +359,61 @@ class CustomerCartController extends Controller
 				'isNewCustomer' => $isNewCustomer,
 			]));
 
-			/* Load relationships */
-			$customerCart->load([
-				'customer:id,name,email,type,country_code,mobile_number',
-				'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-				'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-				'customerCartProducts.product.brand:id,name',
-				'customerCartProducts.product.currency:id,symbol',
-			]);
-
-			/* Mutate the data for each customer cart product */
+			$cartProducts = [];
 			foreach ($customerCart->customerCartProducts as $customerCartProduct) {
 				$product = $customerCartProduct->product;
-				if ($product) {
-					$product->images = is_array($product->images)
-						? $product->images
-						: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-					$product->brand_name = $product->brand->name ?? null;
-					$product->currency_symbol = $product->currency->symbol ?? null;
-					unset($product->brand, $product->currency);
+				if (!$product) continue;
+
+				/* Decode images if stored as JSON string */
+				$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+				$image = $images[0] ?? null;
+
+				$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
+
+				$unitPrice = 0;
+				$shippingCharge = 0;
+				if ($supplier) {
+					$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
+					$shippingCharge = $supplier['shipping_charge'] ?? 0;
 				}
 
-				$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)
-					->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-				$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
-					? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
-					: null;
+				$quantity = $customerCartProduct->quantity ?? 0;
+				$subTotal = $quantity * $unitPrice;
 
-				// Format numeric values to 2 decimal places - FIXED variable name
-				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-					if (isset($customerCartProduct->$key)) {
-						$customerCartProduct->$key = number_format($customerCartProduct->$key, 2, '.', '');
-					}
-				}
+				/* Push product data */
+				$cartProducts[] = [
+					'product_id'      => $customerCartProduct->product_id,
+					'vendor_id'       => $customerCartProduct->vendor_id,
+					'name'            => $product->name,
+					'image'           => $image,
+					'sku'             => $product->sku,
+					'currency_symbol' => $product->currency->symbol ?? null,
+					'quantity'        => $quantity,
+					'unit_price'      => number_format($unitPrice, 2, '.', ''),
+					'sub_total'       => number_format($subTotal, 2, '.', ''),
+					'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
+				];
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-				if (isset($customerCart->$key)) {
-					$customerCart->$key = number_format($customerCart->$key, 2, '.', '');
-				}
-			}
+			/* Prepare cart summary */
+			$carts = [
+				'reference_number'       => $customerCart->reference_number,
+				'address'                => $customerCart->customerAddress,
+				'is_lift_gate'           => $customerCart->is_lift_gate,
+				'is_residential_address' => $customerCart->is_residential_address,
+				'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
+				'amount'                 => number_format($cartAmount, 2, '.', ''),
+				'tax_percentage'         => $request->tax_percentage,
+				'tax_amount'             => number_format($taxAmount, 2, '.', ''),
+				'total_amount'           => number_format($totalAmount, 2, '.', ''),
+				'total_products'         => $totalProducts,
+				'products'               => $cartProducts,
+			];
 
 			return response()->json([
 				'success' => true,
 				'message' => 'Customer cart created successfully',
-				'data' => $customerCart,
+				'data' => $carts,
 			], 201);
 		} catch (\Exception $e) {
 			DB::rollBack();
@@ -347,79 +427,117 @@ class CustomerCartController extends Controller
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/carts/{id}",
+	 *     path="/api/carts/{customer_id}",
 	 *     summary="Get cart details",
 	 *     tags={"Carts"},
 	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(
-	 *         name="id",
+	 *         name="customer_id",
 	 *         in="path",
-	 *         description="Cart ID",
+	 *         description="Customer ID",
 	 *         required=true,
 	 *         @OA\Schema(type="integer")
 	 *     ),
 	 *     @OA\Response(response=200, description="Retrieved successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
-	public function show($id)
+	public function show($customer_id)
 	{
-		$customerCart = CustomerCart::find($id);
+		$customerCart = CustomerCart::where('customer_id', $customer_id)
+		->with([
+			'customerAddress',
+			'customerCartProducts.product.currency:id,symbol',
+		])
+		->first();
 
 		if (!$customerCart) {
 			return response()->json([
-				'success' => false,
-				'message' => "Customer cart not found."
+				'success' => true,
+				'data' => []
 			]);
 		}
 
-		/* Load relationships */
-		$customerCart->load([
-			'customer:id,name,email,type,country_code,mobile_number',
-			'customerAddress',
-			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-			'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-			'customerCartProducts.product.brand:id,name',
-			'customerCartProducts.product.currency:id,symbol',
-			'customerCartProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-			'creator',
-			'updator',
-		]);
-
-		/* Mutate the data for each customer cart product */
-		$customerCart->created_by = $customerCart->creator->name ?? null;
-		$customerCart->updated_by = $customerCart->updator->name ?? null;
-		unset($record->creator, $record->updator);
+		$totalProducts = 0;
+		$cartAmount = 0;
+		$cartShipping = 0;
+		$cartProducts = [];
 
 		foreach ($customerCart->customerCartProducts as $customerCartProduct) {
 			$product = $customerCartProduct->product;
-			if ($product) {
-				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-				$product->brand_name = $product->brand->name ?? null;
-				$product->currency_symbol = $product->currency->symbol ?? null;
-				unset($product->brand, $product->currency);
-			}
-			$customerCartProduct->product_supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-			$customerCartProduct->expectedShippingDate = $customerCartProduct->product_supplier
-			? getDateRange($customerCart->created_at, $customerCartProduct->product_supplier['delivery_days'])
-			: null;
+			if (!$product) continue;
 
-			/* Format numeric values to 2 decimal places */
-			foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-				if (isset($quoteProduct->$key)) {
-					$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
-				}
+			/* Decode images if stored as JSON string */
+			$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+			$image = $images[0] ?? null;
+
+			$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
+
+			$unitPrice = 0;
+			$shippingCharge = 0;
+			if ($supplier) {
+				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
+				$shippingCharge = $supplier['shipping_charge'] ?? 0;
 			}
+
+			$quantity = $customerCartProduct->quantity ?? 0;
+			$subTotal = $quantity * $unitPrice;
+
+			$totalProducts += $quantity;
+			$cartAmount += $subTotal;
+			$cartShipping += $shippingCharge;
+
+			/* Push product data */
+			$cartProducts[] = [
+				'product_id'      => $customerCartProduct->product_id,
+				'vendor_id'       => $customerCartProduct->vendor_id,
+				'name'            => $product->name,
+				'image'           => $image,
+				'sku'             => $product->sku,
+				'currency_symbol' => $product->currency->symbol ?? null,
+				'quantity'        => $quantity,
+				'unit_price'      => number_format($unitPrice, 2, '.', ''),
+				'sub_total'       => number_format($subTotal, 2, '.', ''),
+				'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
+			];
 		}
 
-		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
-			if (isset($customerCart->$key)) {
-				$customerCart->$key = number_format($customerCart->$key, 2, '.', '');
-			}
+		/* Add surcharges */
+		if ($customerCart->is_lift_gate) {
+			$cartAmount += 75;
 		}
+		if ($customerCart->is_residential_address) {
+			$cartAmount += 199;
+		}
+
+		/* Tax calculations */
+		$taxPercentage = $customerCart->tax_percentage ?? 0;
+		$taxAmount = round(($cartAmount * $taxPercentage) / 100, 2);
+
+		/* Website-specific shipping rules */
+		if (config('app.website') == 'UAE') {
+			$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+		}
+
+		$totalAmount = $cartAmount + $taxAmount + $cartShipping;
+
+		/* Prepare cart summary */
+		$carts = [
+			'reference_number'       => $customerCart->reference_number,
+			'address'                => $customerCart->customerAddress,
+			'is_lift_gate'           => $customerCart->is_lift_gate,
+			'is_residential_address' => $customerCart->is_residential_address,
+			'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
+			'amount'                 => number_format($cartAmount, 2, '.', ''),
+			'tax_percentage'         => $taxPercentage,
+			'tax_amount'             => number_format($taxAmount, 2, '.', ''),
+			'total_amount'           => number_format($totalAmount, 2, '.', ''),
+			'total_products'         => $totalProducts,
+			'products'               => $cartProducts,
+		];
 
 		return response()->json([
 			'success' => true,
-			'data' => $customerCart
+			'data' => $carts
 		]);
 	}
 
@@ -433,31 +551,33 @@ class CustomerCartController extends Controller
 
 	/**
 	 * @OA\Delete(
-	 *     path="/api/carts/{id}",
+	 *     path="/api/carts/{customer_id}",
 	 *     summary="Delete a cart",
 	 *     tags={"Carts"},
-	 *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="customer_id", in="path", required=true, @OA\Schema(type="integer")),
 	 *     @OA\Response(response=200, description="Deleted successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function destroy($id)
+	public function destroy($customer_id)
 	{
-		$customerCart = CustomerCart::find($id);
+		$customer = Customer::find($customer_id);
 
-		if (!$customerCart) {
+		if (!$customer) {
 			return response()->json([
 				'success' => false,
-				'message' => __("err_exist")
-			]);
+				'message' => 'Customer not found',
+			], 404);
 		}
 
-		$customerCart->customerCartProducts()->delete();
-		$customerCart->delete();
+		$customer->customerCarts->each(function ($cart) {
+			$cart->customerCartProducts()->delete();
+			$cart->delete();
+		});
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Cart deleted successfully',
+			'message' => 'All carts deleted successfully for customer',
 		]);
 	}
 }

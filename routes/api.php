@@ -76,7 +76,7 @@ use App\Http\Controllers\PrePurchaseClaimController;
 use App\Http\Controllers\PostPurchaseClaimController;
 use App\Http\Controllers\ProductAccessoriesController;
 use App\Http\Controllers\PaymentHistoryController;
-
+use App\Http\Controllers\ProductVariantController;
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
@@ -136,6 +136,8 @@ use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
 use App\Http\Controllers\FrontEnd\FilterController;
 use App\Http\Controllers\FrontEnd\ShippingReportController;
+use App\Http\Controllers\FrontEnd\CustomerCartController as F_CustomerCartController;
+use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
 use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
 
 use App\Http\Middleware\CaptureUtm;
@@ -344,7 +346,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('blog-categories', BlogCategoryController::class);
 	Route::post('/blogs/{id}', [BlogController::class, 'update']);
 	Route::apiResource('blogs', BlogController::class);
-	
+
 	Route::get('/product-questions/{product_id}', [ProductQuestionController::class, 'index']);
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
@@ -409,13 +411,15 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::resource('transaction-logs', TransactionLogController::class);
 
 	Route::resource('websites', WebsiteController::class)->only(['index']);
-
 	Route::resource('/delivery/payment-history', PaymentHistoryController::class);
+
+	Route::get('/delivery/get-price-ordernumber', [PaymentHistoryController::class,'getPriceOrderNumber']);
 	Route::resource('product-accessories', ProductAccessoriesController::class);
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
 	Route::get('/get-product-list', [ProductAccessoriesController::class, 'getProductList']);
 
+	Route::apiResource('product-variants', ProductVariantController::class);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
@@ -565,8 +569,14 @@ Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']
 Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
+Route::post('frontend/python/compare-alternate-products', [CompareProductController::class, 'compareAlternateProducts']);
+Route::get('frontend/product-accessories', [FnProductAccessoriesController::class, 'index']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+    Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
+    Route::apiResource('frontend/carts', F_CustomerCartController::class);
+
+
 	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
 	Route::prefix('customer')->group(function () {
 
@@ -628,7 +638,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::get('/frontend/quotes/{id}/email-pdf', [F_QuoteController::class, 'emailPdf']);
 	Route::get('/frontend/quotes/{id}/download-pdf', [F_QuoteController::class, 'downloadPdf']);
-	Route::apiResource('frontend/quotes', F_QuoteController::class)	->names('frontend.quotes');
+	Route::apiResource('frontend/quotes', F_QuoteController::class)->names('frontend.quotes');
 
 
 	Route::get('frontend/orders/tracking', [F_OrderController::class, 'orderTracking']);
@@ -677,7 +687,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/cart-summary', [F_CartController::class, 'cartSummary']);
 	Route::get('/frontend/cart/total-products', [F_CartController::class, 'totalProductsInCart']);
 	Route::delete('/frontend/cart/delete', [F_CartController::class, 'deleteFromCart']);
-	
+
 
 
 
@@ -833,10 +843,12 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
+Route::post('/ccavenue/thanks', [F_CCavenueController::class, 'paymentSuccess']);
+Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
 
 Route::post('/stripe/create-stripe-payment-link', [F_StripeController::class, 'createStripePaymentLink']);
-Route::get('/stripe/paymentSuccess', [F_StripeController::class, 'paymentSuccess']);
-Route::get('/stripe/paymentCancel', [F_StripeController::class, 'paymentCancel']);
+Route::get('/stripe/thanks', [F_StripeController::class, 'paymentSuccess']);
+Route::get('/stripe/failed', [F_StripeController::class, 'paymentFailed']);
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
 Route::prefix('stripe')->group(function () {
     Route::post('/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);

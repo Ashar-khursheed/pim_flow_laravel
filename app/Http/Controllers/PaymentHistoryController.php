@@ -267,13 +267,13 @@ class PaymentHistoryController extends Controller
 			$validated['created_by'] = auth::id();
 			$validated['rider_name'] = $request->rider_name;
 			$total_amount = $order->total_amount;
-  			if( $total_amount < $request->amount){
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Paid amount is greater than total amount '.$total_amount,
+			if ($total_amount < $request->amount) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Paid amount is greater than total amount ' . $total_amount,
 
-                ], 401);
-            }
+				], 401);
+			}
 
 			$validated['payment_img'] = uploadImageToWebpS3FromFile(
 				$request,
@@ -284,6 +284,16 @@ class PaymentHistoryController extends Controller
 			// Create the payment record
 			$payment = PaymentManagement::create($validated);
 
+			/* Update order amounts */
+			$order = $payment->order;
+			$newPaidAmount = $order->paid_amount + $request->amount;
+			$pendingAmount = $order->total_amount - $newPaidAmount;
+
+			$order->update([
+				'paid_amount' => $newPaidAmount,
+				'pending_amount' => $pendingAmount,
+				'is_paid' => $pendingAmount <= 0,
+			]);
 
 			// Return success response with 201 status
 			return response()->json([
@@ -382,5 +392,55 @@ class PaymentHistoryController extends Controller
 		}
 
 	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/delivery/get-price-ordernumber",
+	 *     summary="Get price by order number",
+	 *     tags={"Delivery Payment History"},
+	 *     @OA\Parameter(
+	 *         name="order_number",
+	 *         in="query",
+	 *         required=false,
+	 *         description="Filter by order number",
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successful operation",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Product accessories retrieved successfully"),
+	 *             @OA\Property(property="data", type="object")
+	 *         )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function getPriceOrderNumber(Request $request)
+	{
+		$validated = $request->validate([
+			'order_number' => 'required|integer|exists:orders,order_number',
+		]);
+		$order = Order::where('order_number', $request->order_number)->first();
+		if (!$order) {
+			return response()->json([
+				'success' => true,
+				'message' => 'the order number does not exist',
+
+			], 201);
+		}
+		return response()->json([
+			'success' => true,
+			'message' => "Price details",
+			'data' => [
+				'order_numner' => $order->order_number,
+				'price' => $order->pending_amount,
+
+			]
+		]);
+	}
+
 
 }
