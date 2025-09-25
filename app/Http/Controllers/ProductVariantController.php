@@ -32,7 +32,6 @@ class ProductVariantController extends Controller
      */
     public function index(Request $request)
     {
-
         $recordsQuery = ProductVariant::with([
             'parentProduct:id,name,sku',
             'childProduct:id,name,sku',
@@ -183,6 +182,8 @@ class ProductVariantController extends Controller
                             ->where('attribute_id', $request->attribute_id);
                     }),
                 ],
+                'label' => 'required|string|max:255',
+                'type' => 'nullable|string|max:255',
             ]);
 
             if ($validator->fails()) {
