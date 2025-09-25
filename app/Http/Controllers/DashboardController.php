@@ -55,7 +55,7 @@ public function stats(Request $request)
         $date = $ranges[$range];
 
         $productsCount = Product::where('created_at', '>=', $date)->count();
-        $ordersCount = Order::where('created_at', '>=', $date)->count();
+        $ordersCount = Order::where('is_reserved', 0)->where('created_at', '>=', $date)->count();
         $categoriesCount = Category::where('created_at', '>=', $date)->count();
         $publishedProducts = Product::where('status', 'published')->where('created_at', '>=', $date)->count();
         $draftProducts = Product::where('status', 'draft')->where('created_at', '>=', $date)->count();
@@ -64,7 +64,7 @@ public function stats(Request $request)
     } else {
         // Lifetime counts
         $productsCount = Product::count();
-        $ordersCount = Order::count();
+        $ordersCount = Order::where('is_reserved', 0)->count();
         $categoriesCount = Category::count();
         $publishedProducts = Product::where('status', 'published')->count();
         $draftProducts = Product::where('status', 'draft')->count();
@@ -81,7 +81,7 @@ public function stats(Request $request)
         'draft_products' => $draftProducts,
         'approved_products' =>  $approvedProducts,
         'qa_products' =>  $qaProducts,
-
     ]);
 }
+
 }

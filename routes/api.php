@@ -138,6 +138,8 @@ use App\Http\Controllers\FrontEnd\FilterController;
 use App\Http\Controllers\FrontEnd\ShippingReportController;
 use App\Http\Controllers\FrontEnd\CustomerCartController as F_CustomerCartController;
 use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
+use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
+
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -320,6 +322,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::apiResource('payments', PaymentController::class);
 	Route::get('report/orders', [ReportController::class, 'index']);
+	Route::get('report/stats/reserved', [ReportController::class, 'reservedOrders']);
 	Route::get('report/utms', [ReportController::class, 'indexUtms']);
 	Route::get('report/customer-utms', [ReportController::class, 'indexCustomerUtms']);
 
@@ -715,6 +718,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
 	});
 
+
+
 });
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
@@ -897,3 +902,4 @@ Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerControl
 	Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
      ->where('from', '.*');
 
+	Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
