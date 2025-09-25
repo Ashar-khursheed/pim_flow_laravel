@@ -76,7 +76,7 @@ use App\Http\Controllers\PrePurchaseClaimController;
 use App\Http\Controllers\PostPurchaseClaimController;
 use App\Http\Controllers\ProductAccessoriesController;
 use App\Http\Controllers\PaymentHistoryController;
-
+use App\Http\Controllers\ProductVariantController;
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
@@ -416,6 +416,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
 	Route::get('/get-product-list', [ProductAccessoriesController::class, 'getProductList']);
 
+	Route::apiResource('product-variants', ProductVariantController::class);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);

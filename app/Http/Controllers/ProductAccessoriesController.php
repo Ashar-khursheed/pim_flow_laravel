@@ -142,9 +142,10 @@ class ProductAccessoriesController extends Controller
 
                 return [
                     'product_id' => $accessory->product_id,
-                    'sku' => $accessory->product?->sku ?? null, // ✅ SKU from related product
+                    'sku' => $accessory->product?->sku ?? null,  
                     'accessory_id' => $accessory->id,
-                    'name' => $accessory->name,               
+                    'name' => $accessory->name,
+                    'product_name' => $accessory->product->name,
                     'isapproved' => $accessory->isapproved,
                     'approved_by' => $accessory->approvedBy?->username ?? null,
                     'created_by' => $accessory->createdBy?->username ?? null,
@@ -208,7 +209,7 @@ class ProductAccessoriesController extends Controller
      *                 @OA\Property(property="isapproved", type="boolean", example=0)
      *             )
      *         )
-     *     ),        
+     *     ),
      *     @OA\Response(
      *         response=201,
      *         description="Success",
@@ -313,6 +314,7 @@ class ProductAccessoriesController extends Controller
                 'product_id' => $accessory->product_id,
                 'accessory_id' => $accessory->id,
                 'name' => $accessory->name,
+                'product_name' => $accessory->product->name,
                 'sku' => $accessory->product->sku,
                 'isapproved' => $accessory->isapproved,
                 'approved_by' => $accessory->approved_by,
@@ -425,7 +427,7 @@ class ProductAccessoriesController extends Controller
      *                     {"name":"top","price":50},
      *                     {"name":"button","price":52}
      *                 }
-     *             ),  
+     *             ),
      *             @OA\Property(property="isapproved", type="integer", example=1),
      *             @OA\Property(property="approved_by", type="integer", example=2)
      *         )
@@ -469,7 +471,7 @@ class ProductAccessoriesController extends Controller
             }
 
             $accessory = ProductAccessory::findOrFail($id);
-
+ 
             // Update main accessory
             $accessory->update([
                 'product_id' => $request->product_id,
@@ -674,14 +676,14 @@ class ProductAccessoriesController extends Controller
      * @OA\Get(
      *     path="/api/get-product-list",
      *     summary="Get list of product list",
-     *     tags={"Product List"},   
+     *     tags={"Product List"},
      *      @OA\Parameter(
      *         name="search",
      *         in="query",
      *         description="Search term for filtering products by name",
      *         required=false,
      *         @OA\Schema(type="string", example="samsung")
-     *     ),   
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -702,8 +704,8 @@ class ProductAccessoriesController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('sku', 'like', "%{$search}%")
-                        ->orWhere('id', 'like', "%{$search}%");
+                        ->orWhere('id', 'like', "%{$search}%")
+                         ->orWhere('sku', 'like', "%{$search}%");
 
                 });
             }

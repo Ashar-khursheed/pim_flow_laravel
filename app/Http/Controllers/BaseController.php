@@ -65,6 +65,10 @@ use App\Http\Controllers\Controller;
  *     description="Get list of Delivery Payment History"
  * )
  * @OA\Tag(
+ *     name="Product Variants",
+ *     description="API Endpoints for managing product variants"
+ * )
+ * @OA\Tag(
  *     name="Categories",
  *     description="API Endpoints for Category Management"
  * )
