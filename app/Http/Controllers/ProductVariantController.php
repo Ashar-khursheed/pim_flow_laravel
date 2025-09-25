@@ -36,16 +36,20 @@ class ProductVariantController extends Controller
         $recordsQuery = ProductVariant::with([
             'parentProduct:id,name,sku',
             'childProduct:id,name,sku',
-            'attribute:id,name'
+            'attribute:id,name',
+            'createdBy:id,username',
+            'updatedBy:id,username'
         ]);
 
-        // Searchable columns (relations)
+        // Searchable columns
         $searchableColumns = [
             'parent_products.name',
             'parent_products.sku',
             'child_products.name',
             'child_products.sku',
-            'attributes.name'
+            'attributes.name',
+            'created_users.username',
+            'updated_users.username'
         ];
 
         $sortableColumns = array_merge(
@@ -59,11 +63,13 @@ class ProductVariantController extends Controller
 
         $sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        // Joins only for searching/sorting
+        // Joins for searching/sorting
         $recordsQuery
             ->leftJoin('ec_products as parent_products', 'product_variants.parent_id', '=', 'parent_products.id')
             ->leftJoin('ec_products as child_products', 'product_variants.child_id', '=', 'child_products.id')
-            ->leftJoin('attributes', 'product_variants.attribute_id', '=', 'attributes.id');
+            ->leftJoin('attributes', 'product_variants.attribute_id', '=', 'attributes.id')
+            ->leftJoin('users as created_users', 'product_variants.created_by', '=', 'created_users.id')
+            ->leftJoin('users as updated_users', 'product_variants.updated_by', '=', 'updated_users.id');
 
         // Status filter
         if ($request->has('status') && in_array($request->status, ['published', 'draft', 'pending'])) {
@@ -83,14 +89,16 @@ class ProductVariantController extends Controller
         // Sorting
         $recordsQuery->orderBy($sortBy, $sortDir);
 
-        // Select required columns
+        // Select columns
         $recordsQuery->addSelect([
             'product_variants.*',
             'parent_products.name as parent_name',
             'parent_products.sku as parent_sku',
             'child_products.name as child_name',
             'child_products.sku as child_sku',
-            'attributes.name as attribute_name'
+            'attributes.name as attribute_name',
+            'created_users.username as created_by_name',
+            'updated_users.username as updated_by_name',
         ]);
 
         // Pagination
@@ -121,6 +129,7 @@ class ProductVariantController extends Controller
             'total_records' => $totalRecords,
             'data' => $records,
         ]);
+
 
     }
     /**

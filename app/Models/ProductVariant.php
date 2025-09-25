@@ -45,4 +45,13 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class, 'child_id');
     }
 
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
 }
