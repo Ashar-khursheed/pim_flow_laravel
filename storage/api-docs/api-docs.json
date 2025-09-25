@@ -28007,7 +28007,7 @@
                                             "Stripe",
                                             "Razorpay",
                                             "Cash on Delivery",
-                                            "CCAvenue"
+                                            "CC Avenue"
                                         ],
                                         "example": "Cash on Delivery"
                                     },
@@ -28019,13 +28019,13 @@
                                     "status": {
                                         "type": "string",
                                         "enum": [
-                                            "pending",
-                                            "completed",
-                                            "failed",
-                                            "cancelled",
-                                            "refunded"
+                                            "Pending",
+                                            "Completed",
+                                            "Failed",
+                                            "Cancelled",
+                                            "Refunded"
                                         ],
-                                        "example": "completed"
+                                        "example": "Completed"
                                     },
                                     "rider_name": {
                                         "type": "string",
