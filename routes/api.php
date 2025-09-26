@@ -138,8 +138,9 @@ use App\Http\Controllers\FrontEnd\FilterController;
 use App\Http\Controllers\FrontEnd\ShippingReportController;
 use App\Http\Controllers\FrontEnd\CustomerCartController as F_CustomerCartController;
 use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
+use App\Http\Controllers\FrontEnd\FndProductVariantController;
 use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
-
+ 
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -420,7 +421,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/get-product-list', [ProductAccessoriesController::class, 'getProductList']);
 
 	Route::apiResource('product-variants', ProductVariantController::class);
-	Route::post('product-variants/productAttibute', [ProductVariantController::class,'show']);
+	Route::post('product-variants/getProductAttibute', [ProductVariantController::class,'getProductAttibute']);
+	Route::post('product-variants/show', [ProductVariantController::class, 'show']);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
@@ -572,6 +574,7 @@ Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'get
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
 Route::post('frontend/python/compare-alternate-products', [CompareProductController::class, 'compareAlternateProducts']);
 Route::get('frontend/product-accessories', [FnProductAccessoriesController::class, 'index']);
+Route::Post('frontend/product-variants', [FndProductVariantController::class, 'index']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
     Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);

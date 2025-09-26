@@ -17017,6 +17017,56 @@
                 ]
             }
         },
+        "/api/frontend/product-variants": {
+            "post": {
+                "tags": [
+                    "Frontend Product variants"
+                ],
+                "summary": "Get list of Frontend Product Variants",
+                "operationId": "f3f56b47238ada59f08806e71d3b90ca",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product Variants retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/location-info": {
             "get": {
                 "tags": [
@@ -33505,7 +33555,7 @@
                     "Product Variants"
                 ],
                 "summary": "Get attributes by product IDs",
-                "operationId": "bc34726f579eea5d980158a540713523",
+                "operationId": "3fc2cdb89a5ed835f59e6db79afab9ba",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -33585,6 +33635,56 @@
                     },
                     "404": {
                         "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-variants/show": {
+            "post": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Get list of child and attribute by product ID",
+                "operationId": "b2da641ba82a30a1785d88d6d82f6db3",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product Variants retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -40588,6 +40688,10 @@
         {
             "name": "Frontend Product Accessories",
             "description": "Frontend Product Accessories"
+        },
+        {
+            "name": "Frontend Product variants",
+            "description": "Frontend Product variants"
         },
         {
             "name": "Geolocation",

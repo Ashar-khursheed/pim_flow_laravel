@@ -19,7 +19,7 @@ class ProductVariant extends Model
 
     public function parentProduct()
     {
-        return $this->belongsTo(Product::class, 'product_id'); // adjust FK if needed
+        return $this->belongsTo(Product::class, 'parent_id'); // adjust FK if needed
     }
     public function attribute()
     {

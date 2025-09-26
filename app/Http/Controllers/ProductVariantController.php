@@ -116,7 +116,7 @@ class ProductVariantController extends Controller
         $records = $records->map(function ($row) {
             $childIds = json_decode($row->child_ids, true) ?? [];
             $variants = json_decode($row->variants, true) ?? [];
- 
+
             // Load child products
             $children = \DB::table('ec_products')
                 ->whereIn('id', $childIds)
@@ -147,14 +147,16 @@ class ProductVariantController extends Controller
 
             $data = [
 
-                    'id' => $row->id,
-                    'parent_id' => $row->parent_id,
-                    'parent_name' => $row->parent_name,
-                    'parent_sku' => $row->parent_sku,
-                    'variants' => $row->variants,
-                    'child' => $row->children,
-                    
-                ];
+                'id' => $row->id,
+                'parent_id' => $row->parent_id,
+                'parent_name' => $row->parent_name,
+                'parent_sku' => $row->parent_sku,
+                'created_by' => $row->created_by_name,
+                'updated_by' => $row->updated_by_name,
+                'variants' => $row->variants,
+                'child' => $row->children,
+
+            ];
 
             return $data;
         });
@@ -352,10 +354,6 @@ class ProductVariantController extends Controller
 
 
             $data = $validator->validated();
-
-
-
-
             $variant->update([
                 'parent_id' => $data['parent_id'],
                 'child_ids' => json_encode($data['child_ids']),
@@ -432,10 +430,9 @@ class ProductVariantController extends Controller
      */
 
 
-    public function show(Request $request)
+    public function getProductAttibute(Request $request)
     {
         try {
-
 
             $validator = Validator::make($request->all(), [
                 'product_ids' => 'required|array',
@@ -488,8 +485,6 @@ class ProductVariantController extends Controller
         }
     }
 
-
-
     /**
      * @OA\Delete(
      *     path="/api/product-variants/{id}",
@@ -523,4 +518,121 @@ class ProductVariantController extends Controller
             ], 404);
         }
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/product-variants/show",
+     *     summary="Get list of child and attribute by product ID",
+     *     tags={"Product Variants"},
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="query",
+     *         required=false,
+     *         description="Filter by product ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *      
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Product Variants retrieved successfully"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *      security={{"bearerAuth":{}}}
+     * )
+     */
+    public function show(Request $request)
+    {
+        try {
+
+            $validator = Validator::make($request->all(), [
+                'product_id' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            // Ensure product_id is always an array
+            $productIds = $request->product_id;
+
+            if (empty($productIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No product IDs provided'
+                ], 422);
+            }
+            $variant = ProductVariant::with([
+                'parentProduct:id,name,sku',
+                'createdBy:id,username',
+                'updatedBy:id,username'
+            ])->where('parent_id', $productIds)->first();
+
+            $childIds = json_decode($variant->child_ids, true) ?? [];
+            $variants = json_decode($variant->variants, true) ?? [];
+
+            // Load child products
+            $children = \DB::table('ec_products')
+                ->whereIn('id', $childIds)
+                ->get(['id', 'name', 'sku']);
+
+            // Load attributes for variants
+            $attributeIds = collect($variants)->pluck('attribute_id')->filter()->all();
+            $attributes = \DB::table('attributes')
+                ->whereIn('id', $attributeIds)
+                ->pluck('name', 'id');
+
+            $variant->children = $children->map(function ($c) {
+                return [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'sku' => $c->sku,
+                ];
+            });
+
+            $variant->variants = collect($variants)->map(function ($v) use ($attributes) {
+                return [
+                    'attribute_id' => $v['attribute_id'],
+                    'attribute_name' => $attributes[$v['attribute_id']] ?? null,
+                    'label' => $v['labels'] ?? null,
+                    'type' => $v['type'] ?? null,
+                ];
+            });
+
+            $data = [
+
+                'id' => $variant->id,
+                'parent_id' => $variant->parent_id,
+                'parent_name' => $variant->parentProduct?->name,
+                'parent_sku' => $variant->parentProduct?->sku,
+                'created_by' => $variant->createdBy?->username,
+                'updated_by' => $variant->updatedBy?->username,
+                'variants' => $variant->variants,
+                'child' => $variant->children,
+
+            ];
+
+
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attributes fetched successfully',
+                'data' => $data
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch attributes',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }
