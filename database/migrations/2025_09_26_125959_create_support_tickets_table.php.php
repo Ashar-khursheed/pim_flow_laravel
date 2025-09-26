@@ -21,7 +21,7 @@ return new class extends Migration
 			$table->text('description');
 			$table->string('reference')->nullable();
 			$table->string('file_path')->nullable();
-			$table->enum('status', ['open', 'in_progress', '', 'closed'])->default('open');
+			$table->enum('status', ['Open', 'In-Progress', 'Resolved', 'Closed'])->default('Open');
 			$table->integer('response_days');
 			$table->integer('created_by');
 			$table->integer('updated_by')->nullable();

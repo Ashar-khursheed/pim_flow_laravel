@@ -11,13 +11,7 @@ use Illuminate\Bus\Batch;
 
 use App\Models\FrontEnd\SupportTicket;
 
-use App\Jobs\Order\OrderPlacedMailJob;
-use App\Jobs\Order\OrderReservedMailJob;
-use App\Jobs\Order\OrderConfirmationMailJob;
-use App\Jobs\Order\OutDeliveryMailJob;
-use App\Jobs\Order\OrderDeliveredMailJob;
-use App\Jobs\Order\OrderCancelledMailJob;
-use App\Jobs\Order\PartialOrderCancelledMailJob;
+use App\Jobs\SupportTicket\SupportTicketMailJob;
 
 class SupportTicketController extends Controller
 {
@@ -175,7 +169,7 @@ class SupportTicketController extends Controller
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"customer_id", "category_id", "priority_id", "subject", "description"},
-	 *                 @OA\Property(property="customer_id", type="string"),
+	 *                 @OA\Property(property="customer_id", type="integer"),
 	 *                 @OA\Property(property="category_id", type="integer"),
 	 *                 @OA\Property(property="priority_id", type="integer"),
 	 *                 @OA\Property(property="subject", type="string"),
@@ -213,12 +207,11 @@ class SupportTicketController extends Controller
 				);
 			}
 
+			/* Get the latest ticket by ID (most recent) */
+			$latestTicket = SupportTicket::orderBy('ticket_number', 'desc')->first();
 
-			/* Get the latest order by ID (most recent) */
-			$latestOrder = SupportTicket::orderBy('ticket_number', 'desc')->first();
-
-			if ($latestOrder && is_numeric($latestOrder->ticket_number)) {
-				$ticketNumber = (int) $latestOrder->ticket_number + 1;
+			if ($latestTicket && is_numeric($latestTicket->ticket_number)) {
+				$ticketNumber = (int) $latestTicket->ticket_number + 1;
 			} else {
 				$website = config('app.website');
 				$ticketNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
@@ -231,13 +224,19 @@ class SupportTicketController extends Controller
 				'priority_id' => $request->priority_id,
 				'subject' => $request->subject,
 				'description' => $request->description,
-				'reference' => $request->reference_id,
+				'reference' => $request->reference,
 				'file_path' => $filePath,
 				'status' => 'open',
 				'response_days' => 7,
 				'created_by' => auth()->id(),
 			]);
 			DB::commit();
+
+			$batch = Bus::batch([])->name('support ticket from admin')->dispatch();
+			$batch->options['queue'] = config('app.website') . '_SPRT_TKT';
+			$batch->add(new SupportTicketMailJob([
+				'recordId' => $ticket->id
+			]));
 
 			return response()->json([
 				'success' => true,
@@ -250,7 +249,7 @@ class SupportTicketController extends Controller
 
 			return response()->json([
 				'success' => false,
-				'message' => 'Failed to create order: ' . $e->getMessage()
+				'message' => 'Failed to create ticket: ' . $e->getMessage()
 			], 500);
 		}
 	}
@@ -308,6 +307,93 @@ class SupportTicketController extends Controller
 		return response()->json([
 			'success' => true,
 			'data' => $record
+		]);
+	}
+
+	/**
+	 * @OA\Put(
+	 *     path="/api/support-tickets/{id}/status",
+	 *     summary="Update support ticket status",
+	 *     tags={"SupportTickets"},
+	 *     @OA\Parameter(name="id", in="path", description="Ticket ID", required=true, @OA\Schema(type="integer")),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"status"},
+	 *             @OA\Property(property="status", type="string")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Status updated successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function updateStatus(Request $request, $id)
+	{
+		$ticket = SupportTicket::find($id);
+
+		if (!$ticket) {
+			return response()->json([
+				'success' => false,
+				'message' => "Support Ticket not found."
+			]);
+		}
+
+		$request->validate([
+			'status' => 'required|string|in:Open,In-Progress,Resolved,Closed',
+			'notes' => 'nullable|string'
+		]);
+
+		$oldStatus = $ticket->status;
+		$newStatus = $request->status;
+
+		/* Other status validation flow */
+		$otherStatus = [
+			'Open',
+			'In-Progress',
+			'Resolved',
+			'Closed',
+		];
+
+		$findStatusIndex = function ($status) use ($otherStatus) {
+			foreach ($otherStatus as $index => $step) {
+				if ($step === $status) {
+					return $index;
+				}
+			}
+			return null;
+		};
+
+		$oldStatusIndex = $findStatusIndex($oldStatus);
+		$newStatusIndex = $findStatusIndex($newStatus);
+
+		if ($oldStatusIndex < $newStatusIndex - 1) {
+			return response()->json([
+				'success' => false,
+				'message' => "Invalid status update: You cannot skip directly from '{$oldStatus}' to '{$newStatus}'. Please follow the correct ticket flow."
+			]);
+		} elseif ($oldStatusIndex == $newStatusIndex) {
+			if ($oldStatus == $newStatus) {
+				return response()->json([
+					'success' => false,
+					'message' => "Ticket is already in '{$oldStatus}' status. Please choose a different status."
+				]);
+			}
+		} elseif ($oldStatusIndex > $newStatusIndex) {
+			return response()->json([
+				'success' => false,
+				'message' => "Invalid status update: You cannot move backwards from '{$oldStatus}' to '{$newStatus}'."
+			]);
+		}
+
+		/* Update ticket and products */
+		$ticket->update([
+			'status' => $newStatus,
+			'updated_by' => auth()->id()
+		]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Ticket status updated successfully',
 		]);
 	}
 }

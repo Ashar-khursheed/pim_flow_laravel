@@ -23722,7 +23722,7 @@
         "/api/frontend/support-categories": {
             "get": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
                 "summary": "Get all support ticket categories",
                 "description": "Returns a list of all available support categories.",
@@ -23774,7 +23774,7 @@
         "/api/frontend/support-priorities": {
             "get": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
                 "summary": "Get all support ticket priorities",
                 "description": "Returns a list of all available support priorities (ordered by severity level).",
@@ -23830,7 +23830,7 @@
         "/api/frontend/support-tickets": {
             "get": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
                 "summary": "List all support tickets with optional filters, search, and sorting",
                 "operationId": "b7d9a4a7ea5ba21acef8104832a49a00",
@@ -23978,7 +23978,7 @@
             },
             "post": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
                 "summary": "Create a support ticket",
                 "operationId": "5a79bf4ae481982fad446ac090e8b46f",
@@ -24049,7 +24049,7 @@
         "/api/frontend/support-tickets/{id}": {
             "get": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
                 "summary": "Get a ticket by ID",
                 "operationId": "ab8a844c9a42f6d2e8c92b6d6b0220fc",
@@ -24081,7 +24081,7 @@
         "/api/frontend/customers/{customer_id}/support-tickets": {
             "get": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
                 "summary": "Get tickets for a specific customer",
                 "operationId": "6608cc2a106e67b71b4aad7fea17b5c9",
@@ -36879,6 +36879,234 @@
                 ]
             }
         },
+        "/api/support-tickets": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Get all tickets with pagination and filters",
+                "operationId": "2d6b7c48d61bcd3d110d3ff9c0269c5e",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "ticket_number",
+                                "customer_name",
+                                "customer_email",
+                                "category_name",
+                                "priority_name",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Records retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Create a new support ticket",
+                "operationId": "f957339d66548bd2321bb050937edbe9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "category_id",
+                                    "priority_id",
+                                    "subject",
+                                    "description"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "priority_id": {
+                                        "type": "integer"
+                                    },
+                                    "subject": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "reference": {
+                                        "type": "string"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/support-tickets/{id}": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Get support ticket details",
+                "operationId": "6631e19cac8edf0ba43b556cc382cd4e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Support Ticket ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/support-tickets/{id}/status": {
+            "put": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Update support ticket status",
+                "operationId": "a746cb7f813b392b80b4ec2d38976d56",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Ticket ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/temp-products": {
             "get": {
                 "tags": [
@@ -40812,6 +41040,10 @@
         {
             "name": "Stripe",
             "description": "Stripe"
+        },
+        {
+            "name": "FrontEnd-SupportTickets",
+            "description": "FrontEnd-SupportTickets"
         },
         {
             "name": "Tamara",
