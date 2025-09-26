@@ -21,8 +21,12 @@ return new class extends Migration {
             $table->dropForeign(['child_id']);
             // 🔹 Drop old columns (check if exists to avoid errors)
             if (Schema::hasColumn('product_variants', 'child_id')) {
+ 
                 $table->dropColumn('child_id');                
+ 
+ 
             }
+            $table->dropForeign(['child_id']);
             if (Schema::hasColumn('product_variants', 'label')) {
                 $table->dropColumn('label');
             }
