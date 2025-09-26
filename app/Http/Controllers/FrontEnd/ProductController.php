@@ -472,24 +472,23 @@ class ProductController extends Controller
                     $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
                     $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
                    $product->accessories = $product->accessories->map(function ($accessory) {
+                    return [
+                        'id'        => $accessory->id,
+                        'name'      => $accessory->name,
+                        'isapproved'=> $accessory->isapproved,
+                        'items'     => $accessory->items->map(function ($item) {
                             return [
-                                'id'        => $accessory->id,
-                                'name'      => $accessory->name,
-                                'isapproved'=> $accessory->isapproved,
-                                'items'     => $accessory->items->map(function ($item) {
-                                    return [
-                                        'id'   => $item->id,
-                                        'name' => $item->name,
-                                        'sku'  => $item->sku ?? null,
-                                    ];
-                                }),
+                                'id'   => $item->id,
+                                'name' => $item->name,
+                                'sku'  => $item->sku ?? null,
                             ];
-                        })->values(); // keep it a Collection
+                        }),
+                    ];
+                })->values();
 
-                        // Ensure empty array is returned if none
-                        if ($product->accessories->isEmpty()) {
-                            $product->accessories = [];
-                        }
+                if ($product->accessories->isEmpty()) {
+                    $product->accessories = [];
+                }
 
 
 
