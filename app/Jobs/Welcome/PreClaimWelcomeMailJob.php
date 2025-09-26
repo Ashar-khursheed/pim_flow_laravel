@@ -19,7 +19,7 @@ use App\Mail\Welcome\PreClaimWelcomeMail;
 class PreClaimWelcomeMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
+
 	public $customerId;
 	public $randomPassword;
 

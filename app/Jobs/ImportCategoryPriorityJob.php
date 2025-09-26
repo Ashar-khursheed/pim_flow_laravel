@@ -24,7 +24,6 @@ use App\Models\CategoryMeasurementUnitPriority;
 class ImportCategoryPriorityJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 43200;
 
 	protected $fileFormatArray;
 	protected $header;

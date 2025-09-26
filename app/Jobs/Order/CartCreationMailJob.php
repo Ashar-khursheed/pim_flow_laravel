@@ -16,7 +16,7 @@ use App\Mail\Order\CartCreationMail;
 class CartCreationMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
+
 	public $customerCartID;
 	public $randomPassword;
 	public $isNewCustomer;

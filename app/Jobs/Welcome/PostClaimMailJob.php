@@ -19,7 +19,7 @@ use App\Mail\Welcome\PostClaimMail;
 class PostClaimMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
+
 	public $claimId;
 
 	public function __construct($data)

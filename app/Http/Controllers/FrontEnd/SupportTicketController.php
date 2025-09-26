@@ -17,7 +17,7 @@ class SupportTicketController extends Controller
     /**
      * @OA\Post(
      *     path="/api/frontend/support-tickets",
-     *     tags={"SupportTickets"},
+     *     tags={"FrontEnd-SupportTickets"},
      *     summary="Create a support ticket",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
@@ -94,7 +94,7 @@ class SupportTicketController extends Controller
 /**
  * @OA\Get(
  *     path="/api/frontend/support-tickets",
- *     tags={"SupportTickets"},
+ *     tags={"FrontEnd-SupportTickets"},
  *     summary="List all support tickets with optional filters, search, and sorting",
  *     security={{"bearerAuth":{}}},
  *     @OA\Parameter(
@@ -235,7 +235,7 @@ public function index(Request $request)
     /**
      * @OA\Get(
      *     path="/api/frontend/support-tickets/{id}",
-     *     tags={"SupportTickets"},
+     *     tags={"FrontEnd-SupportTickets"},
      *     summary="Get a ticket by ID",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *     security={{"bearerAuth":{}}},
@@ -272,7 +272,7 @@ public function index(Request $request)
     /**
      * @OA\Get(
      *     path="/api/frontend/customers/{customer_id}/support-tickets",
-     *     tags={"SupportTickets"},
+     *     tags={"FrontEnd-SupportTickets"},
      *     summary="Get tickets for a specific customer",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(name="customer_id", in="path", required=true, @OA\Schema(type="integer")),
