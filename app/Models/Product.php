@@ -281,4 +281,13 @@ class Product extends Model
 			? $mostParent->seoUrl->url
 			: null;
 	}
+
+	// In Product.php
+	// In Product.phps
+	public function accessories()
+	{
+		return $this->hasMany(ProductAccessory::class, 'product_id')->approved();
+	}
+
+
 }

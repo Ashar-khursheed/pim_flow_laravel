@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\FrontEnd\CustomerCart;
 use App\Models\FrontEnd\CustomerCartProduct;
 use App\Models\Product;
+use App\Models\ProductAccessory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -243,7 +244,8 @@ class CartController extends Controller
                 'product.currency',
                 'product.productSuppliers',
                 'product.seoUrl',
-                'product.sellingUnitAttribute'
+                'product.sellingUnitAttribute',
+                'product.accessories.items'
             ])
             ->get();
 
