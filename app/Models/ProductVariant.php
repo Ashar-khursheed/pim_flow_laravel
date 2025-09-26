@@ -8,22 +8,16 @@ class ProductVariant extends Model
 {
     protected $fillable = [
         'parent_id',
-        'child_id',
-        'attribute_id',
-        'label',
-        'type',
+        'child_ids',
+        'variants',        
         'status',
         'created_by',
         'updated_by'
     ];
 
-    public function parent()
-    {
-        return $this->belongsTo(ProductVariant::class, 'parent_id');
-    }
+   
 
-
-    public function product()
+    public function parentProduct()
     {
         return $this->belongsTo(Product::class, 'product_id'); // adjust FK if needed
     }
@@ -32,20 +26,11 @@ class ProductVariant extends Model
         return $this->belongsTo(Attribute::class, 'attribute_id'); // adjust FK if needed
     }
 
-
-    // Parent Product
-    public function parentProduct()
-    {
-        return $this->belongsTo(Product::class, 'parent_id');
-    }
-
-    // Child Product
-    public function childProduct()
+ public function childProduct()
     {
         return $this->belongsTo(Product::class, 'child_id');
     }
-
-    public function createdBy()
+     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
