@@ -525,7 +525,7 @@ class ProductController extends Controller
     {
 
               // Start building the base query
-                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ])
+                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ,'accessories.items'])
                     ->where('status', 'published');
 
 
