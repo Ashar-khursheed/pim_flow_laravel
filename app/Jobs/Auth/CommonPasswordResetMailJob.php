@@ -19,7 +19,7 @@ use App\Mail\Auth\CommonPasswordResetMail;
 class CommonPasswordResetMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
+
 	public $customerId;
 
 	public function __construct($data)

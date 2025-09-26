@@ -368,8 +368,10 @@ class CcavenueController extends Controller
         $customer = Customer::find($order->customer_id);
         $orderList = array();
         $orderList['order_id'] = $order->id;
-        $orderList['redirect_url'] = $url.'/thanks';
-        $orderList['cancel_url'] = $url.'/failed';
+        $orderList['redirect_url'] = 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks';
+        $orderList['cancel_url'] = 'https://development.d28qosi1cuigvb.amplifyapp.com/failed';
+        // $orderList['redirect_url'] = $url.'/thanks';
+        // $orderList['cancel_url'] = $url.'/failed';
 
         // $orderList['redirect_url'] = url('api/ccavenue/thanks');
         // $orderList['cancel_url'] = url('api/ccavenue/failed');

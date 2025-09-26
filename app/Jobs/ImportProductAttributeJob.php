@@ -23,7 +23,6 @@ use App\Models\MeasurementType;
 class ImportProductAttributeJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 43200;
 
 	protected $header;
 	protected $chunk;

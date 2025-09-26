@@ -20,7 +20,7 @@ use App\Mail\Auth\ResetPasswordMail;
 class ResetPasswordMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
+
 	public $recordId;
 	public $userType;
 

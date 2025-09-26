@@ -16,7 +16,7 @@ use App\Mail\Order\PartialOrderCancelledMail;
 class PartialOrderCancelledMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
+
 	public $orderProductId;
 	public $reason;
 
