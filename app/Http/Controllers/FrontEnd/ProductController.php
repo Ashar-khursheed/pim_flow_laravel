@@ -149,6 +149,7 @@ class ProductController extends Controller
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
                         });
                     },
+                    'accessories.items'
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
@@ -589,6 +590,7 @@ class ProductController extends Controller
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
                         });
                     },
+                      'accessories.items'
                      ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
