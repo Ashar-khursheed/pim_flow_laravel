@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 use Illuminate\Validation\Rule;
+use App\Models\Attribute;
 class ProductVariantController extends Controller
 {
 
@@ -34,19 +35,14 @@ class ProductVariantController extends Controller
     {
         $recordsQuery = ProductVariant::with([
             'parentProduct:id,name,sku',
-            'childProduct:id,name,sku',
-            'attribute:id,name',
             'createdBy:id,username',
             'updatedBy:id,username'
         ]);
 
-        // Searchable columns
+        // Searchable columns (only parent + children (JSON) + attributes inside variants)
         $searchableColumns = [
             'parent_products.name',
             'parent_products.sku',
-            'child_products.name',
-            'child_products.sku',
-            'attributes.name',
             'created_users.username',
             'updated_users.username'
         ];
@@ -62,11 +58,9 @@ class ProductVariantController extends Controller
 
         $sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        // Joins for searching/sorting
+        // Join parent + users
         $recordsQuery
             ->leftJoin('ec_products as parent_products', 'product_variants.parent_id', '=', 'parent_products.id')
-            ->leftJoin('ec_products as child_products', 'product_variants.child_id', '=', 'child_products.id')
-            ->leftJoin('attributes', 'product_variants.attribute_id', '=', 'attributes.id')
             ->leftJoin('users as created_users', 'product_variants.created_by', '=', 'created_users.id')
             ->leftJoin('users as updated_users', 'product_variants.updated_by', '=', 'updated_users.id');
 
@@ -93,9 +87,6 @@ class ProductVariantController extends Controller
             'product_variants.*',
             'parent_products.name as parent_name',
             'parent_products.sku as parent_sku',
-            'child_products.name as child_name',
-            'child_products.sku as child_sku',
-            'attributes.name as attribute_name',
             'created_users.username as created_by_name',
             'updated_users.username as updated_by_name',
         ]);
@@ -121,6 +112,53 @@ class ProductVariantController extends Controller
             $page = 1;
         }
 
+        // 🔥 Decode child_ids + variants JSON and enrich
+        $records = $records->map(function ($row) {
+            $childIds = json_decode($row->child_ids, true) ?? [];
+            $variants = json_decode($row->variants, true) ?? [];
+ 
+            // Load child products
+            $children = \DB::table('ec_products')
+                ->whereIn('id', $childIds)
+                ->get(['id', 'name', 'sku']);
+
+            // Load attributes for variants
+            $attributeIds = collect($variants)->pluck('attribute_id')->filter()->all();
+            $attributes = \DB::table('attributes')
+                ->whereIn('id', $attributeIds)
+                ->pluck('name', 'id');
+
+            $row->children = $children->map(function ($c) {
+                return [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'sku' => $c->sku,
+                ];
+            });
+
+            $row->variants = collect($variants)->map(function ($v) use ($attributes) {
+                return [
+                    'attribute_id' => $v['attribute_id'],
+                    'attribute_name' => $attributes[$v['attribute_id']] ?? null,
+                    'label' => $v['labels'] ?? null,
+                    'type' => $v['type'] ?? null,
+                ];
+            });
+
+            $data = [
+
+                    'id' => $row->id,
+                    'parent_id' => $row->parent_id,
+                    'parent_name' => $row->parent_name,
+                    'parent_sku' => $row->parent_sku,
+                    'variants' => $row->variants,
+                    'child' => $row->children,
+                    
+                ];
+
+            return $data;
+        });
+
         return response()->json([
             'success' => true,
             'message' => __("msg_rec_list"),
@@ -130,22 +168,44 @@ class ProductVariantController extends Controller
         ]);
 
 
+
     }
     /**
      * @OA\Post(
      *     path="/api/product-variants",
      *     tags={"Product Variants"},
-     *     summary="Create a new product variant",
+     *     summary="Create a new product variant with multiple children and variant details",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"label"},
+     *             type="object",
+     *             required={"parent_id", "child_ids", "variants"},
      *             @OA\Property(property="parent_id", type="integer", example=1683),
-     *             @OA\Property(property="child_id", type="integer", example=1683),
-     *             @OA\Property(property="attribute_id", type="integer", example=9),
-     *             @OA\Property(property="label", type="string", example="Red Color"),
-     *             @OA\Property(property="type", type="string", example="Color")
+     *             @OA\Property(
+     *                 property="child_ids",
+     *                 type="array",
+     *                 description="Array of child product IDs",
+     *                 @OA\Items(type="integer", example=1683),
+     *                 example={1683, 1795, 1818}
+     *             ),
+     *             @OA\Property(
+     *                 property="variants",
+     *                 type="array",
+     *                 description="Array of variant details",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     required={"attribute_id","labels","type"},
+     *                     @OA\Property(property="attribute_id", type="integer", example=7),
+     *                     @OA\Property(property="labels", type="string", example="Red Color"),
+     *                     @OA\Property(property="type", type="string", example="Color")
+     *                 ),
+     *                 example={
+     *                     {"attribute_id":7,"labels":"Red Color","type":"Color"},
+     *                     {"attribute_id":22,"labels":"Green Color","type":"Material"},
+     *                     {"attribute_id":48,"labels":"Blue Color","type":"Size"}
+     *                 }
+     *             )
      *         )
      *     ),
      *     @OA\Response(response=201, description="Created"),
@@ -154,36 +214,23 @@ class ProductVariantController extends Controller
      *     @OA\Response(response=500, description="Server Error")
      * )
      */
+
+
     public function store(Request $request)
     {
+
         try {
             $validator = Validator::make($request->all(), [
-                'parent_id' => [
-                    'required',
-                    'integer',
-                    'exists:ec_products,id',
-                ],
-                'child_id' => [
-                    'required',
-                    'integer',
-                    'exists:ec_products,id',
-                    function ($attribute, $value, $fail) use ($request) {
-                        if ($value == $request->parent_id) {
-                            $fail('Parent and child cannot be the same.');
-                        }
-                    }
-                ],
-                'attribute_id' => [
-                    'nullable',
-                    'integer',
-                    Rule::unique('product_variants')->where(function ($query) use ($request) {
-                        return $query->where('parent_id', $request->parent_id)
-                            ->where('child_id', $request->child_id)
-                            ->where('attribute_id', $request->attribute_id);
-                    }),
-                ],
-                'label' => 'required|string|max:255',
-                'type' => 'nullable|string|max:255',
+                'parent_id' => 'required|integer|unique:product_variants,parent_id|exists:ec_products,id',
+
+                // child_ids should be an array of product IDs
+                'child_ids' => 'required|array|min:1',
+
+                // variants should be array of objects
+                'variants' => 'required|array|min:1',
+                'variants.*.attribute_id' => 'required|integer|exists:attributes,id',
+                'variants.*.labels' => 'required|string|max:255',
+                'variants.*.type' => 'nullable|string|max:255',
             ]);
 
             if ($validator->fails()) {
@@ -193,15 +240,20 @@ class ProductVariantController extends Controller
                     'errors' => $validator->errors()
                 ], 422);
             }
+
             $data = $validator->validated();
 
-            $data['created_by'] = Auth::id() ?? 1;
-            // Create variant
-            $variant = ProductVariant::create($data);
+            $createdRecord = ProductVariant::create([
+                'parent_id' => $data['parent_id'],
+                'child_ids' => json_encode($data['child_ids']),
+                'variants' => json_encode($data['variants']),
+                'created_by' => Auth::id() ?? 1,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Product Variant created successfully',
-                'data' => $variant
+                'data' => $createdRecord
             ], 201);
 
         } catch (\Exception $e) {
@@ -211,13 +263,17 @@ class ProductVariantController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+
     }
+
+
     /**
      * @OA\Put(
      *     path="/api/product-variants/{id}",
-     *     summary="Update an existing Product Variant",
      *     tags={"Product Variants"},
-     *     @OA\Parameter(
+     *     summary="Update an existing Product Variant",
+     *     security={{"bearerAuth":{}}},
+     * @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
@@ -227,66 +283,55 @@ class ProductVariantController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"label"},
+     *             type="object",
+     *             required={"parent_id", "child_ids", "variants"},
      *             @OA\Property(property="parent_id", type="integer", example=1683),
-     *             @OA\Property(property="child_id", type="integer", example=21191),
-     *             @OA\Property(property="attribute_id", type="integer", example=9),
-     *             @OA\Property(property="label", type="string", example="Red Color"),
-     *             @OA\Property(property="type", type="string", example="Color")
+     *             @OA\Property(
+     *                 property="child_ids",
+     *                 type="array",
+     *                 description="Array of child product IDs",
+     *                 @OA\Items(type="integer", example=1683),
+     *                 example={1683, 1795, 1818}
+     *             ),
+     *             @OA\Property(
+     *                 property="variants",
+     *                 type="array",
+     *                 description="Array of variant details",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     required={"attribute_id","labels","type"},
+     *                     @OA\Property(property="attribute_id", type="integer", example=7),
+     *                     @OA\Property(property="labels", type="string", example="Red Color"),
+     *                     @OA\Property(property="type", type="string", example="Color")
+     *                 ),
+     *                 example={
+     *                     {"attribute_id":7,"labels":"Red Color","type":"Color"},
+     *                     {"attribute_id":22,"labels":"Green Color","type":"Material"},
+     *                     {"attribute_id":48,"labels":"Blue Color","type":"Size"}
+     *                 }
+     *             )
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Product Variant updated successfully"),
+     *     @OA\Response(response=201, description="Created"),
      *     @OA\Response(response=400, description="Bad Request"),
-     *     @OA\Response(response=404, description="Product Variant not found"),
-     *     @OA\Response(response=422, description="Validation error"),
-     *     @OA\Response(response=500, description="Server Error"),
-     *     security={{"bearerAuth":{}}}
+     *     @OA\Response(response=422, description="Validation Failed"),
+     *     @OA\Response(response=500, description="Server Error")
      * )
      */
-
-
-
-
-
     public function update(Request $request, $id)
     {
         try {
-            $variant = ProductVariant::find($id);
-
-            if (!$variant) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Product Variant not found',
-                ], 404);
-            }
 
             $validator = Validator::make($request->all(), [
-                'parent_id' => [
-                    'required',
-                    'integer',
-                    'exists:ec_products,id',
-                ],
-                'child_id' => [
-                    'required',
-                    'integer',
-                    'exists:ec_products,id',
-                    function ($attribute, $value, $fail) use ($request) {
-                        if ($value == $request->parent_id) {
-                            $fail('Parent and child cannot be the same.');
-                        }
-                    }
-                ],
-                'attribute_id' => [
-                    'nullable',
-                    'integer',
-                    Rule::unique('product_variants')->where(function ($query) use ($request) {
-                        return $query->where('parent_id', $request->parent_id)
-                            ->where('child_id', $request->child_id)
-                            ->where('attribute_id', $request->attribute_id);
-                    })->ignore($id),
-                ],
-                'label' => 'required|string|max:255',
-                'type' => 'nullable|string|max:255',
+                'parent_id' => 'required|integer|unique:product_variants,parent_id,' . $id . ',id|exists:ec_products,id',
+
+                // child_ids should be an array of product IDs
+                'child_ids' => 'required|array|min:1',
+                // variants should be array of objects
+                'variants' => 'required|array|min:1',
+                'variants.*.attribute_id' => 'required|integer|exists:attributes,id',
+                'variants.*.labels' => 'required|string|max:255',
+                'variants.*.type' => 'nullable|string|max:255',
             ]);
 
             if ($validator->fails()) {
@@ -296,11 +341,27 @@ class ProductVariantController extends Controller
                     'errors' => $validator->errors()
                 ], 422);
             }
+            $variant = ProductVariant::find($id);
+
+            if (!$variant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product Variant not found',
+                ], 404);
+            }
+
 
             $data = $validator->validated();
-            $data['updated_by'] = Auth::id() ?? 1;
 
-            $variant->update($data);
+
+
+
+            $variant->update([
+                'parent_id' => $data['parent_id'],
+                'child_ids' => json_encode($data['child_ids']),
+                'variants' => json_encode($data['variants']),
+                'updated_by' => Auth::id() ?? 1,
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -312,6 +373,116 @@ class ProductVariantController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update Product Variant',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/product-variants/getProductAttibute",
+     *     tags={"Product Variants"},
+     *     summary="Get attributes by product IDs",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 required={"product_ids"},
+     *                 @OA\Property(
+     *                     property="product_ids",
+     *                     type="array",
+     *                     description="Array of product IDs",
+     *                     @OA\Items(type="integer", example=1),
+     *                     example={1683,1795,1818}
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Success",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Attributes fetched successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="product_id", type="integer", example=1),
+     *                     @OA\Property(
+     *                         property="attributes",
+     *                         type="array",
+     *                         @OA\Items(
+     *                             type="object",
+     *                             @OA\Property(property="id", type="integer", example=5),
+     *                             @OA\Property(property="name", type="string", example="Color")
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Not Found"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+
+
+    public function show(Request $request)
+    {
+        try {
+
+
+            $validator = Validator::make($request->all(), [
+                'product_ids' => 'required|array',
+
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            // Ensure product_id is always an array
+            $productIds = $request->product_ids;
+
+            if (empty($productIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No product IDs provided'
+                ], 422);
+            }
+
+            // Fetch attributes
+            $attributes = Attribute::whereIn('attribute_group_id', $productIds)
+                ->select('id', 'name', 'attribute_group_id')
+                ->get();
+
+            // Map into clean structure
+            $attributeList = $attributes->map(function ($attr) {
+                return [
+                    'id' => $attr->id,
+                    'name' => $attr->name,
+                    'group_id' => $attr->attribute_group_id,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attributes fetched successfully',
+                'data' => $attributeList
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch attributes',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -340,9 +511,6 @@ class ProductVariantController extends Controller
         try {
             $variant = ProductVariant::findOrFail($id);
             $variant->delete();
-
-
-
             return response()->json([
                 'success' => true,
                 'message' => 'product variant deleted successfully'

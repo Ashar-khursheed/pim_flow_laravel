@@ -33253,7 +33253,7 @@
                 "tags": [
                     "Product Variants"
                 ],
-                "summary": "Create a new product variant",
+                "summary": "Create a new product variant with multiple children and variant details",
                 "operationId": "3621292a6830e507fcc07c6a62e2ce04",
                 "requestBody": {
                     "required": true,
@@ -33261,28 +33261,70 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "label"
+                                    "parent_id",
+                                    "child_ids",
+                                    "variants"
                                 ],
                                 "properties": {
                                     "parent_id": {
                                         "type": "integer",
                                         "example": 1683
                                     },
-                                    "child_id": {
-                                        "type": "integer",
-                                        "example": 1683
+                                    "child_ids": {
+                                        "description": "Array of child product IDs",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        },
+                                        "example": [
+                                            1683,
+                                            1795,
+                                            1818
+                                        ]
                                     },
-                                    "attribute_id": {
-                                        "type": "integer",
-                                        "example": 9
-                                    },
-                                    "label": {
-                                        "type": "string",
-                                        "example": "Red Color"
-                                    },
-                                    "type": {
-                                        "type": "string",
-                                        "example": "Color"
+                                    "variants": {
+                                        "description": "Array of variant details",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "attribute_id",
+                                                "labels",
+                                                "type"
+                                            ],
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "labels": {
+                                                    "type": "string",
+                                                    "example": "Red Color"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "Color"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "attribute_id": 7,
+                                                "labels": "Red Color",
+                                                "type": "Color"
+                                            },
+                                            {
+                                                "attribute_id": 22,
+                                                "labels": "Green Color",
+                                                "type": "Material"
+                                            },
+                                            {
+                                                "attribute_id": 48,
+                                                "labels": "Blue Color",
+                                                "type": "Size"
+                                            }
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -33335,28 +33377,70 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "label"
+                                    "parent_id",
+                                    "child_ids",
+                                    "variants"
                                 ],
                                 "properties": {
                                     "parent_id": {
                                         "type": "integer",
                                         "example": 1683
                                     },
-                                    "child_id": {
-                                        "type": "integer",
-                                        "example": 21191
+                                    "child_ids": {
+                                        "description": "Array of child product IDs",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        },
+                                        "example": [
+                                            1683,
+                                            1795,
+                                            1818
+                                        ]
                                     },
-                                    "attribute_id": {
-                                        "type": "integer",
-                                        "example": 9
-                                    },
-                                    "label": {
-                                        "type": "string",
-                                        "example": "Red Color"
-                                    },
-                                    "type": {
-                                        "type": "string",
-                                        "example": "Color"
+                                    "variants": {
+                                        "description": "Array of variant details",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "attribute_id",
+                                                "labels",
+                                                "type"
+                                            ],
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "labels": {
+                                                    "type": "string",
+                                                    "example": "Red Color"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "Color"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "attribute_id": 7,
+                                                "labels": "Red Color",
+                                                "type": "Color"
+                                            },
+                                            {
+                                                "attribute_id": 22,
+                                                "labels": "Green Color",
+                                                "type": "Material"
+                                            },
+                                            {
+                                                "attribute_id": 48,
+                                                "labels": "Blue Color",
+                                                "type": "Size"
+                                            }
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -33365,17 +33449,14 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Product Variant updated successfully"
+                    "201": {
+                        "description": "Created"
                     },
                     "400": {
                         "description": "Bad Request"
                     },
-                    "404": {
-                        "description": "Product Variant not found"
-                    },
                     "422": {
-                        "description": "Validation error"
+                        "description": "Validation Failed"
                     },
                     "500": {
                         "description": "Server Error"
@@ -33406,6 +33487,101 @@
                 "responses": {
                     "204": {
                         "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-variants/getProductAttibute": {
+            "post": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Get attributes by product IDs",
+                "operationId": "bc34726f579eea5d980158a540713523",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_ids"
+                                ],
+                                "properties": {
+                                    "product_ids": {
+                                        "description": "Array of product IDs",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "example": [
+                                            1683,
+                                            1795,
+                                            1818
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Attributes fetched successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "product_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "attributes": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 5
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "Color"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not Found"

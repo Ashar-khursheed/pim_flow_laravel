@@ -420,6 +420,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/get-product-list', [ProductAccessoriesController::class, 'getProductList']);
 
 	Route::apiResource('product-variants', ProductVariantController::class);
+	Route::post('product-variants/productAttibute', [ProductVariantController::class,'show']);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
