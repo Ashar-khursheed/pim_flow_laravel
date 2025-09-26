@@ -144,7 +144,7 @@ class SupportTicketController extends Controller
 			});
 		} else {
 			/* No pagination: just fetch id */
-			$records = PostPurchaseClaim::orderBy('id', 'desc')->get(['id', 'ticket_number']);
+			$records = SupportTicket::orderBy('id', 'desc')->get(['id', 'ticket_number']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}

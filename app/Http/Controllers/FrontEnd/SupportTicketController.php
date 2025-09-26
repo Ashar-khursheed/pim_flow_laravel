@@ -2,311 +2,273 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
-use App\Models\FrontEnd\SupportTicket;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
-/**
- * @OA\Tag(name="SupportTickets")
- */
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Models\FrontEnd\SupportTicket;
+
+use App\Jobs\SupportTicket\SupportTicketMailJob;
+
 class SupportTicketController extends Controller
 {
-    /**
-     * @OA\Post(
-     *     path="/api/frontend/support-tickets",
-     *     tags={"FrontEnd-SupportTickets"},
-     *     summary="Create a support ticket",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *             @OA\Schema(
-     *                 required={"full_name", "email", "category_id", "priority_id", "subject", "description"},
-     *                 @OA\Property(property="full_name", type="string"),
-     *                 @OA\Property(property="email", type="string", format="email"),
-     *                 @OA\Property(property="company_name", type="string"),
-     *                 @OA\Property(property="phone_number", type="string"),
-     *                 @OA\Property(property="category_id", type="integer"),
-     *                 @OA\Property(property="priority_id", type="integer"),
-     *                 @OA\Property(property="subject", type="string"),
-     *                 @OA\Property(property="description", type="string"),
-     *                 @OA\Property(property="reference_id", type="string"),
-     *                 @OA\Property(property="file", type="string", format="binary")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Ticket Created")
-     * )
-     */
-    public function store(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'full_name'     => 'required|string|max:255',
-                'email'         => 'required|email',
-                'company_name'  => 'nullable|string',
-                'phone_number'  => 'nullable|string|max:20',
-                'category_id'   => 'required|integer',
-                'priority_id'   => 'required|integer',
-                'subject'       => 'required|string',
-                'description'   => 'required|string',
-                'reference_id'  => 'nullable|string',
-                'file'          => 'nullable|file|max:2048',
-                'customer_id'   => 'nullable|integer',
-            ]);
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/support-tickets",
+	 *     summary="Get all tickets with pagination and filters",
+	 *     tags={"FrontEnd-SupportTickets"},
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "ticket_number", "category_name", "priority_name", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *     @OA\Response(response=200, description="Records retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function index(Request $request)
+	{
+		$searchableColumns = ["id", "ticket_number", "category_name", "priority_name"];
+		$sortableColumns = array_merge($searchableColumns, ["created_at", "updated_at"]);
 
-            if ($request->hasFile('file')) {
-              $path = $request->file('file')->store('support-tickets', 's3');
-                $validated['file_path'] = $path;
-                $validated['file_url'] = Storage::disk('s3')->url($path);
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-            }
+		$recordsQuery = SupportTicket::where('customer_id', auth()->id());
 
-            $ticket = SupportTicket::create($validated);
+		/* join for customer name or email */
+		if ($sortBy === 'category_name' || ($request->filled('global') && in_array('category_name', $searchableColumns))) {
+			$recordsQuery->leftJoin('support_categories', 'support_tickets.category_id', '=', 'support_categories.id');
+			$recordsQuery->addSelect('support_tickets.*');
+		}
 
-            return response()->json([
-                'success' => true,
-                'data' => $ticket,
-                'message' => 'Support ticket created successfully.'
-            ], 201);
+		if ($sortBy === 'priority_name' || ($request->filled('global') && in_array('priority_name', $searchableColumns))) {
+			$recordsQuery->leftJoin('support_priorities', 'support_tickets.priority_id', '=', 'support_priorities.id');
+			$recordsQuery->addSelect('support_tickets.*');
+		}
 
-        } catch (ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $e->errors()
-            ], 422);
+		/* Eager load relationships */
+		$recordsQuery->with([
+			'category:id,name',
+			'priority:id,name',
+		]);
 
-        } catch (\Exception $e) {
-            Log::error('Support Ticket Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'An unexpected error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
+		/* Global search */
+		if ($request->filled('global')) {
+			$search = $request->input('global');
+			$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+				foreach ($searchableColumns as $col) {
+					if ($col === 'category_name') {
+						$q->orWhereHas('category', function ($sub) use ($search) {
+							$sub->where('name', 'like', '%' . $search . '%');
+						});
+					} elseif ($col === 'priority_name') {
+						$q->orWhereHas('priority', function ($sub) use ($search) {
+							$sub->where('name', 'like', '%' . $search . '%');
+						});
+					} else {
+						$q->orWhere("support_tickets.$col", 'like', '%' . $search . '%');
+					}
+				}
+			});
+		}
 
-/**
- * @OA\Get(
- *     path="/api/frontend/support-tickets",
- *     tags={"FrontEnd-SupportTickets"},
- *     summary="List all support tickets with optional filters, search, and sorting",
- *     security={{"bearerAuth":{}}},
- *     @OA\Parameter(
- *         name="search",
- *         in="query",
- *         description="Search keyword for subject or description",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="status",
- *         in="query",
- *         description="Filter tickets by status (e.g., open, closed, pending)",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="sort_by",
- *         in="query",
- *         description="Field to sort by (created_at, updated_at, subject, status)",
- *         required=false,
- *         @OA\Schema(type="string", enum={"created_at", "updated_at", "subject", "status"})
- *     ),
- *     @OA\Parameter(
- *         name="sort_order",
- *         in="query",
- *         description="Sort order (asc or desc)",
- *         required=false,
- *         @OA\Schema(type="string", enum={"asc", "desc"})
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Success",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="data", type="array",
- *                 @OA\Items(
- *                     @OA\Property(property="id", type="integer", example=1),
- *                     @OA\Property(property="subject", type="string", example="Login Issue"),
- *                     @OA\Property(property="status", type="string", example="open"),
- *                     @OA\Property(property="description", type="string", example="I can't log in to my account."),
- *                     @OA\Property(property="category", type="string", example="Technical"),
- *                     @OA\Property(property="priority", type="string", example="High"),
- *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-07-21T15:03:00Z"),
- *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-07-22T09:15:00Z")
- *                 )
- *             ),
- *             @OA\Property(property="message", type="string", example="Support tickets fetched successfully.")
- *         )
- *     ),
- *     @OA\Response(
- *         response=500,
- *         description="Internal Server Error",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=false),
- *             @OA\Property(property="message", type="string", example="Failed to fetch support tickets."),
- *             @OA\Property(property="error", type="string", example="Exception message here")
- *         )
- *     )
- * )
- */
+		/* Sorting */
+		if ($sortBy === 'category_name') {
+			$recordsQuery->orderBy('support_categories.name', $sortDir);
+		} elseif ($sortBy === 'priority_name') {
+			$recordsQuery->orderBy('support_priorities.name', $sortDir);
+		} else {
+			$recordsQuery->orderBy("support_tickets.$sortBy", $sortDir);
+		}
 
+		if ($request->filled('page') && $request->filled('length')) {
+			/* Pagination */
+			$length = (int) $request->input('length');
+			$page = (int) $request->input('page');
 
-public function index(Request $request)
-{
-    try {
-        // 🔐 Get authenticated user
-        $user = Auth::id();
+			$totalRecords = (clone $recordsQuery)->count();
+			$totalPages = (int) ceil($totalRecords / $length);
 
-        // 📄 Fetch tickets belonging only to the logged-in user
-        $query = SupportTicket::with(['category:id,name', 'priority:id,name'])
-            ->where('customer_id', $user); // or 'customer_id' if that's your field
+			if ($page > $totalPages && $totalPages > 0) {
+				$page = 1;
+			}
 
-        // 🔍 Search by subject or description
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('subject', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
+			$records = $recordsQuery
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
+		} else {
+			/* No pagination: just fetch id */
+			$records = SupportTicket::orderBy('id', 'desc')->get();
+			$totalRecords = $records->count();
+			$totalPages = 1;
+		}
 
-        // ✅ Filter by status
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
+		/* Transform results */
+		$records->transform(function ($record) {
+			if ($record->category) {
+				$record->category_name = $record->category->name ?? null;
+				unset($record->category);
+			}
+			if ($record->priority) {
+				$record->priority_name = $record->priority->name ?? null;
+				unset($record->priority);
+			}
+			return $record;
+		});
 
-        // 🔃 Sorting logic
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
+		return response()->json([
+			'success' => true,
+			'message' => __('msg_rec_list'),
+			'data' => $records,
+			'total_pages' => $totalPages,
+			'total_records' => $totalRecords,
+		]);
+	}
 
-        $allowedSortFields = ['created_at', 'updated_at', 'subject', 'status'];
-        if (!in_array($sortBy, $allowedSortFields)) {
-            $sortBy = 'created_at';
-        }
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/support-tickets",
+	 *     summary="Create a new support ticket",
+	 *     tags={"FrontEnd-SupportTickets"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"category_id", "priority_id", "subject", "description"},
+	 *                 @OA\Property(property="category_id", type="integer"),
+	 *                 @OA\Property(property="priority_id", type="integer"),
+	 *                 @OA\Property(property="subject", type="string"),
+	 *                 @OA\Property(property="description", type="string"),
+	 *                 @OA\Property(property="reference", type="string"),
+	 *                 @OA\Property(property="file", type="string", format="binary")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function store(Request $request)
+	{
+		$request->validate([
+			'category_id' => 'required|integer|exists:support_categories,id',
+			'priority_id' => 'required|integer|exists:support_priorities,id',
+			'subject' => 'required|string',
+			'description' => 'required|string',
+			'reference' => 'nullable|string',
+			'file' => 'nullable|file|max:2048',
+		]);
 
-        $perPage = $request->get('per_page', 10);
-        $tickets = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
+		DB::beginTransaction();
 
-        $transformed = $tickets->getCollection()->map(function ($ticket) {
-            return [
-                'id' => $ticket->id,
-                'subject' => $ticket->subject,
-                'status' => $ticket->status,
-                'description' => $ticket->description,
-                'category' => $ticket->category ? $ticket->category->name : null,
-                'priority' => $ticket->priority ? $ticket->priority->name : null,
-                'created_at' => $ticket->created_at,
-                'updated_at' => $ticket->updated_at,
-            ];
-        });
+		try {
+			/* Upload file if provided */
+			$filePath = null;
+			if ($request->hasFile('file')) {
+				$filePath = uploadFileToS3(
+					$request->file('file'),
+					env('STORAGE_ENV') . '/support-tickets'
+				);
+			}
 
-        return response()->json([
-            'success' => true,
-            'data' => $transformed,
-            'pagination' => [
-                'current_page' => $tickets->currentPage(),
-                'last_page' => $tickets->lastPage(),
-                'per_page' => $tickets->perPage(),
-                'total' => $tickets->total(),
-            ],
-            'message' => 'Support tickets fetched successfully.'
-        ], 200);
+			/* Get the latest ticket by ID (most recent) */
+			$latestTicket = SupportTicket::orderBy('ticket_number', 'desc')->first();
 
-    } catch (\Exception $e) {
-        Log::error('SupportTicketController@index error: ' . $e->getMessage());
+			if ($latestTicket && is_numeric($latestTicket->ticket_number)) {
+				$ticketNumber = (int) $latestTicket->ticket_number + 1;
+			} else {
+				$website = config('app.website');
+				$ticketNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+			}
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to fetch support tickets.',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
+			$ticket = SupportTicket::create([
+				'ticket_number' => $ticketNumber,
+				'customer_id' => auth()->id(),
+				'category_id' => $request->category_id,
+				'priority_id' => $request->priority_id,
+				'subject' => $request->subject,
+				'description' => $request->description,
+				'reference' => $request->reference,
+				'file_path' => $filePath,
+				'status' => 'open',
+				'response_days' => 7,
+				'created_by' => 0,
+			]);
+			DB::commit();
 
+			$batch = Bus::batch([])->name('support ticket from admin')->dispatch();
+			$batch->options['queue'] = config('app.website') . '_SPRT_TKT';
+			$batch->add(new SupportTicketMailJob([
+				'recordId' => $ticket->id
+			]));
 
+			return response()->json([
+				'success' => true,
+				'data' => $ticket,
+				'message' => 'Support ticket created successfully.'
+			], 201);
 
-    /**
-     * @OA\Get(
-     *     path="/api/frontend/support-tickets/{id}",
-     *     tags={"FrontEnd-SupportTickets"},
-     *     summary="Get a ticket by ID",
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(response=200, description="Ticket Found"),
-     *     @OA\Response(response=404, description="Not Found")
-     * )
-     */
-   public function show($id)
-{
-    try {
-        $ticket = SupportTicket::with(['category', 'priority'])->findOrFail($id);
+		} catch (\Exception $e) {
+			DB::rollBack();
 
-        return response()->json([
-            'success' => true,
-            'data' => $ticket,
-            'message' => 'Support ticket found.'
-        ], 200);
-    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Support ticket not found.'
-        ], 404);
-    } catch (\Exception $e) {
-        Log::error('SupportTicketController@show error: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to fetch ticket.',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to create ticket: ' . $e->getMessage()
+			], 500);
+		}
+	}
 
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/support-tickets/{id}",
+	 *     summary="Get support ticket details",
+	 *     tags={"SupportTickets"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Support Ticket ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Details retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function show($id)
+	{
+		$record = SupportTicket::where('id', $id)->where('customer_id', auth()->id())->first();
 
-    /**
-     * @OA\Get(
-     *     path="/api/frontend/customers/{customer_id}/support-tickets",
-     *     tags={"FrontEnd-SupportTickets"},
-     *     summary="Get tickets for a specific customer",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="customer_id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Tickets found"),
-     *     @OA\Response(response=404, description="No tickets found")
-     * )
-     */
-   public function getTicketsByCustomer($customer_id)
-{
-    try {
-        $tickets = SupportTicket::with(['category', 'priority'])
-            ->where('customer_id', $customer_id)
-            ->get();
+		if (!$record) {
+			return response()->json([
+				'success' => false,
+				'message' => "Ticket not found."
+			]);
+		}
 
-        if ($tickets->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tickets found for this customer.'
-            ], 404);
-        }
+		/* Load relationships */
+		$record->load([
+			'category:id,name',
+			'priority:id,name',
+		]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $tickets,
-            'message' => 'Support tickets found.'
-        ], 200);
-    } catch (\Exception $e) {
-        Log::error('SupportTicketController@getTicketsByCustomer error: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to fetch customer tickets.',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
+		/* Mutate the data for each support ticket */
+		if ($record->category) {
+			$record->category_name = $record->category->name ?? null;
+			unset($record->category);
+		}
+		if ($record->priority) {
+			$record->priority_name = $record->priority->name ?? null;
+			unset($record->priority);
+		}
 
+		return response()->json([
+			'success' => true,
+			'data' => $record
+		]);
+	}
 }

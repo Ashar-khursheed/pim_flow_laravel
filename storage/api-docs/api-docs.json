@@ -23832,23 +23832,33 @@
                 "tags": [
                     "FrontEnd-SupportTickets"
                 ],
-                "summary": "List all support tickets with optional filters, search, and sorting",
+                "summary": "Get all tickets with pagination and filters",
                 "operationId": "b7d9a4a7ea5ba21acef8104832a49a00",
                 "parameters": [
                     {
-                        "name": "search",
+                        "name": "page",
                         "in": "query",
-                        "description": "Search keyword for subject or description",
-                        "required": false,
+                        "description": "Page number for pagination",
                         "schema": {
-                            "type": "string"
-                        }
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
                     },
                     {
-                        "name": "status",
+                        "name": "length",
                         "in": "query",
-                        "description": "Filter tickets by status (e.g., open, closed, pending)",
-                        "required": false,
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
                         "schema": {
                             "type": "string"
                         }
@@ -23856,117 +23866,38 @@
                     {
                         "name": "sort_by",
                         "in": "query",
-                        "description": "Field to sort by (created_at, updated_at, subject, status)",
-                        "required": false,
+                        "description": "Column name to sort by",
                         "schema": {
                             "type": "string",
                             "enum": [
+                                "id",
+                                "ticket_number",
+                                "category_name",
+                                "priority_name",
                                 "created_at",
-                                "updated_at",
-                                "subject",
-                                "status"
+                                "updated_at"
                             ]
                         }
                     },
                     {
-                        "name": "sort_order",
+                        "name": "sort_dir",
                         "in": "query",
-                        "description": "Sort order (asc or desc)",
-                        "required": false,
+                        "description": "Sort direction (asc or desc)",
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "asc",
                                 "desc"
                             ]
-                        }
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Records retrieved successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "subject": {
-                                                        "type": "string",
-                                                        "example": "Login Issue"
-                                                    },
-                                                    "status": {
-                                                        "type": "string",
-                                                        "example": "open"
-                                                    },
-                                                    "description": {
-                                                        "type": "string",
-                                                        "example": "I can't log in to my account."
-                                                    },
-                                                    "category": {
-                                                        "type": "string",
-                                                        "example": "Technical"
-                                                    },
-                                                    "priority": {
-                                                        "type": "string",
-                                                        "example": "High"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "example": "2024-07-21T15:03:00Z"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "example": "2024-07-22T09:15:00Z"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Support tickets fetched successfully."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Failed to fetch support tickets."
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Exception message here"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -23980,7 +23911,7 @@
                 "tags": [
                     "FrontEnd-SupportTickets"
                 ],
-                "summary": "Create a support ticket",
+                "summary": "Create a new support ticket",
                 "operationId": "5a79bf4ae481982fad446ac090e8b46f",
                 "requestBody": {
                     "required": true,
@@ -23988,27 +23919,12 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "full_name",
-                                    "email",
                                     "category_id",
                                     "priority_id",
                                     "subject",
                                     "description"
                                 ],
                                 "properties": {
-                                    "full_name": {
-                                        "type": "string"
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email"
-                                    },
-                                    "company_name": {
-                                        "type": "string"
-                                    },
-                                    "phone_number": {
-                                        "type": "string"
-                                    },
                                     "category_id": {
                                         "type": "integer"
                                     },
@@ -24021,7 +23937,7 @@
                                     "description": {
                                         "type": "string"
                                     },
-                                    "reference_id": {
+                                    "reference": {
                                         "type": "string"
                                     },
                                     "file": {
@@ -24036,7 +23952,10 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Ticket Created"
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -24049,14 +23968,15 @@
         "/api/frontend/support-tickets/{id}": {
             "get": {
                 "tags": [
-                    "FrontEnd-SupportTickets"
+                    "SupportTickets"
                 ],
-                "summary": "Get a ticket by ID",
+                "summary": "Get support ticket details",
                 "operationId": "ab8a844c9a42f6d2e8c92b6d6b0220fc",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "Support Ticket ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -24065,42 +23985,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Ticket Found"
-                    },
-                    "404": {
-                        "description": "Not Found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/customers/{customer_id}/support-tickets": {
-            "get": {
-                "tags": [
-                    "FrontEnd-SupportTickets"
-                ],
-                "summary": "Get tickets for a specific customer",
-                "operationId": "6608cc2a106e67b71b4aad7fea17b5c9",
-                "parameters": [
-                    {
-                        "name": "customer_id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
                         }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Tickets found"
-                    },
-                    "404": {
-                        "description": "No tickets found"
                     }
                 },
                 "security": [
@@ -40723,9 +40611,6 @@
             "description": "API Endpoints for managing discounts"
         },
         {
-            "name": "SupportTickets"
-        },
-        {
             "name": "Newsletters",
             "description": "API Endpoints for managing newsletters"
         },
@@ -41044,6 +40929,10 @@
         {
             "name": "FrontEnd-SupportTickets",
             "description": "FrontEnd-SupportTickets"
+        },
+        {
+            "name": "SupportTickets",
+            "description": "SupportTickets"
         },
         {
             "name": "Tamara",
