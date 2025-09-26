@@ -102,7 +102,7 @@ class SupportTicketController extends Controller
 			->get();
 		} else {
 			/* No pagination: just fetch id */
-			$records = SupportTicket::orderBy('id', 'desc')->get();
+			$records = $recordsQuery->get();
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}
@@ -201,7 +201,7 @@ class SupportTicketController extends Controller
 			]);
 			DB::commit();
 
-			$batch = Bus::batch([])->name('support ticket from admin')->dispatch();
+			$batch = Bus::batch([])->name('support ticket from customer')->dispatch();
 			$batch->options['queue'] = config('app.website') . '_SPRT_TKT';
 			$batch->add(new SupportTicketMailJob([
 				'recordId' => $ticket->id
