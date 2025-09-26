@@ -23968,7 +23968,7 @@
         "/api/frontend/support-tickets/{id}": {
             "get": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
                 "summary": "Get support ticket details",
                 "operationId": "ab8a844c9a42f6d2e8c92b6d6b0220fc",
@@ -40931,10 +40931,6 @@
             "description": "FrontEnd-SupportTickets"
         },
         {
-            "name": "SupportTickets",
-            "description": "SupportTickets"
-        },
-        {
             "name": "Tamara",
             "description": "Tamara"
         },
@@ -41041,6 +41037,10 @@
         {
             "name": "Supplier Scores",
             "description": "Supplier Scores"
+        },
+        {
+            "name": "SupportTickets",
+            "description": "SupportTickets"
         },
         {
             "name": "Temp Products",

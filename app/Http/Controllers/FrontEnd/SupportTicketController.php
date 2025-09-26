@@ -227,7 +227,7 @@ class SupportTicketController extends Controller
 	 * @OA\Get(
 	 *     path="/api/frontend/support-tickets/{id}",
 	 *     summary="Get support ticket details",
-	 *     tags={"SupportTickets"},
+	 *     tags={"FrontEnd-SupportTickets"},
 	 *     @OA\Parameter(
 	 *         name="id",
 	 *         in="path",
