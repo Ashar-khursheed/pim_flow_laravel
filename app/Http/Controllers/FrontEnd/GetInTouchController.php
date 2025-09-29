@@ -50,7 +50,7 @@ class GetInTouchController extends Controller
 			'topic'         => 'required|string|max:255',
 			'order_number'  => 'nullable|string|max:50',
 			'message'       => 'nullable|string',
-			'image'         => 'nullable|file|mimes:jpeg,png,webp|max:2024', /* 2MB */
+			'image' => 'nullable|file|mimes:jpeg,jpg,png,webp,pdf|max:2048', /* 2MB */
 		]);
 
 		/* Handle image upload if present */
