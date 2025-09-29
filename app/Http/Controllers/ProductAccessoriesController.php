@@ -710,7 +710,7 @@ class ProductAccessoriesController extends Controller
                 });
             }
             $product_list = [];
-            $products = $query->orderBy('name', 'asc')->get();
+            $products = $query->orderBy('name', 'asc')->limit(15)->get();
             if (!empty($products)) {
                 foreach ($products as $key => $val) {
                     $product_list[$key] = array(
