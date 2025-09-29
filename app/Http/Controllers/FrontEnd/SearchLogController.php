@@ -4,6 +4,8 @@ Namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\SearchLog;
+use Illuminate\Support\Facades\Auth;
+
 use Illuminate\Http\Request;
 class SearchLogController extends Controller
 {
@@ -40,7 +42,7 @@ class SearchLogController extends Controller
     public function store(Request $request)
     {
         $log = SearchLog::create([
-            'customer_id' => auth('customer')->id() ?? null,
+         'customer_id' => Auth::id() ?? null, // changed here
             'search_term' => $request->input('search_term'),
             'product_id'  => $request->input('product_id'),
             'ip_address'  => $request->ip(),
