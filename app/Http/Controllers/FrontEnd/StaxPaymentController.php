@@ -64,7 +64,7 @@ class StaxPaymentController extends Controller
 
         try {
             $data = [
-                'amount' => $request->amount,
+                'amount' =>intval($request->amount * 100),
                 'currency' => 'USD',
                 'payment_method' => $request->token,
             ];

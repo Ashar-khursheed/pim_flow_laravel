@@ -15,7 +15,8 @@ class StaxService
             'Authorization' => 'Bearer ' . config('services.stax.api_key'),
             'Accept'        => 'application/json',
             'Content-Type'  => 'application/json',
-        ])->post(config('services.stax.base_url') . '/v1/charge', $data);
+        ])->post(config('services.stax.base_url') . '/<correct-endpoint>', $data);
+
 
 
         if ($response->failed()) {
