@@ -280,7 +280,7 @@ public function getCategoriesWithChildren(Request $request)
         ->withCount('products')
         ->with(['seoUrl'])
         ->where('status', 'published')
-        ->orderBy('order', 'asc'); // 👈 ensure ordering
+        ->orderByRaw('`order` ASC'); // 👈 escape reserved column
 
     if ($filterId) {
         $query->where(function ($q) use ($filterId) {
@@ -306,7 +306,9 @@ private function buildCategoryTree($categories)
     $buildTree = function($parentId) use (&$buildTree, $categoriesByParent) {
         $tree = [];
         if (isset($categoriesByParent[$parentId])) {
-            foreach ($categoriesByParent[$parentId]->sortBy('order') as $category) { // 👈 also sort children
+            // Explicitly sort children again
+            $sorted = $categoriesByParent[$parentId]->sortBy('order');
+            foreach ($sorted as $category) {
                 $seoSlug = $category->seoUrl?->url ?? null;
                 $tree[] = [
                     'id' => $category->id,
@@ -315,7 +317,7 @@ private function buildCategoryTree($categories)
                     'parent_id' => $category->parent_id,
                     'productCount' => $category->products_count,
                     'image' => $category->image,
-                    'order' => $category->order, // 👈 include if needed in response
+                    'order' => $category->order,
                     'children' => $buildTree($category->id),
                 ];
             }
@@ -325,6 +327,8 @@ private function buildCategoryTree($categories)
 
     return $buildTree(0);
 }
+
+
 
 // private function buildCategoryTree($categories)
 // {
