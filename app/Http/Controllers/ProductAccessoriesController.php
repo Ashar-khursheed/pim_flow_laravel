@@ -483,7 +483,7 @@ class ProductAccessoriesController extends Controller
             // Refresh accessory items (delete old and insert new)
             $accessory->items()->delete();
             $accessories = collect($request->accessories)->map(function ($item) {
-                $item['name'] = addslashes($item['name']);
+                $item['name'] = trim($item['name'], '"'); // remove surrounding quotes
                 return $item;
             })->toArray();
             $accessory->items()->createMany($accessories);
