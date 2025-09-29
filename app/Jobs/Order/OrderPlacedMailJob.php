@@ -16,7 +16,7 @@ use App\Mail\Order\OrderPlacedMail;
 class OrderPlacedMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
+
 	public $orderId;
 
 	public function __construct($data)

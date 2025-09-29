@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs\Welcome;
+namespace App\Jobs\SupportTicket;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -9,49 +9,45 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
 
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
+use App\Models\FrontEnd\SupportTicket;
+use App\Mail\SupportTicket\SupportTicketMail;
 
-use App\Models\FrontEnd\Customer;
-use App\Mail\Welcome\PreClaimWelcomeMail;
-
-class PreClaimWelcomeMailJob implements ShouldQueue
+class SupportTicketMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
-	public $customerId;
-	public $randomPassword;
+	public $ticketId;
 
 	public function __construct($data)
 	{
-		$this->customerId = $data['recordId'];
-		$this->randomPassword = $data['randomPassword'];
+		$this->ticketId = $data['recordId'];
 	}
 
 	public function handle(): void
 	{
-		$customer = Customer::find($this->customerId);
+		$ticket = SupportTicket::find($this->ticketId);
 
-		if (!$customer) {
-			$this->fail(new \Exception("Customer {$this->customerId} not found"));
+		if (!$ticket) {
+			$this->fail(new \Exception("Support ticket {$this->ticketId} not found"));
 			return;
 		}
 
-		if (!empty($customer)) {
+		if (!empty($ticket)) {
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'sales@thehorecastore.com',
 				'UAE'  => 'hello@horecastore.ae',
 				'TEST' => 'test@thehorecastore.co',
 				default => 'test@thehorecastore.co',
 			};
-			$fromName = 'HorecaStore';
+
+			$fromName = 'HorecaStore Support Team';
 			$replyToEmail = $fromEmail;
 
-			$to = $customer->email;
+			$to = $ticket->customer->email;
 			Mail::to($to)->send(
 				(
-					new PreClaimWelcomeMail($customer, $this->randomPassword)
+					new SupportTicketMail($ticket)
 				)
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)

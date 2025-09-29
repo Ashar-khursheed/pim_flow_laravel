@@ -93,8 +93,7 @@ class ProductController extends Controller
                 }
 
                 // Start building the base query
-                $query = Product::with(['categories', 'brand' ,'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ,'accessories.items' ])
-                    ->where('status', 'published');
+                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews', 'seoUrl', 'accessories.items'])->where('status', 'published');
 
 
                  $productId = $request->input('product_id'); // numeric ID
@@ -546,8 +545,7 @@ class ProductController extends Controller
     {
 
               // Start building the base query
-                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ,'accessories.items' ])
-                    ->where('status', 'published');
+                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews', 'seoUrl', 'accessories.items'])->where('status', 'published');
 
 
                 // Check if filtering by specific product ID
@@ -1984,9 +1982,6 @@ class ProductController extends Controller
 
         return $result;
     }
-
-
-
 
     private function applyFilters(\Illuminate\Database\Eloquent\Builder $query, \Illuminate\Http\Request $request)
     {

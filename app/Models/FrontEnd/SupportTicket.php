@@ -6,18 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 class SupportTicket extends Model
 {
 	protected $fillable = [
+		'ticket_number',
 		'customer_id',
-		'full_name',
-		'email',
-		'company_name',
-		'phone_number',
 		'category_id',
 		'priority_id',
 		'subject',
 		'description',
-		'reference_id',
+		'reference',
 		'file_path',
 		'status',
+		'response_days',
+		'created_by',
+		'updated_by',
 	];
 
 	public function customer()
@@ -33,5 +33,16 @@ class SupportTicket extends Model
 	public function priority()
 	{
 		return $this->belongsTo(SupportPriority::class, 'priority_id');
+	}
+
+	/**
+	 * Prepare a date for array / JSON serialization.
+	 *
+	 * @param  \DateTimeInterface  $date
+	 * @return string
+	 */
+	protected function serializeDate(\DateTimeInterface $date)
+	{
+		return $date->format('Y-m-d H:i:s');
 	}
 }

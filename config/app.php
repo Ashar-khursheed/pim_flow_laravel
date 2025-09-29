@@ -5,7 +5,7 @@ $website = env('APP_WEBSITE', 'US');
 switch ($website) {
 	case 'UAE':
 		$url = 'https://www.horecastore.ae';
-		$backendUrl = 'https://d1rzvl7bmf7tga.cloudfront.net';
+		$backendUrl = 'https://pimflow.thehorecastore.co';
 		break;
 
 	case 'TEST':

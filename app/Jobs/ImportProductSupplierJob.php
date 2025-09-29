@@ -22,8 +22,6 @@ class ImportProductSupplierJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
-	public $timeout = 43200;
-
 	protected $header;
 	protected $chunk;
 	protected $userId;
@@ -62,6 +60,7 @@ class ImportProductSupplierJob implements ShouldQueue
 		$warrantyOptions = app_constants('WARRANTY_OPTIONS');
 		$returnPolicies = app_constants('RETURN_POLICY');
 		$inStockOptions = app_constants('IN_STOCK_OPTIONS');
+		$isFixedOptions = app_constants('IS_FIXED_OPTIONS');
 		$freeShippingOptions = app_constants('FREE_SHIPPING_OPTIONS');
 
 		$errorArray = [];
@@ -185,6 +184,10 @@ class ImportProductSupplierJob implements ShouldQueue
 				$rowErrors[] = 'Price cannot be less than MAP.';
 			}
 
+			if (!empty($min_quantity) && (int)$min_quantity < 1) {
+				$rowErrors[] = 'The minimum quantity must be at least 1.';
+			}
+
 			if (!in_array($delivery_days, $deliveryTimeOptions)) {
 				$rowErrors[] = "Invalid Delivery Days: '$delivery_days'.";
 			}
@@ -195,6 +198,10 @@ class ImportProductSupplierJob implements ShouldQueue
 
 			if (!empty($in_stock) && !in_array($in_stock, $inStockOptions)) {
 				$rowErrors[] = "Invalid In Stock Option: '$in_stock'.";
+			}
+
+			if (!empty($is_fixed) && !in_array($is_fixed, $isFixedOptions)) {
+				$rowErrors[] = "Invalid Is Fixed Option: '$is_fixed'.";
 			}
 
 			if (!empty($free_shipping) && !in_array($free_shipping, $freeShippingOptions)) {
@@ -304,6 +311,8 @@ class ImportProductSupplierJob implements ShouldQueue
 				? 1
 				: (!empty($in_stock) && strtolower($in_stock) === 'yes' ? 1 : 0);
 
+				$supplier->min_quantity = !empty($min_quantity) ? (int)$min_quantity : 1;
+				$supplier->is_fixed = (!empty($is_fixed) && strtolower($is_fixed) === 'yes') ? 1 : 0;
 				$supplier->delivery_days = $delivery_days;
 				$supplier->return_policy = $return_policy;
 

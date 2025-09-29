@@ -56,6 +56,10 @@ if (!function_exists('app_constants')) {
 				1 => 'Yes',
 				0 => 'No',
 			],
+			'IS_FIXED_OPTIONS' => [
+				1 => 'Yes',
+				0 => 'No',
+			],
 			'FREE_SHIPPING_OPTIONS' => [
 				1 => 'Yes',
 				0 => 'No',

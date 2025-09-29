@@ -20,8 +20,6 @@ class UpdateProductTitleJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
-	public $timeout = 43200;
-
 	protected $products;
 	protected $formulaAttributes;
 	protected $formulaAttributeIds;

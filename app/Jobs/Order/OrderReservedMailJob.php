@@ -16,6 +16,7 @@ use App\Mail\Order\OrderReservedMail;
 class OrderReservedMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
+
 	public $orderId;
 
 	public function __construct($data)
