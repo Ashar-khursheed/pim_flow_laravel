@@ -93,7 +93,7 @@ class ProductController extends Controller
                 }
 
                 // Start building the base query
-                $query = Product::with(['categories', 'brand' ,'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ])
+                $query = Product::with(['categories', 'brand' ,'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ,'accessories.items' ])
                     ->where('status', 'published');
 
 
@@ -149,6 +149,7 @@ class ProductController extends Controller
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
                         });
                     },
+                    'accessories.items'
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
@@ -470,6 +471,26 @@ class ProductController extends Controller
                         // 👉 Add this
                     $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
                     $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
+                   $product->accessories = $product->accessories->map(function ($accessory) {
+                    return [
+                        'id'        => $accessory->id,
+                        'name'      => $accessory->name,
+                        'isapproved'=> $accessory->isapproved,
+                        'items'     => $accessory->items->map(function ($item) {
+                            return [
+                                'id'   => $item->id,
+                                'name' => $item->name,
+                                'sku'  => $item->sku ?? null,
+                            ];
+                        }),
+                    ];
+                })->values();
+
+                if ($product->accessories->isEmpty()) {
+                    $product->accessories = [];
+                }
+
+
 
                     return $product;
                 });
@@ -525,7 +546,7 @@ class ProductController extends Controller
     {
 
               // Start building the base query
-                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ])
+                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ,'accessories.items' ])
                     ->where('status', 'published');
 
 
@@ -589,6 +610,7 @@ class ProductController extends Controller
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
                         });
                     },
+                      'accessories.items'
                      ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
@@ -882,6 +904,26 @@ class ProductController extends Controller
 
                         $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
                         $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
+                        $product->accessories = $product->accessories->map(function ($accessory) {
+                            return [
+                                'id'        => $accessory->id,
+                                'name'      => $accessory->name,
+                                'isapproved'=> $accessory->isapproved,
+                                'items'     => $accessory->items->map(function ($item) {
+                                    return [
+                                        'id'   => $item->id,
+                                        'name' => $item->name,
+                                        'sku'  => $item->sku ?? null,
+                                    ];
+                                }),
+                            ];
+                        })->values(); // keep it a Collection
+
+                        // Ensure empty array is returned if none
+                        if ($product->accessories->isEmpty()) {
+                            $product->accessories = [];
+                        }
+
                         return $product;
                         });
 
