@@ -292,12 +292,12 @@ class StripeController extends Controller
         $url = config('app.url');
         $stripeSecret = config('services.stripe.secret');
         $currency = "AED";
-         $success_url = 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
-         $cancel_url = 'https://development.d28qosi1cuigvb.amplifyapp.com/failed';
+        $success_url = 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancel_url = 'https://development.d28qosi1cuigvb.amplifyapp.com/failed';
         //  $success_url = $url.'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
         //  $cancel_url = $url.'/failed';
 
-       //  $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
+        //  $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
         // $cancel_url = url('/api/stripe/failed');       
         $res = Http::withOptions(['verify' => false])
             ->withToken($stripeSecret)
@@ -315,7 +315,7 @@ class StripeController extends Controller
             ]);
 
         $body = $res->json();
-     
+
         if (!isset($body['url'])) {
             return;
         } else {
@@ -338,37 +338,39 @@ class StripeController extends Controller
     public function handleWebhook(Request $request)
     {
 
-    $endpointSecret = config('services.stripe.webhook_secret');
-    $payload = $request->getContent();
-    $sigHeader = $request->header('Stripe-Signature');
+        \Log::error('Stripe Webhook Received', $request->all());
 
-    try {
-        $event = \Stripe\Webhook::constructEvent($payload, $sigHeader, $endpointSecret);
-    } catch (\Exception $e) {
-        return response('Invalid signature', 400);
-    }
+        $endpointSecret = config('services.stripe.webhook_secret');
+        $payload = $request->getContent();
+        $sigHeader = $request->header('Stripe-Signature');
 
-    if ($event->type === 'checkout.session.completed') {
-        $session = $event->data->object;
+        try {
+            $event = \Stripe\Webhook::constructEvent($payload, $sigHeader, $endpointSecret);
+        } catch (\Exception $e) {
+            return response('Invalid signature', 400);
+        }
 
-        // ✅ Save order payment in DB
-        $orderId = $session->metadata->order_id ?? null;
+        if ($event->type === 'checkout.session.completed') {
+            $session = $event->data->object;
 
-        PaymentManagement::create([
-            'order_id' => $orderId,
-            'transaction_id' => $session->payment_intent,
-            'payment_mode' => 'Credit Card',
-            'payment_method' => 'Stripe',
-            'amount' =>  $session->amount_total/100,
-            'status' => "Completed",
-            'payment_date' => date('Y-m-d H:i:s'),
-            'notes' => 'Payment marked through link',
-            'payment_details' => ''
-        ]);
-      
-    }
+            // ✅ Save order payment in DB
+            $orderId = $session->metadata->order_id ?? null;
 
-    return response('Webhook received', 200);
+            PaymentManagement::create([
+                'order_id' => $orderId,
+                'transaction_id' => $session->payment_intent,
+                'payment_mode' => 'Credit Card',
+                'payment_method' => 'Stripe',
+                'amount' => $session->amount_total / 100,
+                'status' => "Completed",
+                'payment_date' => date('Y-m-d H:i:s'),
+                'notes' => 'Payment marked through link',
+                'payment_details' => ''
+            ]);
+
+        }
+
+        return response('Webhook received', 200);
 
         // $sessionId = $request->get('session_id');
         // if (!$sessionId) {
