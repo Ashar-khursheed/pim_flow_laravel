@@ -913,3 +913,5 @@ Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerControl
      ->where('from', '.*');
 
 	Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
+
+ 
