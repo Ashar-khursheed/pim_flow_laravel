@@ -907,11 +907,10 @@ Route::get('/frontend/search-logs', [F_SearchLogController::class, 'index']);
 Route::get('/frontend/menu-banners', [F_MenuBannerController::class, 'index']);
 Route::get('/frontend/menu-banners/{id}', [F_MenuBannerController::class, 'show']);
 Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'showCategory']);
+Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
 
+ 
 	// Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);
 	Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
      ->where('from', '.*');
 
-	Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
-
- 
