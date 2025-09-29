@@ -75,10 +75,12 @@ class GetInTouchController extends Controller
         'image_url'    => $imageUrl,
     ]);
 
-    return response()->json([
-        'message' => 'Saved successfully',
-        'data'    => $getInTouch,
-    ], 201);
+	return response()->json([
+		'message' => 'Saved successfully',
+		'data'    => $getInTouch,
+		'form_id' => $getInTouch->id, // 👈 map `id` to `form_id`
+	], 201);
+
 }
 
 
