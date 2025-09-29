@@ -301,14 +301,22 @@ public function getCategoriesWithChildren(Request $request)
 
 private function buildCategoryTree($categories)
 {
+    // Sort all categories by order first
+    $categories = $categories->sortBy(function($category) {
+        return $category->order ?? 99999;
+    })->values();
+    
     $categoriesByParent = $categories->groupBy('parent_id');
 
     $buildTree = function($parentId) use (&$buildTree, $categoriesByParent) {
         $tree = [];
         if (isset($categoriesByParent[$parentId])) {
-            // Explicitly sort children again
-            $sorted = $categoriesByParent[$parentId]->sortBy('order');
-            foreach ($sorted as $category) {
+            // Sort this group by order again to ensure proper ordering
+            $sortedCategories = $categoriesByParent[$parentId]->sortBy(function($cat) {
+                return $cat->order ?? 99999;
+            });
+            
+            foreach ($sortedCategories as $category) {
                 $seoSlug = $category->seoUrl?->url ?? null;
                 $tree[] = [
                     'id' => $category->id,
