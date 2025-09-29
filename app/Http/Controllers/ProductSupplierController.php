@@ -140,6 +140,8 @@ class ProductSupplierController extends BaseController
 
 	 *             @OA\Property(property="inventory", type="integer", nullable=true, example=50),
 	 *             @OA\Property(property="in_stock", type="string", enum={"Yes", "No"}, example="Yes"),
+	 *             @OA\Property(property="min_quantity", type="integer", example=3),
+	 *             @OA\Property(property="is_fixed", type="string", enum={"Yes", "No"}, example="Yes"),
 	 *             @OA\Property(property="delivery_days", type="string", example="3-5 days"),
 	 *             @OA\Property(property="return_policy", type="string", example="7 days"),
 	 *             @OA\Property(property="free_shipping", type="string", nullable=true, enum={"Yes", "No"}, example="No"),
@@ -173,6 +175,8 @@ class ProductSupplierController extends BaseController
 			'inventory' => 'nullable|integer',
 
 			'in_stock' => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
+			'min_quantity' => 'required|integer',
+			'is_fixed' => ['required', Rule::in(app_constants('IS_FIXED_OPTIONS'))],
 			'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
 			'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
 			'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
@@ -252,6 +256,7 @@ class ProductSupplierController extends BaseController
 		}
 
 		$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (!empty($data['in_stock']) && strtolower($data['in_stock']) === 'yes' ? 1 : 0);
+		$data['is_fixed'] = !empty($data['is_fixed']) && strtolower($data['is_fixed']) === 'yes' ? 1 : 0;
 		$data['free_shipping'] = !empty($data['free_shipping']) && strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
 		$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : $data['shipping_charge'];
 
@@ -321,6 +326,8 @@ class ProductSupplierController extends BaseController
 	 *             @OA\Property(property="price", type="number", format="float", example=120.00),
 	 *             @OA\Property(property="inventory", type="integer", nullable=true, example=50),
 	 *             @OA\Property(property="in_stock", type="string", enum={"Yes", "No"}, example="Yes"),
+	 *             @OA\Property(property="min_quantity", type="integer", example=3),
+	 *             @OA\Property(property="is_fixed", type="string", enum={"Yes", "No"}, example="Yes"),
 	 *             @OA\Property(property="delivery_days", type="string", example="3-5 days"),
 	 *             @OA\Property(property="return_policy", type="string", example="7 days"),
 	 *             @OA\Property(property="free_shipping", type="string", nullable=true, enum={"Yes", "No"}, example="No"),
@@ -361,6 +368,8 @@ class ProductSupplierController extends BaseController
 			'inventory' => 'nullable|integer',
 
 			'in_stock' => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
+			'min_quantity' => 'required|integer',
+			'is_fixed' => ['required', Rule::in(app_constants('IS_FIXED_OPTIONS'))],
 			'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
 			'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
 			'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
@@ -423,6 +432,7 @@ class ProductSupplierController extends BaseController
 		}
 
 		$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (!empty($data['in_stock']) && strtolower($data['in_stock']) === 'yes' ? 1 : 0);
+		$data['is_fixed'] = !empty($data['is_fixed']) && strtolower($data['is_fixed']) === 'yes' ? 1 : 0;
 		$data['free_shipping'] = !empty($data['free_shipping']) && strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
 		$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : $data['shipping_charge'];
 
@@ -509,6 +519,7 @@ class ProductSupplierController extends BaseController
 		$warrantyOptions = app_constants('WARRANTY_OPTIONS');
 		$returnPolicies = app_constants('RETURN_POLICY');
 		$inStockOptions = ['Yes', 'No'];
+		$isFixedOptions = ['Yes', 'No'];
 		$freeShippingOptions = ['Yes', 'No'];
 
 		$query = ProductSupplier::with(['product']);
@@ -595,6 +606,7 @@ class ProductSupplierController extends BaseController
 			/* Extract existing values if present in their respective options, else set empty string */
 
 			$selectedInStock = $supplier->in_stock == 1 ? 'Yes' : 'No';
+			$selectedIsFixed = $supplier->is_fixed == 1 ? 'Yes' : 'No';
 			$selectedFreeShipping = $supplier->free_shipping == 1 ? 'Yes' : 'No';
 
 			$selectedDeliveryDays = in_array($supplier->delivery_days, $deliveryTimeOptions) ? $supplier->delivery_days : '';
@@ -618,6 +630,8 @@ class ProductSupplierController extends BaseController
 			$sheet->setCellValue($col++ . $row, $supplier->inventory ?? '');
 
 			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', $inStockOptions, $selectedInStock);
+			$sheet->setCellValue($col++ . $row, $supplier->min_quantity ?? 1);
+			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'is_fixed', $isFixedOptions, $selectedIsFixed);
 			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, $selectedDeliveryDays);
 			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'return_policy', $returnPolicies, $selectedReturnPolicy);
 			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'free_shipping', $freeShippingOptions, $selectedFreeShipping);
@@ -685,6 +699,8 @@ class ProductSupplierController extends BaseController
 				'Price' => 'price',
 				'Inventory' => 'inventory',
 				'In Stock' => 'in_stock',
+				'Min Quantity' => 'min_quantity',
+				'Is Fixed' => 'is_fixed',
 				'Delivery Days' => 'delivery_days',
 				'Return Policy' => 'return_policy',
 				'Free Shipping' => 'free_shipping',
@@ -746,6 +762,8 @@ class ProductSupplierController extends BaseController
 			'Price' => 'price',
 			'Inventory' => 'inventory',
 			'In Stock' => 'in_stock',
+			'Min Quantity' => 'min_quantity',
+			'Is Fixed' => 'is_fixed',
 			'Delivery Days' => 'delivery_days',
 			'Return Policy' => 'return_policy',
 			'Free Shipping' => 'free_shipping',
@@ -757,6 +775,7 @@ class ProductSupplierController extends BaseController
 		$warrantyOptions = app_constants('WARRANTY_OPTIONS');
 		$returnPolicies = app_constants('RETURN_POLICY');
 		$inStockOptions = ['Yes', 'No'];
+		$isFixedOptions = ['Yes', 'No'];
 		$freeShippingOptions = ['Yes', 'No'];
 
 		$header = array_keys($supplierFormatArray);
@@ -789,6 +808,8 @@ class ProductSupplierController extends BaseController
 		$sheet->setCellValue($col++ . $row, '');
 		$sheet->setCellValue($col++ . $row, '');
 		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', $inStockOptions, '');
+		$sheet->setCellValue($col++ . $row, 1);
+		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'is_fixed', $isFixedOptions, '');
 		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, '');
 		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'return_policy', $returnPolicies, '');
 		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'free_shipping', $freeShippingOptions, '');
