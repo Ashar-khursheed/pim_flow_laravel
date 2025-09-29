@@ -41,41 +41,47 @@ class GetInTouchController extends Controller
 	 * )
 	 */
 	public function store(Request $request)
-	{
-		/* Validate request data */
-		$validated = $request->validate([
-			'name'          => 'required|string|max:255',
-			'email'         => 'required|email|max:255',
-			'phone'         => 'required|string|max:20',
-			'topic'         => 'required|string|max:255',
-			'order_number'  => 'nullable|string|max:50',
-			'message'       => 'nullable|string',
-			'image'         => 'nullable|file|mimes:jpeg,png,webp|max:2024', /* 2MB */
-		]);
+{
+    /* Validate request data */
+    $validated = $request->validate([
+        'name'          => 'required|string|max:255',
+        'email'         => 'required|email|max:255',
+        'phone'         => 'required|string|max:20',
+        'topic'         => 'required|string|max:255',
+        'order_number'  => 'nullable|string|max:50',
+        'message'       => 'nullable|string',
+        'image'         => 'nullable|file|mimes:jpeg,jpg,png,webp,pdf|max:2048', // 2MB
+    ]);
 
-		/* Handle image upload if present */
-		$validated['image_url'] = uploadImageToWebpS3FromFile(
-			$request,
-			'image',
-			env('STORAGE_ENV') . '/get_in_touch'
-		);
+    $imageUrl = null;
 
-		/* Save record */
-		$getInTouch = GetInTouch::create([
-			'name'         => $validated['name'],
-			'email'        => $validated['email'],
-			'phone'        => $validated['phone'],
-			'topic'        => $validated['topic'],
-			'order_number' => $validated['order_number'] ?? null,
-			'message'      => $validated['message'] ?? null,
-			'image_url'    => $validated['image_url'],
-		]);
+    /* Handle image upload if present */
+    if ($request->hasFile('image')) {
+        $imageUrl = uploadImageToWebpS3FromFile(
+            $request,
+            'image',
+            env('STORAGE_ENV') . '/get_in_touch'
+        );
+    }
 
-		return response()->json([
-			'message' => 'Saved successfully',
-			'data'    => $getInTouch,
-		], 201);
-	}
+    /* Save record */
+    $getInTouch = GetInTouch::create([
+        'name'         => $validated['name'],
+        'email'        => $validated['email'],
+        'phone'        => $validated['phone'],
+        'topic'        => $validated['topic'],
+        'order_number' => $validated['order_number'] ?? null,
+        'message'      => $validated['message'] ?? null,
+        'image_url'    => $imageUrl,
+    ]);
+
+	return response()->json([
+		'message' => 'Saved successfully',
+		'data'    => $getInTouch,
+		'form_id' => $getInTouch->id, // 👈 map `id` to `form_id`
+	], 201);
+
+}
 
 
 	/**
