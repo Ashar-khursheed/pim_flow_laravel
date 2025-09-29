@@ -252,7 +252,7 @@ class CartController extends Controller
     $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
         ->where('product_id', $productId)
         ->where('vendor_id', $actualVendorId)
-        ->where('selected_options', json_encode($selectedOptions))
+        ->where('accessories_options', json_encode($selectedOptions))
         ->first();
 
     if ($cartProduct) {
@@ -269,7 +269,7 @@ class CartController extends Controller
             'vendor_id' => $actualVendorId,
             'quantity' => $quantity,
             'unit_price' => $unitPrice,
-            'selected_options' => $selectedOptions, // JSON: accessory_id => selected_item_id
+            'accessories_options' => $selectedOptions, // JSON: accessory_id => selected_item_id
             'amount' => $amount,
             'shipping_charge' => 0,
             'total_amount' => $amount,
@@ -288,7 +288,7 @@ class CartController extends Controller
             'quantity' => $cartProduct->quantity,
             'currency_id' => $product->currency->id,
             'currency_title' => $product->currency->symbol,
-            'selected_options' => $cartProduct->selected_options,
+            'accessories_options' => $cartProduct->accessories_options,
             'unit_price' => $totalUnitPrice,
             'total_amount' => $cartProduct->total_amount,
         ],
@@ -610,13 +610,13 @@ class CartController extends Controller
         $product->selling_unit = $sellingUnit;
 
         // Add selected accessories details
-        $cartItem->selected_options_details = [];
-        if ($cartProduct->selected_options && is_array($cartProduct->selected_options)) {
-            foreach ($cartProduct->selected_options as $accessoryId => $itemId) {
+        $cartItem->accessories_options_details = [];
+        if ($cartProduct->accessories_options && is_array($cartProduct->accessories_options)) {
+            foreach ($cartProduct->accessories_options as $accessoryId => $itemId) {
                 $accessory = ProductAccessory::find($accessoryId);
                 $item = $accessory?->items()->find($itemId);
                 if ($accessory && $item) {
-                    $cartItem->selected_options_details[] = [
+                    $cartItem->accessories_options_details[] = [
                         'accessory_name' => $accessory->name,
                         'item_name' => $item->name,
                         'price' => (float)$item->price,
