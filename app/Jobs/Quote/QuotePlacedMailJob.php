@@ -17,8 +17,6 @@ class QuotePlacedMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
-	public $timeout = 600;
-
 	protected int $quoteId;
 	protected bool $sendToCc;
 

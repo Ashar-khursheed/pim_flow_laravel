@@ -20,6 +20,8 @@ class ProductSupplier extends Model
 		'price',
 		'inventory',
 		'in_stock',
+		'min_quantity',
+		'is_fixed',
 		'delivery_days',
 		'return_policy',
 		'free_shipping',

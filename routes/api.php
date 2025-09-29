@@ -77,6 +77,8 @@ use App\Http\Controllers\PostPurchaseClaimController;
 use App\Http\Controllers\ProductAccessoriesController;
 use App\Http\Controllers\PaymentHistoryController;
 use App\Http\Controllers\ProductVariantController;
+use App\Http\Controllers\SupportTicketController;
+
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
@@ -140,7 +142,7 @@ use App\Http\Controllers\FrontEnd\CustomerCartController as F_CustomerCartContro
 use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
 use App\Http\Controllers\FrontEnd\FndProductVariantController;
 use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
- 
+
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -522,10 +524,13 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
 
-	Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
-	Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
-	Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
-	Route::apiResource('orders', OrderController::class);
+    Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
+    Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
+    Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
+    Route::apiResource('orders', OrderController::class);
+
+    Route::put('support-tickets/{id}/status', [SupportTicketController::class, 'updateStatus']);
+    Route::apiResource('support-tickets', SupportTicketController::class);
 
 	Route::apiResource('quotes', QuoteController::class);
 

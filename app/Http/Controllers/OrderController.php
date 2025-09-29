@@ -29,8 +29,6 @@ use App\Jobs\Order\OrderDeliveredMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 use App\Jobs\Order\PartialOrderCancelledMailJob;
 
-use App\Notifications\Orders\PartialOrderCancelledMail;
-
 class OrderController extends Controller
 {
 	/**

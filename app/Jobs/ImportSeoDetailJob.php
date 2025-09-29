@@ -25,8 +25,6 @@ class ImportSeoDetailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
-	public $timeout = 43200;
-
 	protected $header;
 	protected $chunk;
 	protected $userId;
