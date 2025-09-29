@@ -325,8 +325,8 @@ class StripeController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *     path="/api/stripe/thanks",
+     * @OA\Post(
+     *     path="/api/stripe/webhook",
      *     summary="Stripe Payment Success Redirect",
      *     tags={"Stripe"},
      *     @OA\Response(

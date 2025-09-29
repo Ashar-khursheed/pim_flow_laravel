@@ -424,7 +424,7 @@ class CcavenueController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/payment/ccavenue/notify",
+     *     path="/api/ccavenue/webhook",
      *     summary="ccavenue Payment Success Redirect",
      *     tags={"CCAvenue"},
      *     @OA\Response(
@@ -438,6 +438,7 @@ class CcavenueController extends Controller
         $workingKey = env('CCAVENUE_WORKING_KEY');
         $accessCode = env('CCAVENUE_ACCESS_CODE');
         \Log::error('CCAvenue Webhook Received', $request->all());
+        
         $encResponse = $request->input('encResp');
      //   $encResponse = $request->encResp;
         //This is the response sent by the CCAvenue Server

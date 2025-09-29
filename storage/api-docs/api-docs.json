@@ -13911,13 +13911,13 @@
                 }
             }
         },
-        "/api/payment/ccavenue/notify": {
+        "/api/ccavenue/webhook": {
             "post": {
                 "tags": [
                     "CCAvenue"
                 ],
                 "summary": "ccavenue Payment Success Redirect",
-                "operationId": "3add3a1c7fc714d1d2340cc97ee646c9",
+                "operationId": "a610cfa60feecc42612d10777d76cf30",
                 "responses": {
                     "200": {
                         "description": "Payment was successful"
@@ -23691,13 +23691,13 @@
                 ]
             }
         },
-        "/api/stripe/thanks": {
-            "get": {
+        "/api/stripe/webhook": {
+            "post": {
                 "tags": [
                     "Stripe"
                 ],
                 "summary": "Stripe Payment Success Redirect",
-                "operationId": "682ca88e26ccd0c4f4315a52c8fa7279",
+                "operationId": "8c708eb9188af5e2c7280d314adbb15a",
                 "responses": {
                     "200": {
                         "description": "Payment was successful"
@@ -32214,6 +32214,18 @@
                                         ],
                                         "example": "Yes"
                                     },
+                                    "min_quantity": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "is_fixed": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Yes",
+                                            "No"
+                                        ],
+                                        "example": "Yes"
+                                    },
                                     "delivery_days": {
                                         "type": "string",
                                         "example": "3-5 days"
@@ -32387,6 +32399,18 @@
                                         "nullable": true
                                     },
                                     "in_stock": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Yes",
+                                            "No"
+                                        ],
+                                        "example": "Yes"
+                                    },
+                                    "min_quantity": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "is_fixed": {
                                         "type": "string",
                                         "enum": [
                                             "Yes",
