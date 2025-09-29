@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
+use App\Jobs\Inquiry\InquiryMailJob;
+
 class InquiryController extends Controller
 {
 	/**
@@ -169,6 +171,12 @@ class InquiryController extends Controller
 				'notes' => $validated['notes'] ?? null,
 				'files' => $uploadedFiles,
 			]);
+
+			$batch = Bus::batch([])->name('Inquiry from FrontEnd')->dispatch();
+			$batch->options['queue'] = config('app.website') . '_INQ';
+			$batch->add(new InquiryMailJob([
+				'recordId' => $inquiry->id
+			]));
 
 			return response()->json([
 				'success' => true,
