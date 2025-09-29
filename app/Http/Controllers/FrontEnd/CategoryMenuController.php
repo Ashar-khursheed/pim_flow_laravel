@@ -246,31 +246,6 @@ private function getCategoryWithChildren($category)
      * )
      */
    
-public function getCategoriesWithChildren(Request $request)
-{
-    $filterId = $request->get('id');
-
-    $query = Category::select(['id', 'name', 'parent_id', 'image'])
-        ->withCount('products')
-        ->with(['seoUrl'])
-        ->where('status', 'published');
-
-    if ($filterId) {
-        $query->where(function ($q) use ($filterId) {
-            $q->where('id', $filterId)->orWhere('parent_id', $filterId);
-        });
-    }
-
-    $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
-
-    $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
-        $categories = $query->get();
-        return $this->buildCategoryTree($categories);
-    });
-
-    return response()->json($categoriesTree)
-        ->header('Cache-Control', 'public, max-age=86400');
-}
 // public function getCategoriesWithChildren(Request $request)
 // {
 //     $filterId = $request->get('id');
@@ -293,38 +268,55 @@ public function getCategoriesWithChildren(Request $request)
 //         return $this->buildCategoryTree($categories);
 //     });
 
-//     // Reorder "Food and Beverage" to index 3 among parent categories
-//     $foodCategoryIndex = null;
-//     foreach ($categoriesTree as $index => $category) {
-//         if ($category['name'] === 'Food and Beverage') {
-//             $foodCategoryIndex = $index;
-//             break;
-//         }
-//     }
-
-//     if (!is_null($foodCategoryIndex)) {
-//         $foodCategory = $categoriesTree[$foodCategoryIndex];
-//         unset($categoriesTree[$foodCategoryIndex]);
-//         // Reindex array and insert at index 2 (3rd position, 0-based index)
-//         $categoriesTree = array_values($categoriesTree);
-//         array_splice($categoriesTree, 2, 0, [$foodCategory]);
-//     }
-
 //     return response()->json($categoriesTree)
 //         ->header('Cache-Control', 'public, max-age=86400');
 // }
 
+public function getCategoriesWithChildren(Request $request)
+{
+    $filterId = $request->get('id');
+
+    $query = Category::select(['id', 'name', 'parent_id', 'image', 'order'])
+        ->withCount('products')
+        ->with(['seoUrl'])
+        ->where('status', 'published')
+        ->orderByRaw('`order` ASC'); // 👈 escape reserved column
+
+    if ($filterId) {
+        $query->where(function ($q) use ($filterId) {
+            $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+        });
+    }
+
+    $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
+
+    $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
+        $categories = $query->get();
+        return $this->buildCategoryTree($categories);
+    });
+
+    return response()->json($categoriesTree)
+        ->header('Cache-Control', 'public, max-age=86400');
+}
 
 private function buildCategoryTree($categories)
 {
-    // Map categories by parent_id
+    // Sort all categories by order first
+    $categories = $categories->sortBy(function($category) {
+        return $category->order ?? 99999;
+    })->values();
+    
     $categoriesByParent = $categories->groupBy('parent_id');
 
-    // Recursive function to build tree
     $buildTree = function($parentId) use (&$buildTree, $categoriesByParent) {
         $tree = [];
         if (isset($categoriesByParent[$parentId])) {
-            foreach ($categoriesByParent[$parentId] as $category) {
+            // Sort this group by order again to ensure proper ordering
+            $sortedCategories = $categoriesByParent[$parentId]->sortBy(function($cat) {
+                return $cat->order ?? 99999;
+            });
+            
+            foreach ($sortedCategories as $category) {
                 $seoSlug = $category->seoUrl?->url ?? null;
                 $tree[] = [
                     'id' => $category->id,
@@ -333,6 +325,7 @@ private function buildCategoryTree($categories)
                     'parent_id' => $category->parent_id,
                     'productCount' => $category->products_count,
                     'image' => $category->image,
+                    'order' => $category->order,
                     'children' => $buildTree($category->id),
                 ];
             }
@@ -340,9 +333,39 @@ private function buildCategoryTree($categories)
         return $tree;
     };
 
-    // Only start from top-level categories (parent_id = 0)
     return $buildTree(0);
 }
+
+
+
+// private function buildCategoryTree($categories)
+// {
+//     // Map categories by parent_id
+//     $categoriesByParent = $categories->groupBy('parent_id');
+
+//     // Recursive function to build tree
+//     $buildTree = function($parentId) use (&$buildTree, $categoriesByParent) {
+//         $tree = [];
+//         if (isset($categoriesByParent[$parentId])) {
+//             foreach ($categoriesByParent[$parentId] as $category) {
+//                 $seoSlug = $category->seoUrl?->url ?? null;
+//                 $tree[] = [
+//                     'id' => $category->id,
+//                     'name' => $category->name,
+//                     'slug' => $seoSlug,
+//                     'parent_id' => $category->parent_id,
+//                     'productCount' => $category->products_count,
+//                     'image' => $category->image,
+//                     'children' => $buildTree($category->id),
+//                 ];
+//             }
+//         }
+//         return $tree;
+//     };
+
+//     // Only start from top-level categories (parent_id = 0)
+//     return $buildTree(0);
+// }
 
 
     /**
