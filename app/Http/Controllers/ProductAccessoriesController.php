@@ -246,7 +246,7 @@ class ProductAccessoriesController extends Controller
             ]);
 
             $accessories = collect($request->accessories)->map(function ($item) {
-                // $item['name'] = addslashes($item['name']);
+                    $item['name'] = trim($item['name'], '"'); // remove surrounding quotes
                 return $item;
             })->toArray();
 
