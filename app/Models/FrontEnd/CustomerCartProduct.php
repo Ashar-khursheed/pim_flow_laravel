@@ -17,6 +17,8 @@ class CustomerCartProduct extends Model
 		'amount',
 		'shipping_charge',
 		'total_amount',
+		'accessories_options' => 'array',
+
 	];
 
 	public function customerCart()
