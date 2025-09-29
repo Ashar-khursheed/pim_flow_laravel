@@ -185,6 +185,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
 
 });
 
+Route::post('ccavenue/webhook', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
@@ -852,11 +853,11 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
-Route::post('/ccavenue/thanks', [F_CCavenueController::class, 'paymentSuccess']);
+//Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
 
 Route::post('/stripe/create-stripe-payment-link', [F_StripeController::class, 'createStripePaymentLink']);
-Route::get('/stripe/thanks', [F_StripeController::class, 'paymentSuccess']);
+Route::post('/stripe/webhook', [F_StripeController::class, 'handleWebhook']);
 Route::get('/stripe/failed', [F_StripeController::class, 'paymentFailed']);
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
 Route::prefix('stripe')->group(function () {

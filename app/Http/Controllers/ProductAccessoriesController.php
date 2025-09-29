@@ -703,14 +703,13 @@ class ProductAccessoriesController extends Controller
             if ($request->search) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('id', 'like', "%{$search}%")
+                    $q->where('name', 'like', "%{$search}%")                        
                          ->orWhere('sku', 'like', "%{$search}%");
 
                 });
             }
             $product_list = [];
-            $products = $query->orderBy('name', 'asc')->get();
+            $products = $query->orderBy('name', 'asc')->limit('10')->get();
             if (!empty($products)) {
                 foreach ($products as $key => $val) {
                     $product_list[$key] = array(
