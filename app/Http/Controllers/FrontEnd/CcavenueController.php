@@ -373,8 +373,10 @@ class CcavenueController extends Controller
         // $orderList['redirect_url'] = $url.'/thanks';
         // $orderList['cancel_url'] = $url.'/failed';
 
-        // $orderList['redirect_url'] = url('api/ccavenue/thanks');
+      
+        $orderList['notify_url'] = url('api/ccavenue/webhook');
         // $orderList['cancel_url'] = url('api/ccavenue/failed');
+        
         $orderList['currency'] = "AED";
         $orderList['amount'] = $order->total_amount;
         $orderList['language'] = "EN";
@@ -394,6 +396,7 @@ class CcavenueController extends Controller
             'amount',
             'redirect_url',
             'cancel_url',
+            'notify_url',
             'language'
         ];
         $merchantId = $this->ccavenueService->getMerchantId();
@@ -421,7 +424,7 @@ class CcavenueController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/ccavenue/thanks",
+     *     path="/api/payment/ccavenue/notify",
      *     summary="ccavenue Payment Success Redirect",
      *     tags={"CCAvenue"},
      *     @OA\Response(
@@ -430,12 +433,14 @@ class CcavenueController extends Controller
      *     )
      * )
      */
-    public function paymentSuccess(Request $request)
+    public function successhandleWebhook(Request $request)
     {
 
         $workingKey = env('CCAVENUE_WORKING_KEY');
         $accessCode = env('CCAVENUE_ACCESS_CODE');
-        $encResponse = $request->encResp;
+ 
+        $encResponse = $request->input('encResp');
+     //   $encResponse = $request->encResp;
         //This is the response sent by the CCAvenue Server
         $rcvdString = CcavenueHelper::decrypt($encResponse, $workingKey);
         //Crypto Decryption used as per the specified working key.

@@ -13911,13 +13911,13 @@
                 }
             }
         },
-        "/api/ccavenue/thanks": {
+        "/api/payment/ccavenue/notify": {
             "post": {
                 "tags": [
                     "CCAvenue"
                 ],
                 "summary": "ccavenue Payment Success Redirect",
-                "operationId": "2f8de33400e008495bdeb3cc710b5f5f",
+                "operationId": "3add3a1c7fc714d1d2340cc97ee646c9",
                 "responses": {
                     "200": {
                         "description": "Payment was successful"
@@ -23697,7 +23697,7 @@
                     "Stripe"
                 ],
                 "summary": "Stripe Payment Success Redirect",
-                "operationId": "38356105e0f8eb4ae825a9cfa3d48f2a",
+                "operationId": "682ca88e26ccd0c4f4315a52c8fa7279",
                 "responses": {
                     "200": {
                         "description": "Payment was successful"

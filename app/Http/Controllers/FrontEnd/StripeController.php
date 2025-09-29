@@ -297,9 +297,8 @@ class StripeController extends Controller
         //  $success_url = $url.'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
         //  $cancel_url = $url.'/failed';
 
-        // $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
-        // $cancel_url = url('/api/stripe/failed');
-        $res = Http::withOptions(['verify' => false]);
+       //  $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
+        // $cancel_url = url('/api/stripe/failed');       
         $res = Http::withOptions(['verify' => false])
             ->withToken($stripeSecret)
             ->asForm()
@@ -316,6 +315,7 @@ class StripeController extends Controller
             ]);
 
         $body = $res->json();
+     
         if (!isset($body['url'])) {
             return;
         } else {
@@ -335,111 +335,144 @@ class StripeController extends Controller
      *     )
      * )
      */
-    public function paymentSuccess(Request $request)
+    public function handleWebhook(Request $request)
     {
-        $sessionId = $request->get('session_id');
-        if (!$sessionId) {
-            return response()->json(['error' => 'Missing session_id'], 400);
-        }
-        $stripeSecret = config('services.stripe.secret');
-        // Fetch session details from Stripe
-        $res = Http::withOptions(['verify' => false])
-            ->withToken($stripeSecret)
-            ->get("https://api.stripe.com/v1/checkout/sessions/{$sessionId}");
 
-        $data = $res->json();
-        $id = $data['id'];
-        $amount_total = $data['amount_total'];
-        $created = date('Y-m-d', strtotime($data['created']));
-        $currency = $data['currency'];
-        $mode = $data['mode'];
-        $payment_intent = $data['payment_intent'];
-        $order_id = $data['metadata']['order_id'];
-        $customer_details = $data['customer_details'];
-        $payment_method_types = $data['payment_method_types']['0'];
-        $payment_status = $data['payment_status'];
-        $status = $data['status'];
-        switch ($status) {
-            case 'complete':
-            case 'Success':
-            case 'succeeded':
-                $status = "Completed";
-                break;
-            case 'processing':
-                $status = "Pending";
-                break;
-            case 'canceled':
-            case 'failed':
-            case 'expired':
-                $status = "Failed";
-                break;
-            case 'Invalid':
-                $status = "Invalid";
-                break;
-            default:
-                $status = "Pending";
-        }
-        $email = $data['customer_details']['email'];
-        $name = $data['customer_details']['name'];
-        $phone = $data['customer_details']['phone'];
-        $city = $data['customer_details']['address']['city'];
-        $country = $data['customer_details']['address']['country'];
-        $line1 = $data['customer_details']['address']['line1'];
-        $postal_code = $data['customer_details']['address']['postal_code'];
-        $state = $data['customer_details']['address']['state'];
-        $stripeSecret = config('services.stripe.secret');
-        $paymentIntent = Http::withOptions(['verify' => false])
+    $endpointSecret = config('services.stripe.webhook_secret');
+    $payload = $request->getContent();
+    $sigHeader = $request->header('Stripe-Signature');
 
-            ->withToken($stripeSecret)
-            ->get("https://api.stripe.com/v1/payment_intents/{$payment_intent}")
-            ->json();
+    try {
+        $event = \Stripe\Webhook::constructEvent($payload, $sigHeader, $endpointSecret);
+    } catch (\Exception $e) {
+        return response('Invalid signature', 400);
+    }
+
+    if ($event->type === 'checkout.session.completed') {
+        $session = $event->data->object;
+
+        // ✅ Save order payment in DB
+        $orderId = $session->metadata->order_id ?? null;
 
         PaymentManagement::create([
-            'order_id' => $order_id,
-            'transaction_id' => $payment_intent,
+            'order_id' => $orderId,
+            'transaction_id' => $session->payment_intent,
             'payment_mode' => 'Credit Card',
             'payment_method' => 'Stripe',
-            'amount' => $amount_total / 100,
-            'status' => $status,
+            'amount' =>  $session->amount_total/100,
+            'status' => "Completed",
             'payment_date' => date('Y-m-d H:i:s'),
             'notes' => 'Payment marked through link',
             'payment_details' => ''
         ]);
+      
+    }
 
-        $order = Order::where('id', $order_id)->first();
-        if (!$order) {
-            return response()->json(['success' => false, 'message' => 'Order not found'], 404);
-        }
-        if ($status == 'succeeded') {
-            if ($order->amount_total == $amount_total) {
-                // Mark order as paid and remove payment link
-                $order->update([
-                    'is_paid' => true,
-                    'paid_amount' => $amount_total / 100,
-                    'pending_amount' => $order->pending_amount - ($amount_total / 100),
-                    'payment_link' => null,
-                    'is_reserved' => false,
+    return response('Webhook received', 200);
 
-                ]);
-            } else {
-                $order->update([
-                    'is_paid' => false,
-                    'paid_amount' => $order->paid_amount + ($amount_total / 100),
-                    'pending_amount' => $order->pending_amount - ($amount_total / 100),
-                    'payment_link' => null,
-                    'is_reserved' => false,
+        // $sessionId = $request->get('session_id');
+        // if (!$sessionId) {
+        //     return response()->json(['error' => 'Missing session_id'], 400);
+        // }
+        // $stripeSecret = config('services.stripe.secret');
+        // // Fetch session details from Stripe
+        // $res = Http::withOptions(['verify' => false])
+        //     ->withToken($stripeSecret)
+        //     ->get("https://api.stripe.com/v1/checkout/sessions/{$sessionId}");
 
-                ]);
+        // $data = $res->json();
+        // $id = $data['id'];
+        // $amount_total = $data['amount_total'];
+        // $created = date('Y-m-d', strtotime($data['created']));
+        // $currency = $data['currency'];
+        // $mode = $data['mode'];
+        // $payment_intent = $data['payment_intent'];
+        // $order_id = $data['metadata']['order_id'];
+        // $customer_details = $data['customer_details'];
+        // $payment_method_types = $data['payment_method_types']['0'];
+        // $payment_status = $data['payment_status'];
+        // $status = $data['status'];
+        // switch ($status) {
+        //     case 'complete':
+        //     case 'Success':
+        //     case 'succeeded':
+        //         $status = "Completed";
+        //         break;
+        //     case 'processing':
+        //         $status = "Pending";
+        //         break;
+        //     case 'canceled':
+        //     case 'failed':
+        //     case 'expired':
+        //         $status = "Failed";
+        //         break;
+        //     case 'Invalid':
+        //         $status = "Invalid";
+        //         break;
+        //     default:
+        //         $status = "Pending";
+        // }
+        // $email = $data['customer_details']['email'];
+        // $name = $data['customer_details']['name'];
+        // $phone = $data['customer_details']['phone'];
+        // $city = $data['customer_details']['address']['city'];
+        // $country = $data['customer_details']['address']['country'];
+        // $line1 = $data['customer_details']['address']['line1'];
+        // $postal_code = $data['customer_details']['address']['postal_code'];
+        // $state = $data['customer_details']['address']['state'];
+        // $stripeSecret = config('services.stripe.secret');
+        // $paymentIntent = Http::withOptions(['verify' => false])
 
-            }
-        }
-        // Example response
-        return response()->json([
-            'order_id' => $order_id ?? null,
-            'amount' => ($amount_total / 100),
-            'currency' => $currency,
-            'status' => $status,
-        ]);
+        //     ->withToken($stripeSecret)
+        //     ->get("https://api.stripe.com/v1/payment_intents/{$payment_intent}")
+        //     ->json();
+
+        // PaymentManagement::create([
+        //     'order_id' => $order_id,
+        //     'transaction_id' => $payment_intent,
+        //     'payment_mode' => 'Credit Card',
+        //     'payment_method' => 'Stripe',
+        //     'amount' => $amount_total / 100,
+        //     'status' => $status,
+        //     'payment_date' => date('Y-m-d H:i:s'),
+        //     'notes' => 'Payment marked through link',
+        //     'payment_details' => ''
+        // ]);
+
+        // $order = Order::where('id', $order_id)->first();
+        // if (!$order) {
+        //     return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+        // }
+        // if ($status == 'succeeded') {
+        //     if ($order->amount_total == $amount_total) {
+        //         // Mark order as paid and remove payment link
+        //         $order->update([
+        //             'is_paid' => true,
+        //             'paid_amount' => $amount_total / 100,
+        //             'pending_amount' => $order->pending_amount - ($amount_total / 100),
+        //             'payment_link' => null,
+        //             'is_reserved' => false,
+
+        //         ]);
+        //     } else {
+        //         $order->update([
+        //             'is_paid' => false,
+        //             'paid_amount' => $order->paid_amount + ($amount_total / 100),
+        //             'pending_amount' => $order->pending_amount - ($amount_total / 100),
+        //             'payment_link' => null,
+        //             'is_reserved' => false,
+
+        //         ]);
+
+        //     }
+        // }
+        // // Example response
+        // return response()->json([
+        //     'order_id' => $order_id ?? null,
+        //     'amount' => ($amount_total / 100),
+        //     'currency' => $currency,
+        //     'status' => $status,
+        // ]);
 
     }
 
