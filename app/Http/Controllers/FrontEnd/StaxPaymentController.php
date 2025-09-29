@@ -55,31 +55,42 @@ class StaxPaymentController extends Controller
      *     )
      * )
      */
-    public function checkout(Request $request)
-    {
-        $request->validate([
-            'token'  => 'required|string',  // payment token from React
-            'amount' => 'required|numeric|min:1',
-        ]);
+  public function checkout(Request $request)
+{
+    $request->validate([
+        'token'  => 'required|string',  // Stax.js payment token
+        'amount' => 'required|numeric|min:1',
+        'currency' => 'sometimes|string|size:3', // optional, default USD
+    ]);
 
-        try {
-            $data = [
-                'amount' =>intval($request->amount * 100),
-                'currency' => 'USD',
-                'payment_method' => $request->token,
-            ];
+    try {
+        $data = [
+            'amount' => intval($request->amount * 100), // amount in cents
+            'currency' => $request->currency ?? 'USD',
+            'payment_method' => $request->token,
+        ];
 
-            $result = $this->stax->charge($data);
-
-            return response()->json([
-                'success' => true,
-                'transaction' => $result,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage(),
-            ], 500);
+        // Optional: handle ACH/bank payments
+        if ($request->method === 'bank') {
+            $data['bank_account'] = $request->bank_account;
+            $data['bank_routing'] = $request->bank_routing;
+            $data['bank_type'] = $request->bank_type ?? 'checking';
+            $data['bank_holder_type'] = $request->bank_holder_type ?? 'personal';
         }
+
+        // Call StaxService to process charge
+        $result = $this->stax->charge($data);
+
+        return response()->json([
+            'success' => true,
+            'transaction' => $result,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
+
 }
