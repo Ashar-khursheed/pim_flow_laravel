@@ -227,7 +227,7 @@ class SupportTicketController extends Controller
 				'reference' => $request->reference,
 				'file_path' => $filePath,
 				'status' => 'open',
-				'response_days' => 7,
+				'response_days' => 2,
 				'created_by' => auth()->id(),
 			]);
 			DB::commit();

@@ -83,7 +83,7 @@
 						<td align="left" style="padding: 0 20px; font-size: 15px; font-family: 'Noto Sans', sans-serif;">
 							<p style="font-weight: 600; margin: 0; padding: 10px 0; font-size: 15px; font-family: 'Noto Sans', sans-serif;">What's Next?</p>
 							<p style="margin: 0; padding: 5px 0; font-size: 14px; line-height: 22px; font-family: 'Noto Sans', sans-serif;">
-								Our support team will review your request and respond within <strong style="color:#26683A;">{{ $responseDays }}</strong> days. You'll receive an email update once there's progress on your ticket.
+								Our support team will review your request and respond within 24 to 48 hours. You'll receive an email update once there's progress on your ticket.
 							</p>
 							<p style="margin: 0; padding: 5px 0 10px; font-size: 14px; line-height: 22px; font-family: 'Noto Sans', sans-serif;">
 								If you need to add more information, simply reply to this email — it will automatically update your ticket.
@@ -96,9 +96,6 @@
 						<td align="left" style="padding: 10px 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
 							<p style="font-weight: 600; line-height: 24px; margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; font-size:15px; color:#26683A;">
 								Thank you for choosing HorecaStore!
-							</p>
-							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height: 22px;">
-								Your trusted partner for <strong>HORECA solutions</strong>.
 							</p>
 							<p style="margin: 10px 0 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px;">
 								Best regards,<br/>
