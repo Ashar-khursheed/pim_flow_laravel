@@ -33565,9 +33565,9 @@
                 "operationId": "b2da641ba82a30a1785d88d6d82f6db3",
                 "parameters": [
                     {
-                        "name": "product_id",
+                        "name": "variant_id",
                         "in": "query",
-                        "description": "Filter by product ID",
+                        "description": "Filter by product variants ID",
                         "required": false,
                         "schema": {
                             "type": "integer"

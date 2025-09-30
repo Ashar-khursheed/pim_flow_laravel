@@ -11,4 +11,9 @@ class AccessoryItem extends Model
     protected $casts = [
         'accessories' => 'array',  
     ];
+
+     public function accessory()
+    {
+        return $this->belongsTo(ProductAccessory::class, 'product_accessory_id');
+    }
 }
