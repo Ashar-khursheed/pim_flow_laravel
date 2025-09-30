@@ -91,16 +91,21 @@ class PaymobService
         return $response->json();
     }
 
-    public function createIntention($authToken, $orderId, $amountCents, $billingData)
-    {
-        $response = Http::withToken($authToken)->post($this->baseUrl . '/acceptance/payment_intents', [
-            'amount_cents' => $amountCents,
-            'currency' => 'AED',
-            'order_id' => $orderId,
-            'billing_data' => $billingData,
-            'integration_id' => env('PAYMOB_INTEGRATION_ID'),
-        ]);
+  public function createIntention($amountCents, $billingData)
+{
+    $response = Http::post($this->baseUrl . '/acceptance/payment_intents', [
+        'amount_cents'   => $amountCents,
+        'currency'       => 'EGP', // or AED, but must match your integration currency
+        'billing_data'   => $billingData,
+        'integration_id' => $this->integrationId,
+        'secret_key'     => config('services.paymob.secret_key'),
+    ]);
 
-        return $response->json();
+    if ($response->failed()) {
+        throw new \Exception("Paymob intention failed: " . $response->body());
     }
+
+    return $response->json();
+}
+
 }
