@@ -9,11 +9,13 @@ use App\Models\FrontEnd\CustomerCart;
 use App\Models\FrontEnd\CustomerCartProduct;
 use App\Models\Product;
 use App\Models\ProductAccessory;
+use App\Models\AccessoryItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+
 
 class CartController extends Controller
 {
