@@ -21,6 +21,7 @@ class CustomerCart extends Model
 		'total_products',
 		'created_by',
 		'updated_by',
+		
 	];
 
 	public function creator()
