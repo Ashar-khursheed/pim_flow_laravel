@@ -14,6 +14,6 @@ class AccessoryItem extends Model
 
      public function accessory()
     {
-        return $this->belongsTo(ProductAccessory::class, 'accessory_id');
+        return $this->belongsTo(ProductAccessory::class, 'product_accessory_id');
     }
 }
