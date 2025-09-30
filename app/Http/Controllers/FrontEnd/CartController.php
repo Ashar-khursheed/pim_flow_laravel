@@ -610,22 +610,19 @@ class CartController extends Controller
 
             // Add selected accessories details
                 $cartItem->accessories_options_details = [];
-
                 if ($cartProduct->accessories_options && is_array($cartProduct->accessories_options)) {
-                    // eager load accessory relation for efficiency
-                    $accessoryItems = AccessoryItem::with('accessory')
-                        ->whereIn('id', $cartProduct->accessories_options)
-                        ->get();
-
-                    foreach ($accessoryItems as $item) {
-                        $cartItem->accessories_options_details[] = [
-                            'accessory_name' => $item->accessory->name ?? null, // via relation
-                            'item_name'      => $item->name,
-                            'price'          => (float)$item->price,
-                        ];
+                    foreach ($cartProduct->accessories_options as $itemId) {
+                        $item = AccessoryItem::find($itemId);
+                        if ($item) {
+                            $accessory = ProductAccessory::find($item->accessory_id);
+                            $cartItem->accessories_options_details[] = [
+                                'accessory_name' => $accessory->name ?? null,
+                                'item_name' => $item->name,
+                                'price' => (float)$item->price,
+                            ];
+                        }
                     }
-}
-
+                }
 
 
             return $cartItem;
