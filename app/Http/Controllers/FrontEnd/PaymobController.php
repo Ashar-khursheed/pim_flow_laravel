@@ -19,7 +19,7 @@ class PaymobController extends Controller
     /**
      * Step 1: Initiate checkout
      */
-  public function initiate(Request $request)
+ public function initiate(Request $request)
 {
     $request->validate([
         'amount' => 'required|numeric|min:1',
@@ -30,36 +30,39 @@ class PaymobController extends Controller
     ]);
 
     try {
-        $amountCents = $request->amount * 100;
-        $merchantOrderId = uniqid();
-
-        $authToken = $this->paymob->authenticate();
-        $order = $this->paymob->createOrder($authToken, $amountCents, $merchantOrderId);
-
         $billingData = [
-            "apartment" => "NA",
-            "email" => $request->email,
-            "floor" => "NA",
-            "first_name" => $request->first_name,
-            "last_name" => $request->last_name,
-            "phone_number" => $request->phone,
-            "street" => "NA",
-            "building" => "NA",
+            "apartment"     => "NA",
+            "email"         => $request->email,
+            "floor"         => "NA",
+            "first_name"    => $request->first_name,
+            "last_name"     => $request->last_name,
+            "phone_number"  => $request->phone,
+            "street"        => "NA",
+            "building"      => "NA",
             "shipping_method" => "NA",
-            "postal_code" => "NA",
-            "city" => "Cairo",
-            "country" => "EG",
-            "state" => "NA"
+            "postal_code"   => "NA",
+            "city"          => "Dubai",
+            "country"       => "UAE",
+            "state"         => "NA"
         ];
 
-        // Instead of getPaymentKey, we fire Intention API in PaymobService
-        $intention = $this->paymob->createIntention($authToken, $order['id'], $amountCents, $billingData);
+        $intention = $this->paymob->createIntention(
+            $request->amount, // normal amount in AED
+            "AED",
+            $billingData,
+            [
+                [
+                    "name" => "Sample Item",
+                    "amount" => $request->amount,
+                    "description" => "Test Product",
+                    "quantity" => 1,
+                ]
+            ]
+        );
 
         return response()->json([
             'status' => true,
-            'order_id' => $order['id'],
-            'merchant_order_id' => $merchantOrderId,
-            'client_secret' => $intention['client_secret'],
+            'intention' => $intention,
             'public_key' => env('PAYMOB_PUBLIC_KEY'),
         ]);
 
