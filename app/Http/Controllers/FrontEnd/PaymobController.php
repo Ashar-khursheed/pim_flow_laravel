@@ -1,6 +1,7 @@
 <?php
+namespace App\Http\Controllers\Frontend;
 
-namespace App\Http\Controllers;
+use App\Http\Controllers\Controller;
 
 use App\Services\PaymobService;
 use Illuminate\Http\Request;
