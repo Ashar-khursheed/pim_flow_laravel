@@ -1347,6 +1347,7 @@ public function addMultipleToCart(Request $request)
 
     $userId = Auth::id();
 
+    // Get or create customer cart
     $customerCart = CustomerCart::firstOrCreate(
         ['customer_id' => $userId],
         [
@@ -1371,47 +1372,62 @@ public function addMultipleToCart(Request $request)
         $productId = $item['product_id'];
         $quantity = $item['quantity'];
         $vendorId = $item['vendor_id'] ?? null;
-        $accessoriesOptions = $item['accessories_options'] ?? [];
+        $selectedOptions = $item['accessories_options'] ?? [];
 
+        // Get product with supplier info
         $product = Product::with('currency', 'productSuppliers')->find($productId);
-        if (!$product) continue;
+        if (!$product) {
+            continue; // Skip invalid product
+        }
 
+        // Select supplier
         $supplier = $vendorId
             ? $product->productSuppliers->where('vendor_id', $vendorId)->first()
             : $product->productSuppliers->first();
 
-        if (!$supplier) continue;
+        if (!$supplier) {
+            continue; // Skip if supplier not found
+        }
 
         $unitPrice = $supplier->sale_price ?: $supplier->price;
         $actualVendorId = $supplier->vendor_id;
 
-        $cartProduct = CustomerCartProduct::firstOrNew([
-            'customer_cart_id' => $customerCart->id,
-            'product_id' => $productId,
-            'vendor_id' => $actualVendorId,
-        ]);
-
-        $cartProduct->quantity = ($cartProduct->exists ? $cartProduct->quantity : 0) + $quantity;
-        $cartProduct->unit_price = $unitPrice;
-        $cartProduct->amount = $cartProduct->quantity * $unitPrice;
-        $cartProduct->total_amount = $cartProduct->amount + ($cartProduct->shipping_charge ?? 0);
-        $cartProduct->accessories_options = $accessoriesOptions;
-        $cartProduct->save();
-
-        // Add accessories details
-        $accessoriesDetails = [];
-        if ($accessoriesOptions) {
-            $accessoryItems = AccessoryItem::with('accessory')
-                ->whereIn('id', $accessoriesOptions)
-                ->get();
-
-            foreach ($accessoryItems as $acc) {
-                $accessoriesDetails[] = [
-                    'accessory_name' => $acc->accessory->name ?? null,
-                    'item_name' => $acc->name,
-                    'price' => (float)$acc->price,
-                ];
+        // Calculate accessory options price
+        $optionPrice = 0;
+        foreach ($selectedOptions as $itemId) {
+            $accessoryItem = AccessoryItem::find($itemId);
+            if ($accessoryItem) {
+                $optionPrice += $accessoryItem->price ?? 0;
             }
+        }
+
+        $totalUnitPrice = $unitPrice + $optionPrice;
+        $amount = $quantity * $totalUnitPrice;
+
+        // Check if same product with same options exists in cart
+        $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+            ->where('product_id', $productId)
+            ->where('vendor_id', $actualVendorId)
+            ->where('accessories_options', json_encode($selectedOptions))
+            ->first();
+
+        if ($cartProduct) {
+            $cartProduct->quantity += $quantity;
+            $cartProduct->amount = $cartProduct->quantity * $totalUnitPrice;
+            $cartProduct->total_amount = $cartProduct->amount + $cartProduct->shipping_charge;
+            $cartProduct->save();
+        } else {
+            $cartProduct = CustomerCartProduct::create([
+                'customer_cart_id' => $customerCart->id,
+                'product_id' => $productId,
+                'vendor_id' => $actualVendorId,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'accessories_options' => $selectedOptions,
+                'amount' => $amount,
+                'shipping_charge' => 0,
+                'total_amount' => $amount,
+            ]);
         }
 
         $addedProducts[] = [
@@ -1421,10 +1437,13 @@ public function addMultipleToCart(Request $request)
             'quantity' => $cartProduct->quantity,
             'currency_id' => $product->currency->id,
             'currency_title' => $product->currency->symbol,
-            'accessories_options_details' => $accessoriesDetails,
+            'accessories_options' => $cartProduct->accessories_options,
+            'unit_price' => $totalUnitPrice,
+            'total_amount' => $cartProduct->total_amount,
         ];
     }
 
+    // Update cart totals after all products
     $this->updateCartTotals($customerCart);
 
     return response()->json([
@@ -1433,4 +1452,5 @@ public function addMultipleToCart(Request $request)
         'data' => $addedProducts,
     ]);
 }
+
 }
