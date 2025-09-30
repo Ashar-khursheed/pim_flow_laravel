@@ -246,7 +246,7 @@ class ProductAccessoriesController extends Controller
             ]);
 
             $accessories = collect($request->accessories)->map(function ($item) {
-                $item['name'] = trim($item['name']);
+                    $item['name'] = trim($item['name'], '"'); // remove surrounding quotes
                 return $item;
             })->toArray();
 
@@ -483,7 +483,7 @@ class ProductAccessoriesController extends Controller
             // Refresh accessory items (delete old and insert new)
             $accessory->items()->delete();
             $accessories = collect($request->accessories)->map(function ($item) {
-                $item['name'] = trim($item['name']);
+                $item['name'] = trim($item['name'], '"'); // remove surrounding quotes
                 return $item;
             })->toArray();
             $accessory->items()->createMany($accessories);
@@ -698,42 +698,45 @@ class ProductAccessoriesController extends Controller
      */
     public function getProductList(Request $request)
     {
-        try {
-            $query = Product::select('id', 'name', 'sku');
-            if ($request->search) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")                        
-                         ->orWhere('sku', 'like', "%{$search}%");
+    try {
+        $product_list = [];
 
-                });
-            }
-            $product_list = [];
-            $products = $query->orderBy('name', 'asc')->limit('10')->get();
-            if (!empty($products)) {
-                foreach ($products as $key => $val) {
-                    $product_list[$key] = array(
-                        'id' => $val->id,
-                        'name' => $val->name,
-                        'sku' => $val->sku,
-                    );
-                }
-            }
-            $data['product_list'] = $product_list;
+        // Only search if a search term is provided
+        if ($request->search) {
+            $search = $request->search;
+            $products = Product::select('id', 'name', 'sku')
+                ->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('id', 'like', "%{$search}%")
+                      ->orWhere('sku', 'like', "%{$search}%");
+                })
+                ->orderBy('name', 'asc')
+                ->limit(10) // max 10 products
+                ->get();
 
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Product list',
-                'data' => $data,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to retrieve product accessories',
-                'error' => $e->getMessage()
-            ], 500);
+            // Map the products
+            $product_list = $products->map(function ($val) {
+                return [
+                    'id' => $val->id,
+                    'name' => $val->name,
+                    'sku' => $val->sku,
+                ];
+            });
         }
 
+        return response()->json([
+            'success' => true,
+            'message' => 'Product list',
+            'data' => ['product_list' => $product_list],
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to retrieve product accessories',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 }

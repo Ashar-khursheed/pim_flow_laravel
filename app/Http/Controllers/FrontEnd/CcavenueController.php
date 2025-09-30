@@ -374,7 +374,8 @@ class CcavenueController extends Controller
         // $orderList['cancel_url'] = $url.'/failed';
 
       
-        $orderList['notify_url'] = url('api/ccavenue/webhook');
+        $orderList['webhook_url'] = url('/api/ccavenue/webhook');
+        $orderList['notify_url'] = url('/api/payment/ccavenue/notify');
         // $orderList['cancel_url'] = url('api/ccavenue/failed');
         
         $orderList['currency'] = "AED";
@@ -397,6 +398,7 @@ class CcavenueController extends Controller
             'redirect_url',
             'cancel_url',
             'notify_url',
+            'webhook_url',
             'language'
         ];
         $merchantId = $this->ccavenueService->getMerchantId();
@@ -434,7 +436,7 @@ class CcavenueController extends Controller
      * )
      */
     public function successhandleWebhook(Request $request)
-    {
+    { 
         $workingKey = env('CCAVENUE_WORKING_KEY');
         $accessCode = env('CCAVENUE_ACCESS_CODE');
         \Log::error('CCAvenue Webhook Received', $request->all());
