@@ -47,18 +47,19 @@ class PaymobController extends Controller
         ];
 
         $intention = $this->paymob->createIntention(
-            $request->amount, // normal amount in AED
+            $request->amount, // decimal amount, e.g., 2881.2
             "AED",
             $billingData,
             [
                 [
                     "name" => "Sample Item",
-                    "amount" => $request->amount,
+                    "amount" => $request->amount, // keep as decimal here
                     "description" => "Test Product",
                     "quantity" => 1,
                 ]
             ]
         );
+
 
         return response()->json([
             'status' => true,
