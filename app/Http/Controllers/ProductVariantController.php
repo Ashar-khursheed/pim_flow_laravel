@@ -464,8 +464,8 @@ class ProductVariantController extends Controller
             // Map into clean structure
             $attributeList = $attributes->map(function ($attr) {
                 return [
-                    'id' => $attr->id,
-                    'name' => $attr->name,
+                    'attribute_id' => $attr->id,
+                    'attribute_name' => $attr->name,
                     'group_id' => $attr->attribute_group_id,
                 ];
             });
