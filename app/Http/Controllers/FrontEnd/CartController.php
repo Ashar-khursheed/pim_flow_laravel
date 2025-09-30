@@ -235,15 +235,12 @@ class CartController extends Controller
 
     // Calculate price of selected accessory items
     $optionPrice = 0;
-    foreach ($selectedOptions as $accessoryId => $itemId) {
-        $accessoryItem = AccessoryItem::where('id', $itemId)
-            ->where('accessory_id', $accessoryId)
-            ->first();
-
-        if ($accessoryItem) {
-            $optionPrice += $accessoryItem->price ?? 0;
+        foreach ($selectedOptions as $itemId) {
+            $accessoryItem = AccessoryItem::find($itemId);
+            if ($accessoryItem) {
+                $optionPrice += $accessoryItem->price ?? 0;
+            }
         }
-    }
 
     $totalUnitPrice = $unitPrice + $optionPrice;
     $amount = $quantity * $totalUnitPrice;
