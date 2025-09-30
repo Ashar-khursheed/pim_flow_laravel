@@ -1368,26 +1368,26 @@ public function addMultipleToCart(Request $request)
 
     $addedProducts = [];
 
+    // Preload all accessory items at once
+    $allAccessoryIds = collect($request->products)->pluck('accessories_options')->flatten()->unique()->toArray();
+    $accessoryItems = AccessoryItem::whereIn('id', $allAccessoryIds)->get()->keyBy('id');
+
     foreach ($request->products as $item) {
         $productId = $item['product_id'];
         $quantity = $item['quantity'];
         $vendorId = $item['vendor_id'] ?? null;
         $selectedOptions = $item['accessories_options'] ?? [];
 
-        // Get product with supplier info
-        $product = Product::with('currency', 'productSuppliers')->find($productId);
-        if (!$product) {
-            continue; // Skip invalid product
-        }
+        sort($selectedOptions); // normalize for comparison
 
-        // Select supplier
+        $product = Product::with('currency', 'productSuppliers')->find($productId);
+        if (!$product) continue;
+
         $supplier = $vendorId
             ? $product->productSuppliers->where('vendor_id', $vendorId)->first()
             : $product->productSuppliers->first();
 
-        if (!$supplier) {
-            continue; // Skip if supplier not found
-        }
+        if (!$supplier) continue;
 
         $unitPrice = $supplier->sale_price ?: $supplier->price;
         $actualVendorId = $supplier->vendor_id;
@@ -1395,9 +1395,8 @@ public function addMultipleToCart(Request $request)
         // Calculate accessory options price
         $optionPrice = 0;
         foreach ($selectedOptions as $itemId) {
-            $accessoryItem = AccessoryItem::find($itemId);
-            if ($accessoryItem) {
-                $optionPrice += $accessoryItem->price ?? 0;
+            if (isset($accessoryItems[$itemId])) {
+                $optionPrice += $accessoryItems[$itemId]->price ?? 0;
             }
         }
 
@@ -1408,8 +1407,10 @@ public function addMultipleToCart(Request $request)
         $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
             ->where('product_id', $productId)
             ->where('vendor_id', $actualVendorId)
-            ->where('accessories_options', json_encode($selectedOptions))
-            ->first();
+            ->get()
+            ->first(function ($cart) use ($selectedOptions) {
+                return json_encode($cart->accessories_options) === json_encode($selectedOptions);
+            });
 
         if ($cartProduct) {
             $cartProduct->quantity += $quantity;
@@ -1443,7 +1444,6 @@ public function addMultipleToCart(Request $request)
         ];
     }
 
-    // Update cart totals after all products
     $this->updateCartTotals($customerCart);
 
     return response()->json([
@@ -1452,5 +1452,6 @@ public function addMultipleToCart(Request $request)
         'data' => $addedProducts,
     ]);
 }
+
 
 }
