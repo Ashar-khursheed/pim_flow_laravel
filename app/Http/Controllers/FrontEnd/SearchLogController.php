@@ -42,7 +42,11 @@ class SearchLogController extends Controller
     public function store(Request $request)
     {
         $log = SearchLog::create([
+<<<<<<< HEAD
+            'customer_id' => auth('customers')->id() ?? null,
+=======
              'customer_id' => Auth::id() ?? null, // changed here
+>>>>>>> 3c840df65fb25b9dd2436abfa8ea1118213523a7
             'search_term' => $request->input('search_term'),
             'product_id'  => $request->input('product_id'),
             'ip_address'  => $request->ip(),

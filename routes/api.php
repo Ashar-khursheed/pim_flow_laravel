@@ -185,7 +185,8 @@ Route::middleware([CaptureUtm::class])->group(function () {
 
 });
 
-Route::post('ccavenue/webhook', [F_CCavenueController::class, 'successhandleWebhook']);
+Route::post('/ccavenue/webhook', [F_CCavenueController::class, 'successhandleWebhook']);
+Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
