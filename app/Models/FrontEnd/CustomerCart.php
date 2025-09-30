@@ -21,12 +21,8 @@ class CustomerCart extends Model
 		'total_products',
 		'created_by',
 		'updated_by',
-		'accessories_options'
+		
 	];
-	protected $casts = [
-		'accessories_options' => 'array',
-	];
-
 
 	public function creator()
 	{
