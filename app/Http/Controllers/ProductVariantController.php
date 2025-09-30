@@ -160,7 +160,6 @@ class ProductVariantController extends Controller
 
             return $data;
         });
-
         return response()->json([
             'success' => true,
             'message' => __("msg_rec_list"),
@@ -168,9 +167,6 @@ class ProductVariantController extends Controller
             'total_records' => $totalRecords,
             'data' => $records,
         ]);
-
-
-
     }
     /**
      * @OA\Post(
@@ -200,12 +196,12 @@ class ProductVariantController extends Controller
      *                     required={"attribute_id","labels","type"},
      *                     @OA\Property(property="attribute_id", type="integer", example=7),
      *                     @OA\Property(property="labels", type="string", example="Red Color"),
-     *                     @OA\Property(property="type", type="string", example="Color")
+     *                     @OA\Property(property="type", type="string", example="radio")
      *                 ),
      *                 example={
-     *                     {"attribute_id":7,"labels":"Red Color","type":"Color"},
-     *                     {"attribute_id":22,"labels":"Green Color","type":"Material"},
-     *                     {"attribute_id":48,"labels":"Blue Color","type":"Size"}
+     *                     {"attribute_id":7,"labels":"Red Color","type":"radio"},
+     *                     {"attribute_id":22,"labels":"Green Color","type":"dropdown"},
+     *                     {"attribute_id":48,"labels":"Blue Color","type":"radio"}
      *                 }
      *             )
      *         )
@@ -304,12 +300,12 @@ class ProductVariantController extends Controller
      *                     required={"attribute_id","labels","type"},
      *                     @OA\Property(property="attribute_id", type="integer", example=7),
      *                     @OA\Property(property="labels", type="string", example="Red Color"),
-     *                     @OA\Property(property="type", type="string", example="Color")
+     *                     @OA\Property(property="type", type="string", example="radio")
      *                 ),
      *                 example={
-     *                     {"attribute_id":7,"labels":"Red Color","type":"Color"},
-     *                     {"attribute_id":22,"labels":"Green Color","type":"Material"},
-     *                     {"attribute_id":48,"labels":"Blue Color","type":"Size"}
+     *                     {"attribute_id":7,"labels":"Red Color","type":"radio"},
+     *                     {"attribute_id":22,"labels":"Green Color","type":"dropdown"},
+     *                     {"attribute_id":48,"labels":"Blue Color","type":"radio"}
      *                 }
      *             )
      *         )
@@ -416,8 +412,8 @@ class ProductVariantController extends Controller
      *                         type="array",
      *                         @OA\Items(
      *                             type="object",
-     *                             @OA\Property(property="id", type="integer", example=5),
-     *                             @OA\Property(property="name", type="string", example="Color")
+     *                             @OA\Property(property="attribute_id", type="integer", example=7),
+     *                             @OA\Property(property="attribute_name", type="string", example="Color")
      *                         )
      *                     )
      *                 )
@@ -428,8 +424,6 @@ class ProductVariantController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-
-
     public function getProductAttibute(Request $request)
     {
         try {
@@ -522,7 +516,7 @@ class ProductVariantController extends Controller
     /**
      * @OA\Post(
      *     path="/api/product-variants/show",
-     *     summary="Get list of child and attribute by product ID",
+     *     summary="Get list of child with attribute by product ID",
      *     tags={"Product Variants"},
      *     @OA\Parameter(
      *         name="variant_id",
@@ -531,7 +525,6 @@ class ProductVariantController extends Controller
      *         description="Filter by product variants ID",
      *         @OA\Schema(type="integer")
      *     ),
-     *      
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -622,14 +615,14 @@ class ProductVariantController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Attributes fetched successfully',
+                'message' => "Fetch Product variant",
                 'data' => $data
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch attributes',
+                'message' => 'Failed to fetch Product variant',
                 'error' => $e->getMessage()
             ], 500);
         }
