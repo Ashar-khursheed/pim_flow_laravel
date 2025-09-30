@@ -19,58 +19,59 @@ class PaymobController extends Controller
     /**
      * Step 1: Initiate checkout
      */
-    public function initiate(Request $request)
-    {
-        $request->validate([
-            'amount' => 'required|numeric|min:1',
-            'email' => 'required|email',
-            'first_name' => 'required|string|max:50',
-            'last_name' => 'required|string|max:50',
-            'phone' => 'required|string|max:20',
+  public function initiate(Request $request)
+{
+    $request->validate([
+        'amount' => 'required|numeric|min:1',
+        'email' => 'required|email',
+        'first_name' => 'required|string|max:50',
+        'last_name' => 'required|string|max:50',
+        'phone' => 'required|string|max:20',
+    ]);
+
+    try {
+        $amountCents = $request->amount * 100;
+        $merchantOrderId = uniqid();
+
+        $authToken = $this->paymob->authenticate();
+        $order = $this->paymob->createOrder($authToken, $amountCents, $merchantOrderId);
+
+        $billingData = [
+            "apartment" => "NA",
+            "email" => $request->email,
+            "floor" => "NA",
+            "first_name" => $request->first_name,
+            "last_name" => $request->last_name,
+            "phone_number" => $request->phone,
+            "street" => "NA",
+            "building" => "NA",
+            "shipping_method" => "NA",
+            "postal_code" => "NA",
+            "city" => "Cairo",
+            "country" => "EG",
+            "state" => "NA"
+        ];
+
+        // Instead of getPaymentKey, we fire Intention API in PaymobService
+        $intention = $this->paymob->createIntention($authToken, $order['id'], $amountCents, $billingData);
+
+        return response()->json([
+            'status' => true,
+            'order_id' => $order['id'],
+            'merchant_order_id' => $merchantOrderId,
+            'client_secret' => $intention['client_secret'],
+            'public_key' => env('PAYMOB_PUBLIC_KEY'),
         ]);
 
-        try {
-            $amountCents = $request->amount * 100;
-            $merchantOrderId = uniqid();
-
-            $authToken = $this->paymob->authenticate();
-            $order = $this->paymob->createOrder($authToken, $amountCents, $merchantOrderId);
-
-            $billingData = [
-                "apartment" => "NA",
-                "email" => $request->email,
-                "floor" => "NA",
-                "first_name" => $request->first_name,
-                "last_name" => $request->last_name,
-                "phone_number" => $request->phone,
-                "street" => "NA",
-                "building" => "NA",
-                "shipping_method" => "NA",
-                "postal_code" => "NA",
-                "city" => "Cairo",
-                "country" => "EG",
-                "state" => "NA"
-            ];
-
-            $paymentToken = $this->paymob->getPaymentKey($authToken, $order['id'], $amountCents, $billingData);
-
-            return response()->json([
-                'status' => true,
-                'order_id' => $order['id'],
-                'merchant_order_id' => $merchantOrderId,
-                'payment_token' => $paymentToken,
-                'iframe_url' => "https://accept.paymob.com/api/acceptance/iframes/" . env('PAYMOB_IFRAME_ID') . "?payment_token=$paymentToken"
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Paymob Initiate Error: ' . $e->getMessage());
-            return response()->json([
-                'status' => false,
-                'message' => 'Payment initiation failed',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Payment initiation failed',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 
     /**
      * Step 2: Confirm payment with card details

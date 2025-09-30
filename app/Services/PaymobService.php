@@ -101,4 +101,17 @@ class PaymobService
 
         return $response;
     }
+    public function createIntention($authToken, $orderId, $amountCents, $billingData)
+    {
+        $response = Http::withToken($authToken)->post($this->baseUrl . '/acceptance/payment_intents', [
+            'amount_cents' => $amountCents,
+            'currency' => 'EGP',
+            'order_id' => $orderId,
+            'billing_data' => $billingData,
+            'integration_id' => env('PAYMOB_INTEGRATION_ID'),
+        ]);
+
+        return $response->json();
+    }
+
 }
