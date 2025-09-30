@@ -91,18 +91,31 @@ class PaymobService
         return $response->json();
     }
 
-  public function createIntention($amountCents, $billingData)
+public function createIntention($amount, $currency, $billingData, $items = [])
 {
-    $response = Http::post($this->baseUrl . '/acceptance/payment_intents', [
-        'amount_cents'   => $amountCents,
-        'currency'       => 'EGP', // or AED, but must match your integration currency
-        'billing_data'   => $billingData,
-        'integration_id' => $this->integrationId,
-        'secret_key'     => config('services.paymob.secret_key'),
+    $secretKey = config('services.paymob.secret_key'); // sk_test_xxx
+
+    $response = Http::withHeaders([
+        'Authorization' => 'Token ' . $secretKey,
+        'Content-Type'  => 'application/json',
+    ])->post('https://uae.paymob.com/v1/intention/', [
+        'amount'          => $amount, // NOT cents, direct amount (AED)
+        'currency'        => $currency, // e.g. "AED"
+        'payment_methods' => [
+            config('services.paymob.integration_id'), // your integration id
+            "card"
+        ],
+        'items' => $items,
+        'billing_data' => $billingData,
+        'customer' => [
+            'first_name' => $billingData['first_name'],
+            'last_name'  => $billingData['last_name'],
+            'email'      => $billingData['email'] ?? null,
+        ]
     ]);
 
     if ($response->failed()) {
-        throw new \Exception("Paymob intention failed: " . $response->body());
+        throw new \Exception("Paymob Intention failed: " . $response->body());
     }
 
     return $response->json();
