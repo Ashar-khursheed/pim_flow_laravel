@@ -143,7 +143,7 @@ use App\Http\Controllers\FrontEnd\CustomerCartController as F_CustomerCartContro
 use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
 use App\Http\Controllers\FrontEnd\FndProductVariantController;
 use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
-
+use App\Http\Controllers\FrontEnd\PaymobController as F_PaymobController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -919,3 +919,10 @@ Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout'])
 	Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
      ->where('from', '.*');
 
+	Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
+
+	
+
+Route::post('frontend/paymob/initiate', [F_PaymobController::class, 'initiate']); // get payment_token
+Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);           // pay with card
+Route::post('frontend/paymob/webhook', [F_PaymobController::class, 'webhook']);   // webhook

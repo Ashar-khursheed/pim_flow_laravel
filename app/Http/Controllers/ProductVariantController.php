@@ -140,7 +140,7 @@ class ProductVariantController extends Controller
                 return [
                     'attribute_id' => $v['attribute_id'],
                     'attribute_name' => $attributes[$v['attribute_id']] ?? null,
-                    'label' => $v['labels'] ?? null,
+                    'labels' => $v['labels'] ?? null,
                     'type' => $v['type'] ?? null,
                 ];
             });
