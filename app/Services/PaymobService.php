@@ -3,17 +3,18 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class PaymobService
 {
+    protected $baseUrl;
     protected $apiKey;
     protected $integrationId;
 
     public function __construct()
     {
-        $this->apiKey = env('PAYMOB_API_KEY');
-        $this->integrationId = env('PAYMOB_INTEGRATION_ID');
+        $this->baseUrl = config('services.paymob.base_url');
+        $this->apiKey = config('services.paymob.api_key');
+        $this->integrationId = config('services.paymob.integration_id');
     }
 
     /**
@@ -21,14 +22,12 @@ class PaymobService
      */
     public function authenticate()
     {
-        $response = Http::post('https://accept.paymob.com/api/auth/tokens', [
+        $response = Http::post($this->baseUrl . '/auth/tokens', [
             'api_key' => $this->apiKey,
-        ])->json();
+        ]);
 
-        Log::info('Paymob Auth Response:', $response);
-
-        if (!isset($response['token'])) {
-            throw new \Exception("Paymob authentication failed: " . json_encode($response));
+        if ($response->failed()) {
+            throw new \Exception("Paymob authentication failed: " . $response->body());
         }
 
         return $response['token'];
@@ -39,22 +38,16 @@ class PaymobService
      */
     public function createOrder($authToken, $amountCents, $merchantOrderId)
     {
-        $response = Http::post('https://accept.paymob.com/api/ecommerce/orders', [
-            'auth_token'   => $authToken,
+        $response = Http::post($this->baseUrl . '/ecommerce/orders', [
+            'auth_token' => $authToken,
             'delivery_needed' => false,
             'amount_cents' => $amountCents,
-            'currency'     => 'EGP',
+            'currency' => 'EGP',
             'merchant_order_id' => $merchantOrderId,
-            'items'        => [],
-        ])->json();
+            'items' => [],
+        ]);
 
-        Log::info('Paymob Order Response:', $response);
-
-        if (!isset($response['id'])) {
-            throw new \Exception("Paymob order creation failed: " . json_encode($response));
-        }
-
-        return $response;
+        return $response->json();
     }
 
     /**
@@ -62,50 +55,47 @@ class PaymobService
      */
     public function getPaymentKey($authToken, $orderId, $amountCents, $billingData)
     {
-        $response = Http::post('https://accept.paymob.com/api/acceptance/payment_keys', [
-            'auth_token'    => $authToken,
-            'amount_cents'  => $amountCents,
-            'expiration'    => 3600,
-            'order_id'      => $orderId,
-            'billing_data'  => $billingData,
-            'currency'      => 'EGP',
-            'integration_id'=> $this->integrationId,
-        ])->json();
+        $response = Http::post($this->baseUrl . '/acceptance/payment_keys', [
+            'auth_token' => $authToken,
+            'amount_cents' => $amountCents,
+            'expiration' => 3600,
+            'order_id' => $orderId,
+            'billing_data' => $billingData,
+            'currency' => 'EGP',
+            'integration_id' => $this->integrationId,
+        ]);
 
-        Log::info('Paymob Payment Key Response:', $response);
-
-        if (!isset($response['token'])) {
-            throw new \Exception("Paymob payment key request failed: " . json_encode($response));
+        if ($response->failed()) {
+            throw new \Exception("Paymob payment key failed: " . $response->body());
         }
 
         return $response['token'];
     }
 
     /**
-     * Pay with card (using card details directly)
+     * Pay with card (direct card details)
      */
     public function payWithCard($paymentToken, $cardData)
     {
-        $response = Http::post('https://accept.paymob.com/api/acceptance/payments/pay', [
+        $response = Http::post($this->baseUrl . '/acceptance/payments/pay', [
             'source' => [
-                'identifier'    => $cardData['card_number'],
-                'subtype'       => 'CARD',
-                'expiry_month'  => $cardData['expiry_month'],
-                'expiry_year'   => $cardData['expiry_year'],
-                'cvn'           => $cardData['cvv'],
+                'identifier' => $cardData['card_number'],
+                'subtype' => 'CARD',
+                'expiry_month' => $cardData['expiry_month'],
+                'expiry_year' => $cardData['expiry_year'],
+                'cvn' => $cardData['cvv'],
             ],
             'payment_token' => $paymentToken,
-        ])->json();
+        ]);
 
-        Log::info('Paymob Card Payment Response:', $response);
-
-        return $response;
+        return $response->json();
     }
+
     public function createIntention($authToken, $orderId, $amountCents, $billingData)
     {
         $response = Http::withToken($authToken)->post($this->baseUrl . '/acceptance/payment_intents', [
             'amount_cents' => $amountCents,
-            'currency' => 'EGP',
+            'currency' => 'AED',
             'order_id' => $orderId,
             'billing_data' => $billingData,
             'integration_id' => env('PAYMOB_INTEGRATION_ID'),
@@ -113,5 +103,4 @@ class PaymobService
 
         return $response->json();
     }
-
 }
