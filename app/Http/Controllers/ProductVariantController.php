@@ -525,10 +525,10 @@ class ProductVariantController extends Controller
      *     summary="Get list of child and attribute by product ID",
      *     tags={"Product Variants"},
      *     @OA\Parameter(
-     *         name="product_id",
+     *         name="variant_id",
      *         in="query",
      *         required=false,
-     *         description="Filter by product ID",
+     *         description="Filter by product variants ID",
      *         @OA\Schema(type="integer")
      *     ),
      *      
@@ -549,7 +549,7 @@ class ProductVariantController extends Controller
         try {
 
             $validator = Validator::make($request->all(), [
-                'product_id' => 'required',
+                'variant_id' => 'required',
             ]);
 
             if ($validator->fails()) {
@@ -559,21 +559,21 @@ class ProductVariantController extends Controller
                     'errors' => $validator->errors()
                 ], 422);
             }
-            // Ensure product_id is always an array
-            $productIds = $request->product_id;
-
+            // Ensure variant_id is always an array
+            $productIds = $request->variant_id;
+ 
             if (empty($productIds)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No product IDs provided'
                 ], 422);
             }
-            $variant = ProductVariant::with([
+            $variant = ProductVariant::where('id',$productIds)->with([
                 'parentProduct:id,name,sku',
                 'createdBy:id,username',
                 'updatedBy:id,username'
-            ])->where('parent_id', $productIds)->first();
-
+            ])->first();
+ 
             $childIds = json_decode($variant->child_ids, true) ?? [];
             $variants = json_decode($variant->variants, true) ?? [];
 
@@ -600,7 +600,7 @@ class ProductVariantController extends Controller
                 return [
                     'attribute_id' => $v['attribute_id'],
                     'attribute_name' => $attributes[$v['attribute_id']] ?? null,
-                    'label' => $v['labels'] ?? null,
+                    'labels' => $v['labels'] ?? null,
                     'type' => $v['type'] ?? null,
                 ];
             });
@@ -614,7 +614,7 @@ class ProductVariantController extends Controller
                 'created_by' => $variant->createdBy?->username,
                 'updated_by' => $variant->updatedBy?->username,
                 'variants' => $variant->variants,
-                'child' => $variant->children,
+                'child_ids' => $variant->children,
 
             ];
 
