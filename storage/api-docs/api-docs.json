@@ -33525,7 +33525,7 @@
                                                             "properties": {
                                                                 "attribute_id": {
                                                                     "type": "integer",
-                                                                    "example": 5
+                                                                    "example": 7
                                                                 },
                                                                 "attribute_name": {
                                                                     "type": "string",

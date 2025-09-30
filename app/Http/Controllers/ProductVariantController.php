@@ -160,7 +160,6 @@ class ProductVariantController extends Controller
 
             return $data;
         });
-
         return response()->json([
             'success' => true,
             'message' => __("msg_rec_list"),
@@ -168,9 +167,6 @@ class ProductVariantController extends Controller
             'total_records' => $totalRecords,
             'data' => $records,
         ]);
-
-
-
     }
     /**
      * @OA\Post(
@@ -416,7 +412,7 @@ class ProductVariantController extends Controller
      *                         type="array",
      *                         @OA\Items(
      *                             type="object",
-     *                             @OA\Property(property="attribute_id", type="integer", example=5),
+     *                             @OA\Property(property="attribute_id", type="integer", example=7),
      *                             @OA\Property(property="attribute_name", type="string", example="Color")
      *                         )
      *                     )
