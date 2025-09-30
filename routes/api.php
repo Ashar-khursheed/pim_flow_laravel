@@ -78,6 +78,7 @@ use App\Http\Controllers\ProductAccessoriesController;
 use App\Http\Controllers\PaymentHistoryController;
 use App\Http\Controllers\ProductVariantController;
 use App\Http\Controllers\SupportTicketController;
+use App\Http\Controllers\TranslationController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -401,8 +402,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
 
-	Route::post('/keywords/import', [AppKeywordController::class, 'import']);
-	Route::post('/keywords/export', [AppKeywordController::class, 'export']);
+    Route::post('/keywords/import', [AppKeywordController::class, 'import']);
+    Route::post('/keywords/export', [AppKeywordController::class, 'export']);
+
+    Route::post('/translations/export', [TranslationController::class, 'export']);
+    Route::post('/translations/import', [TranslationController::class, 'import']);
 
 
 	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
@@ -910,7 +914,7 @@ Route::get('/frontend/menu-banners/{id}', [F_MenuBannerController::class, 'show'
 Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'showCategory']);
 Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
 
- 
+
 	// Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);
 	Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
      ->where('from', '.*');

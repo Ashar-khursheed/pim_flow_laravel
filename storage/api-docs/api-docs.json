@@ -37314,6 +37314,110 @@
                 ]
             }
         },
+        "/api/translations/export": {
+            "post": {
+                "tags": [
+                    "Translations"
+                ],
+                "summary": "Export translation data to Excel",
+                "operationId": "7a962471337934ac57d7e975eb651dab",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "attribute",
+                                            "attribute_value",
+                                            "product_attribute"
+                                        ],
+                                        "example": "attribute"
+                                    },
+                                    "range_from": {
+                                        "description": "Starting range (must be >=1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and max 5000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/translations/import": {
+            "post": {
+                "tags": [
+                    "Translations"
+                ],
+                "summary": "Import translation from an excel file",
+                "operationId": "9f285897127f2735fd11bc356d95352d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "attribute",
+                                            "attribute_value",
+                                            "product_attribute"
+                                        ],
+                                        "example": "attribute"
+                                    },
+                                    "upload_file": {
+                                        "description": "xlsx file (.xlsx) max 2MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Imported successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/unisource/create-shipment": {
             "post": {
                 "tags": [
@@ -41069,6 +41173,10 @@
         {
             "name": "Temp Products",
             "description": "Temp Products"
+        },
+        {
+            "name": "Translations",
+            "description": "Translations"
         },
         {
             "name": "Unisource",

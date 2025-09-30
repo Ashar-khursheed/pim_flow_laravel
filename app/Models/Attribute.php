@@ -3,11 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 
-class Attribute extends Model
+class Attribute extends Model implements TranslatableContract
 {
-	// protected $guarded = [];
-	// protected $fillable = ['name', 'code', 'type', 'is_required', 'validations'];
+	use Translatable;
+
+	public $translatedAttributes = ['title'];
+
 	protected $fillable = ['name', 'code', 'type', 'attribute_group_id', 'validations', 'created_by', 'updated_by'];
 
 	public function creator()
@@ -33,12 +37,17 @@ class Attribute extends Model
 
 	public function measurementUnits()
 	{
-		// return $this->belongsToMany(
-		// 	MeasurementUnit::class,
-		// 	'attribute_measurements',
-		// 	'attribute_id',
-		// 	'measurement_unit_id'
-		// );
 		return $this->belongsToMany(MeasurementUnit::class, 'attribute_measurements')->using(AttributeMeasurement::class);
+	}
+
+	/**
+	 * Prepare a date for array / JSON serialization.
+	 *
+	 * @param  \DateTimeInterface  $date
+	 * @return string
+	 */
+	protected function serializeDate(\DateTimeInterface $date)
+	{
+		return $date->format('Y-m-d H:i:s');
 	}
 }
