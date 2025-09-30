@@ -424,8 +424,6 @@ class ProductVariantController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-
-
     public function getProductAttibute(Request $request)
     {
         try {
@@ -518,7 +516,7 @@ class ProductVariantController extends Controller
     /**
      * @OA\Post(
      *     path="/api/product-variants/show",
-     *     summary="Get list of child and attribute by product ID",
+     *     summary="Get list of child with attribute by product ID",
      *     tags={"Product Variants"},
      *     @OA\Parameter(
      *         name="variant_id",
@@ -527,7 +525,6 @@ class ProductVariantController extends Controller
      *         description="Filter by product variants ID",
      *         @OA\Schema(type="integer")
      *     ),
-     *      
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",

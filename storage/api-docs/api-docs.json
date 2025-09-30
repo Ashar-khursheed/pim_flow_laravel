@@ -33561,7 +33561,7 @@
                 "tags": [
                     "Product Variants"
                 ],
-                "summary": "Get list of child and attribute by product ID",
+                "summary": "Get list of child with attribute by product ID",
                 "operationId": "b2da641ba82a30a1785d88d6d82f6db3",
                 "parameters": [
                     {
