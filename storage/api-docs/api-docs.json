@@ -33265,7 +33265,7 @@
                                                 },
                                                 "type": {
                                                     "type": "string",
-                                                    "example": "Color"
+                                                    "example": "radio"
                                                 }
                                             },
                                             "type": "object"
@@ -33274,17 +33274,17 @@
                                             {
                                                 "attribute_id": 7,
                                                 "labels": "Red Color",
-                                                "type": "Color"
+                                                "type": "radio"
                                             },
                                             {
                                                 "attribute_id": 22,
                                                 "labels": "Green Color",
-                                                "type": "Material"
+                                                "type": "dropdown"
                                             },
                                             {
                                                 "attribute_id": 48,
                                                 "labels": "Blue Color",
-                                                "type": "Size"
+                                                "type": "radio"
                                             }
                                         ]
                                     }
@@ -33381,7 +33381,7 @@
                                                 },
                                                 "type": {
                                                     "type": "string",
-                                                    "example": "Color"
+                                                    "example": "radio"
                                                 }
                                             },
                                             "type": "object"
@@ -33390,17 +33390,17 @@
                                             {
                                                 "attribute_id": 7,
                                                 "labels": "Red Color",
-                                                "type": "Color"
+                                                "type": "radio"
                                             },
                                             {
                                                 "attribute_id": 22,
                                                 "labels": "Green Color",
-                                                "type": "Material"
+                                                "type": "dropdown"
                                             },
                                             {
                                                 "attribute_id": 48,
                                                 "labels": "Blue Color",
-                                                "type": "Size"
+                                                "type": "radio"
                                             }
                                         ]
                                     }
@@ -33523,11 +33523,11 @@
                                                         "type": "array",
                                                         "items": {
                                                             "properties": {
-                                                                "id": {
+                                                                "attribute_id": {
                                                                     "type": "integer",
                                                                     "example": 5
                                                                 },
-                                                                "name": {
+                                                                "attribute_name": {
                                                                     "type": "string",
                                                                     "example": "Color"
                                                                 }
