@@ -653,6 +653,7 @@ if (!function_exists('order_cc_mails')) {
 			'ofs@thehorecastore.com',
 			'ofs02@thehorecastore.com',
 			'dmm@thehorecastore.com',
+			'webdeveloper04@horecastore.ae',
 		];
 
 		$uaeMails = [
@@ -663,6 +664,7 @@ if (!function_exists('order_cc_mails')) {
 			'css01@horecastore.ae',
 			'cbfb@horecastore.ae',
 			'procurement@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
 		];
 
 		$testMails = [];
