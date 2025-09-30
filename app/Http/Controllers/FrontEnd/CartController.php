@@ -1220,6 +1220,113 @@ class CartController extends Controller
  *     )
  * )
  */
+// public function addMultipleToCart(Request $request)
+// {
+//     $request->validate([
+//         'products' => 'required|array',
+//         'products.*.product_id' => 'required|exists:ec_products,id',
+//         'products.*.quantity' => 'required|integer|min:1',
+//         'products.*.vendor_id' => 'nullable|exists:vendors,id',
+//     ]);
+
+//     if (!Auth::check()) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Unauthorized user',
+//         ], 401);
+//     }
+
+//     $userId = Auth::id();
+
+//     // Get or create customer cart
+//     $customerCart = CustomerCart::where('customer_id', $userId)->first();
+//     if (!$customerCart) {
+//         $customerCart = CustomerCart::create([
+//             'reference_number' => $this->generateReferenceNumber(),
+//             'customer_id' => $userId,
+//             'customer_address_id' => 0,
+//             'shipping_charge' => 0,
+//             'is_lift_gate' => 0,
+//             'is_residential_address' => 1,
+//             'amount' => 0,
+//             'tax_percentage' => 0,
+//             'tax_amount' => 0,
+//             'total_amount' => 0,
+//             'total_products' => 0,
+//             'created_by' => $userId,
+//             'updated_by' => $userId,
+//         ]);
+//     }
+
+//     $addedProducts = [];
+
+//     foreach ($request->products as $item) {
+//         $productId = $item['product_id'];
+//         $quantity = $item['quantity'];
+//         $vendorId = $item['vendor_id'] ?? null;
+
+//         // Get product with supplier info
+//         $product = Product::with('currency', 'productSuppliers')->find($productId);
+//         if (!$product) {
+//             continue; // Skip invalid product
+//         }
+
+//         // Select supplier
+//         $supplier = $vendorId
+//             ? $product->productSuppliers->where('vendor_id', $vendorId)->first()
+//             : $product->productSuppliers->first();
+
+//         if (!$supplier) {
+//             continue; // Skip if supplier not found
+//         }
+
+//         $unitPrice = $supplier->sale_price ?: $supplier->price;
+//         $actualVendorId = $supplier->vendor_id;
+
+//         // Check if product already in cart
+//         $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+//             ->where('product_id', $productId)
+//             ->where('vendor_id', $actualVendorId)
+//             ->first();
+
+//         if ($cartProduct) {
+//             $cartProduct->quantity += $quantity;
+//             $cartProduct->amount = $cartProduct->quantity * $unitPrice;
+//             $cartProduct->total_amount = $cartProduct->amount + $cartProduct->shipping_charge;
+//             $cartProduct->save();
+//         } else {
+//             $amount = $quantity * $unitPrice;
+//             $cartProduct = CustomerCartProduct::create([
+//                 'customer_cart_id' => $customerCart->id,
+//                 'product_id' => $productId,
+//                 'vendor_id' => $actualVendorId,
+//                 'quantity' => $quantity,
+//                 'unit_price' => $unitPrice,
+//                 'amount' => $amount,
+//                 'shipping_charge' => 0,
+//                 'total_amount' => $amount,
+//             ]);
+//         }
+
+//         $addedProducts[] = [
+//             'id' => $cartProduct->id,
+//             'user_id' => $userId,
+//             'product_id' => $cartProduct->product_id,
+//             'quantity' => $cartProduct->quantity,
+//             'currency_id' => $product->currency->id,
+//             'currency_title' => $product->currency->symbol,
+//         ];
+//     }
+
+//     // Update totals after adding all products
+//     $this->updateCartTotals($customerCart);
+
+//     return response()->json([
+//         'success' => true,
+//         'message' => 'Products added to cart',
+//         'data' => $addedProducts,
+//     ]);
+// }
 public function addMultipleToCart(Request $request)
 {
     $request->validate([
@@ -1227,6 +1334,8 @@ public function addMultipleToCart(Request $request)
         'products.*.product_id' => 'required|exists:ec_products,id',
         'products.*.quantity' => 'required|integer|min:1',
         'products.*.vendor_id' => 'nullable|exists:vendors,id',
+        'products.*.accessories_options' => 'nullable|array',
+        'products.*.accessories_options.*' => 'integer|exists:accessory_items,id',
     ]);
 
     if (!Auth::check()) {
@@ -1238,12 +1347,10 @@ public function addMultipleToCart(Request $request)
 
     $userId = Auth::id();
 
-    // Get or create customer cart
-    $customerCart = CustomerCart::where('customer_id', $userId)->first();
-    if (!$customerCart) {
-        $customerCart = CustomerCart::create([
+    $customerCart = CustomerCart::firstOrCreate(
+        ['customer_id' => $userId],
+        [
             'reference_number' => $this->generateReferenceNumber(),
-            'customer_id' => $userId,
             'customer_address_id' => 0,
             'shipping_charge' => 0,
             'is_lift_gate' => 0,
@@ -1255,8 +1362,8 @@ public function addMultipleToCart(Request $request)
             'total_products' => 0,
             'created_by' => $userId,
             'updated_by' => $userId,
-        ]);
-    }
+        ]
+    );
 
     $addedProducts = [];
 
@@ -1264,48 +1371,47 @@ public function addMultipleToCart(Request $request)
         $productId = $item['product_id'];
         $quantity = $item['quantity'];
         $vendorId = $item['vendor_id'] ?? null;
+        $accessoriesOptions = $item['accessories_options'] ?? [];
 
-        // Get product with supplier info
         $product = Product::with('currency', 'productSuppliers')->find($productId);
-        if (!$product) {
-            continue; // Skip invalid product
-        }
+        if (!$product) continue;
 
-        // Select supplier
         $supplier = $vendorId
             ? $product->productSuppliers->where('vendor_id', $vendorId)->first()
             : $product->productSuppliers->first();
 
-        if (!$supplier) {
-            continue; // Skip if supplier not found
-        }
+        if (!$supplier) continue;
 
         $unitPrice = $supplier->sale_price ?: $supplier->price;
         $actualVendorId = $supplier->vendor_id;
 
-        // Check if product already in cart
-        $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
-            ->where('product_id', $productId)
-            ->where('vendor_id', $actualVendorId)
-            ->first();
+        $cartProduct = CustomerCartProduct::firstOrNew([
+            'customer_cart_id' => $customerCart->id,
+            'product_id' => $productId,
+            'vendor_id' => $actualVendorId,
+        ]);
 
-        if ($cartProduct) {
-            $cartProduct->quantity += $quantity;
-            $cartProduct->amount = $cartProduct->quantity * $unitPrice;
-            $cartProduct->total_amount = $cartProduct->amount + $cartProduct->shipping_charge;
-            $cartProduct->save();
-        } else {
-            $amount = $quantity * $unitPrice;
-            $cartProduct = CustomerCartProduct::create([
-                'customer_cart_id' => $customerCart->id,
-                'product_id' => $productId,
-                'vendor_id' => $actualVendorId,
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'amount' => $amount,
-                'shipping_charge' => 0,
-                'total_amount' => $amount,
-            ]);
+        $cartProduct->quantity = ($cartProduct->exists ? $cartProduct->quantity : 0) + $quantity;
+        $cartProduct->unit_price = $unitPrice;
+        $cartProduct->amount = $cartProduct->quantity * $unitPrice;
+        $cartProduct->total_amount = $cartProduct->amount + ($cartProduct->shipping_charge ?? 0);
+        $cartProduct->accessories_options = $accessoriesOptions;
+        $cartProduct->save();
+
+        // Add accessories details
+        $accessoriesDetails = [];
+        if ($accessoriesOptions) {
+            $accessoryItems = AccessoryItem::with('accessory')
+                ->whereIn('id', $accessoriesOptions)
+                ->get();
+
+            foreach ($accessoryItems as $acc) {
+                $accessoriesDetails[] = [
+                    'accessory_name' => $acc->accessory->name ?? null,
+                    'item_name' => $acc->name,
+                    'price' => (float)$acc->price,
+                ];
+            }
         }
 
         $addedProducts[] = [
@@ -1315,10 +1421,10 @@ public function addMultipleToCart(Request $request)
             'quantity' => $cartProduct->quantity,
             'currency_id' => $product->currency->id,
             'currency_title' => $product->currency->symbol,
+            'accessories_options_details' => $accessoriesDetails,
         ];
     }
 
-    // Update totals after adding all products
     $this->updateCartTotals($customerCart);
 
     return response()->json([
