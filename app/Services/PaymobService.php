@@ -95,22 +95,27 @@ public function createIntention($amount, $currency, $billingData, $items = [])
 {
     $secretKey = config('services.paymob.secret_key'); // sk_test_xxx
 
+    $amountCents = (int) round($amount * 100); // AED 28.81 => 2881
+
     $response = Http::withHeaders([
         'Authorization' => 'Token ' . $secretKey,
         'Content-Type'  => 'application/json',
     ])->post('https://uae.paymob.com/v1/intention/', [
-        'amount'          => $amount, // NOT cents, direct amount (AED)
+        'amount'          => $amountCents,
         'currency'        => $currency, // e.g. "AED"
-        'payment_methods' => [
-            config('services.paymob.integration_id'), // your integration id
-            "card"
-        ],
-        'items' => $items,
-        'billing_data' => $billingData,
+        'payment_methods' => [ (int) env('PAYMOB_CARD_INTEGRATION_ID') ],
+        'items'           => $items ?: [[
+            'name'        => 'Order Payment',
+            'amount'      => $amountCents,
+            'description' => 'Checkout payment',
+            'quantity'    => 1,
+        ]],
+        'billing_data'    => $billingData,
         'customer' => [
             'first_name' => $billingData['first_name'],
             'last_name'  => $billingData['last_name'],
             'email'      => $billingData['email'] ?? null,
+            'phone_number' => $billingData['phone_number'] ?? null,
         ]
     ]);
 
