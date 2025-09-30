@@ -23,6 +23,10 @@ class CustomerCart extends Model
 		'updated_by',
 		'accessories_options'
 	];
+	protected $casts = [
+		'accessories_options' => 'array',
+	];
+
 
 	public function creator()
 	{
