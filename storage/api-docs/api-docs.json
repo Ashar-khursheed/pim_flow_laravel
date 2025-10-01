@@ -23691,20 +23691,6 @@
                 ]
             }
         },
-        "/api/stripe/webhook": {
-            "post": {
-                "tags": [
-                    "Stripe"
-                ],
-                "summary": "Stripe Payment Success Redirect",
-                "operationId": "8c708eb9188af5e2c7280d314adbb15a",
-                "responses": {
-                    "200": {
-                        "description": "Payment was successful"
-                    }
-                }
-            }
-        },
         "/api/stripe/failed": {
             "get": {
                 "tags": [

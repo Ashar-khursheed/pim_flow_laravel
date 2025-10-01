@@ -323,18 +323,7 @@ class StripeController extends Controller
         }
 
     }
-
-    /**
-     * @OA\Post(
-     *     path="/api/stripe/webhook",
-     *     summary="Stripe Payment Success Redirect",
-     *     tags={"Stripe"},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Payment was successful"
-     *     )
-     * )
-     */
+    
     public function handleWebhook(Request $request)
     {
 
