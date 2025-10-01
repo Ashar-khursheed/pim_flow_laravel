@@ -8,6 +8,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
+use Illuminate\Queue\Middleware\RateLimited;
 
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -19,12 +20,17 @@ use App\Mail\Welcome\WelcomeMail;
 class WelcomeMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
+
 	public $customerId;
 
 	public function __construct($data)
 	{
 		$this->customerId = $data['recordId'];
+	}
+
+	public function middleware(): array
+	{
+		return [new RateLimited('emails')];
 	}
 
 	public function handle(): void
