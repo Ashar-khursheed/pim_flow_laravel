@@ -44,21 +44,28 @@ public function stats(Request $request)
     $now = now();
 
     $ranges = [
-        '15_days' => $now->copy()->subDays(15),
-        '30_days' => $now->copy()->subDays(30),
-        '2_months' => $now->copy()->subMonths(2),
-        '3_months' => $now->copy()->subMonths(3),
-        '6_months' => $now->copy()->subMonths(6),
+        '15_days'   => $now->copy()->subDays(15),
+        '30_days'   => $now->copy()->subDays(30),
+        '2_months'  => $now->copy()->subMonths(2),
+        '3_months'  => $now->copy()->subMonths(3),
+        '6_months'  => $now->copy()->subMonths(6),
     ];
 
     if ($range !== 'lifetime' && isset($ranges[$range])) {
         $date = $ranges[$range];
 
         $productsCount = Product::where('created_at', '>=', $date)->count();
-        $ordersCount = Order::where('is_reserved', 0)
-            ->where('status', '!=', 'cancelled')
-            ->where('created_at', '>=', $date)
-            ->count();
+
+        $orders = Order::where('is_reserved', 0)
+            ->whereRaw("LOWER(status) != 'cancelled'")
+            ->where('created_at', '>=', $date);
+
+        $ordersCount = (clone $orders)->count();
+        $totalOrdersAmount = (clone $orders)->sum('total_amount');
+        $paidOrdersAmount = (clone $orders)->where('payment_status', 'paid')->sum('total_amount');
+        $pendingOrdersAmount = (clone $orders)->where('payment_status', 'pending')->sum('total_amount');
+        $returnOrdersCount = (clone $orders)->where('status', 'returned')->count();
+
         $categoriesCount = Category::where('created_at', '>=', $date)->count();
         $publishedProducts = Product::where('status', 'published')->where('created_at', '>=', $date)->count();
         $draftProducts = Product::where('status', 'draft')->where('created_at', '>=', $date)->count();
@@ -67,9 +74,16 @@ public function stats(Request $request)
     } else {
         // Lifetime counts
         $productsCount = Product::count();
-        $ordersCount = Order::where('is_reserved', 0)
-            ->where('status', '!=', 'cancelled')
-            ->count();
+
+        $orders = Order::where('is_reserved', 0)
+            ->whereRaw("LOWER(status) != 'cancelled'");
+
+        $ordersCount = (clone $orders)->count();
+        $totalOrdersAmount = (clone $orders)->sum('total_amount');
+        $paidOrdersAmount = (clone $orders)->where('payment_status', 'paid')->sum('total_amount');
+        $pendingOrdersAmount = (clone $orders)->where('payment_status', 'pending')->sum('total_amount');
+        $returnOrdersCount = (clone $orders)->where('status', 'returned')->count();
+
         $categoriesCount = Category::count();
         $publishedProducts = Product::where('status', 'published')->count();
         $draftProducts = Product::where('status', 'draft')->count();
@@ -81,11 +95,15 @@ public function stats(Request $request)
         'range' => $range,
         'products_count' => $productsCount,
         'orders_count' => $ordersCount,
+        'total_orders_amount' => $totalOrdersAmount,
+        'paid_orders_amount' => $paidOrdersAmount,
+        'pending_orders_amount' => $pendingOrdersAmount,
+        'return_orders_count' => $returnOrdersCount,
         'categories_count' => $categoriesCount,
         'published_products' => $publishedProducts,
         'draft_products' => $draftProducts,
-        'approved_products' =>  $approvedProducts,
-        'qa_products' =>  $qaProducts,
+        'approved_products' => $approvedProducts,
+        'qa_products' => $qaProducts,
     ]);
 }
 
