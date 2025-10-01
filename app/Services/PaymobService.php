@@ -3,83 +3,150 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class PaymobService
 {
-    protected $apiKey;
+    protected $secretKey;
+    protected $publicKey;
     protected $integrationId;
+    protected $baseUrl;
 
     public function __construct()
     {
-        $this->apiKey = env('PAYMOB_API_KEY');
-        $this->integrationId = env('PAYMOB_INTEGRATION_ID');
+        // Use Intention API (new API)
+        $this->baseUrl = config('services.paymob.base_url', 'https://uae.paymob.com/v1');
+        $this->secretKey = config('services.paymob.secret_key'); // sk_test_xxx or sk_live_xxx
+        $this->publicKey = config('services.paymob.public_key'); // are_pk_test_xxx or are_pk_live_xxx
+        $this->integrationId = config('services.paymob.integration_id'); // Card integration ID
     }
 
     /**
-     * Authenticate and get auth token
+     * Create Payment Intention (for Pixel SDK)
+     * This is what the frontend needs
      */
-    public function authenticate()
+    public function createIntention($amount, $billingData, $items = [])
     {
-        $response = Http::post('https://accept.paymob.com/api/auth/tokens', [
-            'api_key' => $this->apiKey,
-        ]);
+        try {
+            $amountCents = (int) round($amount * 100); // Convert to minor units (cents/fils)
 
-        // Fix: Use json() method or object access
-        return $response->json()['token'] ?? null;
+            // Default items if not provided
+            if (empty($items)) {
+                $items = [[
+                    'name'        => 'Order Payment',
+                    'amount'      => $amountCents,
+                    'description' => 'Checkout payment',
+                    'quantity'    => 1,
+                ]];
+            }
+
+            // Ensure all item amounts are in minor units
+            foreach ($items as &$item) {
+                if (!isset($item['amount'])) {
+                    $item['amount'] = $amountCents;
+                }
+                $item['amount'] = (int) round($item['amount']);
+            }
+
+            $payload = [
+                'amount'          => $amountCents,
+                'currency'        => 'EGP', // or 'AED', 'SAR', 'KWD', etc.
+                'payment_methods' => [(int) $this->integrationId], // MUST be array of integers
+                'items'           => $items,
+                'billing_data'    => [
+                    'first_name'   => $billingData['first_name'] ?? 'NA',
+                    'last_name'    => $billingData['last_name'] ?? 'NA',
+                    'email'        => $billingData['email'] ?? 'test@example.com',
+                    'phone_number' => $billingData['phone_number'] ?? '+201000000000',
+                    'apartment'    => $billingData['apartment'] ?? 'NA',
+                    'floor'        => $billingData['floor'] ?? 'NA',
+                    'street'       => $billingData['street'] ?? 'NA',
+                    'building'     => $billingData['building'] ?? 'NA',
+                    'shipping_method' => $billingData['shipping_method'] ?? 'NA',
+                    'postal_code'  => $billingData['postal_code'] ?? 'NA',
+                    'city'         => $billingData['city'] ?? 'Cairo',
+                    'country'      => $billingData['country'] ?? 'EG',
+                    'state'        => $billingData['state'] ?? 'NA',
+                ],
+                'customer' => [
+                    'first_name'   => $billingData['first_name'] ?? 'NA',
+                    'last_name'    => $billingData['last_name'] ?? 'NA',
+                    'email'        => $billingData['email'] ?? 'test@example.com',
+                    'phone_number' => $billingData['phone_number'] ?? '+201000000000',
+                ],
+                // Optional: Add special reference ID
+                'special_reference' => 'ORDER_' . uniqid(),
+            ];
+
+            Log::info('Creating Paymob Intention', [
+                'amount' => $amountCents,
+                'integration_id' => $this->integrationId
+            ]);
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Token ' . $this->secretKey,
+                'Content-Type'  => 'application/json',
+            ])->timeout(30)->post($this->baseUrl . '/intention/', $payload);
+
+            if ($response->failed()) {
+                Log::error('Paymob Intention failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'payload' => $payload
+                ]);
+                throw new \Exception("Paymob Intention failed: " . $response->body());
+            }
+
+            $data = $response->json();
+            
+            if (!isset($data['client_secret'])) {
+                Log::error('No client_secret in response', ['response' => $data]);
+                throw new \Exception('No client_secret returned from Paymob');
+            }
+
+            Log::info('Intention created successfully', [
+                'intention_id' => $data['id'] ?? null,
+                'client_secret' => substr($data['client_secret'], 0, 20) . '...'
+            ]);
+
+            return $data;
+
+        } catch (\Exception $e) {
+            Log::error('Paymob Intention error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     /**
-     * Create order
+     * Get transaction details
      */
-    public function createOrder($authToken, $amountCents, $merchantOrderId)
+    public function getTransaction($transactionId)
     {
-        $response = Http::post('https://accept.paymob.com/api/ecommerce/orders', [
-            'auth_token' => $authToken,
-            'delivery_needed' => false,
-            'amount_cents' => $amountCents,
-            'currency' => 'EGP',
-            'merchant_order_id' => $merchantOrderId,
-            'items' => [],
-        ]);
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Token ' . $this->secretKey,
+            ])->get($this->baseUrl . "/intention/{$transactionId}");
 
-        return $response->json();
+            if ($response->failed()) {
+                throw new \Exception('Failed to get transaction details');
+            }
+
+            return $response->json();
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get transaction', ['error' => $e->getMessage()]);
+            throw $e;
+        }
     }
 
     /**
-     * Get payment key
+     * Get public key for frontend
      */
-    public function getPaymentKey($authToken, $orderId, $amountCents, $billingData)
+    public function getPublicKey()
     {
-        $response = Http::post('https://accept.paymob.com/api/acceptance/payment_keys', [
-            'auth_token' => $authToken,
-            'amount_cents' => $amountCents,
-            'expiration' => 3600,
-            'order_id' => $orderId,
-            'billing_data' => $billingData,
-            'currency' => 'EGP',
-            'integration_id' => $this->integrationId,
-        ]);
-
-        // Fix: Use json() method
-        return $response->json()['token'] ?? null;
-    }
-
-    /**
-     * Pay with card (using card details directly)
-     */
-    public function payWithCard($paymentToken, $cardData)
-    {
-        $response = Http::post('https://accept.paymob.com/api/acceptance/payments/pay', [
-            'source' => [
-                'identifier' => $cardData['card_number'],
-                'subtype' => 'CARD',
-                'expiry_month' => $cardData['expiry_month'],
-                'expiry_year' => $cardData['expiry_year'],
-                'cvn' => $cardData['cvv'],
-            ],
-            'payment_token' => $paymentToken,
-        ]);
-
-        return $response->json();
+        return $this->publicKey;
     }
 }
