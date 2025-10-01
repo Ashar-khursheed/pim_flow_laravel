@@ -8,6 +8,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
+use Illuminate\Queue\Middleware\RateLimited;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\FrontEnd\Inquiry;
@@ -22,6 +23,11 @@ class InquiryMailJob implements ShouldQueue
 	public function __construct($data)
 	{
 		$this->inquiryID = $data['recordId'];
+	}
+
+	public function middleware(): array
+	{
+		return [new RateLimited('emails')];
 	}
 
 	public function handle(): void
