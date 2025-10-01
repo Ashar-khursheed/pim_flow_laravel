@@ -24,7 +24,8 @@ class PaymobService
             'api_key' => $this->apiKey,
         ]);
 
-        return $response['token'];
+        // Fix: Use json() method or object access
+        return $response->json()['token'] ?? null;
     }
 
     /**
@@ -59,7 +60,8 @@ class PaymobService
             'integration_id' => $this->integrationId,
         ]);
 
-        return $response['token'];
+        // Fix: Use json() method
+        return $response->json()['token'] ?? null;
     }
 
     /**
