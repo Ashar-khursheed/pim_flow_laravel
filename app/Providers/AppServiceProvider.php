@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 
 use App\Observers\TransactionLogObserver;
 
@@ -14,65 +17,65 @@ use App\Models\CategoryAttributeGroup;
 use App\Models\Product;
 use App\Models\Category;
 
-use App\Models\AppKeyword;
-use App\Models\AppKeywordTranslation;
-use App\Models\AttributeRecommendation;
-use App\Models\Blog;
-use App\Models\Brand;
-use App\Models\BrandTemp1;
-use App\Models\BrandTemp2;
-use App\Models\BrandTemp3;
-use App\Models\CategoryPage;
-use App\Models\CcavenueTransaction;
-use App\Models\City;
-use App\Models\Country;
-use App\Models\Currency;
-use App\Models\Discount;
-use App\Models\DiscountProduct;
-use App\Models\Faq;
-use App\Models\FaqCategory;
-use App\Models\FlashSale;
-use App\Models\GradingRule;
-use App\Models\Language;
-use App\Models\MeasurementType;
-use App\Models\MeasurementUnit;
-use App\Models\MediaFile;
-use App\Models\Metabox;
-use App\Models\Newsletter;
-use App\Models\Order;
-use App\Models\OrderAddress;
-use App\Models\OrderHistory;
-use App\Models\OrderReferral;
-use App\Models\OrderReturn;
-use App\Models\OrderReturnItem;
-use App\Models\Permission;
-use App\Models\PreOnboardingVendor;
-use App\Models\ProductAttribute;
-use App\Models\ProductCategory;
-use App\Models\ProductGroup;
-use App\Models\ProductGroupItem;
-use App\Models\ProductSupplier;
-use App\Models\RedirectLink;
-use App\Models\Review;
-use App\Models\Role;
-use App\Models\SeoDetail;
-use App\Models\SeoManagement;
-use App\Models\SeoSecondaryKeyword;
-use App\Models\SimpleSlider;
-use App\Models\SimpleSliderItem;
-use App\Models\Slug;
-use App\Models\Store;
-use App\Models\SubCategory;
-use App\Models\Tag;
-use App\Models\Tax;
-use App\Models\TransactionLog;
-use App\Models\User;
-use App\Models\Vendor;
-use App\Models\VendorContact;
-use App\Models\VendorDocument;
-use App\Models\Website;
-use App\Models\Zipcode;
-use Illuminate\Support\Facades\URL;
+// use App\Models\AppKeyword;
+// use App\Models\AppKeywordTranslation;
+// use App\Models\AttributeRecommendation;
+// use App\Models\Blog;
+// use App\Models\Brand;
+// use App\Models\BrandTemp1;
+// use App\Models\BrandTemp2;
+// use App\Models\BrandTemp3;
+// use App\Models\CategoryPage;
+// use App\Models\CcavenueTransaction;
+// use App\Models\City;
+// use App\Models\Country;
+// use App\Models\Currency;
+// use App\Models\Discount;
+// use App\Models\DiscountProduct;
+// use App\Models\Faq;
+// use App\Models\FaqCategory;
+// use App\Models\FlashSale;
+// use App\Models\GradingRule;
+// use App\Models\Language;
+// use App\Models\MeasurementType;
+// use App\Models\MeasurementUnit;
+// use App\Models\MediaFile;
+// use App\Models\Metabox;
+// use App\Models\Newsletter;
+// use App\Models\Order;
+// use App\Models\OrderAddress;
+// use App\Models\OrderHistory;
+// use App\Models\OrderReferral;
+// use App\Models\OrderReturn;
+// use App\Models\OrderReturnItem;
+// use App\Models\Permission;
+// use App\Models\PreOnboardingVendor;
+// use App\Models\ProductAttribute;
+// use App\Models\ProductCategory;
+// use App\Models\ProductGroup;
+// use App\Models\ProductGroupItem;
+// use App\Models\ProductSupplier;
+// use App\Models\RedirectLink;
+// use App\Models\Review;
+// use App\Models\Role;
+// use App\Models\SeoDetail;
+// use App\Models\SeoManagement;
+// use App\Models\SeoSecondaryKeyword;
+// use App\Models\SimpleSlider;
+// use App\Models\SimpleSliderItem;
+// use App\Models\Slug;
+// use App\Models\Store;
+// use App\Models\SubCategory;
+// use App\Models\Tag;
+// use App\Models\Tax;
+// use App\Models\TransactionLog;
+// use App\Models\User;
+// use App\Models\Vendor;
+// use App\Models\VendorContact;
+// use App\Models\VendorDocument;
+// use App\Models\Website;
+// use App\Models\Zipcode;
+
 class AppServiceProvider extends ServiceProvider
 {
 	/**
@@ -103,6 +106,10 @@ class AppServiceProvider extends ServiceProvider
 		if (app()->environment('production')) {
 			URL::forceScheme('https');
 		}
+
+		RateLimiter::for('emails', function ($job) {
+			return Limit::perSecond(2)->by('emails');
+		});
 
 		// AppKeyword::observe(TransactionLogObserver::class);
 		// AppKeywordTranslation::observe(TransactionLogObserver::class);
