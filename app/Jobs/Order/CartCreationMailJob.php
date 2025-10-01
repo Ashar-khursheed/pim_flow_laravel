@@ -8,6 +8,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
+use Illuminate\Queue\Middleware\RateLimited;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\FrontEnd\CustomerCart;
@@ -16,7 +17,7 @@ use App\Mail\Order\CartCreationMail;
 class CartCreationMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
+
 	public $customerCartID;
 	public $randomPassword;
 	public $isNewCustomer;
@@ -26,6 +27,11 @@ class CartCreationMailJob implements ShouldQueue
 		$this->customerCartID = $data['recordId'];
 		$this->randomPassword = $data['randomPassword'];
 		$this->isNewCustomer = $data['isNewCustomer'];
+	}
+
+	public function middleware(): array
+	{
+		return [new RateLimited('emails')];
 	}
 
 	public function handle(): void
