@@ -8,6 +8,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
+use Illuminate\Queue\Middleware\RateLimited;
 
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -28,6 +29,11 @@ class ResetPasswordMailJob implements ShouldQueue
 	{
 		$this->recordId = $data['recordId'];
 		$this->userType = $data['userType'];
+	}
+
+	public function middleware(): array
+	{
+		return [new RateLimited('emails')];
 	}
 
 	public function handle(): void

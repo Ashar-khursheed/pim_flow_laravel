@@ -8,6 +8,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
+use Illuminate\Queue\Middleware\RateLimited;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\FrontEnd\OrderProduct;
@@ -24,6 +25,11 @@ class PartialOrderCancelledMailJob implements ShouldQueue
 	{
 		$this->orderProductId = $data['recordId'];
 		$this->reason = $data['reason'];
+	}
+
+	public function middleware(): array
+	{
+		return [new RateLimited('emails')];
 	}
 
 	public function handle(): void
