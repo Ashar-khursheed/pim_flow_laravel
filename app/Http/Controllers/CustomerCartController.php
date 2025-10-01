@@ -162,6 +162,7 @@ class CustomerCartController extends Controller
 
 				/* Prepare cart summary */
 				$record = [
+					'id'       => $record->id,
 					'reference_number'       => $record->reference_number,
 					'customer'               => $record->customer,
 					'is_lift_gate'           => $record->is_lift_gate,
@@ -172,6 +173,7 @@ class CustomerCartController extends Controller
 					'total_amount'           => number_format($totalAmount, 2, '.', ''),
 					'total_products'         => $totalProducts,
 					'products'               => $cartProducts,
+					'created_at'             => $record->created_at,
 				];
 
 				return $record;
