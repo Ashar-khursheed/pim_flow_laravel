@@ -162,7 +162,7 @@ class CustomerCartController extends Controller
 
 				/* Prepare cart summary */
 				$record = [
-					'id'       => $record->id,
+					'id'                     => $record->id,
 					'reference_number'       => $record->reference_number,
 					'customer'               => $record->customer,
 					'is_lift_gate'           => $record->is_lift_gate,
