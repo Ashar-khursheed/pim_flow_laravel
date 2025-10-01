@@ -57,7 +57,7 @@ public function stats(Request $request)
         $productsCount = Product::where('created_at', '>=', $date)->count();
 
         $orders = Order::where('is_reserved', 0)
-            ->whereRaw("LOWER(status) != 'cancelled'")
+            ->whereRaw("LOWER(status) != 'Cancelled'")
             ->where('created_at', '>=', $date);
 
         $ordersCount = (clone $orders)->count();
@@ -76,7 +76,7 @@ public function stats(Request $request)
         $productsCount = Product::count();
 
         $orders = Order::where('is_reserved', 0)
-            ->whereRaw("LOWER(status) != 'cancelled'");
+            ->whereRaw("LOWER(status) != 'Cancelled'");
 
         $ordersCount = (clone $orders)->count();
         $totalOrdersAmount = (clone $orders)->sum('total_amount');
