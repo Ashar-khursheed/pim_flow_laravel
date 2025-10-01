@@ -2,9 +2,9 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-
 use App\Services\PaymobService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PaymobController extends Controller
 {
@@ -15,54 +15,45 @@ class PaymobController extends Controller
         $this->paymob = $paymob;
     }
 
-    // Step 1: Initiate checkout
+    /**
+     * Step 1: Create Intention (frontend will use client_secret to continue payment)
+     */
     public function initiate(Request $request)
     {
-        $amountCents = $request->amount * 100;
-        $merchantOrderId = uniqid();
+        try {
+            $amount = $request->amount;
 
-        $authToken = $this->paymob->authenticate();
-        $order = $this->paymob->createOrder($authToken, $amountCents, $merchantOrderId);
+            $billingData = [
+                "first_name"   => $request->first_name,
+                "last_name"    => $request->last_name,
+                "email"        => $request->email,
+                "phone_number" => $request->phone,
+                "city"         => "Dubai",
+                "country"      => "UAE",
+            ];
 
-        $billingData = [
-            "apartment" => "NA",
-            "email" => $request->email,
-            "floor" => "NA",
-            "first_name" => $request->first_name,
-            "last_name" => $request->last_name,
-            "phone_number" => $request->phone,
-            "street" => "NA",
-            "building" => "NA",
-            "shipping_method" => "NA",
-            "postal_code" => "NA",
-            "city" => "Cairo",
-            "country" => "EG",
-            "state" => "NA"
-        ];
+            $intention = $this->paymob->createIntention($amount, $billingData);
 
-        $paymentToken = $this->paymob->getPaymentKey($authToken, $order['id'], $amountCents, $billingData);
-
-        return response()->json([
-            'order_id' => $order['id'],
-            'payment_token' => $paymentToken
-        ]);
+            return response()->json([
+                'success' => true,
+                'intention_id' => $intention['id'],
+                'client_secret' => $intention['client_secret'],
+                'public_key' => $this->paymob->getPublicKey(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Paymob initiate error", ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
-    // Step 2: Confirm payment with card details
-    public function pay(Request $request)
-    {
-        $paymentToken = $request->payment_token;
-        $cardData = $request->only(['card_number', 'expiry_month', 'expiry_year', 'cvv']);
-
-        $response = $this->paymob->payWithCard($paymentToken, $cardData);
-
-        return response()->json($response);
-    }
-
-    // Webhook callback
+    /**
+     * Webhook callback (Paymob will notify here after payment)
+     */
     public function webhook(Request $request)
     {
-        // TODO: Add HMAC verification
-        return response()->json($request->all());
+        // TODO: Add HMAC verification (check signature to confirm authenticity)
+        Log::info('Paymob Webhook received', $request->all());
+
+        return response()->json(['status' => 'ok']);
     }
 }
