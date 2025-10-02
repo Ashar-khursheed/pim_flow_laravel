@@ -241,6 +241,7 @@ class OrderController extends BaseController
 				if (!$fetchedDetail) {
 					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
 				}
+				$accessoryIds = $product['accessory_item_ids'] ?? [];
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
