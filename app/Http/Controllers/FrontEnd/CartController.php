@@ -621,6 +621,7 @@ class CartController extends Controller
                         $cartItem->accessories_options_details[] = [
                             'accessory_name' => $item->accessory->name ?? null, // via relation
                             'item_name'      => $item->name,
+                            'item_id'      => $item->id,
                             'price'          => (float)$item->price,
                         ];
                     }
