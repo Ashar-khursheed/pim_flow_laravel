@@ -259,7 +259,8 @@ class OrderController extends Controller
 	 *                     required={"product_id", "vendor_id", "quantity"},
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5)
+	 *                     @OA\Property(property="quantity", type="integer", example=5),
+	 *                     @OA\Property(property="accessory_ids", type="array", @OA\Items(type="integer"))
 	 *                 )
 	 *             )
 	 *         )
@@ -287,6 +288,8 @@ class OrderController extends Controller
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.accessory_ids' => 'nullable|array',
+			'products.*.accessory_ids.*' => 'integer|exists:ec_products,id',
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
@@ -310,11 +313,15 @@ class OrderController extends Controller
 				if (!$fetchedDetail) {
 					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
 				}
+
+				$accessoryIds = $product['accessory_item_ids'] ?? [];
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
+					'accessory_item_ids'   => $accessoryIds,
+					'accessory_item_charge'=> getAccessoryItemCharge($accessoryIds) * $product['quantity'],
 					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
@@ -326,7 +333,7 @@ class OrderController extends Controller
 
 			foreach ($productDetails as $product) {
 				$totalProducts += $product['quantity'];
-				$orderAmount += $product['quantity'] * $product['unit_price'];
+				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
 				$orderShipping += $product['shipping_charge'];
 			}
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
@@ -387,8 +394,10 @@ class OrderController extends Controller
 					'remaining_quantity' => $product['quantity'],
 					'unit_price' => $product['unit_price'],
 					'amount' => $total,
+					'accessory_item_ids' => $product['accessory_item_ids'],
+					'accessory_item_charge' => $product['accessory_item_charge'],
 					'shipping_charge' => $product['shipping_charge'],
-					'total_amount' => $total + $product['shipping_charge'],
+					'total_amount' => $total + $product['shipping_charge'] + $product['accessory_item_charge'],
 					'status' => 'Pending',
 				]);
 			}

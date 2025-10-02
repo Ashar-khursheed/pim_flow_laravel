@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Http;
 
 use App\Models\MeasurementUnit;
 use App\Models\ProductSupplier;
+use App\Models\AccessoryItem;
 
 if (!function_exists('app_constants')) {
 	function app_constants($key = null)
@@ -897,6 +898,14 @@ function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier
 	return $productSupplier;
 }
 
+function getAccessoryItemCharge(?array $accessoryItemIds): float
+{
+	if (empty($accessoryItemIds)) {
+		return 0;
+	}
+
+	return (float) AccessoryItem::whereIn('id', $accessoryItemIds)->sum('price');
+}
 
 if (!function_exists('paymentGateway')) {
 	function paymentGateway()
