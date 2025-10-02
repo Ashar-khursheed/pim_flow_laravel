@@ -218,7 +218,7 @@ class OrderController extends BaseController
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
 			'products.*.accessory_ids' => 'nullable|array',
-			'products.*.accessory_ids.*' => 'integer|exists:ec_products,id',
+			'products.*.accessory_ids.*' => 'integer|exists:accessory_items,id',
 		]);
 
 		$customerId = auth()->id();
