@@ -345,7 +345,7 @@ class OrderController extends Controller
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
 					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
 
@@ -365,7 +365,7 @@ class OrderController extends Controller
 			$discountedAmount = $orderAmount - $discount;
 			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
-			if (config('app.website') == 'UAE') {
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
@@ -377,8 +377,7 @@ class OrderController extends Controller
 			if ($latestOrder && is_numeric($latestOrder->order_number)) {
 				$orderNumber = (int) $latestOrder->order_number + 1;
 			} else {
-				$website = config('app.website');
-				$orderNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+				$orderNumber = in_array(config('app.website'), ['US', 'US_T']) ? 10001 : (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101);
 			}
 
 			$order = Order::create([
@@ -446,7 +445,7 @@ class OrderController extends Controller
 			});
 
 			if ($request->boolean('is_reserved')) {
-				if (in_array(config('app.website'), ['UAE', 'TEST'])) {
+				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					$paymentLink = null;
 					if ($request->boolean('is_payment')) {
 						try {
@@ -468,7 +467,7 @@ class OrderController extends Controller
 
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\PaymobController::class)->generatePaymobPaymentLink($order);
- 
+
 
 							if ($paymentLink) {
 								$order = Order::find($order->id);
@@ -500,7 +499,7 @@ class OrderController extends Controller
 							]);
 						}
 					}
-				} else if (config('app.website') == 'US') {
+				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
 					try {
 						$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
 							->createPaymentLink($order);
@@ -909,7 +908,7 @@ class OrderController extends Controller
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
 					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
 
@@ -929,7 +928,7 @@ class OrderController extends Controller
 			$discountedAmount = $orderAmount - $discount;
 			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
-			if (config('app.website') == 'UAE') {
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 

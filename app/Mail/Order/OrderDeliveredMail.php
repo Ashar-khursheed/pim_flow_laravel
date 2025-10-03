@@ -27,11 +27,11 @@ class OrderDeliveredMail extends Mailable
 	{
 		$order = $this->order;
 		$backendURL = config('app.backend_url');
-		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$logoUrl = $backendURL . '/logo.png';
 
 		$name = $order->customer->name ?? 'User';
 		$orderNumber = $order->order_number;
-		$currency = config('app.website') == 'UAE' ? 'AED' : '$';
+		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 
 		$products = collect();
 		foreach ($order->orderProducts as $orderProduct) {
@@ -54,7 +54,8 @@ class OrderDeliveredMail extends Mailable
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'sales@thehorecastore.com',
 			'UAE'  => 'hello@horecastore.ae',
-			'TEST' => 'test@thehorecastore.co',
+			'US_T' => 'test_us@thehorecastore.co',
+			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
 		};
 

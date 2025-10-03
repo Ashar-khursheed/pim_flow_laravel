@@ -4,7 +4,7 @@
 	$finalUrl = $url ?? config('app.url');
 
 	$backendURL = config('app.backend_url');
-	$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+	$logoUrl = $backendURL . '/logo.png';
 @endphp
 
 <tr>

@@ -28,7 +28,7 @@ class InquiryMail extends Mailable
 		$inquiry = $this->inquiry;
 
 		$backendURL = config('app.backend_url');
-		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$logoUrl = $backendURL . '/logo.png';
 
 		$name = $inquiry->full_name;
 		$phone = $inquiry->phone;
@@ -47,7 +47,8 @@ class InquiryMail extends Mailable
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'sales@thehorecastore.com',
 			'UAE'  => 'hello@horecastore.ae',
-			'TEST' => 'test@thehorecastore.co',
+			'US_T' => 'test_us@thehorecastore.co',
+			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
 		};
 

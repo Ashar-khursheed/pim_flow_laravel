@@ -40,7 +40,7 @@ class ResetPasswordMail extends Mailable
 		$frontEndUrl = config('app.url');
 		$backendUrl = config('app.backend_url');
 
-		$logoUrl = $backendUrl . (config('app.website') === 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$logoUrl = $backendUrl . '/logo.png';
 
 		return $this->subject('Reset Your HorecaStore Password')
 			->markdown('emails.auth.reset-password')
