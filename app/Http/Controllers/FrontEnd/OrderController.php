@@ -419,200 +419,91 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	// public function show($id)
-	// {
-	// 	$order = Order::where('customer_id', auth()->id())
-	// 	->where('id', $id)
-	// 	->first();
-
-	// 	if (!$order) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => "Order not found."
-	// 		]);
-	// 	}
-
-	// 	/* Load relationships */
-	// 	$order->load([
-	// 		'customer:id,name,email,type,country_code,mobile_number',
-	// 		'customerAddress',
-	// 		'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
-	// 		'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-	// 		'orderProducts.product.brand:id,name',
-	// 		'orderProducts.product.currency:id,symbol',
-	// 		'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-	// 		'orderProducts.product.warrantyAttribute',
-	// 		'tracking',
-	// 		'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
-	// 	]);
-
-
-	// 	/* Mutate the data for each order product */
-	// 	foreach ($order->orderProducts as $orderProduct) {
-	// 		$product = $orderProduct->product;
-	// 		if ($product) {
-	// 			$product->images = is_array($product->images)
-	// 			? $product->images
-	// 			: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-
-	// 			$product->brand_name = $product->brand->name ?? null;
-	// 			$product->currency_symbol = $product->currency->symbol ?? null;
-	// 			$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
-	// 			$product->category_url = method_exists($product, 'category_url')
-	// 			? $product->category_url()
-	// 			: null;
-
-	// 			$product->parent_category_url = method_exists($product, 'parent_category_url')
-	// 			? $product->parent_category_url()
-	// 			: null;
-
-
-	// 		// 🔹 Fetch SEO URL directly without relation
-	// 			$seo = \App\Models\SeoManagement::where('relational_id', $product->id)
-	// 			->where('relational_type', 'Product')
-	// 			->first();
-
-	// 			$product->url = $seo->url ?? null;
-
-	// 			unset($product->brand, $product->currency);
-	// 		}
-
-	// 		$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-	// 		->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-
-	// 		$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-	// 		? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-	// 		: null;
-	// 	}
-
-	// 	if (
-	// 		$order->status === 'Delivered' &&
-	// 		$orderProduct->product_supplier &&
-	// 		isset($orderProduct->product_supplier['return_policy'])
-	// 	) {
-	// 		$returnDays = (int) $orderProduct->product_supplier['return_policy'];
-	// 		$deliveryDate = \Carbon\Carbon::parse($order->updated_at);
-	// 		$returnUntil = $deliveryDate->copy()->addDays($returnDays);
-
-	// 		$orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
-	// 	} else {
-	// 		$orderProduct->is_returnable = 'yes';
-	// 	}
-
-	// 	foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-	// 		if (isset($order->$key)) {
-	// 			$order->$key = number_format($order->$key, 2, '.', '');
-	// 		}
-	// 	}
-
-	// 	return response()->json([
-	// 		'success' => true,
-	// 		'data' => $order
-	// 	]);
-	// }
 	public function show($id)
 	{
-    $order = Order::where('customer_id', auth()->id())
-        ->where('id', $id)
-        ->first();
+		$order = Order::where('customer_id', auth()->id())
+		->where('id', $id)
+		->first();
 
-    if (!$order) {
-        return response()->json([
-            'success' => false,
-            'message' => "Order not found."
-        ]);
-    }
+		if (!$order) {
+			return response()->json([
+				'success' => false,
+				'message' => "Order not found."
+			]);
+		}
 
-    /* Load relationships */
-    $order->load([
-        'customer:id,name,email,type,country_code,mobile_number',
-        'customerAddress',
-        'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_ids,accessory_item_charge',
-        'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-        'orderProducts.product.brand:id,name',
-        'orderProducts.product.currency:id,symbol',
-        'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-        'orderProducts.product.warrantyAttribute',
-        'tracking',
-        'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
-    ]);
+		/* Load relationships */
+		$order->load([
+			'customer:id,name,email,type,country_code,mobile_number',
+			'customerAddress',
+			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_ids,accessory_item_charge',
+			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+			'orderProducts.product.brand:id,name',
+			'orderProducts.product.currency:id,symbol',
+			'orderProducts.product.seoProductUrl:id,relational_id,relational_type,url',
+			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'orderProducts.product.warrantyAttribute',
+			'tracking',
+			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
+		]);
 
-    /* Mutate the data for each order product */
-    foreach ($order->orderProducts as $orderProduct) {
-        $product = $orderProduct->product;
-        if ($product) {
-            $product->images = is_array($product->images)
-                ? $product->images
-                : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 
-            $product->brand_name = $product->brand->name ?? null;
-            $product->currency_symbol = $product->currency->symbol ?? null;
-            $product->warranty = $product->warrantyAttribute->attribute_value ?? null;
-            $product->category_url = method_exists($product, 'category_url')
-                ? $product->category_url()
-                : null;
+		/* Mutate the data for each order product */
+		foreach ($order->orderProducts as $orderProduct) {
+			$product = $orderProduct->product;
+			if ($product) {
+				$product->images = is_array($product->images)
+				? $product->images
+				: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 
-            $product->parent_category_url = method_exists($product, 'parent_category_url')
-                ? $product->parent_category_url()
-                : null;
+				$product->brand_name = $product->brand->name ?? null;
+				$product->currency_symbol = $product->currency->symbol ?? null;
+				$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
+				$product->category_url = method_exists($product, 'category_url')
+				? $product->category_url()
+				: null;
 
-            // 🔹 Fetch SEO URL directly without relation
-            $seo = \App\Models\SeoManagement::where('relational_id', $product->id)
-                ->where('relational_type', 'Product')
-                ->first();
+				$product->parent_category_url = method_exists($product, 'parent_category_url')
+				? $product->parent_category_url()
+				: null;
 
-            $product->url = $seo->url ?? null;
+				$product->url = $product->seoProductUrl->url ?? null;
 
-            unset($product->brand, $product->currency);
-        }
+				unset($product->brand, $product->currency);
+			}
 
-        // Vendor supplier details
-        $orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-            ->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
+			->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 
-        $orderProduct->expectedShippingDate = $orderProduct->product_supplier
-            ? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-            : null;
+			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+			: null;
+		}
 
-        // 🔹 Add accessories with details
-        $accessoryItems = [];
-        if (!empty($orderProduct->accessory_item_ids)) {
-            $accessoryItems = \App\Models\AccessoryItem::whereIn('id', $orderProduct->accessory_item_ids)
-                ->get(['id', 'name', 'price']);
-        }
+		if (
+			$order->status === 'Delivered' &&
+			$orderProduct->product_supplier &&
+			isset($orderProduct->product_supplier['return_policy'])
+		) {
+			$returnDays = (int) $orderProduct->product_supplier['return_policy'];
+			$deliveryDate = \Carbon\Carbon::parse($order->updated_at);
+			$returnUntil = $deliveryDate->copy()->addDays($returnDays);
 
-        $orderProduct->accessories = [
-            'items' => $accessoryItems,
-            'total_charge' => $orderProduct->accessory_item_charge ?? 0,
-        ];
-    }
+			$orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
+		} else {
+			$orderProduct->is_returnable = 'yes';
+		}
 
-    // 🔹 Return eligibility check
-    if (
-        $order->status === 'Delivered' &&
-        $orderProduct->product_supplier &&
-        isset($orderProduct->product_supplier['return_policy'])
-    ) {
-        $returnDays = (int) $orderProduct->product_supplier['return_policy'];
-        $deliveryDate = \Carbon\Carbon::parse($order->updated_at);
-        $returnUntil = $deliveryDate->copy()->addDays($returnDays);
+		foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			if (isset($order->$key)) {
+				$order->$key = number_format($order->$key, 2, '.', '');
+			}
+		}
 
-        $orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
-    } else {
-        $orderProduct->is_returnable = 'yes';
-    }
-
-    // Format money values
-    foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-        if (isset($order->$key)) {
-            $order->$key = number_format($order->$key, 2, '.', '');
-        }
-    }
-
-    return response()->json([
-        'success' => true,
-        'data' => $order
-    ]);
+		return response()->json([
+			'success' => true,
+			'data' => $order
+		]);
 	}
 
 	// /**
