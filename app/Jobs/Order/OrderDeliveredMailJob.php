@@ -43,7 +43,8 @@ class OrderDeliveredMailJob implements ShouldQueue
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'orders@thehorecastore.com',
 				'UAE'  => 'orders@horecastore.ae',
-				'TEST' => 'test@thehorecastore.co',
+				'US_T' => 'test_us@thehorecastore.co',
+				'UAE_T' => 'test_uae@thehorecastore.co',
 				default => 'test@thehorecastore.co',
 			};
 

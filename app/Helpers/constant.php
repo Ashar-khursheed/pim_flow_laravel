@@ -611,10 +611,13 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'fm@horecastore.ae',
 		];
 
-		$testMails = [];
+		$testMails = [
+			'qa03@thehorecastore.com',
+			'qa04@thehorecastore.com',
+			'qa05@thehorecastore.com',
+		];
 
 		$localMails = [
-			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
 		];
 
@@ -627,11 +630,15 @@ if (!function_exists('glitch_error_reporting_mails')) {
 				$mails = $uaeMails;
 				break;
 
-			case 'TEST':
+			case 'US_T':
 				$mails = $testMails;
 				break;
 
-			case 'Local':
+			case 'UAE_T':
+				$mails = $testMails;
+				break;
+
+			case 'LOCAL':
 				$mails = $localMails;
 				break;
 
@@ -667,10 +674,13 @@ if (!function_exists('order_cc_mails')) {
 			'webdeveloper04@horecastore.ae',
 		];
 
-		$testMails = [];
+		$testMails = [
+			'qa03@thehorecastore.com',
+			'qa04@thehorecastore.com',
+			'qa05@thehorecastore.com',
+		];
 
 		$localMails = [
-			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
 		];
 
@@ -683,11 +693,15 @@ if (!function_exists('order_cc_mails')) {
 				$mails = $uaeMails;
 				break;
 
-			case 'TEST':
+			case 'US_T':
 				$mails = $testMails;
 				break;
 
-			case 'Local':
+			case 'UAE_T':
+				$mails = $testMails;
+				break;
+
+			case 'LOCAL':
 				$mails = $localMails;
 				break;
 
@@ -717,10 +731,13 @@ if (!function_exists('quote_cc_mails')) {
 			'pm@horecastore.ae',
 		];
 
-		$testMails = [];
+		$testMails = [
+			'qa03@thehorecastore.com',
+			'qa04@thehorecastore.com',
+			'qa05@thehorecastore.com',
+		];
 
 		$localMails = [
-			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
 		];
 
@@ -733,11 +750,15 @@ if (!function_exists('quote_cc_mails')) {
 				$mails = $uaeMails;
 				break;
 
-			case 'TEST':
+			case 'US_T':
 				$mails = $testMails;
 				break;
 
-			case 'Local':
+			case 'UAE_T':
+				$mails = $testMails;
+				break;
+
+			case 'LOCAL':
 				$mails = $localMails;
 				break;
 

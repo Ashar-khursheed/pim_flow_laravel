@@ -34,7 +34,7 @@ class QuotePlacedMail extends Mailable
 		$quoteNumber = $quote->quote_number;
 		$quoteName = $quote->quote_name;
 		$backendURL = config('app.backend_url');
-		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$logoUrl = $backendURL . '/logo.png';
 		$name = strtolower(optional($quote->customer)->type) === 'private' ? $quote->customer->name : $quote->customer->business_name;
 		$rightPngURL = $backendURL. '/right.png';
 		$mailIconURL = $backendURL. '/right.png';
@@ -52,7 +52,8 @@ class QuotePlacedMail extends Mailable
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'yourquote@thehorecastore.com',
 			'UAE'  => 'yourquote@horecastore.ae',
-			'TEST' => 'test@thehorecastore.co',
+			'US_T' => 'test_us@thehorecastore.co',
+			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
 		};
 

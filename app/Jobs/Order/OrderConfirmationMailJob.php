@@ -43,7 +43,8 @@ class OrderConfirmationMailJob implements ShouldQueue
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'orders@thehorecastore.com',
 				'UAE'  => 'orders@horecastore.ae',
-				'TEST' => 'test@thehorecastore.co',
+				'US_T' => 'test_us@thehorecastore.co',
+				'UAE_T' => 'test_uae@thehorecastore.co',
 				default => 'test@thehorecastore.co',
 			};
 
@@ -59,7 +60,7 @@ class OrderConfirmationMailJob implements ShouldQueue
 				->replyTo($replyToEmail)
 			);
 
-			if (config('app.website') !== 'TEST') {
+			if (in_array(config('app.website'), ['UAE', 'US'])) {
 				$recipients = order_cc_mails();
 				$to = array_shift($recipients);
 				$cc = $recipients;

@@ -283,7 +283,7 @@ class QuoteController extends BaseController
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => config('app.website') == 'UAE' ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
 
@@ -323,7 +323,7 @@ class QuoteController extends BaseController
 			$discountedAmount = $quoteAmount - $discount;
 
 			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
-			if (config('app.website') == 'UAE') {
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$quoteShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 			$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
@@ -587,7 +587,7 @@ class QuoteController extends BaseController
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
 
@@ -605,7 +605,7 @@ class QuoteController extends BaseController
 			$discountedAmount = $quoteAmount - $discount;
 			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
-			if (config('app.website') == 'UAE') {
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$quoteShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
