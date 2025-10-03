@@ -912,17 +912,28 @@ Route::get('/frontend/search-logs', [F_SearchLogController::class, 'index']);
 Route::get('/frontend/menu-banners', [F_MenuBannerController::class, 'index']);
 Route::get('/frontend/menu-banners/{id}', [F_MenuBannerController::class, 'show']);
 Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'showCategory']);
-Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
 
 
 	// Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);
 	Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
      ->where('from', '.*');
 
-	Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
 
 	
 
 Route::post('frontend/paymob/initiate', [F_PaymobController::class, 'initiate']); // get payment_token
 Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);           // pay with card
 Route::post('frontend/paymob/webhook', [F_PaymobController::class, 'webhook']);   // webhook
+
+Route::prefix('stax')->middleware(['api'])->group(function () {
+    // Payment processing
+    Route::post('/payment/process', [F_StaxPaymentController::class, 'processPayment']);
+    
+    // Customer management
+    Route::post('/customer', [F_StaxPaymentController::class, 'createCustomer']);
+    Route::get('/customer/{customerId}/payment-methods', [F_StaxPaymentController::class, 'getPaymentMethods']);
+    
+    // Transaction management
+    Route::get('/transaction/{transactionId}', [F_StaxPaymentController::class, 'getTransaction']);
+    Route::post('/transaction/{transactionId}/refund', [F_StaxPaymentController::class, 'refundTransaction']);
+});

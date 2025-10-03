@@ -1,96 +1,261 @@
 <?php
 
-namespace App\Http\Controllers\FrontEnd;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-
 use Illuminate\Http\Request;
-use App\Services\StaxService;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 
 class StaxPaymentController extends Controller
 {
-    protected $stax;
+    private $baseUrl;
+    private $apiKey;
 
-    public function __construct(StaxService $stax)
+    public function __construct()
     {
-        $this->stax = $stax;
+        $this->baseUrl = config('services.stax.base_url');
+        $this->apiKey = config('services.stax.api_key');
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/frontend/auth/Stax",
-     *     tags={"Payments"},
-     *     summary="Process a checkout payment",
-     *     description="Takes a Stax.js payment token and amount, then processes the charge via Stax API.",
-     *     operationId="checkout",
-     *     
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"token","amount"},
-     *             @OA\Property(property="token", type="string", example="tok_abc123XYZ", description="Payment token from Stax.js"),
-     *             @OA\Property(property="amount", type="number", format="float", example=100.50, description="Charge amount in USD")
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful transaction",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="transaction",
-     *                 type="object",
-     *                 example={"id": "txn_12345", "status": "succeeded", "amount": 100.50, "currency": "USD"}
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Failed transaction",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="error", type="string", example="Card declined")
-     *         )
-     *     )
-     * )
+     * Process a payment with Stax
      */
-  public function checkout(Request $request)
-{
-    $request->validate([
-        'token'  => 'required|string',  // Stax.js payment token
-        'amount' => 'required|numeric|min:1',
-        'currency' => 'sometimes|string|size:3', // optional, default USD
-    ]);
+    public function processPayment(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_method_id' => 'required|string',
+            'total' => 'required|numeric|min:0.01',
+            'firstname' => 'required|string',
+            'lastname' => 'required|string',
+            'email' => 'nullable|email',
+            'phone' => 'required|string',
+            'address_1' => 'required|string',
+            'address_city' => 'required|string',
+            'address_state' => 'required|string',
+            'address_zip' => 'required|string',
+            'address_country' => 'required|string',
+            'meta' => 'nullable|array',
+        ]);
 
-    try {
-        $data = [
-            'amount' => intval($request->amount * 100), // amount in cents
-            'currency' => $request->currency ?? 'USD',
-            'payment_method' => $request->token,
-        ];
-
-        // Optional: handle ACH/bank payments
-        if ($request->method === 'bank') {
-            $data['bank_account'] = $request->bank_account;
-            $data['bank_routing'] = $request->bank_routing;
-            $data['bank_type'] = $request->bank_type ?? 'checking';
-            $data['bank_holder_type'] = $request->bank_holder_type ?? 'personal';
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        // Call StaxService to process charge
-        $result = $this->stax->charge($data);
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl . '/charge', [
+                'payment_method_id' => $request->payment_method_id,
+                'total' => $request->total,
+                'firstname' => $request->firstname,
+                'lastname' => $request->lastname,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'address_1' => $request->address_1,
+                'address_2' => $request->address_2,
+                'address_city' => $request->address_city,
+                'address_state' => $request->address_state,
+                'address_zip' => $request->address_zip,
+                'address_country' => $request->address_country,
+                'meta' => $request->meta ?? [],
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'transaction' => $result,
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-        ], 500);
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $response->json()
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment failed',
+                'error' => $response->json()
+            ], $response->status());
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment processing error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
+    /**
+     * Get customer payment methods
+     */
+    public function getPaymentMethods($customerId)
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])->get($this->baseUrl . '/customer/' . $customerId . '/payment-method');
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $response->json()
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve payment methods',
+                'error' => $response->json()
+            ], $response->status());
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving payment methods',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Create a customer
+     */
+    public function createCustomer(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'firstname' => 'required|string',
+            'lastname' => 'required|string',
+            'email' => 'required|email',
+            'phone' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl . '/customer', [
+                'firstname' => $request->firstname,
+                'lastname' => $request->lastname,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'address_1' => $request->address_1,
+                'address_2' => $request->address_2,
+                'address_city' => $request->address_city,
+                'address_state' => $request->address_state,
+                'address_zip' => $request->address_zip,
+                'address_country' => $request->address_country,
+            ]);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $response->json()
+                ], 201);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer creation failed',
+                'error' => $response->json()
+            ], $response->status());
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer creation error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get transaction details
+     */
+    public function getTransaction($transactionId)
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])->get($this->baseUrl . '/transaction/' . $transactionId);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $response->json()
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaction not found',
+                'error' => $response->json()
+            ], $response->status());
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving transaction',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Refund a transaction
+     */
+    public function refundTransaction(Request $request, $transactionId)
+    {
+        $validator = Validator::make($request->all(), [
+            'total' => 'required|numeric|min:0.01',
+            'reason' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl . '/transaction/' . $transactionId . '/refund', [
+                'total' => $request->total,
+                'reason' => $request->reason,
+            ]);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $response->json()
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Refund failed',
+                'error' => $response->json()
+            ], $response->status());
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Refund processing error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
