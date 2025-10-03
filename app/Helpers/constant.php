@@ -898,14 +898,15 @@ function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier
 	return $productSupplier;
 }
 
-function getAccessoryItemCharge(?array $accessoryItemIds): float
+function getAccessoryItemIDPrice(?array $accessoryItemIds): array
 {
 	if (empty($accessoryItemIds)) {
-		return 0;
+		return [];
 	}
 
-	return (float) AccessoryItem::whereIn('id', $accessoryItemIds)->sum('price');
+	return AccessoryItem::whereIn('id', $accessoryItemIds)->get(['id', 'price'])->toArray();
 }
+
 
 if (!function_exists('paymentGateway')) {
 	function paymentGateway()

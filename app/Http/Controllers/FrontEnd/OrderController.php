@@ -50,7 +50,10 @@ class OrderController extends BaseController
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Eager load relationships */
 			$recordsQuery->with([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
 				'orderProducts.product.currency:id,symbol',
@@ -135,6 +138,22 @@ class OrderController extends BaseController
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
 					: null;
+
+					if ($orderProduct->accessoryCharges) {
+						$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+							return [
+								'id' => $charge->id,
+								'accessory_item_id' => $charge->accessory_item_id,
+								'accessory_item_name' => $charge->accessoryItem->name ?? null,
+								'accessory_item_price' => $charge->accessoryItem->price ?? null,
+								'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+								'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+								'amount' => $charge->amount,
+							];
+						});
+
+						unset($orderProduct->accessoryCharges);
+					}
 				}
 				foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
@@ -189,7 +208,7 @@ class OrderController extends BaseController
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
 	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="accessory_ids", type="array", @OA\Items(type="integer"))
+	 *                     @OA\Property(property="accessory_item_ids", type="array", @OA\Items(type="integer"))
 	 *                 )
 	 *             )
 	 *         )
@@ -243,13 +262,16 @@ class OrderController extends BaseController
 					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
 				}
 				$accessoryIds = $product['accessory_item_ids'] ?? [];
+				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
+				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
-					'accessory_item_ids'   => $accessoryIds,
-					'accessory_item_charge'=> getAccessoryItemCharge($accessoryIds) * $product['quantity'],
+					'accessoryItems' => $accessoryItems,
+					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
 					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
@@ -315,7 +337,7 @@ class OrderController extends BaseController
 
 			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
-				OrderProduct::create([
+				$orderProduct = OrderProduct::create([
 					'order_id' => $order->id,
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -324,12 +346,18 @@ class OrderController extends BaseController
 					'remaining_quantity' => $product['quantity'],
 					'unit_price' => $product['unit_price'],
 					'amount' => $total,
-					'accessory_item_ids' => $product['accessory_item_ids'],
 					'accessory_item_charge' => $product['accessory_item_charge'],
 					'shipping_charge' => $product['shipping_charge'],
 					'total_amount' => $total + $product['shipping_charge'] + $product['accessory_item_charge'],
 					'status' => 'Pending',
 				]);
+				foreach ($product['accessoryItems'] as $accessoryItem) {
+					$orderProduct->accessoryCharges()->create([
+						'accessory_item_id' => $accessoryItem['id'],
+						'amount' => $accessoryItem['price'] * $product['quantity'],
+						'created_at' => now(),
+					]);
+				}
 			}
 
 			OrderTracking::create([
@@ -358,7 +386,10 @@ class OrderController extends BaseController
 
 			/* Load relationships */
 			$order->load([
-   				 'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_ids,accessory_item_charge',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
 				'orderProducts.product.currency:id,symbol',
@@ -379,6 +410,22 @@ class OrderController extends BaseController
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
+
+				if ($orderProduct->accessoryCharges) {
+					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+						return [
+							'id' => $charge->id,
+							'accessory_item_id' => $charge->accessory_item_id,
+							'accessory_item_name' => $charge->accessoryItem->name ?? null,
+							'accessory_item_price' => $charge->accessoryItem->price ?? null,
+							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+							'amount' => $charge->amount,
+						];
+					});
+
+					unset($orderProduct->accessoryCharges);
+				}
 			}
 
 			foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
@@ -436,7 +483,10 @@ class OrderController extends BaseController
 		$order->load([
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress',
-			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_ids,accessory_item_charge',
+			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+			'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+			'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+			'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
@@ -446,7 +496,6 @@ class OrderController extends BaseController
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
-
 
 		/* Mutate the data for each order product */
 		foreach ($order->orderProducts as $orderProduct) {
@@ -478,6 +527,22 @@ class OrderController extends BaseController
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
+
+			if ($orderProduct->accessoryCharges) {
+				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+					return [
+						'id' => $charge->id,
+						'accessory_item_id' => $charge->accessory_item_id,
+						'accessory_item_name' => $charge->accessoryItem->name ?? null,
+						'accessory_item_price' => $charge->accessoryItem->price ?? null,
+						'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+						'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+						'amount' => $charge->amount,
+					];
+				});
+
+				unset($orderProduct->accessoryCharges);
+			}
 		}
 
 		if (
