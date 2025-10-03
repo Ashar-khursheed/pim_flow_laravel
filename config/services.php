@@ -98,8 +98,8 @@ return [
         'base_url' => env('STAX_BASE_URL'),
         'api_key'  => env('STAX_API_KEY'),
     ],
-    'paymob' => [
-    'base_url'       => env('PAYMOB_BASE_URL', 'https://accept.paymob.com/api'),
+    'paymob' => [    
+    'base_url'       => env('PAYMOB_MODE') === 'live' ? 'https://accept.paymobsolutions.com/api' : 'https://accept.paymob.com/api',
     'api_key'        => env('PAYMOB_API_KEY'),
     'integration_id' => env('PAYMOB_INTEGRATION_ID'),
     'iframe_id'      => env('PAYMOB_IFRAME_ID'),

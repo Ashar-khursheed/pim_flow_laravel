@@ -40,7 +40,8 @@ class Order extends Model
 		'updated_by',
 		'utm_id',
 		'payment_link',
-		'is_payment'
+		'is_payment',
+		'is_paymob'
 	];
 
 	public function creator()
