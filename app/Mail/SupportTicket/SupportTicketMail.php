@@ -28,7 +28,7 @@ class SupportTicketMail extends Mailable
 		$ticket = $this->ticket;
 
 		$backendURL = config('app.backend_url');
-		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$logoUrl = $backendURL . '/logo.png';
 		$name = $ticket->customer->name ?? 'User';
 		$ticketNumber = $ticket->ticket_number;
 		$ticketDate = Carbon::parse($ticket->created_at)->format('D, M d, Y');
@@ -46,7 +46,8 @@ class SupportTicketMail extends Mailable
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'sales@thehorecastore.com',
 			'UAE'  => 'hello@horecastore.ae',
-			'TEST' => 'test@thehorecastore.co',
+			'US_T' => 'test_us@thehorecastore.co',
+			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
 		};
 
