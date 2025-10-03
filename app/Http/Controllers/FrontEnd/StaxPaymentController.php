@@ -58,7 +58,7 @@ class StaxPaymentController extends Controller
     public function checkout(Request $request)
     {
         $request->validate([
-            'token'  => 'required|string',  // payment token from React
+            'token'  => 'required|string',  // payment token from Reacts
             'amount' => 'required|numeric|min:1',
         ]);
 
