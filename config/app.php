@@ -5,15 +5,24 @@ $website = env('APP_WEBSITE', 'US');
 switch ($website) {
 	case 'UAE':
 		$url = 'https://www.horecastore.ae';
-		$backendUrl = 'https://d1rzvl7bmf7tga.cloudfront.net';
-		break;
-
-	case 'TEST':
-		$url = 'https://test.d2gutus2i9fewc.amplifyapp.com';
-		$backendUrl = 'https://testpim.thehorecastore.co';
+		$backendUrl = 'https://pimflow.thehorecastore.co';
 		break;
 
 	case 'US':
+		$url = 'https://www.thehorecastore.com';
+		$backendUrl = 'https://pim.thehorecastore.co';
+		break;
+
+	case 'UAE_T':
+		$url = 'https://www.uae.thehorecastore.co';
+		$backendUrl = 'https://testpim.thehorecastore.co';
+		break;
+
+	case 'US_T':
+		$url = 'https://development.d28qosi1cuigvb.amplifyapp.com';
+		$backendUrl = 'https://developmentcalifornia.thehorecastore.co';
+		break;
+
 	default:
 		$url = 'https://www.thehorecastore.com';
 		$backendUrl = 'https://pim.thehorecastore.co';
