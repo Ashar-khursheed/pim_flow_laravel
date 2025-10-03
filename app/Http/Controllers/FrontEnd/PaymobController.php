@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Http;
+use App\Models\FrontEnd\CustomerAddress;
+use App\Models\FrontEnd\Customer;
 class PaymobController extends Controller
 {
     // Step 1: Initiate checkout
@@ -82,10 +84,26 @@ class PaymobController extends Controller
     {
         $secret = env('PAYMOB_HMAC_SECRET'); // from Paymob dashboard
         $keys = [
-            "amount_cents", "created_at", "currency", "error_occured", "has_parent_transaction",
-            "id", "integration_id", "is_3d_secure", "is_auth", "is_capture", "is_refunded",
-            "is_standalone_payment", "is_voided", "order", "owner", "pending", "source_data_pan",
-            "source_data_sub_type", "source_data_type", "success"
+            "amount_cents",
+            "created_at",
+            "currency",
+            "error_occured",
+            "has_parent_transaction",
+            "id",
+            "integration_id",
+            "is_3d_secure",
+            "is_auth",
+            "is_capture",
+            "is_refunded",
+            "is_standalone_payment",
+            "is_voided",
+            "order",
+            "owner",
+            "pending",
+            "source_data_pan",
+            "source_data_sub_type",
+            "source_data_type",
+            "success"
         ];
 
         $concatenated = '';
@@ -94,5 +112,85 @@ class PaymobController extends Controller
         }
 
         return hash_hmac('sha512', $concatenated, $secret);
+    }
+
+
+    public function generatePaymobPaymentLink($order)
+    {
+        try {
+
+            $customerAddress = CustomerAddress::find($order->customer_address_id);
+            $customer = Customer::find($order->customer_id);
+            // $this->baseUrl;
+            $baseUrl = config('services.paymob.base_url');
+          
+            // Step : Authentication - Get auth token
+            $authResponse = Http::post("{$baseUrl}/auth/tokens", [
+                'api_key' => env('PAYMOB_API_KEY'),
+            ]);
+
+            if (!$authResponse->successful()) {
+                throw new \Exception('Authentication failed: ' . $authResponse->body());
+            }
+
+            $authToken = $authResponse->json()['token'];
+ 
+            // Step Create order
+            $merchantOrderId = $order->order_number ?? uniqid('order_');
+            $amountCents = (int) ($order->total_amount * 100);
+
+            $orderResponse = Http::post("{$baseUrl}/ecommerce/orders", [
+                'auth_token' => $authToken,
+                'delivery_needed' => 'false', // String instead of boolean
+                'amount_cents' => (string) $amountCents, // Convert to string
+                'currency' => 'AED',
+                'merchant_order_id' => (string) $merchantOrderId,
+                'items' => [],
+            ]);
+            $orderID = $orderResponse->json();
+            // Generate payment key
+            $billingData = [
+                'first_name' => $order->customer->name ?? 'N/A',
+                'last_name' => $order->customer_name ?? 'N/A',
+                'email' => $order->customer->email ?? 'user@example.com',
+                'phone_number' => $order->customer->mobile_number ?? '+971000000000',
+                'apartment' => 'NA',
+                'floor' => 'NA',
+                'street' => $customerAddress->type ?? "",
+                'building' => $customerAddress->address ?? '',
+                'shipping_method' => 'NA',
+                'postal_code' => $customerAddress->zip_code ?? 'NA',
+                'city' => $customerAddress->city ?? '',
+                'country' => $customerAddress->country ?? '',
+                'state' => $customerAddress->state ?? ''
+            ];
+
+            $paymentKeyResponse = Http::post("{$baseUrl}/acceptance/payment_keys", [
+                'auth_token' => $authToken,
+                'amount_cents' => $amountCents,
+                'expiration' => 3600,
+                'order_id' => $orderID["id"],
+                'billing_data' => $billingData,
+                'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
+                'integration_id' => env('PAYMOB_INTEGRATION_ID'),
+            ]);
+            $paymentToken = $paymentKeyResponse->json()['token'];
+
+            // Step 4: Build iframe payment URL
+            $paymentUrl = "{$baseUrl}/acceptance/iframes/"
+                . env('PAYMOB_IFRAME_ID')
+                . "?payment_token="
+                . $paymentToken;
+
+            return $paymentUrl;
+
+        } catch (\Exception $e) {
+            \Log::error('Paymob payment link generation failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+
+            throw $e;
+        }
     }
 }
