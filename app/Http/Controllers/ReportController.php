@@ -33,8 +33,12 @@ class ReportController extends BaseController
 			'status'    => 'nullable|string'
 		]);
 
-		$orderQuery = Order::query()->where('is_reserved', 0); // ✅ only orders with is_reserved = 0
-		$returnProductQuery = ReturnOrderProduct::query();
+		$orderQuery = Order::query()
+			->where('is_reserved', 0)
+			->where('status', '!=', 'Cancelled'); // ✅ exclude cancelled
+
+		$returnProductQuery = ReturnOrderProduct::query()
+			->where('status', '!=', 'Cancelled'); // ✅ exclude cancelled
 
 		/* Filter by status if provided */
 		if ($request->filled('status')) {
@@ -73,6 +77,7 @@ class ReportController extends BaseController
 			'data' => $data,
 		]);
 	}
+
 
 	/**
 	 * @OA\Get(

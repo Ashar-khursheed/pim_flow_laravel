@@ -21,8 +21,10 @@ class PaymobService
      * Authenticate and get auth token
      */
     public function authenticate()
-    {
-        $response = Http::post($this->baseUrl . '/auth/tokens', [
+    {          
+        $response = Http::withOptions([
+             'verify' => false,
+        ])->post($this->baseUrl . '/auth/tokens', [
             'api_key' => $this->apiKey,
         ]);
 
@@ -132,5 +134,7 @@ public function createIntention($amount, $currency, $billingData, $items = [])
 
     return $response->json();
 }
+
+
 
 }
