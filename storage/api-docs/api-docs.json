@@ -23405,7 +23405,7 @@
                     "Payments"
                 ],
                 "summary": "Process a checkout payment",
-                "description": "Takes a Stax.js payment token and amount, then processes the charge via Stax API.",
+                "description": "Takes a Stax.js payment method ID and amount, then processes the charge via Stax API.",
                 "operationId": "checkout",
                 "requestBody": {
                     "required": true,
@@ -23428,6 +23428,11 @@
                                         "format": "float",
                                         "example": 100.5
                                     },
+                                    "pre_auth": {
+                                        "description": "Set to true for pre-authorization (optional)",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "customer": {
                                         "description": "Optional customer information",
                                         "properties": {
@@ -23446,6 +23451,26 @@
                                             "phone": {
                                                 "type": "string",
                                                 "example": "+1234567890"
+                                            },
+                                            "address_1": {
+                                                "type": "string",
+                                                "example": "123 Main St"
+                                            },
+                                            "address_city": {
+                                                "type": "string",
+                                                "example": "New York"
+                                            },
+                                            "address_state": {
+                                                "type": "string",
+                                                "example": "NY"
+                                            },
+                                            "address_zip": {
+                                                "type": "string",
+                                                "example": "10001"
+                                            },
+                                            "address_country": {
+                                                "type": "string",
+                                                "example": "USA"
                                             }
                                         },
                                         "type": "object"
@@ -23460,6 +23485,14 @@
                                             "reference": {
                                                 "type": "string",
                                                 "example": "Invoice #123"
+                                            },
+                                            "tax": {
+                                                "type": "number",
+                                                "example": 5.5
+                                            },
+                                            "subtotal": {
+                                                "type": "number",
+                                                "example": 95
                                             }
                                         },
                                         "type": "object"
@@ -23605,6 +23638,25 @@
                                 }
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Error retrieving transaction",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -23662,8 +23714,115 @@
                                             "type": "boolean",
                                             "example": true
                                         },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Refund processed successfully"
+                                        },
                                         "refund": {
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Refund failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/auth/Stax/void/{id}": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Void a transaction",
+                "description": "Void a transaction",
+                "operationId": "voidTransaction",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Transaction ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction voided",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Transaction voided successfully"
+                                        },
+                                        "void": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Void failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string"
                                         }
                                     },
                                     "type": "object"

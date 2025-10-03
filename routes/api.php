@@ -913,8 +913,11 @@ Route::prefix('frontend/auth')->group(function () {
     
     Route::post('/Stax/refund/{id}', [F_StaxPaymentController::class, 'refund'])
         ->name('stax.refund');
+    
+    Route::post('/Stax/void/{id}', [F_StaxPaymentController::class, 'void'])
+        ->name('stax.void');
+
 });
-	
 
 Route::post('frontend/paymob/initiate', [F_PaymobController::class, 'initiate']); // get payment_token
 Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);           // pay with card

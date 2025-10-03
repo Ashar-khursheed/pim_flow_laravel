@@ -22,7 +22,7 @@ class StaxPaymentController extends Controller
      *     path="/api/frontend/auth/Stax",
      *     tags={"Payments"},
      *     summary="Process a checkout payment",
-     *     description="Takes a Stax.js payment token and amount, then processes the charge via Stax API.",
+     *     description="Takes a Stax.js payment method ID and amount, then processes the charge via Stax API.",
      *     operationId="checkout",
      *     
      *     @OA\RequestBody(
@@ -43,20 +43,33 @@ class StaxPaymentController extends Controller
      *                 description="Charge amount in USD"
      *             ),
      *             @OA\Property(
+     *                 property="pre_auth",
+     *                 type="boolean",
+     *                 example=false,
+     *                 description="Set to true for pre-authorization (optional)"
+     *             ),
+     *             @OA\Property(
      *                 property="customer",
      *                 type="object",
      *                 description="Optional customer information",
      *                 @OA\Property(property="firstname", type="string", example="John"),
      *                 @OA\Property(property="lastname", type="string", example="Doe"),
      *                 @OA\Property(property="email", type="string", example="john@example.com"),
-     *                 @OA\Property(property="phone", type="string", example="+1234567890")
+     *                 @OA\Property(property="phone", type="string", example="+1234567890"),
+     *                 @OA\Property(property="address_1", type="string", example="123 Main St"),
+     *                 @OA\Property(property="address_city", type="string", example="New York"),
+     *                 @OA\Property(property="address_state", type="string", example="NY"),
+     *                 @OA\Property(property="address_zip", type="string", example="10001"),
+     *                 @OA\Property(property="address_country", type="string", example="USA")
      *             ),
      *             @OA\Property(
      *                 property="meta",
      *                 type="object",
      *                 description="Optional metadata",
      *                 @OA\Property(property="order_id", type="string", example="ORD-12345"),
-     *                 @OA\Property(property="reference", type="string", example="Invoice #123")
+     *                 @OA\Property(property="reference", type="string", example="Invoice #123"),
+     *                 @OA\Property(property="tax", type="number", example=5.50),
+     *                 @OA\Property(property="subtotal", type="number", example=95.00)
      *             )
      *         )
      *     ),
@@ -108,13 +121,19 @@ class StaxPaymentController extends Controller
     {
         // Validate incoming request
         $validator = Validator::make($request->all(), [
-            'payment_method_id' => 'required|string',  // Token from Stax.js
+            'payment_method_id' => 'required|string',
             'amount' => 'required|numeric|min:0.01',
+            'pre_auth' => 'nullable|boolean',
             'customer' => 'nullable|array',
             'customer.firstname' => 'nullable|string',
             'customer.lastname' => 'nullable|string',
             'customer.email' => 'nullable|email',
             'customer.phone' => 'nullable|string',
+            'customer.address_1' => 'nullable|string',
+            'customer.address_city' => 'nullable|string',
+            'customer.address_state' => 'nullable|string',
+            'customer.address_zip' => 'nullable|string',
+            'customer.address_country' => 'nullable|string',
             'meta' => 'nullable|array',
         ]);
 
@@ -127,12 +146,16 @@ class StaxPaymentController extends Controller
         }
 
         try {
-            // Prepare charge data
+            // Prepare charge data in the format expected by StaxService
             $chargeData = [
                 'amount' => $request->amount,
                 'payment_method' => $request->payment_method_id,
-                'currency' => 'USD',
             ];
+
+            // Add pre_auth if provided
+            if ($request->has('pre_auth')) {
+                $chargeData['pre_auth'] = $request->pre_auth;
+            }
 
             // Add customer info if provided
             if ($request->has('customer')) {
@@ -146,13 +169,18 @@ class StaxPaymentController extends Controller
 
             Log::info('Processing Stax payment', [
                 'amount' => $request->amount,
-                'payment_method_id' => $request->payment_method_id
+                'payment_method_id' => $request->payment_method_id,
+                'has_customer' => $request->has('customer'),
+                'has_meta' => $request->has('meta'),
             ]);
 
-            // Process the charge
+            // Process the charge through StaxService
             $result = $this->stax->charge($chargeData);
 
-            Log::info('Stax payment successful', ['transaction_id' => $result['id'] ?? null]);
+            Log::info('Stax payment successful', [
+                'transaction_id' => $result['id'] ?? null,
+                'status' => $result['status'] ?? null,
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -163,7 +191,8 @@ class StaxPaymentController extends Controller
         } catch (\Exception $e) {
             Log::error('Stax payment failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'payment_method_id' => $request->payment_method_id ?? null,
+                'amount' => $request->amount ?? null,
             ]);
 
             return response()->json([
@@ -195,12 +224,22 @@ class StaxPaymentController extends Controller
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="transaction", type="object")
      *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error retrieving transaction",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string")
+     *         )
      *     )
      * )
      */
     public function getTransaction($id)
     {
         try {
+            Log::info('Fetching Stax transaction', ['transaction_id' => $id]);
+
             $transaction = $this->stax->getTransaction($id);
 
             return response()->json([
@@ -209,6 +248,11 @@ class StaxPaymentController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            Log::error('Failed to fetch Stax transaction', [
+                'transaction_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -244,7 +288,24 @@ class StaxPaymentController extends Controller
      *         description="Refund processed",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Refund processed successfully"),
      *             @OA\Property(property="refund", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Refund failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string")
      *         )
      *     )
      * )
@@ -253,20 +314,32 @@ class StaxPaymentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'amount' => 'required|numeric|min:0.01',
-            'reason' => 'nullable|string',
+            'reason' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
+                'message' => 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         try {
+            Log::info('Processing Stax refund', [
+                'transaction_id' => $id,
+                'amount' => $request->amount,
+                'reason' => $request->reason,
+            ]);
+
             $refund = $this->stax->refund($id, [
                 'amount' => $request->amount,
                 'reason' => $request->reason ?? 'Customer request',
+            ]);
+
+            Log::info('Stax refund successful', [
+                'transaction_id' => $id,
+                'refund_id' => $refund['id'] ?? null,
             ]);
 
             return response()->json([
@@ -276,6 +349,76 @@ class StaxPaymentController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            Log::error('Stax refund failed', [
+                'transaction_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Void a transaction
+     * 
+     * @OA\Post(
+     *     path="/api/frontend/auth/Stax/void/{id}",
+     *     tags={"Payments"},
+     *     summary="Void a transaction",
+     *     operationId="voidTransaction",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Transaction ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Transaction voided",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Transaction voided successfully"),
+     *             @OA\Property(property="void", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Void failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string")
+     *         )
+     *     )
+     * )
+     */
+    public function void($id)
+    {
+        try {
+            Log::info('Voiding Stax transaction', ['transaction_id' => $id]);
+
+            $void = $this->stax->void($id);
+
+            Log::info('Stax transaction voided', [
+                'transaction_id' => $id,
+                'void_id' => $void['id'] ?? null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaction voided successfully',
+                'void' => $void,
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Stax void failed', [
+                'transaction_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage(),
