@@ -200,21 +200,7 @@ class StaxPaymentController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
-
-        // Call StaxService to process charge
-        $result = $this->stax->charge($data);
-
-        return response()->json([
-            'success' => true,
-            'transaction' => $result,
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-        ], 500);
     }
-
     /**
      * Get transaction details
      * 
