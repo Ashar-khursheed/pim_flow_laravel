@@ -905,13 +905,13 @@ Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerControl
 Route::prefix('frontend/auth')->group(function () {
     
     // Stax Payment Routes
-    Route::post('/Stax', [StaxPaymentController::class, 'checkout'])
+    Route::post('/Stax', [F_StaxPaymentController::class, 'checkout'])
         ->name('stax.checkout');
     
-    Route::get('/Stax/transaction/{id}', [StaxPaymentController::class, 'getTransaction'])
+    Route::get('/Stax/transaction/{id}', [F_StaxPaymentController::class, 'getTransaction'])
         ->name('stax.transaction');
     
-    Route::post('/Stax/refund/{id}', [StaxPaymentController::class, 'refund'])
+    Route::post('/Stax/refund/{id}', [F_StaxPaymentController::class, 'refund'])
         ->name('stax.refund');
 });
 	
