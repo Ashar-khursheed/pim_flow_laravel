@@ -18351,7 +18351,7 @@
                                                     "type": "integer",
                                                     "example": 5
                                                 },
-                                                "accessory_ids": {
+                                                "accessory_item_ids": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "integer"
@@ -27046,7 +27046,7 @@
                                                     "type": "integer",
                                                     "example": 5
                                                 },
-                                                "accessory_ids": {
+                                                "accessory_item_ids": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "integer"
@@ -27195,6 +27195,12 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "accessory_item_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
