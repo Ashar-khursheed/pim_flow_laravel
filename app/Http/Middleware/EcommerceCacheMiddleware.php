@@ -17,7 +17,7 @@ class EcommerceCacheMiddleware
         $path = $request->getPathInfo();
         $method = $request->getMethod();
         
-        // Force remove Laravel's default cache headers
+        // Force remove Laravel's default cache headerss
         $response->headers->remove('Cache-Control');
         $response->headers->remove('Pragma');
         $response->headers->remove('Expires');
