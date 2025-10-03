@@ -920,9 +920,22 @@ Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout'])
 	Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
      ->where('from', '.*');
 
-	Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
+Route::prefix('frontend/auth')->group(function () {
+    
+    // Stax Payment Routes
+    Route::post('/Stax', [F_StaxPaymentController::class, 'checkout'])
+        ->name('stax.checkout');
+    
+    Route::get('/Stax/transaction/{id}', [F_StaxPaymentController::class, 'getTransaction'])
+        ->name('stax.transaction');
+    
+    Route::post('/Stax/refund/{id}', [F_StaxPaymentController::class, 'refund'])
+        ->name('stax.refund');
+    
+    Route::post('/Stax/void/{id}', [F_StaxPaymentController::class, 'void'])
+        ->name('stax.void');
 
-	
+});
 
 Route::post('frontend/paymob/initiate', [F_PaymobController::class, 'initiate']); // get payment_token
 Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);           // pay with card

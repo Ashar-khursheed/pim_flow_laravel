@@ -23461,7 +23461,7 @@
                     "Payments"
                 ],
                 "summary": "Process a checkout payment",
-                "description": "Takes a Stax.js payment token and amount, then processes the charge via Stax API.",
+                "description": "Takes a Stax.js payment method ID and amount, then processes the charge via Stax API.",
                 "operationId": "checkout",
                 "requestBody": {
                     "required": true,
@@ -23469,20 +23469,89 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "token",
+                                    "payment_method_id",
                                     "amount"
                                 ],
                                 "properties": {
-                                    "token": {
-                                        "description": "Payment token from Stax.js",
+                                    "payment_method_id": {
+                                        "description": "Payment method ID from Stax.js tokenization",
                                         "type": "string",
-                                        "example": "tok_abc123XYZ"
+                                        "example": "pm_abc123XYZ"
                                     },
                                     "amount": {
                                         "description": "Charge amount in USD",
                                         "type": "number",
                                         "format": "float",
                                         "example": 100.5
+                                    },
+                                    "pre_auth": {
+                                        "description": "Set to true for pre-authorization (optional)",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "customer": {
+                                        "description": "Optional customer information",
+                                        "properties": {
+                                            "firstname": {
+                                                "type": "string",
+                                                "example": "John"
+                                            },
+                                            "lastname": {
+                                                "type": "string",
+                                                "example": "Doe"
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "example": "john@example.com"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "+1234567890"
+                                            },
+                                            "address_1": {
+                                                "type": "string",
+                                                "example": "123 Main St"
+                                            },
+                                            "address_city": {
+                                                "type": "string",
+                                                "example": "New York"
+                                            },
+                                            "address_state": {
+                                                "type": "string",
+                                                "example": "NY"
+                                            },
+                                            "address_zip": {
+                                                "type": "string",
+                                                "example": "10001"
+                                            },
+                                            "address_country": {
+                                                "type": "string",
+                                                "example": "USA"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "meta": {
+                                        "description": "Optional metadata",
+                                        "properties": {
+                                            "order_id": {
+                                                "type": "string",
+                                                "example": "ORD-12345"
+                                            },
+                                            "reference": {
+                                                "type": "string",
+                                                "example": "Invoice #123"
+                                            },
+                                            "tax": {
+                                                "type": "number",
+                                                "example": 5.5
+                                            },
+                                            "subtotal": {
+                                                "type": "number",
+                                                "example": 95
+                                            }
+                                        },
+                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
@@ -23501,14 +23570,62 @@
                                             "type": "boolean",
                                             "example": true
                                         },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payment processed successfully"
+                                        },
                                         "transaction": {
-                                            "type": "object",
-                                            "example": {
-                                                "id": "txn_12345",
-                                                "status": "succeeded",
-                                                "amount": 100.5,
-                                                "currency": "USD"
-                                            }
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "example": "txn_12345"
+                                                },
+                                                "total": {
+                                                    "type": "number",
+                                                    "example": 100.5
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "completed"
+                                                },
+                                                "payment_method_id": {
+                                                    "type": "string",
+                                                    "example": "pm_abc123"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "payment_method_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The payment method id field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -23528,7 +23645,240 @@
                                         },
                                         "error": {
                                             "type": "string",
-                                            "example": "Card declined"
+                                            "example": "Payment processing failed"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/auth/Stax/transaction/{id}": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get transaction details",
+                "description": "Get transaction details",
+                "operationId": "getTransaction",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Transaction ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "transaction": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error retrieving transaction",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/auth/Stax/refund/{id}": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Refund a transaction",
+                "description": "Refund a transaction",
+                "operationId": "refundTransaction",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Transaction ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "type": "number",
+                                        "example": 50
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "Customer request"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Refund processed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Refund processed successfully"
+                                        },
+                                        "refund": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Refund failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/auth/Stax/void/{id}": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Void a transaction",
+                "description": "Void a transaction",
+                "operationId": "voidTransaction",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Transaction ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction voided",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Transaction voided successfully"
+                                        },
+                                        "void": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Void failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string"
                                         }
                                     },
                                     "type": "object"
@@ -31456,153 +31806,6 @@
                                                 }
                                             },
                                             "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/product/upload-images": {
-            "post": {
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Upload product images from zip file",
-                "description": "Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database. All images are automatically converted to WebP format, resized to 1000x1000, and compressed to under 100KB.",
-                "operationId": "e3e5a4a2e8a7e47751553cf5c9ec8909",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "properties": {
-                                    "zip_file": {
-                                        "description": "ZIP file containing product images organized in folders by SKU. Supports JPG, PNG, WebP, GIF, BMP, TIFF formats. All will be converted to WebP 1000x1000 under 100KB.",
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Images processed successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Product images processed successfully"
-                                        },
-                                        "processed_skus": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "sku": {
-                                                        "type": "string",
-                                                        "example": "ABC123"
-                                                    },
-                                                    "status": {
-                                                        "description": "success, no_images_found, product_not_found, validation_error",
-                                                        "type": "string",
-                                                        "example": "success"
-                                                    },
-                                                    "image_count": {
-                                                        "description": "Number of images processed for this SKU",
-                                                        "type": "integer",
-                                                        "example": 5
-                                                    },
-                                                    "errors": {
-                                                        "description": "Array of error messages for invalid images",
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "string"
-                                                        }
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Unable to open the zip file"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "properties": {
-                                                "zip_file": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "The zip file field is required."
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Error message"
                                         }
                                     },
                                     "type": "object"
