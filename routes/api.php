@@ -902,8 +902,18 @@ Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerControl
 	Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
      ->where('from', '.*');
 
-	Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
-
+Route::prefix('frontend/auth')->group(function () {
+    
+    // Stax Payment Routes
+    Route::post('/Stax', [StaxPaymentController::class, 'checkout'])
+        ->name('stax.checkout');
+    
+    Route::get('/Stax/transaction/{id}', [StaxPaymentController::class, 'getTransaction'])
+        ->name('stax.transaction');
+    
+    Route::post('/Stax/refund/{id}', [StaxPaymentController::class, 'refund'])
+        ->name('stax.refund');
+});
 	
 
 Route::post('frontend/paymob/initiate', [F_PaymobController::class, 'initiate']); // get payment_token
