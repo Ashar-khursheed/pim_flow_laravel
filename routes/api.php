@@ -453,7 +453,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
 	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
-
+	Route::post('/get-product-alternative-comparison', [AIAlternateProductController::class, 'getProdutAlternativeComparison']);
+	Route::post('python/create-alternate-recommendation', [AIAlternateProductController::class, 'createAlternateProductsByPthon']);
+	
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
@@ -583,7 +585,7 @@ Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']
 Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 Route::post('frontend/compare-table-product', [CompareProductController::class, 'getCompareTableProduct']);
-Route::post('frontend/python/compare-alternate-products', [CompareProductController::class, 'compareAlternateProducts']);
+
 Route::get('frontend/product-accessories', [FnProductAccessoriesController::class, 'index']);
 Route::Post('frontend/product-variants', [FndProductVariantController::class, 'index']);
 

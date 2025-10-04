@@ -130,6 +130,135 @@
                 ]
             }
         },
+        "/api/get-product-alternative-comparison": {
+            "post": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Get a list of Products Alternative comparison by product ID",
+                "description": "Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories",
+                "operationId": "419ca9b3102c05c6c6cce53c4ea347a8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id": {
+                                        "description": "Single product ID to compare",
+                                        "type": "integer",
+                                        "example": 1795
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "sku": {
+                                                    "type": "string",
+                                                    "example": "SKU12345"
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Test Product"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/python/create-alternate-recommendation": {
+            "post": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Run Python Alternate Create Recommendation",
+                "operationId": "c58005d43671fcce207d4ba6cae792fc",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id_list": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Job executed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Alternate products saved to DB"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/abandoned-carts": {
             "get": {
                 "tags": [
@@ -14157,7 +14286,7 @@
         "/api/frontend/compare-table-product": {
             "post": {
                 "tags": [
-                    "Compare Products"
+                    "Front Compare Products"
                 ],
                 "summary": "Fetch product compare by ID",
                 "description": "Accepts a single product ID and returns its details",
@@ -14226,7 +14355,7 @@
         "/api/frontend/python/compare-alternate-products": {
             "post": {
                 "tags": [
-                    "Compare Alternate Products"
+                    "Alternate Create Products Python"
                 ],
                 "summary": "Run Python Alternate Product Generator",
                 "operationId": "68d25a7467ffca5db250770205c8a1f6",
@@ -41082,12 +41211,12 @@
             "description": "Frontend Company Profiles"
         },
         {
-            "name": "Compare Products",
-            "description": "Compare Products"
+            "name": "Front Compare Products",
+            "description": "Front Compare Products"
         },
         {
-            "name": "Compare Alternate Products",
-            "description": "Compare Alternate Products"
+            "name": "Alternate Create Products Python",
+            "description": "Alternate Create Products Python"
         },
         {
             "name": "Frontend ContactDirectory",

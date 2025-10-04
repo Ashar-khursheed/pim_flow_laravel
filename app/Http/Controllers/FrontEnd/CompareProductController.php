@@ -17,7 +17,7 @@ class CompareProductController extends Controller
      *     path="/api/frontend/compare-table-product",
      *     summary="Fetch product compare by ID",
      *     description="Accepts a single product ID and returns its details",
-     *     tags={"Compare Products"},
+     *     tags={"Front Compare Products"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -189,7 +189,7 @@ class CompareProductController extends Controller
      * @OA\Post(
      *     path="/api/frontend/python/compare-alternate-products",
      *     summary="Run Python Alternate Product Generator",
-     *     tags={"Compare Alternate Products"},
+     *     tags={"Alternate Create Products Python"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
