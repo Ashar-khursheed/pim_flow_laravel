@@ -123,7 +123,7 @@
 //             $customer = Customer::find($order->customer_id);
 //             // $this->baseUrl;
 //             $baseUrl = config('services.paymob.base_url');
-          
+
 //             // Step : Authentication - Get auth token
 //             $authResponse = Http::post("{$baseUrl}/auth/tokens", [
 //                 'api_key' => env('PAYMOB_API_KEY'),
@@ -134,7 +134,7 @@
 //             }
 
 //             $authToken = $authResponse->json()['token'];
- 
+
 //             // Step Create order
 //             $merchantOrderId = $order->order_number ?? uniqid('order_');
 //             $amountCents = (int) ($order->total_amount * 100);
@@ -205,10 +205,10 @@ use App\Models\FrontEnd\CustomerAddress;
 use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Facades\Log;
 use App\Services\PaymobService;
-
+use App\Models\PaymentManagement;
 class PaymobController extends Controller
 {
- protected $paymob;
+    protected $paymob;
 
     public function __construct(PaymobService $paymob)
     {
@@ -216,62 +216,62 @@ class PaymobController extends Controller
     }
 
     public function initiate(Request $request)
-{
-    $request->validate([
-        'amount' => 'required|numeric|min:1',
-        'email' => 'required|email',
-        'first_name' => 'required|string|max:50',
-        'last_name' => 'required|string|max:50',
-        'phone' => 'required|string|max:20',
-    ]);
-
-    try {
-        $billingData = [
-            "apartment"     => "NA",
-            "email"         => $request->email,
-            "floor"         => "NA",
-            "first_name"    => $request->first_name,
-            "last_name"     => $request->last_name,
-            "phone_number"  => $request->phone,
-            "street"        => "NA",
-            "building"      => "NA",
-            "shipping_method" => "NA",
-            "postal_code"   => "NA",
-            "city"          => "Dubai",
-            "country"       => "UAE",
-            "state"         => "NA"
-        ];
-
-        $intention = $this->paymob->createIntention(
-            $request->amount, // decimal amount, e.g., 2881.2
-            "AED",
-            $billingData,
-            [
-                [
-                    "name" => "Sample Item",
-                    "amount" => $request->amount, // keep as decimal here
-                    "description" => "Test Product",
-                    "quantity" => 1,
-                ]
-            ]
-        );
-
-
-        return response()->json([
-            'status' => true,
-            'intention' => $intention,
-            'public_key' => env('PAYMOB_PUBLIC_KEY'),
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1',
+            'email' => 'required|email',
+            'first_name' => 'required|string|max:50',
+            'last_name' => 'required|string|max:50',
+            'phone' => 'required|string|max:20',
         ]);
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Payment initiation failed',
-            'error' => $e->getMessage()
-        ], 500);
+        try {
+            $billingData = [
+                "apartment" => "NA",
+                "email" => $request->email,
+                "floor" => "NA",
+                "first_name" => $request->first_name,
+                "last_name" => $request->last_name,
+                "phone_number" => $request->phone,
+                "street" => "NA",
+                "building" => "NA",
+                "shipping_method" => "NA",
+                "postal_code" => "NA",
+                "city" => "Dubai",
+                "country" => "UAE",
+                "state" => "NA"
+            ];
+
+            $intention = $this->paymob->createIntention(
+                $request->amount, // decimal amount, e.g., 2881.2
+                "AED",
+                $billingData,
+                [
+                    [
+                        "name" => "Sample Item",
+                        "amount" => $request->amount, // keep as decimal here
+                        "description" => "Test Product",
+                        "quantity" => 1,
+                    ]
+                ]
+            );
+
+
+            return response()->json([
+                'status' => true,
+                'intention' => $intention,
+                'public_key' => env('PAYMOB_PUBLIC_KEY'),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment initiation failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
- public function pay(Request $request)
+    public function pay(Request $request)
     {
         $request->validate([
             'payment_token' => 'required|string',
@@ -314,10 +314,33 @@ class PaymobController extends Controller
         if ($hmac !== $calcHmac) {
             return response()->json(['error' => 'Invalid HMAC'], 403);
         }
+        Log::info('Paymob Webhook Received:', $request->all());       
+        $data =  $request->all();
+        try {
+            $transactionId = $data['obj']['id'] ?? null;
+            $orderId = $data['obj']['order']['merchant_order_id'] ?? null;
+            $amount = ($data['obj']['amount_cents'] ?? 0) / 100;
+            $currency = $data['obj']['currency'] ?? 'EGP';
+            $status = $data['obj']['success'] ? 'Completed' : 'Failed';
 
-        // Process order status (success/failed)
-        // Example: mark order as paid in DB
-        return response()->json(['message' => 'Webhook received']);
+            PaymentManagement::create([
+                'order_id' => $orderId,
+                'transaction_id' => $transactionId,
+                'payment_mode' => 'Credit Card',
+                'payment_method' => 'Paymob',
+                'amount' => $amount,
+                'status' => $status,
+                'payment_date' => date('Y-m-d H:i:s'),
+                'notes' => 'Payment marked through link',
+                'payment_details' => ''
+            ]);
+
+            return response()->json(['message' => 'Webhook processed'], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Paymob Webhook Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Server error'], 500);
+        } 
     }
 
     // Transaction Response Callback (redirect after payment)
@@ -382,7 +405,7 @@ class PaymobController extends Controller
             $customer = Customer::find($order->customer_id);
             // $this->baseUrl;
             $baseUrl = config('services.paymob.base_url');
-          
+
             // Step : Authentication - Get auth token
             $authResponse = Http::post("{$baseUrl}/auth/tokens", [
                 'api_key' => env('PAYMOB_API_KEY'),
@@ -393,7 +416,7 @@ class PaymobController extends Controller
             }
 
             $authToken = $authResponse->json()['token'];
- 
+
             // Step Create order
             $merchantOrderId = $order->order_number ?? uniqid('order_');
             $amountCents = (int) ($order->total_amount * 100);
