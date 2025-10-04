@@ -28124,7 +28124,8 @@
                                             "Bank Transfer",
                                             "Cash",
                                             "Stripe",
-                                            "Razorpay"
+                                            "Razorpay",
+                                            "Paymob"
                                         ],
                                         "example": "Credit Card"
                                     },
@@ -28573,7 +28574,8 @@
                                             "Stripe",
                                             "Razorpay",
                                             "Cash on Delivery",
-                                            "CC Avenue"
+                                            "CC Avenue",
+                                            "Paymob"
                                         ],
                                         "example": "Cash on Delivery"
                                     },

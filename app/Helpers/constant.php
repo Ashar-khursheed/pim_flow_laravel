@@ -941,6 +941,7 @@ if (!function_exists('paymentGateway')) {
 			'PayU',
 			'Instamojo',
 			'BillDesk',
+			'Paymob',
 		);
 		return $gateways;
 	}
