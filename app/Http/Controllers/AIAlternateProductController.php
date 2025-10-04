@@ -125,6 +125,134 @@ class AIAlternateProductController extends Controller
             'message' => 'Alternate products retrieved successfully',
         ]);
     }
+    /**
+     * @OA\Post(
+     *     path="/api/ai-alternate-status",
+     *     summary="Update AI Alternate Status",
+     *     tags={"Products AI alternates"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/x-www-form-urlencoded",
+     *             @OA\Schema(
+     *                 required={"id","status"},
+     *                 @OA\Property(
+     *                     property="id",
+     *                     type="integer",
+     *                     example=1,
+     *                     description="Alternate product ID"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="status",
+     *                     type="string",
+     *                     enum={"approve", "reject", "pending", "review"},
+     *                     example="approve",
+     *                     description="Status of the alternate product"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Status updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Status updated successfully")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+
+
+    public function alternateStatus(Request $request)
+    {
+
+        $request->validate([           
+            'id' => 'required|integer|exists:alternate_products,id',
+            'status' => 'required|string|in:approve,reject,pending',
+        ]);
+        $rejected_by=0;
+        if($request->status=='reject'){
+            $rejected_by = auth()->id();
+        }
+
+        AlternateProduct::where('id', $request->id)
+            ->update([
+                'status' => $request->status,
+                'updated_at' => now(),
+                'updated_by' => auth()->id(),
+                'rejected_by' => $rejected_by,
+            ]);
+
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Status updated successfully to ' . $request->status,
+        ], 200);
+    }
+    /**
+     * @OA\Post(
+     *     path="/api/ai-alternate-priority",
+     *     summary="Update AI Alternate priority",
+     *     tags={"Products AI alternates"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/x-www-form-urlencoded",
+     *             @OA\Schema(
+     *                 required={"id","priority"},
+     *                 @OA\Property(
+     *                     property="id",
+     *                     type="integer",
+     *                     example=1,
+     *                     description="Alternate product ID"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="priority",
+     *                     type="string",
+     *                     enum={"1", "2", "3", "4","5","6","7","8","9"},
+     *                     example="1",
+     *                     description="priority of the alternate product"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="priority updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="priority", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="priority updated successfully")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+
+
+    public function alternatePriority(Request $request)
+    {
+
+        $request->validate([
+            'id' => 'required|integer|exists:alternate_products,id',
+            'priority' => 'required|string|in:1,2,3,4,5,6,7,8,9',
+        ]);
+
+
+        AlternateProduct::where('id', $request->id)
+            ->update([
+                'priority' => $request->priority,
+                'updated_at' => now(),
+                'updated_by' => auth()->id(),
+            ]);
+
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'priority updated successfully to ' . $request->priority,
+        ], 200);
+    }
 
     /**
      * @OA\Get(
@@ -519,9 +647,9 @@ class AIAlternateProductController extends Controller
             $request->validate([
                 'product_id_list' => 'required|array|min:1'
             ]);
-           $productIds = $request->input('product_id_list');
-          
- 
+            $productIds = $request->input('product_id_list');
+
+
             // Path to your Python script            
             $scriptPath = base_path('app/Script/alternate_official_US.py');
 

@@ -455,6 +455,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
 	Route::post('/get-product-alternative-comparison', [AIAlternateProductController::class, 'getProdutAlternativeComparison']);
 	Route::post('python/create-alternate-recommendation', [AIAlternateProductController::class, 'createAlternateProductsByPthon']);
+	Route::post('ai-alternate-status', [AIAlternateProductController::class, 'alternateStatus']);
+	Route::post('ai-alternate-priority', [AIAlternateProductController::class, 'alternatePriority']);
 	
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
