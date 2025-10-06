@@ -71,7 +71,7 @@ class EcommerceCacheMiddleware
             str_contains($path, '/analytics') ||
             str_contains($path, '/dashboard') ||
             str_contains($path, '/payment') ||
-            str_contains($path, '/location') ||
+            str_contains($path, '/frontend/location') ||
             str_contains($path, '/tracking')) {
             $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate');
             $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-Dynamic');
