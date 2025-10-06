@@ -484,10 +484,7 @@ class StaxPaymentController extends Controller
      *     )
      * )
      */
-    /**
-     * Tokenize card and return payment method id (token)
-     * POST /api/frontend/auth/Stax/tokenize
-     */
+   
     public function tokenizeCard(Request $request)
     {
         $validator = Validator::make($request->all(), [

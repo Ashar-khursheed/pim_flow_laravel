@@ -23833,6 +23833,153 @@
                 }
             }
         },
+        "/api/frontend/auth/Stax/tokenize": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Tokenize a card and get a payment method token",
+                "description": "This endpoint tokenizes a customer's card details using the Stax API and returns a payment method ID (token) that can be used for future charges.",
+                "operationId": "56cd3b5c50131552599bd36511299e68",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "card_number",
+                                    "exp_month",
+                                    "exp_year",
+                                    "cvc"
+                                ],
+                                "properties": {
+                                    "card_number": {
+                                        "description": "Customer's card number",
+                                        "type": "string",
+                                        "example": "4242424242424242"
+                                    },
+                                    "exp_month": {
+                                        "description": "Card expiration month (MM)",
+                                        "type": "string",
+                                        "example": "12"
+                                    },
+                                    "exp_year": {
+                                        "description": "Card expiration year (YYYY)",
+                                        "type": "string",
+                                        "example": "2028"
+                                    },
+                                    "cvc": {
+                                        "description": "Card CVV code",
+                                        "type": "string",
+                                        "example": "123"
+                                    },
+                                    "billing_email": {
+                                        "description": "Billing email (optional)",
+                                        "type": "string",
+                                        "example": "customer@example.com"
+                                    },
+                                    "billing_name": {
+                                        "description": "Cardholder name (optional)",
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Card successfully tokenized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "payment_method_id": {
+                                            "type": "string",
+                                            "example": "pm_1234567890abcdef"
+                                        },
+                                        "raw": {
+                                            "description": "Raw Stax API response (optional, for debugging)",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or tokenization failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "The card number is invalid"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Failed to connect to Stax API"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/stripe/create-payment-intent": {
             "post": {
                 "tags": [
