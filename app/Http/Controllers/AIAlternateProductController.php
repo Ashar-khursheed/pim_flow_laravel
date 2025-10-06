@@ -662,8 +662,9 @@ class AIAlternateProductController extends Controller
             $workingDirectory = base_path('app/Script');
             // Pass JSON input to Python script via stdin
             $inputJson = json_encode(['product_id_list' => $productIds]);
-            $pythonCmd = env('PYTHON_PATH', base_path('venv/Scripts/python.exe'));
-
+            //$pythonCmd = 'C:\Program Files\Python313\python.exe';
+           // $pythonCmd = env('PYTHON_PATH', base_path('venv/Scripts/python.exe'));
+            $pythonCmd = env('PYTHON_PATH', base_path('venv/bin/python'));
             $process = new Process([$pythonCmd, $scriptPath], $workingDirectory, null, $inputJson, 300);
             $process->run();
 
