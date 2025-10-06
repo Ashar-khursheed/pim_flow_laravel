@@ -15,6 +15,7 @@ use App\Models\TransactionLog;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\ProductAttribute;
+use App\Models\Product;
 
 class ImportTranslationJob implements ShouldQueue
 {
@@ -72,20 +73,32 @@ class ImportTranslationJob implements ShouldQueue
 
 			$hasTranslation = false;
 			foreach ($langCodes as $locale) {
-				if (!empty(${$locale . '_title'})) {
-					$hasTranslation = true;
-					break;
+				if ($module === 'Product Translation') {
+					if (!empty(${$locale . '_name'})) {
+						$hasTranslation = true;
+						break;
+					}
+				} else {
+					if (!empty(${$locale . '_title'})) {
+						$hasTranslation = true;
+						break;
+					}
 				}
 			}
 
 			if (!$hasTranslation) {
-				$rowErrors[] = 'At least one translation is required.';
+				if ($module === 'Product Translation') {
+					$rowErrors[] = 'At least one name translation is required.';
+				} else {
+					$rowErrors[] = 'At least one title translation is required.';
+				}
 			}
 
 			$model = match ($module) {
 				'Attribute Translation' => Attribute::class,
 				'Attribute Value Translation' => AttributeValue::class,
 				'Product Attribute Translation' => ProductAttribute::class,
+				'Product Translation' => Product::class,
 			};
 
 			/* Fetch record */
@@ -106,9 +119,25 @@ class ImportTranslationJob implements ShouldQueue
 
 				/* Save translations */
 				foreach ($langCodes as $locale) {
-					$title = ${$locale . '_title'} ?? null;
-					if (!empty($title)) {
-						$record->translateOrNew($locale)->title = $title;
+					if ($module === 'Product Translation') {
+						$name = ${$locale . '_name'} ?? null;
+						$description = ${$locale . '_description'} ?? null;
+						$benefits = ${$locale . '_benefits_features'} ?? null;
+						$images = ${$locale . '_images'} ?? null;
+
+						if (!empty($name) || !empty($description) || !empty($benefits) || !empty($images)) {
+							$translation = $record->translateOrNew($locale);
+							$translation->name = $name;
+							$translation->description = $description;
+							$translation->benefits_features = $benefits;
+							$translation->images = $images;
+						}
+					} else {
+						$title = ${$locale . '_title'} ?? null;
+
+						if (!empty($title)) {
+							$record->translateOrNew($locale)->title = $title;
+						}
 					}
 				}
 				$record->save();

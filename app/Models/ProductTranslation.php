@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ProductAttributeTranslation extends Model
+class ProductTranslation extends Model
 {
 	public $timestamps = false;
 	protected $fillable = [
 		'locale',
-		'product_attribute_id',
-		'title',
+		'product_id',
+		'name',
+		'description',
+		'benefits_features',
+		'images',
 	];
 }

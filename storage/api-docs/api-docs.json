@@ -37815,7 +37815,8 @@
                                         "enum": [
                                             "attribute",
                                             "attribute_value",
-                                            "product_attribute"
+                                            "product_attribute",
+                                            "product"
                                         ],
                                         "example": "attribute"
                                     },
