@@ -487,25 +487,24 @@ public function chargeCardWithCurl(Request $request)
     }
 
     try {
-        $apiKey = env('STAX_API_KEY'); // your live Stax secret key from .env
-        $url = env('STAX_BASE_URL'). '/transaction'; // Production URL (not sandbox)
+        $apiKey = env('STAX_API_KEY'); 
+        $url = env('STAX_BASE_URL') . '/transaction'; // ✅ correct endpoint
 
         $payload = [
-            'amount' => $request->amount,
-            'currency' => 'USD',
-            'card' => [
+            'total' => $request->amount, // ✅ renamed from 'amount'
+            'source' => [
                 'number' => $request->card_number,
                 'exp_month' => $request->exp_month,
                 'exp_year' => $request->exp_year,
                 'cvc' => $request->cvv,
             ],
+            'type' => 'sale', // ✅ required for direct charge
             'description' => 'Test charge from API',
             'email' => $request->email,
             'name' => $request->name,
         ];
 
         $ch = curl_init();
-
         curl_setopt_array($ch, [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
@@ -544,5 +543,6 @@ public function chargeCardWithCurl(Request $request)
         ], 500);
     }
 }
+
 
 }
