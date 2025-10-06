@@ -109,6 +109,8 @@ class EcommerceCacheMiddleware
             str_contains($path, '/frontend/blog-categories') ||
             str_contains($path, '/frontend/menu-banners') ||
             str_contains($path, '/frontend/countries') ||
+            str_contains($path, '/frontend/brands/alphabetical') ||
+            str_contains($path, '/frontend/seo/paragraphs') ||
             str_contains($path, '/frontend/seo-management')) {
             $response->headers->set('Cache-Control', 'public, max-age=14400'); // 4 hours
             $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + 14400) . ' GMT');
