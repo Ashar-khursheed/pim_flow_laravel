@@ -23833,6 +23833,103 @@
                 }
             }
         },
+        "/api/frontend/auth/Stax/card-charge": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Charge a credit/debit card using cURL (Production API)",
+                "description": "This endpoint directly calls the Stax production API to charge a card using raw cURL. DO NOT use sandbox URLs.",
+                "operationId": "chargeCardWithCurl",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount",
+                                    "card_number",
+                                    "exp_month",
+                                    "exp_year",
+                                    "cvv"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "type": "number",
+                                        "example": 100
+                                    },
+                                    "card_number": {
+                                        "type": "string",
+                                        "example": "4242424242424242"
+                                    },
+                                    "exp_month": {
+                                        "type": "string",
+                                        "example": "12"
+                                    },
+                                    "exp_year": {
+                                        "type": "string",
+                                        "example": "2028"
+                                    },
+                                    "cvv": {
+                                        "type": "string",
+                                        "example": "123"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "customer@example.com"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Charge successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "transaction": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Charge failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/stripe/create-payment-intent": {
             "post": {
                 "tags": [
