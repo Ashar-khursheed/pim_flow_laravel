@@ -75,7 +75,7 @@ class StaxService
             ]));
         }
 
-        $url = $this->baseUrl . '/v1/charges'; // ✅ correct endpoint
+        $url = $this->baseUrl . '/charges'; // ✅ correct endpoint
 
         Log::info('Stax API Request', [
             'url' => $url,
