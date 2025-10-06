@@ -149,7 +149,7 @@ class StaxPaymentController extends Controller
             // Prepare charge data in the format expected by StaxService
             $chargeData = [
                 'amount' => $request->amount,
-                'payment_method' => $request->payment_method_id,
+                'payment_method_id' => $request->payment_method_id,
             ];
 
             // Add pre_auth if provided
@@ -424,4 +424,160 @@ class StaxPaymentController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/auth/Stax/tokenize",
+     *     summary="Tokenize a card and get a payment method token",
+     *     description="This endpoint tokenizes a customer's card details using the Stax API and returns a payment method ID (token) that can be used for future charges.",
+     *     tags={"Payments"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"card_number","exp_month","exp_year","cvc"},
+     *             @OA\Property(property="card_number", type="string", example="4242424242424242", description="Customer's card number"),
+     *             @OA\Property(property="exp_month", type="string", example="12", description="Card expiration month (MM)"),
+     *             @OA\Property(property="exp_year", type="string", example="2028", description="Card expiration year (YYYY)"),
+     *             @OA\Property(property="cvc", type="string", example="123", description="Card CVV code"),
+     *             @OA\Property(property="billing_email", type="string", example="customer@example.com", description="Billing email (optional)"),
+     *             @OA\Property(property="billing_name", type="string", example="John Doe", description="Cardholder name (optional)")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Card successfully tokenized",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="payment_method_id", type="string", example="pm_1234567890abcdef"),
+     *             @OA\Property(property="raw", type="object", description="Raw Stax API response (optional, for debugging)")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid input or tokenization failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="The card number is invalid")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Failed to connect to Stax API")
+     *         )
+     *     )
+     * )
+     */
+   
+    public function tokenizeCard(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'card_number' => 'required|string',
+            'exp_month'   => 'required|string',
+            'exp_year'    => 'required|string',
+            'cvc'         => 'required|string',
+            'billing_email' => 'nullable|email',
+            'billing_name'  => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $apiKey = env('STAX_API_KEY');
+            $baseUrl = rtrim(env('STAX_BASE_URL', 'https://apiprod.fattlabs.com'), '/');
+            // Choose the tokenization endpoint your Stax instance expects.
+            // Many integrations accept: /paymentmethod  OR  /v1/paymentmethod
+            $url = $baseUrl . '/paymentmethod';
+
+            $payload = [
+                'type' => 'card', // explicit type
+                'card' => [
+                    'number' => $request->card_number,
+                    'exp_month' => $request->exp_month,
+                    'exp_year' => $request->exp_year,
+                    'cvc' => $request->cvc,
+                ],
+                'meta' => [
+                    'email' => $request->billing_email,
+                    'name'  => $request->billing_name,
+                ],
+            ];
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => [
+                    "Authorization: Bearer {$apiKey}",
+                    "Content-Type: application/json",
+                ],
+                CURLOPT_POSTFIELDS => json_encode($payload),
+            ]);
+
+            $response = curl_exec($ch);
+            $curlErr = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlErr) {
+                throw new \Exception('cURL error: ' . $curlErr);
+            }
+
+            $data = json_decode($response, true);
+
+            // If API returns errors in the body
+            if (isset($data['error']) || isset($data['errors'])) {
+                // Log raw for debugging
+                Log::error('Stax tokenization failed', ['response' => $data]);
+                $msg = $data['error']['message'] ?? json_encode($data['errors'] ?? $data);
+                return response()->json(['success' => false, 'error' => $msg], 400);
+            }
+
+            // The token is usually in data.id or id field depending on API
+            $token = $data['data']['id'] ?? $data['id'] ?? null;
+
+            if (! $token) {
+                Log::error('Stax tokenization unexpected response', ['response' => $data]);
+                return response()->json(['success' => false, 'error' => 'Token not returned by Stax'], 500);
+            }
+
+            // Return token (payment method id)
+            return response()->json([
+                'success' => true,
+                'payment_method_id' => $token,
+                'raw' => $data, // optional: remove in production
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Stax tokenize error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
 }

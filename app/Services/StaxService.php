@@ -34,7 +34,7 @@ class StaxService
         Log::info('StaxService::charge called', $data);
 
         // Validate required fields
-        if (empty($data['payment_method'])) {
+        if (empty($data['payment_method_id'])) {
             throw new \Exception('Payment method ID is required');
         }
 
@@ -45,7 +45,7 @@ class StaxService
         // Build the payload according to Stax API specifications
         $payload = [
             'total' => (float) $data['amount'],
-            'payment_method_id' => $data['payment_method'],
+            'payment_method_id' => $data['payment_method_id'],
         ];
 
         // Add optional fields if provided
