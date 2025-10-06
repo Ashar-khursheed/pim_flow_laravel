@@ -29,12 +29,12 @@ class StaxService
      * @return array
      * @throws \Exception
      */
-    public function charge(array $data)
+   public function charge(array $data)
     {
         Log::info('StaxService::charge called', $data);
 
         // Validate required fields
-        if (empty($data['payment_method'])) {
+        if (empty($data['payment_method_id'])) {
             throw new \Exception('Payment method ID is required');
         }
 
@@ -42,43 +42,43 @@ class StaxService
             throw new \Exception('Valid amount is required');
         }
 
-        // Build the payload according to Stax API specifications
+        // Build payload per Stax API
         $payload = [
             'total' => (float) $data['amount'],
-            'payment_method_id' => $data['payment_method'],
+            'payment_method_id' => $data['payment_method_id'], // ✅ correct key
         ];
 
-        // Add optional fields if provided
+        // Add pre_auth if provided
         if (!empty($data['pre_auth'])) {
             $payload['pre_auth'] = (bool) $data['pre_auth'];
         }
 
         // Add metadata
-        if (!empty($data['meta'])) {
-            $payload['meta'] = $data['meta'];
-        } else {
-            $payload['meta'] = [
-                'tax' => 0,
-                'subtotal' => (float) $data['amount'],
-            ];
-        }
+        $payload['meta'] = $data['meta'] ?? [
+            'tax' => 0,
+            'subtotal' => (float) $data['amount'],
+        ];
 
-        // Add customer information if provided
+        // Add customer info if available
         if (!empty($data['customer'])) {
             $customer = $data['customer'];
-            if (!empty($customer['firstname'])) $payload['firstname'] = $customer['firstname'];
-            if (!empty($customer['lastname'])) $payload['lastname'] = $customer['lastname'];
-            if (!empty($customer['email'])) $payload['email'] = $customer['email'];
-            if (!empty($customer['phone'])) $payload['phone'] = $customer['phone'];
-            if (!empty($customer['address_1'])) $payload['address_1'] = $customer['address_1'];
-            if (!empty($customer['address_city'])) $payload['address_city'] = $customer['address_city'];
-            if (!empty($customer['address_state'])) $payload['address_state'] = $customer['address_state'];
-            if (!empty($customer['address_zip'])) $payload['address_zip'] = $customer['address_zip'];
-            if (!empty($customer['address_country'])) $payload['address_country'] = $customer['address_country'];
+            $payload = array_merge($payload, array_filter([
+                'firstname' => $customer['firstname'] ?? null,
+                'lastname' => $customer['lastname'] ?? null,
+                'email' => $customer['email'] ?? null,
+                'phone' => $customer['phone'] ?? null,
+                'address_1' => $customer['address_1'] ?? null,
+                'address_city' => $customer['address_city'] ?? null,
+                'address_state' => $customer['address_state'] ?? null,
+                'address_zip' => $customer['address_zip'] ?? null,
+                'address_country' => $customer['address_country'] ?? null,
+            ]));
         }
 
+        $url = $this->baseUrl . '/v1/charges'; // ✅ correct endpoint
+
         Log::info('Stax API Request', [
-            'url' => $this->baseUrl . '/charge',
+            'url' => $url,
             'payload' => $payload,
         ]);
 
@@ -89,7 +89,7 @@ class StaxService
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json',
                 ])
-                ->post($this->baseUrl . '/charge', $payload);
+                ->post($url, $payload);
 
             $statusCode = $response->status();
             $responseBody = $response->json();
@@ -103,9 +103,8 @@ class StaxService
                 return $responseBody;
             }
 
-            // Extract error message
             $errorMessage = $this->extractErrorMessage($responseBody);
-            
+
             Log::error('Stax API Error', [
                 'status' => $statusCode,
                 'error' => $errorMessage,
@@ -118,20 +117,14 @@ class StaxService
             Log::error('Stax Connection Error', ['error' => $e->getMessage()]);
             throw new \Exception('Unable to connect to payment gateway');
         } catch (\Exception $e) {
-            if (strpos($e->getMessage(), 'payment') !== false || 
-                strpos($e->getMessage(), 'Payment') !== false ||
-                strpos($e->getMessage(), 'gateway') !== false) {
-                throw $e;
-            }
-            
             Log::error('Stax Unexpected Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
             throw new \Exception('Payment processing failed: ' . $e->getMessage());
         }
     }
+
 
     /**
      * Extract error message from API response
