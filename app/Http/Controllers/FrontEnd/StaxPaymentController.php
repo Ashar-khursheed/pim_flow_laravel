@@ -498,7 +498,7 @@ public function chargeCardWithCurl(Request $request)
                 'exp_year' => $request->exp_year,
                 'cvc' => $request->cvv,
             ],
-            'type' => 'sale', // ✅ required for direct charge
+            'type' => 'charge', // ✅ required for direct charge
             'description' => 'Test charge from API',
             'email' => $request->email,
             'name' => $request->name,
