@@ -427,242 +427,161 @@ class StaxPaymentController extends Controller
     }
 
     /**
- * Charge a card directly using cURL (Production)
- *
- * @OA\Post(
- *     path="/api/frontend/auth/Stax/card-charge",
- *     tags={"Payments"},
- *     summary="Charge a credit/debit card using cURL (Production API)",
- *     description="This endpoint directly calls the Stax production API to charge a card using raw cURL. DO NOT use sandbox URLs.",
- *     operationId="chargeCardWithCurl",
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"amount","card_number","exp_month","exp_year","cvv"},
- *             @OA\Property(property="amount", type="number", example=100.00),
- *             @OA\Property(property="card_number", type="string", example="4242424242424242"),
- *             @OA\Property(property="exp_month", type="string", example="12"),
- *             @OA\Property(property="exp_year", type="string", example="2028"),
- *             @OA\Property(property="cvv", type="string", example="123"),
- *             @OA\Property(property="email", type="string", example="customer@example.com"),
- *             @OA\Property(property="name", type="string", example="John Doe")
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Charge successful",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="transaction", type="object")
- *         )
- *     ),
- *     @OA\Response(
- *         response=500,
- *         description="Charge failed",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=false),
- *             @OA\Property(property="error", type="string")
- *         )
- *     )
- * )
- */
-// public function chargeCardWithCurl(Request $request)
-// {
-//     $validator = Validator::make($request->all(), [
-//         'amount' => 'required|numeric|min:0.01',
-//         'card_number' => 'required|string',
-//         'exp_month' => 'required|string',
-//         'exp_year' => 'required|string',
-//         'cvv' => 'required|string',
-//         'email' => 'nullable|email',
-//         'name' => 'nullable|string',
-//     ]);
+     * @OA\Post(
+     *     path="/api/frontend/auth/Stax/tokenize",
+     *     summary="Tokenize a card and get a payment method token",
+     *     description="This endpoint tokenizes a customer's card details using the Stax API and returns a payment method ID (token) that can be used for future charges.",
+     *     tags={"Payments"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"card_number","exp_month","exp_year","cvc"},
+     *             @OA\Property(property="card_number", type="string", example="4242424242424242", description="Customer's card number"),
+     *             @OA\Property(property="exp_month", type="string", example="12", description="Card expiration month (MM)"),
+     *             @OA\Property(property="exp_year", type="string", example="2028", description="Card expiration year (YYYY)"),
+     *             @OA\Property(property="cvc", type="string", example="123", description="Card CVV code"),
+     *             @OA\Property(property="billing_email", type="string", example="customer@example.com", description="Billing email (optional)"),
+     *             @OA\Property(property="billing_name", type="string", example="John Doe", description="Cardholder name (optional)")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Card successfully tokenized",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="payment_method_id", type="string", example="pm_1234567890abcdef"),
+     *             @OA\Property(property="raw", type="object", description="Raw Stax API response (optional, for debugging)")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid input or tokenization failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="The card number is invalid")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Failed to connect to Stax API")
+     *         )
+     *     )
+     * )
+     */
+    /**
+     * Tokenize card and return payment method id (token)
+     * POST /api/frontend/auth/Stax/tokenize
+     */
+    public function tokenizeCard(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'card_number' => 'required|string',
+            'exp_month'   => 'required|string',
+            'exp_year'    => 'required|string',
+            'cvc'         => 'required|string',
+            'billing_email' => 'nullable|email',
+            'billing_name'  => 'nullable|string',
+        ]);
 
-//     if ($validator->fails()) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'Validation failed',
-//             'errors' => $validator->errors(),
-//         ], 422);
-//     }
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
 
-//     try {
-//         $apiKey = env('STAX_API_KEY'); 
-//         $url = env('STAX_BASE_URL') . '/transaction'; // ✅ correct endpoint
+        try {
+            $apiKey = env('STAX_API_KEY');
+            $baseUrl = rtrim(env('STAX_BASE_URL', 'https://apiprod.fattlabs.com'), '/');
+            // Choose the tokenization endpoint your Stax instance expects.
+            // Many integrations accept: /paymentmethod  OR  /v1/paymentmethod
+            $url = $baseUrl . '/paymentmethod';
 
-//         $payload = [
-//             'total' => $request->amount, // ✅ renamed from 'amount'
-//               'customer_id' => 'cus_abc123',
-//             'source' => [
-//                 'number' => $request->card_number,
-//                 'exp_month' => $request->exp_month,
-//                 'exp_year' => $request->exp_year,
-//                 'cvc' => $request->cvv,
-//             ],
-//             'type' => 'charge', // ✅ required for direct charge
-//             'description' => 'Test charge from API',
-//             'email' => $request->email,
-//             'name' => $request->name,
-//         ];
+            $payload = [
+                'type' => 'card', // explicit type
+                'card' => [
+                    'number' => $request->card_number,
+                    'exp_month' => $request->exp_month,
+                    'exp_year' => $request->exp_year,
+                    'cvc' => $request->cvc,
+                ],
+                'meta' => [
+                    'email' => $request->billing_email,
+                    'name'  => $request->billing_name,
+                ],
+            ];
 
-//         $ch = curl_init();
-//         curl_setopt_array($ch, [
-//             CURLOPT_URL => $url,
-//             CURLOPT_RETURNTRANSFER => true,
-//             CURLOPT_POST => true,
-//             CURLOPT_HTTPHEADER => [
-//                 "Authorization: Bearer {$apiKey}",
-//                 "Content-Type: application/json",
-//             ],
-//             CURLOPT_POSTFIELDS => json_encode($payload),
-//         ]);
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => [
+                    "Authorization: Bearer {$apiKey}",
+                    "Content-Type: application/json",
+                ],
+                CURLOPT_POSTFIELDS => json_encode($payload),
+            ]);
 
-//         $response = curl_exec($ch);
-//         $error = curl_error($ch);
-//         curl_close($ch);
+            $response = curl_exec($ch);
+            $curlErr = curl_error($ch);
+            curl_close($ch);
 
-//         if ($error) {
-//             throw new \Exception("cURL Error: {$error}");
-//         }
+            if ($curlErr) {
+                throw new \Exception('cURL error: ' . $curlErr);
+            }
 
-//         $data = json_decode($response, true);
+            $data = json_decode($response, true);
 
-//         if (isset($data['error'])) {
-//             throw new \Exception($data['error']['message'] ?? 'Payment failed');
-//         }
+            // If API returns errors in the body
+            if (isset($data['error']) || isset($data['errors'])) {
+                // Log raw for debugging
+                Log::error('Stax tokenization failed', ['response' => $data]);
+                $msg = $data['error']['message'] ?? json_encode($data['errors'] ?? $data);
+                return response()->json(['success' => false, 'error' => $msg], 400);
+            }
 
-//         return response()->json([
-//             'success' => true,
-//             'transaction' => $data,
-//         ], 200);
+            // The token is usually in data.id or id field depending on API
+            $token = $data['data']['id'] ?? $data['id'] ?? null;
 
-//     } catch (\Exception $e) {
-//         Log::error('Stax cURL payment failed', ['error' => $e->getMessage()]);
-//         return response()->json([
-//             'success' => false,
-//             'error' => $e->getMessage(),
-//         ], 500);
-//     }
-// }
-public function chargeCardWithCurl(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'amount' => 'required|numeric|min:0.01',
-        'card_number' => 'required|string',
-        'exp_month' => 'required|string',
-        'exp_year' => 'required|string',
-        'cvv' => 'required|string',
-        'email' => 'nullable|email',
-        'name' => 'nullable|string',
-    ]);
+            if (! $token) {
+                Log::error('Stax tokenization unexpected response', ['response' => $data]);
+                return response()->json(['success' => false, 'error' => 'Token not returned by Stax'], 500);
+            }
 
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors' => $validator->errors(),
-        ], 422);
+            // Return token (payment method id)
+            return response()->json([
+                'success' => true,
+                'payment_method_id' => $token,
+                'raw' => $data, // optional: remove in production
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Stax tokenize error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
-    try {
-        $apiKey = env('STAX_API_KEY');
-        $baseUrl = rtrim(env('STAX_BASE_URL', 'https://apiprod.fattlabs.com'), '/');
-
-        /** -----------------------------------------
-         * Step 1️⃣ - Create a customer dynamically
-         * ----------------------------------------- */
-        $customerPayload = [
-            'first_name' => $request->name ?? 'Guest',
-            'email' => $request->email ?? 'guest@example.com',
-        ];
-
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => "{$baseUrl}/api/customers",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => [
-                "Authorization: Bearer {$apiKey}",
-                "Content-Type: application/json",
-            ],
-            CURLOPT_POSTFIELDS => json_encode($customerPayload),
-        ]);
-
-        $customerResponse = curl_exec($ch);
-        curl_close($ch);
-
-        $customerData = json_decode($customerResponse, true);
-        if (empty($customerData['data']['id'])) {
-            throw new \Exception('Failed to create customer');
-        }
-
-        $customerId = $customerData['data']['id'];
-
-        /** -----------------------------------------
-         * Step 2️⃣ - Process the charge
-         * ----------------------------------------- */
-        $payload = [
-            'total' => $request->amount,
-            'type' => 'charge',
-            'customer_id' => $customerId,
-            'source' => [
-                'number' => $request->card_number,
-                'exp_month' => $request->exp_month,
-                'exp_year' => $request->exp_year,
-                'cvc' => $request->cvv,
-            ],
-            'description' => 'Test charge via Stax API',
-            'email' => $request->email,
-            'name' => $request->name,
-        ];
-
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => "{$baseUrl}/api/transactions",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => [
-                "Authorization: Bearer {$apiKey}",
-                "Content-Type: application/json",
-            ],
-            CURLOPT_POSTFIELDS => json_encode($payload),
-        ]);
-
-        $response = curl_exec($ch);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        if ($error) {
-            throw new \Exception("cURL Error: {$error}");
-        }
-
-        $data = json_decode($response, true);
-
-        if (isset($data['error'])) {
-            throw new \Exception($data['error']['message'] ?? 'Payment failed');
-        }
-
-        Log::info('✅ Stax charge success', [
-            'customer_id' => $customerId,
-            'response' => $data,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'transaction' => $data,
-        ], 200);
-
-    } catch (\Exception $e) {
-        Log::error('❌ Stax cURL payment failed', [
-            'error' => $e->getMessage(),
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-        ], 500);
-    }
-}
 
 
 }

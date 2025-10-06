@@ -917,7 +917,7 @@ Route::prefix('frontend/auth')->group(function () {
     Route::post('/Stax/void/{id}', [F_StaxPaymentController::class, 'void'])
         ->name('stax.void');
 
-	Route::post('/Stax/card-charge', [F_StaxPaymentController::class, 'chargeCardWithCurl'])
+	Route::post('/Stax/tokenize', [F_StaxPaymentController::class, 'tokenizeCard'])
 		->name('stax.card-charge');
 
 });
