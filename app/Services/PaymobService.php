@@ -217,4 +217,26 @@ class PaymobService
 
         return $response->json();
     }
+
+
+       public function payWithGooglePay($googlePayToken)
+    {
+        $secretKey = config('services.paymob.secret_key');
+
+        $response = \Http::withHeaders([
+            'Authorization' => 'Token ' . $secretKey,
+            'Content-Type'  => 'application/json',
+        ])->post('https://uae.paymob.com/v1/intention/google_pay/', [
+            'token' => $googlePayToken,
+            'integration_id' => env('PAYMOB_GOOGLEPAY_INTEGRATION_ID'),
+        ]);
+
+        if ($response->failed()) {
+            throw new \Exception("Paymob Google Pay failed: " . $response->body());
+        }
+
+        return $response->json();
+    }
+
+
 }
