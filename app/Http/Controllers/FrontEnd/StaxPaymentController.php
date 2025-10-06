@@ -488,7 +488,7 @@ public function chargeCardWithCurl(Request $request)
 
     try {
         $apiKey = env('STAX_API_KEY'); // your live Stax secret key from .env
-        $url = "https://api.staxpayments.com/v1/charges"; // Production URL (not sandbox)
+        $url = env('STAX_BASE_URL'); // Production URL (not sandbox)
 
         $payload = [
             'amount' => $request->amount,
