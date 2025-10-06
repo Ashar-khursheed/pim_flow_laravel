@@ -647,7 +647,7 @@ class AIAlternateProductController extends Controller
                 'product_id' => 'required|integer|min:1'
             ]);
             $productIds = $request->input('product_id');
-
+ 
             // Path to Python script
             $scriptPath = base_path('app/Script/one_create_alternate.py');
 
@@ -662,7 +662,7 @@ class AIAlternateProductController extends Controller
             $workingDirectory = base_path('app/Script');
             // Pass JSON input to Python script via stdin
             $inputJson = json_encode(['product_id_list' => $productIds]);
-            $pythonCmd = env('PYTHON_PATH', base_path('venv/python.exe'));
+            $pythonCmd = env('PYTHON_PATH', base_path('venv/Scripts/python.exe'));
 
             $process = new Process([$pythonCmd, $scriptPath], $workingDirectory, null, $inputJson, 300);
             $process->run();
