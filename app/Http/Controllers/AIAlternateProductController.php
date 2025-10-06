@@ -168,12 +168,12 @@ class AIAlternateProductController extends Controller
     public function alternateStatus(Request $request)
     {
 
-        $request->validate([           
+        $request->validate([
             'id' => 'required|integer|exists:alternate_products,id',
             'status' => 'required|string|in:approve,reject,pending',
         ]);
-        $rejected_by=0;
-        if($request->status=='reject'){
+        $rejected_by = 0;
+        if ($request->status == 'reject') {
             $rejected_by = auth()->id();
         }
 
@@ -616,18 +616,104 @@ class AIAlternateProductController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/python/create-alternate-recommendation",
-     *     summary="Run Python Alternate Create Recommendation",
+     *     path="/api/python/create-one-product-alternate",
+     *     summary="Python create one Alternate Recommendation",
      *     tags={"Products AI alternates"},
-     *     @OA\RequestBody(
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="query",
      *         required=true,
+     *         description="Enter the Product ID for which to create an alternate recommendation",
+     *         @OA\Schema(type="integer", example=1683)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Job executed successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(
-     *                 property="product_id_list",
-     *                 type="array",
-     *                 @OA\Items(type="integer", example=1)
-     *             )
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Alternate products saved to DB")
      *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+
+
+    public function createOneAlternateProductsByPthon(Request $request)
+    {
+        try {
+            // Validate input
+            $request->validate([
+                'product_id' => 'required|integer|min:1'
+            ]);
+            $productIds = $request->input('product_id');
+
+            // Path to Python script
+            $scriptPath = base_path('app/Script/one_create_alternate.py');
+
+            if (!file_exists($scriptPath)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Python script not found',
+                    'details' => $scriptPath
+                ], 500);
+            }
+
+            $workingDirectory = base_path('app/Script');
+            // Pass JSON input to Python script via stdin
+            $inputJson = json_encode(['product_id_list' => $productIds]);
+            $pythonCmd = env('PYTHON_PATH', base_path('venv/python.exe'));
+
+            $process = new Process([$pythonCmd, $scriptPath], $workingDirectory, null, $inputJson, 300);
+            $process->run();
+
+
+            if (!$process->isSuccessful()) {
+                $errorOutput = $process->getErrorOutput();
+                Log::error("Python script execution failed", [
+                    'error' => $errorOutput,
+                    'command' => $process->getCommandLine()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Python script execution failed',
+                    'details' => $errorOutput
+                ], 500);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Python script executed successfully',
+                'output' => json_decode($process->getOutput(), true),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Failed to run Python script", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
+    /**
+     * @OA\Post(
+     *     path="/api/python/create-alternate-recommendation",
+     *     summary="Python all Create Alternate Recommendation",
+     *     tags={"Products AI alternates"},
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="query",
+     *         required=true,
+     *         description="Enter Product ID or 'all'",
+     *         @OA\Schema(type="string", example="1683")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -640,18 +726,20 @@ class AIAlternateProductController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
+
+
     public function createAlternateProductsByPthon(Request $request)
     {
         try {
             // Validate input
             $request->validate([
-                'product_id_list' => 'required|array|min:1'
+                'product_id' => 'required'
             ]);
-            $productIds = $request->input('product_id_list');
+            $productIds = $request->input('product_id');
 
 
             // Path to your Python script            
-            $scriptPath = base_path('app/Script/alternate_official_US.py');
+            $scriptPath = base_path('app/Script/create_alternate_products.py');
 
             if (!file_exists($scriptPath)) {
                 return response()->json([
@@ -707,6 +795,4 @@ class AIAlternateProductController extends Controller
             ], 500);
         }
     }
-
-
 }
