@@ -149,7 +149,7 @@ class StaxPaymentController extends Controller
             // Prepare charge data in the format expected by StaxService
             $chargeData = [
                 'amount' => $request->amount,
-                'payment_method' => $request->payment_method_id,
+                'payment_method_id' => $request->payment_method_id,
             ];
 
             // Add pre_auth if provided
