@@ -466,6 +466,84 @@ class StaxPaymentController extends Controller
  *     )
  * )
  */
+// public function chargeCardWithCurl(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'amount' => 'required|numeric|min:0.01',
+//         'card_number' => 'required|string',
+//         'exp_month' => 'required|string',
+//         'exp_year' => 'required|string',
+//         'cvv' => 'required|string',
+//         'email' => 'nullable|email',
+//         'name' => 'nullable|string',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Validation failed',
+//             'errors' => $validator->errors(),
+//         ], 422);
+//     }
+
+//     try {
+//         $apiKey = env('STAX_API_KEY'); 
+//         $url = env('STAX_BASE_URL') . '/transaction'; // ✅ correct endpoint
+
+//         $payload = [
+//             'total' => $request->amount, // ✅ renamed from 'amount'
+//               'customer_id' => 'cus_abc123',
+//             'source' => [
+//                 'number' => $request->card_number,
+//                 'exp_month' => $request->exp_month,
+//                 'exp_year' => $request->exp_year,
+//                 'cvc' => $request->cvv,
+//             ],
+//             'type' => 'charge', // ✅ required for direct charge
+//             'description' => 'Test charge from API',
+//             'email' => $request->email,
+//             'name' => $request->name,
+//         ];
+
+//         $ch = curl_init();
+//         curl_setopt_array($ch, [
+//             CURLOPT_URL => $url,
+//             CURLOPT_RETURNTRANSFER => true,
+//             CURLOPT_POST => true,
+//             CURLOPT_HTTPHEADER => [
+//                 "Authorization: Bearer {$apiKey}",
+//                 "Content-Type: application/json",
+//             ],
+//             CURLOPT_POSTFIELDS => json_encode($payload),
+//         ]);
+
+//         $response = curl_exec($ch);
+//         $error = curl_error($ch);
+//         curl_close($ch);
+
+//         if ($error) {
+//             throw new \Exception("cURL Error: {$error}");
+//         }
+
+//         $data = json_decode($response, true);
+
+//         if (isset($data['error'])) {
+//             throw new \Exception($data['error']['message'] ?? 'Payment failed');
+//         }
+
+//         return response()->json([
+//             'success' => true,
+//             'transaction' => $data,
+//         ], 200);
+
+//     } catch (\Exception $e) {
+//         Log::error('Stax cURL payment failed', ['error' => $e->getMessage()]);
+//         return response()->json([
+//             'success' => false,
+//             'error' => $e->getMessage(),
+//         ], 500);
+//     }
+// }
 public function chargeCardWithCurl(Request $request)
 {
     $validator = Validator::make($request->all(), [
@@ -487,27 +565,60 @@ public function chargeCardWithCurl(Request $request)
     }
 
     try {
-        $apiKey = env('STAX_API_KEY'); 
-        $url = env('STAX_BASE_URL') . '/transaction'; // ✅ correct endpoint
+        $apiKey = env('STAX_API_KEY');
+        $baseUrl = rtrim(env('STAX_BASE_URL', 'https://apiprod.fattlabs.com'), '/');
 
+        /** -----------------------------------------
+         * Step 1️⃣ - Create a customer dynamically
+         * ----------------------------------------- */
+        $customerPayload = [
+            'first_name' => $request->name ?? 'Guest',
+            'email' => $request->email ?? 'guest@example.com',
+        ];
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => "{$baseUrl}/api/customers",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => [
+                "Authorization: Bearer {$apiKey}",
+                "Content-Type: application/json",
+            ],
+            CURLOPT_POSTFIELDS => json_encode($customerPayload),
+        ]);
+
+        $customerResponse = curl_exec($ch);
+        curl_close($ch);
+
+        $customerData = json_decode($customerResponse, true);
+        if (empty($customerData['data']['id'])) {
+            throw new \Exception('Failed to create customer');
+        }
+
+        $customerId = $customerData['data']['id'];
+
+        /** -----------------------------------------
+         * Step 2️⃣ - Process the charge
+         * ----------------------------------------- */
         $payload = [
-            'total' => $request->amount, // ✅ renamed from 'amount'
-              'customer_id' => 'cus_abc123',
+            'total' => $request->amount,
+            'type' => 'charge',
+            'customer_id' => $customerId,
             'source' => [
                 'number' => $request->card_number,
                 'exp_month' => $request->exp_month,
                 'exp_year' => $request->exp_year,
                 'cvc' => $request->cvv,
             ],
-            'type' => 'charge', // ✅ required for direct charge
-            'description' => 'Test charge from API',
+            'description' => 'Test charge via Stax API',
             'email' => $request->email,
             'name' => $request->name,
         ];
 
         $ch = curl_init();
         curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
+            CURLOPT_URL => "{$baseUrl}/api/transactions",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
             CURLOPT_HTTPHEADER => [
@@ -531,13 +642,21 @@ public function chargeCardWithCurl(Request $request)
             throw new \Exception($data['error']['message'] ?? 'Payment failed');
         }
 
+        Log::info('✅ Stax charge success', [
+            'customer_id' => $customerId,
+            'response' => $data,
+        ]);
+
         return response()->json([
             'success' => true,
             'transaction' => $data,
         ], 200);
 
     } catch (\Exception $e) {
-        Log::error('Stax cURL payment failed', ['error' => $e->getMessage()]);
+        Log::error('❌ Stax cURL payment failed', [
+            'error' => $e->getMessage(),
+        ]);
+
         return response()->json([
             'success' => false,
             'error' => $e->getMessage(),
