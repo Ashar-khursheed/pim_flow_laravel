@@ -492,6 +492,7 @@ public function chargeCardWithCurl(Request $request)
 
         $payload = [
             'total' => $request->amount, // ✅ renamed from 'amount'
+              'customer_id' => 'cus_abc123',
             'source' => [
                 'number' => $request->card_number,
                 'exp_month' => $request->exp_month,
