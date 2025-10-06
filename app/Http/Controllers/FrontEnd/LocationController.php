@@ -12,13 +12,10 @@ class LocationController extends Controller
 {
     protected $geoLocationService;
 
-   
-
     public function __construct(GeoLocationService $geoLocationService)
     {
         $this->geoLocationService = $geoLocationService;
     }
-
 
     /**
      * @OA\Get(
@@ -36,24 +33,42 @@ class LocationController extends Controller
      *         response=200,
      *         description="Location information",
      *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
      *             @OA\Property(property="country", type="string"),
-     *             @OA\Property(property="city", type="string"),
+     *             @OA\Property(property="countryCode", type="string"),
      *             @OA\Property(property="region", type="string"),
+     *             @OA\Property(property="regionName", type="string"),
+     *             @OA\Property(property="city", type="string"),
+     *             @OA\Property(property="zip", type="string"),
      *             @OA\Property(property="lat", type="number"),
-     *             @OA\Property(property="lon", type="number")
+     *             @OA\Property(property="lon", type="number"),
+     *             @OA\Property(property="timezone", type="string"),
+     *             @OA\Property(property="isp", type="string"),
+     *             @OA\Property(property="query", type="string")
      *         )
      *     )
      * )
      */
-
     public function getLocation(Request $request, $ip = null)
     {
-        // Use provided IP or fallback to client's IP
-        $ip = $ip ?? $request->ip();
+        // Get real client IP (handles CloudFront -> ALB -> Laravel chain)
+        $clientIp = $this->getRealClientIp($request);
+        
+        // Use provided IP parameter, route parameter, or detected client IP
+        $ip = $request->query('ip') ?? $ip ?? $clientIp;
 
         // If we're on localhost, use a public IP for testing
         if ($ip == '127.0.0.1' || $ip == '::1') {
             $ip = '8.8.8.8'; // Example IP (Google's DNS server) for testing
+        }
+
+        // Validate IP
+        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'Invalid IP address',
+                'query' => $ip
+            ], 400);
         }
 
         $locationData = $this->geoLocationService->getLocation($ip);
@@ -61,6 +76,43 @@ class LocationController extends Controller
         return response()->json($locationData);
     }
 
+    /**
+     * Get real client IP from CloudFront/ALB headers
+     * Priority: CloudFront headers > X-Forwarded-For > Default
+     */
+    private function getRealClientIp(Request $request)
+    {
+        // Priority order of headers to check
+        $headers = [
+            'HTTP_CF_CONNECTING_IP',           // CloudFront - most reliable
+            'HTTP_CLOUDFRONT_VIEWER_ADDRESS',  // CloudFront viewer address
+            'HTTP_TRUE_CLIENT_IP',             // CloudFront/Akamai
+            'HTTP_X_REAL_IP',                  // Nginx proxy
+            'HTTP_X_FORWARDED_FOR',            // Standard proxy header (ALB adds this)
+            'HTTP_CLIENT_IP',                  // Alternative header
+        ];
+        
+        foreach ($headers as $header) {
+            if (!empty($_SERVER[$header])) {
+                $ip = $_SERVER[$header];
+                
+                // X-Forwarded-For can contain multiple IPs: "client, proxy1, proxy2"
+                // Always get the FIRST IP (original client)
+                if (strpos($ip, ',') !== false) {
+                    $ips = explode(',', $ip);
+                    $ip = trim($ips[0]);
+                }
+                
+                // Validate it's a public IP (exclude private/reserved ranges)
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    return $ip;
+                }
+            }
+        }
+        
+        // Fallback to Laravel's default (will be ALB private IP if no headers found)
+        return $request->ip();
+    }
 
     /**
      * @OA\Get(
@@ -90,7 +142,6 @@ class LocationController extends Controller
      *     )
      * )
      */
-
     public function getCoordinates(Request $request)
     {
         $request->validate([
@@ -140,7 +191,6 @@ class LocationController extends Controller
      *     )
      * )
      */
-
     public function getRealTimeLocation(Request $request)
     {
         $request->validate([
@@ -172,9 +222,6 @@ class LocationController extends Controller
         // Return an error if no address is found
         return response()->json(['message' => 'Address not found'], 404);
     }
-    
-  // HERE API incoming parameters
-
 
     /**
      * @OA\Post(
@@ -206,7 +253,6 @@ class LocationController extends Controller
      *     )
      * )
      */
-
     public function getAddress(Request $request)
     {
         // Validate incoming latitude and longitude
@@ -252,5 +298,4 @@ class LocationController extends Controller
             ]);
         }
     }
-    
 }
