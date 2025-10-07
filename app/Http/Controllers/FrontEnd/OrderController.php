@@ -533,23 +533,8 @@ class OrderController extends BaseController
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
 
-			// if ($orderProduct->accessoryCharges) {
-			// 	$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
-			// 		return [
-			// 			'id' => $charge->id,
-			// 			'accessory_item_id' => $charge->accessory_item_id,
-			// 			'accessory_item_name' => $charge->accessoryItem->name ?? null,
-			// 			'accessory_item_price' => $charge->accessoryItem->price ?? null,
-			// 			'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-			// 			'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-			// 			'amount' => $charge->amount,
-			// 		];
-			// 	});
-
-			// 	unset($orderProduct->accessoryCharges);
-			// }
 			if ($orderProduct->accessoryCharges) {
-				$product->accessories = $orderProduct->accessoryCharges->map(function ($charge) {
+				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
 					return [
 						'id' => $charge->id,
 						'accessory_item_id' => $charge->accessory_item_id,
@@ -563,7 +548,6 @@ class OrderController extends BaseController
 
 				unset($orderProduct->accessoryCharges);
 			}
-
 		}
 
 		if (
