@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 
-class Attribute extends Model implements TranslatableContract
+// class Attribute extends Model implements TranslatableContract
+class Attribute extends Model
 {
-	use Translatable;
+	// use Translatable;
 
-	public $translatedAttributes = ['title'];
+	// public $translatedAttributes = ['title'];
 
 	protected $fillable = ['name', 'code', 'type', 'attribute_group_id', 'validations', 'created_by', 'updated_by'];
 

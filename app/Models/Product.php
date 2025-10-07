@@ -4,8 +4,8 @@ namespace App\Models;
 use App\Models\Slug;
 use App\Models\ProductCategory;
 use Illuminate\Database\Eloquent\Model;
-use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
-use Astrotomic\Translatable\Translatable;
+// use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+// use Astrotomic\Translatable\Translatable;
 use OpenApi\Annotations as OA;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Frontend\Wishlist; // Add this at the top of your Product model
@@ -49,16 +49,17 @@ use App\Models\SeoManagement;
  * )
  */
 
-class Product extends Model implements TranslatableContract
+// class Product extends Model implements TranslatableContract
+class Product extends Model
 {
-	use Translatable;
+	// use Translatable;
 
-	public $translatedAttributes = [
-		'name',
-		'description',
-		'benefits_features',
-		'images',
-	];
+	// public $translatedAttributes = [
+	// 	'name',
+	// 	'description',
+	// 	'benefits_features',
+	// 	'images',
+	// ];
 
 	public static $observerUserId = null;
 	protected $table = 'ec_products';
