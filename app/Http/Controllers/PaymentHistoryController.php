@@ -348,21 +348,33 @@ class PaymentHistoryController extends Controller
 				$newPaidAmount = $order->paid_amount + $request->amount;
 				$pendingAmount = $order->total_amount - $newPaidAmount;
 
-			$order->update([
-				'paid_amount' => $newPaidAmount,
-				'pending_amount' => $pendingAmount,
-				'is_paid' => $pendingAmount <= 0,
-			]);
-			if ($pendingAmount <= 0) {
+				$order->update([
+					'paid_amount' => $newPaidAmount,
+					'pending_amount' => $pendingAmount,
+					'is_paid' => $pendingAmount <= 0,
+				]);
+
+				// ✅ If full amount is paid, release reservation
+				if ($pendingAmount <= 0) {
 					$order->update(['is_reserved' => 0]);
+
+				$batch = Bus::batch([])->name('Order Place in payment mgmt')->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+				$batch->add(new OrderPlacedMailJob([
+					'recordId' => $validated['order_id']
+				]));
+
 				}
+			}
+
+			DB::commit();
 
 			return response()->json([
 				'success' => true,
 				'message' => 'Payment recorded successfully.',
 				'data' => $payment
 			], 201);
-			}
+			
 		} catch (ValidationException $e) {
 			return response()->json([
 				'success' => false,
