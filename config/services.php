@@ -95,7 +95,7 @@ return [
     ],
 
      'stax' => [
-        'base_url' => env('STAX_BASE_URL', 'https://apiprod.fattlabs.com'),
+        'base_url' => env('STAX_BASE_URL', 'https://apiprod.fattlabs.com'),         
         'api_key' => env('STAX_API_KEY'),
         'public_key' => env('STAX_PUBLIC_KEY'),
     ],

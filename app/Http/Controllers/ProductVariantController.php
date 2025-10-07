@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
 use App\Models\Product;
+use App\Models\ProductAttribute;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
@@ -451,17 +452,24 @@ class ProductVariantController extends Controller
             }
 
             // Fetch attributes
-            $attributes = Attribute::whereIn('attribute_group_id', $productIds)
-                ->select('id', 'name', 'attribute_group_id')
-                ->get();
 
-            // Map into clean structure
+            $productIds = array_map('intval', (array) $productIds);
+            $attributes = ProductAttribute::whereIn('product_id', $productIds)
+            ->select(
+            'attribute_id',
+            \DB::raw('GROUP_CONCAT(attribute_value) as attribute_values'),  
+            \DB::raw('GROUP_CONCAT(product_id) as product_ids')  
+            )
+            ->groupBy('attribute_id')
+            ->get();
+
             $attributeList = $attributes->map(function ($attr) {
-                return [
-                    'attribute_id' => $attr->id,
-                    'attribute_name' => $attr->name,
-                    'group_id' => $attr->attribute_group_id,
-                ];
+        
+            return [
+            'attribute_id' => $attr->attribute_id,
+            'attribute_name' => $attr->attribute_values,
+            'group_id' => $attr->product_ids,
+            ];
             });
 
             return response()->json([

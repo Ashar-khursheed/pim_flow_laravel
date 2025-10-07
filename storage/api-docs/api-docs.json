@@ -18716,6 +18716,14 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "is_paymob": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_squarePayment": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "is_customer_pickup": {
                                         "type": "boolean",
                                         "example": false
@@ -27908,6 +27916,10 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "is_squarePayment": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "is_customer_pickup": {
                                         "type": "boolean",
                                         "example": false
@@ -28392,7 +28404,10 @@
                                             "Cash",
                                             "Stripe",
                                             "Razorpay",
-                                            "Paymob"
+                                            "Paymob",
+                                            "Stax",
+                                            "Square",
+                                            "CC Avenue"
                                         ],
                                         "example": "Credit Card"
                                     },
@@ -28842,7 +28857,9 @@
                                             "Razorpay",
                                             "Cash on Delivery",
                                             "CC Avenue",
-                                            "Paymob"
+                                            "Paymob",
+                                            "Stax",
+                                            "Square"
                                         ],
                                         "example": "Cash on Delivery"
                                     },
