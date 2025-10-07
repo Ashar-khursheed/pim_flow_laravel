@@ -358,11 +358,11 @@ class PaymentHistoryController extends Controller
 				if ($pendingAmount <= 0) {
 					$order->update(['is_reserved' => 0]);
 
-					$batch = Bus::batch([
-						new OrderPlacedMailJob(['recordId' => $order->id]),
-					])->name('Payment Completed')
-					->onQueue(config('app.website') . '_PAYMENT_DONE')
-					->dispatch();
+				$batch = Bus::batch([])->name('Order Place in payment mgmt')->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+				$batch->add(new OrderPlacedMailJob([
+					'recordId' => $validated['order_id']
+				]));
 
 				}
 			}
