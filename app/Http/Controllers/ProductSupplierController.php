@@ -180,7 +180,7 @@ class ProductSupplierController extends BaseController
 			'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
 			'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
 			'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
-			'shipping_charge' => 'nullable|numeric|required_if:free_shipping,Yes',
+			'shipping_charge' => 'nullable|numeric|required_if:free_shipping,No',
 			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
 
 			'restocking_fees' => 'nullable|numeric',
@@ -373,7 +373,7 @@ class ProductSupplierController extends BaseController
 			'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
 			'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
 			'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
-			'shipping_charge' => 'nullable|numeric|required_if:free_shipping,Yes',
+			'shipping_charge' => 'nullable|numeric|required_if:free_shipping,No',
 			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
 
 			'restocking_fees' => 'nullable|numeric',
