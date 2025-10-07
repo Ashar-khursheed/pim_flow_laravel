@@ -269,6 +269,33 @@ class TranslationController extends BaseController
 		//
 	}
 
+	/**
+	 * @OA\Post(
+	 *     path="/api/translations/generate-translate",
+	 *     summary="Generate translation from ID",
+	 *     tags={"Translations"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="translate_to", type="string", example="ar"),
+	 *             @OA\Property(property="product_id", type="integer", example=2001)
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function generateTranslate(Request $request)
+	{
+		$request->validate([
+			'translate_to' => 'required|string|in:ar,en',
+			'product_id' => 'required|integer|exists:ec_products,id',
+		]);
 
-
+		return response()->json([
+			'success' => true,
+			'message' => 'Record translated successfully.'
+			'data' => $record,
+		]);
+	}
 }
