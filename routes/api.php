@@ -405,6 +405,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
     Route::post('/keywords/import', [AppKeywordController::class, 'import']);
     Route::post('/keywords/export', [AppKeywordController::class, 'export']);
 
+    Route::post('/translations/generate-translate', [TranslationController::class, 'export']);
     Route::post('/translations/export', [TranslationController::class, 'export']);
     Route::post('/translations/import', [TranslationController::class, 'import']);
 
@@ -458,7 +459,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/python/create-one-product-alternate', [AIAlternateProductController::class, 'createOneAlternateProductsByPthon']);
 	Route::post('ai-alternate-status', [AIAlternateProductController::class, 'alternateStatus']);
 	Route::post('ai-alternate-priority', [AIAlternateProductController::class, 'alternatePriority']);
-	
+
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
@@ -926,17 +927,17 @@ Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout'])
      ->where('from', '.*');
 
 Route::prefix('frontend/auth')->group(function () {
-    
+
     // Stax Payment Routes
     Route::post('/Stax', [F_StaxPaymentController::class, 'checkout'])
         ->name('stax.checkout');
-    
+
     Route::get('/Stax/transaction/{id}', [F_StaxPaymentController::class, 'getTransaction'])
         ->name('stax.transaction');
-    
+
     Route::post('/Stax/refund/{id}', [F_StaxPaymentController::class, 'refund'])
         ->name('stax.refund');
-    
+
     Route::post('/Stax/void/{id}', [F_StaxPaymentController::class, 'void'])
         ->name('stax.void');
 

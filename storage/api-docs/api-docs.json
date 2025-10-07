@@ -38060,7 +38060,8 @@
                                         "enum": [
                                             "attribute",
                                             "attribute_value",
-                                            "product_attribute"
+                                            "product_attribute",
+                                            "product"
                                         ],
                                         "example": "attribute"
                                     },
@@ -38078,6 +38079,48 @@
                 "responses": {
                     "200": {
                         "description": "Imported successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/translations/generate-translate": {
+            "post": {
+                "tags": [
+                    "Translations"
+                ],
+                "summary": "Generate translation from ID",
+                "operationId": "b8d540a355ab95fe186ea93df40d46c8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "translate_to": {
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 2001
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
                         "content": {
                             "application/json": {}
                         }

@@ -294,7 +294,7 @@ class TranslationController extends BaseController
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Record translated successfully.'
+			'message' => 'Record translated successfully.',
 			'data' => $record,
 		]);
 	}
