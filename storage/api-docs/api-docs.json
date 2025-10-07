@@ -12319,7 +12319,7 @@
                 ],
                 "summary": "Remove specific product (with optional accessories) from cart",
                 "description": "Removes a specific product from the user's shopping cart. If 'accessories_options' are provided, only the item with matching accessories will be removed. If not provided, only the product with no accessories will be removed.",
-                "operationId": "4548e6fe036c323d9fd78a084a3d1be9",
+                "operationId": "60a388f0af61b14dd5f46b004d5d78dc",
                 "parameters": [
                     {
                         "name": "productId",
@@ -12369,6 +12369,62 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Product removed successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found in cart"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Bearer token missing or invalid"
+                    },
+                    "500": {
+                        "description": "Server error while removing product from cart"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Frontend-Cart"
+                ],
+                "summary": "Remove specific product from cart",
+                "description": "Remove a specific product from the user's shopping cart",
+                "operationId": "7fb644a037ba9062a021be438087fd65",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "ID of the product to remove",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product removed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product removed from cart."
                                         }
                                     },
                                     "type": "object"
