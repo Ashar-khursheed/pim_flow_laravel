@@ -41,7 +41,8 @@ class Order extends Model
 		'utm_id',
 		'payment_link',
 		'is_payment',
-		'is_paymob'
+		'is_paymob',
+		'is_squarePayment',
 	];
 
 	public function creator()

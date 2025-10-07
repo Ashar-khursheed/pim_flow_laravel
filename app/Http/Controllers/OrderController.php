@@ -271,6 +271,7 @@ class OrderController extends Controller
 	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
 	 *             @OA\Property(property="is_payment", type="boolean", example=false),
 	 *             @OA\Property(property="is_paymob", type="boolean", example=false),
+	 *             @OA\Property(property="is_squarePayment", type="boolean", example=false),
 	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
 	 *             @OA\Property(
 	 *                 property="products",
@@ -304,6 +305,7 @@ class OrderController extends Controller
 			'is_reserved' => 'nullable|boolean',
 			'is_payment' => 'nullable|boolean',
 			'is_paymob' => 'nullable|boolean',
+			'is_squarePayment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
@@ -401,6 +403,7 @@ class OrderController extends Controller
 				'is_reserved' => $request->boolean('is_reserved'),
 				'is_payment' => $request->boolean('is_payment'),
 				'is_paymob' => $request->boolean('is_paymob'),
+				'is_squarePayment' => $request->boolean('is_squarePayment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => auth()->id(),
 				'payment_link' => null
@@ -443,7 +446,7 @@ class OrderController extends Controller
 				$cart->customerCartProducts()->delete();
 				$cart->delete();
 			});
-
+ 
 			if ($request->boolean('is_reserved')) {
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					$paymentLink = null;
@@ -500,20 +503,40 @@ class OrderController extends Controller
 						}
 					}
 				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
-					try {
-						$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
-							->createPaymentLink($order);
-						if ($paymentLink) {
-							$order = Order::find($order->id);
-							$order->payment_link = $paymentLink;
-							$order->save();
+					$paymentLink = null;
+					if ($request->boolean('is_squarePayment')) {
+						try {
+							$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
+								->createPaymentLink($order);
+							if ($paymentLink) {
+								$order = Order::find($order->id);
+								$order->payment_link = $paymentLink;
+								$order->save();
+							}
+						} catch (\Exception $e) {
+							\Log::error('Square Payment Link generation failed', [
+								'order_id' => $order->id,
+								'error' => $e->getMessage(),
+								'trace' => $e->getTraceAsString()
+							]);
 						}
-					} catch (\Exception $e) {
-						\Log::error('Square Payment Link generation failed', [
-							'order_id' => $order->id,
-							'error' => $e->getMessage(),
-							'trace' => $e->getTraceAsString()
-						]);
+					}else{
+						 
+						try {
+							$paymentLink = app(\App\Http\Controllers\FrontEnd\StaxPaymentController::class)
+								->createStaxPaymentLink($order);
+							if ($paymentLink) {
+								$order = Order::find($order->id);
+								$order->payment_link = $paymentLink;
+								$order->save();
+							}
+						} catch (\Exception $e) {
+							\Log::error('Stax Payment Link generation failed', [
+								'order_id' => $order->id,
+								'error' => $e->getMessage(),
+								'trace' => $e->getTraceAsString()
+							]);
+						}
 					}
 				}
 			}

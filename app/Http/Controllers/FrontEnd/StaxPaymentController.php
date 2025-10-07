@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 use App\Services\StaxService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Models\FrontEnd\CustomerAddress;
+use App\Models\FrontEnd\Customer;
+use Illuminate\Support\Facades\Http;
+use App\Models\PaymentManagement;
+use App\Models\FrontEnd\Order;
 
 class StaxPaymentController extends Controller
 {
@@ -483,16 +488,16 @@ class StaxPaymentController extends Controller
      *     )
      * )
      */
-   
+
     public function tokenizeCard(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'card_number' => 'required|string',
-            'exp_month'   => 'required|string',
-            'exp_year'    => 'required|string',
-            'cvc'         => 'required|string',
+            'exp_month' => 'required|string',
+            'exp_year' => 'required|string',
+            'cvc' => 'required|string',
             'billing_email' => 'nullable|email',
-            'billing_name'  => 'nullable|string',
+            'billing_name' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -520,7 +525,7 @@ class StaxPaymentController extends Controller
                 ],
                 'meta' => [
                     'email' => $request->billing_email,
-                    'name'  => $request->billing_name,
+                    'name' => $request->billing_name,
                 ],
             ];
 
@@ -557,7 +562,7 @@ class StaxPaymentController extends Controller
             // The token is usually in data.id or id field depending on API
             $token = $data['data']['id'] ?? $data['id'] ?? null;
 
-            if (! $token) {
+            if (!$token) {
                 Log::error('Stax tokenization unexpected response', ['response' => $data]);
                 return response()->json(['success' => false, 'error' => 'Token not returned by Stax'], 500);
             }
@@ -578,6 +583,240 @@ class StaxPaymentController extends Controller
         }
     }
 
+    public function createStaxPaymentLink($order)
+    {
+        $baseUrl = config('services.stax.base_url', 'https://apiprod.fattlabs.com');
+        $apiKey = config('services.stax.api_key');
+
+        try {
+            $customerAddress = CustomerAddress::find($order->customer_address_id);
+            $customer = Customer::find($order->customer_id);
+
+            if (!$customer || !$customerAddress) {
+                throw new \Exception('Customer or address not found.');
+            }
+
+            // Split customer name
+            $nameParts = explode(' ', trim($customer->name ?? ''), 2);
+            $firstname = $nameParts[0] ?? '';
+            $lastname = $nameParts[1] ?? '';
+
+            
+            $invoiceData = [
+                'amount' => (float) $order->total_amount * 100,
+                'description' => $firstname ?? "",
+                'meta' => [
+                    'reference' => 'ORDER-' . $order->id,
+                    'memo' => $customerAddress->city . ' ' . $customerAddress->state,
+                ],
+                'customer' => [
+                    'email' => $customer->email,
+                    'firstname' => $firstname,
+                    'lastname' => $lastname,
+                    'common_name' => trim($firstname . ' ' . $lastname),
+                ],
+                'link_meta' => [
+                    'redirect_success' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
+                    'redirect_failure' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
+                    'send_email' => true,
+                ],
+                'redirect_url' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
+
+                'send_email' => true,
+
+                'send_now' => true,
+                'pre_auth' => true,
+                'common_name' => trim($firstname . ' ' . $lastname),
+                'url' => 'https://www.horecastore.ae/',
+
+            ];
+
+            // $tokenResponse = Http::withHeaders([
+            //     'Authorization' => 'Bearer ' . env('STAX_API_KEY'),
+            //     'Content-Type' => 'application/json',
+            // ])->post(env('STAX_BASE_URL') . '/v1/hosted-payments/tokens');
+
+            // $token = $tokenResponse->json()['token'] ?? null;
+         
+            $response = Http::timeout(30)->withOptions(['verify' => false])
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . env('STAX_API_KEY'),
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ])
+                ->post($baseUrl . "/query/payment-links", $invoiceData);
 
 
+            $result = $response->json();
+
+            // Log response details for debugging
+            \Log::info('STAX API response', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            if ($response->failed()) {
+                throw new \Exception(
+                    'Stax API error: ' . $response->body()
+                );
+            }
+
+            $result = $response->json();
+
+            return response()->json([
+                'success' => true,
+                'payment_link' => $result['url'] ?? null,
+                'payment_id' => $result['id'] ?? null,
+                'message' => 'Payment link generated successfully',
+                'data' => $result,
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Payment link creation failed', [
+                'error' => $e->getMessage(),
+                'order_id' => $order->id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate payment link',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+    public function handleWebhook(Request $request)
+    {
+        $webhookSecret = config('services.stax.webhook_secret');
+        try {
+            // Verify webhook signature
+            $signature = $request->header('X-Stax-Signature');
+            $payload = json_encode($request->all());
+
+            $computedSignature = hash_hmac('sha256', $payload, $webhookSecret);
+
+            if (!hash_equals($signature, $computedSignature)) {
+                Log::error('Invalid webhook signature', [
+                    'received' => $signature,
+                    'computed' => $computedSignature
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Invalid signature'
+                ], 400);
+            }
+
+            $event = $request->all();
+            $eventType = $event['event_type'] ?? '';
+
+            Log::info('Webhook Event Received', [
+                'event_type' => $eventType,
+                'id' => $event['id'] ?? null,
+                'timestamp' => now()->toISOString()
+            ]);
+
+            // Route to appropriate handler
+            switch ($eventType) {
+                case 'invoice_paid':
+                case 'invoice.paid':
+                    $this->handleInvoicePaid($event['data'] ?? []);
+                    break;
+
+                case 'invoice_created':
+                case 'invoice.created':
+                    $this->handlePaymentFailed($event['data'] ?? []);
+                    break;
+
+                case 'invoice_updated':
+                case 'invoice.updated':
+                    $this->handlePaymentFailed($event['data'] ?? []);
+                    break;
+
+                case 'payment_success':
+                case 'payment.success':
+                    $this->handlePaymentFailed($event['data'] ?? []);
+                    break;
+
+                case 'payment_failed':
+                case 'payment.failed':
+                    $this->handlePaymentFailed($event['data'] ?? []);
+                    break;
+
+                case 'invoice_voided':
+                case 'invoice.voided':
+                    $this->handlePaymentFailed($event['data'] ?? []);
+                    break;
+
+                default:
+                    Log::warning('Unhandled webhook event type', ['event_type' => $eventType]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'received' => true,
+                'event_type' => $eventType
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Webhook processing error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Webhook processing failed'
+            ], 500);
+        }
+
+    }
+
+    private function handleInvoicePaid(array $data): void
+    {
+        Log::info('=== INVOICE PAID ===', [
+            'invoice_id' => $data['id'] ?? null,
+            'amount' => $data['total'] ?? null,
+            'customer' => $data['customer']['email'] ?? null,
+            'reference' => $data['meta']['reference'] ?? null
+        ]);
+
+
+
+        PaymentManagement::create([
+            'order_id' => $data['id'],
+            'transaction_id' => $data['meta']['reference'],
+            'payment_mode' => 'Credit Card',
+            'payment_method' => 'Stax',
+            'amount' => $data['total'] ?? null,
+            'status' => "Completed",
+            'payment_date' => date('Y-m-d H:i:s'),
+            'notes' => 'Payment marked through link',
+            'payment_details' => ''
+        ]);
+
+
+    }
+
+    private function handlePaymentFailed(array $data): void
+    {
+        Log::error('=== PAYMENT FAILED ===', [
+            'data' => $data,
+            'failure_reason' => $data['failure_reason'] ?? 'Unknown'
+        ]);
+        PaymentManagement::create([
+            'order_id' => $data['id'],
+            'transaction_id' => $data['meta']['reference'],
+            'payment_mode' => 'Credit Card',
+            'payment_method' => 'Stax',
+            'amount' => $data['total'] ?? null,
+            'status' => "Failed",
+            'payment_date' => date('Y-m-d H:i:s'),
+            'notes' => 'Payment marked through link',
+            'payment_details' => ''
+        ]);
+
+    }
 }

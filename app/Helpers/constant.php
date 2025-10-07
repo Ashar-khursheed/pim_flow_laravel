@@ -937,11 +937,15 @@ if (!function_exists('paymentGateway')) {
 			'PayPal',
 			'Square',
 			'Razorpay',
-			'CCAvenue',
+			'CC Avenue',
 			'PayU',
 			'Instamojo',
 			'BillDesk',
 			'Paymob',
+			'Bank Transfer',
+			'Cash on Delivery',
+			'Stax',
+			'Square',
 		);
 		return $gateways;
 	}
