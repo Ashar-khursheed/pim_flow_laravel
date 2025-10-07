@@ -200,7 +200,10 @@ class PaymobService
         ])->post('https://uae.paymob.com/v1/intention/', [
             'amount'          => $amountCents,
             'currency'        => $currency,
-            'payment_methods' => [(int) env('PAYMOB_CARD_INTEGRATION_ID')],
+            'payment_methods' => [
+                (int) env('PAYMOB_CARD_INTEGRATION_ID'),
+                (int) env('PAYMOB_TAMARA_INTEGRATION_ID'),
+            ],
             'items'           => $items,
             'billing_data'    => $billingData,
             'customer' => [
