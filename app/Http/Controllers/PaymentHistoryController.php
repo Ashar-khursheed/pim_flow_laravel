@@ -294,6 +294,9 @@ class PaymentHistoryController extends Controller
 				'pending_amount' => $pendingAmount,
 				'is_paid' => $pendingAmount <= 0,
 			]);
+			if ($pendingAmount <= 0) {
+					$order->update(['is_reserved' => 0]);
+				}
 
 			// Return success response with 201 status
 			return response()->json([
