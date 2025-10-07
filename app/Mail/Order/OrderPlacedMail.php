@@ -82,6 +82,21 @@ class OrderPlacedMail extends Mailable
 				$product->quantity = (int) $orderProduct->quantity;
 				$product->total = $orderProduct->amount;
 
+				$product->accessories = [];
+				if ($orderProduct->accessoryCharges) {
+					$product->accessories = $orderProduct->accessoryCharges->map(function ($charge) {
+						return [
+							'id' => $charge->id,
+							'accessory_item_id' => $charge->accessory_item_id,
+							'accessory_item_name' => $charge->accessoryItem->name ?? null,
+							'accessory_item_price' => $charge->accessoryItem->price ?? null,
+							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+							'amount' => $charge->amount,
+						];
+					});
+				}
+
 				$products->push($product);
 			}
 		}
