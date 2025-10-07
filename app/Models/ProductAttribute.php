@@ -8,9 +8,9 @@ use Astrotomic\Translatable\Translatable;
 
 class ProductAttribute extends Model implements TranslatableContract
 {
-	use Translatable;
+	// use Translatable;
 
-	public $translatedAttributes = ['title'];
+	// public $translatedAttributes = ['title'];
 
 	protected $fillable = ['product_id', 'attribute_id', 'attribute_value', 'measurement_unit_id'];
 

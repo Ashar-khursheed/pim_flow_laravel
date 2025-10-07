@@ -8,8 +8,8 @@ use Astrotomic\Translatable\Translatable;
 
 class AttributeValue extends Model implements TranslatableContract
 {
-	use Translatable;
+	// use Translatable;
 
-	public $translatedAttributes = ['title'];
+	// public $translatedAttributes = ['title'];
 	protected $fillable = ['attribute_id', 'attribute_value'];
 }
