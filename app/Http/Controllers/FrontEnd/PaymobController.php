@@ -271,77 +271,77 @@ class PaymobController extends Controller
             ], 500);
         }
     }
-    // public function pay(Request $request)
-    // {
-    //     $request->validate([
-    //         'payment_token' => 'required|string',
-    //         'card_number' => 'required|string',
-    //         'expiry_month' => 'required|string',
-    //         'expiry_year' => 'required|string',
-    //         'cvv' => 'required|string',
-    //     ]);
+    public function pay(Request $request)
+    {
+        $request->validate([
+            'payment_token' => 'required|string',
+            'card_number' => 'required|string',
+            'expiry_month' => 'required|string',
+            'expiry_year' => 'required|string',
+            'cvv' => 'required|string',
+        ]);
 
-    //     try {
-    //         $response = $this->paymob->payWithCard(
-    //             $request->payment_token,
-    //             $request->only(['card_number', 'expiry_month', 'expiry_year', 'cvv'])
-    //         );
-
-    //         return response()->json([
-    //             'status' => true,
-    //             'response' => $response
-    //         ]);
-
-    //     } catch (\Exception $e) {
-    //         Log::error('Paymob Card Payment Error: ' . $e->getMessage());
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Payment failed',
-    //             'error' => $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
-public function pay(Request $request)
-{
-    $request->validate([
-        'payment_token' => 'required|string',
-    ]);
-
-    try {
-        // Case 1: Google Pay token (usually JSON or starts with "{")
-        if (str_starts_with(trim($request->payment_token), '{')) {
-            $response = $this->paymob->payWithGooglePay($request->payment_token);
-
-        // Case 2: Manual card entry
-        } else {
-            $request->validate([
-                'card_number' => 'required|string',
-                'expiry_month' => 'required|string',
-                'expiry_year' => 'required|string',
-                'cvv' => 'required|string',
-            ]);
-
+        try {
             $response = $this->paymob->payWithCard(
                 $request->payment_token,
                 $request->only(['card_number', 'expiry_month', 'expiry_year', 'cvv'])
             );
+
+            return response()->json([
+                'status' => true,
+                'response' => $response
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Paymob Card Payment Error: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment failed',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'status' => true,
-            'response' => $response
-        ]);
-
-    } catch (\Exception $e) {
-        \Log::error('Paymob Payment Error: ' . $e->getMessage());
-
-        return response()->json([
-            'status' => false,
-            'message' => 'Payment failed',
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
+// public function pay(Request $request)
+// {
+//     $request->validate([
+//         'payment_token' => 'required|string',
+//     ]);
+
+//     try {
+//         // Case 1: Google Pay token (usually JSON or starts with "{")
+//         if (str_starts_with(trim($request->payment_token), '{')) {
+//             $response = $this->paymob->payWithGooglePay($request->payment_token);
+
+//         // Case 2: Manual card entry
+//         } else {
+//             $request->validate([
+//                 'card_number' => 'required|string',
+//                 'expiry_month' => 'required|string',
+//                 'expiry_year' => 'required|string',
+//                 'cvv' => 'required|string',
+//             ]);
+
+//             $response = $this->paymob->payWithCard(
+//                 $request->payment_token,
+//                 $request->only(['card_number', 'expiry_month', 'expiry_year', 'cvv'])
+//             );
+//         }
+
+//         return response()->json([
+//             'status' => true,
+//             'response' => $response
+//         ]);
+
+//     } catch (\Exception $e) {
+//         \Log::error('Paymob Payment Error: ' . $e->getMessage());
+
+//         return response()->json([
+//             'status' => false,
+//             'message' => 'Payment failed',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
 
 
 

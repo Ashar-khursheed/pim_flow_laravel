@@ -2967,6 +2967,24 @@ public function fetchCategories(Request $request)
             'Planetary Mixer',
             'Commercial Espresso Machines',
         ],
+         'US_T' => [
+            'Reach-In Refrigerators',
+            'Pizza Prep Tables',
+            'Work Top Refrigerators',
+            'Commercial Chef Base',
+            'Undercounter Refrigerators',
+            'Beer Dispensers',
+            'Back Bar Coolers',
+            'Glass Chillers and Frosters',
+            'Milk Cooler',
+            'Commercial Grills & Griddles',
+            'Commercial Gas Fryers',
+            'Commercial Gas And Electric Range',
+            'Deck Ovens',
+            'Commercial Food Processors',
+            'Planetary Mixer',
+            'Commercial Espresso Machines',
+        ],
         'UAE' => [
          "Work Top Refrigerators",
             "Commercial Fryers",
@@ -2984,9 +3002,25 @@ public function fetchCategories(Request $request)
             "Salamanders",
             "Salad Chillers"
 
-
-
         ],
+        'UAE_T' => [
+            "Work Top Refrigerators",
+            "Commercial Fryers",
+            "Combi Ovens",
+            "Commercial Blenders",
+            "Commercial Gas And Electric Cookers",
+            "Upright Freezers",
+            "Espresso Machines",
+            "Commercial Grills And Griddles",
+            "Commercial Toasters",
+            "Upright Chillers",
+            "White Dinnerware",
+            "Cheese",
+            "Food Processors",
+            "Salamanders",
+            "Salad Chillers"
+        ],
+
         default => [], // fallback if APP_WEBSITE is not set properly
     };
 
