@@ -19858,13 +19858,13 @@
                 ]
             }
         },
-        "/api/frontend/public-products": {
+        "/api/frontend/products-guest": {
             "get": {
                 "tags": [
                     "Frontend-Product"
                 ],
                 "summary": "Get all public products with filters and price range (for guests)",
-                "operationId": "d383c645033de81d2c88ed787ff495dd",
+                "operationId": "b1bfe46ce39e4f6821d95d2dd859e1e2",
                 "parameters": [
                     {
                         "name": "sort_by",
