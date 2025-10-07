@@ -503,7 +503,7 @@ class ProductController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/frontend/public-products",
+     *     path="/api/frontend/products-guest",
      *     summary="Get all public products with filters and price range (for guests)",
      *     tags={"Frontend-Product"},
      *     @OA\Parameter(
