@@ -16,7 +16,7 @@ use App\Models\FrontEnd\Order;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 use OpenApi\Annotations as OA;
-
+use Illuminate\Support\Facades\DB;
 use App\Jobs\Order\OrderPlacedMailJob;
 class PaymentHistoryController extends Controller
 {
