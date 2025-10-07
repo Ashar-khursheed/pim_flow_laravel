@@ -78,10 +78,7 @@ class CustomerController extends BaseController
 			]);
 			$guestCustomer->save();
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Welcome Mails')->dispatch();
+			$batch = Bus::batch([])->name('Welcome mail on guest')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_GUST_WLCM';
 			$batch->add(new GuestWelcomeMailJob([
@@ -134,7 +131,7 @@ class CustomerController extends BaseController
 			]);
 			$customer->save();
 
-			$batch = Bus::batch([])->name('Welcome Mails')->dispatch();
+			$batch = Bus::batch([])->name('Welcome mail on register')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_WLCM';
 			$batch->add(new WelcomeMailJob([
@@ -428,16 +425,12 @@ class CustomerController extends BaseController
 
 			$token = $customer->createToken('apple-login')->plainTextToken;
 
+			$batch = Bus::batch([])->name('Welcome mail on apple login')->dispatch();
 
-			// $batch = Bus::batch([])->before(function (Batch $batch) {
-			// })->catch(function (Batch $batch, Throwable $e) {
-			// })->finally(function (Batch $batch) {
-			// })->name('Welcome Mails')->dispatch();
-
-			// $batch->options['queue'] = config('app.website') . '_WLCM';
-			// $batch->add(new WelcomeMailJob([
-			// 	'recordId' => $customer->id,
-			// ]));
+			$batch->options['queue'] = config('app.website') . '_WLCM';
+			$batch->add(new WelcomeMailJob([
+				'recordId' => $customer->id,
+			]));
 
 			return response()->json([
 				'user' => $customer,
@@ -489,10 +482,7 @@ class CustomerController extends BaseController
 					'profile_img' => $googleProfileImg,
 				]);
 
-				$batch = Bus::batch([])->before(function (Batch $batch) {
-				})->catch(function (Batch $batch, Throwable $e) {
-				})->finally(function (Batch $batch) {
-				})->name('Welcome Mails')->dispatch();
+				$batch = Bus::batch([])->name('Welcome mail on google login')->dispatch();
 
 				$batch->options['queue'] = config('app.website') . '_WLCM';
 				$batch->add(new WelcomeMailJob([
