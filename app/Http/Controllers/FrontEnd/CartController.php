@@ -558,93 +558,73 @@ class CartController extends Controller
         }
     }
 
-    //     /**
-    //  * @OA\Post(
-    //  *     path="/api/frontend/cart/product/{productId}",
-    //  *     tags={"Frontend-Cart"},
-    //  *     summary="Remove specific product (with optional accessories) from cart",
-    //  *     description="Removes a specific product from the user's shopping cart. If 'accessories_options' are provided, only the item with matching accessories will be removed. If not provided, only the product with no accessories will be removed.",
-    //  *     security={{"bearerAuth": {}}},
-    //  *
-    //  *     @OA\Parameter(
-    //  *         name="productId",
-    //  *         in="path",
-    //  *         required=true,
-    //  *         description="ID of the product to remove from the cart",
-    //  *         @OA\Schema(type="integer", example=123)
-    //  *     ),
-    //  *
-    //  *     @OA\RequestBody(
-    //  *         required=false,
-    //  *         description="Optional array of accessories to match a specific cart item variant",
-    //  *         @OA\JsonContent(
-    //  *             type="object",
-    //  *             @OA\Property(
-    //  *                 property="accessories_options",
-    //  *                 type="array",
-    //  *                 example={106,107},
-    //  *                 @OA\Items(type="integer")
-    //  *             )
-    //  *         )
-    //  *     ),
-    //  *
-    //  *     @OA\Response(
-    //  *         response=200,
-    //  *         description="Product removed successfully",
-    //  *         @OA\JsonContent(
-    //  *             type="object",
-    //  *             @OA\Property(property="success", type="boolean", example=true),
-    //  *             @OA\Property(property="message", type="string", example="Product removed successfully")
-    //  *         )
-    //  *     ),
-    //  *
-    //  *     @OA\Response(
-    //  *         response=404,
-    //  *         description="Product not found in cart"
-    //  *     ),
-    //  *
-    //  *     @OA\Response(
-    //  *         response=401,
-    //  *         description="Unauthorized - Bearer token missing or invalid"
-    //  *     ),
-    //  *
-    //  *     @OA\Response(
-    //  *         response=500,
-    //  *         description="Server error while removing product from cart"
-    //  *     )
-    //  * )
-    //  */
-
-
-    // public function clearProductFromCart(Request $request, $productId)
-    // {
-    //     if (!Auth::check()) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Unauthorized user',
-    //         ], 401);
-    //     }
-
-    //     $userId = Auth::id();
-    //     $customerCart = CustomerCart::where('customer_id', $userId)->first();
-
-    //     if (!$customerCart) {
-    //         return response()->json(['success' => false, 'message' => 'Cart not found']);
-    //     }
-
-    //     $deleted = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
-    //         ->where('product_id', $productId)
-    //         ->delete();
-
-    //     if ($deleted > 0) {
-    //         // Update cart totals
-    //         $this->updateCartTotals($customerCart);
-    //     }
-
-    //     return response()->json(['success' => true]);
-    // }
-
     /**
+     * @OA\Delete(
+     *     path="/api/frontend/cart/product/{productId}",
+     *     tags={"Frontend-Cart"},
+     *     summary="Remove specific product from cart",
+     *     description="Remove a specific product from the user's shopping cart",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="productId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the product to remove",
+     *         @OA\Schema(type="integer", example=123)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product removed successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Product removed from cart.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Product not found in cart"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized - Bearer token missing or invalid"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error while removing product from cart"
+     *     )
+     * )
+     */
+
+    public function clearProductFromCart(Request $request, $productId)
+    {
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized user',
+            ], 401);
+        }
+
+        $userId = Auth::id();
+        $customerCart = CustomerCart::where('customer_id', $userId)->first();
+
+        if (!$customerCart) {
+            return response()->json(['success' => false, 'message' => 'Cart not found']);
+        }
+
+        $deleted = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+            ->where('product_id', $productId)
+            ->delete();
+
+        if ($deleted > 0) {
+            // Update cart totals
+            $this->updateCartTotals($customerCart);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+       /**
      * @OA\Post(
      *     path="/api/frontend/cart/product/{productId}",
      *     tags={"Frontend-Cart"},
@@ -700,7 +680,7 @@ class CartController extends Controller
      *     )
      * )
      */
-    public function clearProductFromCart(Request $request, $productId)
+    public function clearProductFromCarts(Request $request, $productId)
     {
         try {
             if (!Auth::check()) {
