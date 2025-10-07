@@ -604,7 +604,7 @@ class StaxPaymentController extends Controller
             
             $invoiceData = [
                 'amount' => (float) $order->total_amount * 100,
-                'description' => $firstname ?? "",
+                 'description' => $firstname??"",
                 'meta' => [
                     'reference' => 'ORDER-' . $order->id,
                     'memo' => $customerAddress->city . ' ' . $customerAddress->state,
@@ -618,58 +618,100 @@ class StaxPaymentController extends Controller
                 'link_meta' => [
                     'redirect_success' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
                     'redirect_failure' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
-                    'send_email' => true,
+                    'send_email' => $customer->email,
+                    'total' => (float) $order->total_amount,
+                    'email' => $customer->email,
+                    'memo' => $customerAddress->city,
                 ],
                 'redirect_url' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
 
-                'send_email' => true,
-
+                'send_email' => $customer->email,
                 'send_now' => true,
                 'pre_auth' => true,
                 'common_name' => trim($firstname . ' ' . $lastname),
-                'url' => 'https://www.horecastore.ae/',
+                'url' => 'https://app.staxpayments.com/#/pay/Horeca-Store-070e15c785ab',
 
             ];
+ 
+            $payload = [
+            'amount' => (float) ($invoiceData['amount'] ?? 0),
+            'description' => $invoiceData['description'] ?? 'Payment Link',
+            ];
 
-            // $tokenResponse = Http::withHeaders([
-            //     'Authorization' => 'Bearer ' . env('STAX_API_KEY'),
-            //     'Content-Type' => 'application/json',
-            // ])->post(env('STAX_BASE_URL') . '/v1/hosted-payments/tokens');
-
-            // $token = $tokenResponse->json()['token'] ?? null;
-         
-            $response = Http::timeout(30)->withOptions(['verify' => false])
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . env('STAX_API_KEY'),
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ])
-                ->post($baseUrl . "/query/payment-links", $invoiceData);
-
-
-            $result = $response->json();
-
-            // Log response details for debugging
-            \Log::info('STAX API response', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-
-            if ($response->failed()) {
-                throw new \Exception(
-                    'Stax API error: ' . $response->body()
-                );
+            if (!empty($invoiceData['redirect_url'])) {
+            $payload['redirect_url'] = $invoiceData['redirect_url'];
+            }
+            if (!empty($invoiceData['url'])) {
+            $payload['url'] = $invoiceData['url'];
+            }
+            if (!empty($invoiceData['link_meta'])) {
+            $payload['link_meta'] = $invoiceData['link_meta'];
+            }
+            if (!empty($invoiceData['common_name'])) {
+            $payload['common_name'] = $invoiceData['common_name'];
             }
 
-            $result = $response->json();
+            if (!empty($invoiceData['customer'])) {
+            $payload['customer'] = $invoiceData['customer'];
+            }
+            
+                
+            // dd($payload['link_meta']);
 
-            return response()->json([
-                'success' => true,
-                'payment_link' => $result['url'] ?? null,
-                'payment_id' => $result['id'] ?? null,
-                'message' => 'Payment link generated successfully',
-                'data' => $result,
-            ], 200);
+            $ch = curl_init();
+
+            curl_setopt($ch, CURLOPT_URL, "https://apiprod.fattlabs.com/query/payment-links");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+            curl_setopt($ch, CURLOPT_HEADER, FALSE);
+
+            curl_setopt($ch, CURLOPT_POST, TRUE);
+            // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+            "url" => "https://app.staxpayments.com/#/pay/Horeca-Store-070e15c785ab",
+            "link_meta" => $payload['link_meta'],
+            "common_name" => "Sample Link", 
+            'active' => 1
+           
+            
+            ]));
+
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            "Content-Type: application/json",
+            "Authorization: Bearer " . env('STAX_API_KEY'),
+            "Accept: application/json"
+            ));
+
+            $response = curl_exec($ch);
+            curl_close($ch);
+
+        
+                // Convert JSON string → PHP array
+            $data = json_decode($response, true);
+          
+              \Log::info('STAX API response', [
+                'status' => $data['status'],
+                'body' => $data['body'],
+            ]);
+
+            if (!isset($data['body']['tinyurl'])) {
+            return;
+            } else {
+                return $data['body']['tinyurl'];
+            }
+            // Access values
+            // $status = $data['status']; 
+            // $message = $data['message'];
+            // $tinyurl = $data['body']['tinyurl'];
+            // $paymentLinkId = $data['body']['link_meta']['paymentLinkId'];
+            // $redirectSuccess = $data['body']['link_meta']['redirect_success'];
+            // $total = $data['body']['link_meta']['total'];
+
+            
+ 
+            // Log response details for debugging
+          
+           
 
         } catch (\Exception $e) {
             \Log::error('Payment link creation failed', [

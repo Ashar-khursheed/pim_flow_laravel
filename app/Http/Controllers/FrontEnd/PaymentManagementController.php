@@ -231,6 +231,7 @@ class PaymentManagementController extends Controller
 		}
 	}
 
+
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/payments/{id}",
