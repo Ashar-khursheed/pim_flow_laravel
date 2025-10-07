@@ -84,30 +84,108 @@ class PaymentManagementController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function store(Request $request): JsonResponse
+	// public function store(Request $request): JsonResponse
+	// {
+	// 	try {
+	// 		$validated = $request->validate([
+	// 			'order_id' => 'required|integer|exists:orders,id',
+	// 			'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id',
+	// 			'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,Paymob,Stax',
+	// 			'amount' => 'required|numeric|min:0.01|max:999999.99',
+	// 			'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
+	// 			'payment_date' => 'required|date|before_or_equal:today',
+	// 			'notes' => 'nullable|string|max:1000',
+	// 			'payment_details' => 'nullable|array|max:2000',
+	// 			'payment_method' => 'nullable|string|max:255'
+	// 		]);
+
+	// 		if (isset($validated['payment_details'])) {
+	// 			$validated['payment_details'] = json_encode($validated['payment_details']);
+	// 		}
+
+	// 		/* Create payment */
+	// 		$payment = PaymentManagement::create($validated);
+
+	// 		/* Update order amounts */
+	// 		$order = $payment->order;
+	// 		$newPaidAmount = $order->paid_amount + $request->amount;
+	// 		$pendingAmount = $order->total_amount - $newPaidAmount;
+
+	// 		$order->update([
+	// 			'paid_amount' => $newPaidAmount,
+	// 			'pending_amount' => $pendingAmount,
+	// 			'is_paid' => $pendingAmount <= 0,
+	// 		]);
+
+	// 		$batch = Bus::batch([])->name('Order Place in payment mgmt')->dispatch();
+	// 		$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+	// 		$batch->add(new OrderPlacedMailJob([
+	// 			'recordId' => $validated['order_id']
+	// 		]));
+
+	// 		return response()->json([
+	// 			'message' => 'Payment recorded successfully.',
+	// 			'data'    => $payment
+	// 		], 201);
+
+
+	// 	} catch (\Exception $e) {
+	// 		return response()->json([
+	// 			'message' => 'Something went wrong while creating the payment.',
+	// 			'error' => $e->getMessage()
+	// 		], 500);
+	// 	}
+	// }
+
+	public function store(Request $request)
 	{
 		try {
+			// Validate the incoming request
 			$validated = $request->validate([
-				'order_id' => 'required|integer|exists:orders,id',
-				'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id',
-				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,Paymob,Stax',
+				'order_number' => 'required|integer|exists:orders,order_number',
+				'transaction_id' => 'nullable|string',
+				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,CC Avenue,Paymob',
 				'amount' => 'required|numeric|min:0.01|max:999999.99',
-				'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
+				'status' => 'required|string|in:Pending,Completed,Failed,Cancelled,Refunded',
 				'payment_date' => 'required|date|before_or_equal:today',
 				'notes' => 'nullable|string|max:1000',
-				'payment_details' => 'nullable|array|max:2000',
+				'payment_details' => 'nullable|json|max:2000',
 				'payment_method' => 'nullable|string|max:255'
 			]);
 
-			if (isset($validated['payment_details'])) {
-				$validated['payment_details'] = json_encode($validated['payment_details']);
+			if (!auth()->check()) {
+				return response()->json([
+					'message' => 'Authentication required.'
+				], 401);
 			}
 
-			/* Create payment */
+			$order = Order::where('order_number', $request->order_number)->first();
+
+			$validated['order_id'] = $order->id;
+			$validated['created_by'] = auth()->id();
+			$validated['rider_name'] = $request->rider_name;
+
+			$total_amount = $order->total_amount;
+			if ($total_amount < $request->amount) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Paid amount is greater than total amount ' . $total_amount,
+				], 401);
+			}
+
+			// Upload payment image if available
+			$validated['payment_img'] = uploadImageToWebpS3FromFile(
+				$request,
+				'payment_img',
+				env('STORAGE_ENV') . '/customer/payment'
+			);
+
+			DB::beginTransaction();
+
+			// Create the payment record
 			$payment = PaymentManagement::create($validated);
 
 			/* Update order amounts */
-			$order = $payment->order;
 			$newPaidAmount = $order->paid_amount + $request->amount;
 			$pendingAmount = $order->total_amount - $newPaidAmount;
 
@@ -117,19 +195,35 @@ class PaymentManagementController extends Controller
 				'is_paid' => $pendingAmount <= 0,
 			]);
 
-			$batch = Bus::batch([])->name('Order Place in payment mgmt')->dispatch();
-			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
-			$batch->add(new OrderPlacedMailJob([
-				'recordId' => $validated['order_id']
-			]));
+			// ✅ If full amount is paid, release reservation
+			if ($pendingAmount <= 0) {
+				$order->update(['is_reserved' => 0]);
+
+				// ✅ Send email when payment completed
+				$batch = Bus::batch([])->name('Payment Completed')->dispatch();
+				$batch->options['queue'] = config('app.website') . '_PAYMENT_DONE';
+				$batch->add(new OrderPlacedMailJob([
+					'recordId' => $order->id
+				]));
+			}
+
+			DB::commit();
 
 			return response()->json([
+				'success' => true,
 				'message' => 'Payment recorded successfully.',
-				'data'    => $payment
+				'data' => $payment
 			], 201);
 
+		} catch (ValidationException $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The given data was invalid.',
+				'errors' => $e->errors()
+			], 422);
 
 		} catch (\Exception $e) {
+			DB::rollBack();
 			return response()->json([
 				'message' => 'Something went wrong while creating the payment.',
 				'error' => $e->getMessage()
