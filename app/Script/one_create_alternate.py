@@ -13,6 +13,7 @@ from mysql.connector import Error
 from tqdm import tqdm
 import time
 import sys
+from sqlalchemy import create_engine
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
@@ -44,16 +45,12 @@ def retry_on_rate_limit(func, max_retries=5, initial_delay=5, backoff=2):
     raise Exception("Max retries exceeded due to rate limits.")
 
 
+
 def load_products_from_sql(host, port, database, username, password, sql_query):
-    conn = pymysql.connect(
-        host=host,
-        port=port,
-        user=username,
-        password=password,
-        database=database
-    )
-    df = pd.read_sql(sql_query, conn)
-    conn.close()
+    engine = create_engine(f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}")
+    df = pd.read_sql(sql_query, engine)
+    engine.dispose()
+
     df = df.drop_duplicates().reset_index(drop=True)
     df.columns = [col.lower().replace(' ', '_') for col in df.columns]
     return df
