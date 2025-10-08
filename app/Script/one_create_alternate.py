@@ -579,21 +579,21 @@ def main():
     #   "password": "Mangoorange9987"
     #}
     
-    db_config = {
-        "host": "localhost",
-        "port": 3306,
-        "database": "horeca_us_05_08_2025",
-        "user": "root",
-        "password": ""
-    }
-
     # db_config = {
-    #     "host": os.getenv("DB_HOST"),
-    #     "port": int(os.getenv("DB_PORT", 3306)),  # default 3306
-    #     "database": os.getenv("DB_DATABASE"),
-    #     "user": os.getenv("DB_USERNAME"),
-    #     "password": os.getenv("DB_PASSWORD")
+    #     "host": "localhost",
+    #     "port": 3306,
+    #     "database": "horeca_us_05_08_2025",
+    #     "user": "root",
+    #     "password": ""
     # }
+
+    db_config = {
+        "host": os.getenv("DB_HOST"),
+        "port": int(os.getenv("DB_PORT", 3306)),  # default 3306
+        "database": os.getenv("DB_DATABASE"),
+        "user": os.getenv("DB_USERNAME"),
+        "password": os.getenv("DB_PASSWORD")
+    }
 
     # db_config = {
     #     "host": "horecadbuaebackup.c1c86oy8g663.me-south-1.rds.amazonaws.com",
