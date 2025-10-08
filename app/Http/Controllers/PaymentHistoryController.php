@@ -13,8 +13,10 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use App\Models\PaymentManagement;
 use App\Models\FrontEnd\Order;
+
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
+
 use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\Order\OrderPlacedMailJob;
@@ -111,19 +113,19 @@ class PaymentHistoryController extends Controller
 			$query->where(function ($q) use ($search) {
 
 				$q->where('transaction_id', 'like', "%{$search}%")
-					->orWhere('payment_method', 'like', "%{$search}%")
-					->orWhere('rider_name', 'like', "%{$search}%")
-					->orWhere('notes', 'like', "%{$search}%")
+				->orWhere('payment_method', 'like', "%{$search}%")
+				->orWhere('rider_name', 'like', "%{$search}%")
+				->orWhere('notes', 'like', "%{$search}%")
 
-					->orWhereHas('order', function ($orderQuery) use ($search) {
-						$orderQuery->where('order_number', 'like', "%{$search}%");
-					})
+				->orWhereHas('order', function ($orderQuery) use ($search) {
+					$orderQuery->where('order_number', 'like', "%{$search}%");
+				})
 
-					->orWhere(function ($numericQuery) use ($search) {
-						if (is_numeric($search)) {
-							$numericQuery->where('order_id', $search);
-						}
-					});
+				->orWhere(function ($numericQuery) use ($search) {
+					if (is_numeric($search)) {
+						$numericQuery->where('order_id', $search);
+					}
+				});
 			});
 		}
 
@@ -150,9 +152,9 @@ class PaymentHistoryController extends Controller
 
 		// Apply sorting and pagination
 		$paymentManagement = $query->orderBy($sortBy, $sortDir)
-			->offset(($page - 1) * $perPage)
-			->limit($perPage)
-			->get();
+		->offset(($page - 1) * $perPage)
+		->limit($perPage)
+		->get();
 
 		// Format the results
 		$formattedPayments = $paymentManagement->map(function ($payment) {
@@ -341,9 +343,6 @@ class PaymentHistoryController extends Controller
 			// Create the payment record
 			$payment = PaymentManagement::create($validated);
 
-			/**
-			 * ✅ Update order only if payment is NOT pending
-			 */
 			if (strtolower($request->status) !== 'pending') {
 				$newPaidAmount = $order->paid_amount + $request->amount;
 				$pendingAmount = $order->total_amount - $newPaidAmount;
@@ -354,16 +353,16 @@ class PaymentHistoryController extends Controller
 					'is_paid' => $pendingAmount <= 0,
 				]);
 
-				// ✅ If full amount is paid, release reservation
 				if ($pendingAmount <= 0) {
+					Log::channel('testLog')->info("reserve called");
+
 					$order->update(['is_reserved' => 0]);
 
-				$batch = Bus::batch([])->name('Order Place in payment mgmt')->dispatch();
-				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
-				$batch->add(new OrderPlacedMailJob([
-					'recordId' => $validated['order_id']
-				]));
-
+					$batch = Bus::batch([])->name('Order Place in payment history')->dispatch();
+					$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+					$batch->add(new OrderPlacedMailJob([
+						'recordId' => $order->id
+					]));
 				}
 			}
 
@@ -479,7 +478,7 @@ class PaymentHistoryController extends Controller
 	 *         description="Filter by order number",
 	 *         @OA\Schema(type="integer")
 	 *     ),
-	 *     
+	 *
 	 *     @OA\Response(
 	 *         response=200,
 	 *         description="Successful operation",
