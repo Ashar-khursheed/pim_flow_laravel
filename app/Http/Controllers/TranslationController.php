@@ -292,6 +292,33 @@ class TranslationController extends BaseController
 			'product_id' => 'required|integer|exists:ec_products,id',
 		]);
 
+		if ($request->translate_to == 'ar') {
+			$scriptPath = base_path('app/Script/ar_translation.py');
+			if (!file_exists($scriptPath)) {
+				return response()->json([
+					'success' => false,
+					'error' => 'Python script not found',
+					'details' => $scriptPath
+				], 500);
+			}
+
+			$workingDirectory = base_path('app/Script');
+			// Pass JSON input to Python script via stdin
+			$inputJson = json_encode(['product_id' => $request->product_id]);
+			$pythonCmd = env('PYTHON_PATH', base_path('venv/bin/python'));
+			$process = new Process([$pythonCmd, $scriptPath], $productId);
+			$process->run();
+
+			if (!$process->isSuccessful()) {
+				throw new ProcessFailedException($process);
+			}
+			$output = $process->getOutput();
+
+			$decoded = json_decode($output, true);
+
+			dd($decoded);
+		}
+
 		return response()->json([
 			'success' => true,
 			'message' => 'Record translated successfully.',
