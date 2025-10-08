@@ -450,7 +450,7 @@ class ProductVariantController extends Controller
                     'message' => 'No product IDs provided'
                 ], 422);
             }
-
+            $countId = count($productIds);
             // Fetch attributes
             $attributes = ProductAttribute::whereIn('product_id', $productIds)
             ->join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
@@ -461,8 +461,7 @@ class ProductVariantController extends Controller
             \DB::raw('COUNT(DISTINCT product_attributes.product_id) as product_count')
             )
             ->groupBy('product_attributes.attribute_id', 'attributes.name')
-
-            ->having('product_count', '>', 1)
+            ->having('product_count', '=', $countId)
             ->get();
             
 
