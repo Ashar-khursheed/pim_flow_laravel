@@ -554,7 +554,7 @@ def main():
 
     # Define the specific list of product IDs to process if category_id is None
     #product_id_list = [1916]
-    product_id_list = [int(input())]
+    product_id_list = [int(input('product_id_list'))]
 
     # raw_input = sys.stdin.read()
     # if not raw_input.strip():

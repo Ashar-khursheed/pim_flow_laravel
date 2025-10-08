@@ -57,7 +57,7 @@ class ResetPasswordMailJob implements ShouldQueue
 
 			$entity->passwordResetToken()->updateOrCreate([
 				'resettable_id' => $entity->id,
-				'resettable_type' => get_class($entity),
+				'resettable_type' => $entity->getMorphClass(),
 			], [
 				'token' => Hash::make($token),
 				'created_at' => now(),
