@@ -587,6 +587,7 @@ class StaxPaymentController extends Controller
     {
         $baseUrl = config('services.stax.base_url', 'https://apiprod.fattlabs.com');
         $apiKey = config('services.stax.api_key');
+        $publickey = config('services.stax.public_key');
 
         try {
             $customerAddress = CustomerAddress::find($order->customer_address_id);
@@ -629,7 +630,7 @@ class StaxPaymentController extends Controller
                 'send_now' => true,
                 'pre_auth' => true,
                 'common_name' => trim($firstname . ' ' . $lastname),
-                'url' => 'https://app.staxpayments.com/#/pay/Horeca-Store-070e15c785ab',
+                'url' => 'https://app.staxpayments.com/#/pay/'.$publickey,
 
             ];
  
@@ -655,20 +656,17 @@ class StaxPaymentController extends Controller
             $payload['customer'] = $invoiceData['customer'];
             }
             
-                
-            // dd($payload['link_meta']);
+           
 
             $ch = curl_init();
-
-            curl_setopt($ch, CURLOPT_URL, "https://apiprod.fattlabs.com/query/payment-links");
+            curl_setopt($ch, CURLOPT_URL, $baseUrl."/query/payment-links");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
             curl_setopt($ch, CURLOPT_HEADER, FALSE);
 
-            curl_setopt($ch, CURLOPT_POST, TRUE);
-            // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_POST, TRUE);           
             
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-            "url" => "https://app.staxpayments.com/#/pay/Horeca-Store-070e15c785ab",
+            "url" => "https://app.staxpayments.com/#/pay/".$publickey,
             "link_meta" => $payload['link_meta'],
             "common_name" => "Sample Link", 
             'active' => 1
