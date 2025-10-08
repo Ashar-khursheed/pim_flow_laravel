@@ -692,15 +692,22 @@ LEFT JOIN cte_product_type pt ON c.product_id = pt.product_id
         return
 
     # --- PROCESSING LOGIC ---
+    # Ensure product_id_list is a list of integers
+    if isinstance(product_id_list, (str, int)):
+        product_id_list = [int(product_id_list)]
+    elif isinstance(product_id_list, list):
+        product_id_list = [int(x) for x in product_id_list]  # Convert all items to int
+    else:
+        raise TypeError(f"product_id_list must be a list, str, or int, got {type(product_id_list)}")
+
     product_indices_to_process = []
     if category_id:
-        # If a category was specified, process all products loaded in the filtered DataFrame
         logging.info(f"Will process all {len(imp_df)} products from the filtered category.")
         product_indices_to_process = imp_df.index.tolist()
     else:
-        # If no category, filter the full DataFrame by the specific product ID list
         logging.info(f"Will process specific product IDs: {product_id_list}")
         product_indices_to_process = imp_df[imp_df['product_id'].isin(product_id_list)].index.tolist()
+
 
     if not product_indices_to_process:
         logging.warning("No products found to process based on the specified criteria.")
