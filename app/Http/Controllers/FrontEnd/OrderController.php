@@ -839,61 +839,131 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+	// public function buyItAgain(Request $request)
+	// {
+	// 	// Fetch last 5 delivered orders with products
+	// 	$deliveredOrders = $customer->orders()
+	// 	->where('status', 'Delivered')
+	// 	->orderByDesc('created_at')
+	// 	->take(5)
+	// 	->with(['orderProducts.product.productSuppliers', 'orderProducts.product.currency', 'orderProducts.product.brand'])
+	// 	->get();
+
+	// 	$addedProducts = collect();
+
+	// 	foreach ($deliveredOrders as $order) {
+	// 		foreach ($order->orderProducts as $orderProduct) {
+	// 			$product = $orderProduct->product;
+	// 			if (!$product) {
+	// 				continue;
+	// 			}
+
+	// 			// find a vendor_id if available
+	// 			$vendorId = $product->productSuppliers->first()->vendor_id ?? null;
+
+	// 			// build a request like addToCart expects
+	// 			$cartRequest = new Request([
+	// 				'product_id' => $product->id,
+	// 				'quantity'   => $orderProduct->quantity,
+	// 				'vendor_id'  => $vendorId,
+	// 			]);
+
+	// 			// call your CartController function
+	// 			$cartResponse = app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
+
+	// 			$addedProducts->push([
+	// 				'product_id' => $product->id,
+	// 				'name'       => $product->name,
+	// 				'quantity'   => $orderProduct->quantity,
+	// 				'unit_price' => $orderProduct->unit_price,
+	// 				'brand_name' => $product->brand->name ?? null,
+	// 			]);
+	// 		}
+	// 	}
+
+	// 	if ($addedProducts->isEmpty()) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'No delivered orders found or no valid products available to buy again.'
+	// 		], 404);
+	// 	}
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Products added to your cart successfully.',
+	// 		'data'    => $addedProducts,
+	// 	], 200);
+	// }
 	public function buyItAgain(Request $request)
-	{
-		// Fetch last 5 delivered orders with products
-		$deliveredOrders = $customer->orders()
-		->where('status', 'Delivered')
-		->orderByDesc('created_at')
-		->take(5)
-		->with(['orderProducts.product.productSuppliers', 'orderProducts.product.currency', 'orderProducts.product.brand'])
-		->get();
+{
+    // Get authenticated customer
+    $customerId = auth()->id();
 
-		$addedProducts = collect();
+    if (!$customerId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'User not authenticated.'
+        ], 401);
+    }
 
-		foreach ($deliveredOrders as $order) {
-			foreach ($order->orderProducts as $orderProduct) {
-				$product = $orderProduct->product;
-				if (!$product) {
-					continue;
-				}
+    // Fetch last 5 delivered orders with products
+    $deliveredOrders = Order::where('customer_id', $customerId)
+       ->whereIn('status', ['Delivered', 'Cancelled'])
+        ->orderByDesc('created_at')
+        ->take(5)
+        ->with([
+            'orderProducts.product.productSuppliers',
+            'orderProducts.product.currency',
+            'orderProducts.product.brand'
+        ])
+        ->get();
 
-				// find a vendor_id if available
-				$vendorId = $product->productSuppliers->first()->vendor_id ?? null;
+    $addedProducts = collect();
 
-				// build a request like addToCart expects
-				$cartRequest = new Request([
-					'product_id' => $product->id,
-					'quantity'   => $orderProduct->quantity,
-					'vendor_id'  => $vendorId,
-				]);
+    foreach ($deliveredOrders as $order) {
+        foreach ($order->orderProducts as $orderProduct) {
+            $product = $orderProduct->product;
+            if (!$product) {
+                continue;
+            }
 
-				// call your CartController function
-				$cartResponse = app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
+            // find a vendor_id if available
+            $vendorId = $product->productSuppliers->first()->vendor_id ?? null;
 
-				$addedProducts->push([
-					'product_id' => $product->id,
-					'name'       => $product->name,
-					'quantity'   => $orderProduct->quantity,
-					'unit_price' => $orderProduct->unit_price,
-					'brand_name' => $product->brand->name ?? null,
-				]);
-			}
-		}
+            // build a request like addToCart expects
+            $cartRequest = new Request([
+                'product_id' => $product->id,
+                'quantity'   => $orderProduct->quantity,
+                'vendor_id'  => $vendorId,
+            ]);
 
-		if ($addedProducts->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No delivered orders found or no valid products available to buy again.'
-			], 404);
-		}
+            // call your CartController function
+            app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Products added to your cart successfully.',
-			'data'    => $addedProducts,
-		], 200);
-	}
+            $addedProducts->push([
+                'product_id' => $product->id,
+                'name'       => $product->name,
+                'quantity'   => $orderProduct->quantity,
+                'unit_price' => $orderProduct->unit_price,
+                'brand_name' => $product->brand->name ?? null,
+            ]);
+        }
+    }
+
+    if ($addedProducts->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No delivered orders found or no valid products available to buy again.'
+        ], 404);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Products added to your cart successfully.',
+        'data'    => $addedProducts,
+    ], 200);
+}
+
 
 	/**
 	 * @OA\Get(
