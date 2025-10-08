@@ -617,12 +617,13 @@ class StaxPaymentController extends Controller
                     'common_name' => trim($firstname . ' ' . $lastname),
                 ],
                 'link_meta' => [
-                    'redirect_success' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
+                    'successRedirect' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
                     'redirect_failure' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
                     'send_email' => $customer->email,
                     'total' => (float) $order->total_amount,
                     'email' => $customer->email,
-                    'memo' => $customerAddress->city,
+                    'memo' => $customerAddress->city
+                    
                 ],
                 'redirect_url' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
 
@@ -655,9 +656,7 @@ class StaxPaymentController extends Controller
             if (!empty($invoiceData['customer'])) {
             $payload['customer'] = $invoiceData['customer'];
             }
-            
-           
-
+             
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $baseUrl."/query/payment-links");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
@@ -669,8 +668,7 @@ class StaxPaymentController extends Controller
             "url" => "https://app.staxpayments.com/#/pay/".$publickey,
             "link_meta" => $payload['link_meta'],
             "common_name" => "Sample Link", 
-            'active' => 1
-           
+            'active' => 1           
             
             ]));
 
