@@ -832,7 +832,7 @@ class OrderController extends BaseController
     }
 
     // Fetch last 5 delivered orders with products
-    $deliveredOrders = \App\Models\Order::where('customer_id', $customerId)
+    $deliveredOrders = Order::where('customer_id', $customerId)
         ->where('status', 'Delivered')
         ->orderByDesc('created_at')
         ->take(5)
