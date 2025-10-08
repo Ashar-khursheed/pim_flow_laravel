@@ -452,22 +452,25 @@ class ProductVariantController extends Controller
             }
 
             // Fetch attributes
-
-            $productIds = array_map('intval', (array) $productIds);
             $attributes = ProductAttribute::whereIn('product_id', $productIds)
+            ->join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
             ->select(
-            'attribute_id',
-            \DB::raw('GROUP_CONCAT(attribute_value) as attribute_values'),  
-            \DB::raw('GROUP_CONCAT(product_id) as product_ids')  
+            'product_attributes.attribute_id',
+            'attributes.name as attribute_name',
+            \DB::raw('GROUP_CONCAT(DISTINCT product_attributes.product_id ORDER BY product_attributes.product_id) as product_ids'),
+            \DB::raw('COUNT(DISTINCT product_attributes.product_id) as product_count')
             )
-            ->groupBy('attribute_id')
+            ->groupBy('product_attributes.attribute_id', 'attributes.name')
+
+            ->having('product_count', '>', 1)
             ->get();
+            
 
             $attributeList = $attributes->map(function ($attr) {
         
             return [
             'attribute_id' => $attr->attribute_id,
-            'attribute_name' => $attr->attribute_values,
+            'attribute_name' => $attr->attribute_name,
             'group_id' => $attr->product_ids,
             ];
             });
