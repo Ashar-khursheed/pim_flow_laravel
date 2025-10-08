@@ -196,11 +196,7 @@ class AuthController extends BaseController
 			]);
 		}
 
-		$batch = Bus::batch([])->before(function (Batch $batch) {
-		})->catch(function (Batch $batch, Throwable $e) {
-		})->finally(function (Batch $batch) {
-		})->name('Reset Password Mail')->dispatch();
-
+		$batch = Bus::batch([])->name('Reset Password Mail from auth controller')->dispatch();
 		$batch->options['queue'] = config('app.website') . '_RST_PWD';
 		$batch->add(new ResetPasswordMailJob([
 			'recordId' => $user->id,
