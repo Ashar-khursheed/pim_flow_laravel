@@ -374,7 +374,7 @@ class PaymentHistoryController extends Controller
 				'message' => 'Payment recorded successfully.',
 				'data' => $payment
 			], 201);
-			
+
 		} catch (ValidationException $e) {
 			return response()->json([
 				'success' => false,
@@ -479,7 +479,7 @@ class PaymentHistoryController extends Controller
 	 *         description="Filter by order number",
 	 *         @OA\Schema(type="integer")
 	 *     ),
-	 *     
+	 *
 	 *     @OA\Response(
 	 *         response=200,
 	 *         description="Successful operation",
