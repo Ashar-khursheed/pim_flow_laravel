@@ -26,7 +26,7 @@ class ProductVariantController extends Controller
      *
      *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
      *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string", enum={"published", "draft", "pending"})),
-     *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "created_at", "updated_at"})),
+     *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id"})),
      *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
      *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
      *     security={{"bearerAuth":{}}}

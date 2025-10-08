@@ -9,6 +9,7 @@ use App\Models\FrontEnd\AlternateProduct;
 use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use App\Models\Category;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 class AIAlternateProductController extends Controller
 {
@@ -663,7 +664,7 @@ class AIAlternateProductController extends Controller
             // Pass JSON input to Python script via stdin
             $inputJson = json_encode(['product_id_list' => $productIds]);
             //$pythonCmd = 'C:\Program Files\Python313\python.exe';
-           // $pythonCmd = env('PYTHON_PATH', base_path('venv/Scripts/python.exe'));
+            //$pythonCmd = env('PYTHON_PATH', base_path('venv/Scripts/python.exe'));
             $pythonCmd = env('PYTHON_PATH', base_path('venv/bin/python'));
             $process = new Process([$pythonCmd, $scriptPath], $workingDirectory, null, $inputJson, 300);
             $process->run();
@@ -686,7 +687,7 @@ class AIAlternateProductController extends Controller
                 'success' => true,
                 'message' => 'Python script executed successfully',
                 'output' => json_decode($process->getOutput(), true),
-            ]);
+            ]);           
 
         } catch (\Exception $e) {
             Log::error("Failed to run Python script", [
@@ -699,7 +700,14 @@ class AIAlternateProductController extends Controller
                 'error' => 'Internal server error',
                 'details' => $e->getMessage()
             ], 500);
-        }
+        }catch (ProcessFailedException $exception) {
+        // Get standard error
+        $error = $exception->getMessage();
+        return response()->json([
+            'success' => false,
+            'error' => $error
+        ]);
+    }
     }
 
 
