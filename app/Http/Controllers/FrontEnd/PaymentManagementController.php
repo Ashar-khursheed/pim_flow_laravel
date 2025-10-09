@@ -176,7 +176,7 @@ class PaymentManagementController extends Controller
 					'message' => 'Paid amount is greater than total amount ' . $total_amount,
 				], 401);
 			}
- 
+
 			// Upload payment image if available
 			$validated['payment_img'] = uploadImageToWebpS3FromFile(
 				$request,
@@ -205,7 +205,7 @@ class PaymentManagementController extends Controller
 
 				// ✅ Send email when payment completed
 				$batch = Bus::batch([])->name('Payment Completed')->dispatch();
-				$batch->options['queue'] = config('app.website') . '_PAYMENT_DONE';
+				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
 					'recordId' => $order->id
 				]));
