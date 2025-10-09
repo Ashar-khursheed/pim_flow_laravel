@@ -495,7 +495,8 @@ class PaymobController extends Controller
                 'order_id' => $orderID["id"],
                 'billing_data' => $billingData,
                 'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
-                'integration_id' => env('PAYMOB_INTEGRATION_ID'),
+                'integration_id' => env('PAYMOB_LINK_ID'),
+                'notification_url' => url('/api/paymob/webhook'),
             ]);
             $paymentToken = $paymentKeyResponse->json()['token'];
 
