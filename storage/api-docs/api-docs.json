@@ -15186,7 +15186,8 @@
                                         "type": "string",
                                         "enum": [
                                             "once",
-                                            "multiple"
+                                            "multiple",
+                                            "unlimited"
                                         ]
                                     },
                                     "usage_limit": {
@@ -15379,7 +15380,8 @@
                                         "type": "string",
                                         "enum": [
                                             "once",
-                                            "multiple"
+                                            "multiple",
+                                            "unlimited"
                                         ]
                                     },
                                     "usage_limit": {
@@ -36403,7 +36405,7 @@
                         "required": true,
                         "schema": {
                             "type": "integer",
-                            "example": 721
+                            "example": 35866
                         }
                     }
                 ],
