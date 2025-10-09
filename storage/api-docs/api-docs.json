@@ -36387,6 +36387,87 @@
                 ]
             }
         },
+        "/api/seoManagement/schema-update/{seo_id}": {
+            "post": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Update an existing SEO schema entry",
+                "description": "This endpoint updates the details of an existing SEO schema record based on the provided SEO ID.",
+                "operationId": "4a63bbd11d750cd4ff8a96cf39ac8d08",
+                "parameters": [
+                    {
+                        "name": "seo_id",
+                        "in": "path",
+                        "description": "The unique ID of the SEO schema to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 721
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "relational_id",
+                                    "relational_type"
+                                ],
+                                "properties": {
+                                    "relational_id": {
+                                        "description": "The related entity ID",
+                                        "type": "integer",
+                                        "example": 1915
+                                    },
+                                    "relational_type": {
+                                        "description": "Type of relation, e.g., Product",
+                                        "type": "string",
+                                        "example": "Product"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "SEO schema updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "SEO schema updated successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/seo-management/import": {
             "post": {
                 "tags": [
