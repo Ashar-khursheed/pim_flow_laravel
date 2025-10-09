@@ -29,8 +29,6 @@ use App\Jobs\Order\OrderDeliveredMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 use App\Jobs\Order\PartialOrderCancelledMailJob;
 
-use App\Notifications\Orders\PartialOrderCancelledMail;
-
 class OrderController extends Controller
 {
 	/**
@@ -100,7 +98,10 @@ class OrderController extends Controller
 
 			$recordsQuery->with([
 				'customer:id,name',
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
 				'orderProducts.product.currency:id,symbol',
@@ -115,15 +116,15 @@ class OrderController extends Controller
 			if ($request->has('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
-					break;
+						$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+						break;
 					case 'Unpaid':
-					$recordsQuery->where('orders.paid_amount', 0);
-					break;
+						$recordsQuery->where('orders.paid_amount', 0);
+						break;
 					case 'Partially Paid':
-					$recordsQuery->where('orders.paid_amount', '>', 0)
-					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
-					break;
+						$recordsQuery->where('orders.paid_amount', '>', 0)
+							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+						break;
 				}
 			}
 
@@ -165,9 +166,9 @@ class OrderController extends Controller
 			}
 
 			$records = $recordsQuery
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get();
+				->offset(($page - 1) * $length)
+				->limit($length)
+				->get();
 
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
@@ -200,8 +201,24 @@ class OrderController extends Controller
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
+						? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+						: null;
+
+					if ($orderProduct->accessoryCharges) {
+						$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+							return [
+								'id' => $charge->id,
+								'accessory_item_id' => $charge->accessory_item_id,
+								'accessory_item_name' => $charge->accessoryItem->name ?? null,
+								'accessory_item_price' => $charge->accessoryItem->price ?? null,
+								'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+								'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+								'amount' => $charge->amount,
+							];
+						});
+
+						unset($orderProduct->accessoryCharges);
+					}
 
 					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
 						if (isset($orderProduct->$key)) {
@@ -253,6 +270,8 @@ class OrderController extends Controller
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
 	 *             @OA\Property(property="is_payment", type="boolean", example=false),
+	 *             @OA\Property(property="is_paymob", type="boolean", example=false),
+	 *             @OA\Property(property="is_squarePayment", type="boolean", example=false),
 	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
 	 *             @OA\Property(
 	 *                 property="products",
@@ -261,7 +280,8 @@ class OrderController extends Controller
 	 *                     required={"product_id", "vendor_id", "quantity"},
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5)
+	 *                     @OA\Property(property="quantity", type="integer", example=5),
+	 *                     @OA\Property(property="accessory_item_ids", type="array", @OA\Items(type="integer"))
 	 *                 )
 	 *             )
 	 *         )
@@ -284,16 +304,20 @@ class OrderController extends Controller
 			'discount' => 'nullable|numeric|min:0',
 			'is_reserved' => 'nullable|boolean',
 			'is_payment' => 'nullable|boolean',
+			'is_paymob' => 'nullable|boolean',
+			'is_squarePayment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.accessory_item_ids' => 'nullable|array',
+			'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
-		->where('customer_id', $request->customer_id)
-		->first();
+			->where('customer_id', $request->customer_id)
+			->first();
 
 		if (!$address) {
 			return response()->json([
@@ -312,11 +336,17 @@ class OrderController extends Controller
 				if (!$fetchedDetail) {
 					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
 				}
+				$accessoryIds = $product['accessory_item_ids'] ?? [];
+				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
+				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
+					'accessoryItems' => $accessoryItems,
+					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
 					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
@@ -328,7 +358,7 @@ class OrderController extends Controller
 
 			foreach ($productDetails as $product) {
 				$totalProducts += $product['quantity'];
-				$orderAmount += $product['quantity'] * $product['unit_price'];
+				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
 				$orderShipping += $product['shipping_charge'];
 			}
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
@@ -372,6 +402,8 @@ class OrderController extends Controller
 				'status' => 'Pending',
 				'is_reserved' => $request->boolean('is_reserved'),
 				'is_payment' => $request->boolean('is_payment'),
+				'is_paymob' => $request->boolean('is_paymob'),
+				'is_squarePayment' => $request->boolean('is_squarePayment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => auth()->id(),
 				'payment_link' => null
@@ -379,7 +411,7 @@ class OrderController extends Controller
 
 			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
-				OrderProduct::create([
+				$orderProduct = OrderProduct::create([
 					'order_id' => $order->id,
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -388,10 +420,18 @@ class OrderController extends Controller
 					'remaining_quantity' => $product['quantity'],
 					'unit_price' => $product['unit_price'],
 					'amount' => $total,
+					'accessory_item_charge' => $product['accessory_item_charge'],
 					'shipping_charge' => $product['shipping_charge'],
-					'total_amount' => $total + $product['shipping_charge'],
+					'total_amount' => $total + $product['shipping_charge'] + $product['accessory_item_charge'],
 					'status' => 'Pending',
 				]);
+				foreach ($product['accessoryItems'] as $accessoryItem) {
+					$orderProduct->accessoryCharges()->create([
+						'accessory_item_id' => $accessoryItem['id'],
+						'amount' => $accessoryItem['price'] * $product['quantity'],
+						'created_at' => now(),
+					]);
+				}
 			}
 
 			OrderTracking::create([
@@ -406,7 +446,7 @@ class OrderController extends Controller
 				$cart->customerCartProducts()->delete();
 				$cart->delete();
 			});
-
+ 
 			if ($request->boolean('is_reserved')) {
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					$paymentLink = null;
@@ -420,6 +460,25 @@ class OrderController extends Controller
 							}
 						} catch (\Exception $e) {
 							\Log::error('Stripe Payment Link generation failed', [
+								'order_id' => $order->id,
+								'error' => $e->getMessage(),
+								'trace' => $e->getTraceAsString()
+							]);
+						}
+
+					} else if ($request->boolean('is_paymob')) {
+
+						try {
+							$paymentLink = app(\App\Http\Controllers\FrontEnd\PaymobController::class)->generatePaymobPaymentLink($order);
+
+
+							if ($paymentLink) {
+								$order = Order::find($order->id);
+								$order->payment_link = $paymentLink;
+								$order->save();
+							}
+						} catch (\Exception $e) {
+							\Log::error('Paymob Payment Link generation failed', [
 								'order_id' => $order->id,
 								'error' => $e->getMessage(),
 								'trace' => $e->getTraceAsString()
@@ -444,20 +503,40 @@ class OrderController extends Controller
 						}
 					}
 				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
-					try {
-						$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
-						->createPaymentLink($order);
-						if ($paymentLink) {
-							$order = Order::find($order->id);
-							$order->payment_link = $paymentLink;
-							$order->save();
+					$paymentLink = null;
+					if ($request->boolean('is_squarePayment')) {
+						try {
+							$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
+								->createPaymentLink($order);
+							if ($paymentLink) {
+								$order = Order::find($order->id);
+								$order->payment_link = $paymentLink;
+								$order->save();
+							}
+						} catch (\Exception $e) {
+							\Log::error('Square Payment Link generation failed', [
+								'order_id' => $order->id,
+								'error' => $e->getMessage(),
+								'trace' => $e->getTraceAsString()
+							]);
 						}
-					} catch (\Exception $e) {
-						\Log::error('Square Payment Link generation failed', [
-							'order_id' => $order->id,
-							'error' => $e->getMessage(),
-							'trace' => $e->getTraceAsString()
-						]);
+					}else{
+						 
+						try {
+							$paymentLink = app(\App\Http\Controllers\FrontEnd\StaxPaymentController::class)
+								->createStaxPaymentLink($order);
+							if ($paymentLink) {
+								$order = Order::find($order->id);
+								$order->payment_link = $paymentLink;
+								$order->save();
+							}
+						} catch (\Exception $e) {
+							\Log::error('Stax Payment Link generation failed', [
+								'order_id' => $order->id,
+								'error' => $e->getMessage(),
+								'trace' => $e->getTraceAsString()
+							]);
+						}
 					}
 				}
 			}
@@ -480,7 +559,10 @@ class OrderController extends Controller
 			}
 
 			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
 				'orderProducts.product.currency:id,symbol',
@@ -493,18 +575,34 @@ class OrderController extends Controller
 				$product = $orderProduct->product;
 				if ($product) {
 					$product->images = is_array($product->images)
-					? $product->images
-					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+						? $product->images
+						: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 					$product->brand_name = $product->brand->name ?? null;
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
 
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-				->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+					->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
+					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
+
+				if ($orderProduct->accessoryCharges) {
+					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+						return [
+							'id' => $charge->id,
+							'accessory_item_id' => $charge->accessory_item_id,
+							'accessory_item_name' => $charge->accessoryItem->name ?? null,
+							'accessory_item_price' => $charge->accessoryItem->price ?? null,
+							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+							'amount' => $charge->amount,
+						];
+					});
+
+					unset($orderProduct->accessoryCharges);
+				}
 
 				// Format numeric values to 2 decimal places - FIXED variable name
 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -632,7 +730,10 @@ class OrderController extends Controller
 		$order->load([
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress',
-			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+			'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+			'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+			'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
@@ -674,12 +775,28 @@ class OrderController extends Controller
 			}
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-			: null;
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 
 			$orderProduct->nofraudResponse->response ?? null;
 			$orderProduct->nofraud_decision = $data['decision'] ?? null;
 			unset($orderProduct->nofraudResponse);
+
+			if ($orderProduct->accessoryCharges) {
+				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+					return [
+						'id' => $charge->id,
+						'accessory_item_id' => $charge->accessory_item_id,
+						'accessory_item_name' => $charge->accessoryItem->name ?? null,
+						'accessory_item_price' => $charge->accessoryItem->price ?? null,
+						'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+						'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+						'amount' => $charge->amount,
+					];
+				});
+
+				unset($orderProduct->accessoryCharges);
+			}
 
 			/* Format numeric values to 2 decimal places */
 			foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -727,7 +844,8 @@ class OrderController extends Controller
 	 *                     required={"product_id", "vendor_id", "quantity"},
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5)
+	 *                     @OA\Property(property="quantity", type="integer", example=5),
+	 *                     @OA\Property(property="accessory_item_ids", type="array", @OA\Items(type="integer"))
 	 *                 )
 	 *             )
 	 *         )
@@ -777,6 +895,8 @@ class OrderController extends Controller
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.accessory_item_ids' => 'nullable|array',
+			'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
 		]);
 
 		$customerId = $order->customer_id;
@@ -800,11 +920,17 @@ class OrderController extends Controller
 				if (!$fetchedDetail) {
 					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
 				}
+				$accessoryIds = $product['accessory_item_ids'] ?? [];
+				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
+				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
+					'accessoryItems' => $accessoryItems,
+					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
 					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
@@ -816,7 +942,7 @@ class OrderController extends Controller
 
 			foreach ($productDetails as $product) {
 				$totalProducts += $product['quantity'];
-				$orderAmount += $product['quantity'] * $product['unit_price'];
+				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
 				$orderShipping += $product['shipping_charge'];
 			}
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
@@ -858,7 +984,7 @@ class OrderController extends Controller
 
 			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
-				OrderProduct::create([
+				$orderProduct = OrderProduct::create([
 					'order_id' => $order->id,
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -867,10 +993,19 @@ class OrderController extends Controller
 					'remaining_quantity' => $product['quantity'],
 					'unit_price' => $product['unit_price'],
 					'amount' => $total,
+					'accessory_item_charge' => $product['accessory_item_charge'],
 					'shipping_charge' => $product['shipping_charge'],
-					'total_amount' => $total + $product['shipping_charge'],
+					'total_amount' => $total + $product['shipping_charge'] + $product['accessory_item_charge'],
 					'status' => 'Pending',
 				]);
+
+				foreach ($product['accessoryItems'] as $accessoryItem) {
+					$orderProduct->accessoryCharges()->create([
+						'accessory_item_id' => $accessoryItem['id'],
+						'amount' => $accessoryItem['price'] * $product['quantity'],
+						'created_at' => now(),
+					]);
+				}
 			}
 
 			OrderTracking::create([
@@ -884,7 +1019,10 @@ class OrderController extends Controller
 
 			/* Load relationships */
 			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
 				'orderProducts.product.currency:id,symbol',
@@ -903,8 +1041,24 @@ class OrderController extends Controller
 				}
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
+					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
+
+				if ($orderProduct->accessoryCharges) {
+					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+						return [
+							'id' => $charge->id,
+							'accessory_item_id' => $charge->accessory_item_id,
+							'accessory_item_name' => $charge->accessoryItem->name ?? null,
+							'accessory_item_price' => $charge->accessoryItem->price ?? null,
+							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+							'amount' => $charge->amount,
+						];
+					});
+
+					unset($orderProduct->accessoryCharges);
+				}
 
 				/* Format numeric values to 2 decimal places */
 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -1442,8 +1596,8 @@ class OrderController extends Controller
 			/* Process each product */
 			foreach ($request->products as $productData) {
 				$orderProduct = OrderProduct::where('id', $productData['order_product_id'])
-				->where('order_id', $order->id)
-				->firstOrFail();
+					->where('order_id', $order->id)
+					->firstOrFail();
 
 				if ($productData['quantity'] > $orderProduct->remaining_quantity) {
 					throw new \Exception("Cannot ship more than remaining quantity for product ID {$orderProduct->id}");

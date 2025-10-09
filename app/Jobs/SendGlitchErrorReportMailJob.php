@@ -17,7 +17,7 @@ use App\Mail\GlitchErrorMail;
 class SendGlitchErrorReportMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
+
 	public $glitchErrorId;
 
 	public function __construct($data)

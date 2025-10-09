@@ -30,7 +30,8 @@ Route::get('/media/{filename}', function ($filename) {
         ->header('Content-Type', $mimeType)
         ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
 });
-
+//use App\Http\Controllers\FrontEnd\StripeController as F_StripeController;
+//Route::post('/api/stripe/webhook', [F_StripeController::class, 'handleWebhook']) ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class);
 Route::get('/robots.txt', function (Request $request) {
     $host = $request->getHost();
 

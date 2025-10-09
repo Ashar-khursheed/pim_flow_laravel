@@ -697,7 +697,7 @@ class ProductAccessoriesController extends Controller
      * )
      */
     public function getProductList(Request $request)
-{
+    {
     try {
         $product_list = [];
 

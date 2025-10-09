@@ -167,12 +167,12 @@ class SquarePaymentController extends Controller
         $request->validate([
             'source_id' => 'required|string',
             'amount' => 'required|numeric|min:0.01',
-            'idempotency_key' => 'required|string', // Make this required
+           'idempotency_key' => 'nullable|string', // Make this required
         ]);
 
         try {
             // Use the idempotency key from the frontend - THIS IS CRITICAL
-            $idempotencyKey = $request->idempotency_key;
+            $idempotencyKey = $request->idempotency_key ?? (string) Str::uuid();
             
             // Optional: Log for debugging (remove in production)
             \Log::info("Processing payment with idempotency key: " . $idempotencyKey);

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Http;
 
 use App\Models\MeasurementUnit;
 use App\Models\ProductSupplier;
+use App\Models\AccessoryItem;
 
 if (!function_exists('app_constants')) {
 	function app_constants($key = null)
@@ -53,6 +54,10 @@ if (!function_exists('app_constants')) {
 				'90 Days'
 			],
 			'IN_STOCK_OPTIONS' => [
+				1 => 'Yes',
+				0 => 'No',
+			],
+			'IS_FIXED_OPTIONS' => [
 				1 => 'Yes',
 				0 => 'No',
 			],
@@ -914,6 +919,15 @@ function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier
 	return $productSupplier;
 }
 
+function getAccessoryItemIDPrice(?array $accessoryItemIds): array
+{
+	if (empty($accessoryItemIds)) {
+		return [];
+	}
+
+	return AccessoryItem::whereIn('id', $accessoryItemIds)->get(['id', 'price'])->toArray();
+}
+
 
 if (!function_exists('paymentGateway')) {
 	function paymentGateway()
@@ -923,10 +937,15 @@ if (!function_exists('paymentGateway')) {
 			'PayPal',
 			'Square',
 			'Razorpay',
-			'CCAvenue',
+			'CC Avenue',
 			'PayU',
 			'Instamojo',
 			'BillDesk',
+			'Paymob',
+			'Bank Transfer',
+			'Cash on Delivery',
+			'Stax',
+			'Square',
 		);
 		return $gateways;
 	}

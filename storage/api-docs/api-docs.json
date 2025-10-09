@@ -45,6 +45,147 @@
                 ]
             }
         },
+        "/api/ai-alternate-status": {
+            "post": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Update AI Alternate Status",
+                "operationId": "57ca3d382d0f695e86d91c6b30bd6bda",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "status"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "Alternate product ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "status": {
+                                        "description": "Status of the alternate product",
+                                        "type": "string",
+                                        "enum": [
+                                            "approve",
+                                            "reject",
+                                            "pending",
+                                            "review"
+                                        ],
+                                        "example": "approve"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Status updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/ai-alternate-priority": {
+            "post": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Update AI Alternate priority",
+                "operationId": "fe7e651c6912499b3d71dbb0e98c90a2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "priority"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "Alternate product ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "priority": {
+                                        "description": "priority of the alternate product",
+                                        "type": "string",
+                                        "enum": [
+                                            "1",
+                                            "2",
+                                            "3",
+                                            "4",
+                                            "5",
+                                            "6",
+                                            "7",
+                                            "8",
+                                            "9"
+                                        ],
+                                        "example": "1"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "priority updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "priority": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "priority updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/get-ai-alternates": {
             "get": {
                 "tags": [
@@ -121,6 +262,176 @@
                     },
                     "400": {
                         "description": "Bad request"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/get-product-alternative-comparison": {
+            "post": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Get a list of Products Alternative comparison by product ID",
+                "description": "Report of products display with id, sku, name, and branch name. Can search across product name, SKU, brand, status, and categories",
+                "operationId": "419ca9b3102c05c6c6cce53c4ea347a8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "product_id": {
+                                        "description": "Single product ID to compare",
+                                        "type": "integer",
+                                        "example": 1795
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "sku": {
+                                                    "type": "string",
+                                                    "example": "SKU12345"
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Test Product"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/python/create-one-product-alternate": {
+            "post": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Python create one Alternate Recommendation",
+                "operationId": "909df02fa2341f713a49c44c6ff10161",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Enter the Product ID for which to create an alternate recommendation",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1683
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job executed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Alternate products saved to DB"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/python/create-alternate-recommendation": {
+            "post": {
+                "tags": [
+                    "Products AI alternates"
+                ],
+                "summary": "Python all Create Alternate Recommendation",
+                "operationId": "c58005d43671fcce207d4ba6cae792fc",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Enter Product ID or 'all'",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1683"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job executed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Alternate products saved to DB"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -12002,6 +12313,85 @@
             }
         },
         "/api/frontend/cart/product/{productId}": {
+            "post": {
+                "tags": [
+                    "Frontend-Cart"
+                ],
+                "summary": "Remove specific product (with optional accessories) from cart",
+                "description": "Removes a specific product from the user's shopping cart. If 'accessories_options' are provided, only the item with matching accessories will be removed. If not provided, only the product with no accessories will be removed.",
+                "operationId": "60a388f0af61b14dd5f46b004d5d78dc",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "ID of the product to remove from the cart",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Optional array of accessories to match a specific cart item variant",
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "accessories_options": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            106,
+                                            107
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product removed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product removed successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found in cart"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Bearer token missing or invalid"
+                    },
+                    "500": {
+                        "description": "Server error while removing product from cart"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "delete": {
                 "tags": [
                     "Frontend-Cart"
@@ -13911,13 +14301,13 @@
                 }
             }
         },
-        "/api/ccavenue/thanks": {
+        "/api/ccavenue/webhook": {
             "post": {
                 "tags": [
                     "CCAvenue"
                 ],
                 "summary": "ccavenue Payment Success Redirect",
-                "operationId": "2f8de33400e008495bdeb3cc710b5f5f",
+                "operationId": "a610cfa60feecc42612d10777d76cf30",
                 "responses": {
                     "200": {
                         "description": "Payment was successful"
@@ -14157,7 +14547,7 @@
         "/api/frontend/compare-table-product": {
             "post": {
                 "tags": [
-                    "Compare Products"
+                    "Front Compare Products"
                 ],
                 "summary": "Fetch product compare by ID",
                 "description": "Accepts a single product ID and returns its details",
@@ -14226,7 +14616,7 @@
         "/api/frontend/python/compare-alternate-products": {
             "post": {
                 "tags": [
-                    "Compare Alternate Products"
+                    "Alternate Create Products Python"
                 ],
                 "summary": "Run Python Alternate Product Generator",
                 "operationId": "68d25a7467ffca5db250770205c8a1f6",
@@ -17017,6 +17407,56 @@
                 ]
             }
         },
+        "/api/frontend/product-variants": {
+            "post": {
+                "tags": [
+                    "Frontend Product variants"
+                ],
+                "summary": "Get list of Frontend Product Variants",
+                "operationId": "f3f56b47238ada59f08806e71d3b90ca",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product Variants retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/location-info": {
             "get": {
                 "tags": [
@@ -18276,6 +18716,14 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "is_paymob": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_squarePayment": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "is_customer_pickup": {
                                         "type": "boolean",
                                         "example": false
@@ -18300,6 +18748,12 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "accessory_item_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -19491,13 +19945,13 @@
                 ]
             }
         },
-        "/api/frontend/public-products": {
+        "/api/frontend/products-guest": {
             "get": {
                 "tags": [
                     "Frontend-Product"
                 ],
                 "summary": "Get all public products with filters and price range (for guests)",
-                "operationId": "d383c645033de81d2c88ed787ff495dd",
+                "operationId": "b1bfe46ce39e4f6821d95d2dd859e1e2",
                 "parameters": [
                     {
                         "name": "sort_by",
@@ -24138,20 +24592,6 @@
                 ]
             }
         },
-        "/api/stripe/thanks": {
-            "get": {
-                "tags": [
-                    "Stripe"
-                ],
-                "summary": "Stripe Payment Success Redirect",
-                "operationId": "38356105e0f8eb4ae825a9cfa3d48f2a",
-                "responses": {
-                    "200": {
-                        "description": "Payment was successful"
-                    }
-                }
-            }
-        },
         "/api/stripe/failed": {
             "get": {
                 "tags": [
@@ -24169,7 +24609,7 @@
         "/api/frontend/support-categories": {
             "get": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
                 "summary": "Get all support ticket categories",
                 "description": "Returns a list of all available support categories.",
@@ -24221,7 +24661,7 @@
         "/api/frontend/support-priorities": {
             "get": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
                 "summary": "Get all support ticket priorities",
                 "description": "Returns a list of all available support priorities (ordered by severity level).",
@@ -24277,25 +24717,35 @@
         "/api/frontend/support-tickets": {
             "get": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
-                "summary": "List all support tickets with optional filters, search, and sorting",
+                "summary": "Get all tickets with pagination and filters",
                 "operationId": "b7d9a4a7ea5ba21acef8104832a49a00",
                 "parameters": [
                     {
-                        "name": "search",
+                        "name": "page",
                         "in": "query",
-                        "description": "Search keyword for subject or description",
-                        "required": false,
+                        "description": "Page number for pagination",
                         "schema": {
-                            "type": "string"
-                        }
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
                     },
                     {
-                        "name": "status",
+                        "name": "length",
                         "in": "query",
-                        "description": "Filter tickets by status (e.g., open, closed, pending)",
-                        "required": false,
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
                         "schema": {
                             "type": "string"
                         }
@@ -24303,117 +24753,38 @@
                     {
                         "name": "sort_by",
                         "in": "query",
-                        "description": "Field to sort by (created_at, updated_at, subject, status)",
-                        "required": false,
+                        "description": "Column name to sort by",
                         "schema": {
                             "type": "string",
                             "enum": [
+                                "id",
+                                "ticket_number",
+                                "category_name",
+                                "priority_name",
                                 "created_at",
-                                "updated_at",
-                                "subject",
-                                "status"
+                                "updated_at"
                             ]
                         }
                     },
                     {
-                        "name": "sort_order",
+                        "name": "sort_dir",
                         "in": "query",
-                        "description": "Sort order (asc or desc)",
-                        "required": false,
+                        "description": "Sort direction (asc or desc)",
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "asc",
                                 "desc"
                             ]
-                        }
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Records retrieved successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "subject": {
-                                                        "type": "string",
-                                                        "example": "Login Issue"
-                                                    },
-                                                    "status": {
-                                                        "type": "string",
-                                                        "example": "open"
-                                                    },
-                                                    "description": {
-                                                        "type": "string",
-                                                        "example": "I can't log in to my account."
-                                                    },
-                                                    "category": {
-                                                        "type": "string",
-                                                        "example": "Technical"
-                                                    },
-                                                    "priority": {
-                                                        "type": "string",
-                                                        "example": "High"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "example": "2024-07-21T15:03:00Z"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "example": "2024-07-22T09:15:00Z"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Support tickets fetched successfully."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Failed to fetch support tickets."
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Exception message here"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -24425,9 +24796,9 @@
             },
             "post": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
-                "summary": "Create a support ticket",
+                "summary": "Create a new support ticket",
                 "operationId": "5a79bf4ae481982fad446ac090e8b46f",
                 "requestBody": {
                     "required": true,
@@ -24435,27 +24806,12 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "full_name",
-                                    "email",
                                     "category_id",
                                     "priority_id",
                                     "subject",
                                     "description"
                                 ],
                                 "properties": {
-                                    "full_name": {
-                                        "type": "string"
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email"
-                                    },
-                                    "company_name": {
-                                        "type": "string"
-                                    },
-                                    "phone_number": {
-                                        "type": "string"
-                                    },
                                     "category_id": {
                                         "type": "integer"
                                     },
@@ -24468,7 +24824,7 @@
                                     "description": {
                                         "type": "string"
                                     },
-                                    "reference_id": {
+                                    "reference": {
                                         "type": "string"
                                     },
                                     "file": {
@@ -24483,7 +24839,10 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Ticket Created"
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -24496,14 +24855,15 @@
         "/api/frontend/support-tickets/{id}": {
             "get": {
                 "tags": [
-                    "SupportTickets"
+                    "FrontEnd-SupportTickets"
                 ],
-                "summary": "Get a ticket by ID",
+                "summary": "Get support ticket details",
                 "operationId": "ab8a844c9a42f6d2e8c92b6d6b0220fc",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "Support Ticket ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -24512,42 +24872,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Ticket Found"
-                    },
-                    "404": {
-                        "description": "Not Found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/customers/{customer_id}/support-tickets": {
-            "get": {
-                "tags": [
-                    "SupportTickets"
-                ],
-                "summary": "Get tickets for a specific customer",
-                "operationId": "6608cc2a106e67b71b4aad7fea17b5c9",
-                "parameters": [
-                    {
-                        "name": "customer_id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
                         }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Tickets found"
-                    },
-                    "404": {
-                        "description": "No tickets found"
                     }
                 },
                 "security": [
@@ -27584,6 +27912,14 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "is_paymob": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_squarePayment": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "is_customer_pickup": {
                                         "type": "boolean",
                                         "example": false
@@ -27608,6 +27944,12 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "accessory_item_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -27752,6 +28094,12 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "accessory_item_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -28055,7 +28403,11 @@
                                             "Bank Transfer",
                                             "Cash",
                                             "Stripe",
-                                            "Razorpay"
+                                            "Razorpay",
+                                            "Paymob",
+                                            "Stax",
+                                            "Square",
+                                            "CC Avenue"
                                         ],
                                         "example": "Credit Card"
                                     },
@@ -28504,7 +28856,10 @@
                                             "Stripe",
                                             "Razorpay",
                                             "Cash on Delivery",
-                                            "CC Avenue"
+                                            "CC Avenue",
+                                            "Paymob",
+                                            "Stax",
+                                            "Square"
                                         ],
                                         "example": "Cash on Delivery"
                                     },
@@ -32626,6 +32981,18 @@
                                         ],
                                         "example": "Yes"
                                     },
+                                    "min_quantity": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "is_fixed": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Yes",
+                                            "No"
+                                        ],
+                                        "example": "Yes"
+                                    },
                                     "delivery_days": {
                                         "type": "string",
                                         "example": "3-5 days"
@@ -32799,6 +33166,18 @@
                                         "nullable": true
                                     },
                                     "in_stock": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Yes",
+                                            "No"
+                                        ],
+                                        "example": "Yes"
+                                    },
+                                    "min_quantity": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "is_fixed": {
                                         "type": "string",
                                         "enum": [
                                             "Yes",
@@ -33564,10 +33943,7 @@
                         "schema": {
                             "type": "string",
                             "enum": [
-                                "id",
-                                "name",
-                                "created_at",
-                                "updated_at"
+                                "id"
                             ]
                         }
                     },
@@ -33603,7 +33979,7 @@
                 "tags": [
                     "Product Variants"
                 ],
-                "summary": "Create a new product variant",
+                "summary": "Create a new product variant with multiple children and variant details",
                 "operationId": "3621292a6830e507fcc07c6a62e2ce04",
                 "requestBody": {
                     "required": true,
@@ -33611,28 +33987,70 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "label"
+                                    "parent_id",
+                                    "child_ids",
+                                    "variants"
                                 ],
                                 "properties": {
                                     "parent_id": {
                                         "type": "integer",
                                         "example": 1683
                                     },
-                                    "child_id": {
-                                        "type": "integer",
-                                        "example": 1683
+                                    "child_ids": {
+                                        "description": "Array of child product IDs",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        },
+                                        "example": [
+                                            1683,
+                                            1795,
+                                            1818
+                                        ]
                                     },
-                                    "attribute_id": {
-                                        "type": "integer",
-                                        "example": 9
-                                    },
-                                    "label": {
-                                        "type": "string",
-                                        "example": "Red Color"
-                                    },
-                                    "type": {
-                                        "type": "string",
-                                        "example": "Color"
+                                    "variants": {
+                                        "description": "Array of variant details",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "attribute_id",
+                                                "labels",
+                                                "type"
+                                            ],
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "labels": {
+                                                    "type": "string",
+                                                    "example": "Red Color"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "radio"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "attribute_id": 7,
+                                                "labels": "Red Color",
+                                                "type": "radio"
+                                            },
+                                            {
+                                                "attribute_id": 22,
+                                                "labels": "Green Color",
+                                                "type": "dropdown"
+                                            },
+                                            {
+                                                "attribute_id": 48,
+                                                "labels": "Blue Color",
+                                                "type": "radio"
+                                            }
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -33685,28 +34103,70 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "label"
+                                    "parent_id",
+                                    "child_ids",
+                                    "variants"
                                 ],
                                 "properties": {
                                     "parent_id": {
                                         "type": "integer",
                                         "example": 1683
                                     },
-                                    "child_id": {
-                                        "type": "integer",
-                                        "example": 21191
+                                    "child_ids": {
+                                        "description": "Array of child product IDs",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        },
+                                        "example": [
+                                            1683,
+                                            1795,
+                                            1818
+                                        ]
                                     },
-                                    "attribute_id": {
-                                        "type": "integer",
-                                        "example": 9
-                                    },
-                                    "label": {
-                                        "type": "string",
-                                        "example": "Red Color"
-                                    },
-                                    "type": {
-                                        "type": "string",
-                                        "example": "Color"
+                                    "variants": {
+                                        "description": "Array of variant details",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "attribute_id",
+                                                "labels",
+                                                "type"
+                                            ],
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "labels": {
+                                                    "type": "string",
+                                                    "example": "Red Color"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "radio"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "attribute_id": 7,
+                                                "labels": "Red Color",
+                                                "type": "radio"
+                                            },
+                                            {
+                                                "attribute_id": 22,
+                                                "labels": "Green Color",
+                                                "type": "dropdown"
+                                            },
+                                            {
+                                                "attribute_id": 48,
+                                                "labels": "Blue Color",
+                                                "type": "radio"
+                                            }
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -33715,17 +34175,14 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Product Variant updated successfully"
+                    "201": {
+                        "description": "Created"
                     },
                     "400": {
                         "description": "Bad Request"
                     },
-                    "404": {
-                        "description": "Product Variant not found"
-                    },
                     "422": {
-                        "description": "Validation error"
+                        "description": "Validation Failed"
                     },
                     "500": {
                         "description": "Server Error"
@@ -33759,6 +34216,151 @@
                     },
                     "404": {
                         "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-variants/getProductAttibute": {
+            "post": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Get attributes by product IDs",
+                "operationId": "3fc2cdb89a5ed835f59e6db79afab9ba",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_ids"
+                                ],
+                                "properties": {
+                                    "product_ids": {
+                                        "description": "Array of product IDs",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "example": [
+                                            1683,
+                                            1795,
+                                            1818
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Attributes fetched successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "product_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "attributes": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "attribute_id": {
+                                                                    "type": "integer",
+                                                                    "example": 7
+                                                                },
+                                                                "attribute_name": {
+                                                                    "type": "string",
+                                                                    "example": "Color"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-variants/show": {
+            "post": {
+                "tags": [
+                    "Product Variants"
+                ],
+                "summary": "Get list of child with attribute by product ID",
+                "operationId": "b2da641ba82a30a1785d88d6d82f6db3",
+                "parameters": [
+                    {
+                        "name": "variant_id",
+                        "in": "query",
+                        "description": "Filter by product variants ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product Variants retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -35785,6 +36387,87 @@
                 ]
             }
         },
+        "/api/seoManagement/schema-update/{seo_id}": {
+            "post": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Update an existing SEO schema entry",
+                "description": "This endpoint updates the details of an existing SEO schema record based on the provided SEO ID.",
+                "operationId": "4a63bbd11d750cd4ff8a96cf39ac8d08",
+                "parameters": [
+                    {
+                        "name": "seo_id",
+                        "in": "path",
+                        "description": "The unique ID of the SEO schema to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 721
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "relational_id",
+                                    "relational_type"
+                                ],
+                                "properties": {
+                                    "relational_id": {
+                                        "description": "The related entity ID",
+                                        "type": "integer",
+                                        "example": 1915
+                                    },
+                                    "relational_type": {
+                                        "description": "Type of relation, e.g., Product",
+                                        "type": "string",
+                                        "example": "Product"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "SEO schema updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "SEO schema updated successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/seo-management/import": {
             "post": {
                 "tags": [
@@ -36953,6 +37636,234 @@
                 ]
             }
         },
+        "/api/support-tickets": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Get all tickets with pagination and filters",
+                "operationId": "2d6b7c48d61bcd3d110d3ff9c0269c5e",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "ticket_number",
+                                "customer_name",
+                                "customer_email",
+                                "category_name",
+                                "priority_name",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Records retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Create a new support ticket",
+                "operationId": "f957339d66548bd2321bb050937edbe9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "category_id",
+                                    "priority_id",
+                                    "subject",
+                                    "description"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "priority_id": {
+                                        "type": "integer"
+                                    },
+                                    "subject": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "reference": {
+                                        "type": "string"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/support-tickets/{id}": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Get support ticket details",
+                "operationId": "6631e19cac8edf0ba43b556cc382cd4e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Support Ticket ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/support-tickets/{id}/status": {
+            "put": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Update support ticket status",
+                "operationId": "a746cb7f813b392b80b4ec2d38976d56",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Ticket ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/temp-products": {
             "get": {
                 "tags": [
@@ -37233,6 +38144,154 @@
                         }
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/translations/export": {
+            "post": {
+                "tags": [
+                    "Translations"
+                ],
+                "summary": "Export translation data to Excel",
+                "operationId": "7a962471337934ac57d7e975eb651dab",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "attribute",
+                                            "attribute_value",
+                                            "product_attribute",
+                                            "product"
+                                        ],
+                                        "example": "attribute"
+                                    },
+                                    "range_from": {
+                                        "description": "Starting range (must be >=1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and max 5000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/translations/import": {
+            "post": {
+                "tags": [
+                    "Translations"
+                ],
+                "summary": "Import translation from an excel file",
+                "operationId": "9f285897127f2735fd11bc356d95352d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "attribute",
+                                            "attribute_value",
+                                            "product_attribute",
+                                            "product"
+                                        ],
+                                        "example": "attribute"
+                                    },
+                                    "upload_file": {
+                                        "description": "xlsx file (.xlsx) max 2MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Imported successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/translations/generate-translate": {
+            "post": {
+                "tags": [
+                    "Translations"
+                ],
+                "summary": "Generate translation from ID",
+                "operationId": "b8d540a355ab95fe186ea93df40d46c8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "translate_to": {
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 2001
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -40569,9 +41628,6 @@
             "description": "API Endpoints for managing discounts"
         },
         {
-            "name": "SupportTickets"
-        },
-        {
             "name": "Newsletters",
             "description": "API Endpoints for managing newsletters"
         },
@@ -40704,12 +41760,12 @@
             "description": "Frontend Company Profiles"
         },
         {
-            "name": "Compare Products",
-            "description": "Compare Products"
+            "name": "Front Compare Products",
+            "description": "Front Compare Products"
         },
         {
-            "name": "Compare Alternate Products",
-            "description": "Compare Alternate Products"
+            "name": "Alternate Create Products Python",
+            "description": "Alternate Create Products Python"
         },
         {
             "name": "Frontend ContactDirectory",
@@ -40762,6 +41818,10 @@
         {
             "name": "Frontend Product Accessories",
             "description": "Frontend Product Accessories"
+        },
+        {
+            "name": "Frontend Product variants",
+            "description": "Frontend Product variants"
         },
         {
             "name": "Geolocation",
@@ -40884,6 +41944,10 @@
             "description": "Stripe"
         },
         {
+            "name": "FrontEnd-SupportTickets",
+            "description": "FrontEnd-SupportTickets"
+        },
+        {
             "name": "Tamara",
             "description": "Tamara"
         },
@@ -40992,8 +42056,16 @@
             "description": "Supplier Scores"
         },
         {
+            "name": "SupportTickets",
+            "description": "SupportTickets"
+        },
+        {
             "name": "Temp Products",
             "description": "Temp Products"
+        },
+        {
+            "name": "Translations",
+            "description": "Translations"
         },
         {
             "name": "Unisource",

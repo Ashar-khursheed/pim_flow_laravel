@@ -4,6 +4,8 @@ Namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\SearchLog;
+use Illuminate\Support\Facades\Auth;
+
 use Illuminate\Http\Request;
 class SearchLogController extends Controller
 {

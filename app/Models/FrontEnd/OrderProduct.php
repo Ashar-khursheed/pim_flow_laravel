@@ -15,6 +15,7 @@ class OrderProduct extends Model
 		'quantity',
 		'unit_price',
 		'amount',
+		'accessory_item_charge',
 		'shipping_charge',
 		'total_amount',
 		'shipped_quantity',
@@ -73,6 +74,11 @@ class OrderProduct extends Model
 	public function returnOrderProducts()
 	{
 		return $this->hasMany(ReturnOrderProduct::class, 'order_product_id');
+	}
+
+	public function accessoryCharges()
+	{
+		return $this->morphMany(AccessoryCharge::class, 'relation');
 	}
 
 	/**

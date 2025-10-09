@@ -8,6 +8,8 @@ use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\OrderProduct;
+use App\Models\FrontEnd\AccessoryCharge;
 
 class OrderPlacedMail extends Mailable
 {
@@ -81,6 +83,23 @@ class OrderPlacedMail extends Mailable
 
 				$product->quantity = (int) $orderProduct->quantity;
 				$product->total = $orderProduct->amount;
+
+				$product->accessories = [];
+
+				$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)->where('relation_id', $orderProduct->id)->get();
+				if ($accessoryCharges->isNotEmpty()) {
+					$product->accessories = $accessoryCharges->map(function ($charge) {
+						return [
+							'id' => $charge->id,
+							'accessory_item_id' => $charge->accessory_item_id,
+							'accessory_item_name' => $charge->accessoryItem->name ?? null,
+							'accessory_item_price' => $charge->accessoryItem->price ?? null,
+							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+							'amount' => $charge->amount,
+						];
+					});
+				}
 
 				$products->push($product);
 			}

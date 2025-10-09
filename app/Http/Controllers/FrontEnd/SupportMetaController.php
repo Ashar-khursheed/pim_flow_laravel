@@ -15,7 +15,7 @@ class SupportMetaController extends Controller
      * @OA\Get(
      *     path="/api/frontend/support-categories",
      *     operationId="getSupportCategories",
-     *     tags={"SupportTickets"},
+     *     tags={"FrontEnd-SupportTickets"},
      *     summary="Get all support ticket categories",
      *     description="Returns a list of all available support categories.",
      *     @OA\Response(
@@ -51,7 +51,7 @@ class SupportMetaController extends Controller
      * @OA\Get(
      *     path="/api/frontend/support-priorities",
      *     operationId="getSupportPriorities",
-     *     tags={"SupportTickets"},
+     *     tags={"FrontEnd-SupportTickets"},
      *     summary="Get all support ticket priorities",
      *     description="Returns a list of all available support priorities (ordered by severity level).",
      *     @OA\Response(

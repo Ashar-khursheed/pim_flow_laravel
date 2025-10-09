@@ -56,7 +56,7 @@ class DiscountController extends Controller
 {
     \Log::info($request->all());
 
-    // Accept either product_id or slug
+    // Accept either product_id or slugs
     $productInput = $request->input('product_id');
 
     if (!$productInput) {
