@@ -105,13 +105,13 @@ class ImportSeoDetailJob implements ShouldQueue
 				$rowError[] = 'Primary Monthly Search Volume is missing.';
 			}
 
-			if (empty($secondary_keyword)) {
-				$rowError[] = 'Secondary Keyword is missing.';
-			}
+			// if (empty($secondary_keyword)) {
+			// 	$rowError[] = 'Secondary Keyword is missing.';
+			// }
 
-			if (empty($secondary_monthly_search_volume)) {
-				$rowError[] = 'Secondary Monthly Search Volume is missing.';
-			}
+			// if (empty($secondary_monthly_search_volume)) {
+			// 	$rowError[] = 'Secondary Monthly Search Volume is missing.';
+			// }
 
 			/* URL Validation and Processing */
 			if (!empty($url)) {

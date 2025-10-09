@@ -305,11 +305,6 @@ class AuthController extends BaseController
 				], 404);
 			}
 
-			/* Log first and last customer IDs for debugging */
-			Log::channel('testLog')->info("common password first customer id: " . $customers->first()->id);
-			Log::channel('testLog')->info("common password last customer id: " . $customers->last()->id);
-			Log::channel('testLog')->info("Total customers found: " . $customers->count());
-
 			/* Create jobs array first to avoid multiple batch creation */
 			$jobs = [];
 			foreach ($customers as $customer) {
@@ -323,9 +318,6 @@ class AuthController extends BaseController
 			->name('Common Password Mail')
 			->onQueue(config('app.website') . '_COMM_PWD')
 			->dispatch();
-
-			/* Log batch creation for debugging */
-			logger("Batch created with ID: " . $batch->id . " and " . count($jobs) . " jobs");
 
 			return response()->json([
 				'success' => true,

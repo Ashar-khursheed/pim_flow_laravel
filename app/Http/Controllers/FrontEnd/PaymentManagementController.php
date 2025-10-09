@@ -151,7 +151,7 @@ class PaymentManagementController extends Controller
 				'status' => 'required|string|in:Pending,Completed,Failed,Cancelled,Refunded',
 				'payment_date' => 'required|date|before_or_equal:today',
 				'notes' => 'nullable|string|max:1000',
-				'payment_details' => 'nullable|json|max:2000',
+				'payment_details' => 'nullable|array|max:2000',
 				'payment_method' => 'nullable|string|max:255'
 			]);
 
@@ -161,8 +161,10 @@ class PaymentManagementController extends Controller
 				], 401);
 			}
 
-			$order = Order::where('order_number', $request->order_number)->first();
-
+			$order = Order::where('id', $request->order_id)->first();
+			if (isset($validated['payment_details'])) {
+				$validated['payment_details'] = json_encode($validated['payment_details']);
+			}
 			$validated['order_id'] = $order->id;
 			$validated['created_by'] = auth()->id();
 			$validated['rider_name'] = $request->rider_name;
@@ -174,7 +176,7 @@ class PaymentManagementController extends Controller
 					'message' => 'Paid amount is greater than total amount ' . $total_amount,
 				], 401);
 			}
-
+ 
 			// Upload payment image if available
 			$validated['payment_img'] = uploadImageToWebpS3FromFile(
 				$request,
