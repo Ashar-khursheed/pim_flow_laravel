@@ -353,6 +353,7 @@ class PaymobController extends Controller
         $calcHmac = $this->calculateHmac($request->all());
 
         if ($hmac !== $calcHmac) {
+            Log::info('Paymob Webhook Invalid HMAC:', $request->all());    
             return response()->json(['error' => 'Invalid HMAC'], 403);
         }
         Log::info('Paymob Webhook Received:', $request->all());       
