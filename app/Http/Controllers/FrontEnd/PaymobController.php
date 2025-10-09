@@ -497,7 +497,7 @@ class PaymobController extends Controller
                 'billing_data' => $billingData,
                 'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
                 'integration_id' => env('PAYMOB_LINK_ID'),
-                'redirect_url' => 'https://www.uae.thehorecastore.co/thanks',
+                // 'redirect_url' => 'https://www.uae.thehorecastore.co/thanks',
                 'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',                 
             ]);
             $paymentToken = $paymentKeyResponse->json()['token'];
