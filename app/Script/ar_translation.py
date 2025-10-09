@@ -22,11 +22,11 @@ JOIN attributes
 """
 
 conn = pymysql.connect(
-    host='horecadbdevelopment.c1c86oy8g663.me-south-1.rds.amazonaws.com',
-    user='horecaDbUAE',
-    password='Blackmango2025',
-    port=3306,
-    database='horecadbuae'
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USERNAME"),
+    password=os.getenv("DB_PASSWORD"),
+    port=int(os.getenv("DB_PORT")),
+    database=os.getenv("DB_DATABASE")
 )
 
 df = pd.read_sql(SQL, conn)
@@ -182,23 +182,13 @@ result = chain.run(product_json=payload)
 
 try:
     out = json.loads(result) if isinstance(result, str) else result
-    title = out.get("title", "")
-    descs = out.get("description", []) or []
-    benefits = out.get("benefits", []) or []
-    faqs = out.get("faqs", []) or []
+    if isinstance(out, dict):
+        out = [out]
+    final_output = json.dumps(out, ensure_ascii=False)
 
-    print("\n" + title + "\n")
-    for p in descs:
-        print(p + "\n")
-    if benefits:
-        print("الفوائد:")
-        for b in benefits:
-            print(f"• {b.get('benefit','')}: {b.get('feature','')}")
-        print()
-    if faqs:
-        print("الأسئلة الشائعة:")
-        for qa in faqs:
-            print(f"س: {qa.get('question','')}")
-            print(f"ج: {qa.get('answer','')}\n")
-except Exception:
-    print(result)
+    print(final_output)
+    with open(f"product_{user_input}.json", "w", encoding="utf-8") as f:
+        f.write(final_output)
+
+except Exception as e:
+    print("Error:", e)

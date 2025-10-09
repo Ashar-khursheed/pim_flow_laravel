@@ -405,7 +405,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
     Route::post('/keywords/import', [AppKeywordController::class, 'import']);
     Route::post('/keywords/export', [AppKeywordController::class, 'export']);
 
-    Route::post('/translations/generate-translate', [TranslationController::class, 'export']);
+    Route::post('/translations/generate-translate', [TranslationController::class, 'generateTranslate']);
     Route::post('/translations/export', [TranslationController::class, 'export']);
     Route::post('/translations/import', [TranslationController::class, 'import']);
 
@@ -594,7 +594,7 @@ Route::get('frontend/product-accessories', [FnProductAccessoriesController::clas
 Route::Post('frontend/product-variants', [FndProductVariantController::class, 'index']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
-	
+
     Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
     Route::apiResource('frontend/carts', F_CustomerCartController::class);
 
