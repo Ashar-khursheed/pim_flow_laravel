@@ -206,6 +206,7 @@ use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Facades\Log;
 use App\Services\PaymobService;
 use App\Models\PaymentManagement;
+use App\Models\FrontEnd\Order;
 class PaymobController extends Controller
 {
     protected $paymob;
@@ -391,8 +392,6 @@ class PaymobController extends Controller
     // Transaction Response Callback (redirect after payment)
     public function response(Request $request)
     {
-
-        // dd($request->all());
         // ✅ Verify HMAC here as well
         $hmac = $request->hmac;
         $calcHmac = $this->calculateHmac($request->all());
@@ -411,20 +410,48 @@ class PaymobController extends Controller
             $currency = $data['currency'] ?? 'EGP';
             $status = $data['success'] ? 'Completed' : 'Failed';
 
-            $checkTransaction = PaymentManagement::where('transaction_id', $transactionId)->get()->count();
-            if (!$checkTransaction) {
-                PaymentManagement::create([
-                    'order_id' => $orderId,
-                    'transaction_id' => $transactionId,
-                    'payment_mode' => 'Credit Card',
-                    'payment_method' => 'Paymob',
-                    'amount' => $amount,
-                    'status' => $status,
-                    'payment_date' => date('Y-m-d H:i:s'),
-                    'notes' => 'Payment marked through link',
-                    'payment_details' => ''
-                ]);
+            $orderdetails = Order::where('order_number', $orderId)->where('is_paid', '0')->first();
+        
+            if (!empty($orderdetails)) {
+                $total_amount = $orderdetails->total_amount;
+                $paid_amount = $orderdetails->paid_amount + $amount;
+                $pending_amount = $total_amount - $paid_amount;
+               
+                $order = Order::find($orderdetails->id);
+                if ($paid_amount < $total_amount) {
+                    $order->update([
+                        'paid_amount' => $paid_amount,
+                        'pending_amount' => $pending_amount,
+                        'is_paid' => $pending_amount <= 0,
+                        'is_reserved' => $pending_amount <= 0,
+                    ]);
+                } else if ($paid_amount == $total_amount) {
+                     
+                    $order->update([
+                        'paid_amount' => $paid_amount,
+                        'pending_amount' => $pending_amount,
+                        'is_paid' => 1,
+                        'is_reserved' => 0,
+                        'status' => 'Confirmed'
+                    ]);
+                }
+  
+                $checkTransaction = PaymentManagement::where('transaction_id', $transactionId)->get()->count();
+                if (!$checkTransaction) {
+                    PaymentManagement::create([
+                        'order_id' => $orderdetails->id,
+                        'transaction_id' => $transactionId,
+                        'payment_mode' => 'Credit Card',
+                        'payment_method' => 'Paymob',
+                        'amount' => $amount,
+                        'status' => $status,
+                        'payment_date' => date('Y-m-d H:i:s'),
+                        'notes' => 'Payment marked through link',
+                        'payment_details' => ''
+                    ]);
+                }
             }
+
             return view('thanks', ['amount' => $amount, 'transaction_id' => $transactionId]);
 
 
@@ -528,10 +555,12 @@ class PaymobController extends Controller
                 'billing_data' => $billingData,
                 'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
                 'integration_id' => env('PAYMOB_LINK_ID'),
-                // 'redirect_url' => 'https://www.uae.thehorecastore.co/thanks',
-                // 'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',         
-                'redirect_url' => 'https://testpim.thehorecastore.co/api/paymob/thanks',
-                'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',
+                'redirect_url' => 'https://development.d14wdtgnxlqbvb.amplifyapp.com/thanks',                 
+                'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',         
+                // 'redirect_url' => 'https://testpim.thehorecastore.co/api/paymob/thanks',
+                // 'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',
+                // 'redirect_url' => url('api/paymob/thanks'),
+                // 'notification_url' => url('api/paymob/webhook'),
 
             ]);
             $paymentToken = $paymentKeyResponse->json()['token'];
