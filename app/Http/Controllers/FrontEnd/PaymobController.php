@@ -359,11 +359,11 @@ class PaymobController extends Controller
         Log::info('Paymob Webhook Received:', $request->all());       
         $data =  $request->all();
         try {
-            $transactionId = $data['obj']['id'] ?? null;
-            $orderId = $data['obj']['order']['merchant_order_id'] ?? null;
-            $amount = ($data['obj']['amount_cents'] ?? 0) / 100;
-            $currency = $data['obj']['currency'] ?? 'EGP';
-            $status = $data['obj']['success'] ? 'Completed' : 'Failed';
+            $transactionId = $data['id'] ?? null;
+            $orderId = $data['merchant_order_id'] ?? null;
+            $amount = ($data['amount_cents'] ?? 0) / 100;
+            $currency = $data['currency'] ?? 'EGP';
+            $status = $data['success'] ? 'Completed' : 'Failed';
 
             PaymentManagement::create([
                 'order_id' => $orderId,
@@ -388,19 +388,45 @@ class PaymobController extends Controller
     // Transaction Response Callback (redirect after payment)
     public function response(Request $request)
     {
+
+        // dd($request->all());
         // ✅ Verify HMAC here as well
-        $hmac = $request->hmac;
+      $hmac = $request->hmac;
         $calcHmac = $this->calculateHmac($request->all());
-
-        if ($hmac !== $calcHmac) {
-            return view('payment.failed', ['message' => 'Invalid payment response']);
+         if ($hmac !== $calcHmac) {
+            Log::info('Paymob thank Invalid HMAC:', $request->all());    
+            return response()->json(['error' => 'Invalid HMAC'], 403);
         }
+        Log::info('Paymob thank Received:', $request->all());
+  
+        $data =  $request->all();
+ 
+        try {
+            $transactionId = $data['id'] ?? null;
+            $orderId = $data['merchant_order_id'] ?? null;
+            $amount = ($data['amount_cents'] ?? 0) / 100;
+            $currency = $data['currency'] ?? 'EGP';
+            $status = $data['success'] ? 'Completed' : 'Failed';
 
-        if ($request->success == "true") {
-            return view('payment.success', ['order_id' => $request->merchant_order_id]);
-        } else {
-            return view('payment.failed', ['message' => 'Payment failed, please try again.']);
-        }
+            PaymentManagement::create([
+                'order_id' => $orderId,
+                'transaction_id' => $transactionId,
+                'payment_mode' => 'Credit Card',
+                'payment_method' => 'Paymob',
+                'amount' => $amount,
+                'status' => $status,
+                'payment_date' => date('Y-m-d H:i:s'),
+                'notes' => 'Payment marked through link',
+                'payment_details' => ''
+            ]);
+       
+            return view('thanks',['amount'=>$amount,'transaction_id'=>$transactionId]);
+
+          
+        } catch (\Exception $e) {
+            Log::error('Paymob Webhook Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Server error'], 500);
+        } 
     }
 
     // HMAC calculation helper
@@ -497,7 +523,9 @@ class PaymobController extends Controller
                 'billing_data' => $billingData,
                 'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
                 'integration_id' => env('PAYMOB_LINK_ID'),
-                'redirect_url' => 'https://www.uae.thehorecastore.co/thanks',
+                // 'redirect_url' => 'https://www.uae.thehorecastore.co/thanks',
+                // 'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',         
+                'redirect_url' => 'https://testpim.thehorecastore.co/api/paymob/thanks',
                 'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',         
                                
             ]);

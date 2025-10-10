@@ -957,3 +957,4 @@ Route::get('frontend/paymob/thank', [F_PaymobController::class, 'pay']);
 
 Route::post('paymob/webhook', [F_PaymobController::class, 'webhook']);   
 Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);   
+Route::get('paymob/thanks', [F_PaymobController::class, 'response']);   
