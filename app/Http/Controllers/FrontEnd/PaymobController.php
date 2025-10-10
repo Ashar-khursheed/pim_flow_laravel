@@ -411,12 +411,12 @@ class PaymobController extends Controller
             $status = $data['success'] ? 'Completed' : 'Failed';
 
             $orderdetails = Order::where('order_number', $orderId)->where('is_paid', '0')->first();
-        
+
             if (!empty($orderdetails)) {
                 $total_amount = $orderdetails->total_amount;
                 $paid_amount = $orderdetails->paid_amount + $amount;
                 $pending_amount = $total_amount - $paid_amount;
-               
+
                 $order = Order::find($orderdetails->id);
                 if ($paid_amount < $total_amount) {
                     $order->update([
@@ -426,7 +426,7 @@ class PaymobController extends Controller
                         'is_reserved' => $pending_amount <= 0,
                     ]);
                 } else if ($paid_amount == $total_amount) {
-                     
+
                     $order->update([
                         'paid_amount' => $paid_amount,
                         'pending_amount' => $pending_amount,
@@ -435,20 +435,21 @@ class PaymobController extends Controller
                         'status' => 'Confirmed'
                     ]);
                 }
-  
-                $checkTransaction = PaymentManagement::where('transaction_id', $transactionId)->get()->count();
-                if (!$checkTransaction) {
-                    PaymentManagement::create([
-                        'order_id' => $orderdetails->id,
-                        'transaction_id' => $transactionId,
-                        'payment_mode' => 'Credit Card',
-                        'payment_method' => 'Paymob',
-                        'amount' => $amount,
-                        'status' => $status,
-                        'payment_date' => date('Y-m-d H:i:s'),
-                        'notes' => 'Payment marked through link',
-                        'payment_details' => ''
-                    ]);
+                if ($status != 'Failed') {
+                    $checkTransaction = PaymentManagement::where('transaction_id', $transactionId)->get()->count();
+                    if (!$checkTransaction) {
+                        PaymentManagement::create([
+                            'order_id' => $orderdetails->id,
+                            'transaction_id' => $transactionId,
+                            'payment_mode' => 'Credit Card',
+                            'payment_method' => 'Paymob',
+                            'amount' => $amount,
+                            'status' => $status,
+                            'payment_date' => date('Y-m-d H:i:s'),
+                            'notes' => 'Payment marked through link',
+                            'payment_details' => ''
+                        ]);
+                    }
                 }
             }
 
@@ -555,12 +556,12 @@ class PaymobController extends Controller
                 'billing_data' => $billingData,
                 'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
                 'integration_id' => env('PAYMOB_LINK_ID'),
-                'redirect_url' => 'https://development.d14wdtgnxlqbvb.amplifyapp.com/thanks',                 
-                'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',         
+                'redirect_url' => 'https://development.d14wdtgnxlqbvb.amplifyapp.com/thanks',
+                'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',
                 // 'redirect_url' => 'https://testpim.thehorecastore.co/api/paymob/thanks',
                 // 'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',
-                // 'redirect_url' => url('api/paymob/thanks'),
-                // 'notification_url' => url('api/paymob/webhook'),
+                //'redirect_url' => url('api/paymob/thanks'),
+                //'notification_url' => url('api/paymob/webhook'),
 
             ]);
             $paymentToken = $paymentKeyResponse->json()['token'];
