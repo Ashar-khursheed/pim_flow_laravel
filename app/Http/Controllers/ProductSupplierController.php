@@ -581,6 +581,8 @@ class ProductSupplierController extends BaseController
 			'Price' => 'price',
 			'Inventory' => 'inventory',
 			'In Stock' => 'in_stock',
+			'Min Quantity' => 'min_quantity',
+			'Is Fixed' => 'is_fixed',
 			'Delivery Days' => 'delivery_days',
 			'Return Policy' => 'return_policy',
 			'Free Shipping' => 'free_shipping',
