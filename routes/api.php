@@ -951,5 +951,9 @@ Route::prefix('frontend/auth')->group(function () {
 });
 
 Route::post('frontend/paymob/initiate', [F_PaymobController::class, 'initiate']); // get payment_token
-Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);           // pay with card
+Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);  
+Route::get('frontend/paymob/thank', [F_PaymobController::class, 'pay']);  
+
+
 Route::post('paymob/webhook', [F_PaymobController::class, 'webhook']);   
+Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);   

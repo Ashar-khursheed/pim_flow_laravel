@@ -498,18 +498,17 @@ class PaymobController extends Controller
                 'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
                 'integration_id' => env('PAYMOB_LINK_ID'),
                 // 'redirect_url' => 'https://www.uae.thehorecastore.co/thanks',
-                'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',                 
+               // 'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',         
+                               
             ]);
             $paymentToken = $paymentKeyResponse->json()['token'];
 
-            // Step 4: Build iframe payment URL
+            //Step : Build iframe payment URL
             $paymentUrl = "{$baseUrl}/acceptance/iframes/"
                 . env('PAYMOB_IFRAME_ID')
                 . "?payment_token="
                 . $paymentToken;
-
-            return $paymentUrl;
-
+            return $paymentUrl;            
         } catch (\Exception $e) {
             \Log::error('Paymob payment link generation failed', [
                 'order_id' => $order->id,
