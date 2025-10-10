@@ -301,18 +301,18 @@ class PaymobController extends Controller
             ], 500);
         }
     }
-// public function pay(Request $request)
+    // public function pay(Request $request)
 // {
 //     $request->validate([
 //         'payment_token' => 'required|string',
 //     ]);
 
-//     try {
+    //     try {
 //         // Case 1: Google Pay token (usually JSON or starts with "{")
 //         if (str_starts_with(trim($request->payment_token), '{')) {
 //             $response = $this->paymob->payWithGooglePay($request->payment_token);
 
-//         // Case 2: Manual card entry
+    //         // Case 2: Manual card entry
 //         } else {
 //             $request->validate([
 //                 'card_number' => 'required|string',
@@ -321,21 +321,21 @@ class PaymobController extends Controller
 //                 'cvv' => 'required|string',
 //             ]);
 
-//             $response = $this->paymob->payWithCard(
+    //             $response = $this->paymob->payWithCard(
 //                 $request->payment_token,
 //                 $request->only(['card_number', 'expiry_month', 'expiry_year', 'cvv'])
 //             );
 //         }
 
-//         return response()->json([
+    //         return response()->json([
 //             'status' => true,
 //             'response' => $response
 //         ]);
 
-//     } catch (\Exception $e) {
+    //     } catch (\Exception $e) {
 //         \Log::error('Paymob Payment Error: ' . $e->getMessage());
 
-//         return response()->json([
+    //         return response()->json([
 //             'status' => false,
 //             'message' => 'Payment failed',
 //             'error' => $e->getMessage()
@@ -353,11 +353,11 @@ class PaymobController extends Controller
         $calcHmac = $this->calculateHmac($request->all());
 
         if ($hmac !== $calcHmac) {
-            Log::info('Paymob Webhook Invalid HMAC:', $request->all());    
+            Log::info('Paymob Webhook Invalid HMAC:', $request->all());
             //return response()->json(['error' => 'Invalid HMAC'], 403);
         }
-        Log::info('Paymob Webhook Received:', $request->all());       
-        $data =  $request->all();
+        Log::info('Paymob Webhook Received:', $request->all());
+        $data = $request->all();
         try {
             $transactionId = $data['id'] ?? null;
             $orderId = $data['merchant_order_id'] ?? null;
@@ -365,24 +365,27 @@ class PaymobController extends Controller
             $currency = $data['currency'] ?? 'EGP';
             $status = $data['success'] ? 'Completed' : 'Failed';
 
-            PaymentManagement::create([
-                'order_id' => $orderId,
-                'transaction_id' => $transactionId,
-                'payment_mode' => 'Credit Card',
-                'payment_method' => 'Paymob',
-                'amount' => $amount,
-                'status' => $status,
-                'payment_date' => date('Y-m-d H:i:s'),
-                'notes' => 'Payment marked through link',
-                'payment_details' => ''
-            ]);
+            $checkTransaction = PaymentManagement::where('transaction_id', $transactionId)->get()->count();
+            if (!$checkTransaction) {
+                PaymentManagement::create([
+                    'order_id' => $orderId,
+                    'transaction_id' => $transactionId,
+                    'payment_mode' => 'Credit Card',
+                    'payment_method' => 'Paymob',
+                    'amount' => $amount,
+                    'status' => $status,
+                    'payment_date' => date('Y-m-d H:i:s'),
+                    'notes' => 'Payment marked through link',
+                    'payment_details' => ''
+                ]);
+            }
 
             return response()->json(['message' => 'Webhook processed'], 200);
 
         } catch (\Exception $e) {
             Log::error('Paymob Webhook Error: ' . $e->getMessage());
             return response()->json(['error' => 'Server error'], 500);
-        } 
+        }
     }
 
     // Transaction Response Callback (redirect after payment)
@@ -391,16 +394,16 @@ class PaymobController extends Controller
 
         // dd($request->all());
         // ✅ Verify HMAC here as well
-      $hmac = $request->hmac;
+        $hmac = $request->hmac;
         $calcHmac = $this->calculateHmac($request->all());
-         if ($hmac !== $calcHmac) {
-            Log::info('Paymob thank Invalid HMAC:', $request->all());    
+        if ($hmac !== $calcHmac) {
+            Log::info('Paymob thank Invalid HMAC:', $request->all());
             //return response()->json(['error' => 'Invalid HMAC'], 403);
         }
         Log::info('Paymob thank Received:', $request->all());
-  
-        $data =  $request->all();
- 
+
+        $data = $request->all();
+
         try {
             $transactionId = $data['id'] ?? null;
             $orderId = $data['merchant_order_id'] ?? null;
@@ -408,25 +411,27 @@ class PaymobController extends Controller
             $currency = $data['currency'] ?? 'EGP';
             $status = $data['success'] ? 'Completed' : 'Failed';
 
-            PaymentManagement::create([
-                'order_id' => $orderId,
-                'transaction_id' => $transactionId,
-                'payment_mode' => 'Credit Card',
-                'payment_method' => 'Paymob',
-                'amount' => $amount,
-                'status' => $status,
-                'payment_date' => date('Y-m-d H:i:s'),
-                'notes' => 'Payment marked through link',
-                'payment_details' => ''
-            ]);
-       
-            return view('thanks',['amount'=>$amount,'transaction_id'=>$transactionId]);
+            $checkTransaction = PaymentManagement::where('transaction_id', $transactionId)->get()->count();
+            if (!$checkTransaction) {
+                PaymentManagement::create([
+                    'order_id' => $orderId,
+                    'transaction_id' => $transactionId,
+                    'payment_mode' => 'Credit Card',
+                    'payment_method' => 'Paymob',
+                    'amount' => $amount,
+                    'status' => $status,
+                    'payment_date' => date('Y-m-d H:i:s'),
+                    'notes' => 'Payment marked through link',
+                    'payment_details' => ''
+                ]);
+            }
+            return view('thanks', ['amount' => $amount, 'transaction_id' => $transactionId]);
 
-          
+
         } catch (\Exception $e) {
             Log::error('Paymob Webhook Error: ' . $e->getMessage());
             return response()->json(['error' => 'Server error'], 500);
-        } 
+        }
     }
 
     // HMAC calculation helper
@@ -526,8 +531,8 @@ class PaymobController extends Controller
                 // 'redirect_url' => 'https://www.uae.thehorecastore.co/thanks',
                 // 'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',         
                 'redirect_url' => 'https://testpim.thehorecastore.co/api/paymob/thanks',
-                'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',         
-                               
+                'notification_url' => 'https://testpim.thehorecastore.co/api/paymob/webhook',
+
             ]);
             $paymentToken = $paymentKeyResponse->json()['token'];
 
@@ -536,7 +541,7 @@ class PaymobController extends Controller
                 . env('PAYMOB_IFRAME_ID')
                 . "?payment_token="
                 . $paymentToken;
-            return $paymentUrl;            
+            return $paymentUrl;
         } catch (\Exception $e) {
             \Log::error('Paymob payment link generation failed', [
                 'order_id' => $order->id,
