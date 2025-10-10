@@ -357,9 +357,10 @@ class StripeController extends Controller
                 'payment_details' => ''
             ]);
 
-        }
- 
-
+        } 
+    }
+    public function success(Request $request)
+    {
         $sessionId = $request->get('session_id');
         if (!$sessionId) {
             return response()->json(['error' => 'Missing session_id'], 400);

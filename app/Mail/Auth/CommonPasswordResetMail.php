@@ -36,7 +36,7 @@ class CommonPasswordResetMail extends Mailable
 		$frontEndUrl = config('app.url');
 		$backendUrl = config('app.backend_url');
 
-		$logoUrl = $backendUrl . (config('app.website') === 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$logoUrl = $backendUrl . '/logo.png';
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -48,7 +48,8 @@ class CommonPasswordResetMail extends Mailable
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'sales@thehorecastore.com',
 			'UAE'  => 'hello@horecastore.ae',
-			'TEST' => 'test@thehorecastore.co',
+			'US_T' => 'test_us@thehorecastore.co',
+			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
 		};
 

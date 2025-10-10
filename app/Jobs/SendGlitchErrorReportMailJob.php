@@ -36,7 +36,7 @@ class SendGlitchErrorReportMailJob implements ShouldQueue
 			return;
 		}
 
-		if (config('app.website') !== 'TEST') {
+		if (in_array(config('app.website'), ['UAE', 'US'])) {
 			$recipients = glitch_error_reporting_mails();
 
 			if (!empty($recipients)) {

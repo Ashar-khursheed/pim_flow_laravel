@@ -8,6 +8,8 @@ use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\OrderProduct;
+use App\Models\FrontEnd\AccessoryCharge;
 
 class OrderPlacedMail extends Mailable
 {
@@ -28,13 +30,13 @@ class OrderPlacedMail extends Mailable
 		$order = $this->order;
 
 		$backendURL = config('app.backend_url');
-		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$logoUrl = $backendURL . '/logo.png';
 		$name = $order->customer->name ?? 'User';
 		$orderUrl = url("/my-order");
 
 		$orderNumber = $order->order_number;
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
-		$currency = config('app.website') == 'UAE' ? 'AED' : '$';
+		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 		$paidAmount = $order->paid_amount ?? 0;
 		$paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
@@ -82,6 +84,23 @@ class OrderPlacedMail extends Mailable
 				$product->quantity = (int) $orderProduct->quantity;
 				$product->total = $orderProduct->amount;
 
+				$product->accessories = [];
+
+				$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)->where('relation_id', $orderProduct->id)->get();
+				if ($accessoryCharges->isNotEmpty()) {
+					$product->accessories = $accessoryCharges->map(function ($charge) {
+						return [
+							'id' => $charge->id,
+							'accessory_item_id' => $charge->accessory_item_id,
+							'accessory_item_name' => $charge->accessoryItem->name ?? null,
+							'accessory_item_price' => $charge->accessoryItem->price ?? null,
+							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+							'amount' => $charge->amount,
+						];
+					});
+				}
+
 				$products->push($product);
 			}
 		}
@@ -99,8 +118,8 @@ class OrderPlacedMail extends Mailable
 
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
-		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
-		$taxPercent = config('app.website') == 'UAE' ? round($order->tax_percentage) : $order->tax_percentage;
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
+		$taxPercent = in_array(config('app.website'), ['UAE', 'UAE_T']) ? round($order->tax_percentage) : $order->tax_percentage;
 		$taxAmount = $order->tax_amount ?? 0;
 		$discount = $order->discount ?? 0;
 		$total = $order->total_amount ?? 0;
@@ -115,7 +134,8 @@ class OrderPlacedMail extends Mailable
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'orders@thehorecastore.com',
 			'UAE'  => 'orders@horecastore.ae',
-			'TEST' => 'test@thehorecastore.co',
+			'US_T' => 'test_us@thehorecastore.co',
+			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
 		};
 

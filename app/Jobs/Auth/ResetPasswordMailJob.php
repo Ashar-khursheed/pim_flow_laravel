@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Mail;
 
 use App\Models\FrontEnd\Customer;
 use App\Models\User;
+use App\Models\PasswordResetToken;
 use App\Mail\Auth\ResetPasswordMail;
 
 class ResetPasswordMailJob implements ShouldQueue
@@ -54,10 +55,11 @@ class ResetPasswordMailJob implements ShouldQueue
 			}
 
 			$token = Str::random(60);
+			$model = $type === 'customer' ? Customer::class : User::class;
 
-			$entity->passwordResetToken()->updateOrCreate([
+			PasswordResetToken::updateOrCreate([
 				'resettable_id' => $entity->id,
-				'resettable_type' => get_class($entity),
+				'resettable_type' => $model,
 			], [
 				'token' => Hash::make($token),
 				'created_at' => now(),

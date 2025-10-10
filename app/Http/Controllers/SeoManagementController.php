@@ -305,14 +305,14 @@ class SeoManagementController extends Controller
 
 			$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
 
-			
+
 			// Create/update the SEO record first
 			$seoRecord = SeoManagement::where('url', $request->url)
-			->where(function ($query) use (  $request) {
-				$query->where('relational_id', '!=', $request->relational_id)
-				->orWhere('relational_type', '!=', $request->relational_type);
-			})
-			->first();
+				->where(function ($query) use ($request) {
+					$query->where('relational_id', '!=', $request->relational_id)
+						->orWhere('relational_type', '!=', $request->relational_type);
+				})
+				->first();
 
 			if ($seoRecord) {
 				return response()->json([
@@ -431,11 +431,11 @@ class SeoManagementController extends Controller
 		$relationalType = $request->query('relational_type');
 
 		$seoRecord = SeoManagement::with('secondaryKeywordDetails')
-		->where('relational_id', $relation_id)
-		->when($relationalType, function ($query, $relationalType) {
-			return $query->where('relational_type', $relationalType);
-		})
-		->first();
+			->where('relational_id', $relation_id)
+			->when($relationalType, function ($query, $relationalType) {
+				return $query->where('relational_type', $relationalType);
+			})
+			->first();
 
 		if (!$seoRecord) {
 			return response()->json([
@@ -751,149 +751,149 @@ class SeoManagementController extends Controller
 				'tags' => 'nullable|string',
 				'schema_rating' => 'nullable|integer|min:1|max:5',
 				'schema_reviews_count' => 'nullable|integer|min:0',
-			'schema' => 'nullable|json', // ✅ allow full schema JSON
-			'created_by' => 'required|integer',
-			'updated_by' => 'nullable|integer',
-			'secondary_keywords' => 'nullable|string',
-			'paragraph_1' => 'nullable|string',
-			'paragraph_2' => 'nullable|string',
-			'paragraph_3' => 'nullable|string',
-			'paragraph_4' => 'nullable|string',
-			'popular_tags' => 'nullable|string',
-			'google_shopping_feed_title' => 'nullable|string',
-			'google_shopping_feed_description' => 'nullable|string',
-			'short_title_variant' => 'nullable|string',
-			'gen_type' => 'nullable|integer',
-			'cat_desc' => 'nullable|string',
-			'banner_image_file' => 'nullable',
-			'banner_image_alt_text' => 'nullable|string',
-			'banner_slug' => 'nullable|string',
-			'popularTag_details' => 'nullable|json',
-		];
+				'schema' => 'nullable|json', // ✅ allow full schema JSON
+				'created_by' => 'required|integer',
+				'updated_by' => 'nullable|integer',
+				'secondary_keywords' => 'nullable|string',
+				'paragraph_1' => 'nullable|string',
+				'paragraph_2' => 'nullable|string',
+				'paragraph_3' => 'nullable|string',
+				'paragraph_4' => 'nullable|string',
+				'popular_tags' => 'nullable|string',
+				'google_shopping_feed_title' => 'nullable|string',
+				'google_shopping_feed_description' => 'nullable|string',
+				'short_title_variant' => 'nullable|string',
+				'gen_type' => 'nullable|integer',
+				'cat_desc' => 'nullable|string',
+				'banner_image_file' => 'nullable',
+				'banner_image_alt_text' => 'nullable|string',
+				'banner_slug' => 'nullable|string',
+				'popularTag_details' => 'nullable|json',
+			];
 
-		if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
-			$rules['og_image_file'] = 'image|mimes:jpeg,png,jpg,webp|max:2048';
-		}
-
-		if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
-			$rules['banner_image_file'] = 'image|mimes:jpeg,png,jpg,gif,webp';
-		}
-
-		$validated = $request->validate($rules);
-
-		$seo = SeoManagement::findOrFail($id);
-
-		// Create/update the SEO record first
-		$seoRecord = SeoManagement::where('url', $request->url)
-		->where(function ($query) use (  $request) {
-			$query->where('relational_id', '!=', $request->relational_id)
-			->orWhere('relational_type', '!=', $request->relational_type);
-		})
-		->first();
-
-		if ($seoRecord) {
-			return response()->json([
-				'success' => false,
-				'message' => "The URL '{$request->url}' is already assigned to {$seoRecord->relational_type} '{$seoRecord->relational->name}'.",
-			], 403);
-		}
-
-		if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
-			return response()->json([
-				'success' => false,
-				'message' => 'The provided relational_type or relational_id does not match the existing record.',
-			], 403);
-		}
-
-		$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file', 'banner_image_file'])->toArray();
-
-		foreach (['paragraph_1', 'paragraph_2', 'paragraph_3', 'paragraph_4'] as $field) {
-			if (!$request->has($field)) {
-				$seoData[$field] = '';
+			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
+				$rules['og_image_file'] = 'image|mimes:jpeg,png,jpg,webp|max:2048';
 			}
-		}
 
-		$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
+			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+				$rules['banner_image_file'] = 'image|mimes:jpeg,png,jpg,gif,webp';
+			}
 
-		if (isset($validated['schema_rating'])) {
-			$seoData['schema_rating'] = (int) $validated['schema_rating'];
-		}
+			$validated = $request->validate($rules);
 
-		if (isset($validated['schema_reviews_count'])) {
-			$seoData['schema_reviews_count'] = (int) $validated['schema_reviews_count'];
-		}
+			$seo = SeoManagement::findOrFail($id);
 
-		if (!empty($validated['popular_tags'])) {
-			if (is_string($validated['popular_tags'])) {
-				$decoded = json_decode($validated['popular_tags'], true);
-				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-					$seoData['popular_tags'] = $decoded;
-				} else {
-					$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+			// Create/update the SEO record first
+			$seoRecord = SeoManagement::where('url', $request->url)
+				->where(function ($query) use ($request) {
+					$query->where('relational_id', '!=', $request->relational_id)
+						->orWhere('relational_type', '!=', $request->relational_type);
+				})
+				->first();
+
+			if ($seoRecord) {
+				return response()->json([
+					'success' => false,
+					'message' => "The URL '{$request->url}' is already assigned to {$seoRecord->relational_type} '{$seoRecord->relational->name}'.",
+				], 403);
+			}
+
+			if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
+				return response()->json([
+					'success' => false,
+					'message' => 'The provided relational_type or relational_id does not match the existing record.',
+				], 403);
+			}
+
+			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file', 'banner_image_file'])->toArray();
+
+			foreach (['paragraph_1', 'paragraph_2', 'paragraph_3', 'paragraph_4'] as $field) {
+				if (!$request->has($field)) {
+					$seoData[$field] = '';
 				}
-			} else {
-				$seoData['popular_tags'] = $validated['popular_tags'];
 			}
-		}
 
-		if (!empty($validated['popularTag_details'])) {
-			if (is_string($validated['popularTag_details'])) {
-				$seoData['popularTag_details'] = json_decode($validated['popularTag_details'], true);
-			} else {
-				$seoData['popularTag_details'] = $validated['popularTag_details'];
+			$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
+
+			if (isset($validated['schema_rating'])) {
+				$seoData['schema_rating'] = (int) $validated['schema_rating'];
 			}
-		}
 
-		// ✅ Save full schema JSON if provided
-		if (!empty($validated['schema'])) {
-			$seoData['schema'] = $validated['schema'];
-		}
-
-		if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
-			$storage = app('Illuminate\Support\Facades\Storage');
-			$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
-			$imagePath = $request->file('og_image_file')->store($folderPath, 's3');
-			$seoData['og_image_url'] = $storage::disk('s3')->url($imagePath);
-			if (empty($seoData['og_image_name'])) {
-				$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
+			if (isset($validated['schema_reviews_count'])) {
+				$seoData['schema_reviews_count'] = (int) $validated['schema_reviews_count'];
 			}
+
+			if (!empty($validated['popular_tags'])) {
+				if (is_string($validated['popular_tags'])) {
+					$decoded = json_decode($validated['popular_tags'], true);
+					if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+						$seoData['popular_tags'] = $decoded;
+					} else {
+						$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+					}
+				} else {
+					$seoData['popular_tags'] = $validated['popular_tags'];
+				}
+			}
+
+			if (!empty($validated['popularTag_details'])) {
+				if (is_string($validated['popularTag_details'])) {
+					$seoData['popularTag_details'] = json_decode($validated['popularTag_details'], true);
+				} else {
+					$seoData['popularTag_details'] = $validated['popularTag_details'];
+				}
+			}
+
+			// ✅ Save full schema JSON if provided
+			if (!empty($validated['schema'])) {
+				$seoData['schema'] = $validated['schema'];
+			}
+
+			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
+				$storage = app('Illuminate\Support\Facades\Storage');
+				$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
+				$imagePath = $request->file('og_image_file')->store($folderPath, 's3');
+				$seoData['og_image_url'] = $storage::disk('s3')->url($imagePath);
+				if (empty($seoData['og_image_name'])) {
+					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
+				}
+			}
+
+			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+				$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+				$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+				$bannerImageUrl = \Storage::disk('s3')->url($bannerImagePath);
+				$seoData['banner_image_file'] = $bannerImageUrl;
+			}
+
+			$seo->update($seoData);
+			$seo->refresh();
+
+			return response()->json([
+				'success' => true,
+				'message' => 'SEO record updated successfully',
+				'data' => $seo
+			], 200);
+
+		} catch (\Illuminate\Validation\ValidationException $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors' => $e->errors()
+			], 422);
+		} catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'SEO record not found'
+			], 404);
+		} catch (\Exception $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to update SEO record',
+				'error' => $e->getMessage()
+			], 422);
 		}
-
-		if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
-			$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
-			$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
-			$bannerImageUrl = \Storage::disk('s3')->url($bannerImagePath);
-			$seoData['banner_image_file'] = $bannerImageUrl;
-		}
-
-		$seo->update($seoData);
-		$seo->refresh();
-
-		return response()->json([
-			'success' => true,
-			'message' => 'SEO record updated successfully',
-			'data' => $seo
-		], 200);
-
-	} catch (\Illuminate\Validation\ValidationException $e) {
-		return response()->json([
-			'success' => false,
-			'message' => 'Validation failed',
-			'errors' => $e->errors()
-		], 422);
-	} catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-		return response()->json([
-			'success' => false,
-			'message' => 'SEO record not found'
-		], 404);
-	} catch (\Exception $e) {
-		return response()->json([
-			'success' => false,
-			'message' => 'Failed to update SEO record',
-			'error' => $e->getMessage()
-		], 422);
 	}
-}
 
 
 	// public function update(Request $request, $relational_type, $id)
@@ -1059,7 +1059,106 @@ class SeoManagementController extends Controller
 	// 	}
 	// }
 
+	/**
+	 * @OA\Post(
+	 *     path="/api/seoManagement/schema-update/{seo_id}",
+	 *     summary="Update an existing SEO schema entry",
+	 *     description="This endpoint updates the details of an existing SEO schema record based on the provided SEO ID.",
+	 *     tags={"SEO Management"},
+	 *     @OA\Parameter(
+	 *         name="seo_id",
+	 *         in="path",
+	 *         required=true,
+	 *         @OA\Schema(type="integer", example=721),
+	 *         description="The unique ID of the SEO schema to update"
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"relational_id", "relational_type"},
+	 *                 @OA\Property(property="relational_id", type="integer", example=1915, description="The related entity ID"),
+	 *                 @OA\Property(property="relational_type", type="string", example="Product", description="Type of relation, e.g., Product")
+	 *                
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="SEO schema updated successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="status", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="SEO schema updated successfully."),
+	 *             @OA\Property(property="data", type="object")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation error"
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
 
+	public function schemaUpdate(Request $request,$seo_id)
+	{ 
+ 
+		$validated = $request->validate([
+			'relational_id' => 'required|integer|exists:seo_management,id',
+			'relational_type' => 'required|string',
+			 
+		]);
+
+		$relational_type = $request->relational_type;
+	 
+		$relational_id = $request->relational_id;
+	 
+		$seo = SeoManagement::findOrFail($seo_id);
+	 
+		if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The provided relational_type or relational_id does not match the existing record.',
+			], 403);
+		}
+
+		try{
+		 
+		$schemaArray = $this->generateSchema($seo);
+		dd($schemaArray);
+		$seo->schema = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+		 
+		
+		//$seo->save();
+
+		return response()->json([
+				'success' => true,
+				'message' => 'SEO record updated successfully',
+				'data' => $seo
+			], 200);
+
+		} catch (\Illuminate\Validation\ValidationException $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors' => $e->errors()
+			], 422);
+		} catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'SEO record not found'
+			], 404);
+		} catch (\Exception $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to update SEO record',
+				'error' => $e->getMessage()
+			], 422);
+		}
+
+
+	}
 
 	/**
 	 * @OA\Delete(
@@ -1209,7 +1308,7 @@ class SeoManagementController extends Controller
 				'success' => true,
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
-		} catch(\Exception $exception) {
+		} catch (\Exception $exception) {
 			$error[] = 'Error: ' . $exception->getMessage();
 			$error[] = 'File: ' . $exception->getFile();
 			$error[] = 'Line: ' . $exception->getLine();
@@ -1263,11 +1362,11 @@ class SeoManagementController extends Controller
 
 		/* Fetch records with related secondary keywords */
 		$records = SeoManagement::with('secondaryKeywordDetails')
-		->where('relational_type', $request->relational_type)
-		->offset($request->range_from - 1)
-		->limit($request->range_to - $request->range_from + 1)
-		->orderBy('id', 'asc')
-		->get();
+			->where('relational_type', $request->relational_type)
+			->offset($request->range_from - 1)
+			->limit($request->range_to - $request->range_from + 1)
+			->orderBy('id', 'asc')
+			->get();
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();

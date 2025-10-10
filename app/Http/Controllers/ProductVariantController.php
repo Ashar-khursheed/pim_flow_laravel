@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
 use App\Models\Product;
+use App\Models\ProductAttribute;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
@@ -25,7 +26,7 @@ class ProductVariantController extends Controller
      *
      *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
      *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string", enum={"published", "draft", "pending"})),
-     *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "created_at", "updated_at"})),
+     *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id"})),
      *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
      *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
      *     security={{"bearerAuth":{}}}
@@ -449,19 +450,28 @@ class ProductVariantController extends Controller
                     'message' => 'No product IDs provided'
                 ], 422);
             }
-
+            $countId = count($productIds);
             // Fetch attributes
-            $attributes = Attribute::whereIn('attribute_group_id', $productIds)
-                ->select('id', 'name', 'attribute_group_id')
-                ->get();
+            $attributes = ProductAttribute::whereIn('product_id', $productIds)
+            ->join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
+            ->select(
+            'product_attributes.attribute_id',
+            'attributes.name as attribute_name',
+            \DB::raw('GROUP_CONCAT(DISTINCT product_attributes.product_id ORDER BY product_attributes.product_id) as product_ids'),
+            \DB::raw('COUNT(DISTINCT product_attributes.product_id) as product_count')
+            )
+            ->groupBy('product_attributes.attribute_id', 'attributes.name')
+            ->having('product_count', '=', $countId)
+            ->get();
+            
 
-            // Map into clean structure
             $attributeList = $attributes->map(function ($attr) {
-                return [
-                    'attribute_id' => $attr->id,
-                    'attribute_name' => $attr->name,
-                    'group_id' => $attr->attribute_group_id,
-                ];
+        
+            return [
+            'attribute_id' => $attr->attribute_id,
+            'attribute_name' => $attr->attribute_name,
+            'group_id' => $attr->product_ids,
+            ];
             });
 
             return response()->json([

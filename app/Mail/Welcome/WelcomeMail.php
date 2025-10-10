@@ -28,10 +28,10 @@ class WelcomeMail extends Mailable
 		$customer = $this->customer;
 
 		$backendURL = config('app.backend_url');
-		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$logoUrl = $backendURL . '/logo.png';
 		$name = $customer->name ?? 'User';
 		$websiteUrl = url("/");
-		$regionName = config('app.website') == 'UAE' ? "Middle East’s":"America’s";
+		$regionName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? "Middle East’s":"America’s";
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -43,7 +43,8 @@ class WelcomeMail extends Mailable
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'sales@thehorecastore.com',
 			'UAE'  => 'hello@horecastore.ae',
-			'TEST' => 'test@thehorecastore.co',
+			'US_T' => 'test_us@thehorecastore.co',
+			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
 		};
 

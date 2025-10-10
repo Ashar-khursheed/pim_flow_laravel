@@ -50,7 +50,10 @@ class OrderController extends BaseController
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Eager load relationships */
 			$recordsQuery->with([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
 				'orderProducts.product.currency:id,symbol',
@@ -135,6 +138,22 @@ class OrderController extends BaseController
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
 					: null;
+
+					if ($orderProduct->accessoryCharges) {
+						$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+							return [
+								'id' => $charge->id,
+								'accessory_item_id' => $charge->accessory_item_id,
+								'accessory_item_name' => $charge->accessoryItem->name ?? null,
+								'accessory_item_price' => $charge->accessoryItem->price ?? null,
+								'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+								'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+								'amount' => $charge->amount,
+							];
+						});
+
+						unset($orderProduct->accessoryCharges);
+					}
 				}
 				foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
@@ -180,6 +199,8 @@ class OrderController extends BaseController
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
 	 *             @OA\Property(property="is_payment", type="boolean", example=false),
+	 * 			   @OA\Property(property="is_paymob", type="boolean", example=false),
+	 *             @OA\Property(property="is_squarePayment", type="boolean", example=false),
 	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
 	 *             @OA\Property(
 	 *                 property="products",
@@ -189,7 +210,7 @@ class OrderController extends BaseController
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
 	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="accessory_ids", type="array", @OA\Items(type="integer"))
+	 *                     @OA\Property(property="accessory_item_ids", type="array", @OA\Items(type="integer"))
 	 *                 )
 	 *             )
 	 *         )
@@ -212,6 +233,8 @@ class OrderController extends BaseController
 			'discount' => 'nullable|numeric|min:0',
 			'is_reserved' => 'nullable|boolean',
 			'is_payment' => 'nullable|boolean',
+			'is_paymob' => 'nullable|boolean',
+			'is_squarePayment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
@@ -243,14 +266,17 @@ class OrderController extends BaseController
 					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
 				}
 				$accessoryIds = $product['accessory_item_ids'] ?? [];
+				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
+				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
-					'accessory_item_ids'   => $accessoryIds,
-					'accessory_item_charge'=> getAccessoryItemCharge($accessoryIds) * $product['quantity'],
-					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'accessoryItems' => $accessoryItems,
+					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
+					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
 
@@ -270,7 +296,7 @@ class OrderController extends BaseController
 			$discountedAmount = $orderAmount - $discount;
 			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
-			if (config('app.website') == 'UAE') {
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
@@ -283,8 +309,7 @@ class OrderController extends BaseController
 			if ($latestOrder && is_numeric($latestOrder->order_number)) {
 				$orderNumber = (int) $latestOrder->order_number + 1;
 			} else {
-				$website = config('app.website');
-				$orderNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+				$orderNumber = in_array(config('app.website'), ['US', 'US_T']) ? 10001 : (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101);
 			}
 
 			$order = Order::create([
@@ -307,6 +332,8 @@ class OrderController extends BaseController
 				'status' => 'Pending',
 				'is_reserved' => $request->boolean('is_reserved'),
 				'is_payment' => $request->boolean('is_payment'),
+				'is_paymob' => $request->boolean('is_paymob'),
+				'is_squarePayment' => $request->boolean('is_squarePayment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'created_by' => 0,
 				'utm_id' => $request->utm_id,
@@ -315,7 +342,7 @@ class OrderController extends BaseController
 
 			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
-				OrderProduct::create([
+				$orderProduct = OrderProduct::create([
 					'order_id' => $order->id,
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -324,12 +351,18 @@ class OrderController extends BaseController
 					'remaining_quantity' => $product['quantity'],
 					'unit_price' => $product['unit_price'],
 					'amount' => $total,
-					'accessory_item_ids' => $product['accessory_item_ids'],
 					'accessory_item_charge' => $product['accessory_item_charge'],
 					'shipping_charge' => $product['shipping_charge'],
 					'total_amount' => $total + $product['shipping_charge'] + $product['accessory_item_charge'],
 					'status' => 'Pending',
 				]);
+				foreach ($product['accessoryItems'] as $accessoryItem) {
+					$orderProduct->accessoryCharges()->create([
+						'accessory_item_id' => $accessoryItem['id'],
+						'amount' => $accessoryItem['price'] * $product['quantity'],
+						'created_at' => now(),
+					]);
+				}
 			}
 
 			OrderTracking::create([
@@ -348,7 +381,7 @@ class OrderController extends BaseController
 			DB::commit();
 
 			if ($request->boolean('is_cod')) {
-				$batch = Bus::batch([])->name('Order Place')->dispatch();
+				$batch = Bus::batch([])->name('Order Place on cod')->dispatch();
 
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
@@ -358,7 +391,10 @@ class OrderController extends BaseController
 
 			/* Load relationships */
 			$order->load([
-   				 'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_ids,accessory_item_charge',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
 				'orderProducts.product.currency:id,symbol',
@@ -379,6 +415,22 @@ class OrderController extends BaseController
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
+
+				if ($orderProduct->accessoryCharges) {
+					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+						return [
+							'id' => $charge->id,
+							'accessory_item_id' => $charge->accessory_item_id,
+							'accessory_item_name' => $charge->accessoryItem->name ?? null,
+							'accessory_item_price' => $charge->accessoryItem->price ?? null,
+							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+							'amount' => $charge->amount,
+						];
+					});
+
+					unset($orderProduct->accessoryCharges);
+				}
 			}
 
 			foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
@@ -436,7 +488,10 @@ class OrderController extends BaseController
 		$order->load([
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress',
-			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_ids,accessory_item_charge',
+			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+			'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+			'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+			'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
@@ -446,7 +501,6 @@ class OrderController extends BaseController
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
-
 
 		/* Mutate the data for each order product */
 		foreach ($order->orderProducts as $orderProduct) {
@@ -478,6 +532,22 @@ class OrderController extends BaseController
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
+
+			if ($orderProduct->accessoryCharges) {
+				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+					return [
+						'id' => $charge->id,
+						'accessory_item_id' => $charge->accessory_item_id,
+						'accessory_item_name' => $charge->accessoryItem->name ?? null,
+						'accessory_item_price' => $charge->accessoryItem->price ?? null,
+						'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+						'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+						'amount' => $charge->amount,
+					];
+				});
+
+				unset($orderProduct->accessoryCharges);
+			}
 		}
 
 		if (
@@ -769,61 +839,131 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+	// public function buyItAgain(Request $request)
+	// {
+	// 	// Fetch last 5 delivered orders with products
+	// 	$deliveredOrders = $customer->orders()
+	// 	->where('status', 'Delivered')
+	// 	->orderByDesc('created_at')
+	// 	->take(5)
+	// 	->with(['orderProducts.product.productSuppliers', 'orderProducts.product.currency', 'orderProducts.product.brand'])
+	// 	->get();
+
+	// 	$addedProducts = collect();
+
+	// 	foreach ($deliveredOrders as $order) {
+	// 		foreach ($order->orderProducts as $orderProduct) {
+	// 			$product = $orderProduct->product;
+	// 			if (!$product) {
+	// 				continue;
+	// 			}
+
+	// 			// find a vendor_id if available
+	// 			$vendorId = $product->productSuppliers->first()->vendor_id ?? null;
+
+	// 			// build a request like addToCart expects
+	// 			$cartRequest = new Request([
+	// 				'product_id' => $product->id,
+	// 				'quantity'   => $orderProduct->quantity,
+	// 				'vendor_id'  => $vendorId,
+	// 			]);
+
+	// 			// call your CartController function
+	// 			$cartResponse = app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
+
+	// 			$addedProducts->push([
+	// 				'product_id' => $product->id,
+	// 				'name'       => $product->name,
+	// 				'quantity'   => $orderProduct->quantity,
+	// 				'unit_price' => $orderProduct->unit_price,
+	// 				'brand_name' => $product->brand->name ?? null,
+	// 			]);
+	// 		}
+	// 	}
+
+	// 	if ($addedProducts->isEmpty()) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'No delivered orders found or no valid products available to buy again.'
+	// 		], 404);
+	// 	}
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Products added to your cart successfully.',
+	// 		'data'    => $addedProducts,
+	// 	], 200);
+	// }
 	public function buyItAgain(Request $request)
-	{
-		// Fetch last 5 delivered orders with products
-		$deliveredOrders = $customer->orders()
-		->where('status', 'Delivered')
-		->orderByDesc('created_at')
-		->take(5)
-		->with(['orderProducts.product.productSuppliers', 'orderProducts.product.currency', 'orderProducts.product.brand'])
-		->get();
+{
+    // Get authenticated customer
+    $customerId = auth()->id();
 
-		$addedProducts = collect();
+    if (!$customerId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'User not authenticated.'
+        ], 401);
+    }
 
-		foreach ($deliveredOrders as $order) {
-			foreach ($order->orderProducts as $orderProduct) {
-				$product = $orderProduct->product;
-				if (!$product) {
-					continue;
-				}
+    // Fetch last 5 delivered orders with products
+    $deliveredOrders = Order::where('customer_id', $customerId)
+       ->whereIn('status', ['Delivered', 'Cancelled'])
+        ->orderByDesc('created_at')
+        ->take(5)
+        ->with([
+            'orderProducts.product.productSuppliers',
+            'orderProducts.product.currency',
+            'orderProducts.product.brand'
+        ])
+        ->get();
 
-				// find a vendor_id if available
-				$vendorId = $product->productSuppliers->first()->vendor_id ?? null;
+    $addedProducts = collect();
 
-				// build a request like addToCart expects
-				$cartRequest = new Request([
-					'product_id' => $product->id,
-					'quantity'   => $orderProduct->quantity,
-					'vendor_id'  => $vendorId,
-				]);
+    foreach ($deliveredOrders as $order) {
+        foreach ($order->orderProducts as $orderProduct) {
+            $product = $orderProduct->product;
+            if (!$product) {
+                continue;
+            }
 
-				// call your CartController function
-				$cartResponse = app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
+            // find a vendor_id if available
+            $vendorId = $product->productSuppliers->first()->vendor_id ?? null;
 
-				$addedProducts->push([
-					'product_id' => $product->id,
-					'name'       => $product->name,
-					'quantity'   => $orderProduct->quantity,
-					'unit_price' => $orderProduct->unit_price,
-					'brand_name' => $product->brand->name ?? null,
-				]);
-			}
-		}
+            // build a request like addToCart expects
+            $cartRequest = new Request([
+                'product_id' => $product->id,
+                'quantity'   => $orderProduct->quantity,
+                'vendor_id'  => $vendorId,
+            ]);
 
-		if ($addedProducts->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No delivered orders found or no valid products available to buy again.'
-			], 404);
-		}
+            // call your CartController function
+            app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Products added to your cart successfully.',
-			'data'    => $addedProducts,
-		], 200);
-	}
+            $addedProducts->push([
+                'product_id' => $product->id,
+                'name'       => $product->name,
+                'quantity'   => $orderProduct->quantity,
+                'unit_price' => $orderProduct->unit_price,
+                'brand_name' => $product->brand->name ?? null,
+            ]);
+        }
+    }
+
+    if ($addedProducts->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No delivered orders found or no valid products available to buy again.'
+        ], 404);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Products added to your cart successfully.',
+        'data'    => $addedProducts,
+    ], 200);
+}
+
 
 	/**
 	 * @OA\Get(

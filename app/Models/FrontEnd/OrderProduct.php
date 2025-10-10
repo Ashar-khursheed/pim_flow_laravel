@@ -15,7 +15,6 @@ class OrderProduct extends Model
 		'quantity',
 		'unit_price',
 		'amount',
-		'accessory_item_ids',
 		'accessory_item_charge',
 		'shipping_charge',
 		'total_amount',
@@ -30,7 +29,6 @@ class OrderProduct extends Model
 		'remaining_quantity' => 'integer',
 		'unit_price' => 'decimal:2',
 		'total_amount' => 'decimal:2',
-		'accessory_item_ids' => 'array',
 	];
 
 	public function order()
@@ -76,6 +74,11 @@ class OrderProduct extends Model
 	public function returnOrderProducts()
 	{
 		return $this->hasMany(ReturnOrderProduct::class, 'order_product_id');
+	}
+
+	public function accessoryCharges()
+	{
+		return $this->morphMany(AccessoryCharge::class, 'relation');
 	}
 
 	/**

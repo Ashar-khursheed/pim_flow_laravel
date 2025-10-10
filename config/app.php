@@ -8,12 +8,21 @@ switch ($website) {
 		$backendUrl = 'https://pimflow.thehorecastore.co';
 		break;
 
-	case 'TEST':
-		$url = 'https://test.d2gutus2i9fewc.amplifyapp.com';
+	case 'US':
+		$url = 'https://www.thehorecastore.com';
+		$backendUrl = 'https://pim.thehorecastore.co';
+		break;
+
+	case 'UAE_T':
+		$url = 'https://www.uae.thehorecastore.co';
 		$backendUrl = 'https://testpim.thehorecastore.co';
 		break;
 
-	case 'US':
+	case 'US_T':
+		$url = 'https://development.d28qosi1cuigvb.amplifyapp.com';
+		$backendUrl = 'https://developmentcalifornia.thehorecastore.co';
+		break;
+
 	default:
 		$url = 'https://www.thehorecastore.com';
 		$backendUrl = 'https://pim.thehorecastore.co';

@@ -380,7 +380,7 @@ class ImportProductJob implements ShouldQueue
 					$product->description = $jsonDescription;
 					$product->benefits_features = $jsonBenefitsFeatures;
 					Product::$observerUserId = $this->userId;
-					$product->currency_id = env('APP_WEBSITE') == 'UAE' ? 2 : 1;
+					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
 					$product->save();
 					Product::$observerUserId = null;
 
@@ -425,7 +425,7 @@ class ImportProductJob implements ShouldQueue
 					$product->video_path = $uploadVideo;
 					// $product->stock_status = $stockStatus;
 					// $product->frequently_bought_together = $frequentlyBoughtTogether;
-					$product->currency_id = env('APP_WEBSITE') == 'UAE' ? 2 : 1;
+					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
 					$product->barcode = !empty($barcode) ? $barcode : null;
 					$product->google_shopping_category = !empty($googleShoppingCategory) ? $googleShoppingCategory : null;
 					$product->google_shopping_mpn = !empty($googleShoppingMpn) ? $googleShoppingMpn : null;

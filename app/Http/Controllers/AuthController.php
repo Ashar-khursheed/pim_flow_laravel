@@ -196,11 +196,7 @@ class AuthController extends BaseController
 			]);
 		}
 
-		$batch = Bus::batch([])->before(function (Batch $batch) {
-		})->catch(function (Batch $batch, Throwable $e) {
-		})->finally(function (Batch $batch) {
-		})->name('Reset Password Mail')->dispatch();
-
+		$batch = Bus::batch([])->name('Reset Password Mail from auth controller')->dispatch();
 		$batch->options['queue'] = config('app.website') . '_RST_PWD';
 		$batch->add(new ResetPasswordMailJob([
 			'recordId' => $user->id,
@@ -309,11 +305,6 @@ class AuthController extends BaseController
 				], 404);
 			}
 
-			/* Log first and last customer IDs for debugging */
-			Log::channel('testLog')->info("common password first customer id: " . $customers->first()->id);
-			Log::channel('testLog')->info("common password last customer id: " . $customers->last()->id);
-			Log::channel('testLog')->info("Total customers found: " . $customers->count());
-
 			/* Create jobs array first to avoid multiple batch creation */
 			$jobs = [];
 			foreach ($customers as $customer) {
@@ -327,9 +318,6 @@ class AuthController extends BaseController
 			->name('Common Password Mail')
 			->onQueue(config('app.website') . '_COMM_PWD')
 			->dispatch();
-
-			/* Log batch creation for debugging */
-			logger("Batch created with ID: " . $batch->id . " and " . count($jobs) . " jobs");
 
 			return response()->json([
 				'success' => true,

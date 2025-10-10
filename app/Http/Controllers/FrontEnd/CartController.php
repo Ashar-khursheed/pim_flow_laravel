@@ -330,160 +330,7 @@ class CartController extends Controller
      * )
      */
 
-    // public function viewCart(Request $request)
-    // {
-    //     $userId = auth()->id();
-    //     $isUserLoggedIn = $userId !== null;
-
-    //     if (!$isUserLoggedIn) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'User not authenticated',
-    //         ], 401);
-    //     }
-
-    //     Log::info('User logged in:', ['user_id' => $userId]);
-
-    //     // Generate cart ID
-    //     $cartId = $this->generateSimpleCartId($userId);
-
-    //     // Get wishlist product IDs
-    //     $wishlistProductIds = DB::table('ec_wish_lists')
-    //         ->where('customer_id', $userId)
-    //         ->pluck('product_id')
-    //         ->map(fn($id) => (int) $id)
-    //         ->toArray();
-
-    //     // Get customer cart
-    //     $customerCart = CustomerCart::where('customer_id', $userId)->first();
-
-    //     if (!$customerCart) {
-    //         return response()->json([
-    //             'success' => true,
-    //             'data' => [],
-    //             'cart_id' => $cartId,
-    //             'checkout_url' => url("/Checkout/{$cartId}")
-    //         ]);
-    //     }
-
-    //     // Fetch cart items with product details
-    //     $cartItems = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
-    //         ->with([
-    //             'product.currency',
-    //             'product.productSuppliers',
-    //             'product.seoUrl',
-    //             'product.sellingUnitAttribute',
-    //             'product.accessories.items'
-    //         ])
-    //         ->get();
-
-    //     // Fetch applicable discounts for the user
-    //     $userDiscountIds = DB::table('ec_discount_customers')
-    //         ->where('customer_id', $userId)
-    //         ->pluck('discount_id')
-    //         ->toArray();
-
-    //     // Fetch applicable product discounts
-    //     $productDiscounts = DB::table('ec_discount_products')
-    //         ->whereIn('product_id', $cartItems->pluck('product.id'))
-    //         ->select('product_id', 'discount_id')
-    //         ->get()
-    //         ->groupBy('product_id')
-    //         ->map(fn($discounts) => $discounts->pluck('discount_id')->toArray());
-
-    //     // Get all discounts
-    //     $discounts = DB::table('ec_discounts')
-    //         ->whereIn('id', array_merge($userDiscountIds, $productDiscounts->flatten()->toArray()))
-    //         ->get()
-    //         ->keyBy('id');
-
-    //     // Transform cart items to match old structure
-    //     $transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $productDiscounts, $discounts) {
-    //         $product = $cartProduct->product;
-
-    //         // Create cart item object that matches old structure
-    //         $cartItem = (object) [
-    //             'id' => $cartProduct->id,
-    //             'user_id' => $cartProduct->customerCart->customer_id,
-    //             'product_id' => $cartProduct->product_id,
-    //             'quantity' => $cartProduct->quantity,
-    //             'product' => $product
-    //         ];
-
-    //         // Process product data
-    //         $product->in_wishlist = in_array($product->id, $wishlistProductIds);
-    //         $product->images = collect(json_decode($product->images, true) ?? []);
-    //         $product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
-    //         $product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
-
-    //         $discountIds = $productDiscounts[$product->id] ?? [];
-    //         $product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
-    //         $product->url = $product->seoUrl->url ?? null;
-
-    //         // Replace currency object with symbol
-    //         $symbol = optional($product->currency)->symbol;
-    //         $product->unsetRelation('currency');
-    //         $product->currency = $symbol;
-
-    //         // Get supplier data for this specific cart item
-    //         $supplier = $cartProduct->vendorProductSupplier;
-
-    //         if ($supplier) {
-    //             $product->vendor_sku = $supplier->vendor_sku ?? null;
-    //             $product->price = (float) $supplier->price;
-    //             $product->sale_price = (float) $supplier->sale_price;
-    //             $product->original_price = (float) $supplier->price;
-    //             $product->front_sale_price = (float) $cartProduct->unit_price;
-    //             $product->best_price = (float) $cartProduct->unit_price;
-    //             $product->vendor_id = $cartProduct->vendor_id;
-    //             $product->map = (float) $supplier->map;
-    //             $product->inventory = $supplier->inventory;
-    //             $product->in_stock = $supplier->in_stock;
-    //             $product->delivery_days = $supplier->delivery_days;
-    //             $product->return_policy = $supplier->return_policy;
-    //             $product->free_shipping = $supplier->free_shipping;
-    //             $product->warranty_information = $supplier->warranty_information;
-    //         } else {
-    //             // Default fallback values
-    //             $product->vendor_sku = null;
-    //             $product->price = (float) $cartProduct->unit_price;
-    //             $product->sale_price = (float) $cartProduct->unit_price;
-    //             $product->original_price = (float) $cartProduct->unit_price;
-    //             $product->front_sale_price = (float) $cartProduct->unit_price;
-    //             $product->best_price = (float) $cartProduct->unit_price;
-    //             $product->vendor_id = $cartProduct->vendor_id;
-    //             $product->map = null;
-    //             $product->inventory = null;
-    //             $product->in_stock = null;
-    //             $product->delivery_days = null;
-    //             $product->return_policy = null;
-    //             $product->free_shipping = null;
-    //             $product->warranty_information = null;
-    //         }
-
-    //         // Add selling unit
-    //         $sellingUnit = null;
-    //         if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-    //             $fullValue = $product->sellingUnitAttribute->attribute_value;
-    //             if (strpos($fullValue, '/') !== false) {
-    //                 $parts = explode('/', $fullValue);
-    //                 $sellingUnit = trim($parts[1]);
-    //             } else {
-    //                 $sellingUnit = $fullValue;
-    //             }
-    //         }
-    //         $product->selling_unit = $sellingUnit;
-
-    //         return $cartItem;
-    //     });
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => $transformedItems,
-    //         'cart_id' => $cartId,
-    //         'checkout_url' => url("/Checkout/{$cartId}")
-    //     ]);
-    // }
+  
     public function viewCart(Request $request)
     {
         $userId = auth()->id();
@@ -776,6 +623,125 @@ class CartController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+       /**
+     * @OA\Post(
+     *     path="/api/frontend/cart/product/{productId}",
+     *     tags={"Frontend-Cart"},
+     *     summary="Remove specific product (with optional accessories) from cart",
+     *     description="Removes a specific product from the user's shopping cart. If 'accessories_options' are provided, only the item with matching accessories will be removed. If not provided, only the product with no accessories will be removed.",
+     *     security={{"bearerAuth": {}}},
+     *
+     *     @OA\Parameter(
+     *         name="productId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the product to remove from the cart",
+     *         @OA\Schema(type="integer", example=123)
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=false,
+     *         description="Optional array of accessories to match a specific cart item variant",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="accessories_options",
+     *                 type="array",
+     *                 example={106,107},
+     *                 @OA\Items(type="integer")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product removed successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Product removed successfully")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Product not found in cart"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized - Bearer token missing or invalid"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error while removing product from cart"
+     *     )
+     * )
+     */
+    public function clearProductFromCarts(Request $request, $productId)
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized user',
+                ], 401);
+            }
+
+            $userId = Auth::id();
+            $customerCart = CustomerCart::where('customer_id', $userId)->first();
+
+            if (!$customerCart) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cart not found'
+                ], 404);
+            }
+
+            $accessories = $request->input('accessories_options', []);
+
+            $query = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+                ->where('product_id', $productId);
+
+            if (!empty($accessories)) {
+                // Delete product only if it has matching accessories
+                $query->whereJsonContains('accessories_options', $accessories);
+            } else {
+                // Delete only items with no accessories
+                $query->where(function ($q) {
+                    $q->whereNull('accessories_options')
+                    ->orWhere('accessories_options', '[]')
+                    ->orWhere('accessories_options', '');
+                });
+            }
+
+            $deleted = $query->delete();
+
+            if ($deleted > 0) {
+                $this->updateCartTotals($customerCart);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product removed successfully'
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found in cart'
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error while removing product from cart',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 
     /**
      * @OA\Post(

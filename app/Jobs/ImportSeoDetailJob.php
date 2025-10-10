@@ -105,13 +105,13 @@ class ImportSeoDetailJob implements ShouldQueue
 				$rowError[] = 'Primary Monthly Search Volume is missing.';
 			}
 
-			if (empty($secondary_keyword)) {
-				$rowError[] = 'Secondary Keyword is missing.';
-			}
+			// if (empty($secondary_keyword)) {
+			// 	$rowError[] = 'Secondary Keyword is missing.';
+			// }
 
-			if (empty($secondary_monthly_search_volume)) {
-				$rowError[] = 'Secondary Monthly Search Volume is missing.';
-			}
+			// if (empty($secondary_monthly_search_volume)) {
+			// 	$rowError[] = 'Secondary Monthly Search Volume is missing.';
+			// }
 
 			/* URL Validation and Processing */
 			if (!empty($url)) {
@@ -275,10 +275,10 @@ class ImportSeoDetailJob implements ShouldQueue
 				'schema_reviews_count' => $schema_reviews_count
 			];
 
-			$groupedPrimary[$primaryKey]['secondary'][] = [
-				'secondary_keyword' => $secondary_keyword,
-				'monthly_search_volume' => $secondary_monthly_search_volume,
-			];
+			// $groupedPrimary[$primaryKey]['secondary'][] = [
+			// 	'secondary_keyword' => $secondary_keyword,
+			// 	'monthly_search_volume' => $secondary_monthly_search_volume,
+			// ];
 
 			$success++;
 		}
@@ -326,15 +326,15 @@ class ImportSeoDetailJob implements ShouldQueue
 					);
 
 					// Process secondary keywords
-					foreach ($group['secondary'] as $secondary) {
-						SeoSecondaryKeyword::updateOrCreate(
-							[
-								'primary_keyword_id' => $seo->id,
-								'secondary_keyword' => $secondary['secondary_keyword'],
-							],
-							['monthly_search_volume' => $secondary['monthly_search_volume']]
-						);
-					}
+					// foreach ($group['secondary'] as $secondary) {
+					// 	SeoSecondaryKeyword::updateOrCreate(
+					// 		[
+					// 			'primary_keyword_id' => $seo->id,
+					// 			// 'secondary_keyword' => $secondary['secondary_keyword'],
+					// 		],
+					// 		['monthly_search_volume' => $secondary['monthly_search_volume']]
+					// 	);
+					// }
 				}
 			}
 

@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class AttributeValueTranslation extends Model
 {
-    public $timestamps = false;
-    protected $fillable = ['title'];
+	public $timestamps = false;
+	protected $fillable = [
+		'locale',
+		'attribute_value_id',
+		'title',
+	];
+
 }

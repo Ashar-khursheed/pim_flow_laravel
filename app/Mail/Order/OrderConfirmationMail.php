@@ -28,16 +28,16 @@ class OrderConfirmationMail extends Mailable
 		$order = $this->order;
 
 		$backendURL = config('app.backend_url');
-		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$logoUrl = $backendURL . '/logo.png';
 		$name = $order->customer->name ?? 'User';
 		$orderNumber = $order->order_number;
 
 		$rightPngURL = $backendURL. '/right.png';
 
 		$orderUrl = url("/view-order/{$order->id}");
-		$siteName = config('app.website') == 'UAE' ? 'UAE':'USA';
-		$siteTollFreeContact = config('app.website') == 'UAE' ? '800 - HORECA (467-322)':'1-866-4-HORECA (1-866-446-7322)';
-		$siteInternationalContact = config('app.website') == 'UAE' ? '+971 4 224 5818':'';
+		$siteName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'UAE':'USA';
+		$siteTollFreeContact = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '800 - HORECA (467-322)':'1-866-4-HORECA (1-866-446-7322)';
+		$siteInternationalContact = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '+971 4 224 5818':'';
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -49,7 +49,8 @@ class OrderConfirmationMail extends Mailable
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'orders@thehorecastore.com',
 			'UAE'  => 'orders@horecastore.ae',
-			'TEST' => 'test@thehorecastore.co',
+			'US_T' => 'test_us@thehorecastore.co',
+			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
 		};
 

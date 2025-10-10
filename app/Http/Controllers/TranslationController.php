@@ -7,6 +7,7 @@ use App\Models\Language;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\ProductAttribute;
+use App\Models\Product;
 
 use App\Repository\ExcelRepository;
 
@@ -23,7 +24,7 @@ class TranslationController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             @OA\Property(property="type", type="string", enum={"attribute", "attribute_value", "product_attribute"}, example="attribute"),
+	 *             @OA\Property(property="type", type="string", enum={"attribute", "attribute_value", "product_attribute", "product"}, example="attribute"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 5000 more)")
 	 *         )
@@ -35,26 +36,48 @@ class TranslationController extends BaseController
 	public function export(Request $request, ExcelRepository $excelRepo)
 	{
 		/* Validate the request data */
+		$maxRange = ($request->type === 'product') ? $request->range_from + 1000 : $request->range_from + 2000;
+
 		$request->validate([
-			'type' => 'required|string|in:attribute,attribute_value,product_attribute',
+			'type' => 'required|string|in:attribute,attribute_value,product_attribute,product',
 			'range_from' => 'required|integer|min:1',
-			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 5000),
+			'range_to' => "required|integer|gte:range_from|max:$maxRange",
 		]);
 
 		/* Get available language codes */
 		$langCodeArray = Language::pluck('code')->toArray();
 
 		/* Prepare header row */
-		$localizedTitleHeaders = array_map(function ($code) {
-			return strtoupper($code) . '_Title';
-		}, $langCodeArray);
+		$localizedTitleHeaders = [];
+		if ($request->type === 'product') {
+			$localizedTitleHeaders = collect($langCodeArray)->flatMap(function ($code) {
+				$prefix = strtoupper($code);
+				return [
+					"{$prefix}_Name",
+					"{$prefix}_Description",
+					"{$prefix}_BenefitsFeatures",
+					"{$prefix}_Images",
+				];
+			})->toArray();
+		} else {
+			$localizedTitleHeaders = array_map(function ($code) {
+				return strtoupper($code) . '_Title';
+			}, $langCodeArray);
+		}
 
-		$excelHeaders = array_merge(['ID', 'Name'], $localizedTitleHeaders);
+		if ($request->type === 'product') {
+			$baseArray = ['ID', 'Name', 'Description', 'Benefits Features', 'Images'];
+		} else {
+			$baseArray = ['ID', 'Name'];
+		}
+
+		$excelHeaders = array_merge($baseArray, $localizedTitleHeaders);
 
 		$model = match ($request->type) {
 			'attribute' => Attribute::class,
 			'attribute_value' => AttributeValue::class,
 			'product_attribute' => ProductAttribute::class,
+			'product' => Product::class,
 		};
 
 		/* Fetch and format records */
@@ -65,35 +88,36 @@ class TranslationController extends BaseController
 		->limit($request->range_to - $request->range_from + 1)
 		->orderBy('id', 'asc')
 		->get();
-		if ($request->type == 'attribute') {
-			$records = $records
-			->map(function ($table) use ($langCodeArray) {
-				$translations = $table->translations->keyBy('locale');
+
+		$records = $records->map(function ($table) use ($langCodeArray, $request) {
+			$translations = $table->translations->keyBy('locale');
+
+			if ($request->type === 'attribute') {
 				$row = [
 					$table->id,
 					$table->name,
 				];
-
-				foreach ($langCodeArray as $code) {
-					$row[] = $translations[$code]->title ?? '';
-				}
-				return $row;
-			});
-		} elseif (in_array($request->type, ['attribute_value', 'product_attribute'])) {
-			$records = $records
-			->map(function ($table) use ($langCodeArray) {
-				$translations = $table->translations->keyBy('locale');
+			} elseif (in_array($request->type, ['attribute_value', 'product_attribute'])) {
 				$row = [
 					$table->id,
 					$table->attribute_value,
 				];
+			} elseif ($request->type === 'product') {
+				$row = [
+					$table->id,
+					$table->name,
+					$table->description,
+					$table->benefits_features,
+					$table->images,
+				];
+			}
 
-				foreach ($langCodeArray as $code) {
-					$row[] = $translations[$code]->title ?? '';
-				}
-				return $row;
-			});
-		}
+			foreach ($langCodeArray as $code) {
+				$row[] = optional($translations->get($code))->title ?? '';
+			}
+
+			return $row;
+		});
 
 		/* Prepare spreadsheet */
 		$spreadsheet = $excelRepo->newSpreadsheet();
@@ -127,7 +151,7 @@ class TranslationController extends BaseController
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"upload_file"},
-	 *                 @OA\Property(property="type", type="string", enum={"attribute", "attribute_value", "product_attribute"}, example="attribute"),
+	 *                 @OA\Property(property="type", type="string", enum={"attribute", "attribute_value", "product_attribute", "product"}, example="attribute"),
 	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB")
 	 *             )
 	 *         )
@@ -140,28 +164,45 @@ class TranslationController extends BaseController
 	{
 		/* Validate request data */
 		$request->validate([
-			'type' => 'required|string|in:attribute,attribute_value,product_attribute',
+			'type' => 'required|string|in:attribute,attribute_value,product_attribute,product',
 			'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
 		]);
 
 		try {
 			$langCodeArray = Language::pluck('code')->toArray();
 
-			$keywordFileFormatArray = [
-				'ID'   => 'id',
-				'Name' => 'name',
-			];
+			if ($request->type === 'product') {
+				$keywordFileFormatArray = [
+					'ID'   => 'id',
+					'Name' => 'name',
+					'Description' => 'description',
+					'Benefits Features' => 'benefits_features',
+					'Images' => 'images',
+				];
+			} else {
+				$keywordFileFormatArray = [
+					'ID'   => 'id',
+					'Name' => 'name',
+				];
+			}
 
-			/* Append language-specific title mappings */
 			foreach ($langCodeArray as $code) {
 				$upperCode = strtoupper($code);
-				$keywordFileFormatArray["{$upperCode}_Title"] = "{$code}_title";
+				if ($request->type === 'product') {
+					$keywordFileFormatArray["{$upperCode}_Name"]             = "{$code}_name";
+					$keywordFileFormatArray["{$upperCode}_Description"]      = "{$code}_description";
+					$keywordFileFormatArray["{$upperCode}_BenefitsFeatures"] = "{$code}_benefits_features";
+					$keywordFileFormatArray["{$upperCode}_Images"]           = "{$code}_images";
+				} else {
+					$keywordFileFormatArray["{$upperCode}_Title"] = "{$code}_title";
+				}
 			}
 
 			$module = match ($request->type) {
 				'attribute' => 'Attribute Translation',
 				'attribute_value' => 'Attribute Value Translation',
 				'product_attribute' => 'Product Attribute Translation',
+				'product' => 'Product Translation',
 			};
 
 			$excelImporter->processExcelImport(
@@ -226,5 +267,35 @@ class TranslationController extends BaseController
 	public function destroy(AppKeyword $appKeyword)
 	{
 		//
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/translations/generate-translate",
+	 *     summary="Generate translation from ID",
+	 *     tags={"Translations"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="translate_to", type="string", example="ar"),
+	 *             @OA\Property(property="product_id", type="integer", example=2001)
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function generateTranslate(Request $request)
+	{
+		$request->validate([
+			'translate_to' => 'required|string|in:ar,en',
+			'product_id' => 'required|integer|exists:ec_products,id',
+		]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Record translated successfully.',
+			'data' => $record,
+		]);
 	}
 }

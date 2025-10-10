@@ -143,7 +143,7 @@ class CustomerCartController extends Controller
 			$taxAmount = round(($cartAmount * $taxPercentage) / 100, 2);
 
 			/* Website-specific shipping rules */
-			if (config('app.website') == 'UAE') {
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
@@ -237,7 +237,7 @@ class CustomerCartController extends Controller
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => (config('app.website') == 'UAE' || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
 
@@ -252,7 +252,7 @@ class CustomerCartController extends Controller
 
 			$taxAmount = round($cartAmount * ($request->tax_percentage / 100), 2);
 
-			if (config('app.website') == 'UAE') {
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
@@ -272,7 +272,7 @@ class CustomerCartController extends Controller
 					$referenceNumber = (int) $latestCart->reference_number + 1;
 				} else {
 					$website = config('app.website');
-					$referenceNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+					$referenceNumber = in_array(config('app.website'), ['US', 'US_T']) ? 10001 : (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101);
 				}
 
 				$customerCart->reference_number = $referenceNumber;

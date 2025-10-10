@@ -32,7 +32,7 @@ class CartCreationMail extends Mailable
 		$customerCart = $this->customerCart;
 
 		$backendURL = config('app.backend_url');
-		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$logoUrl = $backendURL . '/logo.png';
 		$name = $customerCart->customer->name ?? 'User';
 		$username = $customerCart->customer->email;
 		$isNewCustomer = $this->isNewCustomer;
@@ -41,7 +41,7 @@ class CartCreationMail extends Mailable
 
 		$referenceNumber = $customerCart->reference_number;
 		$createdAt = Carbon::parse($customerCart->created_at)->format('D, M d, Y');
-		$currency = config('app.website') == 'UAE' ? 'AED' : '$';
+		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 
 		$customerAddress = $customerCart->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -103,7 +103,7 @@ class CartCreationMail extends Mailable
 
 		$subTotal = $customerCart->amount ?? 0;
 		$shippingCharge = $customerCart->shipping_charge ?? 0;
-		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
 		$taxPercent = $customerCart->tax_percentage;
 		$taxAmount = $customerCart->tax_amount ?? 0;
 		$total = $customerCart->total_amount ?? 0;
@@ -118,7 +118,8 @@ class CartCreationMail extends Mailable
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'sales@thehorecastore.com',
 			'UAE'  => 'hello@horecastore.ae',
-			'TEST' => 'test@thehorecastore.co',
+			'US_T' => 'test_us@thehorecastore.co',
+			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
 		};
 
