@@ -644,7 +644,7 @@ class ProductController extends BaseController
 		];
 
 		$userRole = auth()->user() ? auth()->user()->getRoleNames()->first() : null;
-		$isContentEnabled = $userRole && in_array($userRole, $allowedRoles);
+		$isContentEnabled = $userRole && in_array($userRole, $contentAllowedRoles);
 
 		return response()->json([
 			'success' => true,
