@@ -17907,58 +17907,6 @@
                 }
             }
         },
-        "/api/frontend/inquiries/{id}": {
-            "get": {
-                "tags": [
-                    "FrontEnd Inquiries"
-                ],
-                "summary": "Get single inquiry",
-                "operationId": "4686b5f7aeb4ee602766021e1bb6389a",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Inquiry found"
-                    },
-                    "404": {
-                        "description": "Not found"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "FrontEnd Inquiries"
-                ],
-                "summary": "Delete an inquiry",
-                "operationId": "99fd4eeb8abf44bc57de1f7dbca03dc7",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Deleted"
-                    },
-                    "404": {
-                        "description": "Not found"
-                    }
-                }
-            }
-        },
         "/api/frontend/invoices": {
             "get": {
                 "tags": [
