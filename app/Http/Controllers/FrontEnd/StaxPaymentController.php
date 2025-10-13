@@ -586,6 +586,8 @@ class StaxPaymentController extends Controller
     public function createStaxPaymentLink($order)
     {
         $baseUrl = config('services.stax.base_url', 'https://apiprod.fattlabs.com');
+        $url = config('app.url');
+        $backendUrl = config('app.backend_url');
         $apiKey = config('services.stax.api_key');
         $publickey = config('services.stax.public_key');
 
@@ -617,15 +619,15 @@ class StaxPaymentController extends Controller
                     'common_name' => trim($firstname . ' ' . $lastname),
                 ],
                 'link_meta' => [
-                    'successRedirect' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
-                    'redirect_failure' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
+                    'successRedirect' => $url.'/thanks',
+                    'redirect_failure' => $url.'/failed',
                     'send_email' => $customer->email,
                     'total' => (float) $order->total_amount,
                     'email' => $customer->email,
                     'memo' => $customerAddress->city
                     
                 ],
-                'redirect_url' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
+                'redirect_url' => $url.'/thanks',
 
                 'send_email' => $customer->email,
                 'send_now' => true,

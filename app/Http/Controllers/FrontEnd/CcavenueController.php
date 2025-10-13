@@ -364,22 +364,14 @@ class CcavenueController extends Controller
     public function createCCavenuePaymentLink($order)
     {
         $url = config('app.url');
+        $backendUrl = config('app.backend_url');         
         $customerAddress = CustomerAddress::find($order->customer_address_id);
         $customer = Customer::find($order->customer_id);
         $orderList = array();
         $orderList['order_id'] = $order->id;
-        $orderList['redirect_url'] = 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks';
-        $orderList['cancel_url'] = 'https://development.d28qosi1cuigvb.amplifyapp.com/failed';
-        // $orderList['redirect_url'] = $url.'/thanks';
-        // $orderList['cancel_url'] = $url.'/failed';
-
-      
-        // $orderList['webhook_url'] = url('/api/ccavenue/webhook');
-         $orderList['notify_url'] = url('/api/payment/ccavenue/notify');
-
-      
-        // $orderList['cancel_url'] = url('api/ccavenue/failed');
-        
+        $orderList['redirect_url'] = $url.'/thanks';
+        $orderList['cancel_url'] = $url.'/failed';        
+        $orderList['notify_url'] = $backendUrl.'/api/payment/ccavenue/notify';       
         $orderList['currency'] = "AED";
         $orderList['amount'] = $order->total_amount;
         $orderList['language'] = "EN";
