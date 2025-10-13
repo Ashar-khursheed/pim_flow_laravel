@@ -218,7 +218,7 @@ class StripeController extends Controller
             'order_id' => 'required',
 
         ]);
-
+        $url = config('app.url');
         $totalAmount = ($request->amount) * 100;
         $itemName = $request->itemName;
         $currency = $request->currency;
@@ -230,8 +230,9 @@ class StripeController extends Controller
                 'message' => 'Invalid order_id, not found in records'
             ], 404);
         }
-        $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = url('/api/stripe/failed');
+
+        $success_url = $url.'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancel_url = $url.'/failed';
         $stripeSecret = config('services.stripe.secret');
 
         $res = Http::withOptions(['verify' => false])
@@ -265,8 +266,8 @@ class StripeController extends Controller
                 'payment_url' => $body['url'],
             ],
             'checkout_options' => [
-                'success_url' => url('/api/stripe/thanks?order_id=' . $order_id),
-                'failed_url' => url('/api/stripe/failed?order_id=' . $order_id)
+                'success_url' => $url.'/thanks?session_id={CHECKOUT_SESSION_ID}' ,
+                'failed_url' => $url.'/failed?session_id={CHECKOUT_SESSION_ID}'
             ]
         ];
         // You now have a permanent payment link
@@ -293,7 +294,7 @@ class StripeController extends Controller
         $stripeSecret = config('services.stripe.secret');
         $currency = "AED";        
         $success_url = $url.'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = $url.'/failed';        
+        $cancel_url = $url.'/failed'.'?session_id={CHECKOUT_SESSION_ID}';        
         $res = Http::withOptions(['verify' => false])
             ->withToken($stripeSecret)
             ->asForm()
