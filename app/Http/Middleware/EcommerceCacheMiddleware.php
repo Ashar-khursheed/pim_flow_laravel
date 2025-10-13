@@ -1,175 +1,114 @@
 <?php
 
-
 namespace App\Http\Middleware;
-
 
 use Closure;
 use Illuminate\Http\Request;
-
 
 class EcommerceCacheMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
-        
+
         $path = $request->getPathInfo();
         $method = $request->getMethod();
-        
-        // Force remove Laravel's default cache headerss
+
+        // Remove Laravel's default cache headers
         $response->headers->remove('Cache-Control');
         $response->headers->remove('Pragma');
         $response->headers->remove('Expires');
-        
-        // Only apply caching to GET requests
+
+        // Only cache GET / HEAD
         if (!in_array($method, ['GET', 'HEAD'])) {
-            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate');
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-NonGET');
-            return $response;
+            return $this->noCache($response, 'EcommerceCacheMiddleware-NonGET');
         }
-        
-        // Admin API Routes - Never cache (sensitive data)
-        // Exception: Allow caching for public product endpoints
+
+        // Admin / backend routes - never cache
         if (str_starts_with($path, '/api/') &&
             !str_starts_with($path, '/api/frontend/') &&
             !str_starts_with($path, '/api/category-random-products')) {
-            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate');
-            $response->headers->set('Pragma', 'no-cache');
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-Admin');
-            return $response;
+            return $this->noCache($response, 'EcommerceCacheMiddleware-Admin');
         }
-        
-        // Authentication routes - Never cache
+
+        // Auth routes - never cache
         if (str_contains($path, '/login') ||
             str_contains($path, '/logout') ||
             str_contains($path, '/register') ||
             str_contains($path, '/auth/')) {
-            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate');
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-Auth');
-            return $response;
+            return $this->noCache($response, 'EcommerceCacheMiddleware-Auth');
         }
-        
-        // User-specific routes - Never cache
-        if (str_contains($path, '/cart') ||
-            str_contains($path, '/wishlist') ||
-            str_contains($path, '/orders') ||
-            str_contains($path, '/customer') ||
-            str_contains($path, '/profile') ||
-            str_contains($path, '/save-for-later') ||
-            str_contains($path, '/recent-products') ||
-            str_contains($path, '/invoices') ||
-            str_contains($path, '/support-tickets') ||
-            str_contains($path, '/quotes')) {
-            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate');
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-UserSpecific');
-            return $response;
+
+        // User-specific routes - never cache
+        if (preg_match('#/(cart|wishlist|orders|customer|profile|save-for-later|recent-products|invoices|support-tickets|quotes)#', $path)) {
+            return $this->noCache($response, 'EcommerceCacheMiddleware-UserSpecific');
         }
-        
-        // Dynamic/Real-time data - Never cache
-        if (str_contains($path, '/search') ||
-            str_contains($path, '/analytics') ||
-            str_contains($path, '/dashboard') ||
-            str_contains($path, '/payment') ||
-            str_contains($path, '/frontend/location') ||
-            str_contains($path, '/tracking')) {
-            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate');
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-Dynamic');
-            return $response;
+
+        // Dynamic / real-time - never cache
+        if (preg_match('#/(search|analytics|dashboard|payment|frontend/location|tracking)#', $path)) {
+            return $this->noCache($response, 'EcommerceCacheMiddleware-Dynamic');
         }
-        
-        // Static content - Long term caching (1 year)
-        if (str_contains($path, '/media/') ||
-            str_ends_with($path, '.xml') ||
-            str_ends_with($path, '.txt') ||
-            str_contains($path, '/sitemap') ||
-            str_ends_with($path, '.css') ||
-            str_ends_with($path, '.js') ||
-            str_ends_with($path, '.png') ||
-            str_ends_with($path, '.jpg') ||
-            str_ends_with($path, '.gif') ||
-            str_ends_with($path, '.ico') ||
-            str_ends_with($path, '.pdf')) {
-            $response->headers->set('Cache-Control', 'public, max-age=31536000'); // 1 year
-            $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-Static');
-            $this->addCorsHeaders($response);
-            return $response;
+
+        // Static assets - 1 year
+        if (preg_match('#\.(xml|txt|css|js|png|jpg|jpeg|gif|ico|pdf)$#i', $path) || str_contains($path, '/media/') || str_contains($path, '/sitemap')) {
+            return $this->cache($response, 31536000, 'EcommerceCacheMiddleware-Static');
         }
-        
-        // Semi-static content - Medium term caching (4 hours)
-        if (str_contains($path, '/frontend/all-categories') ||
-            str_contains($path, '/frontend/categories') ||
-            str_contains($path, '/frontend/category-with-slug') ||
-            str_contains($path, '/frontend/categories-with-children') ||
-            str_contains($path, '/frontend/home-categories') ||
-            str_contains($path, '/frontend/brands') ||
-            str_contains($path, '/frontend/sliders') ||
-            str_contains($path, '/frontend/faqs') ||
-            str_contains($path, '/frontend/blog-categories') ||
-            str_contains($path, '/frontend/menu-banners') ||
-            str_contains($path, '/frontend/countries') ||
-            str_contains($path, '/frontend/brands/alphabetical') ||
-            str_contains($path, '/frontend/seo/paragraphs') ||
-            str_contains($path, '/frontend/seo-management')) {
-            $response->headers->set('Cache-Control', 'public, max-age=14400'); // 4 hours
-            $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + 14400) . ' GMT');
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-SemiStatic');
-            $this->addCorsHeaders($response);
-            return $response;
+
+        // Semi-static (SEO, sliders, brands, etc.) - 4 hours
+        if (preg_match('#/frontend/(all-categories|categories|category-with-slug|categories-with-children|home-categories|brands|sliders|faqs|blog-categories|menu-banners|countries|brands/alphabetical|seo/paragraphs|seo-management)#', $path)) {
+            return $this->cache($response, 14400, 'EcommerceCacheMiddleware-SemiStatic');
         }
-        
-        // Product listings - Short term caching (30 minutes)
-        if (str_contains($path, '/frontend/products') ||
-            str_contains($path, '/frontend/brandproducts') ||
-	    str_contains($path, '/frontend/brandguestproducts') ||
-            str_contains($path, '/frontend/categoryproducts') ||
-            str_contains($path, '/frontend/categoryguestproducts') ||
-            str_contains($path, '/frontend/products-guest') ||
-            str_contains($path, '/category-random-products') ||
-            str_contains($path, '/product-info/')) {
-            $response->headers->set('Cache-Control', 'public, max-age=1800'); // 30 minutes
-            $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + 1800) . ' GMT');
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-Products');
-            $this->addCorsHeaders($response);
-            return $response;
+
+        // Product listings - 30 minutes
+        if (preg_match('#/frontend/(products|brandproducts|brandguestproducts|categoryproducts|categoryguestproducts|products-guest)|/category-random-products|/product-info/#', $path)) {
+            return $this->cache($response, 1800, 'EcommerceCacheMiddleware-Products');
         }
-        
-        // Blog content - Medium term caching (2 hours)
+
+        // Blogs - 2 hours
         if (str_contains($path, '/frontend/blogs')) {
-            $response->headers->set('Cache-Control', 'public, max-age=7200'); // 2 hours
-            $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + 7200) . ' GMT');
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-Blogs');
-            $this->addCorsHeaders($response);
-            return $response;
+            return $this->cache($response, 7200, 'EcommerceCacheMiddleware-Blogs');
         }
-        
-        // Health check - Very short caching (5 minutes)
+
+        // Health check - 5 minutes
         if (str_contains($path, '/health')) {
-            $response->headers->set('Cache-Control', 'public, max-age=300'); // 5 minutes
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-Health');
-            $this->addCorsHeaders($response);
-            return $response;
+            return $this->cache($response, 300, 'EcommerceCacheMiddleware-Health');
         }
-        
-        // Default for other frontend routes - Short caching (15 minutes)
+
+        // Default frontend APIs - 15 minutes
         if (str_starts_with($path, '/api/frontend/')) {
-            $response->headers->set('Cache-Control', 'public, max-age=900'); // 15 minutes
-            $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + 900) . ' GMT');
-            $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-Frontend');
-            $this->addCorsHeaders($response);
-            return $response;
+            return $this->cache($response, 900, 'EcommerceCacheMiddleware-Frontend');
         }
-        
-        // Default - Very short caching (5 minutes)
-        $response->headers->set('Cache-Control', 'public, max-age=300'); // 5 minutes
-        $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + 300) . ' GMT');
-        $response->headers->set('X-Cache-Middleware', 'EcommerceCacheMiddleware-Default');
+
+        // Fallback - 5 minutes
+        return $this->cache($response, 300, 'EcommerceCacheMiddleware-Default');
+    }
+
+    /**
+     * Apply a public cache header with s-maxage (for CloudFront)
+     */
+    private function cache($response, $seconds, $tag)
+    {
+        $response->headers->set('Cache-Control', "public, s-maxage={$seconds}, max-age=60");
+        $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + $seconds) . ' GMT');
+        $response->headers->set('Vary', 'Origin');
+        $response->headers->set('X-Cache-Middleware', $tag);
         $this->addCorsHeaders($response);
-        
         return $response;
     }
-    
+
+    /**
+     * Apply no-cache headers for sensitive routes
+     */
+    private function noCache($response, $tag)
+    {
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+        $response->headers->set('X-Cache-Middleware', $tag);
+        $this->addCorsHeaders($response);
+        return $response;
+    }
+
     /**
      * Add CORS headers for CloudFront
      */
