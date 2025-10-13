@@ -256,7 +256,7 @@ class PaymentHistoryController extends Controller
 				'status' => 'required|string|in:Pending,Completed,Failed,Cancelled,Refunded',
 				'payment_date' => 'required|date|before_or_equal:today',
 				'notes' => 'nullable|string|max:1000',
-				'payment_details' => 'nullable|array|max:2000',
+				'payment_details' => 'nullable|json|max:2000',
 				'payment_method' => 'nullable|string|max:255'
 			]);
 
