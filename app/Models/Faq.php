@@ -22,7 +22,7 @@ use Astrotomic\Translatable\Translatable;
  *     @OA\Property(property="updated_at", type="string", format="date-time")
  * )
  */
-class Faq extends Model
+class Product extends Model implements TranslatableContract
 {
     use Translatable;
 
