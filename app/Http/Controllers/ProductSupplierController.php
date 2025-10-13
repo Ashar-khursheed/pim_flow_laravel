@@ -36,7 +36,7 @@ class ProductSupplierController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$searchableColumns = ['id', 'product_name', 'vendor_name', 'vendor_sku'];
+		$searchableColumns = ['id', 'product_name', 'vendor_name', 'vendor_sku','product_sku'];
 		$sortableColumns = array_merge(
 			$searchableColumns,
 			[
@@ -58,6 +58,7 @@ class ProductSupplierController extends BaseController
 		->select(
 			'product_suppliers.*',
 			'ec_products.name as product_name',
+			 'ec_products.sku as product_sku', 
 			'vendors.name as vendor_name'
 		);
 
@@ -72,6 +73,7 @@ class ProductSupplierController extends BaseController
 			$recordsQuery->where(function ($q) use ($search) {
 				$q->orWhere('product_suppliers.id', 'like', "%$search%")
 				->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
+				  ->orWhere('ec_products.sku', 'like', "%$search%") 
 				->orWhere('ec_products.name', 'like', "%$search%")
 				->orWhere('vendors.name', 'like', "%$search%");
 			});
@@ -82,9 +84,13 @@ class ProductSupplierController extends BaseController
 			$recordsQuery->orderBy('ec_products.name', $sortDir);
 		} elseif ($sortBy === 'vendor_name') {
 			$recordsQuery->orderBy('vendors.name', $sortDir);
-		} else {
-			$recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
-		}
+		} 
+		elseif ($sortBy === 'product_sku') {
+        $recordsQuery->orderBy('ec_products.sku', $sortDir);
+		} 
+		else {
+				$recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
+			}
 
 		/* Pagination */
 		$length = (int) $request->input('length', 20);
