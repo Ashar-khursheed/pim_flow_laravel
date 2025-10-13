@@ -131,65 +131,65 @@ class InquiryController extends Controller
 		}
 	}
 
-	/**
-	 * @OA\Get(
-	 *     path="/api/frontend/inquiries/{id}",
-	 *     tags={"FrontEnd Inquiries"},
-	 *     summary="Get single inquiry",
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         required=true,
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Response(response=200, description="Inquiry found"),
-	 *     @OA\Response(response=404, description="Not found")
-	 * )
-	 */
-	public function show($id): JsonResponse
-	{
-		$inquiry = Inquiry::find($id);
+	// /**
+	//  * @OA\Get(
+	//  *     path="/api/frontend/inquiries/{id}",
+	//  *     tags={"FrontEnd Inquiries"},
+	//  *     summary="Get single inquiry",
+	//  *     @OA\Parameter(
+	//  *         name="id",
+	//  *         in="path",
+	//  *         required=true,
+	//  *         @OA\Schema(type="integer")
+	//  *     ),
+	//  *     @OA\Response(response=200, description="Inquiry found"),
+	//  *     @OA\Response(response=404, description="Not found")
+	//  * )
+	//  */
+	// public function show($id): JsonResponse
+	// {
+	// 	$inquiry = Inquiry::find($id);
 
-		if (! $inquiry) {
-			return response()->json(['message' => 'Not found'], 404);
-		}
+	// 	if (! $inquiry) {
+	// 		return response()->json(['message' => 'Not found'], 404);
+	// 	}
 
-		return response()->json($inquiry);
-	}
+	// 	return response()->json($inquiry);
+	// }
 
-	/**
-	 * @OA\Delete(
-	 *     path="/api/frontend/inquiries/{id}",
-	 *     tags={"FrontEnd Inquiries"},
-	 *     summary="Delete an inquiry",
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         required=true,
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Response(response=204, description="Deleted"),
-	 *     @OA\Response(response=404, description="Not found")
-	 * )
-	 */
-	public function destroy($id): JsonResponse
-	{
-		$inquiry = Inquiry::find($id);
+	// /**
+	//  * @OA\Delete(
+	//  *     path="/api/frontend/inquiries/{id}",
+	//  *     tags={"FrontEnd Inquiries"},
+	//  *     summary="Delete an inquiry",
+	//  *     @OA\Parameter(
+	//  *         name="id",
+	//  *         in="path",
+	//  *         required=true,
+	//  *         @OA\Schema(type="integer")
+	//  *     ),
+	//  *     @OA\Response(response=204, description="Deleted"),
+	//  *     @OA\Response(response=404, description="Not found")
+	//  * )
+	//  */
+	// public function destroy($id): JsonResponse
+	// {
+	// 	$inquiry = Inquiry::find($id);
 
-		if (! $inquiry) {
-			return response()->json(['message' => 'Not found'], 404);
-		}
+	// 	if (! $inquiry) {
+	// 		return response()->json(['message' => 'Not found'], 404);
+	// 	}
 
-		// Delete stored files
-		if (is_array($inquiry->files)) {
-			foreach ($inquiry->files as $file) {
-				$relativePath = str_replace(Storage::disk('public')->url(''), '', $file);
-				Storage::disk('public')->delete($relativePath);
-			}
-		}
+	// 	// Delete stored files
+	// 	if (is_array($inquiry->files)) {
+	// 		foreach ($inquiry->files as $file) {
+	// 			$relativePath = str_replace(Storage::disk('public')->url(''), '', $file);
+	// 			Storage::disk('public')->delete($relativePath);
+	// 		}
+	// 	}
 
-		$inquiry->delete();
+	// 	$inquiry->delete();
 
-		return response()->json(null, 204);
-	}
+	// 	return response()->json(null, 204);
+	// }
 }
