@@ -643,7 +643,7 @@ class ProductController extends BaseController
 			'Ecommerce Specialist',
 		];
 
-		$userRole = $user ? $user->getRoleNames()->first() : null;
+		$userRole = auth()->user() ? auth()->user()->getRoleNames()->first() : null;
 		$isContentEnabled = $userRole && in_array($userRole, $allowedRoles);
 
 		return response()->json([
