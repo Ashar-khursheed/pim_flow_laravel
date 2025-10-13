@@ -187,8 +187,8 @@ try:
     final_output = json.dumps(out, ensure_ascii=False)
 
     print(final_output)
-    with open(f"product_{user_input}.json", "w", encoding="utf-8") as f:
-        f.write(final_output)
+    # with open(f"product_{user_input}.json", "w", encoding="utf-8") as f:
+    #     f.write(final_output)
 
 except Exception as e:
     print("Error:", e)
