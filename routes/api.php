@@ -79,6 +79,8 @@ use App\Http\Controllers\PaymentHistoryController;
 use App\Http\Controllers\ProductVariantController;
 use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\TranslationController;
+use App\Http\Controllers\InquiryController;
+
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -285,6 +287,8 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+    Route::apiResource('/inquiries',  InquiryController::class);
+
     Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
     Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
     Route::apiResource('post-purchase-claims', PostPurchaseClaimController::class);
@@ -595,7 +599,7 @@ Route::get('frontend/product-accessories', [FnProductAccessoriesController::clas
 Route::Post('frontend/product-variants', [FndProductVariantController::class, 'index']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
-	
+
     Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
     Route::apiResource('frontend/carts', F_CustomerCartController::class);
 
@@ -895,22 +899,7 @@ Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);
 
 Route::get('/frontend/google-reviews', [F_GoogleReviewController::class, 'getReviews']);
-
-Route::prefix('frontend/inquiries')->group(function () {
-    // 📄 List inquiries with search, sorting, and pagination
-    Route::get('/', [F_InquiryController::class, 'index']);
-
-    // ➕ Create new inquiry (form submission)
-    Route::post('/', [F_InquiryController::class, 'store']);
-
-    // 👁 Get single inquiry by ID
-    Route::get('/{id}', [F_InquiryController::class, 'show']);
-
-    // ❌ Delete inquiry by ID
-    Route::delete('/{id}', [F_InquiryController::class, 'destroy']);
-});
-
-
+Route::apiResource('/frontend/inquiries',  F_InquiryController::class)->names('frontend.inquiries');
 
 // POST when user searches or clicks
 Route::post('/frontend/search-logs', [F_SearchLogController::class, 'store']);
@@ -951,11 +940,10 @@ Route::prefix('frontend/auth')->group(function () {
 });
 
 Route::post('frontend/paymob/initiate', [F_PaymobController::class, 'initiate']); // get payment_token
-Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);  
-Route::get('frontend/paymob/thank', [F_PaymobController::class, 'pay']);  
+Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);
+Route::get('frontend/paymob/thank', [F_PaymobController::class, 'pay']);
 
 
-Route::post('paymob/webhook', [F_PaymobController::class, 'webhook']);   
-Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);   
-Route::get('paymob/thanks', [F_PaymobController::class, 'response']);   
- 
+Route::post('paymob/webhook', [F_PaymobController::class, 'webhook']);
+Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);
+Route::get('paymob/thanks', [F_PaymobController::class, 'response']);
