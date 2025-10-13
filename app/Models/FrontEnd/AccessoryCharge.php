@@ -8,7 +8,13 @@ use App\Models\AccessoryItem;
 class AccessoryCharge extends Model
 {
 	public $timestamps = false;
-	protected $fillable = ['accessory_item_id', 'amount', 'created_at'];
+	protected $fillable = [
+		'relation_type',
+		'relation_id',
+		'accessory_item_id',
+		'amount',
+		'created_at'
+	];
 
 	public function relation()
 	{

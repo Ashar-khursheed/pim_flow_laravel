@@ -381,7 +381,7 @@ class OrderController extends BaseController
 			DB::commit();
 
 			if ($request->boolean('is_cod')) {
-				$batch = Bus::batch([])->name('Order Place')->dispatch();
+				$batch = Bus::batch([])->name('Order Place on frontend cod')->dispatch();
 
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([

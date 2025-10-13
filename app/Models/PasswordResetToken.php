@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class PasswordResetToken extends Model
 {
 	public $timestamps = false;
-	protected $fillable = ['token', 'created_at'];
+	protected $fillable = ['resettable_id', 'resettable_type', 'token', 'created_at'];
 
 	public function resettable()
 	{

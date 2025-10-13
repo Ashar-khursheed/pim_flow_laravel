@@ -502,6 +502,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
 	Route::post('/seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);
+	Route::post('/seoManagement/schema-update/{seo_id}', [SeoManagementController::class, 'schemaUpdate']);
 
 	Route::resource('seo-management', SeoManagementController::class);
 
@@ -871,7 +872,7 @@ Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
 
 Route::post('/stripe/create-stripe-payment-link', [F_StripeController::class, 'createStripePaymentLink']);
 Route::post('/stripe/webhook', [F_StripeController::class, 'handleWebhook']);
-Route::get('/stripe/success', [F_StripeController::class, 'success']);
+Route::get('/stripe/thanks', [F_StripeController::class, 'success']);
 Route::get('/stripe/failed', [F_StripeController::class, 'paymentFailed']);
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
 Route::prefix('stripe')->group(function () {
@@ -950,5 +951,11 @@ Route::prefix('frontend/auth')->group(function () {
 });
 
 Route::post('frontend/paymob/initiate', [F_PaymobController::class, 'initiate']); // get payment_token
-Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);           // pay with card
-Route::post('frontend/paymob/webhook', [F_PaymobController::class, 'webhook']);   // webhook
+Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);  
+Route::get('frontend/paymob/thank', [F_PaymobController::class, 'pay']);  
+
+
+Route::post('paymob/webhook', [F_PaymobController::class, 'webhook']);   
+Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);   
+Route::get('paymob/thanks', [F_PaymobController::class, 'response']);   
+ 

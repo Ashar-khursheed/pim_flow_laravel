@@ -86,59 +86,6 @@ class PaymentManagementController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	// public function store(Request $request): JsonResponse
-	// {
-	// 	try {
-	// 		$validated = $request->validate([
-	// 			'order_id' => 'required|integer|exists:orders,id',
-	// 			'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id',
-	// 			'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,Paymob,Stax',
-	// 			'amount' => 'required|numeric|min:0.01|max:999999.99',
-	// 			'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
-	// 			'payment_date' => 'required|date|before_or_equal:today',
-	// 			'notes' => 'nullable|string|max:1000',
-	// 			'payment_details' => 'nullable|array|max:2000',
-	// 			'payment_method' => 'nullable|string|max:255'
-	// 		]);
-
-	// 		if (isset($validated['payment_details'])) {
-	// 			$validated['payment_details'] = json_encode($validated['payment_details']);
-	// 		}
-
-	// 		/* Create payment */
-	// 		$payment = PaymentManagement::create($validated);
-
-	// 		/* Update order amounts */
-	// 		$order = $payment->order;
-	// 		$newPaidAmount = $order->paid_amount + $request->amount;
-	// 		$pendingAmount = $order->total_amount - $newPaidAmount;
-
-	// 		$order->update([
-	// 			'paid_amount' => $newPaidAmount,
-	// 			'pending_amount' => $pendingAmount,
-	// 			'is_paid' => $pendingAmount <= 0,
-	// 		]);
-
-	// 		$batch = Bus::batch([])->name('Order Place in payment mgmt')->dispatch();
-	// 		$batch->options['queue'] = config('app.website') . '_ORD_PLC';
-	// 		$batch->add(new OrderPlacedMailJob([
-	// 			'recordId' => $validated['order_id']
-	// 		]));
-
-	// 		return response()->json([
-	// 			'message' => 'Payment recorded successfully.',
-	// 			'data'    => $payment
-	// 		], 201);
-
-
-	// 	} catch (\Exception $e) {
-	// 		return response()->json([
-	// 			'message' => 'Something went wrong while creating the payment.',
-	// 			'error' => $e->getMessage()
-	// 		], 500);
-	// 	}
-	// }
-
 	public function store(Request $request)
 	{
 		try {
@@ -176,7 +123,7 @@ class PaymentManagementController extends Controller
 					'message' => 'Paid amount is greater than total amount ' . $total_amount,
 				], 401);
 			}
- 
+
 			// Upload payment image if available
 			$validated['payment_img'] = uploadImageToWebpS3FromFile(
 				$request,
@@ -204,8 +151,8 @@ class PaymentManagementController extends Controller
 				$order->update(['is_reserved' => 0]);
 
 				// ✅ Send email when payment completed
-				$batch = Bus::batch([])->name('Payment Completed')->dispatch();
-				$batch->options['queue'] = config('app.website') . '_PAYMENT_DONE';
+				$batch = Bus::batch([])->name('Order Place on frontend payment')->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
 					'recordId' => $order->id
 				]));
