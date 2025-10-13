@@ -446,7 +446,7 @@ class OrderController extends Controller
 				$cart->customerCartProducts()->delete();
 				$cart->delete();
 			});
- 
+
 			if ($request->boolean('is_reserved')) {
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					$paymentLink = null;
@@ -521,7 +521,7 @@ class OrderController extends Controller
 							]);
 						}
 					}else{
-						 
+
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\StaxPaymentController::class)
 								->createStaxPaymentLink($order);
@@ -550,7 +550,7 @@ class OrderController extends Controller
 					'recordId' => $order->id
 				]));
 			} else {
-				$batch = Bus::batch([])->name('Order Place')->dispatch();
+				$batch = Bus::batch([])->name('Order Place backend')->dispatch();
 
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
