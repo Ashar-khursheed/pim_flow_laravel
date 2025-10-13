@@ -547,8 +547,7 @@ class PaymobController extends Controller
                 'country' => $customerAddress->country ?? '',
                 'state' => $customerAddress->state ?? ''
             ];
-            $url = config('app.url');
-            $backendUrl = config('app.backend_url');
+          
             $paymentKeyResponse = Http::post("{$baseUrl}/acceptance/payment_keys", [
                 'auth_token' => $authToken,
                 'amount_cents' => $amountCents,
@@ -557,8 +556,8 @@ class PaymobController extends Controller
                 'billing_data' => $billingData,
                 'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
                 'integration_id' => env('PAYMOB_LINK_ID'),
-                'redirect_url' => $url.'/thanks',
-                'notification_url' => $backendUrl.'/api/paymob/webhook',             
+                'redirect_url' => config('app.url').'/thanks',
+                'notification_url' => config('app.backend_url').'/api/paymob/webhook',             
 
             ]);
             $paymentToken = $paymentKeyResponse->json()['token'];

@@ -231,8 +231,8 @@ class StripeController extends Controller
             ], 404);
         }
 
-        $success_url = $url.'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = $url.'/failed';
+        $success_url = config('app.url').'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancel_url = config('app.url').'/failed';
         $stripeSecret = config('services.stripe.secret');
 
         $res = Http::withOptions(['verify' => false])
@@ -266,8 +266,8 @@ class StripeController extends Controller
                 'payment_url' => $body['url'],
             ],
             'checkout_options' => [
-                'success_url' => $url.'/thanks?session_id={CHECKOUT_SESSION_ID}' ,
-                'failed_url' => $url.'/failed?session_id={CHECKOUT_SESSION_ID}'
+                'success_url' => config('app.url').'/thanks?session_id={CHECKOUT_SESSION_ID}' ,
+                'failed_url' => config('app.url').'/failed?session_id={CHECKOUT_SESSION_ID}'
             ]
         ];
         // You now have a permanent payment link
@@ -290,11 +290,11 @@ class StripeController extends Controller
         } else {
             $itemName = "Order #" . $order->order_number;
         }
-        $url = config('app.url');        
+             
         $stripeSecret = config('services.stripe.secret');
         $currency = "AED";        
-        $success_url = $url.'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = $url.'/failed'.'?session_id={CHECKOUT_SESSION_ID}';        
+        $success_url = config('app.url').'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancel_url = config('app.url').'/failed'.'?session_id={CHECKOUT_SESSION_ID}';        
         $res = Http::withOptions(['verify' => false])
             ->withToken($stripeSecret)
             ->asForm()
