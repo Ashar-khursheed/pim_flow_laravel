@@ -642,7 +642,9 @@ class ProductController extends BaseController
 			'Content Writer',
 			'Ecommerce Specialist',
 		];
-		$isContentEnabled = in_array($userRole, $contentAllowedRoles);
+
+		$userRole = $user ? $user->getRoleNames()->first() : null;
+		$isContentEnabled = $userRole && in_array($userRole, $allowedRoles);
 
 		return response()->json([
 			'success' => true,
