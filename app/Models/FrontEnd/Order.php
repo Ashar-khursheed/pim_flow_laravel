@@ -36,6 +36,7 @@ class Order extends Model
 		'status',
 		'is_reserved',
 		'is_customer_pickup',
+		'is_cod',
 		'created_by',
 		'updated_by',
 		'utm_id',

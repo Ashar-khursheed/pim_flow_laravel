@@ -13,7 +13,6 @@ use Illuminate\Support\Str;
 use App\Models\Utm;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
-use Illuminate\Support\Facades\Log;
 
 use App\Jobs\Order\OrderPlacedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
@@ -336,9 +335,9 @@ class OrderController extends BaseController
 				'is_paymob' => $request->boolean('is_paymob'),
 				'is_squarePayment' => $request->boolean('is_squarePayment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
+				'is_cod' => $request->boolean('is_cod'),
 				'created_by' => 0,
 				'utm_id' => $request->utm_id,
-
 			]);
 
 			foreach ($productDetails as $product) {
@@ -381,7 +380,6 @@ class OrderController extends BaseController
 
 			DB::commit();
 
-			Log::channel('testLog')->info("Order {$orderNumber} is COD: " . ($request->boolean('is_cod') ? 'Yes' : 'No'));
 			if ($request->boolean('is_cod')) {
 				$batch = Bus::batch([])->name("Order Place on frontend COD for order {$orderNumber}")->dispatch();
 

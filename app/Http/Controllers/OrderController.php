@@ -405,6 +405,7 @@ class OrderController extends Controller
 				'is_paymob' => $request->boolean('is_paymob'),
 				'is_squarePayment' => $request->boolean('is_squarePayment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
+				'is_cod' => $request->boolean('is_cod'),
 				'created_by' => auth()->id(),
 				'payment_link' => null
 			]);

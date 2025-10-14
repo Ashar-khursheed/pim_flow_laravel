@@ -41,6 +41,7 @@ return new class extends Migration
 			])->default('Pending');
 			$table->boolean('is_reserved')->default(false);
 			$table->boolean('is_customer_pickup')->default(false);
+			$table->boolean('is_cod')->default(false);
 
 			$table->integer('created_by');
 			$table->integer('updated_by')->nullable();
