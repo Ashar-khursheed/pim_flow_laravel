@@ -822,7 +822,7 @@ class OrderController extends Controller
 	/**
 	 * @OA\Post(
 	 *     path="/api/orders/{id}/resend-mail",
-	 *     summary="Resend order place email",
+	 *     summary="Resend order place email (only if order is pending)",
 	 *     tags={"Orders"},
 	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(
@@ -843,6 +843,13 @@ class OrderController extends Controller
 				'success' => false,
 				'message' => 'Order not found.'
 			], 404);
+		}
+
+		if (strtolower($order->status) !== 'pending') {
+			return response()->json([
+				'success' => false,
+				'message' => "Order #{$order->id} cannot resend mail because status is '{$order->status}'. Only pending orders are allowed."
+			], 400);
 		}
 
 		try {
