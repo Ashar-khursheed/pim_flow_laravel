@@ -335,9 +335,9 @@ class OrderController extends BaseController
 				'is_paymob' => $request->boolean('is_paymob'),
 				'is_squarePayment' => $request->boolean('is_squarePayment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
+				'is_cod' => $request->boolean('is_cod'),
 				'created_by' => 0,
 				'utm_id' => $request->utm_id,
-
 			]);
 
 			foreach ($productDetails as $product) {
@@ -381,7 +381,7 @@ class OrderController extends BaseController
 			DB::commit();
 
 			if ($request->boolean('is_cod')) {
-				$batch = Bus::batch([])->name('Order Place on frontend cod')->dispatch();
+				$batch = Bus::batch([])->name("Order Place on frontend COD for order {$orderNumber}")->dispatch();
 
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
