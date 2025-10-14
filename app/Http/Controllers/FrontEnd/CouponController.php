@@ -146,10 +146,10 @@ class CouponController extends Controller
 
             //Coupon expire automatic is_active false
              Coupon::where('expire_date', '<', now())
-            ->where('is_active', 1)           
+            ->where('is_active', '1')           
              ->update(['is_active' => 0]);
 
-             
+
         return response()->json([
             'success' => true,
             'message' => __("msg_rec_list"),
