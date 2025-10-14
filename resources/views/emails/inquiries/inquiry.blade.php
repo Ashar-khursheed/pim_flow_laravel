@@ -85,8 +85,8 @@
 					<!-- What's Next Section -->
 					<tr>
 						<td align="left" style="padding: 0 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-							<p style="font-weight: 600; margin: 0; padding: 5px 0; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-								<strong style="color:#232425; font-family: 'Noto Sans', sans-serif;">What Happens Next</strong>
+							<p style="margin: 0; padding: 5px 0; font-size: 14px; font-weight: 600; color:#232425; font-family: 'Noto Sans', sans-serif;">
+								What Happens Next
 							</p>
 							<p style="margin: 0; padding: 5px 0; font-size: 14px; line-height: 22px; font-family: 'Noto Sans', sans-serif;">
 								Our restaurant setup team will review your details and prepare the next steps, whether that's a <strong style="color:#232425;">kitchen layout plan</strong>, <strong style="color:#232425;">equipment bundle suggestion</strong>, or <strong style="color:#232425;">financing options</strong> tailored to your concept.
