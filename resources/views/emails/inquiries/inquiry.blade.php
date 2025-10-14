@@ -30,15 +30,6 @@
 						</td>
 					</tr>
 
-					<!-- Subject Line -->
-					<tr>
-						<td align="left" style="padding: 0 20px 10px; font-family: 'Noto Sans', sans-serif;">
-							<p style="margin: 0; padding: 5px 0; font-size: 20px; font-weight: 600; color:#26683A; font-family: 'Noto Sans', sans-serif;">
-								📋 We've Received Your Restaurant Quote Request
-							</p>
-						</td>
-					</tr>
-
 					<!-- Greeting -->
 					<tr>
 						<td align="left" style="padding: 0 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
@@ -46,10 +37,10 @@
 								Hi <strong style="color:#26683A; font-family: 'Noto Sans', sans-serif;">{{ $name }}</strong>,
 							</p>
 							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; line-height: 22px;">
-								Thank you for reaching out to <strong style="color:#26683A;">HorecaStore</strong>. We've received your request for a restaurant opening quote and our team is excited to help bring your concept to life!
+								Thank you for getting in touch with <strong style="color:#26683A;">HorecaStore</strong>. We’ve received your request and our team is excited to connect with you about your restaurant plans.
 							</p>
 							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; line-height: 22px;">
-								Here are the details you shared with us:
+								<strong style="color:#232425; font-family: 'Noto Sans', sans-serif;">Here are the details you shared:</strong>
 							</p>
 						</td>
 					</tr>
@@ -89,12 +80,14 @@
 					<!-- What's Next Section -->
 					<tr>
 						<td align="left" style="padding: 0 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-							<p style="font-weight: 600; margin: 0; padding: 5px 0; font-size: 14px; font-family: 'Noto Sans', sans-serif;">What's Next?</p>
+							<p style="font-weight: 600; margin: 0; padding: 5px 0; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
+								<strong style="color:#232425; font-family: 'Noto Sans', sans-serif;">What Happens Next?</strong>
+							</p>
 							<p style="margin: 0; padding: 5px 0; font-size: 14px; line-height: 22px; font-family: 'Noto Sans', sans-serif;">
-								Our HORECA experts will review your information and prepare a tailored quote for your concept. You can expect a response within <strong style="color:#232425;">24-48 hours</strong>.
+								Our <strong style="color:#232425;">HORECA experts</strong> will review your information and follow up with the <strong style="color:#232425;">next steps</strong>. This may include a tailored quote, guidance on setup, or answers to any specific questions you raised. You can expect a response within <strong style="color:#232425;">24–48 hours</strong>.
 							</p>
 							<p style="margin: 0; padding: 5px 0 10px; font-size: 14px; line-height: 22px; font-family: 'Noto Sans', sans-serif;">
-								If you have any additional documents, floor plans, or requirements, simply reply to this email — it will reach our team directly.
+								If you’d like to share any additional documents, floor plans, or requirements, simply reply to this email — it will reach our team directly.
 							</p>
 						</td>
 					</tr>
@@ -103,7 +96,7 @@
 					<tr>
 						<td align="left" style="padding: 10px 20px 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
 							<p style="font-weight: 600; line-height: 22px; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px; color:#232425;">
-								We're excited to partner with you to create a world-class kitchen setup!
+								We’re looking forward to supporting you on your <strong style="color:#232425;">restaurant journey</strong>.
 							</p>
 							<p style="margin: 10px 0 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height: 22px;">
 								Best regards,<br/>

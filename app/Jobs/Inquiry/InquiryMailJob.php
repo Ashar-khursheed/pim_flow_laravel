@@ -59,6 +59,19 @@ class InquiryMailJob implements ShouldQueue
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)
 			);
+
+			if (in_array(config('app.website'), ['UAE', 'US'])) {
+				$recipients = inquiry_cc_mails();
+				$to = array_shift($recipients);
+				$cc = $recipients;
+				Mail::to($to)->cc($cc)->send(
+					(
+						new InquiryMail($inquiry)
+					)
+					->from($fromEmail, $fromName)
+					->replyTo($replyToEmail)
+				);
+			}
 		}
 	}
 
