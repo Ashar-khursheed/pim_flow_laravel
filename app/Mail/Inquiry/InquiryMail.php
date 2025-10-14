@@ -65,7 +65,7 @@ class InquiryMail extends Mailable
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject("🍽️ We’ve Received Your Restaurant Quote Request")
+		return $this->subject("Thanks for Contacting HorecaStore – We’ve Received Your Request")
 		->markdown('emails.inquiries.inquiry')
 		->with($params);
 	}
