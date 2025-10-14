@@ -300,9 +300,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
     Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
 
-	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
-	Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
-
 	Route::apiResource('customer-events', CustomerEventController::class);
 
     Route::get('/utms', [Utmcontroller::class, 'index']);
@@ -540,6 +537,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
+
+    Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
+    Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
+
+    Route::post('orders/{id}/resend-mail', [OrderController::class, 'resendOrderPlaceMail']);
 
     Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
     Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);

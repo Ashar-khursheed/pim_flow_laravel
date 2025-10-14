@@ -820,6 +820,61 @@ class OrderController extends Controller
 	}
 
 	/**
+	 * @OA\Post(
+	 *     path="/api/orders/{id}/resend-mail",
+	 *     summary="Resend order place email (only if order is pending)",
+	 *     tags={"Orders"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Order ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Order place mail sent successfully", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
+	public function resendOrderPlaceMail($id)
+	{
+		$order = Order::find($id);
+		if (!$order) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Order not found.'
+			], 404);
+		}
+
+		if (strtolower($order->status) !== 'pending') {
+			return response()->json([
+				'success' => false,
+				'message' => "Order #{$order->id} cannot resend mail because status is '{$order->status}'. Only pending orders are allowed."
+			], 400);
+		}
+
+		try {
+			/* Create a new batch for resending order place mail */
+			$batch = Bus::batch([])->name("Resend Order place Mail for Order #{$order->id}")->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+			$batch->add(new OrderPlacedMailJob([
+				'recordId' => $order->id
+			]));
+
+			return response()->json([
+				'success' => true,
+				'message' => "Order place mail resent successfully for Order #{$order->id}."
+			]);
+		} catch (\Throwable $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to resend order mail. Please try again later.',
+				'error' => $e->getMessage(),
+			], 500);
+		}
+	}
+
+	/**
 	 * @OA\Put(
 	 *     path="/api/orders/{id}",
 	 *     summary="Update an existing order (if not yet confirmed)",

@@ -28162,6 +28162,39 @@
                 ]
             }
         },
+        "/api/orders/{id}/resend-mail": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Resend order place email (only if order is pending)",
+                "operationId": "d3e877539a897c04d044452201437610",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order place mail sent successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/orders/{id}/status": {
             "put": {
                 "tags": [
