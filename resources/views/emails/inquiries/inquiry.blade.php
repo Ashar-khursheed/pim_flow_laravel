@@ -16,7 +16,7 @@
 <body style="margin:0; padding:0; background:#ffffff; font-family: 'Noto Sans', sans-serif; color:#232425;">
 	<!-- Preheader text -->
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; font-family: 'Noto Sans', sans-serif;">
-		We've received your restaurant quote request and our team is excited to help!
+		Opening a restaurant isn't just a purchase, it's the start of something big!
 	</span>
 
 	<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; font-family: 'Noto Sans', sans-serif;">
@@ -37,17 +37,26 @@
 								Hi <strong style="color:#26683A; font-family: 'Noto Sans', sans-serif;">{{ $name }}</strong>,
 							</p>
 							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; line-height: 22px;">
-								Thank you for getting in touch with <strong style="color:#26683A;">HorecaStore</strong>. We’ve received your request and our team is excited to connect with you about your restaurant plans.
+								Thank you for reaching out to <strong style="color:#26683A;">HorecaStore</strong>.
 							</p>
 							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; line-height: 22px;">
-								<strong style="color:#232425; font-family: 'Noto Sans', sans-serif;">Here are the details you shared:</strong>
+								Opening a restaurant isn't just a purchase, it's the start of something big. We're thrilled to walk beside you as you turn your <strong style="color:#232425;">{{ $restaurantType }}</strong> concept, <strong style="color:#232425;">{{ $companyName }}</strong>, into reality.
+							</p>
+						</td>
+					</tr>
+
+					<!-- Details Section Header -->
+					<tr>
+						<td align="left" style="padding: 15px 20px 5px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
+							<p style="margin: 0; padding: 0; font-weight: 600; color:#232425; font-family: 'Noto Sans', sans-serif;">
+								Here's what you shared:
 							</p>
 						</td>
 					</tr>
 
 					<!-- Details Section with Bullets -->
 					<tr>
-						<td align="left" style="padding: 10px 20px 15px 40px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
+						<td align="left" style="padding: 5px 20px 15px 40px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
 							<ul style="margin: 0; padding: 0; list-style-position: outside; font-family: 'Noto Sans', sans-serif;">
 								<li style="margin-bottom: 8px; font-family: 'Noto Sans', sans-serif;">
 									<strong style="color:#232425; font-family: 'Noto Sans', sans-serif;">Name:</strong>
@@ -62,16 +71,12 @@
 									<span style="color:#232425; font-family: 'Noto Sans', sans-serif;">{{ $email }}</span>
 								</li>
 								<li style="margin-bottom: 8px; font-family: 'Noto Sans', sans-serif;">
-									<strong style="color:#232425; font-family: 'Noto Sans', sans-serif;">Company / Restaurant Name:</strong>
-									<span style="color:#232425; font-family: 'Noto Sans', sans-serif;">{{ $companyName }}</span>
-								</li>
-								<li style="margin-bottom: 8px; font-family: 'Noto Sans', sans-serif;">
-									<strong style="color:#232425; font-family: 'Noto Sans', sans-serif;">Restaurant Type / Concept:</strong>
+									<strong style="color:#232425; font-family: 'Noto Sans', sans-serif;">Restaurant Concept:</strong>
 									<span style="color:#232425; font-family: 'Noto Sans', sans-serif;">{{ $restaurantType }}</span>
 								</li>
 								<li style="margin-bottom: 0; font-family: 'Noto Sans', sans-serif;">
 									<strong style="color:#232425; font-family: 'Noto Sans', sans-serif;">Notes:</strong>
-									<span style="color:#232425; font-family: 'Noto Sans', sans-serif;">{{ $notes }}</span>
+									<span style="color:#232425; font-family: 'Noto Sans', sans-serif;">"{{ $notes }}"</span>
 								</li>
 							</ul>
 						</td>
@@ -80,27 +85,36 @@
 					<!-- What's Next Section -->
 					<tr>
 						<td align="left" style="padding: 0 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-							<p style="font-weight: 600; margin: 0; padding: 5px 0; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-								<strong style="color:#232425; font-family: 'Noto Sans', sans-serif;">What Happens Next?</strong>
+							<p style="margin: 0; padding: 5px 0; font-size: 14px; font-weight: 600; color:#232425; font-family: 'Noto Sans', sans-serif;">
+								What Happens Next
 							</p>
 							<p style="margin: 0; padding: 5px 0; font-size: 14px; line-height: 22px; font-family: 'Noto Sans', sans-serif;">
-								Our <strong style="color:#232425;">HORECA experts</strong> will review your information and follow up with the <strong style="color:#232425;">next steps</strong>. This may include a tailored quote, guidance on setup, or answers to any specific questions you raised. You can expect a response within <strong style="color:#232425;">24–48 hours</strong>.
+								Our restaurant setup team will review your details and prepare the next steps, whether that's a <strong style="color:#232425;">kitchen layout plan</strong>, <strong style="color:#232425;">equipment bundle suggestion</strong>, or <strong style="color:#232425;">financing options</strong> tailored to your concept.
+							</p>
+							<p style="margin: 0; padding: 5px 0; font-size: 14px; line-height: 22px; font-family: 'Noto Sans', sans-serif;">
+								You'll hear from us within <strong style="color:#232425;">24–48 hours</strong>.
 							</p>
 							<p style="margin: 0; padding: 5px 0 10px; font-size: 14px; line-height: 22px; font-family: 'Noto Sans', sans-serif;">
-								If you’d like to share any additional documents, floor plans, or requirements, simply reply to this email — it will reach our team directly.
+								If you'd like to share your menu ideas, mood boards, or floor plans, just reply to this email — it goes straight to our restaurant experts.
 							</p>
 						</td>
 					</tr>
 
-					<!-- Closing Message -->
+					<!-- Welcome Section -->
 					<tr>
 						<td align="left" style="padding: 10px 20px 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
 							<p style="font-weight: 600; line-height: 22px; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px; color:#232425;">
-								We’re looking forward to supporting you on your <strong style="color:#232425;">restaurant journey</strong>.
+								Welcome to the Horeca Family
 							</p>
 							<p style="margin: 10px 0 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height: 22px;">
-								Best regards,<br/>
-								<strong style="color:#232425;">- Team HorecaStore</strong>
+								We've helped hundreds of first-time owners turn their dreams into thriving restaurants and yours could be next.
+							</p>
+							<p style="margin: 10px 0 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height: 22px; font-weight: 600; color:#26683A;">
+								HorecaStore — Where Restaurant Dreams Begin.
+							</p>
+							<p style="margin: 15px 0 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height: 22px;">
+								Warm regards,<br/>
+								<strong style="color:#232425;">Team HorecaStore</strong>
 							</p>
 						</td>
 					</tr>
