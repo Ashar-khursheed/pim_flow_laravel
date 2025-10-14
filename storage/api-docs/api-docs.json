@@ -28167,7 +28167,7 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Resend order place email",
+                "summary": "Resend order place email (only if order is pending)",
                 "operationId": "d3e877539a897c04d044452201437610",
                 "parameters": [
                     {
