@@ -26725,6 +26725,117 @@
                 ]
             }
         },
+        "/api/llms-seo-monitoring": {
+            "get": {
+                "tags": [
+                    "Google Console Monitoring"
+                ],
+                "summary": "Get a list of LLMS Google sitemap SERP monitoring data",
+                "description": "Returns product performance data including ID, URL, clicks, position, impressions, and CTR.",
+                "operationId": "60371bba4e0a27de556315076906f7c4",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date filter",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-01"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date filter",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-02"
+                        }
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search term",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "LLMS Google sitemap SERP monitoring data retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 101
+                                        },
+                                        "url": {
+                                            "type": "string",
+                                            "example": "https://example.com/product-1"
+                                        },
+                                        "clicks": {
+                                            "type": "integer",
+                                            "example": 150
+                                        },
+                                        "impressions": {
+                                            "type": "integer",
+                                            "example": 2000
+                                        },
+                                        "ctr": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 7.5
+                                        },
+                                        "position": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 3.2
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/countries": {
             "get": {
                 "tags": [
@@ -42039,6 +42150,10 @@
         {
             "name": "Inquiries",
             "description": "Inquiries"
+        },
+        {
+            "name": "Google Console Monitoring",
+            "description": "Google Console Monitoring"
         },
         {
             "name": "Locations",

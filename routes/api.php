@@ -10,6 +10,7 @@ use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReportController;
 use App\Http\Controllers\AIAlternateProductController;
+use App\Http\Controllers\LLmsSeoMonitoringController;
 use App\Http\Controllers\CategoryPageController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\StoreController;
@@ -452,6 +453,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
 	Route::post('/product-report-export', [ProductReportController::class, 'index']);
 	Route::post('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
+	
+	Route::get('/llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'index']);
 
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
 	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
