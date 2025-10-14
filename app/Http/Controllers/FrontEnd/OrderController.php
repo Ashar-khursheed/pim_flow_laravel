@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use App\Models\Utm;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Log;
 
 use App\Jobs\Order\OrderPlacedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
@@ -380,8 +381,9 @@ class OrderController extends BaseController
 
 			DB::commit();
 
+			Log::channel('testLog')->info("Order {$orderNumber} is COD: " . ($request->boolean('is_cod') ? 'Yes' : 'No'));
 			if ($request->boolean('is_cod')) {
-				$batch = Bus::batch([])->name('Order Place on frontend cod')->dispatch();
+				$batch = Bus::batch([])->name("Order Place on frontend COD for order {$orderNumber}")->dispatch();
 
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
