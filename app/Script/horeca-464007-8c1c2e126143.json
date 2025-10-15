@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "horeca-464007",
+  "private_key_id": "8c1c2e1261433f366de01295a72afdafab1c953f",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDf6NKxzouWSkwx\nc3kc9a1zm8CqA/yocr0FHTiG4SwlWJNxe+W3yoLDPQIpUTn2r9YwFWfmaBlLYnDc\nec5e+4TqhEJxzypgyw9xq9NR/PYFz5NXheornLFxHteZHJSWQgptA7ttk+HKHy6v\nCHSRM8VkxONvWJWDcQgmTqew1BSKoARNnJ1KldU3EGSBUMiSUJjTUOFaqbKJRdCW\n31SUhswPldlUfgkYm3NJRMmyiIIF1nAroryivJEaFa1+rWO8lJaH8CX2jwNNCwqr\nB8KMHSCB6/jZjDHoNSqhvP6nRnVUeouufKCjgdyl3OZdnM7dd3PKZzKDPvBqzthS\nNW5fmTM7AgMBAAECggEAPIMP+fSvfbjrmYuzBhQRQcasjWYRcLa9hbXNcopFI3yq\nMEfDH+YPa9M/k8n7Z8NCl/EZCMhGWbyrcrJKhxnjZHvE9zv9IHaQYHCG5kf+dziP\ngd5TmGC7Ba7Hpn32XBtR9P9Gtoj6QuUleTFIS3uZ069wJcXjdkfkY3HrWNsgCAxQ\nTDugomXbMjhwaPHyDHfiqEZtN0YVrKZ3RTl0CB4U7mSLI19+A545ERkhUY9zPJHA\nRjZlaVoYgd/kQ1wf0U1kGOMBiOJhKYoxmVIYhkO4lvR0nztL20hPwHV3AjKV+ni3\n8TSP2DLJ8NIn5k6iuZdfrhotWCRVNzOW3uFuivLlmQKBgQD41xucJd58Q0RkDyLG\nmzIUqsoSxnSDIqvaZ0OLDmvZ7KU3xYbhI2Ziac3FvlXUj8+6OYMW8VAk4LzGpBYU\nskTMiZ/Eo1aCWwdNjc98/V/fXvO+Yv1WuV50qNLYizA2INn3r0HGZTHF7C+5cdNt\nLTyEWgpdG4wajs4Fv1Yqrce1aQKBgQDmWhTZE66z40ng9bvdjMwglUp2TIbOl610\nMTPUxnHxbbmITS8WR3X/UGPomrl6Op0bDR77BnSkTjaBuxkAO0VtU1Zk5ZMksdHb\nOoWyOVILezIMzszY/fe68Mf80eEY7yYtN20x1mFYPkDa2F4KEqjlhESHuavVpF9+\nlSbGsSAbAwKBgQCY1aWDlk68C6SpwBIf4Zo0z2ElfvZ4xIbAscPuWIEtbAdd5dgd\n11w+/bUAyxJ0Z4+yVTiKktQiklXfu1BEjelrpuuWHqw3jClEHOFfZ0/HJc6XFL18\n0oWNKVO25GZMGIlHc0D21Zhoc9QsFhlBaRNORu8umIjIlwU6ynXl6K5MYQKBgEqH\nUr95Usj4/OpAF2xzJYhVRSZJVER7Zq91S+PH4Q3QBntHHbkDnfXhOLIFfYVCeZpL\nAH8Pc6XFeHU457nfc3MPx6AVdyokLlXT9XXYfechEOx77GM4qHJffRUbgszic2Ol\nzzqUtiIq4ijsYGC58NNxnAqd1C7nY848y7L1lAGpAoGBANQTaqal6mS3G9LKfPpz\np3h8XAv1lnlik1og52Ux0sVKYqWCe/t1iA7PpBGmiyc0QdIyIDaY+z7BzcZyEqS0\npXzymYI+KW3pXESwOi4uvr3Dw1/CgsEwqO+96sIILR7q0i1Ac0aqYh+u8TZ9BC6w\n1DjeaC9TrctEWnyfxmkXQVNA\n-----END PRIVATE KEY-----\n",
+  "client_email": "horeca-store-search-api@horeca-464007.iam.gserviceaccount.com",
+  "client_id": "101259587454947512754",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/horeca-store-search-api%40horeca-464007.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

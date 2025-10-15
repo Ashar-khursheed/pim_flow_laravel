@@ -454,7 +454,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/product-report-export', [ProductReportController::class, 'index']);
 	Route::post('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
 	
-	Route::get('/llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'index']);
+	Route::get('/get-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'index']);
+	 Route::post('/save-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'store']);
+	 Route::get('/live-show-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'show']);
 
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
 	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
