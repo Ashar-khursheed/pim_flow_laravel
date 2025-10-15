@@ -86,7 +86,7 @@ class LLmsSeoMonitoringController extends Controller
      *                     @OA\Property(property="url", type="string", example="https://example.com/product-1"),
      *                     @OA\Property(property="date", type="string", format="date", example="2025-10-02"),
      *                     @OA\Property(property="keyword", type="string", example="best coffee machine"),
-     *                     @OA\Property(property="country", type="string", example="IN"),
+     *                     @OA\Property(property="country", type="string", example="UAE"),
      *                     @OA\Property(property="device", type="string", example="mobile"),
      *                     @OA\Property(property="clicks", type="integer", example=150),
      *                     @OA\Property(property="impressions", type="integer", example=2000),
@@ -107,8 +107,6 @@ class LLmsSeoMonitoringController extends Controller
      *     )
      * )
      */
-
-
     public function index(Request $request)
     {
         ini_set('max_execution_time', 712);
@@ -189,13 +187,13 @@ class LLmsSeoMonitoringController extends Controller
             'total_records' => $totalFiltered,
         ]);
     }
+
     /**
      * @OA\Post(
      *     path="/api/save-llms-seo-monitoring",
      *     summary="Save LLMS Google sitemap SERP monitoring data",
      *     description="Returns product performance data including ID, URL, clicks, position, impressions, and CTR.",
-     *     tags={"Google Console Monitoring"},    *
-     *      
+     *     tags={"Google Console Monitoring"},      
      *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(
@@ -438,7 +436,6 @@ class LLmsSeoMonitoringController extends Controller
         $client->addScope('https://www.googleapis.com/auth/webmasters.readonly');
 
         $service = new \Google_Service_SearchConsole($client);
-
         // Get verified site URL
         $sites = $service->sites->listSites();
         $siteUrl = null;

@@ -26854,7 +26854,7 @@
                                                     },
                                                     "country": {
                                                         "type": "string",
-                                                        "example": "IN"
+                                                        "example": "UAE"
                                                     },
                                                     "device": {
                                                         "type": "string",
