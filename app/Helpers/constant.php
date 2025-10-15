@@ -139,8 +139,6 @@ if (!function_exists('product_constants')) {
 				"upload_video" => "Upload Video",
 				"barcode" => "Barcode (ISBN, UPC, GTIN, etc.)",
 				"status" => "Status",
-				"google_shopping_category" => "Google Shopping Category",
-				"google_shopping_mpn" => "Google Shopping Mpn",
 				"is_featured" => "Is Featured",
 			],
 			'DISCOUNT_SECTION' => [
@@ -242,8 +240,6 @@ if (!function_exists('product_import_constants')) {
 				'Upload Video' => 'uploadVideo',
 				'Barcode (ISBN, UPC, GTIN, etc.)' => 'barcode',
 				'Status' => 'status',
-				'Google Shopping Category' => 'googleShoppingCategory',
-				'Google Shopping Mpn' => 'googleShoppingMpn',
 				'Is Featured' => 'isFeatured',
 			],
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 
 use App\Models\Language;
 use App\Models\Attribute;
@@ -292,10 +294,57 @@ class TranslationController extends BaseController
 			'product_id' => 'required|integer|exists:ec_products,id',
 		]);
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Record translated successfully.',
-			'data' => $record,
-		]);
+		$isPublished = Product::where('id', $request->product_id)->where('status', 'published')->exists();
+
+		if (!$isPublished) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Only published products can be translated.',
+			]);
+		}
+
+		if ($request->translate_to == 'ar') {
+			$scriptPath = base_path('app/Script/ar_translation.py');
+			if (!file_exists($scriptPath)) {
+				return response()->json([
+					'success' => false,
+					'error' => 'Python script not found',
+					'details' => $scriptPath
+				], 500);
+			}
+
+			$productId = $request->product_id;
+			$pythonCmd = env('PYTHON_PATH', base_path('venv/bin/python'));
+
+			$process = new Process([$pythonCmd, $scriptPath, $productId]);
+			$process->setTimeout(600);
+			$process->setEnv([
+				'PYTHONIOENCODING' => 'utf-8'
+			]);
+			$process->run();
+
+			if (!$process->isSuccessful()) {
+				throw new ProcessFailedException($process);
+			}
+
+			$output = $process->getOutput();
+
+			$record = json_decode($output, true);
+
+			if (json_last_error() !== JSON_ERROR_NONE) {
+				dd([
+					'error' => 'JSON decode failed',
+					'json_error' => json_last_error_msg(),
+					'cleaned_output' => $output,
+					'first_100_chars' => substr($output, 0, 100)
+				]);
+			}
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Record translated successfully.',
+				'data' => $record,
+			]);
+		}
 	}
 }

@@ -120,29 +120,29 @@ class ProductController extends BaseController
 	 * )
 	 */
 	public function index(Request $request)
-{
-	if ($request->filled('from_date') && $request->filled('to_date')) {
-		$from = $request->from_date . ' 00:00:00';
-		$to = $request->to_date . ' 23:59:59';
+	{
+		if ($request->filled('from_date') && $request->filled('to_date')) {
+			$from = $request->from_date . ' 00:00:00';
+			$to = $request->to_date . ' 23:59:59';
 
-		$records = Product::whereBetween('created_at', [$from, $to])->pluck('id');
-		return response()->json([
-			'success' => true,
-			'message' => __('msg_rec_list'),
-			'data' => $records,
-		]);
-	}
+			$records = Product::whereBetween('created_at', [$from, $to])->pluck('id');
+			return response()->json([
+				'success' => true,
+				'message' => __('msg_rec_list'),
+				'data' => $records,
+			]);
+		}
 
-	$perPage = $request->input('per_page', 50);
-	$search = $request->input('search');
-	$status = $request->input('status');
-	$approved = $request->input('approved');
-	$sortBy = $request->input('sort_by', 'id');
-	$sortDirection = $request->input('sort_direction', 'desc');
+		$perPage = $request->input('per_page', 50);
+		$search = $request->input('search');
+		$status = $request->input('status');
+		$approved = $request->input('approved');
+		$sortBy = $request->input('sort_by', 'id');
+		$sortDirection = $request->input('sort_direction', 'desc');
 
 	// Validate sort columns to prevent SQL injection
-	$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
-	if (!in_array($sortBy, $allowedSortColumns)) {
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
+		if (!in_array($sortBy, $allowedSortColumns)) {
 		$sortBy = 'id'; // Default to id if invalid column
 	}
 
@@ -158,7 +158,7 @@ class ProductController extends BaseController
 		'productSuppliers.vendor:id,name', // Updated to include vendor relationship
 		'vendors:id,name' // Make sure to select the name field
 	])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
+	->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
 
 	/* Apply search if provided */
 
@@ -173,18 +173,18 @@ class ProductController extends BaseController
 	if ($search) {
 		$query->where(function ($q) use ($search) {
 			$q->where('name', 'like', "%{$search}%")
-				->orWhere('sku', 'like', "%{$search}%")
-				->orWhereHas('brand', function ($brandQuery) use ($search) {
-					$brandQuery->where('name', 'like', "%{$search}%");
-				})
-				->orWhereHas('categories', function ($categoryQuery) use ($search) {
-					$categoryQuery->where('name', 'like', "%{$search}%");
-				});
+			->orWhere('sku', 'like', "%{$search}%")
+			->orWhereHas('brand', function ($brandQuery) use ($search) {
+				$brandQuery->where('name', 'like', "%{$search}%");
+			})
+			->orWhereHas('categories', function ($categoryQuery) use ($search) {
+				$categoryQuery->where('name', 'like', "%{$search}%");
+			});
 		});
 	}
 
 	$products = $query->orderBy($sortBy, $sortDirection)
-		->paginate($perPage);
+	->paginate($perPage);
 
 	/* Formatting response */
 	$formattedProducts = $products->map(function ($product) {
@@ -212,8 +212,8 @@ class ProductController extends BaseController
 
 		$margin = $firstSupplier->sale_price - $firstSupplier->price;
 		$marginPercent = $firstSupplier->sale_price > 0
-			? ($margin / $firstSupplier->sale_price) * 100
-			: 0;
+		? ($margin / $firstSupplier->sale_price) * 100
+		: 0;
 
 		return [
 			'id' => $product->id,
@@ -322,8 +322,8 @@ class ProductController extends BaseController
 
 		/* Step 2: Prepare the category for syncing */
 		$categoryWithTimestamp = in_array($categoryId, $existingCategories)
-			? [$categoryId => []]
-			: [$categoryId => ['created_at' => now()]];
+		? [$categoryId => []]
+		: [$categoryId => ['created_at' => now()]];
 
 		/* Step 3: Sync the single category */
 		$product->categories()->sync($categoryWithTimestamp);
@@ -349,7 +349,7 @@ class ProductController extends BaseController
 	 *         description="Filter product attributes by category",
 	 *         @OA\Schema(
 	 *             type="string",
-	 *             enum={"General", "Inventory & Stock Management", "Pricing & Sales", "Marketing", "Media", "Shipping & Dimensions", "Product Variations", "Store & Vendor Information", "Performance & Analytics", "Comparison & Bundling", "SEO", "Other", "All"},
+	 *             enum={"General", "Inventory & Stock Management", "Pricing & Sales", "Marketing", "Media", "Shipping & Dimensions", "Product Variations", "Store & Vendor Information", "Performance & Analytics", "Comparison & Bundling", "Other", "All"},
 	 *             example="General"
 	 *         )
 	 *     ),
@@ -374,7 +374,6 @@ class ProductController extends BaseController
 			'Media' => ['images', 'video_path', 'documents', 'benefits_features'],
 			'Store & Vendor Information' => ['brand_id'],
 			'Performance & Analytics' => ['views', 'units_sold'],
-			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
 			'Other' => ['order', 'website_ids'],
 			'All' => []
 		];
@@ -386,7 +385,6 @@ class ProductController extends BaseController
 			'Pricing & Sales' => ['currency:id,title'],
 			'Shipping & Dimensions' => [],
 			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
-			'SEO' => [],
 			'Pricing' => ['vendors:id,name,price,sale_price,delivery_days,inventory,in_stock'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
 		];
@@ -464,8 +462,8 @@ class ProductController extends BaseController
 
 		/* Fetch reviews where customer_id is null */
 		$adminReviews = Review::where('product_id', $productId)
-			->whereNull('customer_id')
-			->get();
+		->whereNull('customer_id')
+		->get();
 
 
 		/* Fetch FAQs using the FAQ model */
@@ -541,97 +539,85 @@ class ProductController extends BaseController
 
 			switch ($attribute) {
 				case 'refund':
-					$formattedProduct[$attribute] = [['value' => $value]];
-
-					break;
-				case 'variant_requires_shipping':
-				case 'is_variation':
-					$formattedProduct[$attribute] = [
-						'type' => 'checkbox',
-						'selected' => (int) $value,
-						'values' => [
-							'0' => 'unchecked',
-							'1' => 'checked'
-						]
-					];
-					break;
+				$formattedProduct[$attribute] = [['value' => $value]];
+				break;
 
 				case 'benefits_features':
-					$formattedProduct['benefits_features'] = json_decode($value, true);
-					break;
+				$formattedProduct['benefits_features'] = json_decode($value, true);
+				break;
 
 				case 'stock_status':
-					$stockStatusMappings = [
-						'in_stock' => 'In Stock',
-						'out_of_stock' => 'Out of Stock',
-						'on_backorder' => 'Pre Order'
-					];
+				$stockStatusMappings = [
+					'in_stock' => 'In Stock',
+					'out_of_stock' => 'Out of Stock',
+					'on_backorder' => 'Pre Order'
+				];
 
-					/* Map selected value to frontend readable text */
-					$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
+				/* Map selected value to frontend readable text */
+				$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
 
-					$formattedProduct['stock_status'] = [
-						'selected' => $selectedStockStatus, /* This will now show 'In Stock', 'Out of Stock', etc. */
-						'values' => $stockStatusMappings /* Values remain the same */
-					];
-					break;
+				$formattedProduct['stock_status'] = [
+					'selected' => $selectedStockStatus, /* This will now show 'In Stock', 'Out of Stock', etc. */
+					'values' => $stockStatusMappings /* Values remain the same */
+				];
+				break;
 
 				case 'tax_id':
-					$tax = Tax::find($value);
-					if ($tax) {
-						$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
-					} else {
-						$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
-					}
-					break;
+				$tax = Tax::find($value);
+				if ($tax) {
+					$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
+				} else {
+					$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
+				}
+				break;
 
 				case 'currency_id':
-					$formattedProduct['currency'] = $product->currency ? [
-						[
-							'id' => $product->currency->id,
-							'title' => $product->currency->title
-						]
-					] : null;
-					break;
+				$formattedProduct['currency'] = $product->currency ? [
+					[
+						'id' => $product->currency->id,
+						'title' => $product->currency->title
+					]
+				] : null;
+				break;
 
 				case 'brand_id':
-					$formattedProduct['brand'] = $product->brand ? [
-						[
-							'id' => $product->brand->id,
-							'name' => $product->brand->name
-						]
-					] : null;
-					break;
+				$formattedProduct['brand'] = $product->brand ? [
+					[
+						'id' => $product->brand->id,
+						'name' => $product->brand->name
+					]
+				] : null;
+				break;
 
 				case 'categories':
-					$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
-						return [
-							'id' => $category->id,
-							'name' => $category->name,
-							'parent_id' => $category->parent_id
-						];
-					}) : [];
-					break;
+				$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
+					return [
+						'id' => $category->id,
+						'name' => $category->name,
+						'parent_id' => $category->parent_id
+					];
+				}) : [];
+				break;
 
 				case 'description':
-					$decodedDescription = json_decode($value, true);
+				$decodedDescription = json_decode($value, true);
 					// Send as array if valid, else send raw string
-					$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
-					break;
+				$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
+				break;
 
 				case 'images':
 				case 'video_path':
 				case 'documents':
-					$formattedProduct[$attribute] = is_array($value) ? $value : [];
-					break;
+				$formattedProduct[$attribute] = is_array($value) ? $value : [];
+				break;
 
 				case 'status':
-					$formattedProduct[$attribute] = [['value' => $value]];
-					break;
+				$formattedProduct[$attribute] = [['value' => $value]];
+				break;
 
 				default:
-					$formattedProduct[$attribute] = $value;
-					break;
+				$formattedProduct[$attribute] = $value;
+				break;
 			}
 		}
 
@@ -715,8 +701,6 @@ class ProductController extends BaseController
 	 *                 @OA\Property(property="brand_id", type="integer", example=13),
 	 *                 @OA\Property(property="views", type="integer", example=200),
 	 *                 @OA\Property(property="units_sold", type="integer", example=50),
-	 *                 @OA\Property(property="google_shopping_category", type="string", example="Electronics"),
-	 *                 @OA\Property(property="google_shopping_mpn", type="string", example="123-ABC"),
 	 *                 @OA\Property(property="order", type="integer", example=1),
 	 *                 @OA\Property(property="box_quantity", type="integer", example=5),
 	 *                 @OA\Property(property="delivery_days", type="integer", example=3),
@@ -823,8 +807,11 @@ class ProductController extends BaseController
 	 */
 	public function update(Request $request, $productId)
 	{
-		/* Log the incoming request for debugging */
 
+		/* Handle FAQs with content writer permission check */
+		$locale = $request->locale ?? 'en';
+
+		/* Log the incoming request for debugging */
 		$product = Product::find($productId);
 
 		if (!$product) {
@@ -995,133 +982,439 @@ class ProductController extends BaseController
 			}
 		}
 
-		// Handle FAQs with content writer permission check
-		if ($request->has('faqs')) {
-			$faqs = $request->input('faqs', []);
-			$hasNewFaqData = false;
+		if ($canModifyContent) {
+			/* Handle multilingual product description */
+			if ($request->has('name')) {
+				$updatedName = $request->input('name', '');
+				/* use translated table */
+				$existingName = optional($product->translate($locale))->name ?? [];
 
-			// Decode if it's a JSON string
-			if (is_string($faqs)) {
-				$decoded = json_decode($faqs, true);
-				if (json_last_error() !== JSON_ERROR_NONE) {
+				/* Only save if changed */
+				if ($updatedName !== $existingName) {
+					if ($locale === 'en') {
+						$product->description = $updatedName;
+					}
+
+					$product->translateOrNew($locale)->name = $updatedName;
+					$product->save();
+				}
+			}
+
+			/* Handle multilingual product description */
+			if ($request->has('description')) {
+				$descriptions = $request->input('description', []);
+				$updatedDescriptions = [];
+
+				/* Decode if JSON string provided */
+				if (is_string($descriptions)) {
+					$decoded = json_decode($descriptions, true);
+					if (json_last_error() !== JSON_ERROR_NONE) {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for description.'
+						], 400);
+					}
+					$updatedDescriptions = $decoded;
+				} elseif (is_array($descriptions)) {
+					$updatedDescriptions = $descriptions;
+				} else {
 					return response()->json([
 						'success' => false,
-						'message' => 'Invalid JSON format for faqs.'
+						'message' => 'Invalid description format. Must be JSON string or array.'
 					], 400);
 				}
-				$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
-			}
 
-			// Fetch existing FAQs for comparison
-			$existingFaqs = Faq::where('product_id', $product->id)->get()->keyBy('id');
-			$processedFaqIds = [];
+				/* use translated table */
+				$existingDescriptions = json_decode(optional($product->translate($locale))->description, true) ?? [];
 
-			// Check if there are actual changes
-			if (is_array($faqs) && !empty($faqs)) {
-				foreach ($faqs as $faqData) {
-					$id = $faqData['id'] ?? null;
-					$question = trim($faqData['question'] ?? '');
-					$answer = trim($faqData['answer'] ?? '');
+				/* Only save if changed */
+				if ($updatedDescriptions !== $existingDescriptions) {
+					$jsonEncoded = json_encode($updatedDescriptions);
 
-					// Create or update
-					if ($id && isset($existingFaqs[$id])) {
-						$existing = $existingFaqs[$id];
-						if (
-							$existing->question !== $question ||
-							$existing->answer !== $answer ||
-							$existing->category_id != ($faqData['category_id'] ?? null)
-						) {
-							$hasNewFaqData = true;
-							break;
-						}
-					} elseif (!empty($question) || !empty($answer)) {
-						$hasNewFaqData = true;
-						break;
+					if ($locale === 'en') {
+						$product->description = $jsonEncoded;
 					}
+
+					$product->translateOrNew($locale)->description = $jsonEncoded;
+					$product->save();
 				}
 			}
 
-			// If user is trying to modify and has no permission
-			if ($hasNewFaqData && !$canModifyContent) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You do not have permission to modify product FAQs.'
-				], 403);
-			}
+			/* Handle multilingual benefits & features */
+			if ($request->has('benefits_features')) {
+				$benefitsFeatures = $request->input('benefits_features', []);
+				$updatedBenefitsFeatures = [];
 
-			// If no real changes or user has permission, continue saving
-			if ($canModifyContent && is_array($faqs)) {
+				/* Decode if JSON string provided */
+				if (is_string($benefitsFeatures)) {
+					$decoded = json_decode($benefitsFeatures, true);
+					if (json_last_error() !== JSON_ERROR_NONE) {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for benefits_features.'
+						], 400);
+					}
+					$updatedBenefitsFeatures = $decoded;
+				} elseif (is_array($benefitsFeatures)) {
+					$updatedBenefitsFeatures = $benefitsFeatures;
+				} else {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+					], 400);
+				}
+
+				/* use translated table */
+				$existingBenefitsFeatures = json_decode(optional($product->translate($locale))->benefits_features, true) ?? [];
+
+				/* Only save if changed */
+				if ($updatedBenefitsFeatures !== $existingBenefitsFeatures) {
+					$jsonEncoded = json_encode($updatedBenefitsFeatures);
+
+					if ($locale === 'en') {
+						$product->benefits_features = $jsonEncoded;
+					}
+
+					$product->translateOrNew($locale)->benefits_features = $jsonEncoded;
+					$product->save();
+				}
+			}
+			/* Handle multilingual FAQs with sync */
+			if ($request->has('faqs')) {
+				$faqs = $request->input('faqs', []);
+
+				/* Decode JSON if string */
+				if (is_string($faqs)) {
+					$decoded = json_decode($faqs, true);
+					if (json_last_error() !== JSON_ERROR_NONE) {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for FAQs.'
+						], 400);
+					}
+					$faqs = is_array($decoded) && isset($decoded[0])
+					? $decoded
+					: ($decoded['faqs'] ?? []);
+				}
+
+				if (!is_array($faqs)) {
+					return response()->json([
+						'success' => false,
+						'message' => 'No valid FAQs provided.'
+					], 400);
+				}
+
+				$updatedFaqIds = [];
+
 				foreach ($faqs as $faqData) {
-					if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-						if (!empty($faqData['id'])) {
-							$faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
-							if ($faq) {
-								$faq->update([
-									'question' => $faqData['question'],
-									'answer' => $faqData['answer'],
-									'category_id' => $faqData['category_id'] ?? null,
-									'status' => 'published',
-								]);
-								$processedFaqIds[] = $faq->id;
-							}
-						} else {
-							$newFaq = Faq::create([
-								'product_id' => $product->id,
-								'question' => $faqData['question'],
-								'answer' => $faqData['answer'],
-								'category_id' => $faqData['category_id'] ?? null,
-								'status' => 'published',
+					if (empty($faqData['question']) || empty($faqData['answer'])) {
+						continue; // skip invalid
+					}
+
+					$faq = null;
+
+					/* Update existing if id provided */
+					if (!empty($faqData['id'])) {
+						$faq = $product->faqs()->where('id', $faqData['id'])->first();
+					}
+
+					/* Create new FAQ if not found */
+					if (!$faq) {
+						$faq = $product->faqs()->create([
+							'question'     => $locale === 'en' ? $faqData['question'] : 'NA',
+							'answer'       => $locale === 'en' ? $faqData['answer'] : 'NA',
+							'category_id'  => $faqData['category_id'] ?? null,
+							'status'       => 'published',
+						]);
+					} else {
+						/* Update base table fields only if locale is en */
+						if ($locale === 'en') {
+							$faq->update([
+								'question'     => $faqData['question'],
+								'answer'       => $faqData['answer'],
+								'category_id'  => $faqData['category_id'] ?? $faq->category_id,
+								'status'       => 'published',
 							]);
-							$processedFaqIds[] = $newFaq->id;
 						}
+					}
+
+					/* Update translation for current locale */
+					$faq->translateOrNew($locale)->question = $faqData['question'];
+					$faq->translateOrNew($locale)->answer   = $faqData['answer'];
+					$faq->save();
+
+					$updatedFaqIds[] = $faq->id;
+				}
+
+				/* Delete any existing FAQ not in updatedFaqIds */
+				$product->faqs()->whereNotIn('id', $updatedFaqIds)->get()->each(
+					function ($faq) {
+						$faq->delete();
+					}
+				);
+			}
+		}
+
+		if ($canModifyImages) {
+			if ($request->has('images') && !empty(array_filter($request->images))) {
+				$updatedImages = [];
+				$manager = new ImageManager(new Driver()); // ✅ Initialize once
+
+				foreach ($request->images as $key => $image) {
+					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+						$updatedImages[] = $image;
+					} elseif ($request->hasFile("images.$key")) {
+						$file = $request->file("images.$key");
+
+						$img = $manager->read($file->getRealPath())->scale(width: 1000); /* keep aspect ratio, max width 1000px */
+
+						/* Dynamically adjust quality to keep under 100 KB */
+						$quality = 90;
+						do {
+							$encoded = $img->toWebp($quality);
+							$size = strlen($encoded);
+							$quality -= 5;
+						} while ($size > 102400 && $quality > 10);
+
+						$tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
+						file_put_contents($tempPath, $encoded);
+
+						$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
+						$updatedImages[] = Storage::disk('s3')->url($path);
+
+						@unlink($tempPath);
 					}
 				}
 
-				// Remove deleted FAQs
-				$existingFaqIds = $existingFaqs->keys()->toArray();
-				$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
-				if (!empty($faqsToDelete)) {
-					Faq::where('product_id', $product->id)
-						->whereIn('id', $faqsToDelete)
-						->delete();
+				/* use translated table */
+				$existingImages = json_decode(optional($product->translate($locale))->images, true) ?? [];
+
+				/* Only save if changed */
+				if ($updatedImages !== $existingImages) {
+					$jsonEncoded = json_encode($updatedImages);
+
+					if ($locale === 'en') {
+						$product->images = $jsonEncoded;
+					}
+
+					$product->translateOrNew($locale)->images = $jsonEncoded;
+					$product->save();
 				}
 			}
 		}
 
-		/* Get all input data except '_method' */
-		$input = $request->except('_method', 'status');
-		/* Remove 'faqs' from the input before validation */
 
-		$fieldsToUnset = ['faqs', 'categories']; /* Added categories to fields to unset */
+		// // Handle FAQs with content writer permission check
+		// if ($request->has('faqs') && $canModifyContent) {
+		// 	$faqs = $request->input('faqs', []);
+		// 	$hasNewFaqData = false;
 
-		foreach ($fieldsToUnset as $field) {
-			unset($input[$field]);
-		}
+		// 	if (is_string($faqs)) {
+		// 		$decoded = json_decode($faqs, true);
+		// 		if (json_last_error() !== JSON_ERROR_NONE) {
+		// 			return response()->json([
+		// 				'success' => false,
+		// 				'message' => 'Invalid JSON format for faqs.'
+		// 			], 400);
+		// 		}
+		// 		$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
+		// 	}
 
-		$imagePath = 'production/products';
-		$videoPath = 'production/videos';
-		$documentPath = 'production/documents';
+		// 	// Fetch existing FAQs for comparison
+		// 	$existingFaqs = Faq::where('product_id', $product->id)->get()->keyBy('id');
+		// 	$processedFaqIds = [];
 
-		// Handle images with role-based permission - CORRECTED VERSION
+		// 	// Check if there are actual changes
+		// 	if (is_array($faqs) && !empty($faqs)) {
+		// 		foreach ($faqs as $faqData) {
+		// 			$id = $faqData['id'] ?? null;
+		// 			$question = trim($faqData['question'] ?? '');
+		// 			$answer = trim($faqData['answer'] ?? '');
+
+		// 			// Create or update
+		// 			if ($id && isset($existingFaqs[$id])) {
+		// 				$existing = $existingFaqs[$id];
+		// 				if (
+		// 					$existing->question !== $question ||
+		// 					$existing->answer !== $answer ||
+		// 					$existing->category_id != ($faqData['category_id'] ?? null)
+		// 				) {
+		// 					$hasNewFaqData = true;
+		// 					break;
+		// 				}
+		// 			} elseif (!empty($question) || !empty($answer)) {
+		// 				$hasNewFaqData = true;
+		// 				break;
+		// 			}
+		// 		}
+		// 	}
+
+		// 	// If user is trying to modify and has no permission
+		// 	if ($hasNewFaqData && !$canModifyContent) {
+		// 		return response()->json([
+		// 			'success' => false,
+		// 			'message' => 'You do not have permission to modify product FAQs.'
+		// 		], 403);
+		// 	}
+
+		// 	// If no real changes or user has permission, continue saving
+		// 	if ($canModifyContent && is_array($faqs)) {
+		// 		foreach ($faqs as $faqData) {
+		// 			if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+		// 				if (!empty($faqData['id'])) {
+		// 					$faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
+		// 					if ($faq) {
+		// 						$faq->update([
+		// 							'question' => $faqData['question'],
+		// 							'answer' => $faqData['answer'],
+		// 							'category_id' => $faqData['category_id'] ?? null,
+		// 							'status' => 'published',
+		// 						]);
+		// 						$processedFaqIds[] = $faq->id;
+		// 					}
+		// 				} else {
+		// 					$newFaq = Faq::create([
+		// 						'product_id' => $product->id,
+		// 						'question' => $faqData['question'],
+		// 						'answer' => $faqData['answer'],
+		// 						'category_id' => $faqData['category_id'] ?? null,
+		// 						'status' => 'published',
+		// 					]);
+		// 					$processedFaqIds[] = $newFaq->id;
+		// 				}
+		// 			}
+		// 		}
+
+		// 		// Remove deleted FAQs
+		// 		$existingFaqIds = $existingFaqs->keys()->toArray();
+		// 		$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
+		// 		if (!empty($faqsToDelete)) {
+		// 			Faq::where('product_id', $product->id)
+		// 				->whereIn('id', $faqsToDelete)
+		// 				->delete();
+		// 		}
+		// 	}
+		// }
+
+
+		// if ($request->has('benefits_features')) {
+		// 	$benefitsInput = $request->input('benefits_features');
+
+		// 	if ($canModifyContent) {
+		// 		// Decode and validate input
+		// 		if (is_string($benefitsInput)) {
+		// 			$decoded = json_decode($benefitsInput, true);
+		// 			if (json_last_error() === JSON_ERROR_NONE) {
+		// 				$newBenefits = $decoded;
+		// 			} else {
+		// 				return response()->json([
+		// 					'success' => false,
+		// 					'message' => 'Invalid JSON format for benefits_features.'
+		// 				], 400);
+		// 			}
+		// 		} elseif (is_array($benefitsInput)) {
+		// 			$newBenefits = $benefitsInput;
+		// 		} else {
+		// 			return response()->json([
+		// 				'success' => false,
+		// 				'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+		// 			], 400);
+		// 		}
+
+		// 		// Ensure it's an array
+		// 		if (!is_array($newBenefits)) {
+		// 			$newBenefits = [];
+		// 		}
+
+		// 		// Get existing saved benefits
+		// 		$existingBenefits = json_decode($product->benefits_features, true);
+		// 		if (!is_array($existingBenefits)) {
+		// 			$existingBenefits = [];
+		// 		}
+
+		// 		// Only save if changed
+		// 		if ($newBenefits !== $existingBenefits) {
+		// 			$input['benefits_features'] = json_encode($newBenefits);
+		// 		} else {
+		// 			// No change, so ignore it
+		// 			unset($input['benefits_features']);
+		// 		}
+		// 	} else {
+		// 		// User tried to modify benefits but doesn't have permission
+		// 		unset($input['benefits_features']);
+		// 	}
+		// }
+
+		// if ($request->has('description')) {
+		// 	if ($canModifyContent) {
+		// 		$descriptionInput = $request->input('description');
+
+		// 		// Decode and validate input
+		// 		if (is_string($descriptionInput)) {
+		// 			$decoded = json_decode($descriptionInput, true);
+		// 			if (json_last_error() === JSON_ERROR_NONE) {
+		// 				$newDescription = $decoded;
+		// 			} else {
+		// 				return response()->json([
+		// 					'success' => false,
+		// 					'message' => 'Invalid JSON format for description.'
+		// 				], 400);
+		// 			}
+		// 		} elseif (is_array($descriptionInput)) {
+		// 			$newDescription = $descriptionInput;
+		// 		} else {
+		// 			return response()->json([
+		// 				'success' => false,
+		// 				'message' => 'Invalid description format. Must be JSON string or array.'
+		// 			], 400);
+		// 		}
+
+		// 		// Ensure it's an array
+		// 		if (!is_array($newDescription)) {
+		// 			$newDescription = [];
+		// 		}
+
+		// 		// Save the description
+		// 		$input['description'] = json_encode($newDescription);
+		// 	} else {
+		// 		// User tried to modify description but doesn't have permission
+		// 		// For now, let's just remove it from input to prevent overwriting
+		// 		// This matches the behavior when no actual change is detected
+		// 		unset($input['description']);
+		// 	}
+		// }
+
 		// if ($request->has('images') && !empty(array_filter($request->images))) {
 		// 	if ($canModifyImages) {
 		// 		$finalImages = [];
+		// 		$manager = new ImageManager(new Driver()); // ✅ Initialize once
+
 		// 		foreach ($request->images as $key => $image) {
 		// 			if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
 		// 				$finalImages[] = $image;
 		// 			} elseif ($request->hasFile("images.$key")) {
 		// 				$file = $request->file("images.$key");
-		// 				// ✅ Check file size (max 100 KB)
-		// 				if ($file->getSize() > 102400) {
-		// 					return response()->json([
-		// 						'success' => false,
-		// 						'message' => 'Image size must not exceed 100 KB.'
-		// 					], 400);
-		// 				}
-		// 				$path = $file->store($imagePath, 's3');
+
+		// 				$img = $manager->read($file->getRealPath())->scale(width: 1000); /* keep aspect ratio, max width 1000px */
+
+		// 				/* Dynamically adjust quality to keep under 100 KB */
+		// 				$quality = 90;
+		// 				do {
+		// 					$encoded = $img->toWebp($quality);
+		// 					$size = strlen($encoded);
+		// 					$quality -= 5;
+		// 				} while ($size > 102400 && $quality > 10);
+
+		// 				$tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
+		// 				file_put_contents($tempPath, $encoded);
+
+		// 				$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
 		// 				$finalImages[] = Storage::disk('s3')->url($path);
+
+		// 				@unlink($tempPath);
 		// 			}
 		// 		}
+
 		// 		if (!empty($finalImages)) {
 		// 			$input['images'] = json_encode($finalImages);
 		// 		}
@@ -1132,55 +1425,19 @@ class ProductController extends BaseController
 		// 	unset($input['images']); // preserve existing
 		// }
 
-		if ($request->has('images') && !empty(array_filter($request->images))) {
-			if ($canModifyImages) {
-				$finalImages = [];
-				$manager = new ImageManager(new Driver()); // ✅ Initialize once
+		/* Get all input data except '_method' */
+		$input = $request->except('_method', 'status');
+		/* Remove 'faqs' from the input before validation */
 
-				foreach ($request->images as $key => $image) {
-					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-						// ✅ If already a valid URL, keep as is
-						$finalImages[] = $image;
+		$fieldsToUnset = ['categories', 'name', 'benefits_features', 'description', 'faqs', 'images'];
 
-					} elseif ($request->hasFile("images.$key")) {
-						$file = $request->file("images.$key");
-
-						// ✅ Load image with Intervention v3
-						$img = $manager->read($file->getRealPath())
-							->scale(width: 1000); // keep aspect ratio, max width 1000px
-
-						// ✅ Dynamically adjust quality to keep under 100 KB
-						$quality = 90;
-						do {
-							$encoded = $img->toWebp($quality); // 🔄 now WebP instead of JPEG
-							$size = strlen($encoded); // bytes
-							$quality -= 5;
-						} while ($size > 102400 && $quality > 10);
-
-						// ✅ Save compressed image to temp file
-						$tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
-						file_put_contents($tempPath, $encoded);
-
-						// ✅ Upload to S3
-						$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
-						$finalImages[] = Storage::disk('s3')->url($path);
-
-						// ✅ Cleanup
-						@unlink($tempPath);
-					}
-				}
-
-				if (!empty($finalImages)) {
-					$input['images'] = json_encode($finalImages);
-				}
-			} else {
-				unset($input['images']);
-			}
-		} else {
-			unset($input['images']); // preserve existing
+		foreach ($fieldsToUnset as $field) {
+			unset($input[$field]);
 		}
 
-
+		$imagePath = 'production/products';
+		$videoPath = 'production/videos';
+		$documentPath = 'production/documents';
 
 		// Handle videos with role-based permission - CORRECTED VERSION
 		if ($request->has('video_path')) {
@@ -1269,11 +1526,8 @@ class ProductController extends BaseController
 		/* Convert to JSON with unescaped slashes */
 		$input['documents'] = json_encode($input['documents']);
 
-		$input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-		$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-
 		/* List of valid fields allowed for updating */
-		$validArray = ["sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "images", "video_path", "documents", "brand_id", "views", "units_sold", "google_shopping_category", "google_shopping_mpn", "order", "benefits_features", "gen_type", "approved"];
+		$validArray = ["sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "video_path", "documents", "brand_id", "views", "units_sold", "order", "benefits_features", "gen_type", "approved"];
 
 		unset($input['product_attributes']);
 		unset($input['vendor_id']);
@@ -1282,93 +1536,6 @@ class ProductController extends BaseController
 
 		/* Initialize an error array to store validation errors */
 		$rowError = [];
-
-		if ($request->has('benefits_features')) {
-			$benefitsInput = $request->input('benefits_features');
-
-			if ($canModifyContent) {
-				// Decode and validate input
-				if (is_string($benefitsInput)) {
-					$decoded = json_decode($benefitsInput, true);
-					if (json_last_error() === JSON_ERROR_NONE) {
-						$newBenefits = $decoded;
-					} else {
-						return response()->json([
-							'success' => false,
-							'message' => 'Invalid JSON format for benefits_features.'
-						], 400);
-					}
-				} elseif (is_array($benefitsInput)) {
-					$newBenefits = $benefitsInput;
-				} else {
-					return response()->json([
-						'success' => false,
-						'message' => 'Invalid benefits_features format. Must be JSON string or array.'
-					], 400);
-				}
-
-				// Ensure it's an array
-				if (!is_array($newBenefits)) {
-					$newBenefits = [];
-				}
-
-				// Get existing saved benefits
-				$existingBenefits = json_decode($product->benefits_features, true);
-				if (!is_array($existingBenefits)) {
-					$existingBenefits = [];
-				}
-
-				// Only save if changed
-				if ($newBenefits !== $existingBenefits) {
-					$input['benefits_features'] = json_encode($newBenefits);
-				} else {
-					// No change, so ignore it
-					unset($input['benefits_features']);
-				}
-			} else {
-				// User tried to modify benefits but doesn't have permission
-				unset($input['benefits_features']);
-			}
-		}
-
-		if ($request->has('description')) {
-			if ($canModifyContent) {
-				$descriptionInput = $request->input('description');
-
-				// Decode and validate input
-				if (is_string($descriptionInput)) {
-					$decoded = json_decode($descriptionInput, true);
-					if (json_last_error() === JSON_ERROR_NONE) {
-						$newDescription = $decoded;
-					} else {
-						return response()->json([
-							'success' => false,
-							'message' => 'Invalid JSON format for description.'
-						], 400);
-					}
-				} elseif (is_array($descriptionInput)) {
-					$newDescription = $descriptionInput;
-				} else {
-					return response()->json([
-						'success' => false,
-						'message' => 'Invalid description format. Must be JSON string or array.'
-					], 400);
-				}
-
-				// Ensure it's an array
-				if (!is_array($newDescription)) {
-					$newDescription = [];
-				}
-
-				// Save the description
-				$input['description'] = json_encode($newDescription);
-			} else {
-				// User tried to modify description but doesn't have permission
-				// For now, let's just remove it from input to prevent overwriting
-				// This matches the behavior when no actual change is detected
-				unset($input['description']);
-			}
-		}
 
 		/* Tax ID validation */
 		if (isset($input['tax_id'])) {
@@ -1390,18 +1557,6 @@ class ProductController extends BaseController
 				$product->currency_id = (int) $input['currency_id'];
 				unset($input['currency_id']); /* Remove processed field */
 			}
-		}
-
-		/* Unit ID validation for length, weight, and shipping */
-
-		if (isset($input['google_shopping_category'])) {
-			$product->google_shopping_category = $input['google_shopping_category'];
-			unset($input['google_shopping_category']);
-		}
-
-		if (isset($input['google_shopping_mpn'])) {
-			$product->google_shopping_mpn = $input['google_shopping_mpn'];
-			unset($input['google_shopping_mpn']);
 		}
 
 		/* Brand ID validation */
@@ -1593,35 +1748,35 @@ class ProductController extends BaseController
 		$productAttributeMeasurement = $product->productAttributes->pluck('measurement_unit_id', 'attribute_id');
 
 		$attributeGroup = $category->categoryAttributeGroups()
-			->with(['groupsAttributes.attributeValues', 'groupsAttributes.measurementUnits'])
-			->get()
-			->map(function ($group) use ($productAttributes, $productAttributeMeasurement) {
-				return [
-					'id' => $group->id,
-					'name' => $group->name,
-					'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes, $productAttributeMeasurement) {
-						$data = [
-							'id' => $attribute->id,
-							'name' => $attribute->name,
-							'code' => $attribute->code,
-							'type' => $attribute->type,
-							'validations' => json_decode($attribute->validations, true),
-							'currentValue' => $productAttributes[$attribute->id] ?? null,
-						];
+		->with(['groupsAttributes.attributeValues', 'groupsAttributes.measurementUnits'])
+		->get()
+		->map(function ($group) use ($productAttributes, $productAttributeMeasurement) {
+			return [
+				'id' => $group->id,
+				'name' => $group->name,
+				'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes, $productAttributeMeasurement) {
+					$data = [
+						'id' => $attribute->id,
+						'name' => $attribute->name,
+						'code' => $attribute->code,
+						'type' => $attribute->type,
+						'validations' => json_decode($attribute->validations, true),
+						'currentValue' => $productAttributes[$attribute->id] ?? null,
+					];
 
-						if ($attribute->type === 'select') {
-							$data['attributeValues'] = $attribute->attributeValues->pluck('attribute_value')->values()->all();
-						}
+					if ($attribute->type === 'select') {
+						$data['attributeValues'] = $attribute->attributeValues->pluck('attribute_value')->values()->all();
+					}
 
-						if ($attribute->type === 'measurement') {
-							$data['attributeMeasurement'] = $attribute->measurementUnits->pluck('name', 'id')->all();
-							$data['currentMeasurementId'] = $productAttributeMeasurement[$attribute->id] ?? null;
-						}
+					if ($attribute->type === 'measurement') {
+						$data['attributeMeasurement'] = $attribute->measurementUnits->pluck('name', 'id')->all();
+						$data['currentMeasurementId'] = $productAttributeMeasurement[$attribute->id] ?? null;
+					}
 
-						return $data;
-					})->toArray(),
-				];
-			});
+					return $data;
+				})->toArray(),
+			];
+		});
 
 
 		return response()->json([
@@ -1763,9 +1918,9 @@ class ProductController extends BaseController
 		$products = Product::whereHas('categories', function ($query) use ($category_id) {
 			$query->where('category_id', $category_id);
 		})
-			->select(['id', 'name', 'sku', 'images'])
-			->orderBy('id', 'desc') /* Order by product ID in descending order */
-			->get();
+		->select(['id', 'name', 'sku', 'images'])
+		->orderBy('id', 'desc') /* Order by product ID in descending order */
+		->get();
 
 		/* Formatting the response to include only id, name, sku, and image */
 		$formattedProducts = $products->map(function ($product) use ($category_id) {
@@ -1904,9 +2059,9 @@ class ProductController extends BaseController
 
 		/* Fetch products from the database */
 		$products = Product::whereIn('id', $allProductIds)
-			->select(['id', 'name', 'sku', 'images'])
-			->orderBy('id', 'desc')
-			->get();
+		->select(['id', 'name', 'sku', 'images'])
+		->orderBy('id', 'desc')
+		->get();
 
 		/* Format product data */
 		$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
@@ -2010,9 +2165,9 @@ class ProductController extends BaseController
 
 		/* Fetch products from the database */
 		$products = Product::whereIn('id', $allProductIds)
-			->select(['id', 'name', 'sku', 'images'])
-			->orderBy('id', 'desc')
-			->get();
+		->select(['id', 'name', 'sku', 'images'])
+		->orderBy('id', 'desc')
+		->get();
 
 		/* Format product data */
 		$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
@@ -2116,9 +2271,9 @@ class ProductController extends BaseController
 
 		/* Fetch products from the database */
 		$products = Product::whereIn('id', $allProductIds)
-			->select(['id', 'name', 'sku', 'images'])
-			->orderBy('id', 'desc')
-			->get();
+		->select(['id', 'name', 'sku', 'images'])
+		->orderBy('id', 'desc')
+		->get();
 
 		/* Format product data */
 		$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
@@ -2190,14 +2345,11 @@ class ProductController extends BaseController
 					$product->is_featured = $mainProduct->is_featured;
 					$product->brand_id = $mainProduct->brand_id;
 					$product->quote_available = $mainProduct->quote_available;
-					$product->is_variation = $mainProduct->is_variation;
 					$product->tax_id = $mainProduct->tax_id;
 					$product->views = '0';
 					$product->stock_status = $mainProduct->stock_status;
 					$product->barcode = $mainProduct->barcode;
 					$product->approved_by = $mainProduct->approved_by;
-					$product->google_shopping_category = $mainProduct->google_shopping_category;
-					$product->google_shopping_mpn = $mainProduct->google_shopping_mpn;
 					$product->documents = $mainProduct->documents;
 					$product->video_path = $mainProduct->video_path;
 					$product->units_sold = $mainProduct->units_sold;
@@ -2265,8 +2417,8 @@ class ProductController extends BaseController
 									if (!$value && !$measurementUnitID) {
 										/* Both missing = delete the existing attribute */
 										$product->productAttributes()
-											->where('attribute_id', $attributeId)
-											->delete();
+										->where('attribute_id', $attributeId)
+										->delete();
 									} else {
 										/* Both exist = update or create attribute */
 										$product->productAttributes()->updateOrCreate(
@@ -2283,8 +2435,8 @@ class ProductController extends BaseController
 									if (empty($value)) {
 										/* Delete non-measurement attribute if empty */
 										$product->productAttributes()
-											->where('attribute_id', $attributeId)
-											->delete();
+										->where('attribute_id', $attributeId)
+										->delete();
 									} else {
 										/* Update or create normal attribute */
 										$product->productAttributes()->updateOrCreate(
