@@ -284,13 +284,13 @@ class FilterController extends Controller
 				if ($measurementAttribute['measurement_unit_id'] != $measurementAttribute['primary_measurement_unit_id']) {
 					$originalUnitName = $measurementUnitIDName[$measurementAttribute['measurement_unit_id']];
 					$targetUnitName = $measurementUnitIDName[$measurementAttribute['primary_measurement_unit_id']];
-					// dd($measurementAttribute['attribute_value'],$measurementAttribute['primary_measurement_unit_id'],$measurementAttribute['measurement_unit_id']);
 					$attributeValue = convert_unit(
 						$measurementAttribute['measurement_type_name'],
 						$measurementAttribute['attribute_value'],
 						$originalUnitName,
 						$targetUnitName
 					);
+					// dd($measurementAttribute, $attributeValue);
 				}
 
 				$rangefilterArray[] = [
