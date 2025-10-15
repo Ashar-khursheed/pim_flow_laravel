@@ -2,15 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
-use App\Models\FrontEnd\AlternateProduct;
-use Illuminate\Support\Facades\DB;
-use App\Models\SeoMonitoring;
-use App\Models\Category;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-use Symfony\Component\Process\Process;
+use Illuminate\Http\Request; 
+use App\Models\SeoMonitoring; 
 use Google\Client as Google_Client;
 use Google\Service\SearchConsole as Google_Service_SearchConsole;
 use Google\Service\SearchConsole\SearchAnalyticsQueryRequest as Google_Service_SearchConsole_SearchAnalyticsQueryRequest;
@@ -256,7 +249,7 @@ class LLmsSeoMonitoringController extends Controller
         ]);
         $response = json_decode(curl_exec($curl), true);
         curl_close($curl);
-
+ 
         if (empty($response['access_token'])) {
             return response()->json(['success' => false, 'message' => 'Unable to fetch access token']);
         }
