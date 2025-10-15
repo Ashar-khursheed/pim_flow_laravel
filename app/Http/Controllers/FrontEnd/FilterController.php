@@ -109,8 +109,18 @@ class FilterController extends Controller
 
 		$filters = [];
 
-		$priceRange = Product::join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
-		->join('product_suppliers', 'ec_products.id', '=', 'product_suppliers.product_id')
+
+		// $priceRange = Product::join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
+		// ->join('product_suppliers', 'ec_products.id', '=', 'product_suppliers.product_id')
+		// ->whereIn('product_categories.category_id', $categoryIds)
+		// ->where('ec_products.status', 'published')
+		// ->selectRaw('
+		// 	MIN(CASE WHEN product_suppliers.sale_price > 0 THEN product_suppliers.sale_price ELSE product_suppliers.price END) as min_price,
+		// 	MAX(CASE WHEN product_suppliers.sale_price > 0 THEN product_suppliers.sale_price ELSE product_suppliers.price END) as max_price
+		// 	')
+		// ->first();
+		$priceRange = ProductSupplier::join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
+		->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
 		->whereIn('product_categories.category_id', $categoryIds)
 		->where('ec_products.status', 'published')
 		->selectRaw('
