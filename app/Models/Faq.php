@@ -22,7 +22,7 @@ use Astrotomic\Translatable\Translatable;
  *     @OA\Property(property="updated_at", type="string", format="date-time")
  * )
  */
-class Product extends Model implements TranslatableContract
+class Faq extends Model implements TranslatableContract
 {
     use Translatable;
 
@@ -31,6 +31,13 @@ class Product extends Model implements TranslatableContract
         'answer',
     ];
     protected $fillable = ['question', 'answer', 'category_id', 'status', 'product_id'];
+
+    protected static function booted()
+    {
+        static::deleting(function ($faq) {
+            $faq->translations()->delete();
+        });
+    }
 
     public function category()
     {

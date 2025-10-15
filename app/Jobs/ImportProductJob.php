@@ -427,8 +427,6 @@ class ImportProductJob implements ShouldQueue
 					// $product->frequently_bought_together = $frequentlyBoughtTogether;
 					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
 					$product->barcode = !empty($barcode) ? $barcode : null;
-					$product->google_shopping_category = !empty($googleShoppingCategory) ? $googleShoppingCategory : null;
-					$product->google_shopping_mpn = !empty($googleShoppingMpn) ? $googleShoppingMpn : null;
 					$product->created_at = $product->id ? $product->created_at : now();
 					$product->updated_at = now();
 					$product->created_by = $this->userId;

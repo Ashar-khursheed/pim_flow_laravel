@@ -11,7 +11,7 @@ return new class extends Migration
 	 */
 	public function up(): void
 	{
-		// Schema::dropIfExists('attribute_translations');
+		Schema::dropIfExists('attribute_translations');
 		// Schema::create('attribute_translations', function (Blueprint $table) {
 		// 	$table->id();
 		// 	$table->string("locale", 2);
@@ -28,7 +28,7 @@ return new class extends Migration
 		// }
 
 
-		// Schema::dropIfExists('attribute_value_translations');
+		Schema::dropIfExists('attribute_value_translations');
 		// Schema::create('attribute_value_translations', function (Blueprint $table) {
 		// 	$table->id();
 		// 	$table->string("locale", 2);
@@ -45,7 +45,7 @@ return new class extends Migration
 		// }
 
 
-		// Schema::dropIfExists('product_attribute_translations');
+		Schema::dropIfExists('product_attribute_translations');
 		// Schema::create('product_attribute_translations', function (Blueprint $table) {
 		// 	$table->id();
 		// 	$table->string("locale", 2);
@@ -95,7 +95,7 @@ return new class extends Migration
 		foreach ($records as $record) {
 			DB::table('faq_translations')->insert([
 				'locale' => 'en',
-				'product_id' => $record->id,
+				'faq_id' => $record->id,
 				'question' => $record->question,
 				'answer' => $record->answer,
 			]);
