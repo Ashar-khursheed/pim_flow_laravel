@@ -560,7 +560,7 @@ class ProductController extends Controller
                         // Get slug from seo_management table
                         $slug = \DB::table('seo_management')
                             ->where('product_id', $child->id)
-                            ->value('slug');
+                            ->value('url');
 
                         return [
                             'id' => $child->id,
