@@ -1155,6 +1155,54 @@ class ProductController extends BaseController
 			}
 		}
 
+		if ($canModifyImages) {
+			if ($request->has('images') && !empty(array_filter($request->images))) {
+				$updatedImages = [];
+				$manager = new ImageManager(new Driver()); // ✅ Initialize once
+
+				foreach ($request->images as $key => $image) {
+					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+						$updatedImages[] = $image;
+					} elseif ($request->hasFile("images.$key")) {
+						$file = $request->file("images.$key");
+
+						$img = $manager->read($file->getRealPath())->scale(width: 1000); /* keep aspect ratio, max width 1000px */
+
+						/* Dynamically adjust quality to keep under 100 KB */
+						$quality = 90;
+						do {
+							$encoded = $img->toWebp($quality);
+							$size = strlen($encoded);
+							$quality -= 5;
+						} while ($size > 102400 && $quality > 10);
+
+						$tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
+						file_put_contents($tempPath, $encoded);
+
+						$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
+						$updatedImages[] = Storage::disk('s3')->url($path);
+
+						@unlink($tempPath);
+					}
+				}
+
+				/* use translated table */
+				$existingImages = json_decode(optional($product->translate($locale))->images, true) ?? [];
+
+				/* Only save if changed */
+				if ($updatedImages !== $existingImages) {
+					$jsonEncoded = json_encode($updatedImages);
+
+					if ($locale === 'en') {
+						$product->images = $jsonEncoded;
+					}
+
+					$product->translateOrNew($locale)->images = $jsonEncoded;
+					$product->save();
+				}
+			}
+		}
+
 
 		// // Handle FAQs with content writer permission check
 		// if ($request->has('faqs') && $canModifyContent) {
@@ -1336,11 +1384,52 @@ class ProductController extends BaseController
 		// 	}
 		// }
 
+		// if ($request->has('images') && !empty(array_filter($request->images))) {
+		// 	if ($canModifyImages) {
+		// 		$finalImages = [];
+		// 		$manager = new ImageManager(new Driver()); // ✅ Initialize once
+
+		// 		foreach ($request->images as $key => $image) {
+		// 			if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+		// 				$finalImages[] = $image;
+		// 			} elseif ($request->hasFile("images.$key")) {
+		// 				$file = $request->file("images.$key");
+
+		// 				$img = $manager->read($file->getRealPath())->scale(width: 1000); /* keep aspect ratio, max width 1000px */
+
+		// 				/* Dynamically adjust quality to keep under 100 KB */
+		// 				$quality = 90;
+		// 				do {
+		// 					$encoded = $img->toWebp($quality);
+		// 					$size = strlen($encoded);
+		// 					$quality -= 5;
+		// 				} while ($size > 102400 && $quality > 10);
+
+		// 				$tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
+		// 				file_put_contents($tempPath, $encoded);
+
+		// 				$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
+		// 				$finalImages[] = Storage::disk('s3')->url($path);
+
+		// 				@unlink($tempPath);
+		// 			}
+		// 		}
+
+		// 		if (!empty($finalImages)) {
+		// 			$input['images'] = json_encode($finalImages);
+		// 		}
+		// 	} else {
+		// 		unset($input['images']);
+		// 	}
+		// } else {
+		// 	unset($input['images']); // preserve existing
+		// }
+
 		/* Get all input data except '_method' */
 		$input = $request->except('_method', 'status');
 		/* Remove 'faqs' from the input before validation */
 
-		$fieldsToUnset = ['categories', 'name', 'benefits_features', 'description', 'faqs'];
+		$fieldsToUnset = ['categories', 'name', 'benefits_features', 'description', 'faqs', 'images'];
 
 		foreach ($fieldsToUnset as $field) {
 			unset($input[$field]);
@@ -1349,54 +1438,6 @@ class ProductController extends BaseController
 		$imagePath = 'production/products';
 		$videoPath = 'production/videos';
 		$documentPath = 'production/documents';
-
-		if ($request->has('images') && !empty(array_filter($request->images))) {
-			if ($canModifyImages) {
-				$finalImages = [];
-				$manager = new ImageManager(new Driver()); // ✅ Initialize once
-
-				foreach ($request->images as $key => $image) {
-					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-						// ✅ If already a valid URL, keep as is
-						$finalImages[] = $image;
-
-					} elseif ($request->hasFile("images.$key")) {
-						$file = $request->file("images.$key");
-
-						// ✅ Load image with Intervention v3
-						$img = $manager->read($file->getRealPath())
-							->scale(width: 1000); // keep aspect ratio, max width 1000px
-
-						// ✅ Dynamically adjust quality to keep under 100 KB
-							$quality = 90;
-							do {
-							$encoded = $img->toWebp($quality); // 🔄 now WebP instead of JPEG
-							$size = strlen($encoded); // bytes
-							$quality -= 5;
-						} while ($size > 102400 && $quality > 10);
-
-						// ✅ Save compressed image to temp file
-						$tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
-						file_put_contents($tempPath, $encoded);
-
-						// ✅ Upload to S3
-						$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
-						$finalImages[] = Storage::disk('s3')->url($path);
-
-						// ✅ Cleanup
-						@unlink($tempPath);
-					}
-				}
-
-				if (!empty($finalImages)) {
-					$input['images'] = json_encode($finalImages);
-				}
-			} else {
-				unset($input['images']);
-			}
-		} else {
-			unset($input['images']); // preserve existing
-		}
 
 		// Handle videos with role-based permission - CORRECTED VERSION
 		if ($request->has('video_path')) {
@@ -1486,7 +1527,7 @@ class ProductController extends BaseController
 		$input['documents'] = json_encode($input['documents']);
 
 		/* List of valid fields allowed for updating */
-		$validArray = ["sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "images", "video_path", "documents", "brand_id", "views", "units_sold", "order", "benefits_features", "gen_type", "approved"];
+		$validArray = ["sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "video_path", "documents", "brand_id", "views", "units_sold", "order", "benefits_features", "gen_type", "approved"];
 
 		unset($input['product_attributes']);
 		unset($input['vendor_id']);
