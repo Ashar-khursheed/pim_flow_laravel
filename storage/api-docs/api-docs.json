@@ -31341,7 +31341,6 @@
                                 "Store & Vendor Information",
                                 "Performance & Analytics",
                                 "Comparison & Bundling",
-                                "SEO",
                                 "Other",
                                 "All"
                             ],
@@ -31522,14 +31521,6 @@
                                     "units_sold": {
                                         "type": "integer",
                                         "example": 50
-                                    },
-                                    "google_shopping_category": {
-                                        "type": "string",
-                                        "example": "Electronics"
-                                    },
-                                    "google_shopping_mpn": {
-                                        "type": "string",
-                                        "example": "123-ABC"
                                     },
                                     "order": {
                                         "type": "integer",

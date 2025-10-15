@@ -11,6 +11,6 @@ class AttributeValue extends Model
 {
 	// use Translatable;
 
-	// public $translatedAttributes = ['title'];
+	// public $translatedAttributes = ['attribute_value'];
 	protected $fillable = ['attribute_id', 'attribute_value'];
 }

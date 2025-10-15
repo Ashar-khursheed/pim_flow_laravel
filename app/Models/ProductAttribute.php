@@ -11,7 +11,7 @@ class ProductAttribute extends Model
 {
 	// use Translatable;
 
-	// public $translatedAttributes = ['title'];
+	// public $translatedAttributes = ['attribute_value'];
 
 	protected $fillable = ['product_id', 'attribute_id', 'attribute_value', 'measurement_unit_id'];
 

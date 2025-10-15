@@ -407,7 +407,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
     Route::post('/keywords/import', [AppKeywordController::class, 'import']);
     Route::post('/keywords/export', [AppKeywordController::class, 'export']);
 
-    Route::post('/translations/generate-translate', [TranslationController::class, 'export']);
+    Route::post('/translations/generate-translate', [TranslationController::class, 'generateTranslate']);
     Route::post('/translations/export', [TranslationController::class, 'export']);
     Route::post('/translations/import', [TranslationController::class, 'import']);
 

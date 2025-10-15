@@ -102,13 +102,6 @@ class Discount extends Model
         return $this->belongsToMany(Product::class, 'ec_discount_products', 'discount_id', 'product_id');
     }
 
-    public function productVariants(): BelongsToMany
-    {
-        return $this
-            ->products()
-            ->where('is_variation', true);
-    }
-
     public function usedByCustomers(): BelongsToMany
     {
         return $this->belongsToMany(Customer::class, 'ec_customer_used_coupons');
