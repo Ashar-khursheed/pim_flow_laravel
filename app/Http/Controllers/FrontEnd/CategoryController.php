@@ -1471,6 +1471,8 @@ private function buildProductsResponse($filteredProductIds, $request, $perPage)
             'return_policy' => $firstSupplier?->return_policy ?? null,
             'free_shipping' => $firstSupplier?->free_shipping ?? null,
             'warranty_information' => $firstSupplier?->warranty_information ?? null,
+            'min_quantity' => $firstSupplier->min_quantity ?? 0,
+            'is_fixed' => $firstSupplier->is_fixed ?? 0,
         ];
     });
 
@@ -3363,11 +3365,12 @@ return response()->json($limitedCategories->values())
 						'map' => $firstSupplier ? (float) $firstSupplier->map : null,
 						'inventory' => $firstSupplier->inventory ?? null,
 						'in_stock' => $firstSupplier->in_stock ?? null,
-						'delivery_days' => $firstSupplier->delivery_days ?? null,
-						'delivery_days' => $firstSupplier->delivery_days ?? null,
+						'delivery_days' => $firstSupplier->delivery_days ?? null,					 
 						'return_policy' => $firstSupplier->return_policy ?? null,
 						'free_shipping' => $firstSupplier->free_shipping ?? null,
 						'warranty_information' => $firstSupplier->warranty_information ?? null,
+                        'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                        'is_fixed' => $firstSupplier->is_fixed ?? 0,
 					];
 				})->filter()->values(), // Remove null values and reset array keys
 				];
@@ -3556,11 +3559,12 @@ return response()->json($limitedCategories->values())
 						'map' => $firstSupplier ? (float) $firstSupplier->map : null,
 						'inventory' => $firstSupplier->inventory ?? null,
 						'in_stock' => $firstSupplier->in_stock ?? null,
-						'delivery_days' => $firstSupplier->delivery_days ?? null,
-						'delivery_days' => $firstSupplier->delivery_days ?? null,
+						'delivery_days' => $firstSupplier->delivery_days ?? null,						 
 						'return_policy' => $firstSupplier->return_policy ?? null,
 						'free_shipping' => $firstSupplier->free_shipping ?? null,
 						'warranty_information' => $firstSupplier->warranty_information ?? null,
+                        'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                        'is_fixed' => $firstSupplier->is_fixed ?? 0,
 					];
 				})->filter()->values(), // Remove null values and reset array keys
 				];

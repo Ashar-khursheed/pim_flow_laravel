@@ -391,7 +391,9 @@ class ProductController extends Controller
                             $product->delivery_days = $firstSupplier->delivery_days;
                             $product->return_policy = $firstSupplier->return_policy;
                             $product->free_shipping = $firstSupplier->free_shipping;
-                            $product->warranty_information = $firstSupplier->warranty_information;
+                            $product->min_quantity = $firstSupplier->min_quantity;
+                            $product->is_fixed = $firstSupplier->is_fixed;
+                            
                         } else {
                             // Defaults if no supplier exists
                             $product->vendor_sku = null;
@@ -408,6 +410,8 @@ class ProductController extends Controller
                             $product->return_policy = null;
                             $product->free_shipping = null;
                             $product->warranty_information = null;
+                            $product->min_quantity = 0;
+                            $product->is_fixed = 0;
                         }
 
 
@@ -1093,6 +1097,8 @@ class ProductController extends Controller
                  'return_policy' => $firstSupplier->return_policy ?? null,
                  'free_shipping' => $firstSupplier->free_shipping ?? null,
                  'warranty_information' => $firstSupplier->warranty_information ?? null,
+                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                'is_fixed' => $firstSupplier->is_fixed ?? 0,
             ];
         });
 
@@ -1249,6 +1255,8 @@ class ProductController extends Controller
                  'return_policy' => $firstSupplier->return_policy ?? null,
                  'free_shipping' => $firstSupplier->free_shipping ?? null,
                  'warranty_information' => $firstSupplier->warranty_information ?? null,
+                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
             ];
         });
 
@@ -1397,6 +1405,8 @@ class ProductController extends Controller
                  'return_policy' => $firstSupplier->return_policy ?? null,
                  'free_shipping' => $firstSupplier->free_shipping ?? null,
                  'warranty_information' => $firstSupplier->warranty_information ?? null,
+                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
             ];
         });
 
@@ -1720,6 +1730,8 @@ class ProductController extends Controller
         "return_policy" => $firstSupplier->return_policy ?? null,
         "free_shipping" => $firstSupplier->free_shipping ?? null,
         "warranty_information" => $firstSupplier->warranty_information ?? null,
+        'min_quantity' => $firstSupplier->min_quantity ?? 0,
+        'is_fixed' => $firstSupplier->is_fixed ?? 0,
         ];
 
         });
@@ -1915,13 +1927,10 @@ class ProductController extends Controller
                 'sku' => $product->sku,
                 "url" => $product->seoUrl->url ?? null,
                 'start_date' => $product->start_date,
-                'end_date' => $product->end_date,
-                'warranty_information' => $product->warranty_information,
+                'end_date' => $product->end_date,              
                 'currency' => $product->currency?->symbol,
                 'total_reviews' => $totalReviews,
-                'avg_rating' => $avgRating,
-                'best_price' => $product->sale_price ?? $product->price,
-                'delivery_days' => null, // optional to calculate
+                'avg_rating' => $avgRating,               
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
@@ -1945,6 +1954,8 @@ class ProductController extends Controller
                  'return_policy' => $firstSupplier->return_policy ?? null,
                  'free_shipping' => $firstSupplier->free_shipping ?? null,
                  'warranty_information' => $firstSupplier->warranty_information ?? null,
+                  'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                  'is_fixed' => $firstSupplier->is_fixed ?? 0,
             ];
         });
 

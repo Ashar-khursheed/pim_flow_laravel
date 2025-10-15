@@ -249,6 +249,9 @@ class WishlistController extends Controller
                     $product->delivery_days = $firstSupplier->delivery_days;
                     $product->return_policy = $firstSupplier->return_policy;
                     $product->free_shipping = $firstSupplier->free_shipping;
+                    $product->min_quantity = $firstSupplier->min_quantity;
+                    $product->is_fixed = $firstSupplier->is_fixed;
+                    
                    if (!empty($product->warrantyAttribute?->attribute_value)) {
                         $product->warranty_information = $product->warrantyAttribute->attribute_value;
                     } elseif (!empty($firstSupplier?->warranty_information)) {
@@ -271,7 +274,9 @@ class WishlistController extends Controller
                     $product->in_stock = null;
                     $product->delivery_days = null;
                     $product->return_policy = null;
-                    $product->free_shipping = null;// Warranty: prefer attribute value over supplier
+                    $product->free_shipping = null; 
+                    $product->min_quantity = 0;
+                    $product->is_fixed = 0;
                     if (!empty($product->warrantyAttribute?->attribute_value)) {
                         $product->warranty_information = $product->warrantyAttribute->attribute_value;
                     } elseif (!empty($firstSupplier?->warranty_information)) {
