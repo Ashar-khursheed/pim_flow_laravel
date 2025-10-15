@@ -10,6 +10,7 @@ use PhpUnitsOfMeasure\PhysicalQuantity\Area;
 use PhpUnitsOfMeasure\PhysicalQuantity\Energy;
 use PhpUnitsOfMeasure\PhysicalQuantity\Pressure;
 use PhpUnitsOfMeasure\PhysicalQuantity\Force;
+use PhpUnitsOfMeasure\PhysicalQuantity\Power;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -318,6 +319,7 @@ if (!function_exists('convert_unit')) {
 				'energy' => Energy::class,
 				'pressure' => Pressure::class,
 				'force' => Force::class,
+				'power' => Power::class,
 			];
 
 			$type = strtolower($type);
