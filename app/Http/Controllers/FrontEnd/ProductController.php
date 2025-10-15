@@ -495,46 +495,97 @@ class ProductController extends Controller
             }
 
 
-            $product->productVariants = $product->productVariants->map(function ($variant) {
+            // $product->productVariants = $product->productVariants->map(function ($variant) {
+            //     $childIds = json_decode($variant->child_ids, true) ?? [];
+            //     $variants = json_decode($variant->variants, true) ?? [];
+            //     $children = \DB::table('ec_products')
+            //         ->whereIn('id', $childIds)
+            //         ->get(['id', 'name', 'sku']);
+            //     $variantChildren = $children->map(function ($c) {
+            //         return [
+            //             'id' => $c->id,
+            //             'name' => $c->name,
+            //             'sku' => $c->sku,
+            //         ];
+            //     });
+
+
+            //     $productVariants = collect($variants)->map(function ($v) {
+
+
+            //         $attributes = Attribute::where('id', $v['attribute_id'])
+            //             ->pluck('name', 'id');
+
+            //         return [
+            //             'attribute_id' => $v['attribute_id'],
+            //             'attribute_name' => $attributes[$v['attribute_id']] ?? null,
+            //             'label' => $v['labels'] ?? null,
+            //             'type' => $v['type'] ?? null,
+            //         ];
+            //     });
+
+
+            //     return [
+            //         'variants' => $productVariants,
+            //         'child' => $variantChildren,
+
+            //     ];
+            // })->values();
+          $product->productVariants = $product->productVariants->map(function ($variant) {
                 $childIds = json_decode($variant->child_ids, true) ?? [];
                 $variants = json_decode($variant->variants, true) ?? [];
+
+                // Fetch all child products
                 $children = \DB::table('ec_products')
                     ->whereIn('id', $childIds)
-                    ->get(['id', 'name', 'sku']);
-                $variantChildren = $children->map(function ($c) {
-                    return [
-                        'id' => $c->id,
-                        'name' => $c->name,
-                        'sku' => $c->sku,
-                    ];
-                });
+                    ->select('id', 'sku')
+                    ->get();
 
+                $result = [];
 
-                $productVariants = collect($variants)->map(function ($v) {
+                foreach ($variants as $v) {
+                    // Get attribute name
+                    $attributeName = \DB::table('attributes')
+                        ->where('id', $v['attribute_id'])
+                        ->value('name');
 
+                    // Create child array for this attribute
+                    $childrenData = $children->map(function ($child) use ($v) {
+                        // Get attribute_value from product_attributes
+                        $attrValue = \DB::table('product_attributes')
+                            ->where('product_id', $child->id)
+                            ->where('attribute_id', $v['attribute_id'])
+                            ->value('attribute_value');
 
-                    $attributes = Attribute::where('id', $v['attribute_id'])
-                        ->pluck('name', 'id');
+                        // Get slug from seo_management table
+                        $slug = \DB::table('seo_management')
+                            ->where('product_id', $child->id)
+                            ->value('slug');
 
-                    return [
+                        return [
+                            'id' => $child->id,
+                            'sku' => $child->sku,
+                            'attribute_value' => $attrValue,
+                            'slug' => $slug,
+                        ];
+                    });
+
+                    $result[] = [
                         'attribute_id' => $v['attribute_id'],
-                        'attribute_name' => $attributes[$v['attribute_id']] ?? null,
-                        'label' => $v['labels'] ?? null,
-                        'type' => $v['type'] ?? null,
+                        'attribute_name' => $attributeName,
+                        'label' => $v['labels'] ?? $attributeName,
+                        'type' => $v['type'] ?? 'dropdown',
+                        'child' => $childrenData,
                     ];
-                });
+                }
 
-
-                return [
-                    'variants' => $productVariants,
-                    'child' => $variantChildren,
-
-                ];
-            })->values();
+                return $result;
+            })->flatten(1)->values();
 
             if ($product->productVariants->isEmpty()) {
                 $product->productVariants = [];
             }
+
             return $product;
         });
         return response()->json([
