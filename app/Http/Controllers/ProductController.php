@@ -298,9 +298,13 @@ class ProductController extends BaseController
 		$product->status = 'draft';
 		$product->created_at = now();
 		$product->updated_at = now();
-		// $product->created_by_id = auth()->id();
-		// $product->created_by_type = User::class;
+		$product->created_by = auth()->id();
 		$product->save();
+
+		/* Create English translation */
+		$product->translateOrNew('en')->name = $request->name;
+		$product->save();
+
 		$this->saveProductCategory($product, $request->product_family);
 
 		return response()->json([
@@ -939,8 +943,8 @@ class ProductController extends BaseController
 						if (!$value && !$measurementUnitID) {
 							/* Both missing = delete the existing attribute */
 							$product->productAttributes()
-								->where('attribute_id', $attributeId)
-								->delete();
+							->where('attribute_id', $attributeId)
+							->delete();
 						} else {
 							/* Both exist = update or create attribute */
 							$product->productAttributes()->updateOrCreate(
@@ -957,8 +961,8 @@ class ProductController extends BaseController
 						if (empty($value)) {
 							/* Delete non-measurement attribute if empty */
 							$product->productAttributes()
-								->where('attribute_id', $attributeId)
-								->delete();
+							->where('attribute_id', $attributeId)
+							->delete();
 						} else {
 							/* Update or create normal attribute */
 							$product->productAttributes()->updateOrCreate(
