@@ -116,15 +116,15 @@ class OrderController extends Controller
 			if ($request->has('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-						$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
-						break;
+					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+					break;
 					case 'Unpaid':
-						$recordsQuery->where('orders.paid_amount', 0);
-						break;
+					$recordsQuery->where('orders.paid_amount', 0);
+					break;
 					case 'Partially Paid':
-						$recordsQuery->where('orders.paid_amount', '>', 0)
-							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
-						break;
+					$recordsQuery->where('orders.paid_amount', '>', 0)
+					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+					break;
 				}
 			}
 
@@ -166,9 +166,9 @@ class OrderController extends Controller
 			}
 
 			$records = $recordsQuery
-				->offset(($page - 1) * $length)
-				->limit($length)
-				->get();
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
 
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
@@ -201,8 +201,8 @@ class OrderController extends Controller
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-						? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-						: null;
+					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 
 					if ($orderProduct->accessoryCharges) {
 						$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -316,8 +316,8 @@ class OrderController extends Controller
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
-			->where('customer_id', $request->customer_id)
-			->first();
+		->where('customer_id', $request->customer_id)
+		->first();
 
 		if (!$address) {
 			return response()->json([
@@ -508,7 +508,7 @@ class OrderController extends Controller
 					if ($request->boolean('is_squarePayment')) {
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
-								->createPaymentLink($order);
+							->createPaymentLink($order);
 							if ($paymentLink) {
 								$order = Order::find($order->id);
 								$order->payment_link = $paymentLink;
@@ -525,7 +525,7 @@ class OrderController extends Controller
 
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\StaxPaymentController::class)
-								->createStaxPaymentLink($order);
+							->createStaxPaymentLink($order);
 							if ($paymentLink) {
 								$order = Order::find($order->id);
 								$order->payment_link = $paymentLink;
@@ -576,18 +576,18 @@ class OrderController extends Controller
 				$product = $orderProduct->product;
 				if ($product) {
 					$product->images = is_array($product->images)
-						? $product->images
-						: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+					? $product->images
+					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 					$product->brand_name = $product->brand->name ?? null;
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
 
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-					->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+				->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -776,8 +776,8 @@ class OrderController extends Controller
 			}
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
+			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+			: null;
 
 			$orderProduct->nofraudResponse->response ?? null;
 			$orderProduct->nofraud_decision = $data['decision'] ?? null;
@@ -1097,8 +1097,8 @@ class OrderController extends Controller
 				}
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -1226,6 +1226,13 @@ class OrderController extends Controller
 				'success' => true,
 				'message' => 'Order status updated successfully',
 				'data' => $order->fresh(['tracking'])
+			]);
+		}
+
+		if ($newStatus == 'Delivered' && $order->is_reserved) {
+			return response()->json([
+				'success' => false,
+				'message' => "This order is reserved and cannot be marked as delivered."
 			]);
 		}
 
@@ -1461,6 +1468,13 @@ class OrderController extends Controller
 			]);
 		}
 
+		if ($newStatus == 'Delivered' && $order->is_reserved) {
+			return response()->json([
+				'success' => false,
+				'message' => "This product belongs to a reserved order and cannot be marked as delivered."
+			]);
+		}
+
 		/* Other status validation flow */
 		$otherStatus = [
 			'Confirmed',
@@ -1652,8 +1666,8 @@ class OrderController extends Controller
 			/* Process each product */
 			foreach ($request->products as $productData) {
 				$orderProduct = OrderProduct::where('id', $productData['order_product_id'])
-					->where('order_id', $order->id)
-					->firstOrFail();
+				->where('order_id', $order->id)
+				->firstOrFail();
 
 				if ($productData['quantity'] > $orderProduct->remaining_quantity) {
 					throw new \Exception("Cannot ship more than remaining quantity for product ID {$orderProduct->id}");
