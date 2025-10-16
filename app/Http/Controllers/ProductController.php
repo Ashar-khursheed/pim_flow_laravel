@@ -200,6 +200,7 @@ class ProductController extends BaseController
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
 				'status' => $product->status,
+				'quote_available' => $product->quote_available,
 				'price' => null,
 				'sale_price' => null,
 				'margin' => null,
@@ -224,6 +225,7 @@ class ProductController extends BaseController
 			'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 			'brand' => optional($product->brand)->name,
 			'status' => $product->status,
+			'quote_available' => $product->quote_available,
 			'price' => $firstSupplier->price,
 			'sale_price' => $firstSupplier->sale_price,
 			'vendor_id' => $firstSupplier->vendor_id,
@@ -296,6 +298,7 @@ class ProductController extends BaseController
 		$product->sku = $request->sku;
 		$product->website_ids = implode(',', $request->websites);
 		$product->status = 'draft';
+		$product->quote_available = 0;
 		$product->created_at = now();
 		$product->updated_at = now();
 		$product->created_by = auth()->id();
@@ -532,8 +535,7 @@ class ProductController extends BaseController
 				'vendor_sku' => $productSupplier->vendor_sku,
 				'total_cost_per_item' => $productSupplier->total_cost_per_item,
 				'inventory' => $productSupplier->inventory,
-				'in_stock' => $productSupplier->in_stock,
-				'vendor_id' => $productSupplier->vendor_id,
+				'in_stock' => $productSupplier->in_stock,				 
 				'vendor_name' => $productSupplier->vendor->name,
 			];
 		});
@@ -701,6 +703,7 @@ class ProductController extends BaseController
 	 *                 @OA\Property(property="video_path[]", type="array", @OA\Items(type="string", format="binary")),
 	 *                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
 	 *                 @OA\Property(property="is_variation", type="boolean", example=false),
+	 *                 @OA\Property(property="quote_available", type="boolean", example=false),
 	 *                 @OA\Property(property="vendor_id", type="integer", example=7),
 	 *                 @OA\Property(property="brand_id", type="integer", example=13),
 	 *                 @OA\Property(property="views", type="integer", example=200),
@@ -1040,6 +1043,7 @@ class ProductController extends BaseController
 					}
 
 					$product->translateOrNew($locale)->description = $jsonEncoded;
+					
 					$product->save();
 				}
 			}
@@ -1587,7 +1591,7 @@ class ProductController extends BaseController
 		foreach ($input as $key => $value) {
 			$product->$key = $value;
 		}
-
+		$product->quote_available = 0;
 		/* Save the product */
 		$product->save();
 

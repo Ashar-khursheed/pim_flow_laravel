@@ -27292,6 +27292,404 @@
                 }
             }
         },
+        "/api/made-to-orders": {
+            "get": {
+                "tags": [
+                    "Made to Orders"
+                ],
+                "summary": "Get all made-to-orders with pagination and filters",
+                "description": "Retrieve a paginated list of made-to-orders with optional search and sorting parameters.",
+                "operationId": "354c1c5028ff1d5b40d82e65ede127be",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search term (name, email, city, state, country, phone_number)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "John"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "email",
+                                "city",
+                                "country",
+                                "created_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Orders retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 20
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 20
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 100
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Made to Orders"
+                ],
+                "summary": "Create a new made-to-order request",
+                "description": "This API allows users to create a new made-to-order request with customer and product details.",
+                "operationId": "67950a4d28e32df84b866b4cf17a2050",
+                "requestBody": {
+                    "description": "Made to Order form data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "quantity",
+                                    "name",
+                                    "email",
+                                    "address",
+                                    "city",
+                                    "country",
+                                    "zipcode",
+                                    "phone_number"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "description": "ID of the product to order",
+                                        "type": "integer",
+                                        "example": 101
+                                    },
+                                    "quantity": {
+                                        "description": "Quantity of the product",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "name": {
+                                        "description": "Customer full name",
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "description": "Customer email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "address": {
+                                        "description": "Shipping address",
+                                        "type": "string",
+                                        "example": "123 Main Street, Connaught Place"
+                                    },
+                                    "city": {
+                                        "description": "City name",
+                                        "type": "string",
+                                        "example": "New Delhi"
+                                    },
+                                    "state": {
+                                        "description": "State name",
+                                        "type": "string",
+                                        "example": "Delhi"
+                                    },
+                                    "country": {
+                                        "description": "Country name",
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "zipcode": {
+                                        "description": "Postal or ZIP code",
+                                        "type": "string",
+                                        "example": "110001"
+                                    },
+                                    "phone_number": {
+                                        "description": "Customer contact number",
+                                        "type": "string",
+                                        "example": "+91-9876543210"
+                                    },
+                                    "notes": {
+                                        "description": "Optional order notes",
+                                        "type": "string",
+                                        "example": "Need delivery before 25th December"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Made to Order request created successfully"
+                    },
+                    "400": {
+                        "description": "Validation error or bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/made-to-orders/{id}": {
+            "get": {
+                "tags": [
+                    "Made to Orders"
+                ],
+                "summary": "Get a specific made-to-order",
+                "description": "Retrieve details of a single made-to-order by its ID.",
+                "operationId": "622679db4ea07a2e657fc4662136a8e1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Made-to-order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Made-to-order retrieved successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    },
+                    "404": {
+                        "description": "Made-to-order not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Made to Orders"
+                ],
+                "summary": "Update an existing made-to-order",
+                "description": "Update details of an existing made-to-order by its ID.",
+                "operationId": "748ae0c1366399c5adeb1f7f7d330b5b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The ID of the made-to-order record to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Updated made-to-order data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "quantity",
+                                    "name",
+                                    "email",
+                                    "address",
+                                    "city",
+                                    "state",
+                                    "country",
+                                    "zipcode",
+                                    "phone_number"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 101
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Street Name"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "New Delhi"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "Delhi"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "zipcode": {
+                                        "type": "string",
+                                        "example": "110001"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "+91-9876543210"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Urgent delivery requested"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Made-to-order updated successfully"
+                    },
+                    "404": {
+                        "description": "Made-to-order not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Made to Orders"
+                ],
+                "summary": "Delete a made-to-order",
+                "operationId": "c526ca667d51b066033f4f412fc1e5ab",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/measurement-types": {
             "get": {
                 "tags": [
@@ -31503,6 +31901,10 @@
                                         }
                                     },
                                     "is_variation": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "quote_available": {
                                         "type": "boolean",
                                         "example": false
                                     },
@@ -42379,6 +42781,10 @@
         {
             "name": "Locations",
             "description": "Locations"
+        },
+        {
+            "name": "Made to Orders",
+            "description": "Made to Orders"
         },
         {
             "name": "Measurement",
