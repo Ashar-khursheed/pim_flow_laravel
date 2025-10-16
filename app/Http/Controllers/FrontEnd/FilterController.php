@@ -4,6 +4,7 @@ namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 
 use App\Models\Category;
 use App\Models\Product;
@@ -75,6 +76,12 @@ class FilterController extends Controller
 	 */
 	public function index(Request $request)
 	{
+		// $locale = $request->input('locale', 'ar');
+		// // dd($locale);
+		// if (in_array($locale, ['ar', 'en'])) {
+		// 	App::setLocale($locale);
+		// }
+
 		/* Validate request data */
 		$request->validate([
 			'category_id' => 'required|integer|exists:categories,id',
@@ -447,9 +454,11 @@ class FilterController extends Controller
 				'free_shipping' => $firstSupplier->free_shipping ?? null,
 				'warranty_information' => $firstSupplier->warranty_information ?? null,
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
-                'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 			];
 		}
+
+
 		/************************* Fetch Products ***********************/
 		$finalResponse = array_merge([
 			'success' => true,
