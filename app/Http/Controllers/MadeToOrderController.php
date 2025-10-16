@@ -166,7 +166,7 @@ class MadeToOrderController extends Controller
      *             @OA\Schema(
      *                 required={"product_id", "quantity", "name", "email","phone_number","notes"},
      *                 
-     *                 @OA\Property(property="product_id", type="integer", example=101, description="ID of the product to order"),
+     *                 @OA\Property(property="product_id", type="integer", example=1795, description="ID of the product to order"),
      *                 @OA\Property(property="quantity", type="integer", example=2, description="Quantity of the product"),
      *                 @OA\Property(property="name", type="string", example="John Doe", description="Customer full name"),
      *                 @OA\Property(property="email", type="string", format="email", example="john@example.com", description="Customer email address"),
@@ -329,7 +329,7 @@ class MadeToOrderController extends Controller
      *         description="Updated made-to-order data",
      *         @OA\JsonContent(
      *             required={"product_id", "quantity", "name", "email", "phone_number","notes"},
-     *             @OA\Property(property="product_id", type="integer", example=101),
+     *             @OA\Property(property="product_id", type="integer", example=1795),
      *             @OA\Property(property="quantity", type="integer", example=2),
      *             @OA\Property(property="name", type="string", example="John Doe"),
      *             @OA\Property(property="email", type="string", example="john.doe@example.com"),
@@ -338,7 +338,7 @@ class MadeToOrderController extends Controller
      *             @OA\Property(property="state", type="string", example="Delhi"),
      *             @OA\Property(property="country", type="string", example="India"),
      *             @OA\Property(property="zipcode", type="string", example="110001"),
-     *             @OA\Property(property="phone_number", type="string", example="9876543210"),
+    *             @OA\Property(property="phone_number", type="string", example="9876543210"),
      *             @OA\Property(property="notes", type="string", example="Urgent delivery requested")
      *         )
      *     ),

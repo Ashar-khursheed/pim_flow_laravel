@@ -108,6 +108,7 @@ use App\Http\Controllers\FrontEnd\SearchController as F_SearchController;
 use App\Http\Controllers\FrontEnd\SliderController as F_SliderController;
 use App\Http\Controllers\FrontEnd\SquarePaymentController as F_SquarePaymentController;
 use App\Http\Controllers\FrontEnd\LocationController as F_LocationController;
+use App\Http\Controllers\FrontEnd\MadeToOrderController as F_MadeToOrderController;
 use App\Http\Controllers\FrontEnd\ReturnOrderProductController as F_ReturnOrderProductController;
 use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterController;
 use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
@@ -851,6 +852,8 @@ Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'crea
 Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
 Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
+
+Route::post('/frontend/made-to-orders', [F_MadeToOrderController::class, 'store']);
 
 Route::post('/find-shipping-charges', [ShippingReportController::class, 'findShippingCharges']);
 Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);

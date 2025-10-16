@@ -18400,6 +18400,104 @@
                 }
             }
         },
+        "/api/frontend/made-to-orders": {
+            "post": {
+                "tags": [
+                    "Frontend Made to Orders"
+                ],
+                "summary": "Create a new made-to-order request",
+                "description": "This API allows users to create a new made-to-order request with customer and product details.",
+                "operationId": "712c2833e61a93af31baeae6d9730f73",
+                "requestBody": {
+                    "description": "Made to Order form data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "quantity",
+                                    "name",
+                                    "email",
+                                    "phone_number",
+                                    "notes"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "description": "ID of the product to order",
+                                        "type": "integer",
+                                        "example": 1808
+                                    },
+                                    "quantity": {
+                                        "description": "Quantity of the product",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "name": {
+                                        "description": "Customer full name",
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "description": "Customer email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "address": {
+                                        "description": "Shipping address",
+                                        "type": "string",
+                                        "example": "123 Main Street, Connaught Place"
+                                    },
+                                    "city": {
+                                        "description": "City name",
+                                        "type": "string",
+                                        "example": "New Delhi"
+                                    },
+                                    "state": {
+                                        "description": "State name",
+                                        "type": "string",
+                                        "example": "Delhi"
+                                    },
+                                    "country": {
+                                        "description": "Country name",
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "zipcode": {
+                                        "description": "Postal or ZIP code",
+                                        "type": "string",
+                                        "example": "110001"
+                                    },
+                                    "phone_number": {
+                                        "description": "Customer contact number",
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "notes": {
+                                        "description": "Optional order notes",
+                                        "type": "string",
+                                        "example": "Need delivery before 25th December"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Made to Order request created successfully"
+                    },
+                    "400": {
+                        "description": "Validation error or bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    }
+                }
+            }
+        },
         "/api/frontend/menu-banners": {
             "get": {
                 "tags": [
@@ -27434,7 +27532,7 @@
                                     "product_id": {
                                         "description": "ID of the product to order",
                                         "type": "integer",
-                                        "example": 101
+                                        "example": 1795
                                     },
                                     "quantity": {
                                         "description": "Quantity of the product",
@@ -27584,7 +27682,7 @@
                                 "properties": {
                                     "product_id": {
                                         "type": "integer",
-                                        "example": 101
+                                        "example": 1795
                                     },
                                     "quantity": {
                                         "type": "integer",
@@ -42643,6 +42741,10 @@
         {
             "name": "Frontend-Location",
             "description": "Frontend-Location"
+        },
+        {
+            "name": "Frontend Made to Orders",
+            "description": "Frontend Made to Orders"
         },
         {
             "name": "Frontend Menu Banners",
