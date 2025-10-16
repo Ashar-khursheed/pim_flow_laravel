@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Validator;
 class MadeToOrderController extends Controller
 {
 
-   /**
+    /**
      * @OA\Get(
      *     path="/api/made-to-orders",
      *     summary="Get all made-to-orders with pagination and filters",
@@ -44,7 +44,7 @@ class MadeToOrderController extends Controller
      *         in="query",
      *         description="Column name to sort by",
      *         required=false,
-     *         @OA\Schema(type="string", enum={"id", "name", "email", "city", "country", "created_at"})
+     *         @OA\Schema(type="string", enum={"id", "name", "email"})
      *     ),
      *     @OA\Parameter(
      *         name="sort_dir",
@@ -120,14 +120,14 @@ class MadeToOrderController extends Controller
                 'product_id' => $payment->product_id,
                 'quantity' => $payment->quantity,
                 'name' => $payment->name,
-                'email' => $payment->email??null,
-                'address' => $payment->address?? null,
-                'city' => $payment->city??null,
-                'state' => $payment->state??null,
-                'country' => $payment->country??null,
-                'zipcode' => $payment->zipcode??null,
-                'phone_number' => $payment->phone_number??null,               
-                'notes' => $payment->notes,                
+                'email' => $payment->email ?? null,
+                'address' => $payment->address ?? null,
+                'city' => $payment->city ?? null,
+                'state' => $payment->state ?? null,
+                'country' => $payment->country ?? null,
+                'zipcode' => $payment->zipcode ?? null,
+                'phone_number' => $payment->phone_number ?? null,
+                'notes' => $payment->notes,
                 'created_at' => date('d-m-Y', strtotime($payment->created_at)),
                 'updated_at' => date('d-m-Y', strtotime($payment->updated_at)),
             ];
@@ -150,84 +150,71 @@ class MadeToOrderController extends Controller
         ]);
 
     }
-     
+
     /**
- * @OA\Post(
- *     path="/api/made-to-orders",
- *     summary="Create a new made-to-order request",
- *     description="This API allows users to create a new made-to-order request with customer and product details.",
- *     tags={"Made to Orders"},
- *     security={{"bearerAuth": {}}},
- *     @OA\RequestBody(
- *         required=true,
- *         description="Made to Order form data",
- *         @OA\MediaType(
- *             mediaType="multipart/form-data",
- *             @OA\Schema(
- *                 required={"product_id", "quantity", "name", "email", "address", "city", "country", "zipcode", "phone_number"},
- *                 
- *                 @OA\Property(property="product_id", type="integer", example=101, description="ID of the product to order"),
- *                 @OA\Property(property="quantity", type="integer", example=2, description="Quantity of the product"),
- *                 @OA\Property(property="name", type="string", example="John Doe", description="Customer full name"),
- *                 @OA\Property(property="email", type="string", format="email", example="john@example.com", description="Customer email address"),
- *                 @OA\Property(property="address", type="string", example="123 Main Street, Connaught Place", description="Shipping address"),
- *                 @OA\Property(property="city", type="string", example="New Delhi", description="City name"),
- *                 @OA\Property(property="state", type="string", example="Delhi", description="State name"),
- *                 @OA\Property(property="country", type="string", example="India", description="Country name"),
- *                 @OA\Property(property="zipcode", type="string", example="110001", description="Postal or ZIP code"),
- *                 @OA\Property(property="phone_number", type="string", example="+91-9876543210", description="Customer contact number"),
- *                 @OA\Property(property="notes", type="string", example="Need delivery before 25th December", description="Optional order notes"),               
- *                  
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=201,
- *         description="Made to Order request created successfully"
- *     ),
- *     @OA\Response(
- *         response=400,
- *         description="Validation error or bad request"
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized - Invalid or missing authentication token"
- *     )
- * )
- */
+     * @OA\Post(
+     *     path="/api/made-to-orders",
+     *     summary="Create a new made-to-order request",
+     *     description="This API allows users to create a new made-to-order request with customer and product details.",
+     *     tags={"Made to Orders"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Made to Order form data",
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"product_id", "quantity", "name", "email", "address", "city", "country", "zipcode", "phone_number"},
+     *                 
+     *                 @OA\Property(property="product_id", type="integer", example=101, description="ID of the product to order"),
+     *                 @OA\Property(property="quantity", type="integer", example=2, description="Quantity of the product"),
+     *                 @OA\Property(property="name", type="string", example="John Doe", description="Customer full name"),
+     *                 @OA\Property(property="email", type="string", format="email", example="john@example.com", description="Customer email address"),
+     *                 @OA\Property(property="address", type="string", example="123 Main Street, Connaught Place", description="Shipping address"),
+     *                 @OA\Property(property="city", type="string", example="New Delhi", description="City name"),
+     *                 @OA\Property(property="state", type="string", example="Delhi", description="State name"),
+     *                 @OA\Property(property="country", type="string", example="India", description="Country name"),
+     *                 @OA\Property(property="zipcode", type="string", example="110001", description="Postal or ZIP code"),
+     *                 @OA\Property(property="phone_number", type="string", example="+91-9876543210", description="Customer contact number"),
+     *                 @OA\Property(property="notes", type="string", example="Need delivery before 25th December", description="Optional order notes"),               
+     *                  
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Made to Order request created successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error or bad request"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized - Invalid or missing authentication token"
+     *     )
+     * )
+     */
     public function store(Request $request)
-    {  
-       
-        try{
-        // $validated = $request->validate([
-        //     'product_id' => 'required|exists:ec_products,id',
-        //     'quantity' => 'required|integer|min:1',
-        //     'name' => 'required|string|max:255',
-        //     'email' => 'required|email',
-        //     'address' => 'nullable|string',
-        //     'city' => 'required|string|max:100',
-        //     'state' => 'nullable|string|max:100',
-        //     'country' => 'required|string|max:100',
-        //     'zipcode' => 'nullable|string|max:20',
-        //     'phone_number' => 'required|string|regex:/^[0-9\-\+\(\)\s]+$/',
-        //     'notes' => 'required|string',
-        // ]);
- 
-         $validator = Validator::make($request->all(), [
-            'product_id' => 'required|exists:ec_products,id',
-            'quantity' => 'required|integer|min:1',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'address' => 'nullable|string',
-            'city' => 'required|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'required|string|max:100',
-            'zipcode' => 'nullable|string|max:20',
-            'phone_number' => 'required|string|regex:/^[0-9\-\+\(\)\s]+$/',
-            'notes' => 'required|string',
+    {
+
+        try {
+
+            $validator = Validator::make($request->all(), [
+                'product_id' => 'required|exists:ec_products,id',
+                'quantity' => 'required|integer|min:1',
+                'name' => 'required|string|max:255',
+                'email' => 'required|email',
+                'address' => 'nullable|string',
+                'city' => 'required|string|max:100',
+                'state' => 'nullable|string|max:100',
+                'country' => 'required|string|max:100',
+                'zipcode' => 'nullable|string|max:20',
+                'phone_number' => 'required|string|regex:/^[0-9\-\+\(\)\s]+$/',
+                'notes' => 'required|string',
             ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed',
@@ -235,30 +222,30 @@ class MadeToOrderController extends Controller
                 ], 422);
             }
 
-             $data = $validator->validated();
- 
-        $order = MadeToOrder::create($data);
+            $data = $validator->validated();
 
-      return response()->json([
-				'success' => true,
-				'message' => 'Payment recorded successfully.',
-				'data' => $order
-			], 201);
+            $order = MadeToOrder::create($data);
 
-		} catch (ValidationException $e) {
-			return response()->json([
-				'success' => false,
-				'message' => 'The given data was invalid.',
-				'errors' => $e->errors()
-			], 422);
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment recorded successfully.',
+                'data' => $order
+            ], 201);
 
-		} catch (\Exception $e) {
-			 
-			return response()->json([
-				'message' => 'Something went wrong while creating the payment.',
-				'error' => $e->getMessage()
-			], 500);
-		}
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The given data was invalid.',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'message' => 'Something went wrong while creating the payment.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
 
     }
 
@@ -295,80 +282,80 @@ class MadeToOrderController extends Controller
     {
         $order = MadeToOrder::with('product')->find($id);
 
-           $madeToOrder =  [
-                'id' => $order->id,
-                'product_id' => $order->product_id,
-                'quantity' => $order->quantity,
-                'name' => $order->name,
-                'email' => $order->email??null,
-                'address' => $order->address?? null,
-                'city' => $order->city??null,
-                'state' => $order->state??null,
-                'country' => $order->country??null,
-                'zipcode' => $order->zipcode??null,
-                'phone_number' => $order->phone_number??null,               
-                'notes' => $order->notes,                
-                'created_at' => date('d-m-Y', strtotime($order->created_at)),
-                'updated_at' => date('d-m-Y', strtotime($order->updated_at)),
-            ];
+        $madeToOrder = [
+            'id' => $order->id,
+            'product_id' => $order->product_id,
+            'quantity' => $order->quantity,
+            'name' => $order->name,
+            'email' => $order->email ?? null,
+            'address' => $order->address ?? null,
+            'city' => $order->city ?? null,
+            'state' => $order->state ?? null,
+            'country' => $order->country ?? null,
+            'zipcode' => $order->zipcode ?? null,
+            'phone_number' => $order->phone_number ?? null,
+            'notes' => $order->notes,
+            'created_at' => date('d-m-Y', strtotime($order->created_at)),
+            'updated_at' => date('d-m-Y', strtotime($order->updated_at)),
+        ];
 
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
 
-         return response()->json([
-				'success' => true,
-				'message' => 'Made to Order successfully',
-				'data' => $madeToOrder
-			]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Made to Order successfully',
+            'data' => $madeToOrder
+        ]);
     }
 
     /**
- * @OA\Put(
- *     path="/api/made-to-orders/{id}",
- *     summary="Update an existing made-to-order",
- *     description="Update details of an existing made-to-order by its ID.",
- *     tags={"Made to Orders"},
- *     security={{"bearerAuth": {}}},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="The ID of the made-to-order record to update",
- *         @OA\Schema(type="integer", example=1)
- *     ),
- *     @OA\RequestBody(
- *         required=true,
- *         description="Updated made-to-order data",
- *         @OA\JsonContent(
- *             required={"product_id", "quantity", "name", "email", "address", "city", "state", "country", "zipcode", "phone_number"},
- *             @OA\Property(property="product_id", type="integer", example=101),
- *             @OA\Property(property="quantity", type="integer", example=2),
- *             @OA\Property(property="name", type="string", example="John Doe"),
- *             @OA\Property(property="email", type="string", example="john.doe@example.com"),
- *             @OA\Property(property="address", type="string", example="123 Street Name"),
- *             @OA\Property(property="city", type="string", example="New Delhi"),
- *             @OA\Property(property="state", type="string", example="Delhi"),
- *             @OA\Property(property="country", type="string", example="India"),
- *             @OA\Property(property="zipcode", type="string", example="110001"),
- *             @OA\Property(property="phone_number", type="string", example="+91-9876543210"),
- *             @OA\Property(property="notes", type="string", example="Urgent delivery requested")
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Made-to-order updated successfully"
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Made-to-order not found"
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized - Invalid or missing authentication token"
- *     )
- * )
- */
+     * @OA\Put(
+     *     path="/api/made-to-orders/{id}",
+     *     summary="Update an existing made-to-order",
+     *     description="Update details of an existing made-to-order by its ID.",
+     *     tags={"Made to Orders"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the made-to-order record to update",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Updated made-to-order data",
+     *         @OA\JsonContent(
+     *             required={"product_id", "quantity", "name", "email", "address", "city", "state", "country", "zipcode", "phone_number"},
+     *             @OA\Property(property="product_id", type="integer", example=101),
+     *             @OA\Property(property="quantity", type="integer", example=2),
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", example="john.doe@example.com"),
+     *             @OA\Property(property="address", type="string", example="123 Street Name"),
+     *             @OA\Property(property="city", type="string", example="New Delhi"),
+     *             @OA\Property(property="state", type="string", example="Delhi"),
+     *             @OA\Property(property="country", type="string", example="India"),
+     *             @OA\Property(property="zipcode", type="string", example="110001"),
+     *             @OA\Property(property="phone_number", type="string", example="+91-9876543210"),
+     *             @OA\Property(property="notes", type="string", example="Urgent delivery requested")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Made-to-order updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Made-to-order not found"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized - Invalid or missing authentication token"
+     *     )
+     * )
+     */
     public function update(Request $request, $id)
     {
         $order = MadeToOrder::find($id);
@@ -389,27 +376,27 @@ class MadeToOrderController extends Controller
             'zipcode' => 'nullable|string|max:20',
             'phone_number' => 'required|string|regex:/^[0-9\-\+\(\)\s]+$/',
             'notes' => 'required|string',
-            ]);
+        ]);
 
         if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-             $data = $validator->validated();
+        $data = $validator->validated();
 
         $order->update($data);
- return response()->json([
-                'success' => true,
-                'message' => 'Product Variant updated successfully',
-                'data' => $order
-            ], 200);
-       
+        return response()->json([
+            'success' => true,
+            'message' => 'Product Variant updated successfully',
+            'data' => $order
+        ], 200);
+
     }
-     
+
     /**
      * @OA\Delete(
      *     path="/api/made-to-orders/{id}",
@@ -427,7 +414,7 @@ class MadeToOrderController extends Controller
      * )
      */
     public function destroy($id)
-    {  
+    {
         $order = MadeToOrder::find($id);
 
         if (!$order) {

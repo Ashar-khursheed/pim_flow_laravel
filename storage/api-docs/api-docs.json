@@ -27343,10 +27343,7 @@
                             "enum": [
                                 "id",
                                 "name",
-                                "email",
-                                "city",
-                                "country",
-                                "created_at"
+                                "email"
                             ]
                         }
                     },
