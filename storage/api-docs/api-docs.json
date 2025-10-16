@@ -27427,11 +27427,8 @@
                                     "quantity",
                                     "name",
                                     "email",
-                                    "address",
-                                    "city",
-                                    "country",
-                                    "zipcode",
-                                    "phone_number"
+                                    "phone_number",
+                                    "notes"
                                 ],
                                 "properties": {
                                     "product_id": {
@@ -27483,7 +27480,7 @@
                                     "phone_number": {
                                         "description": "Customer contact number",
                                         "type": "string",
-                                        "example": "+91-9876543210"
+                                        "example": "9876543210"
                                     },
                                     "notes": {
                                         "description": "Optional order notes",
@@ -27581,12 +27578,8 @@
                                     "quantity",
                                     "name",
                                     "email",
-                                    "address",
-                                    "city",
-                                    "state",
-                                    "country",
-                                    "zipcode",
-                                    "phone_number"
+                                    "phone_number",
+                                    "notes"
                                 ],
                                 "properties": {
                                     "product_id": {
@@ -27627,7 +27620,7 @@
                                     },
                                     "phone_number": {
                                         "type": "string",
-                                        "example": "+91-9876543210"
+                                        "example": "9876543210"
                                     },
                                     "notes": {
                                         "type": "string",

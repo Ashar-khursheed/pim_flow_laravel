@@ -164,7 +164,7 @@ class MadeToOrderController extends Controller
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
-     *                 required={"product_id", "quantity", "name", "email", "address", "city", "country", "zipcode", "phone_number"},
+     *                 required={"product_id", "quantity", "name", "email","phone_number","notes"},
      *                 
      *                 @OA\Property(property="product_id", type="integer", example=101, description="ID of the product to order"),
      *                 @OA\Property(property="quantity", type="integer", example=2, description="Quantity of the product"),
@@ -175,7 +175,7 @@ class MadeToOrderController extends Controller
      *                 @OA\Property(property="state", type="string", example="Delhi", description="State name"),
      *                 @OA\Property(property="country", type="string", example="India", description="Country name"),
      *                 @OA\Property(property="zipcode", type="string", example="110001", description="Postal or ZIP code"),
-     *                 @OA\Property(property="phone_number", type="string", example="+91-9876543210", description="Customer contact number"),
+     *                 @OA\Property(property="phone_number", type="string", example="9876543210", description="Customer contact number"),
      *                 @OA\Property(property="notes", type="string", example="Need delivery before 25th December", description="Optional order notes"),               
      *                  
      *             )
@@ -206,9 +206,9 @@ class MadeToOrderController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|email',
                 'address' => 'nullable|string',
-                'city' => 'required|string|max:100',
+                'city' => 'nullable|string|max:100',
                 'state' => 'nullable|string|max:100',
-                'country' => 'required|string|max:100',
+                'country' => 'nullable|string|max:100',
                 'zipcode' => 'nullable|string|max:20',
                 'phone_number' => 'required|string|regex:/^[0-9\-\+\(\)\s]+$/',
                 'notes' => 'required|string',
@@ -328,7 +328,7 @@ class MadeToOrderController extends Controller
      *         required=true,
      *         description="Updated made-to-order data",
      *         @OA\JsonContent(
-     *             required={"product_id", "quantity", "name", "email", "address", "city", "state", "country", "zipcode", "phone_number"},
+     *             required={"product_id", "quantity", "name", "email", "phone_number","notes"},
      *             @OA\Property(property="product_id", type="integer", example=101),
      *             @OA\Property(property="quantity", type="integer", example=2),
      *             @OA\Property(property="name", type="string", example="John Doe"),
@@ -338,7 +338,7 @@ class MadeToOrderController extends Controller
      *             @OA\Property(property="state", type="string", example="Delhi"),
      *             @OA\Property(property="country", type="string", example="India"),
      *             @OA\Property(property="zipcode", type="string", example="110001"),
-     *             @OA\Property(property="phone_number", type="string", example="+91-9876543210"),
+     *             @OA\Property(property="phone_number", type="string", example="9876543210"),
      *             @OA\Property(property="notes", type="string", example="Urgent delivery requested")
      *         )
      *     ),
@@ -365,17 +365,17 @@ class MadeToOrderController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'product_id' => 'required|exists:ec_products,id',
-            'quantity' => 'required|integer|min:1',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'address' => 'nullable|string',
-            'city' => 'required|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'required|string|max:100',
-            'zipcode' => 'nullable|string|max:20',
-            'phone_number' => 'required|string|regex:/^[0-9\-\+\(\)\s]+$/',
-            'notes' => 'required|string',
+             'product_id' => 'required|exists:ec_products,id',
+                'quantity' => 'required|integer|min:1',
+                'name' => 'required|string|max:255',
+                'email' => 'required|email',
+                'address' => 'nullable|string',
+                'city' => 'nullable|string|max:100',
+                'state' => 'nullable|string|max:100',
+                'country' => 'nullable|string|max:100',
+                'zipcode' => 'nullable|string|max:20',
+                'phone_number' => 'required|string|regex:/^[0-9\-\+\(\)\s]+$/',
+                'notes' => 'required|string',
         ]);
 
         if ($validator->fails()) {
