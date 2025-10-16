@@ -263,36 +263,12 @@ class ImportProductJob implements ShouldQueue
 					$rowError[] = "$category category does not exist or is not a valid lowest-level category.";
 				}
 
-				/* Stock status validation */
-				// $usStockStatusArray = [
-				// 	1 => "in_stock",
-				// 	2 => "out_of_stock",
-				// 	3 => "on_backorder"
-				// ];
-
-				// if ($stockStatus) {
-				// 	if (!is_numeric($stockStatus) || !array_key_exists((int) $stockStatus, $usStockStatusArray)) {
-				// 		$rowError[] = "Stock status should be numeric and either 1 for In-Stock, 2 for Out of Stock, or 3 for Pre Order.";
-				// 	} else {
-				// 		$stockStatus = $usStockStatusArray[(int) $stockStatus];
-				// 	}
-				// } else {
-				// 	$stockStatus = null;
-				// }
-
 				/* Is featured validation (Check for 0 if empty) */
 				if ($isFeatured !== '' && (!is_numeric($isFeatured) || !in_array($isFeatured, [0, 1]))) {
 					$rowError[] = "Is featured should be numeric and either 1 for Enable, or 0 for Disable.";
 				} else {
 					$isFeatured = $isFeatured !== '' ? (int) $isFeatured : 0;
 				}
-
-				// $frequentlyBoughtTogether = trim($rowData['Frequently Bought Together']);
-				// if ($frequentlyBoughtTogether) {
-				// 	$frequentlyBoughtTogether = json_encode(array_map(fn($value) => ['value' => trim($value)], explode(',', $frequentlyBoughtTogether)));
-				// } else {
-				// 	$frequentlyBoughtTogether = null;
-				// }
 
 				/* Process Images */
 				$fetchedImages = $this->getImageURLs((array) $images ?? []);
@@ -378,13 +354,18 @@ class ImportProductJob implements ShouldQueue
 				$product->gen_type = 0;
 				if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
 					$product->description = $jsonDescription;
+					$product->translateOrNew('en')->description = $jsonDescription;
+
 					$product->benefits_features = $jsonBenefitsFeatures;
+					$product->translateOrNew('en')->benefits_features = $jsonBenefitsFeatures;
+
 					Product::$observerUserId = $this->userId;
 					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
 					$product->save();
 					Product::$observerUserId = null;
 
 					$submittedQuestions = [];
+
 					/* Fetch existing FAQs for this product */
 					$existingFaqs = $product->faqs()->get()->keyBy('question');
 
@@ -396,35 +377,54 @@ class ImportProductJob implements ShouldQueue
 							$submittedQuestions[] = $faqQuestion;
 
 							if ($existingFaqs->has($faqQuestion)) {
-								/* Update */
-								$existingFaqs[$faqQuestion]->update([
+								/* Update existing FAQ */
+								$faq = $existingFaqs[$faqQuestion];
+								$faq->update([
+									'question' => $faqQuestion,
 									'answer' => $faqAnswer,
 								]);
+
+								/* Update translation (English) */
+								$faq->translateOrNew('en')->question = $faqQuestion;
+								$faq->translateOrNew('en')->answer   = $faqAnswer;
+
+								$faq->save();
 							} else {
-								/* Create */
-								Faq::create([
+								/* Create new FAQ */
+								$faq = new Faq([
 									'product_id' => $product->id,
 									'category_id' => 4,
 									'question' => $faqQuestion,
 									'answer' => $faqAnswer,
 									'status' => 'published',
 								]);
+
+								/* Add translations */
+								$faq->translateOrNew('en')->question = $faqQuestion;
+								$faq->translateOrNew('en')->answer = $faqAnswer;
+
+								$faq->save();
 							}
 						}
 					}
 
 					/* Delete FAQs not in current submission */
-					$product->faqs()->whereNotIn('question', $submittedQuestions)->delete();
+					$product->faqs()->whereNotIn('question', $submittedQuestions)->each(function ($faq) {
+						$faq->delete();
+					});
 				} else {
+					$jsonImages = json_encode($fetchedImages);
 					$product->name = $name;
+					$product->translateOrNew('en')->name = $name;
+
 					$product->sku = $sku;
 					$product->status = $product->id ? $status : 'draft';
 					$product->is_featured = $isFeatured;
 					$product->brand_id = $brandId;
-					$product->images = json_encode($fetchedImages);
+					$product->images = $jsonImages;
+					$product->translateOrNew('en')->images = $jsonImages;
+
 					$product->video_path = $uploadVideo;
-					// $product->stock_status = $stockStatus;
-					// $product->frequently_bought_together = $frequentlyBoughtTogether;
 					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
 					$product->barcode = !empty($barcode) ? $barcode : null;
 					$product->created_at = $product->id ? $product->created_at : now();
@@ -438,18 +438,7 @@ class ImportProductJob implements ShouldQueue
 
 					$this->saveProductCategory($product, $categoryId);
 					$this->saveProductTag($product, $tags);
-					// $this->saveSlugData($product, $url);
-					// $this->saveTranslation($product, $rowData);
-					// $this->saveDiscount($product, $rowData);
 				}
-
-				// if (!empty($meta_title) && !empty($meta_description) && $product->seoManagement) {
-				// 	$product->seoManagement->update([
-				// 		'meta_title' => $meta_title,
-				// 		'meta_description' => $meta_description,
-				// 	]);
-				// }
-
 
 				DB::commit();
 

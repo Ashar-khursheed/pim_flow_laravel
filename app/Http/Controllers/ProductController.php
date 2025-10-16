@@ -992,7 +992,7 @@ class ProductController extends BaseController
 				/* Only save if changed */
 				if ($updatedName !== $existingName) {
 					if ($locale === 'en') {
-						$product->description = $updatedName;
+						$product->name = $updatedName;
 					}
 
 					$product->translateOrNew($locale)->name = $updatedName;
