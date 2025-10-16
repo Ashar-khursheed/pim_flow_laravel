@@ -61,6 +61,10 @@ use App\Http\Controllers\Controller;
  *     description="API Endpoints for Product Accessories"
  * )
  *	@OA\Tag(
+ *     name="Made To Orders",
+ *     description="API Endpoints for Made To Orders"
+ * )
+ *	@OA\Tag(
  *     name="Delivery Payment History",
  *     description="Get list of Delivery Payment History"
  * )
