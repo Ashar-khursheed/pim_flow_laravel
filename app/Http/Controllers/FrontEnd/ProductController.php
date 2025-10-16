@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Brand;
 use App\Models\Attribute;
 use App\Models\SeoManagement;
+use App\Models\ProductAttribute;
 use App\Models\Review;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB; // Add this line
@@ -94,7 +95,7 @@ class ProductController extends Controller
         }
 
         // Start building the base query
-        $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews', 'seoUrl', 'accessories.items', 'productVariants'])->where('status', 'published');
+        $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews', 'seoUrl', 'accessories.items'])->where('status', 'published');
 
 
         $productId = $request->input('product_id'); // numeric ID
@@ -494,47 +495,58 @@ class ProductController extends Controller
                 $product->accessories = [];
             }
 
-
-            $product->productVariants = $product->productVariants->map(function ($variant) {
+ 
+          $product->productVariants = $product->productVariants->map(function ($variant) {
                 $childIds = json_decode($variant->child_ids, true) ?? [];
                 $variants = json_decode($variant->variants, true) ?? [];
-                $children = \DB::table('ec_products')
-                    ->whereIn('id', $childIds)
-                    ->get(['id', 'name', 'sku']);
-                $variantChildren = $children->map(function ($c) {
-                    return [
-                        'id' => $c->id,
-                        'name' => $c->name,
-                        'sku' => $c->sku,
-                    ];
-                });
 
+                // Fetch all child products
+                $children = Product::whereIn('id', $childIds)
+                    ->select('id', 'sku')
+                    ->get();
 
-                $productVariants = collect($variants)->map(function ($v) {
+                $result = [];
 
+                foreach ($variants as $v) {
+                    // Get attribute name
+                    $attributeName = Attribute::where('id', $v['attribute_id'])
+                        ->value('name');
 
-                    $attributes = Attribute::where('id', $v['attribute_id'])
-                        ->pluck('name', 'id');
+                    // Create child array for this attribute
+                    $childrenData = $children->map(function ($child) use ($v) {
+                        // Get attribute_value from product_attributes
+                        $attrValue = ProductAttribute::where('product_id', $child->id)
+                            ->where('attribute_id', $v['attribute_id'])
+                            ->value('attribute_value');
 
-                    return [
+                        // Get slug from seo_management table
+                        $slug = SeoManagement::where('relational_id', $child->id)
+                            ->value('url');
+
+                        return [
+                            'id' => $child->id,
+                            'sku' => $child->sku,
+                            'attribute_value' => $attrValue,
+                            'slug' => $slug,
+                        ];
+                    });
+
+                    $result[] = [
                         'attribute_id' => $v['attribute_id'],
-                        'attribute_name' => $attributes[$v['attribute_id']] ?? null,
-                        'label' => $v['labels'] ?? null,
-                        'type' => $v['type'] ?? null,
+                        'attribute_name' => $attributeName,
+                        'label' => $v['labels'] ?? $attributeName,
+                        'type' => $v['type'] ?? 'dropdown',
+                        'child' => $childrenData,
                     ];
-                });
+                }
 
-
-                return [
-                    'variants' => $productVariants,
-                    'child' => $variantChildren,
-
-                ];
-            })->values();
+                return $result;
+            })->flatten(1)->values();
 
             if ($product->productVariants->isEmpty()) {
                 $product->productVariants = [];
             }
+
             return $product;
         });
         return response()->json([
@@ -970,47 +982,58 @@ class ProductController extends Controller
                 $product->accessories = [];
             }
 
-             $product->productVariants = $product->productVariants->map(function ($variant) {
+                 $product->productVariants = $product->productVariants->map(function ($variant) {
                 $childIds = json_decode($variant->child_ids, true) ?? [];
                 $variants = json_decode($variant->variants, true) ?? [];
-                $children = \DB::table('ec_products')
-                    ->whereIn('id', $childIds)
-                    ->get(['id', 'name', 'sku']);
-                $variantChildren = $children->map(function ($c) {
-                    return [
-                        'id' => $c->id,
-                        'name' => $c->name,
-                        'sku' => $c->sku,
-                    ];
-                });
 
+                // Fetch all child products
+                $children = Product::whereIn('id', $childIds)
+                    ->select('id', 'sku')
+                    ->get();
 
-                $productVariants = collect($variants)->map(function ($v) {
+                $result = [];
 
+                foreach ($variants as $v) {
+                    // Get attribute name
+                    $attributeName = Attribute::where('id', $v['attribute_id'])
+                        ->value('name');
 
-                    $attributes = Attribute::where('id', $v['attribute_id'])
-                        ->pluck('name', 'id');
+                    // Create child array for this attribute
+                    $childrenData = $children->map(function ($child) use ($v) {
+                        // Get attribute_value from product_attributes
+                        $attrValue = ProductAttribute::where('product_id', $child->id)
+                            ->where('attribute_id', $v['attribute_id'])
+                            ->value('attribute_value');
 
-                    return [
+                        // Get slug from seo_management table
+                        $slug = SeoManagement::where('relational_id', $child->id)
+                            ->value('url');
+
+                        return [
+                            'id' => $child->id,
+                            'sku' => $child->sku,
+                            'attribute_value' => $attrValue,
+                            'slug' => $slug,
+                        ];
+                    });
+
+                    $result[] = [
                         'attribute_id' => $v['attribute_id'],
-                        'attribute_name' => $attributes[$v['attribute_id']] ?? null,
-                        'label' => $v['labels'] ?? null,
-                        'type' => $v['type'] ?? null,
+                        'attribute_name' => $attributeName,
+                        'label' => $v['labels'] ?? $attributeName,
+                        'type' => $v['type'] ?? 'dropdown',
+                        'child' => $childrenData,
                     ];
-                });
+                }
 
-
-                return [
-                    'variants' => $productVariants,
-                    'child' => $variantChildren,
-
-                ];
-            })->values();
+                return $result;
+            })->flatten(1)->values();
 
             if ($product->productVariants->isEmpty()) {
                 $product->productVariants = [];
             }
 
+         
             return $product;
         });
 
