@@ -97,8 +97,6 @@ class CustomerCartController extends Controller
 
 		$onlyTotalAmount = $request->has('only_total_amount') && $request->boolean('only_total_amount');
 
-		dd($recordsQuery->sum('total_amount1'));
-
 		$totalRecords = (clone $recordsQuery)->count();
 
 		/* Check if pagination requested */
