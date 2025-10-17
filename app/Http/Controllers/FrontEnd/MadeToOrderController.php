@@ -108,7 +108,7 @@ class MadeToOrderController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Payment recorded successfully.',
+                'message' => 'Made to Order successfully.',
                 'data' => $order
             ], 201);
 

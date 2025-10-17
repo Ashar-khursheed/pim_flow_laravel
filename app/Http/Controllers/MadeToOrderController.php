@@ -250,7 +250,7 @@ class MadeToOrderController extends Controller
             }
            return response()->json([
                 'success' => true,
-                'message' => 'Payment recorded successfully.',
+                'message' => 'Made to Order successfully.',
                 'data' => $order
             ], 201);
 
@@ -433,7 +433,7 @@ class MadeToOrderController extends Controller
         }
         return response()->json([
             'success' => true,
-            'message' => 'Product Variant updated successfully',
+            'message' => 'Made to Order updated successfully',
             'data' => $order
         ], 200);
 
