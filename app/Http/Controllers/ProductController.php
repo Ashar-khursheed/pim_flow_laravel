@@ -535,7 +535,7 @@ class ProductController extends BaseController
 				'vendor_sku' => $productSupplier->vendor_sku,
 				'total_cost_per_item' => $productSupplier->total_cost_per_item,
 				'inventory' => $productSupplier->inventory,
-				'in_stock' => $productSupplier->in_stock,				 
+				'in_stock' => $productSupplier->in_stock,
 				'vendor_name' => $productSupplier->vendor->name,
 			];
 		});
@@ -1043,7 +1043,7 @@ class ProductController extends BaseController
 					}
 
 					$product->translateOrNew($locale)->description = $jsonEncoded;
-					
+
 					$product->save();
 				}
 			}
