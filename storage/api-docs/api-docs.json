@@ -8543,6 +8543,29 @@
                         }
                     },
                     {
+                        "name": "from_admin_panel",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "only_total_amount",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "username",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "name": "from_date",
                         "in": "query",
                         "schema": {
