@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\MadeToOrder;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 class MadeToOrderController extends Controller
 {
     /**
@@ -80,8 +81,30 @@ class MadeToOrderController extends Controller
             }
 
             $data = $validator->validated();
-
             $order = MadeToOrder::create($data);
+        
+            if ($order) {
+                $originalValues = [];
+                $newValues = $order->getAttributes();
+                $changes = [];
+                foreach ($newValues as $field => $newValue) {
+                    $changes[$field] = [
+                        'old' => $originalValues[$field] ?? null,
+                        'new' => $newValue,
+                    ];
+                }
+                $versionData = [
+                    'version_id' => $order->id,
+                    'created_by' => Auth::id() ?? 1,
+                    'module' => 'MadeToOrder',
+                    'action' => 'Create',
+                    'description' => json_encode($changes),
+                ];
+
+                app(\App\Services\VersionService::class)
+                    ->createVersion($versionData);
+            }
+
 
             return response()->json([
                 'success' => true,

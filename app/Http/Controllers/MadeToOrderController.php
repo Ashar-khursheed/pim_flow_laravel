@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\MadeToOrder;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 class MadeToOrderController extends Controller
 {
 
@@ -226,7 +227,28 @@ class MadeToOrderController extends Controller
 
             $order = MadeToOrder::create($data);
 
-            return response()->json([
+            if ($order) {
+                $originalValues = [];
+                $newValues = $order->getAttributes();
+                $changes = [];
+                foreach ($newValues as $field => $newValue) {
+                    $changes[$field] = [
+                        'old' => $originalValues[$field] ?? null,
+                        'new' => $newValue,
+                    ];
+                }
+                $versionData = [
+                    'version_id' => $order->id,
+                    'created_by' => Auth::id() ?? 1,
+                    'module' => 'MadeToOrder',
+                    'action' => 'Create',
+                    'description' => json_encode($changes),
+                ];
+
+                app(\App\Services\VersionService::class)
+                    ->createVersion($versionData);
+            }
+           return response()->json([
                 'success' => true,
                 'message' => 'Payment recorded successfully.',
                 'data' => $order
@@ -338,7 +360,7 @@ class MadeToOrderController extends Controller
      *             @OA\Property(property="state", type="string", example="Delhi"),
      *             @OA\Property(property="country", type="string", example="India"),
      *             @OA\Property(property="zipcode", type="string", example="110001"),
-    *             @OA\Property(property="phone_number", type="string", example="9876543210"),
+     *             @OA\Property(property="phone_number", type="string", example="9876543210"),
      *             @OA\Property(property="notes", type="string", example="Urgent delivery requested")
      *         )
      *     ),
@@ -359,23 +381,22 @@ class MadeToOrderController extends Controller
     public function update(Request $request, $id)
     {
         $order = MadeToOrder::find($id);
-
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
 
         $validator = Validator::make($request->all(), [
-             'product_id' => 'required|exists:ec_products,id',
-                'quantity' => 'required|integer|min:1',
-                'name' => 'required|string|max:255',
-                'email' => 'required|email',
-                'address' => 'nullable|string',
-                'city' => 'nullable|string|max:100',
-                'state' => 'nullable|string|max:100',
-                'country' => 'nullable|string|max:100',
-                'zipcode' => 'nullable|string|max:20',
-                'phone_number' => 'required|string|regex:/^[0-9\-\+\(\)\s]+$/',
-                'notes' => 'required|string',
+            'product_id' => 'required|exists:ec_products,id',
+            'quantity' => 'required|integer|min:1',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'address' => 'nullable|string',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'zipcode' => 'nullable|string|max:20',
+            'phone_number' => 'required|string|regex:/^[0-9\-\+\(\)\s]+$/',
+            'notes' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -387,8 +408,29 @@ class MadeToOrderController extends Controller
         }
 
         $data = $validator->validated();
+        $order->fill($data);
+       
+        if ($order->isDirty()) {
+            $originalValues = $order->getOriginal();
+            $changes = [];
+            foreach ($order->getDirty() as $field => $newValue) {
+                $changes[$field] = [
+                    'old' => $originalValues[$field] ?? null,
+                    'new' => $newValue,
+                ];
+            }
+            $order->save();
+            $versionData = [
+                'version_id' => $order->id,
+                'updated_by' => Auth::id() ?? 1,
+                'module' => 'MadeToOrder',
+                'action' => 'Update',
+                'description' => json_encode($changes),
+            ];
 
-        $order->update($data);
+            app(\App\Services\VersionService::class)
+                ->createVersion($versionData);
+        }
         return response()->json([
             'success' => true,
             'message' => 'Product Variant updated successfully',
@@ -422,6 +464,28 @@ class MadeToOrderController extends Controller
         }
 
         $order->delete();
+
+         if ($order) {
+                $originalValues = [];
+                $newValues = $order->getAttributes();
+                $changes = [];
+                foreach ($newValues as $field => $newValue) {
+                    $changes[$field] = [
+                        'old' => $originalValues[$field] ?? null,
+                        'new' => $newValue,
+                    ];
+                }
+                $versionData = [
+                    'version_id' => $order->id,
+                    'created_by' => Auth::id() ?? 1,
+                    'module' => 'MadeToOrder',
+                    'action' => 'Delete',
+                    'description' => json_encode($changes),
+                ];
+
+                app(\App\Services\VersionService::class)
+                    ->createVersion($versionData);
+            }
 
         return response()->json(['message' => 'Order deleted successfully'], 200);
     }
