@@ -26,6 +26,9 @@ class CustomerCartController extends Controller
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="from_admin_panel", in="query", @OA\Schema(type="boolean", example=true)),
+	 *     @OA\Parameter(name="only_total_amount", in="query", @OA\Schema(type="boolean", example=true)),
+	 *     @OA\Parameter(name="username", in="query", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "reference_number", "shipping_charge", "total_amount", "total_products", "created_at", "updated_at"})),
@@ -43,61 +46,89 @@ class CustomerCartController extends Controller
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
 		$recordsQuery = CustomerCart::query();
+		/* Eager load relationships */
+		$recordsQuery->with([
+			'customer:id,name,email,country_code,mobile_number',
+			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
+			'customerCartProducts.product:id,name,images,sku,currency_id,barcode',
+			'customerCartProducts.product.currency:id,symbol',
+			'creator:id,username',
+		]);
+
+		if ($request->has('from_date') && $request->has('to_date')) {
+			$from = $request->from_date . ' 00:00:00';
+			$to = $request->to_date . ' 23:59:59';
+			$recordsQuery->whereBetween('customer_carts.created_at', [$from, $to]);
+		} elseif ($request->has('from_date')) {
+			$from = $request->from_date . ' 00:00:00';
+			$recordsQuery->where('customer_carts.created_at', '>=', $from);
+		} elseif ($request->has('to_date')) {
+			$to = $request->to_date . ' 23:59:59';
+			$recordsQuery->where('customer_carts.created_at', '<=', $to);
+		}
+
+		/* Global search */
+		if ($request->filled('global')) {
+			$search = $request->input('global');
+			$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+				foreach ($searchableColumns as $col) {
+					$q->orWhere("customer_carts.$col", 'like', '%' . $search . '%');
+				}
+			});
+		}
+
+		if ($request->has('from_admin_panel')) {
+			$fromAdminPanel = $request->boolean('from_admin_panel');
+
+			if ($fromAdminPanel) {
+				$recordsQuery->where("customer_carts.created_by", ">", 0);
+			}
+		}
+
+		if ($request->filled('username')) {
+			$username = $request->input('username');
+			$recordsQuery->orWhereHas('creator', function ($sub) use ($username) {
+				$sub->where('username', $username);
+			});
+		}
+
+		/* Sorting */
+		$recordsQuery->orderBy($sortBy, $sortDir);
+
+		$onlyTotalAmount = $request->has('only_total_amount') && $request->boolean('only_total_amount');
+
+		dd($recordsQuery->sum('total_amount1'));
+
+		$totalRecords = (clone $recordsQuery)->count();
+
 		/* Check if pagination requested */
 		if ($request->filled('page') && $request->filled('length')) {
-			/* Eager load relationships */
-			$recordsQuery->with([
-				'customer:id,name,email,country_code,mobile_number',
-				'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
-				'customerCartProducts.product:id,name,images,sku,currency_id,barcode',
-				'customerCartProducts.product.currency:id,symbol',
-			]);
-
-			if ($request->has('from_date') && $request->has('to_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->whereBetween('customer_carts.created_at', [$from, $to]);
-			} elseif ($request->has('from_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$recordsQuery->where('customer_carts.created_at', '>=', $from);
-			} elseif ($request->has('to_date')) {
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->where('customer_carts.created_at', '<=', $to);
-			}
-
-			/* Global search */
-			if ($request->filled('global')) {
-				$search = $request->input('global');
-				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
-					foreach ($searchableColumns as $col) {
-						$q->orWhere("customer_carts.$col", 'like', '%' . $search . '%');
-					}
-				});
-			}
-
-			/* Sorting */
-			$recordsQuery->orderBy($sortBy, $sortDir);
-
 			/* Pagination */
 			$length = (int) $request->input('length');
 			$page = (int) $request->input('page');
-
-			$totalRecords = (clone $recordsQuery)->count();
 			$totalPages = (int) ceil($totalRecords / $length);
 
 			if ($page > $totalPages && $totalPages > 0) {
 				$page = 1;
 			}
+		} else {
+			/* No pagination: just fetch id and reference number */
+			$page = 1;
+			$length = $totalRecords;
+			$totalPages = 1;
+		}
 
+		if ($onlyTotalAmount) {
+			$records =(clone $recordsQuery)->sum('total_amount');
+		} else {
 			$records = $recordsQuery
 			->offset(($page - 1) * $length)
 			->limit($length)
-			->get(['id', 'reference_number', 'customer_id', 'is_lift_gate', 'is_residential_address', 'total_amount', 'total_products', 'created_at']);
+			->get(['id', 'reference_number', 'customer_id', 'is_lift_gate', 'is_residential_address', 'total_amount', 'total_products', 'created_by', 'created_at']);
 
 			/* Transform results */
 			$records->transform(function ($record) {
 				/* Process each product in customer cart products */
-
 				$totalProducts = 0;
 				$cartAmount = 0;
 				$cartShipping = 0;
@@ -173,21 +204,17 @@ class CustomerCartController extends Controller
 					'total_amount'           => number_format($totalAmount, 2, '.', ''),
 					'total_products'         => $totalProducts,
 					'products'               => $cartProducts,
+					'creator'                => $record->creator,
 					'created_at'             => $record->created_at,
 				];
 
 				return $record;
 			});
-		} else {
-			/* No pagination: just fetch id and reference number */
-			$records = CustomerCart::orderBy('reference_number', 'asc')->get(['id', 'reference_number']);
-			$totalRecords = $records->count();
-			$totalPages = 1;
 		}
 
 		return response()->json([
 			'success' => true,
-			'message' => __('msg_rec_list'),
+			'message' => $onlyTotalAmount ? 'Total amount' : __('msg_rec_list'),
 			'data' => $records,
 			'total_pages' => $totalPages,
 			'total_records' => $totalRecords,

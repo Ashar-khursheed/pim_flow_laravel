@@ -206,8 +206,7 @@ class CartController extends Controller
                 'tax_amount' => 0,
                 'total_amount' => 0,
                 'total_products' => 0,
-                'created_by' => $userId,
-                'updated_by' => $userId,
+                'created_by' => 0,
             ]
         );
 
@@ -330,7 +329,7 @@ class CartController extends Controller
      * )
      */
 
-  
+
     public function viewCart(Request $request)
     {
         $userId = auth()->id();
@@ -1220,8 +1219,7 @@ class CartController extends Controller
 //             'tax_amount' => 0,
 //             'total_amount' => 0,
 //             'total_products' => 0,
-//             'created_by' => $userId,
-//             'updated_by' => $userId,
+//             'created_by' => 0,
 //         ]);
 //     }
 
@@ -1327,8 +1325,7 @@ public function addMultipleToCart(Request $request)
             'tax_amount' => 0,
             'total_amount' => 0,
             'total_products' => 0,
-            'created_by' => $userId,
-            'updated_by' => $userId,
+            'created_by' => 0,
         ]
     );
 
