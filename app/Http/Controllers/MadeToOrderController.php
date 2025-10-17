@@ -487,6 +487,6 @@ class MadeToOrderController extends Controller
                     ->createVersion($versionData);
             }
 
-        return response()->json(['message' => 'Order deleted successfully'], 200);
+        return response()->json(['message' => 'Made Order deleted successfully'], 200);
     }
 }
