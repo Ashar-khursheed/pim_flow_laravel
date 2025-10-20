@@ -244,59 +244,6 @@ class PaymentHistoryController extends Controller
 	 *     )
 	 * )
 	 */
-
-	// public function store(Request $request): JsonResponse
-	// {
-	// 	try {
-	// 		$validated = $request->validate([
-	// 			'order_id' => 'required|integer|exists:orders,id',
-	// 			'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id',
-	// 			'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay',
-	// 			'amount' => 'required|numeric|min:0.01|max:999999.99',
-	// 			'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
-	// 			'payment_date' => 'required|date|before_or_equal:today',
-	// 			'notes' => 'nullable|string|max:1000',
-	// 			'payment_details' => 'nullable|array|max:2000',
-	// 			'payment_method' => 'nullable|string|max:255'
-	// 		]);
-
-	// 		if (isset($validated['payment_details'])) {
-	// 			$validated['payment_details'] = json_encode($validated['payment_details']);
-	// 		}
-
-	// 		/* Create payment */
-	// 		$payment = PaymentManagement::create($validated);
-
-	// 		/* Update order amounts */
-	// 		$order = $payment->order;
-	// 		$newPaidAmount = $order->paid_amount + $request->amount;
-	// 		$pendingAmount = $order->total_amount - $newPaidAmount;
-
-	// 		$order->update([
-	// 			'paid_amount' => $newPaidAmount,
-	// 			'pending_amount' => $pendingAmount,
-	// 			'is_paid' => $pendingAmount <= 0,
-	// 		]);
-
-	// 		$batch = Bus::batch([])->name('Order Place in payment mgmt')->dispatch();
-	// 		$batch->options['queue'] = config('app.website') . '_ORD_PLC';
-	// 		$batch->add(new OrderPlacedMailJob([
-	// 			'recordId' => $validated['order_id']
-	// 		]));
-
-	// 		return response()->json([
-	// 			'message' => 'Payment recorded successfully.',
-	// 			'data'    => $payment
-	// 		], 201);
-
-
-	// 	} catch (\Exception $e) {
-	// 		return response()->json([
-	// 			'message' => 'Something went wrong while creating the payment.',
-	// 			'error' => $e->getMessage()
-	// 		], 500);
-	// 	}
-	// }
 	public function store(Request $request)
 	{
 		try {
@@ -309,7 +256,7 @@ class PaymentHistoryController extends Controller
 				'status' => 'required|string|in:Pending,Completed,Failed,Cancelled,Refunded',
 				'payment_date' => 'required|date|before_or_equal:today',
 				'notes' => 'nullable|string|max:1000',
-				'payment_details' => 'nullable|array|max:2000',
+				'payment_details' => 'nullable|json|max:2000',
 				'payment_method' => 'nullable|string|max:255'
 			]);
 
@@ -360,7 +307,7 @@ class PaymentHistoryController extends Controller
 
 					$order->update(['is_reserved' => 0]);
 
-					$batch = Bus::batch([])->name('Order Place in payment history')->dispatch();
+					$batch = Bus::batch([])->name('Order Place in backend payment')->dispatch();
 					$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 					$batch->add(new OrderPlacedMailJob([
 						'recordId' => $order->id

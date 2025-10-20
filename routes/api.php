@@ -79,6 +79,8 @@ use App\Http\Controllers\PaymentHistoryController;
 use App\Http\Controllers\ProductVariantController;
 use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\TranslationController;
+use App\Http\Controllers\InquiryController;
+
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -285,6 +287,8 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+    Route::apiResource('/inquiries',  InquiryController::class);
+
     Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
     Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
     Route::apiResource('post-purchase-claims', PostPurchaseClaimController::class);
@@ -296,10 +300,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
     Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
 
-    Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
-    Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
-
-    Route::apiResource('customer-events', CustomerEventController::class);
+	Route::apiResource('customer-events', CustomerEventController::class);
 
     Route::get('/utms', [Utmcontroller::class, 'index']);
     Route::get('/analytics/stats', [Utmcontroller::class, 'stats']);
@@ -536,6 +537,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
     Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
     Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
+
+    Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
+    Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
+
+    Route::post('orders/{id}/resend-mail', [OrderController::class, 'resendOrderPlaceMail']);
 
     Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
     Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
@@ -872,7 +878,7 @@ Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
 
 Route::post('/stripe/create-stripe-payment-link', [F_StripeController::class, 'createStripePaymentLink']);
 Route::post('/stripe/webhook', [F_StripeController::class, 'handleWebhook']);
-Route::get('/stripe/success', [F_StripeController::class, 'success']);
+Route::get('/stripe/thanks', [F_StripeController::class, 'success']);
 Route::get('/stripe/failed', [F_StripeController::class, 'paymentFailed']);
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
 Route::prefix('stripe')->group(function () {
@@ -895,22 +901,7 @@ Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);
 
 Route::get('/frontend/google-reviews', [F_GoogleReviewController::class, 'getReviews']);
-
-Route::prefix('frontend/inquiries')->group(function () {
-    // 📄 List inquiries with search, sorting, and pagination
-    Route::get('/', [F_InquiryController::class, 'index']);
-
-    // ➕ Create new inquiry (form submission)
-    Route::post('/', [F_InquiryController::class, 'store']);
-
-    // 👁 Get single inquiry by ID
-    Route::get('/{id}', [F_InquiryController::class, 'show']);
-
-    // ❌ Delete inquiry by ID
-    Route::delete('/{id}', [F_InquiryController::class, 'destroy']);
-});
-
-
+Route::apiResource('/frontend/inquiries',  F_InquiryController::class)->names('frontend.inquiries');
 
 // POST when user searches or clicks
 Route::post('/frontend/search-logs', [F_SearchLogController::class, 'store']);
@@ -951,5 +942,10 @@ Route::prefix('frontend/auth')->group(function () {
 });
 
 Route::post('frontend/paymob/initiate', [F_PaymobController::class, 'initiate']); // get payment_token
-Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);           // pay with card
+Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);
+Route::get('frontend/paymob/thank', [F_PaymobController::class, 'pay']);
+
+
 Route::post('paymob/webhook', [F_PaymobController::class, 'webhook']);
+Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);
+Route::get('paymob/thanks', [F_PaymobController::class, 'response']);

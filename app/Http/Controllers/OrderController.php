@@ -116,15 +116,15 @@ class OrderController extends Controller
 			if ($request->has('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-						$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
-						break;
+					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+					break;
 					case 'Unpaid':
-						$recordsQuery->where('orders.paid_amount', 0);
-						break;
+					$recordsQuery->where('orders.paid_amount', 0);
+					break;
 					case 'Partially Paid':
-						$recordsQuery->where('orders.paid_amount', '>', 0)
-							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
-						break;
+					$recordsQuery->where('orders.paid_amount', '>', 0)
+					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+					break;
 				}
 			}
 
@@ -166,9 +166,9 @@ class OrderController extends Controller
 			}
 
 			$records = $recordsQuery
-				->offset(($page - 1) * $length)
-				->limit($length)
-				->get();
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
 
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
@@ -201,8 +201,8 @@ class OrderController extends Controller
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-						? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-						: null;
+					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 
 					if ($orderProduct->accessoryCharges) {
 						$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -316,8 +316,8 @@ class OrderController extends Controller
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
-			->where('customer_id', $request->customer_id)
-			->first();
+		->where('customer_id', $request->customer_id)
+		->first();
 
 		if (!$address) {
 			return response()->json([
@@ -405,6 +405,7 @@ class OrderController extends Controller
 				'is_paymob' => $request->boolean('is_paymob'),
 				'is_squarePayment' => $request->boolean('is_squarePayment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
+				'is_cod' => $request->boolean('is_cod'),
 				'created_by' => auth()->id(),
 				'payment_link' => null
 			]);
@@ -446,7 +447,7 @@ class OrderController extends Controller
 				$cart->customerCartProducts()->delete();
 				$cart->delete();
 			});
- 
+
 			if ($request->boolean('is_reserved')) {
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					$paymentLink = null;
@@ -507,7 +508,7 @@ class OrderController extends Controller
 					if ($request->boolean('is_squarePayment')) {
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
-								->createPaymentLink($order);
+							->createPaymentLink($order);
 							if ($paymentLink) {
 								$order = Order::find($order->id);
 								$order->payment_link = $paymentLink;
@@ -521,10 +522,10 @@ class OrderController extends Controller
 							]);
 						}
 					}else{
-						 
+
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\StaxPaymentController::class)
-								->createStaxPaymentLink($order);
+							->createStaxPaymentLink($order);
 							if ($paymentLink) {
 								$order = Order::find($order->id);
 								$order->payment_link = $paymentLink;
@@ -550,7 +551,7 @@ class OrderController extends Controller
 					'recordId' => $order->id
 				]));
 			} else {
-				$batch = Bus::batch([])->name('Order Place')->dispatch();
+				$batch = Bus::batch([])->name('Order Place backend')->dispatch();
 
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
@@ -575,18 +576,18 @@ class OrderController extends Controller
 				$product = $orderProduct->product;
 				if ($product) {
 					$product->images = is_array($product->images)
-						? $product->images
-						: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+					? $product->images
+					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 					$product->brand_name = $product->brand->name ?? null;
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
 
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-					->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+				->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -775,8 +776,8 @@ class OrderController extends Controller
 			}
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
+			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+			: null;
 
 			$orderProduct->nofraudResponse->response ?? null;
 			$orderProduct->nofraud_decision = $data['decision'] ?? null;
@@ -816,6 +817,61 @@ class OrderController extends Controller
 			'success' => true,
 			'data' => $order
 		]);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/orders/{id}/resend-mail",
+	 *     summary="Resend order place email (only if order is pending)",
+	 *     tags={"Orders"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Order ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Order place mail sent successfully", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
+	public function resendOrderPlaceMail($id)
+	{
+		$order = Order::find($id);
+		if (!$order) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Order not found.'
+			], 404);
+		}
+
+		if (strtolower($order->status) !== 'pending') {
+			return response()->json([
+				'success' => false,
+				'message' => "Order #{$order->id} cannot resend mail because status is '{$order->status}'. Only pending orders are allowed."
+			], 400);
+		}
+
+		try {
+			/* Create a new batch for resending order place mail */
+			$batch = Bus::batch([])->name("Resend Order place Mail for Order #{$order->id}")->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+			$batch->add(new OrderPlacedMailJob([
+				'recordId' => $order->id
+			]));
+
+			return response()->json([
+				'success' => true,
+				'message' => "Order place mail resent successfully for Order #{$order->id}."
+			]);
+		} catch (\Throwable $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to resend order mail. Please try again later.',
+				'error' => $e->getMessage(),
+			], 500);
+		}
 	}
 
 	/**
@@ -1041,8 +1097,8 @@ class OrderController extends Controller
 				}
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -1170,6 +1226,13 @@ class OrderController extends Controller
 				'success' => true,
 				'message' => 'Order status updated successfully',
 				'data' => $order->fresh(['tracking'])
+			]);
+		}
+
+		if ($newStatus == 'Delivered' && $order->is_reserved) {
+			return response()->json([
+				'success' => false,
+				'message' => "This order is reserved and cannot be marked as delivered."
 			]);
 		}
 
@@ -1405,6 +1468,13 @@ class OrderController extends Controller
 			]);
 		}
 
+		if ($newStatus == 'Delivered' && $order->is_reserved) {
+			return response()->json([
+				'success' => false,
+				'message' => "This product belongs to a reserved order and cannot be marked as delivered."
+			]);
+		}
+
 		/* Other status validation flow */
 		$otherStatus = [
 			'Confirmed',
@@ -1596,8 +1666,8 @@ class OrderController extends Controller
 			/* Process each product */
 			foreach ($request->products as $productData) {
 				$orderProduct = OrderProduct::where('id', $productData['order_product_id'])
-					->where('order_id', $order->id)
-					->firstOrFail();
+				->where('order_id', $order->id)
+				->firstOrFail();
 
 				if ($productData['quantity'] > $orderProduct->remaining_quantity) {
 					throw new \Exception("Cannot ship more than remaining quantity for product ID {$orderProduct->id}");

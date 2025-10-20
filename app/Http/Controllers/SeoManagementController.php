@@ -1069,7 +1069,7 @@ class SeoManagementController extends Controller
 	 *         name="seo_id",
 	 *         in="path",
 	 *         required=true,
-	 *         @OA\Schema(type="integer", example=721),
+	 *         @OA\Schema(type="integer", example=35866),
 	 *         description="The unique ID of the SEO schema to update"
 	 *     ),
 	 *     @OA\RequestBody(
@@ -1101,21 +1101,21 @@ class SeoManagementController extends Controller
 	 * )
 	 */
 
-	public function schemaUpdate(Request $request,$seo_id)
-	{ 
- 
+	public function schemaUpdate(Request $request, $seo_id)
+	{
+
 		$validated = $request->validate([
 			'relational_id' => 'required|integer|exists:seo_management,id',
 			'relational_type' => 'required|string',
-			 
+
 		]);
 
 		$relational_type = $request->relational_type;
-	 
+
 		$relational_id = $request->relational_id;
-	 
+
 		$seo = SeoManagement::findOrFail($seo_id);
-	 
+
 		if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
 			return response()->json([
 				'success' => false,
@@ -1123,16 +1123,13 @@ class SeoManagementController extends Controller
 			], 403);
 		}
 
-		try{
-		 
-		$schemaArray = $this->generateSchema($seo);
-		dd($schemaArray);
-		$seo->schema = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-		 
-		
-		//$seo->save();
+		try {
 
-		return response()->json([
+			$schemaArray = $this->generateSchema($seo);
+			$seo->schema = json_encode($schemaArray);
+			$seo->save();
+
+			return response()->json([
 				'success' => true,
 				'message' => 'SEO record updated successfully',
 				'data' => $seo
@@ -1197,11 +1194,11 @@ class SeoManagementController extends Controller
 		if ($seo->relational_type === 'Product' && $seo->relational_id) {
 			/* Fetch product data from 'ec_products' table */
 			$product = Product::find($seo->relational_id);
-
 			if ($product) {
 				/* Fetch currency and brand names using relationships */
 				$currencyName = $product->currency ? $product->currency->title : 'USD'; /* Default to 'USD' if no currency found */
 				$brandName = $product->brand ? $product->brand->name : 'Default Brand'; /* Default to 'Default Brand' if no brand found */
+				$firstSupplier = $product->productSuppliers->first();
 
 				/* Generate schema with product-specific details */
 				return [
@@ -1209,8 +1206,8 @@ class SeoManagementController extends Controller
 					"@type" => "Product",
 					"url" => $seo->url,
 					"name" => $seo->meta_title,
-					"description" => $seo->meta_description,
 					"keywords" => $seo->tags,
+					"description" => $seo->meta_description,
 					"image" => [
 						"@type" => "ImageObject",
 						"url" => $seo->og_image_url,
@@ -1225,7 +1222,7 @@ class SeoManagementController extends Controller
 					"offers" => [
 						"@type" => "Offer",
 						"priceCurrency" => $currencyName,
-						"price" => $product->price ?? 0, /* Default to 0 if no price found */
+						"price" => $firstSupplier->price ?? 0, /* Default to 0 if no price found */
 						"url" => $seo->url,
 					],
 					"sku" => $product->sku ?? null, /* SKU if available */

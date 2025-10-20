@@ -291,14 +291,14 @@ class StripeController extends Controller
         }
         $url = config('app.url');
         $stripeSecret = config('services.stripe.secret');
-        $currency = "AED";
+        $currency = "AED";        
         $success_url = 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
         $cancel_url = 'https://development.d28qosi1cuigvb.amplifyapp.com/failed';
         //  $success_url = $url.'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
         //  $cancel_url = $url.'/failed';
 
-        //  $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
-        // $cancel_url = url('/api/stripe/failed');       
+        // $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
+        // $cancel_url = url('/api/stripe/failed');
         $res = Http::withOptions(['verify' => false])
             ->withToken($stripeSecret)
             ->asForm()
@@ -323,7 +323,7 @@ class StripeController extends Controller
         }
 
     }
-    
+
     public function handleWebhook(Request $request)
     {
 
@@ -357,7 +357,7 @@ class StripeController extends Controller
                 'payment_details' => ''
             ]);
 
-        } 
+        }
     }
     public function success(Request $request)
     {
@@ -372,98 +372,76 @@ class StripeController extends Controller
             ->get("https://api.stripe.com/v1/checkout/sessions/{$sessionId}");
 
         $data = $res->json();
-        $id = $data['id'];
-        $amount_total = $data['amount_total'];
-        $created = date('Y-m-d', strtotime($data['created']));
-        $currency = $data['currency'];
-        $mode = $data['mode'];
-        $payment_intent = $data['payment_intent'];
-        $order_id = $data['metadata']['order_id'];
-        $customer_details = $data['customer_details'];
-        $payment_method_types = $data['payment_method_types']['0'];
-        $payment_status = $data['payment_status'];
-        $status = $data['status'];
-        switch ($status) {
-            case 'complete':
-            case 'Success':
-            case 'succeeded':
+
+        if (!empty($data)) {
+            $amount = $data['amount_total'] / 100;
+            $currency = $data['currency'];
+            $transactionId = $data['payment_intent'];
+            $order_id = $data['metadata']['order_id'];
+            if ($data['status'] == 'complete') {
                 $status = "Completed";
-                break;
-            case 'processing':
-                $status = "Pending";
-                break;
-            case 'canceled':
-            case 'failed':
-            case 'expired':
-                $status = "Failed";
-                break;
-            case 'Invalid':
-                $status = "Invalid";
-                break;
-            default:
-                $status = "Pending";
-        }
-        $email = $data['customer_details']['email'];
-        $name = $data['customer_details']['name'];
-        $phone = $data['customer_details']['phone'];
-        $city = $data['customer_details']['address']['city'];
-        $country = $data['customer_details']['address']['country'];
-        $line1 = $data['customer_details']['address']['line1'];
-        $postal_code = $data['customer_details']['address']['postal_code'];
-        $state = $data['customer_details']['address']['state'];
-        $stripeSecret = config('services.stripe.secret');
-        $paymentIntent = Http::withOptions(['verify' => false])
-
-            ->withToken($stripeSecret)
-            ->get("https://api.stripe.com/v1/payment_intents/{$payment_intent}")
-            ->json();
-
-        PaymentManagement::create([
-            'order_id' => $order_id,
-            'transaction_id' => $payment_intent,
-            'payment_mode' => 'Credit Card',
-            'payment_method' => 'Stripe',
-            'amount' => $amount_total / 100,
-            'status' => $status,
-            'payment_date' => date('Y-m-d H:i:s'),
-            'notes' => 'Payment marked through link',
-            'payment_details' => ''
-        ]);
-
-        $order = Order::where('id', $order_id)->first();
-        if (!$order) {
-            return response()->json(['success' => false, 'message' => 'Order not found'], 404);
-        }
-        if ($status == 'succeeded') {
-            if ($order->amount_total == $amount_total) {
-                // Mark order as paid and remove payment link
-                $order->update([
-                    'is_paid' => true,
-                    'paid_amount' => $amount_total / 100,
-                    'pending_amount' => $order->pending_amount - ($amount_total / 100),
-                    'payment_link' => null,
-                    'is_reserved' => false,
-
-                ]);
             } else {
-                $order->update([
-                    'is_paid' => false,
-                    'paid_amount' => $order->paid_amount + ($amount_total / 100),
-                    'pending_amount' => $order->pending_amount - ($amount_total / 100),
-                    'payment_link' => null,
-                    'is_reserved' => false,
-
-                ]);
-
+                $status = "Failed";
             }
+
+
+            $orderdetails = Order::where('id', $order_id)->where('is_paid', '0')->first();
+
+            if (!empty($orderdetails)) {
+                $total_amount = $orderdetails->total_amount;
+                $paid_amount = $orderdetails->paid_amount + $amount;
+                $pending_amount = $total_amount - $paid_amount;
+
+                $order = Order::find($orderdetails->id);
+                if ($paid_amount < $total_amount) {
+                    $order->update([
+                        'paid_amount' => $paid_amount,
+                        'pending_amount' => $pending_amount,
+                        'is_paid' => $pending_amount <= 0,
+                        'is_reserved' => $pending_amount <= 0,
+                    ]);
+                } else if ($paid_amount == $total_amount) {
+
+                    $order->update([
+                        'paid_amount' => $paid_amount,
+                        'pending_amount' => $pending_amount,
+                        'is_paid' => 1,
+                        'is_reserved' => 0,
+                        'status' => 'Confirmed'
+                    ]);
+                }
+                if ($status != 'Failed') {
+                    $checkTransaction = PaymentManagement::where('transaction_id', $transactionId)->get()->count();
+                    if (!$checkTransaction) {
+                        PaymentManagement::create([
+                            'order_id' => $orderdetails->id,
+                            'transaction_id' => $transactionId,
+                            'payment_mode' => 'Credit Card',
+                            'payment_method' => 'Stripe',
+                            'amount' => $amount,
+                            'status' => $status,
+                            'payment_date' => date('Y-m-d H:i:s'),
+                            'notes' => 'Payment marked through link',
+                            'payment_details' => ''
+                        ]);
+                    }
+                }
+            }
+            // Example response
+            return response()->json([
+                'order_id' => $order_id ?? null,
+                'amount' => $amount,
+                'currency' => $currency,
+                'status' => $status,
+            ]);
+        } else {
+            return response()->json([
+                'data' => $data ?? null,
+                'status' => false,
+            ]);
         }
-        // Example response
-        return response()->json([
-            'order_id' => $order_id ?? null,
-            'amount' => ($amount_total / 100),
-            'currency' => $currency,
-            'status' => $status,
-        ]);
+
+
 
     }
 
@@ -491,77 +469,61 @@ class StripeController extends Controller
             ->get("https://api.stripe.com/v1/checkout/sessions/{$sessionId}");
 
         $data = $res->json();
-        $id = $data['id'];
-        $amount_total = $data['amount_total'];
-        $created = date('Y-m-d', strtotime($data['created']));
-        $currency = $data['currency'];
-        $mode = $data['mode'];
-        $payment_intent = $data['payment_intent'];
-        $order_id = $data['metadata']['order_id'];
-        $customer_details = $data['customer_details'];
-        $payment_method_types = $data['payment_method_types']['0'];
-        $payment_status = $data['payment_status'];
-        $status = $data['status'];
-        switch ($status) {
-            case 'complete':
-            case 'Success':
-            case 'succeeded':
+
+        if (!empty($data)) {
+            $amount = $data['amount_total'] / 100;
+            $currency = $data['currency'];
+            $transactionId = $data['payment_intent'];
+            $order_id = $data['metadata']['order_id'];
+            if ($data['status'] == 'complete') {
                 $status = "Completed";
-                break;
-            case 'processing':
-                $status = "Pending";
-                break;
-            case 'canceled':
-            case 'failed':
-            case 'expired':
+            } else {
                 $status = "Failed";
-                break;
-            case 'Invalid':
-                $status = "Invalid";
-                break;
-            default:
-                $status = "Pending";
+            }
+
+
+            $orderdetails = Order::where('id', $order_id)->where('is_paid', '0')->first();
+
+            if (!empty($orderdetails)) {
+                $total_amount = $orderdetails->total_amount;
+                $paid_amount = $orderdetails->paid_amount + $amount;
+                $pending_amount = $total_amount - $paid_amount;
+
+                $order = Order::find($orderdetails->id);
+
+                if ($status != 'Failed') {
+                    $checkTransaction = PaymentManagement::where('transaction_id', $transactionId)->get()->count();
+                    if (!$checkTransaction) {
+                        PaymentManagement::create([
+                            'order_id' => $orderdetails->id,
+                            'transaction_id' => $transactionId,
+                            'payment_mode' => 'Credit Card',
+                            'payment_method' => 'Stripe',
+                            'amount' => $amount,
+                            'status' => $status,
+                            'payment_date' => date('Y-m-d H:i:s'),
+                            'notes' => 'Payment marked through link',
+                            'payment_details' => ''
+                        ]);
+                    }
+                }
+
+            }
+            // Example response
+            return response()->json([
+                'order_id' => $order_id ?? null,
+                'amount' => $amount,
+                'currency' => $currency,
+                'status' => $status,
+            ]);
+        } else {
+            return response()->json([
+                'data' => $data ?? null,
+                'status' => false,
+            ]);
         }
-        $email = $data['customer_details']['email'];
-        $name = $data['customer_details']['name'];
-        $phone = $data['customer_details']['phone'];
-        $city = $data['customer_details']['address']['city'];
-        $country = $data['customer_details']['address']['country'];
-        $line1 = $data['customer_details']['address']['line1'];
-        $postal_code = $data['customer_details']['address']['postal_code'];
-        $state = $data['customer_details']['address']['state'];
-        $stripeSecret = config('services.stripe.secret');
-        $paymentIntent = Http::withOptions(['verify' => false])
-
-            ->withToken($stripeSecret)
-            ->get("https://api.stripe.com/v1/payment_intents/{$payment_intent}")
-            ->json();
-
-        PaymentManagement::create([
-            'order_id' => $order_id,
-            'transaction_id' => $payment_intent,
-            'payment_mode' => 'Credit Card',
-            'payment_method' => 'Stripe',
-            'amount' => $amount_total / 100,
-            'status' => $status,
-            'payment_date' => date('Y-m-d H:i:s'),
-            'notes' => 'Payment marked through link',
-            'payment_details' => ''
-        ]);
-
-        $order = Order::where('id', $order_id)->first();
-        if (!$order) {
-            return response()->json(['success' => false, 'message' => 'Order not found'], 404);
-        }
 
 
-        // Example response
-        return response()->json([
-            'order_id' => $order_id ?? null,
-            'amount' => ($amount_total / 100),
-            'currency' => $currency,
-            'status' => $status,
-        ]);
 
     }
 

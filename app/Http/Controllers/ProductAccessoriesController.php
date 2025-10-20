@@ -704,22 +704,28 @@ class ProductAccessoriesController extends Controller
         // Only search if a search term is provided
         if ($request->search) {
             $search = $request->search;
-            $products = Product::select('id', 'name', 'sku')
+            $products = Product::select('id', 'name', 'sku','images')
                 ->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('id', 'like', "%{$search}%")
                       ->orWhere('sku', 'like', "%{$search}%");
                 })
                 ->orderBy('name', 'asc')
-                ->limit(10) // max 10 products
+                ->limit(25)  
                 ->get();
-
+ 
             // Map the products
             $product_list = $products->map(function ($val) {
+
+                $image  = is_array($val->images)
+                        ? $val->images
+                        : (is_array($decoded = json_decode($val->images, true)) ? $decoded : null);
+            
                 return [
                     'id' => $val->id,
                     'name' => $val->name,
                     'sku' => $val->sku,
+                    'img' => $image,
                 ];
             });
         }
