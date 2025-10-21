@@ -284,6 +284,7 @@ class CustomerCartController extends Controller
 			$customerCart->shipping_charge        = $cartShipping;
 			$customerCart->is_lift_gate           = $request->is_lift_gate ?? null;
 			$customerCart->is_residential_address = $request->is_residential_address ?? null;
+			$customerCart->is_inside_delivery     = $request->is_inside_delivery ?? null;
 			$customerCart->amount                 = $cartAmount;
 			$customerCart->tax_percentage         = $request->tax_percentage;
 			$customerCart->tax_amount             = $taxAmount;
