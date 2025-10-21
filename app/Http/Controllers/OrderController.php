@@ -898,6 +898,9 @@ class OrderController extends Controller
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
+	 *             @OA\Property(property="additional_amount_name", type="string", example="Accessory 1"),
+	 *             @OA\Property(property="additional_amount_price", type="number", format="float", example=100),
+	 *             @OA\Property(property="additional_amount_details", type="string", example="paymentlink.com"),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -953,6 +956,11 @@ class OrderController extends Controller
 			'separate_deliveries' => 'nullable|boolean',
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
+
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price,additional_amount_details|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name,additional_amount_details|numeric|min:0',
+			'additional_amount_details' => 'nullable|required_with:additional_amount_name,additional_amount_price|string',
+
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -1010,6 +1018,10 @@ class OrderController extends Controller
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$orderAmount += $request->boolean('is_inside_delivery') ? 250 : 0;
+
+			if (!empty($request->additional_amount_price)) {
+				$orderAmount += (float) $request->additional_amount_price;
+			}
 
 			$discountedAmount = $orderAmount - $discount;
 			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
