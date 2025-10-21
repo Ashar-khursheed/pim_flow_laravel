@@ -8659,6 +8659,10 @@
                                         "type": "boolean",
                                         "example": true
                                     },
+                                    "is_inside_delivery": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "is_new_customer": {
                                         "type": "boolean",
                                         "example": false
@@ -18706,6 +18710,10 @@
                                         "example": true
                                     },
                                     "is_residential_address": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_inside_delivery": {
                                         "type": "boolean",
                                         "example": true
                                     },
@@ -28769,6 +28777,10 @@
                                         "type": "boolean",
                                         "example": true
                                     },
+                                    "is_inside_delivery": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "example": 5
@@ -28931,6 +28943,10 @@
                                         "example": true
                                     },
                                     "is_residential_address": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_inside_delivery": {
                                         "type": "boolean",
                                         "example": true
                                     },
