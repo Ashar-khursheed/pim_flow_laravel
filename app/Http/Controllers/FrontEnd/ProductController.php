@@ -522,12 +522,17 @@ class ProductController extends Controller
                         // Get slug from seo_management table
                         $slug = SeoManagement::where('relational_id', $child->id)
                             ->value('url');
-
+                        $full_slug =  $child->parent_category_url() . '/' .
+                     $child->category_url() . '/' .
+                     ($child->seoProductUrl->url ?? "");
                         return [
                             'id' => $child->id,
                             'sku' => $child->sku,
                             'attribute_value' => $attrValue,
                             'slug' => $slug,
+                            'parent_slug' => $child->parent_category_url() ,
+                            'child_slug' => $child->category_url(),
+                            'full_slug' => $full_slug,
                         ];
                     });
 
