@@ -122,7 +122,7 @@ class CustomerCartController extends Controller
 			$records = $recordsQuery
 			->offset(($page - 1) * $length)
 			->limit($length)
-			->get(['id', 'reference_number', 'customer_id', 'is_lift_gate', 'is_residential_address', 'total_amount', 'total_products', 'created_by', 'created_at']);
+			->get(['id', 'reference_number', 'customer_id', 'is_lift_gate', 'is_residential_address', 'is_inside_delivery', 'total_amount', 'total_products', 'created_by', 'created_at']);
 
 			/* Transform results */
 			$records->transform(function ($record) {
@@ -177,6 +177,9 @@ class CustomerCartController extends Controller
 				if ($record->is_residential_address) {
 					$cartAmount += 199;
 				}
+				if ($record->is_inside_delivery) {
+					$cartAmount += 250;
+				}
 
 				/* Tax calculations */
 				$taxPercentage = $record->tax_percentage ?? 0;
@@ -196,6 +199,7 @@ class CustomerCartController extends Controller
 					'customer'               => $record->customer,
 					'is_lift_gate'           => $record->is_lift_gate,
 					'is_residential_address' => $record->is_residential_address,
+					'is_inside_delivery'     => $record->is_inside_delivery,
 					'amount'                 => number_format($cartAmount, 2, '.', ''),
 					'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 					'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
@@ -232,6 +236,7 @@ class CustomerCartController extends Controller
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
 	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
 	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
+	 *             @OA\Property(property="is_inside_delivery", type="boolean", example=true),
 	 *             @OA\Property(property="is_new_customer", type="boolean", example=false),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(
@@ -257,6 +262,7 @@ class CustomerCartController extends Controller
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
 			'is_residential_address' => 'nullable|boolean',
+			'is_inside_delivery' => 'nullable|boolean',
 			'is_new_customer' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'products' => 'required|array|min:1',
@@ -306,6 +312,7 @@ class CustomerCartController extends Controller
 
 			$cartAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$cartAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$cartAmount += $request->boolean('is_inside_delivery') ? 250 : 0;
 
 			$taxAmount = round($cartAmount * ($request->tax_percentage / 100), 2);
 
@@ -340,6 +347,7 @@ class CustomerCartController extends Controller
 			$customerCart->shipping_charge        = $cartShipping;
 			$customerCart->is_lift_gate           = $request->is_lift_gate;
 			$customerCart->is_residential_address = $request->is_residential_address;
+			$customerCart->is_inside_delivery     = $request->is_inside_delivery;
 			$customerCart->amount                 = $cartAmount;
 			$customerCart->tax_percentage         = $request->tax_percentage;
 			$customerCart->tax_amount             = $taxAmount;
@@ -427,6 +435,7 @@ class CustomerCartController extends Controller
 				'address'                => $customerCart->customerAddress,
 				'is_lift_gate'           => $customerCart->is_lift_gate,
 				'is_residential_address' => $customerCart->is_residential_address,
+				'is_inside_delivery'     => $customerCart->is_inside_delivery,
 				'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 				'amount'                 => number_format($cartAmount, 2, '.', ''),
 				'tax_percentage'         => $request->tax_percentage,
@@ -534,6 +543,9 @@ class CustomerCartController extends Controller
 		if ($customerCart->is_residential_address) {
 			$cartAmount += 199;
 		}
+		if ($customerCart->is_inside_delivery) {
+			$cartAmount += 250;
+		}
 
 		/* Tax calculations */
 		$taxPercentage = $customerCart->tax_percentage ?? 0;
@@ -552,6 +564,7 @@ class CustomerCartController extends Controller
 			'address'                => $customerCart->customerAddress,
 			'is_lift_gate'           => $customerCart->is_lift_gate,
 			'is_residential_address' => $customerCart->is_residential_address,
+			'is_inside_delivery'     => $customerCart->is_inside_delivery,
 			'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 			'amount'                 => number_format($cartAmount, 2, '.', ''),
 			'tax_percentage'         => $taxPercentage,

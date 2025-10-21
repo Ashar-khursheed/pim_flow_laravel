@@ -15,17 +15,22 @@ class Order extends Model
 	use SoftDeletes;
 
 	protected $fillable = [
+		'utm_id',
 		'order_number',
 		'customer_id',
 		'customer_address_id',
 		'shipping_charge',
 		'is_lift_gate',
 		'is_residential_address',
+		'is_inside_delivery',
 		'amount',
 		'tax_percentage',
 		'tax_amount',
 		'coupon_id',
 		'discount',
+		'additional_amount_name',
+		'additional_amount_price',
+		'additional_amount_details',
 		'total_amount',
 		'total_products',
 		'ship_all_at_once',
@@ -34,16 +39,15 @@ class Order extends Model
 		'paid_amount',
 		'pending_amount',
 		'status',
+		'payment_link',
 		'is_reserved',
+		'is_payment',
+		'is_squarePayment',
+		'is_paymob',
 		'is_customer_pickup',
 		'is_cod',
 		'created_by',
 		'updated_by',
-		'utm_id',
-		'payment_link',
-		'is_payment',
-		'is_paymob',
-		'is_squarePayment',
 	];
 
 	public function creator()
