@@ -156,35 +156,35 @@ use Illuminate\Support\Facades\Http;
 
 Route::middleware([CaptureUtm::class])->group(function () {
 
-    Route::post('/store-lead', function (Request $request) {
-        $sessionId = $request->header('X-Session-ID') ?? Str::uuid()->toString();
+	Route::post('/store-lead', function (Request $request) {
+		$sessionId = $request->header('X-Session-ID') ?? Str::uuid()->toString();
 
-        $lead = Lead::create([
-            'session_id' => $sessionId,
-            'name'       => $request->input('name'),
-            'email'      => $request->input('email'),
-        ]);
+		$lead = Lead::create([
+			'session_id' => $sessionId,
+			'name'       => $request->input('name'),
+			'email'      => $request->input('email'),
+		]);
 
-        return response()->json(['message' => 'Lead stored', 'lead' => $lead]);
-    });
+		return response()->json(['message' => 'Lead stored', 'lead' => $lead]);
+	});
 
-    Route::get('/utm-stats', function () {
-        $visitors = DB::table('utms')
-            ->select('utm_source', DB::raw('count(distinct session_id) as total_visitors'))
-            ->groupBy('utm_source')
-            ->get();
+	Route::get('/utm-stats', function () {
+		$visitors = DB::table('utms')
+		->select('utm_source', DB::raw('count(distinct session_id) as total_visitors'))
+		->groupBy('utm_source')
+		->get();
 
-        $conversionsRaw = DB::table('leads')->select('session_id')->get();
+		$conversionsRaw = DB::table('leads')->select('session_id')->get();
 
-        $conversions = $conversionsRaw->groupBy(function ($item) {
-            return Utm::where('session_id', $item->session_id)->value('utm_source') ?? 'unknown';
-        })->map->count();
+		$conversions = $conversionsRaw->groupBy(function ($item) {
+			return Utm::where('session_id', $item->session_id)->value('utm_source') ?? 'unknown';
+		})->map->count();
 
-        return response()->json([
-            'visitors'    => $visitors,
-            'conversions' => $conversions,
-        ]);
-    });
+		return response()->json([
+			'visitors'    => $visitors,
+			'conversions' => $conversions,
+		]);
+	});
 
 });
 
@@ -195,27 +195,27 @@ Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
-    $url = $request->query('url');
+	$url = $request->query('url');
 
-    if (!$url) {
-        abort(400, 'URL is required');
-    }
+	if (!$url) {
+		abort(400, 'URL is required');
+	}
 
-    try {
-        $response = Http::timeout(10)->get($url);
+	try {
+		$response = Http::timeout(10)->get($url);
 
-        if (!$response->successful()) {
-            abort(404, 'Image not found');
-        }
+		if (!$response->successful()) {
+			abort(404, 'Image not found');
+		}
 
 		return response($response->body(), 200)
 		->header('Content-Type', $response->header('Content-Type') ?? 'image/webp')
 		->header('Cache-Control', 'public, max-age=86400')
 		->header('Access-Control-Allow-Origin', '*')
 		->header('Access-Control-Allow-Headers', 'Content-Type');
-    } catch (\Exception $e) {
-        abort(500, 'Proxy failed: ' . $e->getMessage());
-    }
+	} catch (\Exception $e) {
+		abort(500, 'Proxy failed: ' . $e->getMessage());
+	}
 })->name('proxy-image');
 
 
@@ -245,33 +245,33 @@ Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
 Route::post('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'store']);
 
 Route::prefix('analytics')->group(function () {
-    // Basic Analytics
-    Route::get('/overview', [AnalyticsController::class, 'overview']);
-    Route::get('/sessions-by-date', [AnalyticsController::class, 'sessionsByDate']);
-    Route::get('/realtime', [AnalyticsController::class, 'realTimeAnalytics']);
+	// Basic Analytics
+	Route::get('/overview', [AnalyticsController::class, 'overview']);
+	Route::get('/sessions-by-date', [AnalyticsController::class, 'sessionsByDate']);
+	Route::get('/realtime', [AnalyticsController::class, 'realTimeAnalytics']);
 
-    // Detailed Analytics
-    Route::get('/device', [AnalyticsController::class, 'deviceAnalytics']);
-    Route::get('/geographic', [AnalyticsController::class, 'geographicAnalytics']);
-    Route::get('/traffic-sources', [AnalyticsController::class, 'trafficSources']);
-    Route::get('/pages', [AnalyticsController::class, 'pageAnalytics']);
-    Route::get('/events', [AnalyticsController::class, 'eventAnalytics']);
+	// Detailed Analytics
+	Route::get('/device', [AnalyticsController::class, 'deviceAnalytics']);
+	Route::get('/geographic', [AnalyticsController::class, 'geographicAnalytics']);
+	Route::get('/traffic-sources', [AnalyticsController::class, 'trafficSources']);
+	Route::get('/pages', [AnalyticsController::class, 'pageAnalytics']);
+	Route::get('/events', [AnalyticsController::class, 'eventAnalytics']);
 
-    // E-commerce & Conversions
-    Route::get('/conversions', [AnalyticsController::class, 'conversionAnalytics']);
-    Route::get('/abandoned-cart', [AnalyticsController::class, 'abandonedCartAnalytics']);
-    Route::get('/ecommerce-funnel', [AnalyticsController::class, 'ecommerceFunnel']);
-    Route::get('/goal-completions', [AnalyticsController::class, 'goalCompletions']);
+	// E-commerce & Conversions
+	Route::get('/conversions', [AnalyticsController::class, 'conversionAnalytics']);
+	Route::get('/abandoned-cart', [AnalyticsController::class, 'abandonedCartAnalytics']);
+	Route::get('/ecommerce-funnel', [AnalyticsController::class, 'ecommerceFunnel']);
+	Route::get('/goal-completions', [AnalyticsController::class, 'goalCompletions']);
 
-    // Audience Analytics
-    Route::get('/demographics', [AnalyticsController::class, 'audienceDemographics']);
-    Route::get('/cohort-analysis', [AnalyticsController::class, 'cohortAnalysis']);
-    Route::get('/user-journey', [AnalyticsController::class, 'userJourney']);
+	// Audience Analytics
+	Route::get('/demographics', [AnalyticsController::class, 'audienceDemographics']);
+	Route::get('/cohort-analysis', [AnalyticsController::class, 'cohortAnalysis']);
+	Route::get('/user-journey', [AnalyticsController::class, 'userJourney']);
 
-    // Advanced Features
-    Route::get('/time-based', [AnalyticsController::class, 'timeBasedAnalytics']);
-    Route::get('/complete-dashboard', [AnalyticsController::class, 'completeDashboard']);
-    Route::post('/custom-report', [AnalyticsController::class, 'customReport']);
+	// Advanced Features
+	Route::get('/time-based', [AnalyticsController::class, 'timeBasedAnalytics']);
+	Route::get('/complete-dashboard', [AnalyticsController::class, 'completeDashboard']);
+	Route::post('/custom-report', [AnalyticsController::class, 'customReport']);
 });
 Route::get('/analytics/landing-pages', [AnalyticsController::class, 'landingPageAnalytics']);
 Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerformance']);
@@ -287,36 +287,36 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
-    Route::apiResource('/inquiries',  InquiryController::class);
+	Route::apiResource('/inquiries',  InquiryController::class);
 
-    Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
-    Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
-    Route::apiResource('post-purchase-claims', PostPurchaseClaimController::class);
+	Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
+	Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
+	Route::apiResource('post-purchase-claims', PostPurchaseClaimController::class);
 
-    Route::apiResource('/coupons', F_CouponController::class)	;
-    Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
-    Route::post('/coupons/{coupon}/reject', [F_CouponController::class, 'reject']);
-    Route::post('/coupons/validate', [F_CouponController::class, 'validate']);
+	Route::apiResource('/coupons', F_CouponController::class)	;
+	Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
+	Route::post('/coupons/{coupon}/reject', [F_CouponController::class, 'reject']);
+	Route::post('/coupons/validate', [F_CouponController::class, 'validate']);
 
-    Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
+	Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
 
 	Route::apiResource('customer-events', CustomerEventController::class);
 
-    Route::get('/utms', [Utmcontroller::class, 'index']);
+	Route::get('/utms', [Utmcontroller::class, 'index']);
 	Route::get('/analytics/stats', [Utmcontroller::class, 'stats']);
 	Route::get('/analytics/utm-sources', [Utmcontroller::class, 'utmSources']);
 
 	Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
 	Route::get('/abandoned-carts/{id}', [AbandonedCartController::class, 'show']);
-    Route::get('/customers-by-date-range', [AbandonedCartController::class, 'getCustomersByDateRange']);
+	Route::get('/customers-by-date-range', [AbandonedCartController::class, 'getCustomersByDateRange']);
 
 	Route::prefix('menu-banners')->group(function () {
-    // Create banner
-    Route::post('/', [MenuBannerController::class, 'store']);
-    Route::get('/', [MenuBannerController::class, 'index']);
-    Route::get('/{id}', [MenuBannerController::class, 'show']);
-    Route::post('/{id}', [MenuBannerController::class, 'update']);
-    Route::delete('/{id}', [MenuBannerController::class, 'destroy']);
+	// Create banner
+		Route::post('/', [MenuBannerController::class, 'store']);
+		Route::get('/', [MenuBannerController::class, 'index']);
+		Route::get('/{id}', [MenuBannerController::class, 'show']);
+		Route::post('/{id}', [MenuBannerController::class, 'update']);
+		Route::delete('/{id}', [MenuBannerController::class, 'destroy']);
 	});
 
 	Route::prefix('category-banners')->group(function () {
@@ -403,12 +403,12 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
 
-    Route::post('/keywords/import', [AppKeywordController::class, 'import']);
-    Route::post('/keywords/export', [AppKeywordController::class, 'export']);
+	Route::post('/keywords/import', [AppKeywordController::class, 'import']);
+	Route::post('/keywords/export', [AppKeywordController::class, 'export']);
 
-    Route::post('/translations/generate-translate', [TranslationController::class, 'export']);
-    Route::post('/translations/export', [TranslationController::class, 'export']);
-    Route::post('/translations/import', [TranslationController::class, 'import']);
+	Route::post('/translations/generate-translate', [TranslationController::class, 'export']);
+	Route::post('/translations/export', [TranslationController::class, 'export']);
+	Route::post('/translations/import', [TranslationController::class, 'import']);
 
 
 	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
@@ -499,7 +499,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('flash-sales', FlashSaleController::class);
 
 
-    Route::get('/seo-management/check-url', [SeoManagementController::class, 'checkURL']);
+	Route::get('/seo-management/check-url', [SeoManagementController::class, 'checkURL']);
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
 	Route::post('/seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);
@@ -538,18 +538,18 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
 
-    Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
-    Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
+	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
+	Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
 
-    Route::post('orders/{id}/resend-mail', [OrderController::class, 'resendOrderPlaceMail']);
+	Route::post('orders/{id}/resend-mail', [OrderController::class, 'resendOrderPlaceMail']);
 
-    Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
-    Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
-    Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
-    Route::apiResource('orders', OrderController::class);
+	Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
+	Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
+	Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
+	Route::apiResource('orders', OrderController::class);
 
-    Route::put('support-tickets/{id}/status', [SupportTicketController::class, 'updateStatus']);
-    Route::apiResource('support-tickets', SupportTicketController::class);
+	Route::put('support-tickets/{id}/status', [SupportTicketController::class, 'updateStatus']);
+	Route::apiResource('support-tickets', SupportTicketController::class);
 
 	Route::apiResource('quotes', QuoteController::class);
 
@@ -577,7 +577,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
 	Route::post('/unisource/authenticate', [UnisourceShipmentController::class, 'authenticateWithUnisource']);
-    Route::apiResource('carts', CustomerCartController::class);
+
+	Route::get('/carts/fetch/{id}', [CustomerCartController::class, 'fetchByID']);
+	Route::apiResource('carts', CustomerCartController::class);
 
 });
 
@@ -602,57 +604,57 @@ Route::Post('frontend/product-variants', [FndProductVariantController::class, 'i
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
-    Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
-    Route::apiResource('frontend/carts', F_CustomerCartController::class);
+	Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
+	Route::apiResource('frontend/carts', F_CustomerCartController::class);
 
 
-	    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
+	Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
 	Route::prefix('customer')->group(function () {
 
 		Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
 
-        // Customer coupon application
-        Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
+		// Customer coupon application
+		Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
 
 		Route::get('check-coupon', [F_CouponController::class, 'checkCustomerCoupon']);
 
-        Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
+		Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
 
-        // Customer coupon history
-        Route::get('coupon-history', [F_CouponController::class, 'getCustomerCouponHistory']);
+		// Customer coupon history
+		Route::get('coupon-history', [F_CouponController::class, 'getCustomerCouponHistory']);
 
-        // Check if coupon code exists (without applying)
-        Route::post('check-coupon', [F_CouponController::class, 'checkCouponCode']);
-    });
-    Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
-    Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
-    Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class)
-    ->names('frontend.post-purchase-claims');
+		// Check if coupon code exists (without applying)
+		Route::post('check-coupon', [F_CouponController::class, 'checkCouponCode']);
+	});
+	Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
+	Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
+	Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class)
+	->names('frontend.post-purchase-claims');
 
-    Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
+	Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
 	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
-    Route::get('/frontend/invoices/{id}', [F_InvoiceController::class, 'show']);
-    Route::post('/frontend/invoices', [F_InvoiceController::class, 'store']);
+	Route::get('/frontend/invoices/{id}', [F_InvoiceController::class, 'show']);
+	Route::post('/frontend/invoices', [F_InvoiceController::class, 'store']);
 
 	Route::post('frontend/customers/change-password', [F_CustomerController::class, 'changePassword']);
 
 	Route::post('/frontend/support-tickets', [F_SupportTicketController::class, 'store']);
-    Route::get('/frontend/support-tickets', [F_SupportTicketController::class, 'index']);
-    Route::get('/frontend/support-tickets/{id}', [F_SupportTicketController::class, 'show']);
-    Route::get('/frontend/customers/{customer_id}/support-tickets', [F_SupportTicketController::class, 'getTicketsByCustomer']);
+	Route::get('/frontend/support-tickets', [F_SupportTicketController::class, 'index']);
+	Route::get('/frontend/support-tickets/{id}', [F_SupportTicketController::class, 'show']);
+	Route::get('/frontend/customers/{customer_id}/support-tickets', [F_SupportTicketController::class, 'getTicketsByCustomer']);
 
 	Route::get('/frontend/customer-documents', [F_CustomerDocumentController::class, 'index']);
-    Route::post('/frontend/customer-documents', [F_CustomerDocumentController::class, 'store']);
-    Route::delete('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'destroy']);
-    Route::get('/frontend/customer-documents/{customer_id}', [F_CustomerDocumentController::class, 'customerDocuments']);
+	Route::post('/frontend/customer-documents', [F_CustomerDocumentController::class, 'store']);
+	Route::delete('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'destroy']);
+	Route::get('/frontend/customer-documents/{customer_id}', [F_CustomerDocumentController::class, 'customerDocuments']);
 
 	Route::prefix('frontend')->group(function () {
-    Route::get('/company-profiles', [CompanyProfileController::class, 'index']);
-    Route::post('/company-profiles', [CompanyProfileController::class, 'store']);
-    Route::get('/company-profiles/{id}', [CompanyProfileController::class, 'show']);
-    Route::put('/company-profiles/{id}', [CompanyProfileController::class, 'update']);
-    Route::delete('/company-profiles/{id}', [CompanyProfileController::class, 'destroy']);
+		Route::get('/company-profiles', [CompanyProfileController::class, 'index']);
+		Route::post('/company-profiles', [CompanyProfileController::class, 'store']);
+		Route::get('/company-profiles/{id}', [CompanyProfileController::class, 'show']);
+		Route::put('/company-profiles/{id}', [CompanyProfileController::class, 'update']);
+		Route::delete('/company-profiles/{id}', [CompanyProfileController::class, 'destroy']);
 	});
 
 	Route::apiResource('/frontend/contact-directories', F_ContactDirectoryController::class);
@@ -662,8 +664,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/products/{id}/dif', [F_DiffProductController::class, 'getDiffProducts']);
 	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
 	// Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
-		Route::apiResource('frontend/customer-address', F_CustomerAddressController::class)
-			->names('frontend.customer-address');
+	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class)
+	->names('frontend.customer-address');
 
 	Route::get('/frontend/quotes/{id}/email-pdf', [F_QuoteController::class, 'emailPdf']);
 	Route::get('/frontend/quotes/{id}/download-pdf', [F_QuoteController::class, 'downloadPdf']);
@@ -747,9 +749,6 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::prefix('/frontend/blogs')->group(function () {
 		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
 	});
-
-
-
 });
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
@@ -882,8 +881,8 @@ Route::get('/stripe/thanks', [F_StripeController::class, 'success']);
 Route::get('/stripe/failed', [F_StripeController::class, 'paymentFailed']);
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
 Route::prefix('stripe')->group(function () {
-    Route::post('/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
-    Route::post('/confirm-payment-intent', [F_StripeController::class, 'confirmPaymentIntent']);
+	Route::post('/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
+	Route::post('/confirm-payment-intent', [F_StripeController::class, 'confirmPaymentIntent']);
 });
 Route::post('frontend/product-errors', [F_ProductErrorController::class, 'store']);
 Route::get('frontend/product-errors', [F_ProductErrorController::class, 'index']);
@@ -918,26 +917,26 @@ Route::post('/webhook/stax', [F_StaxPaymentController::class, 'handleWebhook']);
 
 
 	// Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);
-	Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
-     ->where('from', '.*');
+Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
+->where('from', '.*');
 
 Route::prefix('frontend/auth')->group(function () {
 
-    // Stax Payment Routes
-    Route::post('/Stax', [F_StaxPaymentController::class, 'checkout'])
-        ->name('stax.checkout');
+	// Stax Payment Routes
+	Route::post('/Stax', [F_StaxPaymentController::class, 'checkout'])
+	->name('stax.checkout');
 
-    Route::get('/Stax/transaction/{id}', [F_StaxPaymentController::class, 'getTransaction'])
-        ->name('stax.transaction');
+	Route::get('/Stax/transaction/{id}', [F_StaxPaymentController::class, 'getTransaction'])
+	->name('stax.transaction');
 
-    Route::post('/Stax/refund/{id}', [F_StaxPaymentController::class, 'refund'])
-        ->name('stax.refund');
+	Route::post('/Stax/refund/{id}', [F_StaxPaymentController::class, 'refund'])
+	->name('stax.refund');
 
-    Route::post('/Stax/void/{id}', [F_StaxPaymentController::class, 'void'])
-        ->name('stax.void');
+	Route::post('/Stax/void/{id}', [F_StaxPaymentController::class, 'void'])
+	->name('stax.void');
 
 	Route::post('/Stax/tokenize', [F_StaxPaymentController::class, 'tokenizeCard'])
-		->name('stax.card-charge');
+	->name('stax.card-charge');
 
 });
 
