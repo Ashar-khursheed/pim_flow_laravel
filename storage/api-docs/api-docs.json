@@ -28976,6 +28976,19 @@
                                         "format": "float",
                                         "example": 200
                                     },
+                                    "additional_amount_name": {
+                                        "type": "string",
+                                        "example": "Accessory 1"
+                                    },
+                                    "additional_amount_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
+                                    "additional_amount_details": {
+                                        "type": "string",
+                                        "example": "paymentlink.com"
+                                    },
                                     "products": {
                                         "type": "array",
                                         "items": {
