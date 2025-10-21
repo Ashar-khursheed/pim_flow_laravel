@@ -218,6 +218,13 @@
 											</tr>
 											@endif
 
+											@if ($insideDeliveryCharge > 0)
+											<tr>
+												<td style="font-family: 'Noto Sans',  sans-serif; ">Inside Delivery Charge</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($insideDeliveryCharge, 2, '.', ',') }}</td>
+											</tr>
+											@endif
+
 											<tr>
 												<td style="font-family: 'Noto Sans',  sans-serif; ">Subtotal</td>
 												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
