@@ -520,7 +520,7 @@ class PaymobController extends Controller
 
             // Step Create order
             $merchantOrderId = $order->order_number ?? uniqid('order_');
-            $amountCents = (int) ($order->total_amount * 100);
+            $amountCents = (int) ($order->pending_amount * 100);
 
             $orderResponse = Http::post("{$baseUrl}/ecommerce/orders", [
                 'auth_token' => $authToken,

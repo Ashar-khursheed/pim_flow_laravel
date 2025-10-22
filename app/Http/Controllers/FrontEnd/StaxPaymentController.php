@@ -606,7 +606,7 @@ class StaxPaymentController extends Controller
 
             
             $invoiceData = [
-                'amount' => (float) $order->total_amount * 100,
+                'amount' => (float) $order->pending_amount * 100,
                  'description' => $firstname??"",
                 'meta' => [
                     'reference' => 'ORDER-' . $order->id,
@@ -622,7 +622,7 @@ class StaxPaymentController extends Controller
                     'successRedirect' => $url.'/thanks',
                     'redirect_failure' => $url.'/failed',
                     'send_email' => $customer->email,
-                    'total' => (float) $order->total_amount,
+                    'total' => (float) $order->pending_amount,
                     'email' => $customer->email,
                     'memo' => $customerAddress->city
                     

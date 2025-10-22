@@ -373,7 +373,7 @@ class CcavenueController extends Controller
         $orderList['cancel_url'] = $url.'/failed';        
         $orderList['notify_url'] = $backendUrl.'/api/payment/ccavenue/notify';       
         $orderList['currency'] = "AED";
-        $orderList['amount'] = $order->total_amount;
+        $orderList['amount'] = $order->pending_amount;
         $orderList['language'] = "EN";
         $orderList['tax_percentage'] = $order->tax_percentage;
         $orderList['billing_city'] = $customerAddress->city;
