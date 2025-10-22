@@ -32692,11 +32692,49 @@
                 "summary": "Create a product duplicate",
                 "description": "Creates a new product with the required details.",
                 "operationId": "36292e068d0fb7811644935f30fdee50",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product",
+                                    "sku"
+                                ],
+                                "properties": {
+                                    "product": {
+                                        "type": "string",
+                                        "example": "12345"
+                                    },
+                                    "sku": {
+                                        "type": "string",
+                                        "example": "SKU-NEW-001"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "Success",
                         "content": {
-                            "application/json": {}
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product duplicated successfully"
+                                        },
+                                        "new_product_id": {
+                                            "type": "integer",
+                                            "example": 6789
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
                         }
                     }
                 },
