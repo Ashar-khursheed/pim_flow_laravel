@@ -733,8 +733,10 @@ if (!function_exists('inquiry_cc_mails')) {
 		];
 
 		$uaeMails = [
-			'webdeveloper01@horecastore.ae',
-			'webdeveloper04@horecastore.ae',
+			'noman.peera@thehorecastore.com',
+			'imran@horecastore.ae',
+			'dmm@thehorecastore.com',
+			'pm@horecastore.ae',
 		];
 
 		$testMails = [
