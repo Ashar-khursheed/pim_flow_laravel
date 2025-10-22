@@ -380,7 +380,7 @@ class ProductController extends BaseController
 
 			'Inventory & Stock Management' => ['stock_status'],
 			'Pricing & Sales' => ['tax_id', 'currency_id', 'approved_by'],
-			'Marketing' => ['name', 'description', 'gen_type'],
+			'Marketing' => ['name', 'description', 'gen_type' , 'quote_available'],
 			'Media' => ['images', 'video_path', 'documents', 'benefits_features'],
 			'Store & Vendor Information' => ['brand_id'],
 			'Performance & Analytics' => ['views', 'units_sold'],
