@@ -234,6 +234,7 @@ class BrandController extends Controller
                             'warranty_information' => $firstSupplier?->warranty_information ?? null,
                             'min_quantity' => $firstSupplier->min_quantity ?? 0,
                             'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                            'quote_available' => $product->quote_available ?? null,
 
                         ];
 
@@ -319,7 +320,7 @@ class BrandController extends Controller
      * )
      */
     public function getAllBrandGuestProducts(Request $request)
-    {
+    {  
         // Subquery for best price and delivery days by SKU (only published products)
         $subQuery = Product::select('sku')
             ->where('status', 'published') // Add this line
@@ -447,7 +448,7 @@ class BrandController extends Controller
                         }
 
                         $details->per_unit_price = $perUnitPrice;
-                       
+                        
                         return [
                             'id' => $details->id,
                             'name' => $details->name,
@@ -472,11 +473,11 @@ class BrandController extends Controller
                             'map' => (float) ($firstSupplier->map ?? 0),
                             'inventory' => $firstSupplier->inventory ?? null,
                             'in_stock' => $firstSupplier->in_stock ?? null,
-                            'delivery_days' => $firstSupplier->delivery_days ?? null,
-                            'delivery_days' => $firstSupplier->delivery_days ?? null,
+                            'delivery_days' => $firstSupplier->delivery_days ?? null,                            
                             'return_policy' => $firstSupplier->return_policy ?? null,
                             'free_shipping' => $firstSupplier->free_shipping ?? null,
                             'warranty_information' => $firstSupplier->warranty_information ?? null,
+                            'quote_available' => $details->quote_available ?? null,
                         ] ;
 
                     })->values(),
@@ -1351,6 +1352,7 @@ if (!is_null($categoryId)) {
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                 'quote_available' => $product->quote_available ?? null,
             ];
         });
 

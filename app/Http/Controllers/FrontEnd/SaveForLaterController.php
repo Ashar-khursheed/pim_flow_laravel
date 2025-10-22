@@ -313,6 +313,7 @@ public function showSaveForLater(Request $request)
             'min_quantity' => $firstSupplier->min_quantity ?? 0,
             'is_fixed' => $firstSupplier->is_fixed ?? 0,
             'quantity' => $item->quantity ?? 1,  
+            'quote_available' => $product->quote_available ?? null,
         ];
     })->filter()->values(); // Remove nulls
 

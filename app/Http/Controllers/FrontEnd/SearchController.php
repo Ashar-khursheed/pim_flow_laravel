@@ -153,6 +153,7 @@ class SearchController extends Controller
                     ? $product->warrantyAttribute->attribute_value
                     : ($firstSupplier->warranty_information ?? null),
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                'quote_available' => $product->quote_available ?? null,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
                 'brand' => $product->brand ? [
                     'id' => $product->brand->id,
@@ -609,6 +610,7 @@ class SearchController extends Controller
                 'free_shipping' => $firstSupplier->free_shipping ?? null,
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                'quote_available' => $product->quote_available ?? null,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
                 'brand' => $product->brand ? [
                     'id' => $product->brand->id,

@@ -1215,6 +1215,7 @@ class ProductController extends Controller
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                'quote_available' => $product->quote_available ?? null,
             ];
         });
 
@@ -1373,6 +1374,7 @@ class ProductController extends Controller
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                'quote_available' => $product->quote_available ?? null,
             ];
         });
 
@@ -1523,6 +1525,7 @@ class ProductController extends Controller
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                'quote_available' => $product->quote_available ?? null,
             ];
         });
 
@@ -1848,6 +1851,7 @@ class ProductController extends Controller
                 "warranty_information" => $firstSupplier->warranty_information ?? null,
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                'quote_available' => $product->quote_available ?? null,
             ];
 
         });
@@ -2072,6 +2076,7 @@ class ProductController extends Controller
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                'quote_available' => $product->quote_available ?? null,
             ];
         });
 

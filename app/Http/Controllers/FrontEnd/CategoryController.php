@@ -1473,6 +1473,7 @@ private function buildProductsResponse($filteredProductIds, $request, $perPage)
             'warranty_information' => $firstSupplier?->warranty_information ?? null,
             'min_quantity' => $firstSupplier->min_quantity ?? 0,
             'is_fixed' => $firstSupplier->is_fixed ?? 0,
+            'quote_available' => $product->quote_available ?? null,
         ];
     });
 
@@ -3371,6 +3372,7 @@ return response()->json($limitedCategories->values())
 						'warranty_information' => $firstSupplier->warranty_information ?? null,
                         'min_quantity' => $firstSupplier->min_quantity ?? 0,
                         'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                        'quote_available' => $product->quote_available ?? null,
 					];
 				})->filter()->values(), // Remove null values and reset array keys
 				];
@@ -3565,6 +3567,7 @@ return response()->json($limitedCategories->values())
 						'warranty_information' => $firstSupplier->warranty_information ?? null,
                         'min_quantity' => $firstSupplier->min_quantity ?? 0,
                         'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                        'quote_available' => $product->quote_available ?? null,
 					];
 				})->filter()->values(), // Remove null values and reset array keys
 				];
