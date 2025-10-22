@@ -28,6 +28,7 @@ class CustomerCartController extends Controller
 	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="from_admin_panel", in="query", @OA\Schema(type="boolean", example=true)),
 	 *     @OA\Parameter(name="only_total_amount", in="query", @OA\Schema(type="boolean", example=true)),
+	 *     @OA\Parameter(name="only_id", in="query", @OA\Schema(type="boolean", example=true)),
 	 *     @OA\Parameter(name="username", in="query", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date")),
@@ -96,6 +97,7 @@ class CustomerCartController extends Controller
 		$recordsQuery->orderBy($sortBy, $sortDir);
 
 		$onlyTotalAmount = $request->has('only_total_amount') && $request->boolean('only_total_amount');
+		$onlyID = $request->has('only_id') && $request->boolean('only_id');
 
 		$totalRecords = (clone $recordsQuery)->count();
 
@@ -118,6 +120,8 @@ class CustomerCartController extends Controller
 
 		if ($onlyTotalAmount) {
 			$records =(clone $recordsQuery)->sum('total_amount');
+		} elseif ($onlyID) {
+			$records =(clone $recordsQuery)->pluck('id');
 		} else {
 			$records = $recordsQuery
 			->offset(($page - 1) * $length)
@@ -462,8 +466,131 @@ class CustomerCartController extends Controller
 
 	/**
 	 * @OA\Get(
+	 *     path="/api/carts/fetch/{id}",
+	 *     summary="Get cart details by id",
+	 *     tags={"Carts"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Cart ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Retrieved successfully", @OA\MediaType(mediaType="application/json"))
+	 * )
+	 */
+	public function fetchByID($id)
+	{
+		$record = CustomerCart::with([
+			'customer:id,name,email,country_code,mobile_number',
+			'customerAddress',
+			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
+			'customerCartProducts.product:id,name,images,sku,currency_id,barcode',
+			'customerCartProducts.product.currency:id,symbol',
+			'creator:id,username',
+		])
+		->find($id);
+
+		if (!$record) {
+			return response()->json([
+				'success' => false,
+				'data' => __("err_exist")
+			]);
+		}
+
+		/* Process each product in customer cart products */
+		$totalProducts = 0;
+		$cartAmount = 0;
+		$cartShipping = 0;
+		$cartProducts = [];
+
+		foreach ($record->customerCartProducts as $customerCartProduct) {
+			$product = $customerCartProduct->product;
+			if (!$product) continue;
+
+			/* Decode images if stored as JSON string */
+			$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+			$image = $images[0] ?? null;
+
+			$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
+
+			$unitPrice = 0;
+			$shippingCharge = 0;
+			if ($supplier) {
+				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
+				$shippingCharge = $supplier['shipping_charge'] ?? 0;
+			}
+
+			$quantity = $customerCartProduct->quantity ?? 0;
+			$subTotal = $quantity * $unitPrice;
+
+			$totalProducts += $quantity;
+			$cartAmount += $subTotal;
+			$cartShipping += $shippingCharge;
+
+			/* Push product data */
+			$cartProducts[] = [
+				'product_id'      => $customerCartProduct->product_id,
+				'vendor_id'       => $customerCartProduct->vendor_id,
+				'image'           => $image,
+				'name'            => $product->name,
+				'currency_symbol' => $product->currency->symbol ?? null,
+				'unit_price'      => number_format($unitPrice, 2, '.', ''),
+				'quantity'        => $quantity,
+				'sub_total'       => number_format($subTotal, 2, '.', ''),
+				'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
+			];
+		}
+
+		/* Add surcharges */
+		if ($record->is_lift_gate) {
+			$cartAmount += 75;
+		}
+		if ($record->is_residential_address) {
+			$cartAmount += 199;
+		}
+
+		/* Tax calculations */
+		$taxPercentage = $record->tax_percentage ?? 0;
+		$taxAmount = round(($cartAmount * $taxPercentage) / 100, 2);
+
+		/* Website-specific shipping rules */
+		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+			$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+		}
+
+		$totalAmount = $cartAmount + $taxAmount + $cartShipping;
+
+		/* Prepare cart summary */
+		$cart = [
+			'id'                     => $record->id,
+			'reference_number'       => $record->reference_number,
+			'customer'               => $record->customer,
+			'customer_address'               => $record->customerAddress,
+			'is_lift_gate'           => $record->is_lift_gate,
+			'is_residential_address' => $record->is_residential_address,
+			'amount'                 => number_format($cartAmount, 2, '.', ''),
+			'tax_percentage'             => number_format($taxPercentage, 2, '.', ''),
+			'tax_amount'             => number_format($taxAmount, 2, '.', ''),
+			'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
+			'total_amount'           => number_format($totalAmount, 2, '.', ''),
+			'total_products'         => $totalProducts,
+			'products'               => $cartProducts,
+			'creator'                => $record->creator,
+			'created_at'             => $record->created_at,
+		];
+
+		return response()->json([
+			'success' => true,
+			'data' => $cart
+		]);
+	}
+
+	/**
+	 * @OA\Get(
 	 *     path="/api/carts/{customer_id}",
-	 *     summary="Get cart details",
+	 *     summary="Get cart details by customer id",
 	 *     tags={"Carts"},
 	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(

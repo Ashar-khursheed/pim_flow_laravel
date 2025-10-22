@@ -8559,6 +8559,14 @@
                         }
                     },
                     {
+                        "name": "only_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
                         "name": "username",
                         "in": "query",
                         "schema": {
@@ -8717,12 +8725,45 @@
                 ]
             }
         },
+        "/api/carts/fetch/{id}": {
+            "get": {
+                "tags": [
+                    "Carts"
+                ],
+                "summary": "Get cart details by id",
+                "operationId": "c8403b1d21c990a2be9ea070efd9469d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Cart ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/carts/{customer_id}": {
             "get": {
                 "tags": [
                     "Carts"
                 ],
-                "summary": "Get cart details",
+                "summary": "Get cart details by customer id",
                 "operationId": "01177ba8293c42dbae683f65ccc6e655",
                 "parameters": [
                     {
