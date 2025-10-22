@@ -299,7 +299,9 @@ class ProductController extends BaseController
 		$product->sku = $request->sku;
 		$product->website_ids = implode(',', $request->websites);
 		$product->status = 'draft';
-		$product->quote_available = 0;
+		if ($request->quote_available) {
+			$product->quote_available = $request->quote_available;
+		}
 		$product->created_at = now();
 		$product->updated_at = now();
 		$product->created_by = auth()->id();
@@ -1592,7 +1594,9 @@ class ProductController extends BaseController
 		foreach ($input as $key => $value) {
 			$product->$key = $value;
 		}
-		$product->quote_available = 0;
+		if ($request->quote_available) {
+			$product->quote_available = $request->quote_available;
+		}
 		/* Save the product */
 		$product->save();
 
@@ -2338,7 +2342,7 @@ class ProductController extends BaseController
 	 */
 
 	public function productDuplicate(Request $request)
-	{		 
+	{
 		$validator = Validator::make($request->all(), [
 			'product' => 'required|exists:ec_products,id',
 			'sku' => "required",
@@ -2351,7 +2355,7 @@ class ProductController extends BaseController
 				'errors' => $validator->errors()
 			], 422);
 		}
- 
+
 		$locale = $request->locale ?? 'en';
 		try {
 			$mainProduct = Product::findOrFail(trim($request->input('product')));
@@ -2359,15 +2363,15 @@ class ProductController extends BaseController
 				$checkSku = Product::where('sku', $request->input('sku'))->count();
 
 				if (!$checkSku) {
-					$product = new Product();					 
+					$product = new Product();
 					$product->translateOrNew($locale)->name = $mainProduct->name;
 					$product->translateOrNew($locale)->description = $mainProduct->description;
 					$product->translateOrNew($locale)->benefits_features = $mainProduct->benefits_features;
 					$product->translateOrNew($locale)->images = $mainProduct->images;
-					 
+
 					$product->sku = $request->input('sku');
 					$product->website_ids = $mainProduct->website_ids;
-					$product->gen_type = $mainProduct->gen_type;				 
+					$product->gen_type = $mainProduct->gen_type;
 					$product->order = '0';
 					$product->is_featured = $mainProduct->is_featured;
 					$product->brand_id = $mainProduct->brand_id;
@@ -2384,7 +2388,7 @@ class ProductController extends BaseController
 					$product->currency_id = $mainProduct->currency_id;
 					$product->status = 'draft';
 					$product->created_at = now();
-					$product->updated_at = now(); 
+					$product->updated_at = now();
 					$product->save();
 					if (!empty($mainProduct->categories)) {
 						$categoryId = $mainProduct->categories->pluck('id')->toArray();
@@ -2518,75 +2522,75 @@ class ProductController extends BaseController
 							->first();
 
 						if (!$existingEntry) {
-							 
-						$data = [];
-						$rowErrors = [];
 
-					 
-						$data['product_id'] = $product->id;
-						$data['vendor_id'] = $firstSupplier->vendor_id;
-						$data['vendor_sku'] = $product->sku;
-						$data['list_price'] = $firstSupplier->list_price;
-						$data['cost_per_item'] = $firstSupplier->cost_per_item ?? 0;
-					 
-						$data['multiple'] = $firstSupplier->multiple ?? null;
-						$data['surcharge'] = $firstSupplier->surcharge ?? 0;
-						$data['additional_cost'] = $firstSupplier->additional_cost ?? 0;
-						$data['map'] = $firstSupplier->map ?? null;
-						$data['sale_price'] = $firstSupplier->sale_price ?? null;
-						$data['price'] = $firstSupplier->price ?? 0;
-						$data['inventory'] = $firstSupplier->inventory ?? 0;
+							$data = [];
+							$rowErrors = [];
 
-						$data['in_stock'] = $firstSupplier->in_stock ?? 'Yes';
-						$data['min_quantity'] = $firstSupplier->min_quantity ?? 1;
-						$data['is_fixed'] = $firstSupplier->is_fixed ?? 'Yes';
-						$data['delivery_days'] = $firstSupplier->delivery_days ?? '';
-						$data['return_policy'] = $firstSupplier->return_policy ?? '';
-						$data['free_shipping'] = $firstSupplier->free_shipping ?? '0';
-						$data['shipping_charge'] = $firstSupplier->shipping_charge ?? 0;
-						$data['warranty_information'] = $firstSupplier->warranty_information ?? null;
-						$data['restocking_fees'] = $firstSupplier->restocking_fees ?? 0;
 
-						/* --- Calculate cost_per_item --- */
-						if (!empty($data['list_price']) && !empty($data['multiple'])) {
-							$data['cost_per_item'] = (float) $data['list_price'] * (float) $data['multiple'];
+							$data['product_id'] = $product->id;
+							$data['vendor_id'] = $firstSupplier->vendor_id;
+							$data['vendor_sku'] = $product->sku;
+							$data['list_price'] = $firstSupplier->list_price;
+							$data['cost_per_item'] = $firstSupplier->cost_per_item ?? 0;
+
+							$data['multiple'] = $firstSupplier->multiple ?? null;
+							$data['surcharge'] = $firstSupplier->surcharge ?? 0;
+							$data['additional_cost'] = $firstSupplier->additional_cost ?? 0;
+							$data['map'] = $firstSupplier->map ?? null;
+							$data['sale_price'] = $firstSupplier->sale_price ?? null;
+							$data['price'] = $firstSupplier->price ?? 0;
+							$data['inventory'] = $firstSupplier->inventory ?? 0;
+
+							$data['in_stock'] = $firstSupplier->in_stock ?? 'Yes';
+							$data['min_quantity'] = $firstSupplier->min_quantity ?? 1;
+							$data['is_fixed'] = $firstSupplier->is_fixed ?? 'Yes';
+							$data['delivery_days'] = $firstSupplier->delivery_days ?? '';
+							$data['return_policy'] = $firstSupplier->return_policy ?? '';
+							$data['free_shipping'] = $firstSupplier->free_shipping ?? '0';
+							$data['shipping_charge'] = $firstSupplier->shipping_charge ?? 0;
+							$data['warranty_information'] = $firstSupplier->warranty_information ?? null;
+							$data['restocking_fees'] = $firstSupplier->restocking_fees ?? 0;
+
+							/* --- Calculate cost_per_item --- */
+							if (!empty($data['list_price']) && !empty($data['multiple'])) {
+								$data['cost_per_item'] = (float) $data['list_price'] * (float) $data['multiple'];
+							}
+
+							$data['surcharge'] = !empty($data['surcharge'])
+								? $data['cost_per_item'] * ((float) $data['surcharge'] / 100)
+								: 0;
+
+							$data['additional_cost'] = !empty($data['additional_cost'])
+								? $data['cost_per_item'] * ((float) $data['additional_cost'] / 100)
+								: 0;
+
+							$data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
+
+							/* --- Price & Sale Price fallback --- */
+							$data['sale_price'] = !empty($data['sale_price']) ? (float) $data['sale_price'] : null;
+							$data['price'] = !empty($data['price']) ? (float) $data['price'] : 0;
+
+							/* --- Margin calculation --- */
+							if (!empty($data['sale_price']) && $data['sale_price'] > 0) {
+								$data['margin'] = (($data['sale_price'] - $data['total_cost_per_item']) / $data['sale_price']) * 100;
+							} elseif ($data['price'] > 0) {
+								$data['margin'] = (($data['price'] - $data['total_cost_per_item']) / $data['price']) * 100;
+							} else {
+								$data['margin'] = null;
+							}
+
+							/* --- Stock flags --- */
+							$data['in_stock'] = ($data['inventory'] > 0 || strtolower($data['in_stock']) === 'yes') ? 1 : 0;
+							$data['is_fixed'] = strtolower($data['is_fixed']) === 'yes' ? 1 : 0;
+							$data['free_shipping'] = strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
+							$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : $data['shipping_charge'];
+
+							$data['created_by'] = auth()->id();
+
+
+							$record = ProductSupplier::create($data);
 						}
-				 
-						$data['surcharge'] = !empty($data['surcharge'])
-							? $data['cost_per_item'] * ((float) $data['surcharge'] / 100)
-							: 0;
 
-						$data['additional_cost'] = !empty($data['additional_cost'])
-							? $data['cost_per_item'] * ((float) $data['additional_cost'] / 100)
-							: 0;
-					 
-						$data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
-
-						/* --- Price & Sale Price fallback --- */
-						$data['sale_price'] = !empty($data['sale_price']) ? (float) $data['sale_price'] : null;
-						$data['price'] = !empty($data['price']) ? (float) $data['price'] : 0;
-
-						/* --- Margin calculation --- */
-						if (!empty($data['sale_price']) && $data['sale_price'] > 0) {
-							$data['margin'] = (($data['sale_price'] - $data['total_cost_per_item']) / $data['sale_price']) * 100;
-						} elseif ($data['price'] > 0) {
-							$data['margin'] = (($data['price'] - $data['total_cost_per_item']) / $data['price']) * 100;
-						} else {
-							$data['margin'] = null;
-						}
-
-						/* --- Stock flags --- */
-						$data['in_stock'] = ($data['inventory'] > 0 || strtolower($data['in_stock']) === 'yes') ? 1 : 0;
-						$data['is_fixed'] = strtolower($data['is_fixed']) === 'yes' ? 1 : 0;
-						$data['free_shipping'] = strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
-						$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : $data['shipping_charge'];
-				 
-						$data['created_by'] = auth()->id();
-
-						 
-						$record = ProductSupplier::create($data);
-					}
-						 
 					}
 
 
