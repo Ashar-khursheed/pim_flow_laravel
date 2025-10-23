@@ -28,6 +28,7 @@ use App\Jobs\Order\OutDeliveryMailJob;
 use App\Jobs\Order\OrderDeliveredMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 use App\Jobs\Order\PartialOrderCancelledMailJob;
+use App\Jobs\Order\OrderUpdateMailJob;
 
 class OrderController extends Controller
 {
@@ -549,13 +550,13 @@ class OrderController extends Controller
 			DB::commit();
 
 			if ($request->boolean('is_reserved')) {
-				$batch = Bus::batch([])->name('Order Reserved')->dispatch();
+				$batch = Bus::batch([])->name("Order reserved mail for Order #{$order->id}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_RES';
 				$batch->add(new OrderReservedMailJob([
 					'recordId' => $order->id
 				]));
 			} else {
-				$batch = Bus::batch([])->name('Order Place backend')->dispatch();
+				$batch = Bus::batch([])->name("Order place mail for Order #{$order->id}")->dispatch();
 
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
@@ -1045,6 +1046,8 @@ class OrderController extends Controller
 				'tax_amount' => $taxAmount,
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
+				'additional_amount_name' => $request->additional_amount_name ?? null,
+				'additional_amount_price' => $request->additional_amount_price ?? null,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
@@ -1092,6 +1095,48 @@ class OrderController extends Controller
 			]);
 
 			DB::commit();
+
+			if ($pendingAmount > 0) {
+				$paymentLink = null;
+				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+					try {
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\PaymobController::class)->generatePaymobPaymentLink($order);
+						if ($paymentLink) {
+							$order = Order::find($order->id);
+							$order->additional_amount_details = $paymentLink;
+							$order->save();
+						}
+					} catch (\Exception $e) {
+						\Log::error('Paymob Payment Link generation failed', [
+							'order_id' => $order->id,
+							'error' => $e->getMessage(),
+							'trace' => $e->getTraceAsString()
+						]);
+					}
+				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
+					try {
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\StaxPaymentController::class)
+						->createStaxPaymentLink($order);
+						if ($paymentLink) {
+							$order = Order::find($order->id);
+							$order->additional_amount_details = $paymentLink;
+							$order->save();
+						}
+					} catch (\Exception $e) {
+						\Log::error('Stax Payment Link generation failed', [
+							'order_id' => $order->id,
+							'error' => $e->getMessage(),
+							'trace' => $e->getTraceAsString()
+						]);
+					}
+				}
+
+				$batch = Bus::batch([])->name("Order update Mail for Order #{$order->id}")->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
+				$batch->add(new OrderUpdateMailJob([
+					'recordId' => $order->id
+				]));
+			}
 
 			/* Load relationships */
 			$order->load([
@@ -1232,10 +1277,7 @@ class OrderController extends Controller
 				'created_by' => auth()->id(),
 			]);
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Order Mails')->dispatch();
+			$batch = Bus::batch([])->name("Order cancelled Mail for Order #{$order->id}")->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
 			$batch->add(new OrderCancelledMailJob([
@@ -1350,10 +1392,7 @@ class OrderController extends Controller
 		]);
 
 		if (in_array($newStatus, ['Confirmed', 'Out for delivery', 'Delivered', 'Cancelled'])) {
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Order Mails')->dispatch();
+			$batch = Bus::batch([])->name("Order Mail for Order #{$order->id}")->dispatch();
 
 			if ($newStatus == 'Confirmed') {
 				$batch->options['queue'] = config('app.website') . '_ORD_CNF';
@@ -1462,10 +1501,7 @@ class OrderController extends Controller
 				'created_by' => auth()->id(),
 			]);
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Order Mails')->dispatch();
+			$batch = Bus::batch([])->name("Order partial cancelled mail for Order #{$order->id}")->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_ORD_PART_CNCL';
 			$batch->add(new PartialOrderCancelledMailJob([

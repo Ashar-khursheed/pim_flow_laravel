@@ -25,7 +25,7 @@
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: black;">
 	<!-- Preheader text: hidden but visible in email previews -->
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-		Thank you! We’ve received your order and will start processing it shortly.
+		Your updated order is ready. Complete payment to confirm your items.
 	</span>
 
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f8f8; font-family: 'Noto Sans',  sans-serif;">
@@ -47,13 +47,14 @@
 								</strong>!
 							</p>
 							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
-								Your Order Has Been Placed Successfully
+								Your Order Has Been Updated Successfully!
 							</p>
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
-								You’ll receive a separate confirmation email shortly with updated delivery details and next steps. If you’d like to view the status of your order or make changes, visit
+								We’ve added your requested items and updated your order details. Please review the changes and complete the remaining payment to confirm your order.
 							</p>
-							<a href="{{ $orderUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
-								Manage Your Orders
+
+							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
+								Complete Your Payment
 							</a>
 						</td>
 					</tr>
@@ -103,13 +104,14 @@
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; font-size: 15px; line-height:22px; color:black; font-size: 14px;">
-													Payment Method
+													Payment Status
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
-													{{ $paymentMethod }}
+													Pending
+													<a href="{{ $paymentUrl }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">[Pay Now]</a>
 												</td>
 											</tr>
 										</table>
@@ -136,7 +138,6 @@
 									</td>
 								</tr>
 							</table>
-
 						</td>
 					</tr>
 
@@ -220,6 +221,13 @@
 											</tr>
 											@endif
 
+											@if ($additionalAmountPrice > 0)
+											<tr>
+												<td style="font-family: 'Noto Sans',  sans-serif; ">{{ $additionalAmountName }}</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($additionalAmountPrice, 2, '.', ',') }}</td>
+											</tr>
+											@endif
+
 											<tr>
 												<td style="font-family: 'Noto Sans',  sans-serif; ">Subtotal</td>
 												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
@@ -263,7 +271,12 @@
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
 									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
-										You can view or update your order anytime by visiting the Orders section under your account profile.
+										We’re excited to prepare your updated order! Please complete the <strong> remaining payment of {{ $currency }} {{ number_format($total, 2, '.', ',') }} </strong>  at the earliest to avoid any delay in processing and delivery.
+									</td>
+								</tr>
+								<tr>
+									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
+										To make sure your updated items are secured for you, please complete payment within <strong> 7 days</strong>. After that, the system may automatically release the additional items, and we’d hate for you to miss out!
 									</td>
 								</tr>
 								<tr>

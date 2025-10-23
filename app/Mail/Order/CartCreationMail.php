@@ -42,6 +42,7 @@ class CartCreationMail extends Mailable
 		$referenceNumber = $customerCart->reference_number;
 		$createdAt = Carbon::parse($customerCart->created_at)->format('D, M d, Y');
 		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+		$orderStatus = $order->status;
 
 		$customerAddress = $customerCart->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -136,6 +137,7 @@ class CartCreationMail extends Mailable
 			'referenceNumber' => $referenceNumber,
 			'createdAt' => $createdAt,
 			'currency' => $currency,
+			'orderStatus' => $orderStatus,
 
 			'address' => $address,
 			'city' => $city,

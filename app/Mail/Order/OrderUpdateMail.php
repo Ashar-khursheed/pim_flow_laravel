@@ -8,8 +8,10 @@ use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\OrderProduct;
+use App\Models\FrontEnd\AccessoryCharge;
 
-class OrderReservedMail extends Mailable
+class OrderUpdateMail extends Mailable
 {
 	use Queueable, SerializesModels;
 
@@ -30,22 +32,21 @@ class OrderReservedMail extends Mailable
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . '/logo.png';
 		$name = $order->customer->name ?? 'User';
-		$username = $order->customer->email;
-		$isNewCustomer = false;
-		$password = null;
+		$paymentUrl = $order->additional_amount_details ?? url("/");
 
-		$paymentUrl = $order->payment_link ?? url("/");
-
-		$referenceNumber = $order->order_number;
-		$createdAt = Carbon::parse($order->created_at)->format('D, M d, Y');
+		$orderNumber = $order->order_number;
+		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
-		$orderStatus = $order->status;
+		$total = $order->total_amount ?? 0;
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
-		$zipcode = $customerAddress->zip_code ?? '';$products = collect();
+		$zipcode = $customerAddress->zip_code ?? '';
+		$customerEmail = $order->customer->email;
+
+		$products = collect();
 
 		foreach ($order->orderProducts as $orderProduct) {
 			$productSupplierDetail = $orderProduct->vendorProductSupplier;
@@ -57,8 +58,8 @@ class OrderReservedMail extends Mailable
 				$images = is_array($productDetail->images) ? $productDetail->images : (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
-				$product->delivery_days = $productSupplierDetail
-				? $productSupplierDetail->delivery_days
+				$product->expectedShippingDate = $productSupplierDetail
+				? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
 				: null;
 
 				/* Original Price (before discount) */
@@ -82,6 +83,23 @@ class OrderReservedMail extends Mailable
 				$product->quantity = (int) $orderProduct->quantity;
 				$product->total = $orderProduct->amount;
 
+				$product->accessories = [];
+
+				$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)->where('relation_id', $orderProduct->id)->get();
+				if ($accessoryCharges->isNotEmpty()) {
+					$product->accessories = $accessoryCharges->map(function ($charge) {
+						return [
+							'id' => $charge->id,
+							'accessory_item_id' => $charge->accessory_item_id,
+							'accessory_item_name' => $charge->accessoryItem->name ?? null,
+							'accessory_item_price' => $charge->accessoryItem->price ?? null,
+							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+							'amount' => $charge->amount,
+						];
+					});
+				}
+
 				$products->push($product);
 			}
 		}
@@ -97,13 +115,15 @@ class OrderReservedMail extends Mailable
 		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
 		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
 		$insideDeliveryCharge = $order->is_inside_delivery ? 250 : 0;
+		$additionalAmountName = $order->additional_amount_name;
+		$additionalAmountPrice = $order->additional_amount_price;
 
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
-		$taxPercent = $order->tax_percentage;
+		$taxPercent = in_array(config('app.website'), ['UAE', 'UAE_T']) ? round($order->tax_percentage) : $order->tax_percentage;
 		$taxAmount = $order->tax_amount ?? 0;
-		$total = $order->total_amount ?? 0;
+		$discount = $order->discount ?? 0;
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -113,8 +133,8 @@ class OrderReservedMail extends Mailable
 		};
 
 		$siteEmail = match (config('app.website')) {
-			'US'  => 'sales@thehorecastore.com',
-			'UAE'  => 'hello@horecastore.ae',
+			'US'  => 'orders@thehorecastore.com',
+			'UAE'  => 'orders@horecastore.ae',
 			'US_T' => 'test_us@thehorecastore.co',
 			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
@@ -123,21 +143,18 @@ class OrderReservedMail extends Mailable
 		$params = [
 			'logoUrl' => $logoUrl,
 			'name' => $name,
-
-			'isNewCustomer' => $isNewCustomer,
-			'username' => $username,
-			'password' => $password,
 			'paymentUrl' => $paymentUrl,
 
-			'referenceNumber' => $referenceNumber,
-			'createdAt' => $createdAt,
+			'orderNumber' => $orderNumber,
+			'orderDate' => $orderDate,
 			'currency' => $currency,
-			'orderStatus' => $orderStatus,
+			'total' => $total,
 
 			'address' => $address,
 			'city' => $city,
 			'country' => $country,
 			'zipcode' => $zipcode,
+			'customerEmail' => $customerEmail,
 
 			'products' => $products,
 			'totalSaved' => $totalSaved,
@@ -145,19 +162,22 @@ class OrderReservedMail extends Mailable
 			'liftGateCharge' => $liftGateCharge,
 			'residentialAddressCharge' => $residentialAddressCharge,
 			'insideDeliveryCharge' => $insideDeliveryCharge,
+			'additionalAmountName' => $additionalAmountName,
+			'additionalAmountPrice' => $additionalAmountPrice,
+
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
 			'taxName' => $taxName,
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
-			'total' => $total,
+			'discount' => $discount,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject("Your HorecaStore Order Ref {$referenceNumber} is Reserved — Awaiting Payment")
-		->markdown('emails.orders.cart-creation')
+		return $this->subject("Your HorecaStore Updated Order #{$orderNumber} Awaits Payment – Pay Now")
+		->markdown('emails.orders.order-update')
 		->with($params);
 	}
 }
