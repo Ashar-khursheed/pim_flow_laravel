@@ -2544,6 +2544,7 @@ class ProductController extends BaseController
 							$data['in_stock'] = $firstSupplier->in_stock ?? 'Yes';
 							$data['min_quantity'] = $firstSupplier->min_quantity ?? 1;
 							$data['is_fixed'] = $firstSupplier->is_fixed ?? 'Yes';
+							
 							$data['delivery_days'] = $firstSupplier->delivery_days ?? '';
 							$data['return_policy'] = $firstSupplier->return_policy ?? '';
 							$data['free_shipping'] = $firstSupplier->free_shipping ?? '0';

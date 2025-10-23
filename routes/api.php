@@ -192,6 +192,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
 
 Route::post('/ccavenue/webhook', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'successhandleWebhook']);
+Route::get('/ccavenue/thank', [F_CCavenueController::class, 'thank']);
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
@@ -546,6 +547,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
 
 	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
+	Route::post('/webhook/thanks', [OrderController::class, 'thanks']);
 	Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
 
 	Route::post('orders/{id}/resend-mail', [OrderController::class, 'resendOrderPlaceMail']);
@@ -923,6 +925,7 @@ Route::get('/frontend/menu-banners/{id}', [F_MenuBannerController::class, 'show'
 Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'showCategory']);
 Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
 Route::post('/webhook/stax', [F_StaxPaymentController::class, 'handleWebhook']);
+Route::any('/stax/thanks', [F_StaxPaymentController::class, 'thanks']);
 
 
 	// Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);

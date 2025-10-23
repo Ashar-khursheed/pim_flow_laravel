@@ -603,11 +603,16 @@ class StaxPaymentController extends Controller
             $nameParts = explode(' ', trim($customer->name ?? ''), 2);
             $firstname = $nameParts[0] ?? '';
             $lastname = $nameParts[1] ?? '';
-
-            
+            $paydata['order_id'] = $order->id;
+            $paydata['amount'] = (float) $order->pending_amount * 100;
+            $paydata['email'] = $customer->email;
+            $paydata['currency'] = 'AED';
+            $paydata['common_name'] = trim($firstname . ' ' . $lastname);
+            $paydata = dataEncodeJsonBase64($paydata);
+            $appUrl = url('');
             $invoiceData = [
                 'amount' => (float) $order->pending_amount * 100,
-                 'description' => $firstname??"",
+                'description' => $firstname ?? "",
                 'meta' => [
                     'reference' => 'ORDER-' . $order->id,
                     'memo' => $customerAddress->city . ' ' . $customerAddress->state,
@@ -618,82 +623,82 @@ class StaxPaymentController extends Controller
                     'lastname' => $lastname,
                     'common_name' => trim($firstname . ' ' . $lastname),
                 ],
-                'link_meta' => [
-                    'successRedirect' => $url.'/thanks',
-                    'redirect_failure' => $url.'/failed',
+                'link_meta' => [                   
+                    'successRedirect' => $url . '/thanks?status=complete&getStax=' . $paydata,
+                    'redirect_failure' => $url . '/failed',
                     'send_email' => $customer->email,
                     'total' => (float) $order->pending_amount,
                     'email' => $customer->email,
                     'memo' => $customerAddress->city
-                    
+
                 ],
-                'redirect_url' => $url.'/thanks',
+                'redirect_url' => $url . '/thanks',
 
                 'send_email' => $customer->email,
                 'send_now' => true,
                 'pre_auth' => true,
                 'common_name' => trim($firstname . ' ' . $lastname),
-                'url' => 'https://app.staxpayments.com/#/pay/'.$publickey,
+                'url' => 'https://app.staxpayments.com/#/pay/' . $publickey,
 
             ];
- 
+
             $payload = [
-            'amount' => (float) ($invoiceData['amount'] ?? 0),
-            'description' => $invoiceData['description'] ?? 'Payment Link',
+                'amount' => (float) ($invoiceData['amount'] ?? 0),
+                'description' => $invoiceData['description'] ?? 'Payment Link',
             ];
 
             if (!empty($invoiceData['redirect_url'])) {
-            $payload['redirect_url'] = $invoiceData['redirect_url'];
+                $payload['redirect_url'] = $invoiceData['redirect_url'];
             }
             if (!empty($invoiceData['url'])) {
-            $payload['url'] = $invoiceData['url'];
+                $payload['url'] = $invoiceData['url'];
             }
             if (!empty($invoiceData['link_meta'])) {
-            $payload['link_meta'] = $invoiceData['link_meta'];
+                $payload['link_meta'] = $invoiceData['link_meta'];
             }
             if (!empty($invoiceData['common_name'])) {
-            $payload['common_name'] = $invoiceData['common_name'];
+                $payload['common_name'] = $invoiceData['common_name'];
             }
 
             if (!empty($invoiceData['customer'])) {
-            $payload['customer'] = $invoiceData['customer'];
+                $payload['customer'] = $invoiceData['customer'];
             }
-             
+  
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $baseUrl."/query/payment-links");
+            curl_setopt($ch, CURLOPT_URL, $baseUrl . "/query/payment-links");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
             curl_setopt($ch, CURLOPT_HEADER, FALSE);
 
-            curl_setopt($ch, CURLOPT_POST, TRUE);           
-            
+            curl_setopt($ch, CURLOPT_POST, TRUE);
+
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-            "url" => "https://app.staxpayments.com/#/pay/".$publickey,
-            "link_meta" => $payload['link_meta'],
-            "common_name" => "Sample Link", 
-            'active' => 1           
-            
+                "url" => "https://app.staxpayments.com/#/pay/" . $publickey,
+                "link_meta" => $payload['link_meta'],
+                "common_name" => "Sample Link",
+                'active' => 1
+
             ]));
 
             curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Content-Type: application/json",
-            "Authorization: Bearer " . env('STAX_API_KEY'),
-            "Accept: application/json"
+                "Content-Type: application/json",
+                "Authorization: Bearer " . env('STAX_API_KEY'),
+                "Accept: application/json"
             ));
 
             $response = curl_exec($ch);
             curl_close($ch);
 
-        
-                // Convert JSON string → PHP array
+
+            // Convert JSON string → PHP array
             $data = json_decode($response, true);
-          
-              \Log::info('STAX API response', [
+
+            \Log::info('STAX API response', [
                 'status' => $data['status'],
                 'body' => $data['body'],
             ]);
 
             if (!isset($data['body']['tinyurl'])) {
-            return;
+                return;
             } else {
                 return $data['body']['tinyurl'];
             }
@@ -705,11 +710,11 @@ class StaxPaymentController extends Controller
             // $redirectSuccess = $data['body']['link_meta']['redirect_success'];
             // $total = $data['body']['link_meta']['total'];
 
-            
- 
+
+
             // Log response details for debugging
-          
-           
+
+
 
         } catch (\Exception $e) {
             \Log::error('Payment link creation failed', [
@@ -724,8 +729,6 @@ class StaxPaymentController extends Controller
             ], 500);
         }
     }
-
-
 
     public function handleWebhook(Request $request)
     {
@@ -836,6 +839,84 @@ class StaxPaymentController extends Controller
             'notes' => 'Payment marked through link',
             'payment_details' => ''
         ]);
+
+
+    }
+    public function thanks(Request $request)
+    {
+        $encResponse = $_GET['getStax'];
+
+        $data = dataDecodeJsonBase64($encResponse);
+        
+        if (!empty($data)) {
+            $amount = $data->amount / 100;
+            $currency = $data->currency;
+            $transactionId = $data->order_id;
+            $order_id = $data->order_id;
+          
+            if ($_GET['status'] == 'complete') {
+                $status = "Completed";
+            } else {
+                $status = "Failed";
+            }
+ 
+ 
+            $orderdetails = Order::where('id', $order_id)->where('is_paid', '0')->first();
+ 
+            if (!empty($orderdetails)) {
+                $total_amount = $orderdetails->total_amount;
+                $paid_amount = $orderdetails->paid_amount + $amount;
+                $pending_amount = $total_amount - $paid_amount;
+
+                $order = Order::find($orderdetails->id);
+                if ($paid_amount < $total_amount) {
+                    $order->update([
+                        'paid_amount' => $paid_amount,
+                        'pending_amount' => $pending_amount,
+                        'is_paid' => $pending_amount <= 0,
+                        'is_reserved' => $pending_amount <= 0,
+                    ]);
+                } else if ($paid_amount == $total_amount) {
+
+                    $order->update([
+                        'paid_amount' => $paid_amount,
+                        'pending_amount' => $pending_amount,
+                        'is_paid' => 1,
+                        'is_reserved' => 0,
+                        'status' => 'Confirmed'
+                    ]);
+                }
+                if ($status != 'Failed') {
+                    $checkTransaction = PaymentManagement::where('transaction_id', $transactionId)->get()->count();
+                    if (!$checkTransaction) {
+                        PaymentManagement::create([
+                            'order_id' => $orderdetails->id,
+                            'transaction_id' => $transactionId,
+                            'payment_mode' => 'Credit Card',
+                            'payment_method' => 'Stax',
+                            'amount' => $amount,
+                            'status' => $status,
+                            'payment_date' => date('Y-m-d H:i:s'),
+                            'notes' => 'Payment marked through link',
+                            'payment_details' => ''
+                        ]);
+                    }
+                }
+            }
+            // Example response
+            return response()->json([
+                'order_id' => $order_id ?? null,
+                'amount' => $amount,
+                'currency' => $currency,
+                'status' => $status,
+            ]);
+        } else {
+            return response()->json([
+                'data' => $data ?? null,
+                'status' => false,
+            ]);
+        }
+
 
 
     }
