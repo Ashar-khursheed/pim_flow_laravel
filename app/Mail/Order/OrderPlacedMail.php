@@ -36,7 +36,12 @@ class OrderPlacedMail extends Mailable
 
 		$orderNumber = $order->order_number;
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+		$currency = match (config('app.website')) {
+			'UAE', 'UAE_T' => 'AED',
+			'US', 'US_T' => '$',
+			'SA' => 'SAR',
+			default => '$',
+		};
 		$paidAmount = $order->paid_amount ?? 0;
 		$paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
@@ -118,22 +123,22 @@ class OrderPlacedMail extends Mailable
 
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
-		$taxPercent = in_array(config('app.website'), ['UAE', 'UAE_T']) ? round($order->tax_percentage) : $order->tax_percentage;
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? 'VAT' : 'SALES TAX';
+		$taxPercent = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? round($order->tax_percentage) : $order->tax_percentage;
 		$taxAmount = $order->tax_amount ?? 0;
 		$discount = $order->discount ?? 0;
 		$total = $order->total_amount ?? 0;
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
-			'UAE'  => 'HorecaStore.ae',
+			'UAE', 'SA'  => 'HorecaStore.ae',
 			'TEST' => 'Thehorecastore.com',
 			default => 'Thehorecastore.com',
 		};
 
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'orders@thehorecastore.com',
-			'UAE'  => 'orders@horecastore.ae',
+			'UAE', 'SA'  => 'orders@horecastore.ae',
 			'US_T' => 'test_us@thehorecastore.co',
 			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',

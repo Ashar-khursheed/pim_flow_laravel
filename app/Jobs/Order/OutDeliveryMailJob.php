@@ -42,7 +42,7 @@ class OutDeliveryMailJob implements ShouldQueue
 		if (!empty($order)) {
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'orders@thehorecastore.com',
-				'UAE'  => 'orders@horecastore.ae',
+				'UAE', 'SA'  => 'orders@horecastore.ae',
 				'US_T' => 'test_us@thehorecastore.co',
 				'UAE_T' => 'test_uae@thehorecastore.co',
 				default => 'test@thehorecastore.co',
@@ -60,7 +60,7 @@ class OutDeliveryMailJob implements ShouldQueue
 				->replyTo($replyToEmail)
 			);
 
-			if (in_array(config('app.website'), ['UAE', 'US'])) {
+			if (in_array(config('app.website'), ['UAE', 'US', 'SA'])) {
 				$recipients = order_cc_mails();
 				$to = array_shift($recipients);
 				$cc = $recipients;

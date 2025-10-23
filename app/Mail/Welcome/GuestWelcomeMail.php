@@ -35,18 +35,18 @@ class GuestWelcomeMail extends Mailable
 		$randomPassword = $this->randomPassword ?? 'User';
 		$resetPasswordUrl = url("/");
 		$websiteUrl = url("/");
-		$regionName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? "Middle East’s":"America’s";
+		$regionName = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? "Middle East’s":"America’s";
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
-			'UAE'  => 'HorecaStore.ae',
+			'UAE', 'SA'  => 'HorecaStore.ae',
 			'TEST' => 'Thehorecastore.com',
 			default => 'Thehorecastore.com',
 		};
 
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'sales@thehorecastore.com',
-			'UAE'  => 'hello@horecastore.ae',
+			'UAE', 'SA'  => 'hello@horecastore.ae',
 			'US_T' => 'test_us@thehorecastore.co',
 			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',

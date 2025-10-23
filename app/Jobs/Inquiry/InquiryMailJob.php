@@ -42,7 +42,7 @@ class InquiryMailJob implements ShouldQueue
 		if (!empty($inquiry)) {
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'sales@thehorecastore.com',
-				'UAE'  => 'hello@horecastore.ae',
+				'UAE', 'SA'  => 'hello@horecastore.ae',
 				'US_T' => 'test_us@thehorecastore.co',
 				'UAE_T' => 'test_uae@thehorecastore.co',
 				default => 'test@thehorecastore.co',
@@ -60,7 +60,7 @@ class InquiryMailJob implements ShouldQueue
 				->replyTo($replyToEmail)
 			);
 
-			if (in_array(config('app.website'), ['UAE', 'US'])) {
+			if (in_array(config('app.website'), ['UAE', 'US', 'SA'])) {
 				$recipients = inquiry_cc_mails();
 				$to = array_shift($recipients);
 				$cc = $recipients;

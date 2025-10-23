@@ -380,7 +380,15 @@ class ImportProductJob implements ShouldQueue
 					$product->description = $jsonDescription;
 					$product->benefits_features = $jsonBenefitsFeatures;
 					Product::$observerUserId = $this->userId;
-					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
+					if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+						$product->currency_id = 2;
+					} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+						$product->currency_id = 1;
+					} elseif (in_array(config('app.website'), ['SA'])) {
+						$product->currency_id = 3;
+					} else {
+						$product->currency_id = 1;
+					}
 					$product->save();
 					Product::$observerUserId = null;
 
@@ -423,9 +431,17 @@ class ImportProductJob implements ShouldQueue
 					$product->brand_id = $brandId;
 					$product->images = json_encode($fetchedImages);
 					$product->video_path = $uploadVideo;
-					// $product->stock_status = $stockStatus;
-					// $product->frequently_bought_together = $frequentlyBoughtTogether;
-					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
+
+					if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+						$product->currency_id = 2;
+					} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+						$product->currency_id = 1;
+					} elseif (in_array(config('app.website'), ['SA'])) {
+						$product->currency_id = 3;
+					} else {
+						$product->currency_id = 1;
+					}
+
 					$product->barcode = !empty($barcode) ? $barcode : null;
 					$product->google_shopping_category = !empty($googleShoppingCategory) ? $googleShoppingCategory : null;
 					$product->google_shopping_mpn = !empty($googleShoppingMpn) ? $googleShoppingMpn : null;

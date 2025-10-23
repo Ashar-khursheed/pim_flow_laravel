@@ -38,7 +38,12 @@ class OrderReservedMail extends Mailable
 
 		$referenceNumber = $order->order_number;
 		$createdAt = Carbon::parse($order->created_at)->format('D, M d, Y');
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+		$currency = match (config('app.website')) {
+			'UAE', 'UAE_T' => 'AED',
+			'US', 'US_T' => '$',
+			'SA' => 'SAR',
+			default => '$',
+		};
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -98,21 +103,21 @@ class OrderReservedMail extends Mailable
 
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? 'VAT' : 'SALES TAX';
 		$taxPercent = $order->tax_percentage;
 		$taxAmount = $order->tax_amount ?? 0;
 		$total = $order->total_amount ?? 0;
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
-			'UAE'  => 'HorecaStore.ae',
+			'UAE', 'SA'  => 'HorecaStore.ae',
 			'TEST' => 'Thehorecastore.com',
 			default => 'Thehorecastore.com',
 		};
 
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'sales@thehorecastore.com',
-			'UAE'  => 'hello@horecastore.ae',
+			'UAE', 'SA'  => 'hello@horecastore.ae',
 			'US_T' => 'test_us@thehorecastore.co',
 			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',
