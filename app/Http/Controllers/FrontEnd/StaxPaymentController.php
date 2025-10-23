@@ -586,7 +586,7 @@ class StaxPaymentController extends Controller
     public function createStaxPaymentLink($order)
     {
         $baseUrl = config('services.stax.base_url', 'https://apiprod.fattlabs.com');
-        $url = config('app.url');
+        $url = config('app.url');      
         $backendUrl = config('app.backend_url');
         $apiKey = config('services.stax.api_key');
         $publickey = config('services.stax.public_key');
@@ -603,11 +603,14 @@ class StaxPaymentController extends Controller
             $nameParts = explode(' ', trim($customer->name ?? ''), 2);
             $firstname = $nameParts[0] ?? '';
             $lastname = $nameParts[1] ?? '';
+            $paymentReference = 'stx' . time() . '' . $order->id;
             $paydata['order_id'] = $order->id;
             $paydata['amount'] = (float) $order->pending_amount * 100;
             $paydata['email'] = $customer->email;
             $paydata['currency'] = 'AED';
             $paydata['common_name'] = trim($firstname . ' ' . $lastname);
+          
+            $paydata['ref'] = $paymentReference;
             $paydata = dataEncodeJsonBase64($paydata);
             $appUrl = url('');
             $invoiceData = [
@@ -851,7 +854,7 @@ class StaxPaymentController extends Controller
         if (!empty($data)) {
             $amount = $data->amount / 100;
             $currency = $data->currency;
-            $transactionId = $data->order_id;
+            $transactionId = $data->ref;
             $order_id = $data->order_id;
           
             if ($_GET['status'] == 'complete') {
