@@ -3020,6 +3020,24 @@ public function fetchCategories(Request $request)
             "Salamanders",
             "Salad Chillers"
         ],
+        'SA' => [
+           "Work Top Refrigerators",
+            "Commercial Fryers",
+            "Combi Ovens",
+            "Commercial Blenders",
+            "Commercial Gas And Electric Cookers",
+            "Upright Freezers",
+            "Espresso Machines",
+            "Commercial Grills And Griddles",
+            "Commercial Toasters",
+            "Upright Chillers",
+            "White Dinnerware",
+            "Cheese",
+            "Food Processors",
+            "Salamanders",
+            "Salad Chillers"
+
+        ],
 
         default => [], // fallback if APP_WEBSITE is not set properly
     };
