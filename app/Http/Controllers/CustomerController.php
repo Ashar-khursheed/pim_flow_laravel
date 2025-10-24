@@ -355,9 +355,9 @@ class CustomerController extends Controller
 			$isTaxFree = $request->boolean('is_tax_free');
 
 			$validatedData['is_tax_free'] = $isTaxFree;
-			$validatedData['approval_action_notes'] = $validatedData['approval_action_notes'] ?? null;
-			$validatedData['approval_action_by'] = auth()->id() : null;
-			$validatedData['approval_action_at'] = now() : null;
+			$validatedData['approval_action_notes'] = $validatedData['approval_action_notes'];
+			$validatedData['approval_action_by'] = auth()->id();
+			$validatedData['approval_action_at'] = now();
 		} else {
 			unset(
 				$validatedData['is_tax_free'],

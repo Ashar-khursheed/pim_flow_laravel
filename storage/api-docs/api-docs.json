@@ -8937,6 +8937,22 @@
                                         "type": "string",
                                         "example": "John Doe"
                                     },
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "Acme Corporation"
+                                    },
+                                    "business_licence": {
+                                        "description": "Business licence PDF (max 2MB)",
+                                        "type": "file"
+                                    },
+                                    "trn_number": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "vat_certificate": {
+                                        "description": "VAT certificate PDF (max 2MB)",
+                                        "type": "file"
+                                    },
                                     "email": {
                                         "type": "string",
                                         "format": "email",
@@ -8965,8 +8981,16 @@
                                         "example": "971500000000"
                                     },
                                     "profile_img": {
-                                        "description": "Profile image (jpeg, png, webp only, max 1 mb)",
+                                        "description": "Profile image (jpeg, png, webp only, max 1 MB)",
                                         "type": "file"
+                                    },
+                                    "is_tax_free": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "approval_action_notes": {
+                                        "type": "string",
+                                        "example": "Customer provided valid exemption certificate."
                                     }
                                 },
                                 "type": "object"
@@ -9058,6 +9082,22 @@
                                         "type": "string",
                                         "example": "John Doe"
                                     },
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "Acme Corporation"
+                                    },
+                                    "business_licence": {
+                                        "description": "Business licence PDF (max 2MB)",
+                                        "type": "file"
+                                    },
+                                    "trn_number": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "vat_certificate": {
+                                        "description": "VAT certificate PDF (max 2MB)",
+                                        "type": "file"
+                                    },
                                     "email": {
                                         "type": "string",
                                         "format": "email",
@@ -9067,6 +9107,10 @@
                                         "type": "string",
                                         "format": "password",
                                         "example": "secret123"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Business"
                                     },
                                     "dob": {
                                         "type": "string",
@@ -9086,28 +9130,16 @@
                                         "example": "https://example.com/image.png"
                                     },
                                     "profile_img": {
-                                        "description": "Profile image (jpeg, jpg, png, webp only, max 1MB)",
+                                        "description": "Profile image (jpeg, png, webp only, max 1 MB)",
                                         "type": "file"
                                     },
-                                    "business_name": {
+                                    "is_tax_free": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "approval_action_notes": {
                                         "type": "string",
-                                        "example": "Acme Corporation"
-                                    },
-                                    "business_licence": {
-                                        "description": "Business licence PDF (max 2MB)",
-                                        "type": "file"
-                                    },
-                                    "trn_number": {
-                                        "type": "string",
-                                        "example": "1234567890"
-                                    },
-                                    "vat_certificate": {
-                                        "description": "VAT certificate PDF (max 2MB)",
-                                        "type": "file"
-                                    },
-                                    "type": {
-                                        "type": "string",
-                                        "example": "vendor"
+                                        "example": "Customer provided valid exemption certificate."
                                     }
                                 },
                                 "type": "object"
