@@ -29,22 +29,22 @@ class StaxPaymentController extends Controller
      *     summary="Process a checkout payment",
      *     description="Takes a Stax.js payment method ID and amount, then processes the charge via Stax API.",
      *     operationId="checkout",
-     *     
+     *
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"payment_method_id","amount"},
      *             @OA\Property(
-     *                 property="payment_method_id", 
-     *                 type="string", 
-     *                 example="pm_abc123XYZ", 
+     *                 property="payment_method_id",
+     *                 type="string",
+     *                 example="pm_abc123XYZ",
      *                 description="Payment method ID from Stax.js tokenization"
      *             ),
      *             @OA\Property(
-     *                 property="amount", 
-     *                 type="number", 
-     *                 format="float", 
-     *                 example=100.50, 
+     *                 property="amount",
+     *                 type="number",
+     *                 format="float",
+     *                 example=100.50,
      *                 description="Charge amount in USD"
      *             ),
      *             @OA\Property(
@@ -208,7 +208,7 @@ class StaxPaymentController extends Controller
     }
     /**
      * Get transaction details
-     * 
+     *
      * @OA\Get(
      *     path="/api/frontend/auth/Stax/transaction/{id}",
      *     tags={"Payments"},
@@ -266,7 +266,7 @@ class StaxPaymentController extends Controller
 
     /**
      * Refund a transaction
-     * 
+     *
      * @OA\Post(
      *     path="/api/frontend/auth/Stax/refund/{id}",
      *     tags={"Payments"},
@@ -367,7 +367,7 @@ class StaxPaymentController extends Controller
 
     /**
      * Void a transaction
-     * 
+     *
      * @OA\Post(
      *     path="/api/frontend/auth/Stax/void/{id}",
      *     tags={"Payments"},
@@ -602,7 +602,7 @@ class StaxPaymentController extends Controller
             $firstname = $nameParts[0] ?? '';
             $lastname = $nameParts[1] ?? '';
 
-            
+
             $invoiceData = [
                 'amount' => (float) $order->total_amount * 100,
                  'description' => $firstname??"",
@@ -623,7 +623,7 @@ class StaxPaymentController extends Controller
                     'total' => (float) $order->total_amount,
                     'email' => $customer->email,
                     'memo' => $customerAddress->city
-                    
+
                 ],
                 'redirect_url' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
 
@@ -634,7 +634,7 @@ class StaxPaymentController extends Controller
                 'url' => 'https://app.staxpayments.com/#/pay/'.$publickey,
 
             ];
- 
+
             $payload = [
             'amount' => (float) ($invoiceData['amount'] ?? 0),
             'description' => $invoiceData['description'] ?? 'Payment Link',
@@ -656,20 +656,20 @@ class StaxPaymentController extends Controller
             if (!empty($invoiceData['customer'])) {
             $payload['customer'] = $invoiceData['customer'];
             }
-             
+
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $baseUrl."/query/payment-links");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
             curl_setopt($ch, CURLOPT_HEADER, FALSE);
 
-            curl_setopt($ch, CURLOPT_POST, TRUE);           
-            
+            curl_setopt($ch, CURLOPT_POST, TRUE);
+
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
             "url" => "https://app.staxpayments.com/#/pay/".$publickey,
             "link_meta" => $payload['link_meta'],
-            "common_name" => "Sample Link", 
-            'active' => 1           
-            
+            "common_name" => "Sample Link",
+            'active' => 1
+
             ]));
 
             curl_setopt($ch, CURLOPT_HTTPHEADER, array(
@@ -681,10 +681,10 @@ class StaxPaymentController extends Controller
             $response = curl_exec($ch);
             curl_close($ch);
 
-        
+
                 // Convert JSON string → PHP array
             $data = json_decode($response, true);
-          
+
               \Log::info('STAX API response', [
                 'status' => $data['status'],
                 'body' => $data['body'],
@@ -696,18 +696,18 @@ class StaxPaymentController extends Controller
                 return $data['body']['tinyurl'];
             }
             // Access values
-            // $status = $data['status']; 
+            // $status = $data['status'];
             // $message = $data['message'];
             // $tinyurl = $data['body']['tinyurl'];
             // $paymentLinkId = $data['body']['link_meta']['paymentLinkId'];
             // $redirectSuccess = $data['body']['link_meta']['redirect_success'];
             // $total = $data['body']['link_meta']['total'];
 
-            
- 
+
+
             // Log response details for debugging
-          
-           
+
+
 
         } catch (\Exception $e) {
             \Log::error('Payment link creation failed', [
