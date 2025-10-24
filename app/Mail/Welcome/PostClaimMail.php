@@ -37,14 +37,14 @@ class PostClaimMail extends Mailable
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
-			'UAE'  => 'HorecaStore.ae',
+			'UAE', 'SA'  => 'HorecaStore.ae',
 			'TEST' => 'Thehorecastore.com',
 			default => 'Thehorecastore.com',
 		};
 
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'sales@thehorecastore.com',
-			'UAE'  => 'hello@horecastore.ae',
+			'UAE', 'SA'  => 'hello@horecastore.ae',
 			'US_T' => 'test_us@thehorecastore.co',
 			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',

@@ -44,14 +44,14 @@ class QuotePlacedMail extends Mailable
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
-			'UAE'  => 'HorecaStore.ae',
+			'UAE', 'SA'  => 'HorecaStore.ae',
 			'TEST' => 'Thehorecastore.com',
 			default => 'Thehorecastore.com',
 		};
 
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'yourquote@thehorecastore.com',
-			'UAE'  => 'yourquote@horecastore.ae',
+			'UAE', 'SA'  => 'yourquote@horecastore.ae',
 			'US_T' => 'test_us@thehorecastore.co',
 			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',

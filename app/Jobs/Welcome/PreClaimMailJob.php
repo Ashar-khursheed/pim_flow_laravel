@@ -45,7 +45,7 @@ class PreClaimMailJob implements ShouldQueue
 		if (!empty($claim)) {
 			$fromEmail = match (config('app.website')) {
 				'US'  => 'sales@thehorecastore.com',
-				'UAE'  => 'hello@horecastore.ae',
+				'UAE', 'SA'  => 'hello@horecastore.ae',
 				'US_T' => 'test_us@thehorecastore.co',
 				'UAE_T' => 'test_uae@thehorecastore.co',
 				default => 'test@thehorecastore.co',

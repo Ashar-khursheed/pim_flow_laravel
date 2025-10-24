@@ -36,7 +36,12 @@ class PartialOrderCancelledMail extends Mailable
 		$name = $notifiable->name ?? 'User';
 		$orderNumber = $order->order_number;
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+		$currency = match (config('app.website')) {
+			'UAE', 'UAE_T' => 'AED',
+			'US', 'US_T' => '$',
+			'SA' => 'SAR',
+			default => '$',
+		};
 		$paidAmount = $order->paid_amount ?? 0;
 		$paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
@@ -96,14 +101,14 @@ class PartialOrderCancelledMail extends Mailable
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
-			'UAE'  => 'HorecaStore.ae',
+			'UAE', 'SA'  => 'HorecaStore.ae',
 			'TEST' => 'Thehorecastore.com',
 			default => 'Thehorecastore.com',
 		};
 
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'orders@thehorecastore.com',
-			'UAE'  => 'orders@horecastore.ae',
+			'UAE', 'SA'  => 'orders@horecastore.ae',
 			'US_T' => 'test_us@thehorecastore.co',
 			'UAE_T' => 'test_uae@thehorecastore.co',
 			default => 'test@thehorecastore.co',

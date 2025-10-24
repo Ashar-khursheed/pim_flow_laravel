@@ -156,35 +156,35 @@ use Illuminate\Support\Facades\Http;
 
 Route::middleware([CaptureUtm::class])->group(function () {
 
-    Route::post('/store-lead', function (Request $request) {
-        $sessionId = $request->header('X-Session-ID') ?? Str::uuid()->toString();
+	Route::post('/store-lead', function (Request $request) {
+		$sessionId = $request->header('X-Session-ID') ?? Str::uuid()->toString();
 
-        $lead = Lead::create([
-            'session_id' => $sessionId,
-            'name'       => $request->input('name'),
-            'email'      => $request->input('email'),
-        ]);
+		$lead = Lead::create([
+			'session_id' => $sessionId,
+			'name'       => $request->input('name'),
+			'email'      => $request->input('email'),
+		]);
 
-        return response()->json(['message' => 'Lead stored', 'lead' => $lead]);
-    });
+		return response()->json(['message' => 'Lead stored', 'lead' => $lead]);
+	});
 
-    Route::get('/utm-stats', function () {
-        $visitors = DB::table('utms')
-            ->select('utm_source', DB::raw('count(distinct session_id) as total_visitors'))
-            ->groupBy('utm_source')
-            ->get();
+	Route::get('/utm-stats', function () {
+		$visitors = DB::table('utms')
+		->select('utm_source', DB::raw('count(distinct session_id) as total_visitors'))
+		->groupBy('utm_source')
+		->get();
 
-        $conversionsRaw = DB::table('leads')->select('session_id')->get();
+		$conversionsRaw = DB::table('leads')->select('session_id')->get();
 
-        $conversions = $conversionsRaw->groupBy(function ($item) {
-            return Utm::where('session_id', $item->session_id)->value('utm_source') ?? 'unknown';
-        })->map->count();
+		$conversions = $conversionsRaw->groupBy(function ($item) {
+			return Utm::where('session_id', $item->session_id)->value('utm_source') ?? 'unknown';
+		})->map->count();
 
-        return response()->json([
-            'visitors'    => $visitors,
-            'conversions' => $conversions,
-        ]);
-    });
+		return response()->json([
+			'visitors'    => $visitors,
+			'conversions' => $conversions,
+		]);
+	});
 
 });
 
@@ -195,27 +195,27 @@ Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
-    $url = $request->query('url');
+	$url = $request->query('url');
 
-    if (!$url) {
-        abort(400, 'URL is required');
-    }
+	if (!$url) {
+		abort(400, 'URL is required');
+	}
 
-    try {
-        $response = Http::timeout(10)->get($url);
+	try {
+		$response = Http::timeout(10)->get($url);
 
-        if (!$response->successful()) {
-            abort(404, 'Image not found');
-        }
+		if (!$response->successful()) {
+			abort(404, 'Image not found');
+		}
 
-        return response($response->body(), 200)
-        ->header('Content-Type', $response->header('Content-Type') ?? 'image/webp')
-        ->header('Cache-Control', 'public, max-age=86400')
-        ->header('Access-Control-Allow-Origin', '*')
-        ->header('Access-Control-Allow-Headers', 'Content-Type');
-    } catch (\Exception $e) {
-        abort(500, 'Proxy failed: ' . $e->getMessage());
-    }
+		return response($response->body(), 200)
+		->header('Content-Type', $response->header('Content-Type') ?? 'image/webp')
+		->header('Cache-Control', 'public, max-age=86400')
+		->header('Access-Control-Allow-Origin', '*')
+		->header('Access-Control-Allow-Headers', 'Content-Type');
+	} catch (\Exception $e) {
+		abort(500, 'Proxy failed: ' . $e->getMessage());
+	}
 })->name('proxy-image');
 
 
@@ -245,33 +245,33 @@ Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
 Route::post('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'store']);
 
 Route::prefix('analytics')->group(function () {
-    // Basic Analytics
-    Route::get('/overview', [AnalyticsController::class, 'overview']);
-    Route::get('/sessions-by-date', [AnalyticsController::class, 'sessionsByDate']);
-    Route::get('/realtime', [AnalyticsController::class, 'realTimeAnalytics']);
+	// Basic Analytics
+	Route::get('/overview', [AnalyticsController::class, 'overview']);
+	Route::get('/sessions-by-date', [AnalyticsController::class, 'sessionsByDate']);
+	Route::get('/realtime', [AnalyticsController::class, 'realTimeAnalytics']);
 
-    // Detailed Analytics
-    Route::get('/device', [AnalyticsController::class, 'deviceAnalytics']);
-    Route::get('/geographic', [AnalyticsController::class, 'geographicAnalytics']);
-    Route::get('/traffic-sources', [AnalyticsController::class, 'trafficSources']);
-    Route::get('/pages', [AnalyticsController::class, 'pageAnalytics']);
-    Route::get('/events', [AnalyticsController::class, 'eventAnalytics']);
+	// Detailed Analytics
+	Route::get('/device', [AnalyticsController::class, 'deviceAnalytics']);
+	Route::get('/geographic', [AnalyticsController::class, 'geographicAnalytics']);
+	Route::get('/traffic-sources', [AnalyticsController::class, 'trafficSources']);
+	Route::get('/pages', [AnalyticsController::class, 'pageAnalytics']);
+	Route::get('/events', [AnalyticsController::class, 'eventAnalytics']);
 
-    // E-commerce & Conversions
-    Route::get('/conversions', [AnalyticsController::class, 'conversionAnalytics']);
-    Route::get('/abandoned-cart', [AnalyticsController::class, 'abandonedCartAnalytics']);
-    Route::get('/ecommerce-funnel', [AnalyticsController::class, 'ecommerceFunnel']);
-    Route::get('/goal-completions', [AnalyticsController::class, 'goalCompletions']);
+	// E-commerce & Conversions
+	Route::get('/conversions', [AnalyticsController::class, 'conversionAnalytics']);
+	Route::get('/abandoned-cart', [AnalyticsController::class, 'abandonedCartAnalytics']);
+	Route::get('/ecommerce-funnel', [AnalyticsController::class, 'ecommerceFunnel']);
+	Route::get('/goal-completions', [AnalyticsController::class, 'goalCompletions']);
 
-    // Audience Analytics
-    Route::get('/demographics', [AnalyticsController::class, 'audienceDemographics']);
-    Route::get('/cohort-analysis', [AnalyticsController::class, 'cohortAnalysis']);
-    Route::get('/user-journey', [AnalyticsController::class, 'userJourney']);
+	// Audience Analytics
+	Route::get('/demographics', [AnalyticsController::class, 'audienceDemographics']);
+	Route::get('/cohort-analysis', [AnalyticsController::class, 'cohortAnalysis']);
+	Route::get('/user-journey', [AnalyticsController::class, 'userJourney']);
 
-    // Advanced Features
-    Route::get('/time-based', [AnalyticsController::class, 'timeBasedAnalytics']);
-    Route::get('/complete-dashboard', [AnalyticsController::class, 'completeDashboard']);
-    Route::post('/custom-report', [AnalyticsController::class, 'customReport']);
+	// Advanced Features
+	Route::get('/time-based', [AnalyticsController::class, 'timeBasedAnalytics']);
+	Route::get('/complete-dashboard', [AnalyticsController::class, 'completeDashboard']);
+	Route::post('/custom-report', [AnalyticsController::class, 'customReport']);
 });
 Route::get('/analytics/landing-pages', [AnalyticsController::class, 'landingPageAnalytics']);
 Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerformance']);
@@ -287,297 +287,299 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
-    Route::apiResource('/inquiries',  InquiryController::class);
+	Route::apiResource('/inquiries',  InquiryController::class);
 
-    Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
-    Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
-    Route::apiResource('post-purchase-claims', PostPurchaseClaimController::class);
+	Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
+	Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
+	Route::apiResource('post-purchase-claims', PostPurchaseClaimController::class);
 
-    Route::apiResource('/coupons', F_CouponController::class)   ;
-    Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
-    Route::post('/coupons/{coupon}/reject', [F_CouponController::class, 'reject']);
-    Route::post('/coupons/validate', [F_CouponController::class, 'validate']);
+	Route::apiResource('/coupons', F_CouponController::class)	;
+	Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
+	Route::post('/coupons/{coupon}/reject', [F_CouponController::class, 'reject']);
+	Route::post('/coupons/validate', [F_CouponController::class, 'validate']);
 
-    Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
+	Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
 
 	Route::apiResource('customer-events', CustomerEventController::class);
 
-    Route::get('/utms', [Utmcontroller::class, 'index']);
-    Route::get('/analytics/stats', [Utmcontroller::class, 'stats']);
-    Route::get('/analytics/utm-sources', [Utmcontroller::class, 'utmSources']);
-
-    Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
-    Route::get('/abandoned-carts/{id}', [AbandonedCartController::class, 'show']);
-    Route::get('/customers-by-date-range', [AbandonedCartController::class, 'getCustomersByDateRange']);
-
-    Route::prefix('menu-banners')->group(function () {
-    // Create banner
-    Route::post('/', [MenuBannerController::class, 'store']);
-    Route::get('/', [MenuBannerController::class, 'index']);
-    Route::get('/{id}', [MenuBannerController::class, 'show']);
-    Route::post('/{id}', [MenuBannerController::class, 'update']);
-    Route::delete('/{id}', [MenuBannerController::class, 'destroy']);
-    });
-
-    Route::prefix('category-banners')->group(function () {
-        Route::get('/', [CategoryBannerController::class, 'index']);
-        Route::post('/', [CategoryBannerController::class, 'store']);
-        Route::get('/show/{category_id}', [CategoryBannerController::class, 'show']);
-        Route::put('/{id}', [CategoryBannerController::class, 'update']);
-        Route::delete('/{id}', [CategoryBannerController::class, 'destroy']);
-    });
-
-    Route::apiResource('payments', PaymentController::class);
-    Route::get('report/orders', [ReportController::class, 'index']);
-    Route::get('report/stats/reserved', [ReportController::class, 'reservedOrders']);
-    Route::get('report/utms', [ReportController::class, 'indexUtms']);
-    Route::get('report/customer-utms', [ReportController::class, 'indexCustomerUtms']);
-
-    Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
-    Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
-    Route::put('/product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
-    // Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
-    Route::get('/product-groups/brands-with-categories', [ProductGroupController::class, 'getBrandsWithCategories']);
-    Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
-
-    Route::put('/products/{id}/categories', [ProductCategoryController::class, 'updateCategories']);
-    Route::get('/products/{id}/categories', [ProductCategoryController::class, 'getCategories']);
-
-    Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
-    Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
-
-    Route::post('/generate-recommendations', [AttributeRecommendationController::class, 'generate']);
-    Route::apiResource('recommendations', AttributeRecommendationController::class);
-
-
-    Route::apiResource('blog-categories', BlogCategoryController::class);
-    Route::post('/blogs/{id}', [BlogController::class, 'update']);
-    Route::apiResource('blogs', BlogController::class);
-
-    Route::get('/product-questions/{product_id}', [ProductQuestionController::class, 'index']);
-
-    Route::post('/calculate-grade', [GradingController::class, 'calculate']);
-    Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
-    Route::put('/update-grade', [GradingController::class, 'update']);
-
-    Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
-    Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
-
-    Route::get('/customers/{customer_id}/addresses', [CustomerAddressController::class, 'indexByCustomer']);
-    Route::apiResource('customers', CustomerController::class);
-    Route::get('/customers/filter-by-date', [CustomerController::class, 'filterByDate']);
-    Route::apiResource('customer-address', CustomerAddressController::class);
-
-    Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);
-    Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
-    Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
-    Route::apiResource('product-suppliers', ProductSupplierController::class);
-
-    // Bulk operations
-    // Route::post('/product-suppliers/bulk-delete', [ProductSupplierController::class, 'bulkDelete']);
-    // Route::post('/product-suppliers/batch/export', [ProductSupplierController::class, 'batchExport']);
-    // Route::get('/product-suppliers/import/status/{batch_id}', [ProductSupplierController::class, 'importStatus']);
-
-    Route::apiResource('users', UserController::class);
-
-    Route::post('/attributes/import', [AttributeController::class, 'import']);
-    Route::post('/attributes/export', [AttributeController::class, 'export']);
-    Route::resource('attributes', AttributeController::class);
-    Route::delete('attribute-groups/{id}/remove-attribute/{attribute_id}', [AttributeGroupController::class, 'removeAttribute']);
-    Route::resource('attribute-groups', AttributeGroupController::class);
-    Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);
-
-    Route::get('/measurement-types', [MeasurementController::class, 'getMeasurementTypes']);
-    Route::get('/measurement-units', [MeasurementController::class, 'getMeasurementUnitsByType']);
-    Route::get('/measurement-type-categories', [MeasurementController::class, 'getCategoriesByMeasurementType']);
-
-    Route::post('/measurement-unit-priorities/import', [CategoryMeasurementUnitPriorityController::class, 'import']);
-    Route::resource('measurement-unit-priorities', CategoryMeasurementUnitPriorityController::class);
-
-    Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroup']);
-    Route::resource('category-attributes', CategoryAttributeController::class);
-
-    Route::post('/brand-temp-2/{id}', [CategoryAttributeController::class, 'update']);
+	Route::get('/utms', [Utmcontroller::class, 'index']);
+	Route::get('/analytics/stats', [Utmcontroller::class, 'stats']);
+	Route::get('/analytics/utm-sources', [Utmcontroller::class, 'utmSources']);
+
+	Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
+	Route::get('/abandoned-carts/{id}', [AbandonedCartController::class, 'show']);
+	Route::get('/customers-by-date-range', [AbandonedCartController::class, 'getCustomersByDateRange']);
+
+	Route::prefix('menu-banners')->group(function () {
+	// Create banner
+		Route::post('/', [MenuBannerController::class, 'store']);
+		Route::get('/', [MenuBannerController::class, 'index']);
+		Route::get('/{id}', [MenuBannerController::class, 'show']);
+		Route::post('/{id}', [MenuBannerController::class, 'update']);
+		Route::delete('/{id}', [MenuBannerController::class, 'destroy']);
+	});
+
+	Route::prefix('category-banners')->group(function () {
+		Route::get('/', [CategoryBannerController::class, 'index']);
+		Route::post('/', [CategoryBannerController::class, 'store']);
+		Route::get('/show/{category_id}', [CategoryBannerController::class, 'show']);
+		Route::put('/{id}', [CategoryBannerController::class, 'update']);
+		Route::delete('/{id}', [CategoryBannerController::class, 'destroy']);
+	});
+
+	Route::apiResource('payments', PaymentController::class);
+	Route::get('report/orders', [ReportController::class, 'index']);
+	Route::get('report/stats/reserved', [ReportController::class, 'reservedOrders']);
+	Route::get('report/utms', [ReportController::class, 'indexUtms']);
+	Route::get('report/customer-utms', [ReportController::class, 'indexCustomerUtms']);
+
+	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
+	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
+	Route::put('/product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
+	// Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
+	Route::get('/product-groups/brands-with-categories', [ProductGroupController::class, 'getBrandsWithCategories']);
+	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
+
+	Route::put('/products/{id}/categories', [ProductCategoryController::class, 'updateCategories']);
+	Route::get('/products/{id}/categories', [ProductCategoryController::class, 'getCategories']);
+
+	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
+	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
+
+	Route::post('/generate-recommendations', [AttributeRecommendationController::class, 'generate']);
+	Route::apiResource('recommendations', AttributeRecommendationController::class);
+
+
+	Route::apiResource('blog-categories', BlogCategoryController::class);
+	Route::post('/blogs/{id}', [BlogController::class, 'update']);
+	Route::apiResource('blogs', BlogController::class);
+
+	Route::get('/product-questions/{product_id}', [ProductQuestionController::class, 'index']);
+
+	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
+	Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
+	Route::put('/update-grade', [GradingController::class, 'update']);
+
+	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
+	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
+
+	Route::get('/customers/{customer_id}/addresses', [CustomerAddressController::class, 'indexByCustomer']);
+	Route::apiResource('customers', CustomerController::class);
+	Route::get('/customers/filter-by-date', [CustomerController::class, 'filterByDate']);
+	Route::apiResource('customer-address', CustomerAddressController::class);
+
+	Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);
+	Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
+	Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
+	Route::apiResource('product-suppliers', ProductSupplierController::class);
+
+	// Bulk operations
+	// Route::post('/product-suppliers/bulk-delete', [ProductSupplierController::class, 'bulkDelete']);
+	// Route::post('/product-suppliers/batch/export', [ProductSupplierController::class, 'batchExport']);
+	// Route::get('/product-suppliers/import/status/{batch_id}', [ProductSupplierController::class, 'importStatus']);
+
+	Route::apiResource('users', UserController::class);
+
+	Route::post('/attributes/import', [AttributeController::class, 'import']);
+	Route::post('/attributes/export', [AttributeController::class, 'export']);
+	Route::resource('attributes', AttributeController::class);
+	Route::delete('attribute-groups/{id}/remove-attribute/{attribute_id}', [AttributeGroupController::class, 'removeAttribute']);
+	Route::resource('attribute-groups', AttributeGroupController::class);
+	Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);
+
+	Route::get('/measurement-types', [MeasurementController::class, 'getMeasurementTypes']);
+	Route::get('/measurement-units', [MeasurementController::class, 'getMeasurementUnitsByType']);
+	Route::get('/measurement-type-categories', [MeasurementController::class, 'getCategoriesByMeasurementType']);
+
+	Route::post('/measurement-unit-priorities/import', [CategoryMeasurementUnitPriorityController::class, 'import']);
+	Route::resource('measurement-unit-priorities', CategoryMeasurementUnitPriorityController::class);
+
+	Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroup']);
+	Route::resource('category-attributes', CategoryAttributeController::class);
+
+	Route::post('/brand-temp-2/{id}', [CategoryAttributeController::class, 'update']);
 
-    Route::apiResource('brand-temp-1', BrandTemp1Controller::class);
-    Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
-    Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
+	Route::apiResource('brand-temp-1', BrandTemp1Controller::class);
+	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
+	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
 
-    Route::post('/keywords/import', [AppKeywordController::class, 'import']);
-    Route::post('/keywords/export', [AppKeywordController::class, 'export']);
+	Route::post('/keywords/import', [AppKeywordController::class, 'import']);
+	Route::post('/keywords/export', [AppKeywordController::class, 'export']);
 
-    Route::post('/translations/generate-translate', [TranslationController::class, 'export']);
-    Route::post('/translations/export', [TranslationController::class, 'export']);
-    Route::post('/translations/import', [TranslationController::class, 'import']);
+	Route::post('/translations/generate-translate', [TranslationController::class, 'export']);
+	Route::post('/translations/export', [TranslationController::class, 'export']);
+	Route::post('/translations/import', [TranslationController::class, 'import']);
 
 
-    Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
-    Route::get('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'show']);
-    Route::post('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'store']);
-    Route::post('/vendors/import', [VendorController::class, 'import']);
-    Route::post('/vendors/export', [VendorController::class, 'export']);
-    Route::apiResource('vendors', VendorController::class);
-    Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
+	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
+	Route::get('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'show']);
+	Route::post('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'store']);
+	Route::post('/vendors/import', [VendorController::class, 'import']);
+	Route::post('/vendors/export', [VendorController::class, 'export']);
+	Route::apiResource('vendors', VendorController::class);
+	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
 
-    Route::resource('transaction-logs', TransactionLogController::class);
+	Route::resource('transaction-logs', TransactionLogController::class);
 
-    Route::resource('websites', WebsiteController::class)->only(['index']);
-    Route::resource('/delivery/payment-history', PaymentHistoryController::class);
+	Route::resource('websites', WebsiteController::class)->only(['index']);
+	Route::resource('/delivery/payment-history', PaymentHistoryController::class);
 
-    Route::get('/delivery/get-price-ordernumber', [PaymentHistoryController::class,'getPriceOrderNumber']);
-    Route::resource('product-accessories', ProductAccessoriesController::class);
-    Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
-    Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
-    Route::get('/get-product-list', [ProductAccessoriesController::class, 'getProductList']);
+	Route::get('/delivery/get-price-ordernumber', [PaymentHistoryController::class,'getPriceOrderNumber']);
+	Route::resource('product-accessories', ProductAccessoriesController::class);
+	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
+	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
+	Route::get('/get-product-list', [ProductAccessoriesController::class, 'getProductList']);
 
-    Route::apiResource('product-variants', ProductVariantController::class);
-    Route::post('product-variants/getProductAttibute', [ProductVariantController::class,'getProductAttibute']);
-    Route::post('product-variants/show', [ProductVariantController::class, 'show']);
+	Route::apiResource('product-variants', ProductVariantController::class);
+	Route::post('product-variants/getProductAttibute', [ProductVariantController::class,'getProductAttibute']);
+	Route::post('product-variants/show', [ProductVariantController::class, 'show']);
 
-    Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
-    Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
-    Route::post('/products/export', [ProductExportController::class, 'export']);
-    Route::post('products/import', [ProductController::class, 'import']);
-    Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
-    Route::get('products/category/{category_id}', [ProductController::class, 'getProductsByCategory']);
-    Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
-    Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
-    Route::resource('products', ProductController::class);
-    Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
-    Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
-    Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
+	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
+	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
+	Route::post('/products/export', [ProductExportController::class, 'export']);
+	Route::post('products/import', [ProductController::class, 'import']);
+	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
+	Route::get('products/category/{category_id}', [ProductController::class, 'getProductsByCategory']);
+	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
+	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
+	Route::resource('products', ProductController::class);
+	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
+	Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
+	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
 
-    Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
+	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
 
-    Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
-    Route::post('/product-report-export', [ProductReportController::class, 'index']);
-    Route::post('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
+	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
+	Route::post('/product-report-export', [ProductReportController::class, 'index']);
+	Route::post('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
 
-    Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
-    Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
-    Route::post('/get-product-alternative-comparison', [AIAlternateProductController::class, 'getProdutAlternativeComparison']);
-    Route::post('python/create-alternate-recommendation', [AIAlternateProductController::class, 'createAlternateProductsByPthon']);
-    Route::post('/python/create-one-product-alternate', [AIAlternateProductController::class, 'createOneAlternateProductsByPthon']);
-    Route::post('ai-alternate-status', [AIAlternateProductController::class, 'alternateStatus']);
-    Route::post('ai-alternate-priority', [AIAlternateProductController::class, 'alternatePriority']);
+	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
+	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
+	Route::post('/get-product-alternative-comparison', [AIAlternateProductController::class, 'getProdutAlternativeComparison']);
+	Route::post('python/create-alternate-recommendation', [AIAlternateProductController::class, 'createAlternateProductsByPthon']);
+	Route::post('/python/create-one-product-alternate', [AIAlternateProductController::class, 'createOneAlternateProductsByPthon']);
+	Route::post('ai-alternate-status', [AIAlternateProductController::class, 'alternateStatus']);
+	Route::post('ai-alternate-priority', [AIAlternateProductController::class, 'alternatePriority']);
 
-    Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
-    Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
-    Route::apiResource('brands', BrandController::class);
+	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
+	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
+	Route::apiResource('brands', BrandController::class);
 
-    Route::get('getStoresList', [StoreController::class, 'getStoresList']);
-    Route::get('/stores/list', [StoreController::class, 'storeList']);
-    Route::apiResource('stores', StoreController::class);
+	Route::get('getStoresList', [StoreController::class, 'getStoresList']);
+	Route::get('/stores/list', [StoreController::class, 'storeList']);
+	Route::apiResource('stores', StoreController::class);
 
 
 
-    Route::post('/category-pages', [CategoryPageController::class, 'store']);
-    Route::put('/category-pages/{category}', [CategoryPageController::class, 'update']);
-    Route::delete('/category-pages/{category}', [CategoryPageController::class, 'destroy']);
+	Route::post('/category-pages', [CategoryPageController::class, 'store']);
+	Route::put('/category-pages/{category}', [CategoryPageController::class, 'update']);
+	Route::delete('/category-pages/{category}', [CategoryPageController::class, 'destroy']);
 
 
-    Route::apiResource('media', MediaController::class)->parameters([
-        'media' => 'folder'
-    ]);
+	Route::apiResource('media', MediaController::class)->parameters([
+		'media' => 'folder'
+	]);
 
-    Route::apiResource('faqs', FaqController::class);
-    Route::apiResource('faq-categories', FaqCategoryController::class);
+	Route::apiResource('faqs', FaqController::class);
+	Route::apiResource('faq-categories', FaqCategoryController::class);
 
-    Route::get('roles/names', [RoleController::class, 'getRoleNames']);
-    Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
-    Route::get('permissions', [RoleController::class, 'getAllPermissions']);
-    Route::apiResource('roles', RoleController::class);
+	Route::get('roles/names', [RoleController::class, 'getRoleNames']);
+	Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
+	Route::get('permissions', [RoleController::class, 'getAllPermissions']);
+	Route::apiResource('roles', RoleController::class);
 
 
-    Route::apiResource('reviews', ReviewController::class);
-    Route::apiResource('sliders', SliderController::class);
+	Route::apiResource('reviews', ReviewController::class);
+	Route::apiResource('sliders', SliderController::class);
 
-    // Discount API Routes
-    Route::apiResource('discounts', DiscountController::class);
+	// Discount API Routes
+	Route::apiResource('discounts', DiscountController::class);
 
-    // Flash Sale API Routes
-    Route::apiResource('flash-sales', FlashSaleController::class);
+	// Flash Sale API Routes
+	Route::apiResource('flash-sales', FlashSaleController::class);
 
 
-    Route::get('/seo-management/check-url', [SeoManagementController::class, 'checkURL']);
-    Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
-    Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
-    Route::post('/seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);
-    Route::post('/seoManagement/schema-update/{seo_id}', [SeoManagementController::class, 'schemaUpdate']);
+	Route::get('/seo-management/check-url', [SeoManagementController::class, 'checkURL']);
+	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
+	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
+	Route::post('/seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);
+	Route::post('/seoManagement/schema-update/{seo_id}', [SeoManagementController::class, 'schemaUpdate']);
 
-    Route::resource('seo-management', SeoManagementController::class);
+	Route::resource('seo-management', SeoManagementController::class);
 
-    Route::post('seo-details', [SeoDetailController::class, 'store']);
-    Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
+	Route::post('seo-details', [SeoDetailController::class, 'store']);
+	Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
 
 
 
-    Route::post('/generate-reviews', [ClaudeAIController::class, 'generateReviews']);
-    Route::post('/generate-faqs', [ClaudeAIController::class, 'generateFAQs']);
-    Route::post('/generate-benefits-features', [ClaudeAIController::class, 'generateBenefitsFeatures']);
-    Route::post('/generate-benefits-features-automation', [ClaudeAIController::class, 'generateFeaturesAndBenefits']);
+	Route::post('/generate-reviews', [ClaudeAIController::class, 'generateReviews']);
+	Route::post('/generate-faqs', [ClaudeAIController::class, 'generateFAQs']);
+	Route::post('/generate-benefits-features', [ClaudeAIController::class, 'generateBenefitsFeatures']);
+	Route::post('/generate-benefits-features-automation', [ClaudeAIController::class, 'generateFeaturesAndBenefits']);
 
-    Route::get('subcategories', [SubCategoryController::class, 'index']);
-    Route::get('subcategories/{id}', [SubCategoryController::class, 'show']);
-    Route::post('subcategories', [SubCategoryController::class, 'store']);
-    Route::post('subcategories/{id}', [SubCategoryController::class, 'update']);
-    Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
+	Route::get('subcategories', [SubCategoryController::class, 'index']);
+	Route::get('subcategories/{id}', [SubCategoryController::class, 'show']);
+	Route::post('subcategories', [SubCategoryController::class, 'store']);
+	Route::post('subcategories/{id}', [SubCategoryController::class, 'update']);
+	Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
 
-    Route::get('/brands/{id}/categories', [BrandController::class, 'getCategories']);
+	Route::get('/brands/{id}/categories', [BrandController::class, 'getCategories']);
 
 
-    Route::get('/allcategories', [CategoryController::class, 'allcategories']);
-    Route::resource('categories', CategoryController::class)->only(['index']);
-    Route::post('/categories/{id}', [CategoryController::class, 'update']);
+	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
+	Route::resource('categories', CategoryController::class)->only(['index']);
+	Route::post('/categories/{id}', [CategoryController::class, 'update']);
 
-    Route::post('/categories/{id}/move-up', [CategoryController::class ,'moveUp']);
-    Route::post('/categories/{id}/move-down', [CategoryController::class ,'moveDown']);
-    Route::post('/reorder', [CategoryController::class ,'reorder']);
-    Route::apiResource('categories', CategoryController::class);
+	Route::post('/categories/{id}/move-up', [CategoryController::class ,'moveUp']);
+	Route::post('/categories/{id}/move-down', [CategoryController::class ,'moveDown']);
+	Route::post('/reorder', [CategoryController::class ,'reorder']);
+	Route::apiResource('categories', CategoryController::class);
 
-    Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
-    Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
+	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
+	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
 
-    Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
-    Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
+	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
+	Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
 
-    Route::post('orders/{id}/resend-mail', [OrderController::class, 'resendOrderPlaceMail']);
+	Route::post('orders/{id}/resend-mail', [OrderController::class, 'resendOrderPlaceMail']);
 
-    Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
-    Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
-    Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
-    Route::apiResource('orders', OrderController::class);
+	Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
+	Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
+	Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
+	Route::apiResource('orders', OrderController::class);
 
-    Route::put('support-tickets/{id}/status', [SupportTicketController::class, 'updateStatus']);
-    Route::apiResource('support-tickets', SupportTicketController::class);
+	Route::put('support-tickets/{id}/status', [SupportTicketController::class, 'updateStatus']);
+	Route::apiResource('support-tickets', SupportTicketController::class);
 
-    Route::apiResource('quotes', QuoteController::class);
+	Route::apiResource('quotes', QuoteController::class);
 
-    Route::get('/redirect-links/template', [RedirectLinkController::class, 'downloadTemplate']);
-    Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
-    Route::get('/redirect-links/{id}', [RedirectLinkController::class, 'show']);
-    Route::put('/redirect-links/{id}', [RedirectLinkController::class, 'update']);
-    Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
-    Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
+	Route::get('/redirect-links/template', [RedirectLinkController::class, 'downloadTemplate']);
+	Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
+	Route::get('/redirect-links/{id}', [RedirectLinkController::class, 'show']);
+	Route::put('/redirect-links/{id}', [RedirectLinkController::class, 'update']);
+	Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
+	Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
 
 
-    Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
-    Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
+	Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
+	Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
 
 
-    Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
+	Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
 
-    Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
-    Route::post('/logout', [AuthController::class, 'logout']);
+	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+	Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::get('/categories/{category_id}/finalize-product-titles', [ProductTitleFormulaController::class, 'finalizeProductTitles']);
-    Route::get('/categories/{category_id}/sample-product-titles', [ProductTitleFormulaController::class, 'generateSampleProductTitles']);
-    Route::apiResource('product-title-formula', ProductTitleFormulaController::class);
-    Route::post('product-title-formula/delete-multiple', [ProductTitleFormulaController::class, 'destroyMultiple']);
+	Route::get('/categories/{category_id}/finalize-product-titles', [ProductTitleFormulaController::class, 'finalizeProductTitles']);
+	Route::get('/categories/{category_id}/sample-product-titles', [ProductTitleFormulaController::class, 'generateSampleProductTitles']);
+	Route::apiResource('product-title-formula', ProductTitleFormulaController::class);
+	Route::post('product-title-formula/delete-multiple', [ProductTitleFormulaController::class, 'destroyMultiple']);
 
-    Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
-    Route::post('/unisource/authenticate', [UnisourceShipmentController::class, 'authenticateWithUnisource']);
-    Route::apiResource('carts', CustomerCartController::class);
+	Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
+	Route::post('/unisource/authenticate', [UnisourceShipmentController::class, 'authenticateWithUnisource']);
+
+	Route::get('/carts/fetch/{id}', [CustomerCartController::class, 'fetchByID']);
+	Route::apiResource('carts', CustomerCartController::class);
 
 });
 
@@ -602,154 +604,151 @@ Route::Post('frontend/product-variants', [FndProductVariantController::class, 'i
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
-    Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
-    Route::apiResource('frontend/carts', F_CustomerCartController::class);
+	Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
+	Route::apiResource('frontend/carts', F_CustomerCartController::class);
 
 
-        Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
-    Route::prefix('customer')->group(function () {
+	Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
+	Route::prefix('customer')->group(function () {
 
-        Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
+		Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
 
-        // Customer coupon application
-        Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
+		// Customer coupon application
+		Route::post('apply-coupon', [F_CouponController::class, 'applyCustomerCoupon']);
 
-        Route::get('check-coupon', [F_CouponController::class, 'checkCustomerCoupon']);
+		Route::get('check-coupon', [F_CouponController::class, 'checkCustomerCoupon']);
 
-        Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
+		Route::get('available-coupons', [F_CouponController::class, 'getAvailableCoupons']);
 
-        // Customer coupon history
-        Route::get('coupon-history', [F_CouponController::class, 'getCustomerCouponHistory']);
+		// Customer coupon history
+		Route::get('coupon-history', [F_CouponController::class, 'getCustomerCouponHistory']);
 
-        // Check if coupon code exists (without applying)
-        Route::post('check-coupon', [F_CouponController::class, 'checkCouponCode']);
-    });
-    Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
-    Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
-    Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class)
-    ->names('frontend.post-purchase-claims');
+		// Check if coupon code exists (without applying)
+		Route::post('check-coupon', [F_CouponController::class, 'checkCouponCode']);
+	});
+	Route::get('frontend/pre-purchase-claims', [F_PrePurchaseClaimController::class, 'index']);
+	Route::get('frontend/pre-purchase-claims/{id}', [F_PrePurchaseClaimController::class, 'show']);
+	Route::apiResource('frontend/post-purchase-claims', F_PostPurchaseClaimController::class)
+	->names('frontend.post-purchase-claims');
 
-    Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
+	Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
-    Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
-    Route::get('/frontend/invoices/{id}', [F_InvoiceController::class, 'show']);
-    Route::post('/frontend/invoices', [F_InvoiceController::class, 'store']);
+	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
+	Route::get('/frontend/invoices/{id}', [F_InvoiceController::class, 'show']);
+	Route::post('/frontend/invoices', [F_InvoiceController::class, 'store']);
 
-    Route::post('frontend/customers/change-password', [F_CustomerController::class, 'changePassword']);
+	Route::post('frontend/customers/change-password', [F_CustomerController::class, 'changePassword']);
 
-    Route::post('/frontend/support-tickets', [F_SupportTicketController::class, 'store']);
-    Route::get('/frontend/support-tickets', [F_SupportTicketController::class, 'index']);
-    Route::get('/frontend/support-tickets/{id}', [F_SupportTicketController::class, 'show']);
-    Route::get('/frontend/customers/{customer_id}/support-tickets', [F_SupportTicketController::class, 'getTicketsByCustomer']);
+	Route::post('/frontend/support-tickets', [F_SupportTicketController::class, 'store']);
+	Route::get('/frontend/support-tickets', [F_SupportTicketController::class, 'index']);
+	Route::get('/frontend/support-tickets/{id}', [F_SupportTicketController::class, 'show']);
+	Route::get('/frontend/customers/{customer_id}/support-tickets', [F_SupportTicketController::class, 'getTicketsByCustomer']);
 
-    Route::get('/frontend/customer-documents', [F_CustomerDocumentController::class, 'index']);
-    Route::post('/frontend/customer-documents', [F_CustomerDocumentController::class, 'store']);
-    Route::delete('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'destroy']);
-    Route::get('/frontend/customer-documents/{customer_id}', [F_CustomerDocumentController::class, 'customerDocuments']);
+	Route::get('/frontend/customer-documents', [F_CustomerDocumentController::class, 'index']);
+	Route::post('/frontend/customer-documents', [F_CustomerDocumentController::class, 'store']);
+	Route::delete('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'destroy']);
+	Route::get('/frontend/customer-documents/{customer_id}', [F_CustomerDocumentController::class, 'customerDocuments']);
 
-    Route::prefix('frontend')->group(function () {
-    Route::get('/company-profiles', [CompanyProfileController::class, 'index']);
-    Route::post('/company-profiles', [CompanyProfileController::class, 'store']);
-    Route::get('/company-profiles/{id}', [CompanyProfileController::class, 'show']);
-    Route::put('/company-profiles/{id}', [CompanyProfileController::class, 'update']);
-    Route::delete('/company-profiles/{id}', [CompanyProfileController::class, 'destroy']);
-    });
+	Route::prefix('frontend')->group(function () {
+		Route::get('/company-profiles', [CompanyProfileController::class, 'index']);
+		Route::post('/company-profiles', [CompanyProfileController::class, 'store']);
+		Route::get('/company-profiles/{id}', [CompanyProfileController::class, 'show']);
+		Route::put('/company-profiles/{id}', [CompanyProfileController::class, 'update']);
+		Route::delete('/company-profiles/{id}', [CompanyProfileController::class, 'destroy']);
+	});
 
-    Route::apiResource('/frontend/contact-directories', F_ContactDirectoryController::class);
+	Route::apiResource('/frontend/contact-directories', F_ContactDirectoryController::class);
 
-    Route::get('/frontend/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateProducts']);
-    Route::get('/frontend/products/{id}/fbt', [F_FbtProductController::class, 'getFbtProducts']);
-    Route::get('/frontend/products/{id}/dif', [F_DiffProductController::class, 'getDiffProducts']);
-    Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
-    // Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
-        Route::apiResource('frontend/customer-address', F_CustomerAddressController::class)
-            ->names('frontend.customer-address');
+	Route::get('/frontend/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateProducts']);
+	Route::get('/frontend/products/{id}/fbt', [F_FbtProductController::class, 'getFbtProducts']);
+	Route::get('/frontend/products/{id}/dif', [F_DiffProductController::class, 'getDiffProducts']);
+	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
+	// Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
+	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class)
+	->names('frontend.customer-address');
 
-    Route::get('/frontend/quotes/{id}/email-pdf', [F_QuoteController::class, 'emailPdf']);
-    Route::get('/frontend/quotes/{id}/download-pdf', [F_QuoteController::class, 'downloadPdf']);
-    Route::apiResource('frontend/quotes', F_QuoteController::class)->names('frontend.quotes');
-
-
-    Route::get('frontend/orders/tracking', [F_OrderController::class, 'orderTracking']);
-    Route::post('frontend/order-products/multiple-return', [F_ReturnOrderProductController::class, 'multipleReturn']);
-    Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
-    Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);
-    Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
-    Route::apiResource('frontend/orders', F_OrderController::class) ->names('frontend.orders');
-
-    Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
-
-    Route::post('/frontend/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
-    Route::get('/frontend/wishlist', [F_WishlistController::class, 'getWishlist']);
-    Route::delete('/frontend/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
-
-    // Additional wishlist routes
-    Route::get('/frontend/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
-    Route::get('/frontend/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
-    Route::Post('/frontend/wishlist/remove-multiple', [F_WishlistController::class, 'removeMultipleFromWishlist']);
-    Route::Post('/frontend/wishlist/add-multiple', [F_WishlistController::class, 'addMultipleToWishlist']);
-
-    Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
-    Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
-    Route::put('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
-    Route::delete('/customer-reviews-delete/{id}', [F_UserReviewController::class, 'deleteReview']);
-
-    Route::get('/frontend/products/products-you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
-    Route::get('/frontend/products/{product_id}/you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
-
-    Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
-    Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
+	Route::get('/frontend/quotes/{id}/email-pdf', [F_QuoteController::class, 'emailPdf']);
+	Route::get('/frontend/quotes/{id}/download-pdf', [F_QuoteController::class, 'downloadPdf']);
+	Route::apiResource('frontend/quotes', F_QuoteController::class)->names('frontend.quotes');
 
 
-    Route::get('/frontend/discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
+	Route::get('frontend/orders/tracking', [F_OrderController::class, 'orderTracking']);
+	Route::post('frontend/order-products/multiple-return', [F_ReturnOrderProductController::class, 'multipleReturn']);
+	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
+	Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);
+	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
+	Route::apiResource('frontend/orders', F_OrderController::class)	->names('frontend.orders');
 
-    Route::get('/frontend/brandproducts', [F_BrandController::class, 'getAllBrandProducts']);
-    Route::get('/frontend/homebrandproducts', [F_BrandController::class, 'getAllHomeBrandProducts']);
+	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
 
-    Route::post('/frontend/cart/add', [F_CartController::class, 'addToCart']);
-    Route::get('/frontend/cart', [F_CartController::class, 'viewCart']);
-    Route::delete('/frontend/cart/clear', [F_CartController::class, 'clearCart']);
-    Route::delete('/frontend/cart/product/{productId}', [F_CartController::class, 'clearProductFromCart']);
-    Route::post('/frontend/cart/product/{productId}', [F_CartController::class, 'clearProductFromCarts']);
-    Route::post('/frontend/cart/update-quantity', [F_CartController::class, 'updateCartQuantity']);
-    Route::post('/frontend/cart/decrease-quantity', [F_CartController::class, 'decreaseQuantity']);
-    Route::post('/frontend/cart/add-multiple', [F_CartController::class, 'addMultipleToCart']);
-    Route::get('/frontend/cart-summary', [F_CartController::class, 'cartSummary']);
-    Route::get('/frontend/cart/total-products', [F_CartController::class, 'totalProductsInCart']);
-    Route::delete('/frontend/cart/delete', [F_CartController::class, 'deleteFromCart']);
+	Route::post('/frontend/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
+	Route::get('/frontend/wishlist', [F_WishlistController::class, 'getWishlist']);
+	Route::delete('/frontend/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
 
+	// Additional wishlist routes
+	Route::get('/frontend/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
+	Route::get('/frontend/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
+	Route::Post('/frontend/wishlist/remove-multiple', [F_WishlistController::class, 'removeMultipleFromWishlist']);
+	Route::Post('/frontend/wishlist/add-multiple', [F_WishlistController::class, 'addMultipleToWishlist']);
 
+	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
+	Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
+	Route::put('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
+	Route::delete('/customer-reviews-delete/{id}', [F_UserReviewController::class, 'deleteReview']);
 
+	Route::get('/frontend/products/products-you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
+	Route::get('/frontend/products/{product_id}/you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
 
-    Route::get('/frontend/categoryproducts', [F_CategoryController::class, 'getAllFeaturedProductsByCategory']);
-
-    Route::get('/frontend/coupons/customer', [F_CustomerController::class, 'getCustomerCoupons']);
-    Route::get('/frontend/coupons/search', [F_CustomerController::class, 'searchCustomerCoupons']);
-    Route::post('/frontend/update-profile', [F_CustomerController::class, 'updateProfile']);
-    Route::get('/frontend/user/get-profile', [F_CustomerController::class, 'getProfile']);
-
-
-    Route::get('/frontend/products', [F_ProductController::class, 'getAllProducts']);
-    Route::get('/frontend/products/{id}/related', [F_ProductController::class, 'relatedProducts']);
-    Route::get('/frontend/brands/{id}/products', [F_ProductController::class, 'productsByBrand']);
-    Route::get('/frontend/brands/{id}/sale-products', [F_ProductController::class, 'saleProductsByBrand']);
-    Route::get('/frontend/products/random/{category_id}', [F_ProductController::class, 'getRandomProducts']);
-    Route::get('/auth/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProductsForUser']);
-
-    Route::post('/frontend/save-for-later', [F_SaveForLaterController::class, 'saveForLater']);
-    Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
-    Route::delete('/frontend/remove-from-save-for-later/{product_id}', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
-
-    Route::apiResource('/frontend/payments',  F_PaymentManagementController::class)->names('frontend.payments');
-    Route::post('/frontend/payments/cash-delivery',  [F_PaymentManagementController::class,'paymentCashDelivery']);
+	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
+	Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
 
 
-    Route::prefix('/frontend/blogs')->group(function () {
-        Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
-    });
+	Route::get('/frontend/discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
+
+	Route::get('/frontend/brandproducts', [F_BrandController::class, 'getAllBrandProducts']);
+	Route::get('/frontend/homebrandproducts', [F_BrandController::class, 'getAllHomeBrandProducts']);
+
+	Route::post('/frontend/cart/add', [F_CartController::class, 'addToCart']);
+	Route::get('/frontend/cart', [F_CartController::class, 'viewCart']);
+	Route::delete('/frontend/cart/clear', [F_CartController::class, 'clearCart']);
+	Route::delete('/frontend/cart/product/{productId}', [F_CartController::class, 'clearProductFromCart']);
+	Route::post('/frontend/cart/product/{productId}', [F_CartController::class, 'clearProductFromCarts']);
+	Route::post('/frontend/cart/update-quantity', [F_CartController::class, 'updateCartQuantity']);
+	Route::post('/frontend/cart/decrease-quantity', [F_CartController::class, 'decreaseQuantity']);
+	Route::post('/frontend/cart/add-multiple', [F_CartController::class, 'addMultipleToCart']);
+	Route::get('/frontend/cart-summary', [F_CartController::class, 'cartSummary']);
+	Route::get('/frontend/cart/total-products', [F_CartController::class, 'totalProductsInCart']);
+	Route::delete('/frontend/cart/delete', [F_CartController::class, 'deleteFromCart']);
 
 
 
+
+	Route::get('/frontend/categoryproducts', [F_CategoryController::class, 'getAllFeaturedProductsByCategory']);
+
+	Route::get('/frontend/coupons/customer', [F_CustomerController::class, 'getCustomerCoupons']);
+	Route::get('/frontend/coupons/search', [F_CustomerController::class, 'searchCustomerCoupons']);
+	Route::post('/frontend/update-profile', [F_CustomerController::class, 'updateProfile']);
+	Route::get('/frontend/user/get-profile', [F_CustomerController::class, 'getProfile']);
+
+
+	Route::get('/frontend/products', [F_ProductController::class, 'getAllProducts']);
+	Route::get('/frontend/products/{id}/related', [F_ProductController::class, 'relatedProducts']);
+	Route::get('/frontend/brands/{id}/products', [F_ProductController::class, 'productsByBrand']);
+	Route::get('/frontend/brands/{id}/sale-products', [F_ProductController::class, 'saleProductsByBrand']);
+	Route::get('/frontend/products/random/{category_id}', [F_ProductController::class, 'getRandomProducts']);
+	Route::get('/auth/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProductsForUser']);
+
+	Route::post('/frontend/save-for-later', [F_SaveForLaterController::class, 'saveForLater']);
+	Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
+	Route::delete('/frontend/remove-from-save-for-later/{product_id}', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
+
+	Route::apiResource('/frontend/payments',  F_PaymentManagementController::class)->names('frontend.payments');
+	Route::post('/frontend/payments/cash-delivery',  [F_PaymentManagementController::class,'paymentCashDelivery']);
+
+
+	Route::prefix('/frontend/blogs')->group(function () {
+		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
+	});
 });
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
@@ -816,13 +815,13 @@ Route::get('/frontend/country-phonecodes', [F_CountryController::class, 'getPhon
 
 
 Route::prefix('/frontend/blogs')->group(function () {
-    Route::get('/', [F_BlogController::class, 'index']);
-    Route::get('/{slug}', [F_BlogController::class, 'show']);
-    Route::post('/{id}/like', [F_BlogController::class, 'like']);
-    Route::post('/{id}/share', [F_BlogController::class, 'share']);
-    Route::post('/{id}/view', [F_BlogController::class, 'view']);
-    // Route::put('/{id}/comment', [F_BlogController::class, 'postComment']);
-    Route::get('/{postId}/comments', [F_BlogController::class, 'viewComments']);
+	Route::get('/', [F_BlogController::class, 'index']);
+	Route::get('/{slug}', [F_BlogController::class, 'show']);
+	Route::post('/{id}/like', [F_BlogController::class, 'like']);
+	Route::post('/{id}/share', [F_BlogController::class, 'share']);
+	Route::post('/{id}/view', [F_BlogController::class, 'view']);
+	// Route::put('/{id}/comment', [F_BlogController::class, 'postComment']);
+	Route::get('/{postId}/comments', [F_BlogController::class, 'viewComments']);
 
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
@@ -869,9 +868,9 @@ Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
 Route::prefix('/frontend/ccavenue')->group(function () {
-    Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
-    Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
-    Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
+	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
+	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
+	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
 //Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
@@ -882,8 +881,8 @@ Route::get('/stripe/thanks', [F_StripeController::class, 'success']);
 Route::get('/stripe/failed', [F_StripeController::class, 'paymentFailed']);
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
 Route::prefix('stripe')->group(function () {
-    Route::post('/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
-    Route::post('/confirm-payment-intent', [F_StripeController::class, 'confirmPaymentIntent']);
+	Route::post('/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
+	Route::post('/confirm-payment-intent', [F_StripeController::class, 'confirmPaymentIntent']);
 });
 Route::post('frontend/product-errors', [F_ProductErrorController::class, 'store']);
 Route::get('frontend/product-errors', [F_ProductErrorController::class, 'index']);
@@ -917,27 +916,27 @@ Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout'])
 Route::post('/webhook/stax', [F_StaxPaymentController::class, 'handleWebhook']);
 
 
-    // Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);
-    Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
-     ->where('from', '.*');
+	// Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);
+Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom'])
+->where('from', '.*');
 
 Route::prefix('frontend/auth')->group(function () {
 
-    // Stax Payment Routes
-    Route::post('/Stax', [F_StaxPaymentController::class, 'checkout'])
-        ->name('stax.checkout');
+	// Stax Payment Routes
+	Route::post('/Stax', [F_StaxPaymentController::class, 'checkout'])
+	->name('stax.checkout');
 
-    Route::get('/Stax/transaction/{id}', [F_StaxPaymentController::class, 'getTransaction'])
-        ->name('stax.transaction');
+	Route::get('/Stax/transaction/{id}', [F_StaxPaymentController::class, 'getTransaction'])
+	->name('stax.transaction');
 
-    Route::post('/Stax/refund/{id}', [F_StaxPaymentController::class, 'refund'])
-        ->name('stax.refund');
+	Route::post('/Stax/refund/{id}', [F_StaxPaymentController::class, 'refund'])
+	->name('stax.refund');
 
-    Route::post('/Stax/void/{id}', [F_StaxPaymentController::class, 'void'])
-        ->name('stax.void');
+	Route::post('/Stax/void/{id}', [F_StaxPaymentController::class, 'void'])
+	->name('stax.void');
 
-    Route::post('/Stax/tokenize', [F_StaxPaymentController::class, 'tokenizeCard'])
-        ->name('stax.card-charge');
+	Route::post('/Stax/tokenize', [F_StaxPaymentController::class, 'tokenizeCard'])
+	->name('stax.card-charge');
 
 });
 
