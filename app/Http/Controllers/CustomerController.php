@@ -111,13 +111,19 @@ class CustomerController extends Controller
 	 *             @OA\Schema(
 	 *                 required={"name", "email", "password"},
 	 *                 @OA\Property(property="name", type="string", example="John Doe"),
+	 *                 @OA\Property(property="business_name", type="string", example="Acme Corporation"),
+	 *                 @OA\Property(property="business_licence", type="file", description="Business licence PDF (max 2MB)"),
+	 *                 @OA\Property(property="trn_number", type="string", example="1234567890"),
+	 *                 @OA\Property(property="vat_certificate", type="file", description="VAT certificate PDF (max 2MB)"),
 	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
 	 *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
 	 *                 @OA\Property(property="type", type="string", example="Business"),
 	 *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
 	 *                 @OA\Property(property="country_code", type="string", example="+91"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
-	 *                 @OA\Property(property="profile_img", type="file", description="Profile image (jpeg, png, webp only, max 1 mb)"),
+	 *                 @OA\Property(property="profile_img", type="file", description="Profile image (jpeg, png, webp only, max 1 MB)"),
+	 *                 @OA\Property(property="is_tax_free", type="boolean", example=false),
+	 *                 @OA\Property(property="approval_action_notes", type="string", example="Customer provided valid exemption certificate.")
 	 *             )
 	 *         )
 	 *     ),
@@ -129,13 +135,22 @@ class CustomerController extends Controller
 	{
 		$validatedData = $request->validate([
 			'name' => 'required|string|max:255',
+
+			'business_name'    => 'nullable|string',
+			'business_licence' => 'nullable|file|mimes:pdf|max:2048',
+			'trn_number'       => 'nullable|string',
+			'vat_certificate'  => 'nullable|file|mimes:pdf|max:2048',
+
 			'email' => 'required|string|email|max:255|unique:customers,email',
 			'password' => 'required|string|min:8',
 			'type' => 'nullable|string',
 			'dob' => 'nullable|date',
-			'country_code' => 'nullable|string',
+			'country_code' => 'nullable|string|max:10',
 			'mobile_number' => 'nullable|string|max:20',
 			'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
+			'is_tax_free' => 'nullable|boolean',
+			'approval_action_notes' => 'required_if:is_tax_free,1|string|nullable',
+
 		]);
 
 		$validatedData['profile_img'] = uploadImageToWebpS3FromFile(
@@ -144,8 +159,32 @@ class CustomerController extends Controller
 			env('STORAGE_ENV') . '/customer/profile_img'
 		);
 
+		/* Business licence PDF */
+		if ($request->hasFile('business_licence')) {
+			$validatedData['business_licence'] = uploadPdfToS3FromFile(
+				$request,
+				'business_licence',
+				env('STORAGE_ENV') . '/customer/business_licence'
+			);
+		}
+
+		/* VAT certificate PDF */
+		if ($request->hasFile('vat_certificate')) {
+			$validatedData['vat_certificate'] = uploadPdfToS3FromFile(
+				$request,
+				'vat_certificate',
+				env('STORAGE_ENV') . '/customer/vat_certificate'
+			);
+		}
+
+		$isTaxFree = $request->boolean('is_tax_free');
+
 		$customer = new Customer([
 			'name' => $validatedData['name'],
+			'business_name' => $validatedData['business_name'] ?? null,
+			'business_licence' => $validatedData['business_licence'] ?? null,
+			'trn_number' => $validatedData['trn_number'] ?? null,
+			'vat_certificate' => $validatedData['vat_certificate'] ?? null,
 			'email' => $validatedData['email'],
 			'password' => Hash::make($validatedData['password']),
 			'type' => $validatedData['type'] ?? null,
@@ -153,6 +192,10 @@ class CustomerController extends Controller
 			'country_code' => $validatedData['country_code'] ?? null,
 			'mobile_number' => $validatedData['mobile_number'] ?? null,
 			'profile_img' => $validatedData['profile_img'] ?? null,
+			'is_tax_free' => $isTaxFree,
+			'approval_action_notes' => $isTaxFree ? ($validatedData['approval_action_notes'] ?? null) : null,
+			'approval_action_by' => $isTaxFree ? auth()->id() : null,
+			'approval_action_at' => $isTaxFree ? now() : null,
 			'created_by' => auth()->id(),
 		]);
 
@@ -215,39 +258,25 @@ class CustomerController extends Controller
 	 *                 required={"_method", "name", "email"},
 	 *                 @OA\Property(property="_method", type="string", example="PUT"),
 	 *                 @OA\Property(property="name", type="string", example="John Doe"),
+	 *                 @OA\Property(property="business_name", type="string", example="Acme Corporation"),
+	 *                 @OA\Property(property="business_licence", type="file", description="Business licence PDF (max 2MB)"),
+	 *                 @OA\Property(property="trn_number", type="string", example="1234567890"),
+	 *                 @OA\Property(property="vat_certificate", type="file", description="VAT certificate PDF (max 2MB)"),
+	 *
 	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
 	 *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
+	 *                 @OA\Property(property="type", type="string", example="Business"),
 	 *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
 	 *                 @OA\Property(property="country_code", type="string", example="+91"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
 	 *                 @OA\Property(property="profile_img_url", type="string", example="https://example.com/image.png"),
-	 *                 @OA\Property(
-	 *                     property="profile_img",
-	 *                     type="file",
-	 *                     description="Profile image (jpeg, jpg, png, webp only, max 1MB)"
-	 *                 ),
-	 *
-	 *                 @OA\Property(property="business_name", type="string", example="Acme Corporation"),
-	 *                 @OA\Property(
-	 *                     property="business_licence",
-	 *                     type="file",
-	 *                     description="Business licence PDF (max 2MB)"
-	 *                 ),
-	 *                 @OA\Property(property="trn_number", type="string", example="1234567890"),
-	 *                 @OA\Property(
-	 *                     property="vat_certificate",
-	 *                     type="file",
-	 *                     description="VAT certificate PDF (max 2MB)"
-	 *                 ),
-	 *
-	 *                 @OA\Property(property="type", type="string", example="vendor")
+	 *                 @OA\Property(property="profile_img", type="file", description="Profile image (jpeg, png, webp only, max 1 MB)"),
+	 *                 @OA\Property(property="is_tax_free", type="boolean", example=false),
+	 *                 @OA\Property(property="approval_action_notes", type="string", example="Customer provided valid exemption certificate.")
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Updated successfully",
-	 *         @OA\MediaType(mediaType="application/json")
+	 *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")
 	 *     ),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -265,6 +294,12 @@ class CustomerController extends Controller
 
 		$validatedData = $request->validate([
 			'name'             => 'required|string|max:255',
+
+			'business_name'    => 'nullable|string',
+			'business_licence' => 'nullable|file|mimes:pdf|max:2048',
+			'trn_number'       => 'nullable|string',
+			'vat_certificate'  => 'nullable|file|mimes:pdf|max:2048',
+
 			'email'            => 'string|email|max:255|unique:customers,email,' . $id,
 			'password'         => 'nullable|string|min:8',
 			'type'             => 'nullable|string',
@@ -274,11 +309,8 @@ class CustomerController extends Controller
 			'profile_img_url'  => 'nullable',
 			'profile_img'      => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
 
-			// New fields
-			'business_name'    => 'nullable|string',
-			'business_licence' => 'nullable|file|mimes:pdf|max:2048',
-			'trn_number'       => 'nullable|string',
-			'vat_certificate'  => 'nullable|file|mimes:pdf|max:2048',
+			'is_tax_free' => 'nullable|boolean',
+			'approval_action_notes' => 'required_with:is_tax_free|string|nullable',
 		]);
 
 		/* Profile Image */
@@ -317,6 +349,20 @@ class CustomerController extends Controller
 			$validatedData['password'] = Hash::make($validatedData['password']);
 		} else {
 			unset($validatedData['password']);
+		}
+
+		if (!is_null($request->is_tax_free)) {
+			$isTaxFree = $request->boolean('is_tax_free');
+
+			$validatedData['is_tax_free'] = $isTaxFree;
+			$validatedData['approval_action_notes'] = $validatedData['approval_action_notes'] ?? null;
+			$validatedData['approval_action_by'] = auth()->id() : null;
+			$validatedData['approval_action_at'] = now() : null;
+		} else {
+			unset(
+				$validatedData['is_tax_free'],
+				$validatedData['approval_action_notes']
+			);
 		}
 
 		$customer->update($validatedData);
