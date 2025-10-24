@@ -18268,13 +18268,26 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
                                         "country": {
+                                            "type": "string"
+                                        },
+                                        "countryCode": {
+                                            "type": "string"
+                                        },
+                                        "region": {
+                                            "type": "string"
+                                        },
+                                        "regionName": {
                                             "type": "string"
                                         },
                                         "city": {
                                             "type": "string"
                                         },
-                                        "region": {
+                                        "zip": {
                                             "type": "string"
                                         },
                                         "lat": {
@@ -18282,6 +18295,15 @@
                                         },
                                         "lon": {
                                             "type": "number"
+                                        },
+                                        "timezone": {
+                                            "type": "string"
+                                        },
+                                        "isp": {
+                                            "type": "string"
+                                        },
+                                        "query": {
+                                            "type": "string"
                                         }
                                     },
                                     "type": "object"

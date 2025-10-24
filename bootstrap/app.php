@@ -6,6 +6,8 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\EnsureUserGuard;
 use App\Http\Middleware\EnsureCustomerGuard;
 use Illuminate\Auth\AuthenticationException;
+use App\Http\Middleware\EcommerceCacheMiddleware;
+
 
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -15,12 +17,18 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    
     ->withMiddleware(function (Middleware $middleware) {
+          $middleware->api(append: [
+            EcommerceCacheMiddleware::class,
+        ]);
+        
 
         // Alias middleware for optional route usage
         $middleware->alias([
             'user.guard' => EnsureUserGuard::class,
             'customer.guard' => EnsureCustomerGuard::class,
+            'cache.middleware' => EcommerceCacheMiddleware::class, // Optional alias for selective use
         
         ]);
 
