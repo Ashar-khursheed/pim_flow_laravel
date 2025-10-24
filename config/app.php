@@ -23,6 +23,11 @@ switch ($website) {
 		$backendUrl = 'https://developmentcalifornia.thehorecastore.co';
 		break;
 
+	case 'SA':
+		$url = 'https://www.horecastore.ae/sa-en';
+		$backendUrl = 'https://d1szysbal095g7.cloudfront.net';
+		break;
+
 	default:
 		$url = 'https://www.thehorecastore.com';
 		$backendUrl = 'https://pim.thehorecastore.co';
