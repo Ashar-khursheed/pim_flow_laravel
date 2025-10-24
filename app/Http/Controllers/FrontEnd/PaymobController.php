@@ -245,7 +245,7 @@ class PaymobController extends Controller
 
             $intention = $this->paymob->createIntention(
                 $request->amount, // decimal amount, e.g., 2881.2
-                "SAR",
+                "AED",
                 $billingData,
                 [
                     [
@@ -526,7 +526,7 @@ class PaymobController extends Controller
                 'auth_token' => $authToken,
                 'delivery_needed' => 'false', // String instead of boolean
                 'amount_cents' => (string) $amountCents, // Convert to string
-                'currency' => 'SAR',
+                'currency' => 'AED',
                 'merchant_order_id' => (string) $merchantOrderId,
                 'items' => [],
             ]);
@@ -554,7 +554,7 @@ class PaymobController extends Controller
                 'expiration' => 3600,
                 'order_id' => $orderID["id"],
                 'billing_data' => $billingData,
-                'currency' => 'SAR', // Fixed: Should be AED for UAE, not EGP
+                'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
                 'integration_id' => env('PAYMOB_LINK_ID'),
                 'redirect_url' => 'https://www.horecastore.ae/Saudia-en/thanks',
                 'notification_url' => 'https://d1szysbal095g7.cloudfront.net/api/paymob/webhook',             
