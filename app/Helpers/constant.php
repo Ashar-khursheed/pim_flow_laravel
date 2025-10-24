@@ -601,9 +601,9 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'sales@thehorecastore.com',
 			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+			'qa03@horecastore.ae',
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
 		];
 
 		$uaeMails = [
@@ -611,17 +611,17 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'hello@horecastore.ae',
 			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+			'qa03@horecastore.ae',
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
 			'css01@horecastore.ae',
 			'fm@horecastore.ae',
 		];
 
 		$testMails = [
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+			'qa03@horecastore.ae',
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
 		];
 
 		$localMails = [
@@ -668,7 +668,6 @@ if (!function_exists('order_cc_mails')) {
 			'ofs@thehorecastore.com',
 			'ofs02@thehorecastore.com',
 			'dmm@thehorecastore.com',
-			'webdeveloper04@horecastore.ae',
 		];
 
 		$uaeMails = [
@@ -679,13 +678,13 @@ if (!function_exists('order_cc_mails')) {
 			'css01@horecastore.ae',
 			'cbfb@horecastore.ae',
 			'procurement@horecastore.ae',
-			'webdeveloper04@horecastore.ae',
+			'saas@horecastore.ae',
 		];
 
 		$testMails = [
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+			'qa03@horecastore.ae',
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
 		];
 
 		$localMails = [
@@ -742,9 +741,9 @@ if (!function_exists('inquiry_cc_mails')) {
 		];
 
 		$testMails = [
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+			'qa03@horecastore.ae',
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
 		];
 
 		$localMails = [
@@ -799,9 +798,9 @@ if (!function_exists('quote_cc_mails')) {
 		];
 
 		$testMails = [
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+			'qa03@horecastore.ae',
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
 		];
 
 		$localMails = [
