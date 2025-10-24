@@ -195,190 +195,138 @@ class CustomerController extends Controller
 			'data' => $customer
 		]);
 	}
-/**
- * @OA\Post(
- *     path="/api/customers/{id}",
- *     summary="Update a customer",
- *     tags={"Customers"},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\MediaType(
- *             mediaType="multipart/form-data",
- *             @OA\Schema(
- *                 required={"_method", "name", "email"},
- *                 @OA\Property(property="_method", type="string", example="PUT"),
- *                 @OA\Property(property="name", type="string", example="John Doe"),
- *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
- *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
- *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
- *                 @OA\Property(property="country_code", type="string", example="+91"),
- *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
- *                 @OA\Property(property="profile_img_url", type="string", example="https://example.com/image.png"),
- *                 @OA\Property(
- *                     property="profile_img",
- *                     type="file",
- *                     description="Profile image (jpeg, jpg, png, webp only, max 1MB)"
- *                 ),
- *
- *                 @OA\Property(property="business_name", type="string", example="Acme Corporation"),
- *                 @OA\Property(
- *                     property="business_licence",
- *                     type="file",
- *                     description="Business licence PDF (max 2MB)"
- *                 ),
- *                 @OA\Property(property="trn_number", type="string", example="1234567890"),
- *                 @OA\Property(
- *                     property="vat_certificate",
- *                     type="file",
- *                     description="VAT certificate PDF (max 2MB)"
- *                 ),
- *
- *                 @OA\Property(property="type", type="string", example="vendor")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Updated successfully",
- *         @OA\MediaType(mediaType="application/json")
- *     ),
- *     security={{"bearerAuth":{}}}
- * )
- */
 
-	// public function update(Request $request, $id)
-	// {
-	// 	$customer = Customer::find($id);
-
-	// 	if (!$customer) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => __("err_exist")
-	// 		]);
-	// 	}
-
-	// 	$validatedData = $request->validate([
-	// 		'name' => 'required|string|max:255',
-	// 		'email' => 'required|string|email|max:255|unique:customers,email,'.$id,
-	// 		'password' => 'nullable|string|min:8',
-	// 		'type' => 'nullable|string',
-	// 		'dob' => 'nullable|date',
-	// 		'country_code' => 'nullable|string',
-	// 		'mobile_number' => 'nullable|string|max:20',
-	// 		'profile_img_url' => 'nullable',
-	// 		'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
-	// 	]);
-
-	// 	if ($request->hasFile('profile_img')) {
-	// 		$validatedData['profile_img'] = uploadImageToWebpS3FromFile(
-	// 			$request,
-	// 			'profile_img',
-	// 			env('STORAGE_ENV') . '/customer/profile_img'
-	// 		);
-	// 	} elseif (!empty($validatedData['profile_img_url'])) {
-	// 		$validatedData['profile_img'] = $validatedData['profile_img_url'];
-	// 	} else {
-	// 		unset($validatedData['profile_img']); // Don't update this field at all
-	// 	}
-
-
-
-	// 	if (isset($validatedData['password'])) {
-	// 		$validatedData['password'] = Hash::make($validatedData['password']);
-	// 	} else {
-	// 		unset($validatedData['password']);
-	// 	}
-
-	// 	$customer->update($validatedData);
-
-	// 	return response()->json([
-	// 		'success' => true,
-	// 		'message' => 'Customer updated successfully',
-	// 		'data' => $customer
-	// 	]);
-	// }
+	/**
+	 * @OA\Post(
+	 *     path="/api/customers/{id}",
+	 *     summary="Update a customer",
+	 *     tags={"Customers"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"_method", "name", "email"},
+	 *                 @OA\Property(property="_method", type="string", example="PUT"),
+	 *                 @OA\Property(property="name", type="string", example="John Doe"),
+	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+	 *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
+	 *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
+	 *                 @OA\Property(property="country_code", type="string", example="+91"),
+	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
+	 *                 @OA\Property(property="profile_img_url", type="string", example="https://example.com/image.png"),
+	 *                 @OA\Property(
+	 *                     property="profile_img",
+	 *                     type="file",
+	 *                     description="Profile image (jpeg, jpg, png, webp only, max 1MB)"
+	 *                 ),
+	 *
+	 *                 @OA\Property(property="business_name", type="string", example="Acme Corporation"),
+	 *                 @OA\Property(
+	 *                     property="business_licence",
+	 *                     type="file",
+	 *                     description="Business licence PDF (max 2MB)"
+	 *                 ),
+	 *                 @OA\Property(property="trn_number", type="string", example="1234567890"),
+	 *                 @OA\Property(
+	 *                     property="vat_certificate",
+	 *                     type="file",
+	 *                     description="VAT certificate PDF (max 2MB)"
+	 *                 ),
+	 *
+	 *                 @OA\Property(property="type", type="string", example="vendor")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Updated successfully",
+	 *         @OA\MediaType(mediaType="application/json")
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
 	public function update(Request $request, $id)
-{
-    $customer = Customer::find($id);
+	{
+		$customer = Customer::find($id);
 
-    if (!$customer) {
-        return response()->json([
-            'success' => false,
-            'message' => __("err_exist")
-        ]);
-    }
+		if (!$customer) {
+			return response()->json([
+				'success' => false,
+				'message' => __("err_exist")
+			]);
+		}
 
-    $validatedData = $request->validate([
-        'name'             => 'required|string|max:255',
-        'email'            => 'string|email|max:255|unique:customers,email,' . $id,
-        'password'         => 'nullable|string|min:8',
-        'type'             => 'nullable|string',
-        'dob'              => 'nullable|date',
-        'country_code'     => 'nullable|string|max:10',
-        'mobile_number'    => 'nullable|string|max:20',
-        'profile_img_url'  => 'nullable',
-        'profile_img'      => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
+		$validatedData = $request->validate([
+			'name'             => 'required|string|max:255',
+			'email'            => 'string|email|max:255|unique:customers,email,' . $id,
+			'password'         => 'nullable|string|min:8',
+			'type'             => 'nullable|string',
+			'dob'              => 'nullable|date',
+			'country_code'     => 'nullable|string|max:10',
+			'mobile_number'    => 'nullable|string|max:20',
+			'profile_img_url'  => 'nullable',
+			'profile_img'      => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
 
-        // New fields
-        'business_name'    => 'nullable|string',
-        'business_licence' => 'nullable|file|mimes:pdf|max:2048',
-        'trn_number'       => 'nullable|string',
-        'vat_certificate'  => 'nullable|file|mimes:pdf|max:2048',
-    ]);
+			// New fields
+			'business_name'    => 'nullable|string',
+			'business_licence' => 'nullable|file|mimes:pdf|max:2048',
+			'trn_number'       => 'nullable|string',
+			'vat_certificate'  => 'nullable|file|mimes:pdf|max:2048',
+		]);
 
-    /* Profile Image */
-    if ($request->hasFile('profile_img')) {
-        $validatedData['profile_img'] = uploadImageToWebpS3FromFile(
-            $request,
-            'profile_img',
-            env('STORAGE_ENV') . '/customer/profile_img'
-        );
-    } elseif (!empty($validatedData['profile_img_url'])) {
-        $validatedData['profile_img'] = $validatedData['profile_img_url'];
-    } else {
-        unset($validatedData['profile_img']);
-    }
+		/* Profile Image */
+		if ($request->hasFile('profile_img')) {
+			$validatedData['profile_img'] = uploadImageToWebpS3FromFile(
+				$request,
+				'profile_img',
+				env('STORAGE_ENV') . '/customer/profile_img'
+			);
+		} elseif (!empty($validatedData['profile_img_url'])) {
+			$validatedData['profile_img'] = $validatedData['profile_img_url'];
+		} else {
+			unset($validatedData['profile_img']);
+		}
 
-    /* Business licence PDF */
-    if ($request->hasFile('business_licence')) {
-        $validatedData['business_licence'] = uploadPdfToS3FromFile(
-            $request,
-            'business_licence',
-            env('STORAGE_ENV') . '/customer/business_licence'
-        );
-    }
+		/* Business licence PDF */
+		if ($request->hasFile('business_licence')) {
+			$validatedData['business_licence'] = uploadPdfToS3FromFile(
+				$request,
+				'business_licence',
+				env('STORAGE_ENV') . '/customer/business_licence'
+			);
+		}
 
-    /* VAT certificate PDF */
-    if ($request->hasFile('vat_certificate')) {
-        $validatedData['vat_certificate'] = uploadPdfToS3FromFile(
-            $request,
-            'vat_certificate',
-            env('STORAGE_ENV') . '/customer/vat_certificate'
-        );
-    }
+		/* VAT certificate PDF */
+		if ($request->hasFile('vat_certificate')) {
+			$validatedData['vat_certificate'] = uploadPdfToS3FromFile(
+				$request,
+				'vat_certificate',
+				env('STORAGE_ENV') . '/customer/vat_certificate'
+			);
+		}
 
-    /* Password */
-    if (isset($validatedData['password'])) {
-        $validatedData['password'] = Hash::make($validatedData['password']);
-    } else {
-        unset($validatedData['password']);
-    }
+		/* Password */
+		if (isset($validatedData['password'])) {
+			$validatedData['password'] = Hash::make($validatedData['password']);
+		} else {
+			unset($validatedData['password']);
+		}
 
-    $customer->update($validatedData);
+		$customer->update($validatedData);
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Customer updated successfully',
-        'data' => $customer
-    ]);
-}
-
+		return response()->json([
+			'success' => true,
+			'message' => 'Customer updated successfully',
+			'data' => $customer
+		]);
+	}
 
 	/**
 	 * @OA\Delete(
@@ -409,116 +357,114 @@ class CustomerController extends Controller
 		]);
 	}
 
+	/**
+	 * @OA\Get(
+	 *     path="/api/customers/filter-by-date",
+	 *     summary="Filter customers by created_at or updated_at date range",
+	 *     tags={"Customers"},
+	 *     security={{"bearerAuth":{}}},
+	 *     operationId="filterCustomersByDate",
+	 *     @OA\Parameter(
+	 *         name="date_type",
+	 *         in="query",
+	 *         required=true,
+	 *         description="Field to filter on: created_at or updated_at",
+	 *         @OA\Schema(type="string", enum={"created_at", "updated_at"})
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="start_date",
+	 *         in="query",
+	 *         required=true,
+	 *         description="Start date in YYYY-MM-DD format",
+	 *         @OA\Schema(type="string", format="date")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="end_date",
+	 *         in="query",
+	 *         required=true,
+	 *         description="End date in YYYY-MM-DD format",
+	 *         @OA\Schema(type="string", format="date")
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Filtered customer IDs",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Customer IDs filtered by date range."),
+	 *             @OA\Property(property="data", type="array", @OA\Items(type="integer"))
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation error"
+	 *     )
+	 * )
+	 */
+	public function filterByDate(Request $request)
+	{
+		// Add this at the very beginning to confirm the method is being called
 
-/**
- * @OA\Get(
- *     path="/api/customers/filter-by-date",
- *     summary="Filter customers by created_at or updated_at date range",
- *     tags={"Customers"},
- *     security={{"bearerAuth":{}}},
- *     operationId="filterCustomersByDate",
- *     @OA\Parameter(
- *         name="date_type",
- *         in="query",
- *         required=true,
- *         description="Field to filter on: created_at or updated_at",
- *         @OA\Schema(type="string", enum={"created_at", "updated_at"})
- *     ),
- *     @OA\Parameter(
- *         name="start_date",
- *         in="query",
- *         required=true,
- *         description="Start date in YYYY-MM-DD format",
- *         @OA\Schema(type="string", format="date")
- *     ),
- *     @OA\Parameter(
- *         name="end_date",
- *         in="query",
- *         required=true,
- *         description="End date in YYYY-MM-DD format",
- *         @OA\Schema(type="string", format="date")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Filtered customer IDs",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Customer IDs filtered by date range."),
- *             @OA\Property(property="data", type="array", @OA\Items(type="integer"))
- *         )
- *     ),
- *     @OA\Response(
- *         response=422,
- *         description="Validation error"
- *     )
- * )
- */
-public function filterByDate(Request $request)
-{
-    // Add this at the very beginning to confirm the method is being called
+		try {
+			$request->validate([
+				'date_type' => 'required|in:created_at,updated_at',
+				'start_date' => 'required|date',
+				'end_date' => 'required|date|after_or_equal:start_date',
+			]);
 
-    try {
-        $request->validate([
-            'date_type' => 'required|in:created_at,updated_at',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
-
-        $dateType = $request->input('date_type');
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-
-        // First, let's check if there are ANY customers in the database
-        $totalCustomers = Customer::count();
-
-        // Check a few sample customers and their dates
-        $sampleCustomers = Customer::take(5)->get(['id', 'created_at', 'updated_at']);
-
-        // Build the query step by step for debugging
-        $query = Customer::query();
-
-        // Debug the raw SQL query
-        $sqlQuery = Customer::whereBetween($dateType, [
-            Carbon::parse($startDate)->startOfDay(),
-            Carbon::parse($endDate)->endOfDay()
-        ])->toSql();
-
-        $bindings = Customer::whereBetween($dateType, [
-            Carbon::parse($startDate)->startOfDay(),
-            Carbon::parse($endDate)->endOfDay()
-        ])->getBindings();
+			$dateType = $request->input('date_type');
+			$startDate = $request->input('start_date');
+			$endDate = $request->input('end_date');
 
 
+			// First, let's check if there are ANY customers in the database
+			$totalCustomers = Customer::count();
 
-        // Execute the query
-        $customers = Customer::whereBetween($dateType, [
-            Carbon::parse($startDate)->startOfDay(),
-            Carbon::parse($endDate)->endOfDay()
-        ])->get();
+			// Check a few sample customers and their dates
+			$sampleCustomers = Customer::take(5)->get(['id', 'created_at', 'updated_at']);
+
+			// Build the query step by step for debugging
+			$query = Customer::query();
+
+			// Debug the raw SQL query
+			$sqlQuery = Customer::whereBetween($dateType, [
+				Carbon::parse($startDate)->startOfDay(),
+				Carbon::parse($endDate)->endOfDay()
+			])->toSql();
+
+			$bindings = Customer::whereBetween($dateType, [
+				Carbon::parse($startDate)->startOfDay(),
+				Carbon::parse($endDate)->endOfDay()
+			])->getBindings();
 
 
-        // Return proper response
-        return response()->json([
-            'success' => true,
-            'message' => 'Customer IDs filtered by date range.',
-            'data' => $customers->pluck('id')->toArray(),
-            'total' => $customers->count(),
-            'debug' => [
-                'total_customers_in_db' => $totalCustomers,
-                'sql_query' => $sqlQuery,
-                'bindings' => $bindings
-            ]
-        ]);
 
-    } catch (\Exception $e) {
+			// Execute the query
+			$customers = Customer::whereBetween($dateType, [
+				Carbon::parse($startDate)->startOfDay(),
+				Carbon::parse($endDate)->endOfDay()
+			])->get();
 
-        return response()->json([
-            'success' => false,
-            'message' => 'An error occurred: ' . $e->getMessage(),
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
 
+			// Return proper response
+			return response()->json([
+				'success' => true,
+				'message' => 'Customer IDs filtered by date range.',
+				'data' => $customers->pluck('id')->toArray(),
+				'total' => $customers->count(),
+				'debug' => [
+					'total_customers_in_db' => $totalCustomers,
+					'sql_query' => $sqlQuery,
+					'bindings' => $bindings
+				]
+			]);
+
+		} catch (\Exception $e) {
+
+			return response()->json([
+				'success' => false,
+				'message' => 'An error occurred: ' . $e->getMessage(),
+				'error' => $e->getMessage()
+			], 500);
+		}
+	}
 }
