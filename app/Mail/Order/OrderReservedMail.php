@@ -102,6 +102,7 @@ class OrderReservedMail extends Mailable
 		$shippingCharge = $order->shipping_charge ?? 0;
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
 		$taxPercent = $order->tax_percentage;
+		$taxPercent = $taxPercent + 0;
 		$taxAmount = $order->tax_amount ?? 0;
 		$total = $order->total_amount ?? 0;
 

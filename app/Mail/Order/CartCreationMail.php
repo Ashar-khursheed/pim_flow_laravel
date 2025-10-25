@@ -107,6 +107,7 @@ class CartCreationMail extends Mailable
 		$shippingCharge = $customerCart->shipping_charge ?? 0;
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
 		$taxPercent = $customerCart->tax_percentage;
+		$taxPercent = $taxPercent + 0;
 		$taxAmount = $customerCart->tax_amount ?? 0;
 		$total = $customerCart->total_amount ?? 0;
 

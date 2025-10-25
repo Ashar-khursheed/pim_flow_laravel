@@ -120,6 +120,7 @@ trait GeneratesQuotePdf
 		$shippingCharge = $quote->shipping_charge ?? 0;
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'Sales Tax';
 		$taxPercent = $quote->tax_percentage;
+		$taxPercent = $taxPercent + 0;
 		$taxAmount = $quote->tax_amount ?? 0;
 		$discount = $quote->discount ?? 0;
 		$total = $quote->total_amount ?? 0;

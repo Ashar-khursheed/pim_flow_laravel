@@ -121,7 +121,8 @@ class OrderUpdateMail extends Mailable
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
-		$taxPercent = in_array(config('app.website'), ['UAE', 'UAE_T']) ? round($order->tax_percentage) : $order->tax_percentage;
+		$taxPercent = $order->tax_percentage;
+		$taxPercent = $taxPercent + 0;
 		$taxAmount = $order->tax_amount ?? 0;
 		$discount = $order->discount ?? 0;
 
