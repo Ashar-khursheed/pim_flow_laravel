@@ -66,7 +66,7 @@ class ProductXMLFeedWatchController extends Controller
 public function getProductFeed(Request $request)
 {
     // Cache the feed for 1 hour with pagination parameters
-    $cacheKey = 'datafeedwatch_feed_' . md5($request->fullUrl());
+    $cacheKey = 'datafeedwatch_feed' . md5($request->fullUrl());
 
     $data = Cache::remember($cacheKey, 3600, function () use ($request) {
         return $this->generateProductFeed($request);
@@ -98,7 +98,8 @@ private function generateProductFeed(Request $request)
         'categories:id,name',
         'slug:id,key,reference_id',
         'productSuppliers.vendor:id,name',
-        'vendors:id,name'
+        'vendors:id,name',
+        'seoUrl'
     ])
     ->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved', 'description', 'quote_available', 'stock_status'])
     ->where('status', 'published')
@@ -241,7 +242,7 @@ private function generateProductFeed(Request $request)
             'taxonomy_path' => optional($product->slug)->key ?? '',
             'title' => $product->name,
             'description' => $description,
-            'slug' => $product->seoProductUrl->url,
+            'slug' => $product->seoProductUrl->url ?? null,
             'availability' => $product->stock_status,            
             'productVariants' => $productVariants,            
         ];
