@@ -90,6 +90,31 @@ class ProductXMLFeedWatchController extends Controller
                 ? ($margin / $firstSupplier->sale_price) * 100
                 : 0;
 
+                   if (is_string($product->description)) {
+                $decoded = json_decode($product->description, true);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $description = array_values(array_filter(array_map(function ($item) {
+                        if (is_null($item) || strtolower($item) === 'null') {
+                            return null;
+                        }
+
+                        // Remove all &nbsp; (HTML and UTF-8) from the string
+                        $item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
+
+                        // Optionally clean up extra spaces
+                        $item = preg_replace('/\s+/', ' ', $item); // collapse spaces
+                        $item = trim($item);
+
+                        // Still keep <p> tags or not? Your call — if not, uncomment below:
+                        // $item = strip_tags($item);
+
+                        return $item !== '' ? $item : null;
+                    }, $decoded)));
+                } else {
+                    $description = [$product->description];
+                }
+            }
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -109,7 +134,7 @@ class ProductXMLFeedWatchController extends Controller
                 'product_family' => $product->categories->pluck('name')->toArray(),
                 'taxonomy_path' => optional($product->slug)->key ?? '',               
                 'title' => $product->name,
-                'description' => strip_tags($product->description),
+                'description' => $description,
                 'link' => route('product.show', $product->slug),              
                 'availability' => $product->stock > 0 ? 'in stock' : 'out of stock',
                 'condition' => $product->condition ?? 'new',
