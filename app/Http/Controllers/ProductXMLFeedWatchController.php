@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\SeoManagement;
+use App\Models\Attribute;
+use App\Models\ProductAttribute;
 use Illuminate\Support\Facades\Cache;
 class ProductXMLFeedWatchController extends Controller
 {
@@ -97,7 +100,7 @@ private function generateProductFeed(Request $request)
         'productSuppliers.vendor:id,name',
         'vendors:id,name'
     ])
-    ->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved', 'description', 'quote_available', 'stock_status', 'condition', 'age_group', 'gender'])
+    ->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved', 'description', 'quote_available', 'stock_status'])
     ->where('status', 'published')
     ->orderBy($sortBy, $sortDirection);
 
@@ -133,6 +136,90 @@ private function generateProductFeed(Request $request)
             }
         }
 
+        if ($product->brand) {
+                $brand_id = $product->brand->id;
+                $brand_name = $product->brand->name;
+                $product->brand_logo = $product->brand->logo;
+
+                if ($product->brand->seoUrl) {
+                    $product->brand_url = $product->brand->seoUrl->url;
+                } else {
+                    $product->brand_url = null;
+                }
+
+
+
+
+                // Get review stats directly from the database
+                $brandProductIds = \DB::table('ec_products')
+                    ->where('brand_id', $product->brand->id)
+                    ->pluck('id');
+
+                $brandReviewsQuery = \DB::table('ec_reviews')
+                    ->whereIn('product_id', $brandProductIds);
+
+                $brandReviewCount = $brandReviewsQuery->count();
+                $brandAvgRating = $brandReviewCount > 0
+                    ? round($brandReviewsQuery->avg('star'), 1)
+                    : null;
+
+                $product->brand_avg_rating = $brandAvgRating;
+                $product->brand_review_count = $brandReviewCount;
+            }
+
+              $productVariants = $product->productVariants->map(function ($variant) {
+                $childIds = json_decode($variant->child_ids, true) ?? [];
+                $variants = json_decode($variant->variants, true) ?? [];
+
+                // Fetch all child products
+                $children = Product::whereIn('id', $childIds)
+                    ->select('id', 'sku')
+                    ->get();
+
+                $result = [];
+
+                foreach ($variants as $v) {
+                    // Get attribute name
+                    $attributeName = Attribute::where('id', $v['attribute_id'])
+                        ->value('name');
+
+                    // Create child array for this attribute
+                    $childrenData = $children->map(function ($child) use ($v) {
+                        // Get attribute_value from product_attributes
+                        $attrValue = ProductAttribute::where('product_id', $child->id)
+                            ->where('attribute_id', $v['attribute_id'])
+                            ->value('attribute_value');
+
+                        // Get slug from seo_management table
+                        $slug = SeoManagement::where('relational_id', $child->id)
+                            ->value('url');
+                        $full_slug =  $child->parent_category_url() . '/' .
+                     $child->category_url() . '/' .
+                     ($child->seoProductUrl->url ?? "");
+                        return [
+                            'id' => $child->id,
+                            'sku' => $child->sku,
+                            'attribute_value' => $attrValue,
+                            'slug' => $slug,
+                            'parent_slug' => $child->parent_category_url() ,
+                            'child_slug' => $child->category_url(),
+                            'full_slug' => $full_slug,
+                        ];
+                    });
+
+                    $result[] = [
+                        'attribute_id' => $v['attribute_id'],
+                        'attribute_name' => $attributeName,
+                        'label' => $v['labels'] ?? $attributeName,
+                        'type' => $v['type'] ?? 'dropdown',
+                        'child' => $childrenData,
+                    ];
+                }
+
+                return $result;
+            })->flatten(1)->values();
+
+            
         return [
             'id' => $product->id,
             'name' => $product->name,
@@ -141,6 +228,7 @@ private function generateProductFeed(Request $request)
             'sku' => $product->sku,
             'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
             'brand' => optional($product->brand)->name,
+            'brand_url' => optional($product->brand->seoUrl)->url,
             'status' => $product->status,
             'quote_available' => $product->quote_available,
             'price' => $price,
@@ -153,11 +241,9 @@ private function generateProductFeed(Request $request)
             'taxonomy_path' => optional($product->slug)->key ?? '',
             'title' => $product->name,
             'description' => $description,
-            'link' => route('product.show', $product->slug),
-            'availability' => $product->stock_status,
-            
-            'age_group' => $product->age_group ?? 'adult',
-            'gender' => $product->gender ?? 'unisex',
+            'slug' => $product->seoProductUrl->url,
+            'availability' => $product->stock_status,            
+            'productVariants' => $productVariants,            
         ];
     });
 

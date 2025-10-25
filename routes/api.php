@@ -887,8 +887,7 @@ Route::get('/frontend/image.xml', [SitemapController::class, 'getImageSitemap'])
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
-Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'getProductFeed'])
-        ->name('feed.products');
+Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'getProductFeed']);
 Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
