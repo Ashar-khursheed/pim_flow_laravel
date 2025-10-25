@@ -200,60 +200,139 @@ class CouponController extends Controller
             new OA\Response(response: 422, description: 'Validation errors')
         ]
     )]
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'code' => 'string|max:255|unique:coupons,code',
+    //         'name' => 'string|max:255',
+    //         'description' => 'nullable|string',
+    //         'type' => 'in:fixed,percentage',
+    //         'value' => 'required|numeric|min:0',
+    //         'basis' => 'required|in:customer,category,product,promotional',
+    //         'min_order_value' => 'nullable|numeric|min:0',
+    //         'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
+    //         'usage_type' => 'required|in:once,multiple,unlimited',
+    //         'usage_limit' => 'nullable|integer|min:1',
+    //         'usage_limit_per_customer' => 'nullable|integer|min:1',
+    //         'start_date' => 'required|date|after_or_equal:today',
+    //         'expire_date' => 'required|date|after:start_date',
+    //         'is_active' => 'boolean',
+
+    //         // 👇 Conditional validation
+    //         'customer_ids' => 'required_if:basis,customer|array',
+    //         'customer_ids.*' => 'required_if:basis,customer|exists:customers,id',
+
+    //         'category_ids' => 'required_if:basis,category|array',
+    //         'category_ids.*' => 'required_if:basis,category|exists:categories,id',
+
+    //         'product_ids' => 'required_if:basis,product|array',
+    //         'product_ids.*' => 'required_if:basis,product|exists:ec_products,id',
+    //     ]);
+
+    //     $validated['created_by'] = auth()->id();
+
+    //     $coupon = Coupon::create($validated);
+
+    //     // Attach relationships based on basis
+    //     if ($validated['basis'] === 'customer' && !empty($validated['customer_ids'])) {
+    //         $coupon->customers()->attach($validated['customer_ids']);
+    //     }
+
+    //     if ($validated['basis'] === 'category' && !empty($validated['category_ids'])) {
+    //         $coupon->categories()->attach($validated['category_ids']);
+    //     }
+
+    //     if ($validated['basis'] === 'product' && !empty($validated['product_ids'])) {
+    //         $coupon->products()->attach($validated['product_ids']);
+    //     }
+
+    //     $coupon->load(['creator', 'customers', 'categories', 'products']);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $coupon,
+    //         'message' => 'Coupon created successfully'
+    //     ], 201);
+    // }
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'code' => 'string|max:255|unique:coupons,code',
-            'name' => 'string|max:255',
-            'description' => 'nullable|string',
-            'type' => 'in:fixed,percentage',
-            'value' => 'required|numeric|min:0',
-            'basis' => 'required|in:customer,category,product,promotional',
-            'min_order_value' => 'nullable|numeric|min:0',
-            'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
-            'usage_type' => 'required|in:once,multiple,unlimited',
-            'usage_limit' => 'nullable|integer|min:1',
-            'usage_limit_per_customer' => 'nullable|integer|min:1',
-            'start_date' => 'required|date|after_or_equal:today',
-            'expire_date' => 'required|date|after:start_date',
-            'is_active' => 'boolean',
+{
+    $validated = $request->validate([
+        'code' => 'string|max:255|unique:coupons,code',
+        'name' => 'string|max:255',
+        'description' => 'nullable|string',
+        'type' => 'in:fixed,percentage',
+        'value' => 'required|numeric|min:0',
+        'basis' => 'required|in:customer,category,product,promotional',
+        'min_order_value' => 'nullable|numeric|min:0',
+        'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
+        'usage_type' => 'required|in:once,multiple,unlimited',
+        'usage_limit' => 'nullable|integer|min:1',
+        'usage_limit_per_customer' => 'nullable|integer|min:1',
+        
+        // More lenient date validation
+        'start_date' => [
+            'required',
+            'date',
+            function ($attribute, $value, $fail) {
+                $startDate = \Carbon\Carbon::parse($value)->startOfDay();
+                $today = \Carbon\Carbon::today()->startOfDay();
+                
+                if ($startDate->lt($today)) {
+                    $fail('The start date cannot be in the past.');
+                }
+            }
+        ],
+        'expire_date' => [
+            'required',
+            'date',
+            function ($attribute, $value, $fail) use ($request) {
+                $expireDate = \Carbon\Carbon::parse($value)->startOfDay();
+                $startDate = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+                
+                if ($expireDate->lt($startDate)) {
+                    $fail('The expire date must be after the start date.');
+                }
+            }
+        ],
+        
+        'is_active' => 'boolean',
 
-            // 👇 Conditional validation
-            'customer_ids' => 'required_if:basis,customer|array',
-            'customer_ids.*' => 'required_if:basis,customer|exists:customers,id',
+        // Conditional validation
+        'customer_ids' => 'required_if:basis,customer|array',
+        'customer_ids.*' => 'required_if:basis,customer|exists:customers,id',
 
-            'category_ids' => 'required_if:basis,category|array',
-            'category_ids.*' => 'required_if:basis,category|exists:categories,id',
+        'category_ids' => 'required_if:basis,category|array',
+        'category_ids.*' => 'required_if:basis,category|exists:categories,id',
 
-            'product_ids' => 'required_if:basis,product|array',
-            'product_ids.*' => 'required_if:basis,product|exists:ec_products,id',
-        ]);
+        'product_ids' => 'required_if:basis,product|array',
+        'product_ids.*' => 'required_if:basis,product|exists:ec_products,id',
+    ]);
 
-        $validated['created_by'] = auth()->id();
+    $validated['created_by'] = auth()->id();
 
-        $coupon = Coupon::create($validated);
+    $coupon = Coupon::create($validated);
 
-        // Attach relationships based on basis
-        if ($validated['basis'] === 'customer' && !empty($validated['customer_ids'])) {
-            $coupon->customers()->attach($validated['customer_ids']);
-        }
-
-        if ($validated['basis'] === 'category' && !empty($validated['category_ids'])) {
-            $coupon->categories()->attach($validated['category_ids']);
-        }
-
-        if ($validated['basis'] === 'product' && !empty($validated['product_ids'])) {
-            $coupon->products()->attach($validated['product_ids']);
-        }
-
-        $coupon->load(['creator', 'customers', 'categories', 'products']);
-
-        return response()->json([
-            'success' => true,
-            'data' => $coupon,
-            'message' => 'Coupon created successfully'
-        ], 201);
+    // Attach relationships based on basis
+    if ($validated['basis'] === 'customer' && !empty($validated['customer_ids'])) {
+        $coupon->customers()->attach($validated['customer_ids']);
     }
+
+    if ($validated['basis'] === 'category' && !empty($validated['category_ids'])) {
+        $coupon->categories()->attach($validated['category_ids']);
+    }
+
+    if ($validated['basis'] === 'product' && !empty($validated['product_ids'])) {
+        $coupon->products()->attach($validated['product_ids']);
+    }
+
+    $coupon->load(['creator', 'customers', 'categories', 'products']);
+
+    return response()->json([
+        'success' => true,
+        'data' => $coupon,
+        'message' => 'Coupon created successfully'
+    ], 201);
+}
 
     #[OA\Get(
         path: '/api/coupons/{id}',
