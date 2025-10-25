@@ -8,6 +8,7 @@ class GlitchError extends Model
 {
     protected $fillable = [
         'email',
+        'mobile_number',
         'description',
         'device',
         'images',
