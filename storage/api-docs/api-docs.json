@@ -35432,27 +35432,6 @@
                 "summary": "Get product feed for DataFeedWatch",
                 "description": "Returns dynamic XML feed with all products for DataFeedWatch integration",
                 "operationId": "669eeff82606c5b773d2ec5868881f78",
-                "parameters": [
-                    {
-                        "name": "category",
-                        "in": "query",
-                        "description": "Filter by category ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 45
-                        }
-                    },
-                    {
-                        "name": "brand",
-                        "in": "query",
-                        "description": "Filter by brand",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Successful operation",
