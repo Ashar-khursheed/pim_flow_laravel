@@ -73,6 +73,10 @@ use App\Http\Controllers\Controller;
  *     description="API Endpoints for managing product variants"
  * )
  * @OA\Tag(
+ *     name="Product Feed XML",
+ *     description="API Endpoints for managing product XML Data FeedWatch"
+ * )
+ * @OA\Tag(
  *     name="Categories",
  *     description="API Endpoints for Category Management"
  * )

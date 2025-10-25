@@ -6,12 +6,14 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\TemporaryCategoryController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReportController;
 use App\Http\Controllers\AIAlternateProductController;
 use App\Http\Controllers\LLmsSeoMonitoringController;
 use App\Http\Controllers\CategoryPageController;
+use App\Http\Controllers\ProductXMLFeedWatchController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\AttributeController;
@@ -535,6 +537,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 
 	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
+	
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::post('/categories/{id}', [CategoryController::class, 'update']);
 
@@ -542,6 +545,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/categories/{id}/move-down', [CategoryController::class ,'moveDown']);
 	Route::post('/reorder', [CategoryController::class ,'reorder']);
 	Route::apiResource('categories', CategoryController::class);
+	Route::apiResource('temporaryCategories', TemporaryCategoryController::class);
+	Route::get('/allLastChild', [TemporaryCategoryController::class ,'allLastChildCategories']);
+    Route::get('/allTemporaryCategories', [TemporaryCategoryController::class, 'allTemporaryCategories']);
+	Route::post('/temporaryCategories/{id}', [TemporaryCategoryController::class, 'update']);
+ 
 
 	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
@@ -878,6 +886,8 @@ Route::get('/frontend/image.xml', [SitemapController::class, 'getImageSitemap'])
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
+Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'getProductFeed'])
+        ->name('feed.products');
 Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
