@@ -29058,10 +29058,6 @@
                                         "format": "float",
                                         "example": 100
                                     },
-                                    "additional_amount_details": {
-                                        "type": "string",
-                                        "example": "paymentlink.com"
-                                    },
                                     "products": {
                                         "type": "array",
                                         "items": {
