@@ -24,6 +24,7 @@ class GlitchErrorMail extends Mailable
 		->with([
 			'description' => $this->record->description,
 			'email' => $this->record->email,
+			'contact' => $this->record->mobile_number,
 			'device' => $this->record->device,
 			'images' => json_decode($this->record->images, true),
 		]);
