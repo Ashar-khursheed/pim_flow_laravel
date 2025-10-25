@@ -307,7 +307,7 @@ class PaymentHistoryController extends Controller
 
 					$order->update(['is_reserved' => 0]);
 
-					$batch = Bus::batch([])->name('Order Place in backend payment')->dispatch();
+					$batch = Bus::batch([])->name("Order Placed from Backend (Paid) - #{$order->order_number}")->dispatch();
 					$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 					$batch->add(new OrderPlacedMailJob([
 						'recordId' => $order->id

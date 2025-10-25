@@ -111,6 +111,7 @@ class CartCreationMail extends Mailable
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? 'VAT' : 'SALES TAX';
 		$taxPercent = $customerCart->tax_percentage;
 		$taxAmount = $customerCart->tax_amount ?? 0;
+		$discount = 0;
 		$total = $customerCart->total_amount ?? 0;
 
 		$siteUrl = match (config('app.website')) {
@@ -156,6 +157,7 @@ class CartCreationMail extends Mailable
 			'taxName' => $taxName,
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
+			'discount' => $discount,
 			'total' => $total,
 
 			'siteUrl' => $siteUrl,
