@@ -3,6 +3,8 @@
 
 **From:** {{ $email }}
 
+**Contact:** {{ $contact }}
+
 **Description:**
 {{ $description }}
 
