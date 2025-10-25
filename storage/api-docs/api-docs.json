@@ -17730,6 +17730,10 @@
                                         "format": "email",
                                         "example": "user@example.com"
                                     },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "971500000000"
+                                    },
                                     "description": {
                                         "type": "string",
                                         "example": "Page not loading properly."
