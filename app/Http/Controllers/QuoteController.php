@@ -13,6 +13,7 @@ use Illuminate\Bus\Batch;
 
 use App\Models\FrontEnd\Quote;
 use App\Models\FrontEnd\CustomerAddress;
+use App\Models\FrontEnd\Customer;
 
 use App\Jobs\Quote\QuotePlacedMailJob;
 
@@ -322,7 +323,10 @@ class QuoteController extends BaseController
 
 			$discountedAmount = $quoteAmount - $discount;
 
-			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
+			$customer = Customer::find($customerId);
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$quoteShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
@@ -335,7 +339,7 @@ class QuoteController extends BaseController
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $quoteShipping,
 				'amount' => $quoteAmount,
-				'tax_percentage' => $request->tax_percentage,
+				'tax_percentage' => $taxPercentage,
 				'tax_amount' => $taxAmount,
 
 				'coupon_id' => $request->coupon_id ?? null,
@@ -603,7 +607,11 @@ class QuoteController extends BaseController
 			}
 
 			$discountedAmount = $quoteAmount - $discount;
-			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
+
+			$customer = $quote->customer;
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$quoteShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
@@ -614,7 +622,7 @@ class QuoteController extends BaseController
 			$quote->update([
 				'shipping_charge' => $quoteShipping,
 				'amount' => $quoteAmount,
-				'tax_percentage' => $request->tax_percentage,
+				'tax_percentage' => $taxPercentage,
 				'tax_amount' => $taxAmount,
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,

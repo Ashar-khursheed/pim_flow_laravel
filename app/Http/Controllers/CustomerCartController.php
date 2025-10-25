@@ -318,7 +318,10 @@ class CustomerCartController extends Controller
 			$cartAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$cartAmount += $request->boolean('is_inside_delivery') ? 250 : 0;
 
-			$taxAmount = round($cartAmount * ($request->tax_percentage / 100), 2);
+			$customer = Customer::find($request->customer_id);
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
@@ -353,7 +356,7 @@ class CustomerCartController extends Controller
 			$customerCart->is_residential_address = $request->is_residential_address;
 			$customerCart->is_inside_delivery     = $request->is_inside_delivery;
 			$customerCart->amount                 = $cartAmount;
-			$customerCart->tax_percentage         = $request->tax_percentage;
+			$customerCart->tax_percentage         = $taxPercentage;
 			$customerCart->tax_amount             = $taxAmount;
 			$customerCart->total_amount           = $totalAmount;
 			$customerCart->total_products         = $totalProducts;
@@ -442,7 +445,7 @@ class CustomerCartController extends Controller
 				'is_inside_delivery'     => $customerCart->is_inside_delivery,
 				'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 				'amount'                 => number_format($cartAmount, 2, '.', ''),
-				'tax_percentage'         => $request->tax_percentage,
+				'tax_percentage'         => $taxPercentage,
 				'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 				'total_amount'           => number_format($totalAmount, 2, '.', ''),
 				'total_products'         => $totalProducts,
@@ -567,11 +570,11 @@ class CustomerCartController extends Controller
 			'id'                     => $record->id,
 			'reference_number'       => $record->reference_number,
 			'customer'               => $record->customer,
-			'customer_address'               => $record->customerAddress,
+			'customer_address'       => $record->customerAddress,
 			'is_lift_gate'           => $record->is_lift_gate,
 			'is_residential_address' => $record->is_residential_address,
 			'amount'                 => number_format($cartAmount, 2, '.', ''),
-			'tax_percentage'             => number_format($taxPercentage, 2, '.', ''),
+			'tax_percentage'         => number_format($taxPercentage, 2, '.', ''),
 			'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 			'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 			'total_amount'           => number_format($totalAmount, 2, '.', ''),

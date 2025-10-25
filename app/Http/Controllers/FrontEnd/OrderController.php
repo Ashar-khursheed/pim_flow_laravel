@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\BaseController;
+
 use App\Models\FrontEnd\Order;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 use App\Models\FrontEnd\CustomerAddress;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -297,7 +299,11 @@ class OrderController extends BaseController
 			$orderAmount += $request->boolean('is_inside_delivery') ? 250 : 0;
 
 			$discountedAmount = $orderAmount - $discount;
-			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
+
+			$customer = auth()->user();
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
@@ -324,7 +330,7 @@ class OrderController extends BaseController
 				'is_residential_address' => $request->is_residential_address,
 				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-				'tax_percentage' => $request->tax_percentage,
+				'tax_percentage' => $taxPercentage,
 				'tax_amount' => $taxAmount,
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
