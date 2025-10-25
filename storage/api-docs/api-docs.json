@@ -35540,13 +35540,58 @@
                 "summary": "Get product feed for DataFeedWatch",
                 "description": "Returns dynamic XML feed with all products for DataFeedWatch integration",
                 "operationId": "669eeff82606c5b773d2ec5868881f78",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page (default: 50)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 50
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number (default: 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort by column (default: id)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_direction",
+                        "in": "query",
+                        "description": "Sort direction (asc/desc, default: desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful operation",
                         "content": {
-                            "application/xml": {
-                                "example": ""
-                            }
+                            "application/json": {}
                         }
                     },
                     "400": {

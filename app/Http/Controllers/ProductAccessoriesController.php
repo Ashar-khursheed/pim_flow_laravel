@@ -704,7 +704,7 @@ class ProductAccessoriesController extends Controller
 
         // Only search if a search term is provided
         if ($request->search) {
-            $search = $request->search;
+            $search = trim($request->search);
             $products = Product::select('id', 'name', 'sku','images')
                 ->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
