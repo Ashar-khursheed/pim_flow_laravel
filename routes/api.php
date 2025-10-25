@@ -545,8 +545,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/categories/{id}/move-down', [CategoryController::class ,'moveDown']);
 	Route::post('/reorder', [CategoryController::class ,'reorder']);
 	Route::apiResource('categories', CategoryController::class);
+	Route::get('/allLastChild', [CategoryController::class ,'allLastChildCategories']);
 	Route::apiResource('temporaryCategories', TemporaryCategoryController::class);
-	Route::get('/allLastChild', [TemporaryCategoryController::class ,'allLastChildCategories']);
+	
     Route::get('/allTemporaryCategories', [TemporaryCategoryController::class, 'allTemporaryCategories']);
 	Route::post('/temporaryCategories/{id}', [TemporaryCategoryController::class, 'update']);
  
