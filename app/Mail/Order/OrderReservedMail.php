@@ -101,6 +101,7 @@ class OrderReservedMail extends Mailable
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
 		$taxPercent = $order->tax_percentage;
 		$taxAmount = $order->tax_amount ?? 0;
+		$discount = $order->discount ?? 0;
 		$total = $order->total_amount ?? 0;
 
 		$siteUrl = match (config('app.website')) {
@@ -146,6 +147,7 @@ class OrderReservedMail extends Mailable
 			'taxName' => $taxName,
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
+			'discount' => $discount,
 			'total' => $total,
 
 			'siteUrl' => $siteUrl,
