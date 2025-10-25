@@ -865,7 +865,6 @@ class OrderController extends Controller
 		try {
 			/* Create a new batch for resending order place mail */
 			$batch = Bus::batch([])->name("Resend Order place Mail - #{$order->order_number}")->dispatch();
-
 			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 			$batch->add(new OrderPlacedMailJob([
 				'recordId' => $order->id
@@ -1138,7 +1137,7 @@ class OrderController extends Controller
 					}
 				}
 
-				$batch = Bus::batch([])->name("Order update Mail for Order #{$order->id}")->dispatch();
+				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
 				$batch->add(new OrderUpdateMailJob([
 					'recordId' => $order->id
