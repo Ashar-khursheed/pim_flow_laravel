@@ -39,7 +39,6 @@ class OrderReservedMail extends Mailable
 		$referenceNumber = $order->order_number;
 		$createdAt = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
-		$orderStatus = $order->status;
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -134,7 +133,6 @@ class OrderReservedMail extends Mailable
 			'referenceNumber' => $referenceNumber,
 			'createdAt' => $createdAt,
 			'currency' => $currency,
-			'orderStatus' => $orderStatus,
 
 			'address' => $address,
 			'city' => $city,
