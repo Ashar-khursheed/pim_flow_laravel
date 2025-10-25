@@ -901,7 +901,6 @@ class OrderController extends Controller
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(property="additional_amount_name", type="string", example="Accessory 1"),
 	 *             @OA\Property(property="additional_amount_price", type="number", format="float", example=100),
-	 *             @OA\Property(property="additional_amount_details", type="string", example="paymentlink.com"),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -958,9 +957,8 @@ class OrderController extends Controller
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 
-			'additional_amount_name' => 'nullable|required_with:additional_amount_price,additional_amount_details|string|max:255',
-			'additional_amount_price' => 'nullable|required_with:additional_amount_name,additional_amount_details|numeric|min:0',
-			'additional_amount_details' => 'nullable|required_with:additional_amount_name,additional_amount_price|string',
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
 
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
