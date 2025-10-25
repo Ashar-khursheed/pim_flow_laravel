@@ -381,8 +381,7 @@ class OrderController extends BaseController
 			DB::commit();
 
 			if ($request->boolean('is_cod')) {
-				$batch = Bus::batch([])->name("Order Place on frontend COD for order {$orderNumber}")->dispatch();
-
+				$batch = Bus::batch([])->name("Order Placed by Customer (COD) - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
 					'recordId' => $order->id
@@ -801,8 +800,7 @@ class OrderController extends BaseController
 		$order->orderProducts()->update(['status' => $request->status]);
 
 		if ($request->status == 'Cancelled') {
-			$batch = Bus::batch([])->name('Order Mails')->dispatch();
-
+			$batch = Bus::batch([])->name("Order Cancelled by Customer - #{$order->order_number}")->dispatch();
 			$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
 			$batch->add(new OrderCancelledMailJob([
 				'recordId' => $order->id
