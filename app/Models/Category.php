@@ -39,7 +39,8 @@ class Category extends Model
 		'is_featured',
 		'icon',
 		'icon_image',
-		'slug'
+		'slug',
+		'last_child'
 	];
 
 	public function parent()
