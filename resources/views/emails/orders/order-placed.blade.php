@@ -237,8 +237,8 @@
 
 											@if ($discount > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif;">Discount</td>
-												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
+												<td style="color: #15803d; font-family: 'Noto Sans',  sans-serif;">Discount</td>
+												<td style="color: #15803d; font-family: 'Noto Sans',  sans-serif;" align="right">- {{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 

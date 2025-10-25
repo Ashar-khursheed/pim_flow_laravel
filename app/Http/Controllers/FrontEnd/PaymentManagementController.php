@@ -151,7 +151,7 @@ class PaymentManagementController extends Controller
 				$order->update(['is_reserved' => 0]);
 
 				// ✅ Send email when payment completed
-				$batch = Bus::batch([])->name('Order Place on frontend payment')->dispatch();
+				$batch = Bus::batch([])->name("Order Placed by Customer (Paid) - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
 					'recordId' => $order->id

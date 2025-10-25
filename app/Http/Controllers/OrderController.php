@@ -556,14 +556,13 @@ class OrderController extends Controller
 			DB::commit();
 
 			if ($request->boolean('is_reserved')) {
-				$batch = Bus::batch([])->name("Order reserved mail for Order #{$order->id}")->dispatch();
+				$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_RES';
 				$batch->add(new OrderReservedMailJob([
 					'recordId' => $order->id
 				]));
 			} else {
-				$batch = Bus::batch([])->name("Order place mail for Order #{$order->id}")->dispatch();
-
+				$batch = Bus::batch([])->name("Order Placed by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
 					'recordId' => $order->id
@@ -865,7 +864,7 @@ class OrderController extends Controller
 
 		try {
 			/* Create a new batch for resending order place mail */
-			$batch = Bus::batch([])->name("Resend Order place Mail for Order #{$order->id}")->dispatch();
+			$batch = Bus::batch([])->name("Resend Order place Mail - #{$order->order_number}")->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 			$batch->add(new OrderPlacedMailJob([
@@ -874,7 +873,7 @@ class OrderController extends Controller
 
 			return response()->json([
 				'success' => true,
-				'message' => "Order place mail resent successfully for Order #{$order->id}."
+				'message' => "Order place mail resent successfully for Order #{$order->order_number}."
 			]);
 		} catch (\Throwable $e) {
 			return response()->json([
@@ -1285,8 +1284,7 @@ class OrderController extends Controller
 				'created_by' => auth()->id(),
 			]);
 
-			$batch = Bus::batch([])->name("Order cancelled Mail for Order #{$order->id}")->dispatch();
-
+			$batch = Bus::batch([])->name("Order Cancelled by Backend - #{$order->order_number}")->dispatch();
 			$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
 			$batch->add(new OrderCancelledMailJob([
 				'recordId' => $order->id
@@ -1399,29 +1397,28 @@ class OrderController extends Controller
 			'created_by' => auth()->id(),
 		]);
 
-		if (in_array($newStatus, ['Confirmed', 'Out for delivery', 'Delivered', 'Cancelled'])) {
-			$batch = Bus::batch([])->name("Order Mail for Order #{$order->id}")->dispatch();
+		if ($newStatus == 'Confirmed') {
+			$batch = Bus::batch([])->name("Order Confirmation - #{$order->order_number}")->dispatch();
+			$batch->options['queue'] = config('app.website') . '_ORD_CNF';
+			$batch->add(new OrderConfirmationMailJob([
+				'recordId' => $order->id
+			]));
+		}
 
-			if ($newStatus == 'Confirmed') {
-				$batch->options['queue'] = config('app.website') . '_ORD_CNF';
-				$batch->add(new OrderConfirmationMailJob([
-					'recordId' => $order->id
-				]));
-			}
+		if ($newStatus == 'Out for delivery') {
+			$batch = Bus::batch([])->name("Order Out for Delivery - #{$order->order_number}")->dispatch();
+			$batch->options['queue'] = config('app.website') . '_ORD_OUT';
+			$batch->add(new OutDeliveryMailJob([
+				'recordId' => $order->id
+			]));
+		}
 
-			if ($newStatus == 'Out for delivery') {
-				$batch->options['queue'] = config('app.website') . '_ORD_OUT';
-				$batch->add(new OutDeliveryMailJob([
-					'recordId' => $order->id
-				]));
-			}
-
-			if ($newStatus == 'Delivered') {
-				$batch->options['queue'] = config('app.website') . '_ORD_DLVR';
-				$batch->add(new OrderDeliveredMailJob([
-					'recordId' => $order->id
-				]));
-			}
+		if ($newStatus == 'Delivered') {
+			$batch = Bus::batch([])->name("Order Delivered - #{$order->order_number}")->dispatch();
+			$batch->options['queue'] = config('app.website') . '_ORD_DLVR';
+			$batch->add(new OrderDeliveredMailJob([
+				'recordId' => $order->id
+			]));
 		}
 
 		return response()->json([
@@ -1509,8 +1506,7 @@ class OrderController extends Controller
 				'created_by' => auth()->id(),
 			]);
 
-			$batch = Bus::batch([])->name("Order partial cancelled mail for Order #{$order->id}")->dispatch();
-
+			$batch = Bus::batch([])->name("Order Partially Cancelled by Backend - #{$order->order_number}")->dispatch();
 			$batch->options['queue'] = config('app.website') . '_ORD_PART_CNCL';
 			$batch->add(new PartialOrderCancelledMailJob([
 				'recordId' => $orderProduct->id,
