@@ -270,14 +270,14 @@ class CouponController extends Controller
         'usage_limit_per_customer' => 'nullable|integer|min:1',
         
         // More lenient date validation
-        'start_date' => [
+       'start_date' => [
             'required',
             'date',
             function ($attribute, $value, $fail) {
-                $startDate = \Carbon\Carbon::parse($value)->startOfDay();
-                $today = \Carbon\Carbon::today()->startOfDay();
+                $startDate = \Carbon\Carbon::parse($value)->format('Y-m-d');
+                $today = \Carbon\Carbon::today()->format('Y-m-d');
                 
-                if ($startDate->lt($today)) {
+                if ($startDate < $today) {
                     $fail('The start date cannot be in the past.');
                 }
             }
