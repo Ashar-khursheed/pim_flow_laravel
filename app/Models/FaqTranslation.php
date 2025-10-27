@@ -10,7 +10,7 @@ class FaqTranslation extends Model
 	protected $fillable = [
 		'locale',
 		'faq_id',
-		'question',
-		'answer',
+		'question_tr',
+		'answer_tr',
 	];
 }

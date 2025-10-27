@@ -66,20 +66,20 @@ return new class extends Migration
 			$table->id();
 			$table->string('locale', 2);
 			$table->integer('product_id');
-			$table->text('name');
-			$table->longText('description')->nullable();
-			$table->longText('benefits_features')->nullable();
-			$table->text('images')->nullable();
+			$table->text('name_tr')->nullable();
+			$table->longText('description_tr')->nullable();
+			$table->longText('benefits_features_tr')->nullable();
+			$table->text('images_tr')->nullable();
 		});
 		$records = DB::table('ec_products')->select('id', 'name', 'description', 'benefits_features', 'images')->get();
 		foreach ($records as $record) {
 			DB::table('product_translations')->insert([
 				'locale' => 'en',
 				'product_id' => $record->id,
-				'name' => $record->name,
-				'description' => $record->description,
-				'benefits_features' => $record->benefits_features,
-				'images' => $record->images,
+				'name_tr' => $record->name,
+				'description_tr' => $record->description,
+				'benefits_features_tr' => $record->benefits_features,
+				'images_tr' => $record->images,
 			]);
 		}
 
@@ -88,16 +88,16 @@ return new class extends Migration
 			$table->id();
 			$table->string('locale', 2);
 			$table->integer('faq_id');
-			$table->longText('question')->nullable();
-			$table->longText('answer')->nullable();
+			$table->longText('question_tr')->nullable();
+			$table->longText('answer_tr')->nullable();
 		});
 		$records = DB::table('faqs')->select('id', 'question', 'answer')->get();
 		foreach ($records as $record) {
 			DB::table('faq_translations')->insert([
 				'locale' => 'en',
 				'faq_id' => $record->id,
-				'question' => $record->question,
-				'answer' => $record->answer,
+				'question_tr' => $record->question,
+				'answer_tr' => $record->answer,
 			]);
 		}
 	}

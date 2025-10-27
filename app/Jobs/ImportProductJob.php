@@ -176,7 +176,7 @@ class ImportProductJob implements ShouldQueue
 			}
 
 
-			if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
+			if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer', 'Super Admin'])) {
 
 				/* Description validations */
 				for ($i = 1; $i <= 4; $i++) {
@@ -352,12 +352,12 @@ class ImportProductJob implements ShouldQueue
 			try {
 				/*************/
 				$product->gen_type = 0;
-				if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
+				if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer', 'Super Admin'])) {
 					$product->description = $jsonDescription;
-					$product->translateOrNew('en')->description = $jsonDescription;
+					$product->translateOrNew('en')->description_tr = $jsonDescription;
 
 					$product->benefits_features = $jsonBenefitsFeatures;
-					$product->translateOrNew('en')->benefits_features = $jsonBenefitsFeatures;
+					$product->translateOrNew('en')->benefits_features_tr = $jsonBenefitsFeatures;
 
 					Product::$observerUserId = $this->userId;
 					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
@@ -386,8 +386,8 @@ class ImportProductJob implements ShouldQueue
 								]);
 
 								/* Update translation (English) */
-								$faq->translateOrNew('en')->question = $faqQuestion;
-								$faq->translateOrNew('en')->answer   = $faqAnswer;
+								$faq->translateOrNew('en')->question_tr = $faqQuestion;
+								$faq->translateOrNew('en')->answer_tr   = $faqAnswer;
 
 								$faq->save();
 							} else {
@@ -401,8 +401,8 @@ class ImportProductJob implements ShouldQueue
 								]);
 
 								/* Add translations */
-								$faq->translateOrNew('en')->question = $faqQuestion;
-								$faq->translateOrNew('en')->answer = $faqAnswer;
+								$faq->translateOrNew('en')->question_tr = $faqQuestion;
+								$faq->translateOrNew('en')->answer_tr = $faqAnswer;
 
 								$faq->save();
 							}
@@ -416,14 +416,14 @@ class ImportProductJob implements ShouldQueue
 				} else {
 					$jsonImages = json_encode($fetchedImages);
 					$product->name = $name;
-					$product->translateOrNew('en')->name = $name;
+					$product->translateOrNew('en')->name_tr = $name;
 
 					$product->sku = $sku;
 					$product->status = $product->id ? $status : 'draft';
 					$product->is_featured = $isFeatured;
 					$product->brand_id = $brandId;
 					$product->images = $jsonImages;
-					$product->translateOrNew('en')->images = $jsonImages;
+					$product->translateOrNew('en')->images_tr = $jsonImages;
 
 					$product->video_path = $uploadVideo;
 					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
