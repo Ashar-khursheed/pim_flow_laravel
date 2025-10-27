@@ -802,9 +802,22 @@ class SeoManagementController extends Controller
 				->first();
 
 			if ($seoRecord) {
+				$typeNameMap = [
+					'App\\Models\\Category' => 'Category',
+					'App\\Models\\Product'    => 'Product',
+					'App\\Models\\Brand'    => 'Brand',
+					'App\\Models\\Blog'     => 'Blog',
+				];
+
+				$typeName = $typeNameMap[$seoRecord->relational_type] ?? $seoRecord->relational_type;
+				$relatedName = $seoRecord->relational->name 
+					?? $seoRecord->relational->title 
+					?? $seoRecord->relational->slug 
+					?? 'Unknown';
+
 				return response()->json([
 					'success' => false,
-					'message' => "The URL '{$request->url}' is already assigned to {$seoRecord->relational_type} '{$seoRecord->relational->name}'.",
+					'message' => "The URL '{$request->url}' is already assigned to {$typeName} '{$relatedName}'.",
 				], 403);
 			}
 
