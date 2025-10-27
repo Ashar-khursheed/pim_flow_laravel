@@ -361,6 +361,7 @@ class ImportProductJob implements ShouldQueue
 
 					Product::$observerUserId = $this->userId;
 					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
+					$product->website_ids = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
 					$product->save();
 					Product::$observerUserId = null;
 
@@ -426,6 +427,7 @@ class ImportProductJob implements ShouldQueue
 
 					$product->video_path = $uploadVideo;
 					$product->currency_id = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
+					$product->website_ids = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 2 : 1;
 					$product->barcode = !empty($barcode) ? $barcode : null;
 					$product->created_at = $product->id ? $product->created_at : now();
 					$product->updated_at = now();
