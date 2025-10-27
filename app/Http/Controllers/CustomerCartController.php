@@ -295,7 +295,7 @@ class CustomerCartController extends Controller
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? 0),
 				];
 			}
 
