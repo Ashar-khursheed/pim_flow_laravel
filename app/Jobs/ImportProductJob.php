@@ -176,7 +176,7 @@ class ImportProductJob implements ShouldQueue
 			}
 
 
-			if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer', 'Super Admin'])) {
+			if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
 
 				/* Description validations */
 				for ($i = 1; $i <= 4; $i++) {
@@ -352,7 +352,7 @@ class ImportProductJob implements ShouldQueue
 			try {
 				/*************/
 				$product->gen_type = 0;
-				if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer', 'Super Admin'])) {
+				if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
 					$product->description = $jsonDescription;
 					$product->translateOrNew('en')->description_tr = $jsonDescription;
 
