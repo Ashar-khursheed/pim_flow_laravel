@@ -156,7 +156,7 @@ class ImportSeoDetailJob implements ShouldQueue
 			];
 
 			foreach ($fieldsWithLimits as $field => $config) {
-				if (!empty($$field) && strlen($$field) > $config['limit']) {
+				if (!empty($$field) && mb_strlen($$field) > $config['limit']) {
 					$rowError[] = "Maximum {$config['limit']} characters allowed in {$config['label']}.";
 				}
 			}
@@ -393,8 +393,8 @@ class ImportSeoDetailJob implements ShouldQueue
 		$errors = [];
 
 		// Check length (≤ 60 characters)
-		if (strlen($slug) > 60) {
-			$errors[] = "URL slug exceeds maximum length of 60 characters (current: " . strlen($slug) . " characters).";
+		if (mb_strlen($slug) > 60) {
+			$errors[] = "URL slug exceeds maximum length of 60 characters (current: " . mb_strlen($slug) . " characters).";
 		}
 
 		// Check if slug is empty
