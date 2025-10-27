@@ -784,11 +784,21 @@ class SeoManagementController extends Controller
 			$seo = SeoManagement::findOrFail($id);
 
 			// Create/update the SEO record first
+			// $seoRecord = SeoManagement::where('url', $request->url)
+			// 	->where(function ($query) use ($request) {
+			// 		$query->where('relational_id', '!=', $request->relational_id)
+			// 			->orWhere('relational_type', '!=', $request->relational_type);
+			// 	})
+			// 	->first();
+
+			// if ($seoRecord) {
+			// 	return response()->json([
+			// 		'success' => false,
+			// 		'message' => "The URL '{$request->url}' is already assigned to {$seoRecord->relational_type} '{$seoRecord->relational->name}'.",
+			// 	], 403);
+			// }
 			$seoRecord = SeoManagement::where('url', $request->url)
-				->where(function ($query) use ($request) {
-					$query->where('relational_id', '!=', $request->relational_id)
-						->orWhere('relational_type', '!=', $request->relational_type);
-				})
+				->where('id', '!=', $id)
 				->first();
 
 			if ($seoRecord) {
