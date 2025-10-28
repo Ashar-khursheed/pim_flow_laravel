@@ -276,7 +276,7 @@ public function getCategoriesWithChildren(Request $request)
 {
     $filterId = $request->get('id');
 
-    $query = Category::select(['id', 'name', 'parent_id', 'image', 'order'])
+    $query = Category::select(['id', 'name', 'parent_id', 'image', 'order','last_child'])
         ->withCount('products')
         ->with(['seoUrl'])
         ->where('status', 'published')
@@ -318,6 +318,19 @@ private function buildCategoryTree($categories)
             
             foreach ($sortedCategories as $category) {
                 $seoSlug = $category->seoUrl?->url ?? null;
+
+                
+                $lastChildIds = !empty($category->last_child)
+                ? array_map('intval', explode(',', $category->last_child))
+                : [];
+
+                if (!empty($lastChildIds)) {
+                $last_children = Category::whereIn('id', $lastChildIds)
+                ->get(['id', 'name', 'slug']);
+                } else {
+                $last_children = collect();
+                }
+
                 $tree[] = [
                     'id' => $category->id,
                     'name' => $category->name,
@@ -327,6 +340,7 @@ private function buildCategoryTree($categories)
                     'image' => $category->image,
                     'order' => $category->order,
                     'children' => $buildTree($category->id),
+                    'last_children' => $last_children,
                 ];
             }
         }
