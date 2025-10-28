@@ -204,6 +204,9 @@ class ProductController extends BaseController
 				'sale_price' => null,
 				'margin' => null,
 				'margin_percent' => null,
+				'min_quantity' => null,
+				'is_fixed' => null,
+				'shipping_charge' => null,
 				'vendor_name' => null, // Added vendor_name field
 				'product_family' => $product->categories->pluck('name')->toArray(),
 				'taxonomy_path' => optional($product->slug)->key ?? '',
@@ -226,6 +229,9 @@ class ProductController extends BaseController
 			'status' => $product->status,
 			'price' => $firstSupplier->price,
 			'sale_price' => $firstSupplier->sale_price,
+			'min_quantity' => $firstSupplier->min_quantity,
+			'is_fixed' => $firstSupplier->is_fixed,
+			'shipping_charge' => $firstSupplier->shipping_charge,
 			'vendor_id' => $firstSupplier->vendor_id,
 			'vendor_name' => $product->vendors->pluck('name')->first(), // Get first vendor name from vendors relationship
 			'margin' => $margin,
