@@ -850,7 +850,7 @@ class StaxPaymentController extends Controller
         $encResponse = $_GET['getStax'];
 
         $data = dataDecodeJsonBase64($encResponse);
-        
+        dd($data);
         if (!empty($data)) {
             $amount = $data->amount / 100;
             $currency = $data->currency;
@@ -911,6 +911,7 @@ class StaxPaymentController extends Controller
                 'order_id' => $order_id ?? null,
                 'amount' => $amount,
                 'currency' => $currency,
+                'transactionId' => $transactionId,
                 'status' => $status,
             ]);
         } else {
