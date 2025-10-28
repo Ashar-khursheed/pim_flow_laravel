@@ -251,7 +251,7 @@ class PaymentHistoryController extends Controller
 			$validated = $request->validate([
 				'order_number' => 'required|integer|exists:orders,order_number',
 				'transaction_id' => 'nullable|string',
-				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,CC Avenue,Paymob,Stax,Square',
+				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,CC Avenue,Paymob,Stax,Square,Tabby,Cheque,Tamara,COD',
 				'amount' => 'required|numeric|min:0.01|max:999999.99',
 				'status' => 'required|string|in:Pending,Completed,Failed,Cancelled,Refunded',
 				'payment_date' => 'required|date|before_or_equal:today',
