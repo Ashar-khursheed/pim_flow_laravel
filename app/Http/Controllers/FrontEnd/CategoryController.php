@@ -123,33 +123,57 @@ class CategoryController extends Controller
                 })
                 ->get();
             $categories->map(function ($record) {
+
                 $lastChildIds = !empty($record->last_child)
-                    ? array_map('intval', explode(',', $record->last_child))
-                    : [];
+                        ? array_map('intval', explode(',', $record->last_child))
+                        : [];
 
-                if (!empty($lastChildIds)) {
-                    $record->last_children = Category::whereIn('id', $lastChildIds)
-                        ->get(['id', 'name', 'slug']);
-                } else {
-                    $record->last_children = collect();
-                }
-
+                    if (!empty($lastChildIds)) {
+                        $record->last_children = Category::with('seoUrl')
+                            ->whereIn('id', $lastChildIds)
+                            ->get(['id', 'name', 'slug', 'parent_id', 'image', 'order'])
+                            ->map(function ($child) {
+                                return [
+                                    'id' => $child->id,
+                                    'name' => $child->name,
+                                    'slug' => $child->seoUrl?->url ?? $child->slug ?? null,
+                                    'parent_id' => $child->parent_id,
+                                    'image' => $child->image,
+                                    'order' => $child->order,
+                                ];
+                            });
+                    } else {
+                        $record->last_children = collect();
+                    }
                 return $record;
-            });
+            });  
+
         } else {
             // Fetch all categories with seoUrl eager loaded
             $categories = Category::with('seoUrl')->get();
             $categories->map(function ($record) {
+
                 $lastChildIds = !empty($record->last_child)
                     ? array_map('intval', explode(',', $record->last_child))
                     : [];
 
                 if (!empty($lastChildIds)) {
-                    $record->last_children = Category::whereIn('id', $lastChildIds)
-                        ->get(['id', 'name', 'slug']);
-                } else {
-                    $record->last_children = collect();
-                }
+                        $record->last_children = Category::with('seoUrl')
+                            ->whereIn('id', $lastChildIds)
+                            ->get(['id', 'name', 'slug', 'parent_id', 'image', 'order'])
+                            ->map(function ($child) {
+                                return [
+                                    'id' => $child->id,
+                                    'name' => $child->name,
+                                    'slug' => $child->seoUrl?->url ?? $child->slug ?? null,
+                                    'parent_id' => $child->parent_id,
+                                    'image' => $child->image,
+                                    'order' => $child->order,
+                                ];
+                            });
+                    } else {
+                        $record->last_children = collect();
+                    }
 
                 return $record;
             });
@@ -263,15 +287,28 @@ class CategoryController extends Controller
                 ? array_map('intval', explode(',', $record->last_child))
                 : [];
 
-            if (!empty($lastChildIds)) {
-                $record->last_children = Category::whereIn('id', $lastChildIds)
-                    ->get(['id', 'name', 'slug']);
-            } else {
-                $record->last_children = collect();
-            }
+             if (!empty($lastChildIds)) {
+                        $record->last_children = Category::with('seoUrl')
+                            ->whereIn('id', $lastChildIds)
+                            ->get(['id', 'name', 'slug', 'parent_id', 'image', 'order'])
+                            ->map(function ($child) {
+                                return [
+                                    'id' => $child->id,
+                                    'name' => $child->name,
+                                    'slug' => $child->seoUrl?->url ?? $child->slug ?? null,
+                                    'parent_id' => $child->parent_id,
+                                    'image' => $child->image,
+                                    'order' => $child->order,
+                                ];
+                            });
+                    } else {
+                        $record->last_children = collect();
+                    }
 
             return $record;
         });
+
+
         // Add url property based on seoUrl->slug
         foreach ($categories as $category) {
             $category->url = $category->seoUrl ? $category->seoUrl->slug : null;
