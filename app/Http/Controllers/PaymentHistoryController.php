@@ -211,7 +211,7 @@ class PaymentHistoryController extends Controller
 	 *                 required={"order_number", "payment_mode", "amount", "status", "payment_date"},
 	 *                 @OA\Property(property="order_number", type="integer", example=123),
 	 *                 @OA\Property(property="transaction_id", type="string", example="TXN456789"),
-	 *                 @OA\Property(property="payment_mode", type="string", enum={"Bank Transfer","Stripe","Razorpay","Cash on Delivery","CC Avenue","Paymob","Stax","Square"}, example="Cash on Delivery"),
+	 *                 @OA\Property(property="payment_mode", type="string", enum={"Bank Transfer", "Stripe", "Razorpay", "Cash on Delivery", "CC Avenue", "Credit Card", "Debit Card", "Tabby", "Cheque", "Tamara", "Paymob", "COD", "PayPal", "Stax", "Square"}, example="Cash on Delivery"),
 	 *                 @OA\Property(property="amount", type="number", format="float", example=299.99),
 	 *                 @OA\Property(property="status", type="string", enum={"Pending","Completed","Failed","Cancelled","Refunded"}, example="Completed"),
 	 *                 @OA\Property(property="rider_name", type="string", example="Jon Jones"),
