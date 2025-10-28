@@ -159,7 +159,7 @@ class ProductController extends BaseController
 			'productSuppliers.vendor:id,name', // Updated to include vendor relationship
 			'vendors:id,name' // Make sure to select the name field
 		])
-			->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
 
 		/* Apply search if provided */
 
@@ -174,18 +174,18 @@ class ProductController extends BaseController
 		if ($search) {
 			$query->where(function ($q) use ($search) {
 				$q->where('name', 'like', "%{$search}%")
-					->orWhere('sku', 'like', "%{$search}%")
-					->orWhereHas('brand', function ($brandQuery) use ($search) {
-						$brandQuery->where('name', 'like', "%{$search}%");
-					})
-					->orWhereHas('categories', function ($categoryQuery) use ($search) {
-						$categoryQuery->where('name', 'like', "%{$search}%");
-					});
+				->orWhere('sku', 'like', "%{$search}%")
+				->orWhereHas('brand', function ($brandQuery) use ($search) {
+					$brandQuery->where('name', 'like', "%{$search}%");
+				})
+				->orWhereHas('categories', function ($categoryQuery) use ($search) {
+					$categoryQuery->where('name', 'like', "%{$search}%");
+				});
 			});
 		}
 
 		$products = $query->orderBy($sortBy, $sortDirection)
-			->paginate($perPage);
+		->paginate($perPage);
 
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
@@ -206,6 +206,9 @@ class ProductController extends BaseController
 					'sale_price' => null,
 					'margin' => null,
 					'margin_percent' => null,
+					'min_quantity' => null,
+					'is_fixed' => null,
+					'shipping_charge' => null,
 					'vendor_name' => null, // Added vendor_name field
 					'product_family' => $product->categories->pluck('name')->toArray(),
 					'taxonomy_path' => optional($product->slug)->key ?? '',
@@ -214,8 +217,8 @@ class ProductController extends BaseController
 
 			$margin = $firstSupplier->sale_price - $firstSupplier->price;
 			$marginPercent = $firstSupplier->sale_price > 0
-				? ($margin / $firstSupplier->sale_price) * 100
-				: 0;
+			? ($margin / $firstSupplier->sale_price) * 100
+			: 0;
 
 			return [
 				'id' => $product->id,
@@ -229,6 +232,9 @@ class ProductController extends BaseController
 				'quote_available' => $product->quote_available,
 				'price' => $firstSupplier->price,
 				'sale_price' => $firstSupplier->sale_price,
+				'min_quantity' => $firstSupplier->min_quantity,
+				'is_fixed' => $firstSupplier->is_fixed,
+				'shipping_charge' => $firstSupplier->shipping_charge,
 				'vendor_id' => $firstSupplier->vendor_id,
 				'vendor_name' => $product->vendors->pluck('name')->first(), // Get first vendor name from vendors relationship
 				'margin' => $margin,
@@ -332,8 +338,8 @@ class ProductController extends BaseController
 
 		/* Step 2: Prepare the category for syncing */
 		$categoryWithTimestamp = in_array($categoryId, $existingCategories)
-			? [$categoryId => []]
-			: [$categoryId => ['created_at' => now()]];
+		? [$categoryId => []]
+		: [$categoryId => ['created_at' => now()]];
 
 		/* Step 3: Sync the single category */
 		$product->categories()->sync($categoryWithTimestamp);
@@ -472,8 +478,8 @@ class ProductController extends BaseController
 
 		/* Fetch reviews where customer_id is null */
 		$adminReviews = Review::where('product_id', $productId)
-			->whereNull('customer_id')
-			->get();
+		->whereNull('customer_id')
+		->get();
 
 
 		/* Fetch FAQs using the FAQ model */
@@ -548,85 +554,85 @@ class ProductController extends BaseController
 
 			switch ($attribute) {
 				case 'refund':
-					$formattedProduct[$attribute] = [['value' => $value]];
-					break;
+				$formattedProduct[$attribute] = [['value' => $value]];
+				break;
 
 				case 'benefits_features':
-					$formattedProduct['benefits_features'] = json_decode($value, true);
-					break;
+				$formattedProduct['benefits_features'] = json_decode($value, true);
+				break;
 
 				case 'stock_status':
-					$stockStatusMappings = [
-						'in_stock' => 'In Stock',
-						'out_of_stock' => 'Out of Stock',
-						'on_backorder' => 'Pre Order'
-					];
+				$stockStatusMappings = [
+					'in_stock' => 'In Stock',
+					'out_of_stock' => 'Out of Stock',
+					'on_backorder' => 'Pre Order'
+				];
 
-					/* Map selected value to frontend readable text */
-					$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
+				/* Map selected value to frontend readable text */
+				$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
 
-					$formattedProduct['stock_status'] = [
-						'selected' => $selectedStockStatus, /* This will now show 'In Stock', 'Out of Stock', etc. */
-						'values' => $stockStatusMappings /* Values remain the same */
-					];
-					break;
+				$formattedProduct['stock_status'] = [
+					'selected' => $selectedStockStatus, /* This will now show 'In Stock', 'Out of Stock', etc. */
+					'values' => $stockStatusMappings /* Values remain the same */
+				];
+				break;
 
 				case 'tax_id':
-					$tax = Tax::find($value);
-					if ($tax) {
-						$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
-					} else {
-						$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
-					}
-					break;
+				$tax = Tax::find($value);
+				if ($tax) {
+					$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
+				} else {
+					$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
+				}
+				break;
 
 				case 'currency_id':
-					$formattedProduct['currency'] = $product->currency ? [
-						[
-							'id' => $product->currency->id,
-							'title' => $product->currency->title
-						]
-					] : null;
-					break;
+				$formattedProduct['currency'] = $product->currency ? [
+					[
+						'id' => $product->currency->id,
+						'title' => $product->currency->title
+					]
+				] : null;
+				break;
 
 				case 'brand_id':
-					$formattedProduct['brand'] = $product->brand ? [
-						[
-							'id' => $product->brand->id,
-							'name' => $product->brand->name
-						]
-					] : null;
-					break;
+				$formattedProduct['brand'] = $product->brand ? [
+					[
+						'id' => $product->brand->id,
+						'name' => $product->brand->name
+					]
+				] : null;
+				break;
 
 				case 'categories':
-					$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
-						return [
-							'id' => $category->id,
-							'name' => $category->name,
-							'parent_id' => $category->parent_id
-						];
-					}) : [];
-					break;
+				$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
+					return [
+						'id' => $category->id,
+						'name' => $category->name,
+						'parent_id' => $category->parent_id
+					];
+				}) : [];
+				break;
 
 				case 'description':
-					$decodedDescription = json_decode($value, true);
+				$decodedDescription = json_decode($value, true);
 					// Send as array if valid, else send raw string
-					$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
-					break;
+				$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
+				break;
 
 				case 'images':
 				case 'video_path':
 				case 'documents':
-					$formattedProduct[$attribute] = is_array($value) ? $value : [];
-					break;
+				$formattedProduct[$attribute] = is_array($value) ? $value : [];
+				break;
 
 				case 'status':
-					$formattedProduct[$attribute] = [['value' => $value]];
-					break;
+				$formattedProduct[$attribute] = [['value' => $value]];
+				break;
 
 				default:
-					$formattedProduct[$attribute] = $value;
-					break;
+				$formattedProduct[$attribute] = $value;
+				break;
 			}
 		}
 
@@ -1761,35 +1767,35 @@ class ProductController extends BaseController
 		$productAttributeMeasurement = $product->productAttributes->pluck('measurement_unit_id', 'attribute_id');
 
 		$attributeGroup = $category->categoryAttributeGroups()
-			->with(['groupsAttributes.attributeValues', 'groupsAttributes.measurementUnits'])
-			->get()
-			->map(function ($group) use ($productAttributes, $productAttributeMeasurement) {
-				return [
-					'id' => $group->id,
-					'name' => $group->name,
-					'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes, $productAttributeMeasurement) {
-						$data = [
-							'id' => $attribute->id,
-							'name' => $attribute->name,
-							'code' => $attribute->code,
-							'type' => $attribute->type,
-							'validations' => json_decode($attribute->validations, true),
-							'currentValue' => $productAttributes[$attribute->id] ?? null,
-						];
+		->with(['groupsAttributes.attributeValues', 'groupsAttributes.measurementUnits'])
+		->get()
+		->map(function ($group) use ($productAttributes, $productAttributeMeasurement) {
+			return [
+				'id' => $group->id,
+				'name' => $group->name,
+				'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes, $productAttributeMeasurement) {
+					$data = [
+						'id' => $attribute->id,
+						'name' => $attribute->name,
+						'code' => $attribute->code,
+						'type' => $attribute->type,
+						'validations' => json_decode($attribute->validations, true),
+						'currentValue' => $productAttributes[$attribute->id] ?? null,
+					];
 
-						if ($attribute->type === 'select') {
-							$data['attributeValues'] = $attribute->attributeValues->pluck('attribute_value')->values()->all();
-						}
+					if ($attribute->type === 'select') {
+						$data['attributeValues'] = $attribute->attributeValues->pluck('attribute_value')->values()->all();
+					}
 
-						if ($attribute->type === 'measurement') {
-							$data['attributeMeasurement'] = $attribute->measurementUnits->pluck('name', 'id')->all();
-							$data['currentMeasurementId'] = $productAttributeMeasurement[$attribute->id] ?? null;
-						}
+					if ($attribute->type === 'measurement') {
+						$data['attributeMeasurement'] = $attribute->measurementUnits->pluck('name', 'id')->all();
+						$data['currentMeasurementId'] = $productAttributeMeasurement[$attribute->id] ?? null;
+					}
 
-						return $data;
-					})->toArray(),
-				];
-			});
+					return $data;
+				})->toArray(),
+			];
+		});
 
 
 		return response()->json([
@@ -1931,9 +1937,9 @@ class ProductController extends BaseController
 		$products = Product::whereHas('categories', function ($query) use ($category_id) {
 			$query->where('category_id', $category_id);
 		})
-			->select(['id', 'name', 'sku', 'images'])
-			->orderBy('id', 'desc') /* Order by product ID in descending order */
-			->get();
+		->select(['id', 'name', 'sku', 'images'])
+		->orderBy('id', 'desc') /* Order by product ID in descending order */
+		->get();
 
 		/* Formatting the response to include only id, name, sku, and image */
 		$formattedProducts = $products->map(function ($product) use ($category_id) {
@@ -2072,9 +2078,9 @@ class ProductController extends BaseController
 
 		/* Fetch products from the database */
 		$products = Product::whereIn('id', $allProductIds)
-			->select(['id', 'name', 'sku', 'images'])
-			->orderBy('id', 'desc')
-			->get();
+		->select(['id', 'name', 'sku', 'images'])
+		->orderBy('id', 'desc')
+		->get();
 
 		/* Format product data */
 		$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
@@ -2178,9 +2184,9 @@ class ProductController extends BaseController
 
 		/* Fetch products from the database */
 		$products = Product::whereIn('id', $allProductIds)
-			->select(['id', 'name', 'sku', 'images'])
-			->orderBy('id', 'desc')
-			->get();
+		->select(['id', 'name', 'sku', 'images'])
+		->orderBy('id', 'desc')
+		->get();
 
 		/* Format product data */
 		$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
@@ -2284,9 +2290,9 @@ class ProductController extends BaseController
 
 		/* Fetch products from the database */
 		$products = Product::whereIn('id', $allProductIds)
-			->select(['id', 'name', 'sku', 'images'])
-			->orderBy('id', 'desc')
-			->get();
+		->select(['id', 'name', 'sku', 'images'])
+		->orderBy('id', 'desc')
+		->get();
 
 		/* Format product data */
 		$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
@@ -2315,6 +2321,7 @@ class ProductController extends BaseController
 			'data' => $formattedProducts
 		]);
 	}
+
 	/**
 	 * @OA\Post(
 	 *     path="/api/products/duplicate",
@@ -2340,7 +2347,6 @@ class ProductController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
 	public function productDuplicate(Request $request)
 	{
 		$validator = Validator::make($request->all(), [
@@ -2453,8 +2459,8 @@ class ProductController extends BaseController
 									if (!$value && !$measurementUnitID) {
 										/* Both missing = delete the existing attribute */
 										$product->productAttributes()
-											->where('attribute_id', $attributeId)
-											->delete();
+										->where('attribute_id', $attributeId)
+										->delete();
 									} else {
 										/* Both exist = update or create attribute */
 										$product->productAttributes()->updateOrCreate(
@@ -2471,8 +2477,8 @@ class ProductController extends BaseController
 									if (empty($value)) {
 										/* Delete non-measurement attribute if empty */
 										$product->productAttributes()
-											->where('attribute_id', $attributeId)
-											->delete();
+										->where('attribute_id', $attributeId)
+										->delete();
 									} else {
 										/* Update or create normal attribute */
 										$product->productAttributes()->updateOrCreate(
@@ -2638,6 +2644,7 @@ class ProductController extends BaseController
 			]);
 		}
 	}
+
 	/**
 	 * @OA\Post(
 	 *     path="/api/products/delete-product-document",
@@ -2668,8 +2675,6 @@ class ProductController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
-
 	public function deleteProductDocument(Request $request)
 	{
 		$request->validate([
