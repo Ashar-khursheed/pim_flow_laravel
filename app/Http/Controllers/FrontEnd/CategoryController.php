@@ -17,6 +17,7 @@ use App\Models\AttributeValue;
 use App\Models\Attribute;
 use App\Models\AttributeGroup;
 use App\Models\ProductAttribute;
+use App\Models\SeoManagement;
 use Illuminate\Support\Facades\Auth;
 // Add these imports at the top of your controller file
 use PhpUnitsOfMeasure\PhysicalQuantity\Length;
@@ -313,7 +314,7 @@ class CategoryController extends Controller
      * )
      */
     public function show($id)
-    {
+    { 
         // Validate that the ID is numeric
         if (!is_numeric($id)) {
             return response()->json([
@@ -328,10 +329,25 @@ class CategoryController extends Controller
                 'message' => "Category with ID $id not found."
             ], 404);
         }
+       
 
         // // Add image URL if image exists
         // $category->image = $this->getImageUrl($category->image);
 
+        //   $category->map(function ($record) {
+        //         $lastChildIds = !empty($record->last_child)
+        //             ? array_map('intval', explode(',', $record->last_child))
+        //             : [];
+
+        //         if (!empty($lastChildIds)) {
+        //             $record->last_children = Category::whereIn('id', $lastChildIds)
+        //                 ->get(['id', 'name', 'slug']);
+        //         } else {
+        //             $record->last_children = collect();
+        //         }
+
+        //         return $record;
+        //     });
         return response()->json([
             'category' => $category,
         ])->header('Cache-Control', 'public, max-age=86400');
@@ -385,7 +401,7 @@ class CategoryController extends Controller
      */
 
     public function getProductsByCategory($categoryId)
-    {
+    { 
         $category = Category::find($categoryId);
 
         if (!$category) {
