@@ -826,6 +826,9 @@ class ProductController extends BaseController
 
 		/* Handle FAQs with content writer permission check */
 		$locale = $request->locale ?? 'en';
+		$imagePath = 'production/products';
+		$videoPath = 'production/videos';
+		$documentPath = 'production/documents';
 
 		/* Log the incoming request for debugging */
 		$product = Product::find($productId);
@@ -1451,10 +1454,6 @@ class ProductController extends BaseController
 		foreach ($fieldsToUnset as $field) {
 			unset($input[$field]);
 		}
-
-		$imagePath = 'production/products';
-		$videoPath = 'production/videos';
-		$documentPath = 'production/documents';
 
 		// Handle videos with role-based permission - CORRECTED VERSION
 		if ($request->has('video_path')) {
