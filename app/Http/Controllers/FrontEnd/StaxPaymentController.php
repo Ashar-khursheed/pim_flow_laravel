@@ -944,4 +944,84 @@ class StaxPaymentController extends Controller
         ]);
 
     }
+
+    public function thanks(Request $request)
+    {
+        $encResponse = $_GET['getStax'];
+ 
+        $data = dataDecodeJsonBase64($encResponse);
+        dd($data);
+        if (!empty($data)) {
+            $amount = $data->amount / 100;
+            $currency = $data->currency;
+            $transactionId = $data->ref;
+            $order_id = $data->order_id;
+         
+            if ($_GET['status'] == 'complete') {
+                $status = "Completed";
+            } else {
+                $status = "Failed";
+            }
+ 
+ 
+            $orderdetails = Order::where('id', $order_id)->where('is_paid', '0')->first();
+ 
+            if (!empty($orderdetails)) {
+                $total_amount = $orderdetails->total_amount;
+                $paid_amount = $orderdetails->paid_amount + $amount;
+                $pending_amount = $total_amount - $paid_amount;
+ 
+                $order = Order::find($orderdetails->id);
+                if ($paid_amount < $total_amount) {
+                    $order->update([
+                        'paid_amount' => $paid_amount,
+                        'pending_amount' => $pending_amount,
+                        'is_paid' => $pending_amount <= 0,
+                        'is_reserved' => $pending_amount <= 0,
+                    ]);
+                } else if ($paid_amount == $total_amount) {
+ 
+                    $order->update([
+                        'paid_amount' => $paid_amount,
+                        'pending_amount' => $pending_amount,
+                        'is_paid' => 1,
+                        'is_reserved' => 0,
+                        'status' => 'Confirmed'
+                    ]);
+                }
+                if ($status != 'Failed') {
+                    $checkTransaction = PaymentManagement::where('transaction_id', $transactionId)->get()->count();
+                    if (!$checkTransaction) {
+                        PaymentManagement::create([
+                            'order_id' => $orderdetails->id,
+                            'transaction_id' => $transactionId,
+                            'payment_mode' => 'Credit Card',
+                            'payment_method' => 'Stax',
+                            'amount' => $amount,
+                            'status' => $status,
+                            'payment_date' => date('Y-m-d H:i:s'),
+                            'notes' => 'Payment marked through link',
+                            'payment_details' => ''
+                        ]);
+                    }
+                }
+            }
+            // Example response
+            return response()->json([
+                'order_id' => $order_id ?? null,
+                'amount' => $amount,
+                'currency' => $currency,
+                'transactionId' => $transactionId,
+                'status' => $status,
+            ]);
+        } else {
+            return response()->json([
+                'data' => $data ?? null,
+                'status' => false,
+            ]);
+        }
+ 
+ 
+ 
+    }
 }
