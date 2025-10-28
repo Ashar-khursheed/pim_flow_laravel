@@ -939,6 +939,7 @@ Route::prefix('frontend/auth')->group(function () {
 	->name('stax.card-charge');
 
 });
+Route::any('/stax/thanks', [F_StaxPaymentController::class, 'thanks']);
 
 Route::post('frontend/paymob/initiate', [F_PaymobController::class, 'initiate']); // get payment_token
 Route::post('frontend/paymob/pay', [F_PaymobController::class, 'pay']);
