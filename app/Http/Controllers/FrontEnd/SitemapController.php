@@ -410,8 +410,10 @@ class SitemapController extends Controller
      *     )
      * )
      */
+    
     public function getCategoriesSitemap()
     {
+        // Fetch only top-level published categories
         $mainCategories = Category::select(['id', 'name', 'updated_at'])
             ->with('seoUrl')
             ->where('parent_id', 0)
@@ -422,7 +424,7 @@ class SitemapController extends Controller
             ->get()
             ->map(function ($category) {
                 return [
-                    'loc' => $category->seoUrl->url, // safe now
+                    'loc' => $category->seoUrl->url,
                     'lastmod' => $category->updated_at
                         ? $category->updated_at->toAtomString()
                         : now()->toAtomString(),
@@ -431,15 +433,28 @@ class SitemapController extends Controller
                 ];
             });
 
-        $subCategories = Category::with(['seoUrl', 'parent.parent.seoUrl']) // preload seoUrls up the chain
+        // Fetch subcategories whose full parent chain is published
+        $subCategories = Category::with(['seoUrl', 'parent', 'parent.parent'])
             ->whereNotNull('parent_id')
             ->where('parent_id', '!=', 0)
+            ->where('status', 'published')
             ->whereHas('seoUrl', fn($q) => $q->whereNotNull('url'))
-            ->select(['id', 'name', 'updated_at', 'slug', 'parent_id'])
             ->get()
+            ->filter(function ($subcategory) {
+                // ensure all parent categories are published
+                $parent = $subcategory->parent;
+                $superParent = $parent?->parent;
+
+                return $parent && $parent->status === 'published'
+                    && (!$superParent || $superParent->status === 'published');
+            })
             ->map(function ($subcategory) {
                 $superParent = $subcategory->getSuperParent();
-                $aprentUrls = SeoManagement::select('url', 'relational_id')->where('relational_type', 'Category')->where('relational_id', $superParent)->first();
+
+                $aprentUrls = SeoManagement::select('url', 'relational_id')
+                    ->where('relational_type', 'Category')
+                    ->where('relational_id', $superParent)
+                    ->first();
 
                 return [
                     'loc' => $aprentUrls->url . '/' . ($subcategory->seoUrl->url ?? ''),
@@ -450,12 +465,15 @@ class SitemapController extends Controller
                     'priority' => '0.8',
                 ];
             });
+
         $sitemaps = $mainCategories->merge($subCategories);
+
+        // --- XML Output ---
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
         foreach ($sitemaps as $sitemap) {
             $xml .= '<url>';
-
             $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
             $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
             $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
@@ -466,9 +484,8 @@ class SitemapController extends Controller
         $xml .= '</urlset>';
 
         return response($xml, 200)->header('Content-Type', 'application/xml');
-
-
     }
+
 
 
     /**
