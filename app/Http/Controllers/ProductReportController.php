@@ -451,5 +451,4 @@ class ProductReportController extends Controller
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
 
-
 }

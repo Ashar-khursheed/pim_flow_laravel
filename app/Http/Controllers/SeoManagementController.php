@@ -1212,22 +1212,25 @@ class SeoManagementController extends Controller
 	}
 
 	private function generateSchema(SeoManagement $seo)
-	{
+	{		 
 		/* Check if the type is 'Product' and relational_id is available */
 		if ($seo->relational_type === 'Product' && $seo->relational_id) {
 			/* Fetch product data from 'ec_products' table */
-			$product = Product::find($seo->relational_id);
+			$product = Product::find($seo->relational_id);			 
 			if ($product) {
 				/* Fetch currency and brand names using relationships */
 				$currencyName = $product->currency ? $product->currency->title : 'USD'; /* Default to 'USD' if no currency found */
 				$brandName = $product->brand ? $product->brand->name : 'Default Brand'; /* Default to 'Default Brand' if no brand found */
 				$firstSupplier = $product->productSuppliers->first();
-
+				$url = $product->parent_category_url() . '/' .
+                     $product->category_url() . '/' .
+                     ($product->seoProductUrl->url ?? "");
+					 
 				/* Generate schema with product-specific details */
 				return [
 					"@context" => "https://schema.org",
 					"@type" => "Product",
-					"url" => $seo->url,
+					"url" => $url,
 					"name" => $seo->meta_title,
 					"keywords" => $seo->tags,
 					"description" => $seo->meta_description,

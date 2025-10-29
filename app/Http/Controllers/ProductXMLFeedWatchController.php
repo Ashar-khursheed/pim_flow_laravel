@@ -44,7 +44,7 @@ class ProductXMLFeedWatchController extends Controller
  *         in="query",
  *         description="Sort direction (asc/desc, default: desc)",
  *         required=false,
- *         @OA\Schema(type="string",enum={"asc", "desc"})
+ *         @OA\Schema(type="string",enum={"asc", "desc"},example="asc")
  *     ),
  *     @OA\Response(
  *         response=200,
