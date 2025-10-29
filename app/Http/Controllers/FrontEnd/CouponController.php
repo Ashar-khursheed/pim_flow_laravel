@@ -47,7 +47,7 @@ class CouponController extends Controller
         ]
     )]
     public function index(Request $request): JsonResponse
-    { 
+    {
         $query = Coupon::with(['creator', 'approver', 'customers', 'categories', 'products']);
 
         // Global Search Implementation
@@ -315,13 +315,6 @@ class CouponController extends Controller
     ]);
 
     $validated['created_by'] = auth()->id();
-    $validated['start_date'] = $request->start_date 
-    ? date('Y-m-d 00:00:00', strtotime($request->start_date)) 
-    : null;
-    $validated['expire_date'] = $request->expire_date 
-    ? date('Y-m-d 00:00:00', strtotime($request->expire_date)) 
-    : null;
-     
 
     $coupon = Coupon::create($validated);
 
@@ -453,13 +446,6 @@ class CouponController extends Controller
             'product_ids.*' => 'exists:ec_products,id',
         ]);
 
-        $validated['start_date'] = $request->start_date 
-        ? date('Y-m-d 00:00:00', strtotime($request->start_date)) 
-        : null;
-        $validated['expire_date'] = $request->expire_date 
-        ? date('Y-m-d 00:00:00', strtotime($request->expire_date)) 
-        : null;
-     
         $coupon->update($validated);
 
         // Update relationships based on basis
