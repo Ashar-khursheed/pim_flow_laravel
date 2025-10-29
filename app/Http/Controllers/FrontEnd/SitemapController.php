@@ -11,7 +11,20 @@ use App\Models\Brand;
 use Carbon\Carbon;
 class SitemapController extends Controller
 {
-    private $baseUrl = 'https://www.horecastore.ae';
+    public function __construct()
+    {
+        // Determine the base URL dynamically from APP_WEBSITE
+        $website = env('APP_WEBSITE');
+
+        if ($website === 'US') {
+            $this->baseUrl = 'https://www.thehorecastore.com';
+        } elseif ($website === 'UAE') {
+            $this->baseUrl = 'https://www.horecastore.ae';
+        } else {
+            $this->baseUrl = 'https://www.horecastore.ae/sa-en'; // fallback
+        }
+    }
+
 
 
     private function buildXml()
