@@ -32072,6 +32072,19 @@
                             ],
                             "example": "General"
                         }
+                    },
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ar",
+                                "en"
+                            ],
+                            "example": "ar"
+                        }
                     }
                 ],
                 "responses": {
