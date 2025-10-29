@@ -369,6 +369,16 @@ class ProductController extends BaseController
 	 *             example="General"
 	 *         )
 	 *     ),
+	 *     @OA\Parameter(
+	 *         name="locale",
+	 *         in="query",
+	 *         required=true,
+	 *         @OA\Schema(
+	 *             type="string",
+	 *             enum={"ar", "en"},
+	 *             example="ar"
+	 *         )
+	 *     ),
 	 *     @OA\Response(
 	 *         response=201,
 	 *         description="Success",
@@ -381,6 +391,7 @@ class ProductController extends BaseController
 	 */
 	public function show($productId, Request $request)
 	{
+		$locale = in_array($request->locale ?? 'en', ['ar', 'en']) ? ($request->locale ?? 'en') : 'en';
 		$attributeGroup = [
 			'General' => ['sku', 'barcode', 'status', 'approved'],
 
@@ -420,12 +431,15 @@ class ProductController extends BaseController
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+		$translation = $product->translations->firstWhere('locale', $locale);
+
 		if (!$product) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Product does not exist.'
 			]);
 		}
+
 		// Extract first vendor's price and sale_price
 		$firstVendor = $product->vendors->first();
 		$productPrice = $firstVendor?->pivot?->price ?? null;
@@ -479,15 +493,14 @@ class ProductController extends BaseController
 		/* Fetch reviews where customer_id is null */
 		$adminReviews = Review::where('product_id', $productId)
 		->whereNull('customer_id')
-		->get();
+		->get()->each(function ($faq) use ($locale) {
+			$translation = $faq->translations->firstWhere('locale', $locale);
 
+			$faq->question = $translation?->question_tr ?? $faq->question;
+			$faq->answer = $translation?->answer_tr ?? $faq->answer;
 
-		/* Fetch FAQs using the FAQ model */
-		$faqs = FAQ::where('product_id', $productId)->get();
-
-		if (!empty($product->images) && is_string($product->images)) {
-			$product->images = json_decode($product->images, true) ?? [];
-		}
+			unset($faq->translations, $faq->question_tr, $faq->answer_tr);
+		});
 
 		if (!empty($product->video_path) && is_string($product->video_path)) {
 			$product->video_path = json_decode($product->video_path, true) ?? [];
@@ -553,12 +566,23 @@ class ProductController extends BaseController
 			$value = $product->$attribute ?? null;
 
 			switch ($attribute) {
-				case 'refund':
-				$formattedProduct[$attribute] = [['value' => $value]];
+
+				case 'name':
+				$field = $attribute . '_tr';
+				$value = $translation ? $translation->$field : $value;
+				$formattedProduct[$attribute] = $value;
 				break;
 
 				case 'benefits_features':
-				$formattedProduct['benefits_features'] = json_decode($value, true);
+				case 'description':
+				case 'images':
+				$field = $attribute . '_tr';
+				$value = $translation ? $translation->$field : $value;
+				$formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true);
+				break;
+
+				case 'refund':
+				$formattedProduct[$attribute] = [['value' => $value]];
 				break;
 
 				case 'stock_status':
@@ -614,13 +638,6 @@ class ProductController extends BaseController
 				}) : [];
 				break;
 
-				case 'description':
-				$decodedDescription = json_decode($value, true);
-					// Send as array if valid, else send raw string
-				$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
-				break;
-
-				case 'images':
 				case 'video_path':
 				case 'documents':
 				$formattedProduct[$attribute] = is_array($value) ? $value : [];
@@ -958,8 +975,8 @@ class ProductController extends BaseController
 						if (!$value && !$measurementUnitID) {
 							/* Both missing = delete the existing attribute */
 							$product->productAttributes()
-								->where('attribute_id', $attributeId)
-								->delete();
+							->where('attribute_id', $attributeId)
+							->delete();
 						} else {
 							/* Both exist = update or create attribute */
 							$product->productAttributes()->updateOrCreate(
@@ -976,8 +993,8 @@ class ProductController extends BaseController
 						if (empty($value)) {
 							/* Delete non-measurement attribute if empty */
 							$product->productAttributes()
-								->where('attribute_id', $attributeId)
-								->delete();
+							->where('attribute_id', $attributeId)
+							->delete();
 						} else {
 							/* Update or create normal attribute */
 							$product->productAttributes()->updateOrCreate(
@@ -1113,8 +1130,8 @@ class ProductController extends BaseController
 						], 400);
 					}
 					$faqs = is_array($decoded) && isset($decoded[0])
-						? $decoded
-						: ($decoded['faqs'] ?? []);
+					? $decoded
+					: ($decoded['faqs'] ?? []);
 				}
 
 				if (!is_array($faqs)) {
@@ -2528,8 +2545,8 @@ class ProductController extends BaseController
 
 						/* Check if a record with the same SKU and vendor_id already exists */
 						$existingEntry = ProductSupplier::where('product_id', $product->id)
-							->where('vendor_id', $firstSupplier->vendor_id)
-							->first();
+						->where('vendor_id', $firstSupplier->vendor_id)
+						->first();
 
 						if (!$existingEntry) {
 
@@ -2568,12 +2585,12 @@ class ProductController extends BaseController
 							}
 
 							$data['surcharge'] = !empty($data['surcharge'])
-								? $data['cost_per_item'] * ((float) $data['surcharge'] / 100)
-								: 0;
+							? $data['cost_per_item'] * ((float) $data['surcharge'] / 100)
+							: 0;
 
 							$data['additional_cost'] = !empty($data['additional_cost'])
-								? $data['cost_per_item'] * ((float) $data['additional_cost'] / 100)
-								: 0;
+							? $data['cost_per_item'] * ((float) $data['additional_cost'] / 100)
+							: 0;
 
 							$data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
 
