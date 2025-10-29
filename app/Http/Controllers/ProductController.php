@@ -493,7 +493,10 @@ class ProductController extends BaseController
 		/* Fetch reviews where customer_id is null */
 		$adminReviews = Review::where('product_id', $productId)
 		->whereNull('customer_id')
-		->get()->each(function ($faq) use ($locale) {
+		->get();
+
+		/* Fetch FAQs using the FAQ model */
+		$faqs = FAQ::where('product_id', $productId)->get()->each(function ($faq) use ($locale) {
 			$translation = $faq->translations->firstWhere('locale', $locale);
 
 			$faq->question = $translation?->question_tr ?? $faq->question;
