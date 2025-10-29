@@ -33971,6 +33971,83 @@
                 ]
             }
         },
+        "/api/vendor-brand-product-export": {
+            "post": {
+                "tags": [
+                    "Vendor wise brand and product export"
+                ],
+                "summary": "Export product report",
+                "description": "Exports product report as Vendor wise brand and product export.",
+                "operationId": "3894e8cf668a1006c2771e6f266b14db",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "vendor_id": {
+                                        "type": "integer",
+                                        "example": 40
+                                    },
+                                    "range_from": {
+                                        "description": "Starting product index (must be >= 1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending product index (max range allowed: 500 products)",
+                                        "type": "integer",
+                                        "example": 500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product report export",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "vendor_id": {
+                                                        "type": "integer",
+                                                        "example": 22
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/product-suppliers": {
             "get": {
                 "tags": [
@@ -43457,6 +43534,10 @@
         {
             "name": "Product Questions",
             "description": "Product Questions"
+        },
+        {
+            "name": "Vendor wise brand and product export",
+            "description": "Vendor wise brand and product export"
         },
         {
             "name": "Product Suppliers",

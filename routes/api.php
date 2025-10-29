@@ -458,6 +458,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
 	Route::post('/product-report-export', [ProductReportController::class, 'index']);
 	Route::post('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
+	Route::post('/vendor-brand-product-export', [ProductReportController::class, 'vendorBrandProductExport']);
 	
 	Route::get('/get-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'index']);
 	Route::post('/save-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'store']);
