@@ -489,6 +489,24 @@ class ProductController extends Controller
                     $product->accessories = [];
                 }
 
+                try {
+                        if (method_exists($product, 'category_url')) {
+                            $product->category_url = $product->category_url();
+                        } else {
+                            $product->category_url = null;
+                        }
+
+                        if (method_exists($product, 'parent_category_url')) {
+                            $product->parent_category_url = $product->parent_category_url();
+                        } else {
+                            $product->parent_category_url = null;
+                        }
+                    } catch (\Throwable $e) {
+                        \Log::error('Error fetching category URLs for product ID ' . $product->id . ': ' . $e->getMessage());
+                        $product->category_url = null;
+                        $product->parent_category_url = null;
+                    }
+
 
 
                     return $product;
@@ -921,6 +939,23 @@ class ProductController extends Controller
                         if ($product->accessories->isEmpty()) {
                             $product->accessories = [];
                         }
+                        try {
+                                if (method_exists($product, 'category_url')) {
+                                    $product->category_url = $product->category_url();
+                                } else {
+                                    $product->category_url = null;
+                                }
+
+                                if (method_exists($product, 'parent_category_url')) {
+                                    $product->parent_category_url = $product->parent_category_url();
+                                } else {
+                                    $product->parent_category_url = null;
+                                }
+                            } catch (\Throwable $e) {
+                                \Log::error('Error fetching category URLs for product ID ' . $product->id . ': ' . $e->getMessage());
+                                $product->category_url = null;
+                                $product->parent_category_url = null;
+                            }
 
                         return $product;
                         });
