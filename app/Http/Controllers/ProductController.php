@@ -320,7 +320,9 @@ class ProductController extends BaseController
 		$product->save();
 
 		/* Create English translation */
-		$product->translateOrNew('en')->name_tr = $request->name;
+		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+			$product->translateOrNew('en')->name_tr = $request->name;
+		}
 		$product->save();
 
 		$this->saveProductCategory($product, $request->product_family);
@@ -1047,7 +1049,9 @@ class ProductController extends BaseController
 						$product->name = $updatedName;
 					}
 
-					$product->translateOrNew($locale)->name_tr = $updatedName;
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$product->translateOrNew($locale)->name_tr = $updatedName;
+					}
 					$product->save();
 				}
 			}
@@ -1087,7 +1091,9 @@ class ProductController extends BaseController
 						$product->description = $jsonEncoded;
 					}
 
-					$product->translateOrNew($locale)->description_tr = $jsonEncoded;
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$product->translateOrNew($locale)->description_tr = $jsonEncoded;
+					}
 
 					$product->save();
 				}
@@ -1128,7 +1134,9 @@ class ProductController extends BaseController
 						$product->benefits_features = $jsonEncoded;
 					}
 
-					$product->translateOrNew($locale)->benefits_features_tr = $jsonEncoded;
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$product->translateOrNew($locale)->benefits_features_tr = $jsonEncoded;
+					}
 					$product->save();
 				}
 			}
@@ -1192,8 +1200,10 @@ class ProductController extends BaseController
 					}
 
 					/* Update translation for current locale */
-					$faq->translateOrNew($locale)->question_tr = $faqData['question'];
-					$faq->translateOrNew($locale)->answer_tr = $faqData['answer'];
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$faq->translateOrNew($locale)->question_tr = $faqData['question'];
+						$faq->translateOrNew($locale)->answer_tr = $faqData['answer'];
+					}
 					$faq->save();
 
 					$updatedFaqIds[] = $faq->id;
@@ -1250,7 +1260,9 @@ class ProductController extends BaseController
 						$product->images = $jsonEncoded;
 					}
 
-					$product->translateOrNew($locale)->images_tr = $jsonEncoded;
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$product->translateOrNew($locale)->images_tr = $jsonEncoded;
+					}
 					$product->save();
 				}
 			}
@@ -2407,10 +2419,12 @@ class ProductController extends BaseController
 					$product->benefits_features = $mainProduct->benefits_features;
 					$product->images = $mainProduct->images;
 
-					$product->translateOrNew($locale)->name_tr = $mainProduct->name;
-					$product->translateOrNew($locale)->description_tr = $mainProduct->description;
-					$product->translateOrNew($locale)->benefits_features_tr = $mainProduct->benefits_features;
-					$product->translateOrNew($locale)->images_tr = $mainProduct->images;
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$product->translateOrNew($locale)->name_tr = $mainProduct->name;
+						$product->translateOrNew($locale)->description_tr = $mainProduct->description;
+						$product->translateOrNew($locale)->benefits_features_tr = $mainProduct->benefits_features;
+						$product->translateOrNew($locale)->images_tr = $mainProduct->images;
+					}
 
 					$product->sku = $request->input('sku');
 					$product->website_ids = $mainProduct->website_ids;

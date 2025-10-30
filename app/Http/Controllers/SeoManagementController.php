@@ -1128,7 +1128,7 @@ class SeoManagementController extends Controller
 	{
 
 		$validated = $request->validate([
-			'relational_id' => 'required|integer|exists:seo_management,id',
+			'relational_id' => 'required|integer|exists:seo_management,relational_id',
 			'relational_type' => 'required|string',
 
 		]);
