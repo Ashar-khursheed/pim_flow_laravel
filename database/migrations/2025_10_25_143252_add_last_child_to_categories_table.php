@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
-             $table->boolean('is_squarePayment')->default(false)->after('is_payment');
+        Schema::table('categories', function (Blueprint $table) {
+             $table->text('last_child')->nullable()->after('parent_id');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
-             $table->dropColumn('is_squarePayment');
+        Schema::table('categories', function (Blueprint $table) {
+             $table->dropColumn('last_child');
         });
     }
 };

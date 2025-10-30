@@ -14,6 +14,7 @@ return new class extends Migration
 		Schema::dropIfExists('orders');
 		Schema::create('orders', function (Blueprint $table) {
 			$table->id();
+			$table->string('utm_id')->nullable();
 			$table->string('order_number')->unique();
 			$table->integer('customer_id');
 			$table->integer('customer_address_id');
@@ -21,11 +22,15 @@ return new class extends Migration
 			$table->decimal('shipping_charge', 10, 2);
 			$table->boolean('is_lift_gate')->nullable();
 			$table->boolean('is_residential_address')->nullable();
+			$table->boolean('is_inside_delivery')->nullable();
 			$table->decimal('amount', 10, 2);
 			$table->decimal('tax_percentage', 10, 4);
 			$table->decimal('tax_amount', 10, 2);
 			$table->integer('coupon_id')->nullable();
 			$table->decimal('discount', 10, 2)->nullable();
+			$table->string('additional_amount_name')->nullable();
+			$table->decimal('additional_amount_price', 10, 2)->nullable();
+			$table->text('additional_amount_details')->nullable();
 			$table->decimal('total_amount', 10, 2);
 			$table->integer('total_products');
 
@@ -39,7 +44,11 @@ return new class extends Migration
 			$table->enum('status', [
 				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Partially Delivered', 'Completed', 'Re-Attempt', 'Returned', 'Cancelled'
 			])->default('Pending');
+			$table->longText('payment_link')->nullable();
 			$table->boolean('is_reserved')->default(false);
+			$table->boolean('is_payment')->default(false);
+			$table->boolean('is_squarePayment')->default(false);
+			$table->boolean('is_paymob')->default(false);
 			$table->boolean('is_customer_pickup')->default(false);
 			$table->boolean('is_cod')->default(false);
 

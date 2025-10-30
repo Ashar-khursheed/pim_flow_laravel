@@ -14,6 +14,7 @@ class CustomerCart extends Model
 		'shipping_charge',
 		'is_lift_gate',
 		'is_residential_address',
+		'is_inside_delivery',
 		'amount',
 		'tax_percentage',
 		'tax_amount',
@@ -21,7 +22,6 @@ class CustomerCart extends Model
 		'total_products',
 		'created_by',
 		'updated_by',
-		
 	];
 
 	public function creator()

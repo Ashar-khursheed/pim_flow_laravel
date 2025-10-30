@@ -100,11 +100,13 @@ class CartCreationMail extends Mailable
 
 		$liftGateCharge = $customerCart->is_lift_gate ? 75 : 0;
 		$residentialAddressCharge = $customerCart->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $customerCart->is_inside_delivery ? 250 : 0;
 
 		$subTotal = $customerCart->amount ?? 0;
 		$shippingCharge = $customerCart->shipping_charge ?? 0;
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
 		$taxPercent = $customerCart->tax_percentage;
+		$taxPercent = $taxPercent + 0;
 		$taxAmount = $customerCart->tax_amount ?? 0;
 		$discount = 0;
 		$total = $customerCart->total_amount ?? 0;
@@ -147,6 +149,7 @@ class CartCreationMail extends Mailable
 
 			'liftGateCharge' => $liftGateCharge,
 			'residentialAddressCharge' => $residentialAddressCharge,
+			'insideDeliveryCharge' => $insideDeliveryCharge,
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
 			'taxName' => $taxName,

@@ -127,10 +127,10 @@ class ImportTranslationJob implements ShouldQueue
 
 						if (!empty($name) || !empty($description) || !empty($benefits) || !empty($images)) {
 							$translation = $record->translateOrNew($locale);
-							$translation->name = $name;
-							$translation->description = $description;
-							$translation->benefits_features = $benefits;
-							$translation->images = $images;
+							$translation->name_tr = $name;
+							$translation->description_tr = $description;
+							$translation->benefits_features_tr = $benefits;
+							$translation->images_tr = $images;
 						}
 					} else {
 						$title = ${$locale . '_title'} ?? null;

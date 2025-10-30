@@ -6,11 +6,14 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\TemporaryCategoryController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReportController;
 use App\Http\Controllers\AIAlternateProductController;
+use App\Http\Controllers\LLmsSeoMonitoringController;
 use App\Http\Controllers\CategoryPageController;
+use App\Http\Controllers\ProductXMLFeedWatchController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\AttributeController;
@@ -80,7 +83,7 @@ use App\Http\Controllers\ProductVariantController;
 use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\TranslationController;
 use App\Http\Controllers\InquiryController;
-
+use App\Http\Controllers\MadeToOrderController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -107,6 +110,7 @@ use App\Http\Controllers\FrontEnd\SearchController as F_SearchController;
 use App\Http\Controllers\FrontEnd\SliderController as F_SliderController;
 use App\Http\Controllers\FrontEnd\SquarePaymentController as F_SquarePaymentController;
 use App\Http\Controllers\FrontEnd\LocationController as F_LocationController;
+use App\Http\Controllers\FrontEnd\MadeToOrderController as F_MadeToOrderController;
 use App\Http\Controllers\FrontEnd\ReturnOrderProductController as F_ReturnOrderProductController;
 use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterController;
 use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
@@ -190,6 +194,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
 
 Route::post('/ccavenue/webhook', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'successhandleWebhook']);
+Route::get('/ccavenue/thank', [F_CCavenueController::class, 'thank']);
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
@@ -406,9 +411,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/keywords/import', [AppKeywordController::class, 'import']);
 	Route::post('/keywords/export', [AppKeywordController::class, 'export']);
 
-	Route::post('/translations/generate-translate', [TranslationController::class, 'export']);
-	Route::post('/translations/export', [TranslationController::class, 'export']);
-	Route::post('/translations/import', [TranslationController::class, 'import']);
+    Route::post('/translations/generate-translate', [TranslationController::class, 'generateTranslate']);
+    Route::post('/translations/export', [TranslationController::class, 'export']);
+    Route::post('/translations/import', [TranslationController::class, 'import']);
 
 
 	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
@@ -433,6 +438,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('product-variants', ProductVariantController::class);
 	Route::post('product-variants/getProductAttibute', [ProductVariantController::class,'getProductAttibute']);
 	Route::post('product-variants/show', [ProductVariantController::class, 'show']);
+	Route::apiResource('made-to-orders', MadeToOrderController::class);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
@@ -452,6 +458,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
 	Route::post('/product-report-export', [ProductReportController::class, 'index']);
 	Route::post('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
+	Route::post('/vendor-brand-product-export', [ProductReportController::class, 'vendorBrandProductExport']);
+	
+	Route::get('/get-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'index']);
+	Route::post('/save-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'store']);
+	Route::get('/live-show-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'show']);
 
 	Route::get('/ai-products-alternates', [AIAlternateProductController::class, 'index']);
 	Route::get('/get-ai-alternates', [AIAlternateProductController::class, 'getAiAlternateProducts']);
@@ -527,6 +538,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 
 	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
+	
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::post('/categories/{id}', [CategoryController::class, 'update']);
 
@@ -534,11 +546,18 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/categories/{id}/move-down', [CategoryController::class ,'moveDown']);
 	Route::post('/reorder', [CategoryController::class ,'reorder']);
 	Route::apiResource('categories', CategoryController::class);
+	Route::get('/allLastChild', [CategoryController::class ,'allLastChildCategories']);
+	Route::apiResource('temporaryCategories', TemporaryCategoryController::class);
+	
+    Route::get('/allTemporaryCategories', [TemporaryCategoryController::class, 'allTemporaryCategories']);
+	Route::post('/temporaryCategories/{id}', [TemporaryCategoryController::class, 'update']);
+ 
 
 	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
 
 	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
+	Route::post('/webhook/thanks', [OrderController::class, 'thanks']);
 	Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
 
 	Route::post('orders/{id}/resend-mail', [OrderController::class, 'resendOrderPlaceMail']);
@@ -845,6 +864,8 @@ Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
 Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
 
+Route::post('/frontend/made-to-orders', [F_MadeToOrderController::class, 'store']);
+
 Route::post('/find-shipping-charges', [ShippingReportController::class, 'findShippingCharges']);
 Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
 Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
@@ -867,6 +888,7 @@ Route::get('/frontend/image.xml', [SitemapController::class, 'getImageSitemap'])
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
+Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'getProductFeed']);
 Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
@@ -914,6 +936,7 @@ Route::get('/frontend/menu-banners/{id}', [F_MenuBannerController::class, 'show'
 Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'showCategory']);
 Route::post('/frontend/auth/Stax', [F_StaxPaymentController::class, 'checkout']);
 Route::post('/webhook/stax', [F_StaxPaymentController::class, 'handleWebhook']);
+Route::any('/stax/thanks', [F_StaxPaymentController::class, 'thanks']);
 
 
 	// Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\Customer;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 
@@ -28,6 +30,7 @@ use App\Jobs\Order\OutDeliveryMailJob;
 use App\Jobs\Order\OrderDeliveredMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 use App\Jobs\Order\PartialOrderCancelledMailJob;
+use App\Jobs\Order\OrderUpdateMailJob;
 
 class OrderController extends Controller
 {
@@ -263,6 +266,7 @@ class OrderController extends Controller
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
 	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
 	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
+	 *             @OA\Property(property="is_inside_delivery", type="boolean", example=true),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
@@ -297,6 +301,7 @@ class OrderController extends Controller
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
 			'is_residential_address' => 'nullable|boolean',
+			'is_inside_delivery' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
@@ -363,9 +368,14 @@ class OrderController extends Controller
 			}
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$orderAmount += $request->boolean('is_inside_delivery') ? 250 : 0;
 
 			$discountedAmount = $orderAmount - $discount;
-			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
+
+			$customer = Customer::find($request->customer_id);
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
@@ -389,8 +399,9 @@ class OrderController extends Controller
 				'shipping_charge' => $orderShipping,
 				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
+				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-				'tax_percentage' => $request->tax_percentage,
+				'tax_percentage' => $taxPercentage,
 				'tax_amount' => $taxAmount,
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
@@ -552,7 +563,6 @@ class OrderController extends Controller
 				]));
 			} else {
 				$batch = Bus::batch([])->name("Order Placed by Backend - #{$order->order_number}")->dispatch();
-
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
 					'recordId' => $order->id
@@ -855,7 +865,6 @@ class OrderController extends Controller
 		try {
 			/* Create a new batch for resending order place mail */
 			$batch = Bus::batch([])->name("Resend Order place Mail - #{$order->order_number}")->dispatch();
-
 			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 			$batch->add(new OrderPlacedMailJob([
 				'recordId' => $order->id
@@ -887,12 +896,15 @@ class OrderController extends Controller
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
 	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
 	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
+	 *             @OA\Property(property="is_inside_delivery", type="boolean", example=true),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
 	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
+	 *             @OA\Property(property="additional_amount_name", type="string", example="Accessory 1"),
+	 *             @OA\Property(property="additional_amount_price", type="number", format="float", example=100),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -942,11 +954,16 @@ class OrderController extends Controller
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
 			'is_residential_address' => 'nullable|boolean',
+			'is_inside_delivery' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
+
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
+
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -1003,9 +1020,18 @@ class OrderController extends Controller
 			}
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$orderAmount += $request->boolean('is_inside_delivery') ? 250 : 0;
+
+			if (!empty($request->additional_amount_price)) {
+				$orderAmount += (float) $request->additional_amount_price;
+			}
 
 			$discountedAmount = $orderAmount - $discount;
-			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
+
+			$customer = $order->customer;
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
@@ -1020,11 +1046,14 @@ class OrderController extends Controller
 				'shipping_charge' => $orderShipping,
 				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
+				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-				'tax_percentage' => $request->tax_percentage,
+				'tax_percentage' => $taxPercentage,
 				'tax_amount' => $taxAmount,
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
+				'additional_amount_name' => $request->additional_amount_name ?? null,
+				'additional_amount_price' => $request->additional_amount_price ?? null,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
@@ -1072,6 +1101,48 @@ class OrderController extends Controller
 			]);
 
 			DB::commit();
+
+			if ($pendingAmount > 0) {
+				$paymentLink = null;
+				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+					try {
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\PaymobController::class)->generatePaymobPaymentLink($order);
+						if ($paymentLink) {
+							$order = Order::find($order->id);
+							$order->additional_amount_details = $paymentLink;
+							$order->save();
+						}
+					} catch (\Exception $e) {
+						\Log::error('Paymob Payment Link generation failed', [
+							'order_id' => $order->id,
+							'error' => $e->getMessage(),
+							'trace' => $e->getTraceAsString()
+						]);
+					}
+				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
+					try {
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\StaxPaymentController::class)
+						->createStaxPaymentLink($order);
+						if ($paymentLink) {
+							$order = Order::find($order->id);
+							$order->additional_amount_details = $paymentLink;
+							$order->save();
+						}
+					} catch (\Exception $e) {
+						\Log::error('Stax Payment Link generation failed', [
+							'order_id' => $order->id,
+							'error' => $e->getMessage(),
+							'trace' => $e->getTraceAsString()
+						]);
+					}
+				}
+
+				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
+				$batch->add(new OrderUpdateMailJob([
+					'recordId' => $order->id
+				]));
+			}
 
 			/* Load relationships */
 			$order->load([
@@ -1435,7 +1506,6 @@ class OrderController extends Controller
 			]);
 
 			$batch = Bus::batch([])->name("Order Partially Cancelled by Backend - #{$order->order_number}")->dispatch();
-
 			$batch->options['queue'] = config('app.website') . '_ORD_PART_CNCL';
 			$batch->add(new PartialOrderCancelledMailJob([
 				'recordId' => $orderProduct->id,

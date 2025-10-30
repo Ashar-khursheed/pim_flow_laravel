@@ -140,8 +140,6 @@ if (!function_exists('product_constants')) {
 				"upload_video" => "Upload Video",
 				"barcode" => "Barcode (ISBN, UPC, GTIN, etc.)",
 				"status" => "Status",
-				"google_shopping_category" => "Google Shopping Category",
-				"google_shopping_mpn" => "Google Shopping Mpn",
 				"is_featured" => "Is Featured",
 			],
 			'DISCOUNT_SECTION' => [
@@ -243,8 +241,6 @@ if (!function_exists('product_import_constants')) {
 				'Upload Video' => 'uploadVideo',
 				'Barcode (ISBN, UPC, GTIN, etc.)' => 'barcode',
 				'Status' => 'status',
-				'Google Shopping Category' => 'googleShoppingCategory',
-				'Google Shopping Mpn' => 'googleShoppingMpn',
 				'Is Featured' => 'isFeatured',
 			],
 
@@ -422,8 +418,8 @@ if (!function_exists('getDateRange')) {
 	function getDateRange(Carbon\Carbon|string $createdAt, string $deliveryDays): string
 	{
 		$createdAt = $createdAt instanceof \Carbon\Carbon
-		? $createdAt->copy()
-		: \Carbon\Carbon::parse($createdAt);
+			? $createdAt->copy()
+			: \Carbon\Carbon::parse($createdAt);
 
 		$deliveryDays = trim($deliveryDays);
 		$isWeekFormat = str_contains($deliveryDays, 'Week');
@@ -467,8 +463,8 @@ if (!function_exists('getDateRange')) {
 		}
 
 		return $isRange
-		? $startDate->format('D, F j') . ' - ' . $endDate->format('D, F j')
-		: $startDate->format('D, F j');
+			? $startDate->format('D, F j') . ' - ' . $endDate->format('D, F j')
+			: $startDate->format('D, F j');
 	}
 }
 
@@ -630,28 +626,28 @@ if (!function_exists('glitch_error_reporting_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-			$mails = $usMails;
-			break;
+				$mails = $usMails;
+				break;
 
 			case 'UAE':
-			$mails = $uaeMails;
-			break;
+				$mails = $uaeMails;
+				break;
 
 			case 'US_T':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'UAE_T':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'LOCAL':
-			$mails = $localMails;
-			break;
+				$mails = $localMails;
+				break;
 
 			default:
-			$mails = [];
-			break;
+				$mails = [];
+				break;
 		}
 		return $mails;
 	}
@@ -692,28 +688,28 @@ if (!function_exists('order_cc_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-			$mails = $usMails;
-			break;
+				$mails = $usMails;
+				break;
 
 			case 'UAE':
-			$mails = $uaeMails;
-			break;
+				$mails = $uaeMails;
+				break;
 
 			case 'US_T':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'UAE_T':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'LOCAL':
-			$mails = $localMails;
-			break;
+				$mails = $localMails;
+				break;
 
 			default:
-			$mails = [];
-			break;
+				$mails = [];
+				break;
 		}
 		return $mails;
 	}
@@ -750,28 +746,28 @@ if (!function_exists('inquiry_cc_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-			$mails = $usMails;
-			break;
+				$mails = $usMails;
+				break;
 
 			case 'UAE':
-			$mails = $uaeMails;
-			break;
+				$mails = $uaeMails;
+				break;
 
 			case 'US_T':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'UAE_T':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'LOCAL':
-			$mails = $localMails;
-			break;
+				$mails = $localMails;
+				break;
 
 			default:
-			$mails = [];
-			break;
+				$mails = [];
+				break;
 		}
 		return $mails;
 	}
@@ -806,28 +802,28 @@ if (!function_exists('quote_cc_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-			$mails = $usMails;
-			break;
+				$mails = $usMails;
+				break;
 
 			case 'UAE':
-			$mails = $uaeMails;
-			break;
+				$mails = $uaeMails;
+				break;
 
 			case 'US_T':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'UAE_T':
-			$mails = $testMails;
-			break;
+				$mails = $testMails;
+				break;
 
 			case 'LOCAL':
-			$mails = $localMails;
-			break;
+				$mails = $localMails;
+				break;
 
 			default:
-			$mails = [];
-			break;
+				$mails = [];
+				break;
 		}
 		return $mails;
 	}
@@ -932,8 +928,8 @@ function createDistributedRanges($values, $maxRanges)
 
 	for ($i = 0; $i < $maxRanges; $i++) {
 		$currentMax = ($i === $maxRanges - 1)
-		? (int) ceil($max)
-		: (int) floor($currentMin + $rangeSize);
+			? (int) ceil($max)
+			: (int) floor($currentMin + $rangeSize);
 
 		/* Ensure we have at least one value in this range */
 		$hasValueInRange = false;
@@ -961,14 +957,14 @@ function createDistributedRanges($values, $maxRanges)
 function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier
 {
 	$productSupplier = ProductSupplier::where('product_id', $productID)->where('vendor_id', $vendorID)
-	->selectRaw('
+		->selectRaw('
 		CASE
 		WHEN sale_price > 0 AND sale_price < price THEN sale_price
 		ELSE price
 		END as unit_price,
 		shipping_charge
 		')
-	->first();
+		->first();
 
 	if ($productSupplier) {
 		$productSupplier->shipping_charge = $productSupplier->shipping_charge ?? 0;
@@ -1007,4 +1003,20 @@ if (!function_exists('paymentGateway')) {
 		);
 		return $gateways;
 	}
+}
+
+
+
+function dataEncodeJsonBase64($o)
+{
+	$o = json_encode($o);
+	$o = base64_encode($o);
+	return $o;
+}
+function dataDecodeJsonBase64($o)
+{
+	$o = base64_decode($o);
+	$o = json_decode($o);
+
+	return $o;
 }

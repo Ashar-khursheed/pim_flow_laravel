@@ -238,6 +238,7 @@ class ProductAccessoriesController extends Controller
                     'errors' => $validator->errors()
                 ], 422);
             }
+            // dd($request->all());
             $accessory = ProductAccessory::create([
                 'product_id' => $request->product_id,
                 'name' => $request->name,
@@ -246,10 +247,10 @@ class ProductAccessoriesController extends Controller
             ]);
 
             $accessories = collect($request->accessories)->map(function ($item) {
-                    $item['name'] = trim($item['name'], '"'); // remove surrounding quotes
+                    $item['name'] = trim($item['name']);  
                 return $item;
             })->toArray();
-
+ 
             // Save all accessories at once
             $accessory->items()->createMany($accessories);
 
@@ -483,7 +484,7 @@ class ProductAccessoriesController extends Controller
             // Refresh accessory items (delete old and insert new)
             $accessory->items()->delete();
             $accessories = collect($request->accessories)->map(function ($item) {
-                $item['name'] = trim($item['name'], '"'); // remove surrounding quotes
+                $item['name'] = trim($item['name']);  
                 return $item;
             })->toArray();
             $accessory->items()->createMany($accessories);
@@ -703,7 +704,7 @@ class ProductAccessoriesController extends Controller
 
         // Only search if a search term is provided
         if ($request->search) {
-            $search = $request->search;
+            $search = trim($request->search);
             $products = Product::select('id', 'name', 'sku','images')
                 ->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")

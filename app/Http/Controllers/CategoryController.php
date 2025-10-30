@@ -92,7 +92,18 @@ class CategoryController extends BaseController
 			}
 
 			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
-				'id', 'name', 'parent_id', 'description', 'status', 'order', 'image', 'is_featured', 'icon', 'icon_image', 'slug'
+				'id',
+				'name',
+				'parent_id',
+				'description',
+				'status',
+				'order',
+				'image',
+				'is_featured',
+				'icon',
+				'icon_image',
+				'slug',
+				'last_child'
 			]);
 			$records->transform(function ($record) {
 
@@ -102,12 +113,40 @@ class CategoryController extends BaseController
 				if ($record->icon_image) {
 					$record->icon_image = asset('storage/' . $record->icon_image);
 				}
+				$lastChildIds = !empty($record->last_child)
+					? array_map('intval', explode(',', $record->last_child))
+					: [];
+
+				if (!empty($lastChildIds)) {
+					$record->last_children = Category::whereIn('id', $lastChildIds)
+						->get(['id', 'name', 'slug']);
+				} else {
+					$record->last_children = collect();
+				}
 				return $record;
 			});
 		} else {
 			$records = $recordsQuery->orderBy('name', 'asc')->get([
-				'id', 'name', 'parent_id', 'order'
+				'id',
+				'name',
+				'parent_id',
+				'order',
+				'last_child'
 			]);
+
+			$records->transform(function ($record) {
+				$lastChildIds = !empty($record->last_child)
+					? array_map('intval', explode(',', $record->last_child))
+					: [];
+
+				if (!empty($lastChildIds)) {
+					$record->last_children = Category::whereIn('id', $lastChildIds)
+						->get(['id', 'name', 'slug']);
+				} else {
+					$record->last_children = collect();
+				}
+				return $record;
+			});
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}
@@ -180,9 +219,9 @@ class CategoryController extends BaseController
 		}
 		$categories = Cache::remember('all_categories', 3600, function () {
 			return Category::where('parent_id', 0)
-			->with(['childrenRecursive'])
-			->orderBy('order', 'asc')
-			->get(['id', 'name', 'slug', 'order', 'parent_id']);
+				->with(['childrenRecursive'])
+				->orderBy('order', 'asc')
+				->get(['id', 'name', 'slug', 'order', 'parent_id']);
 		});
 
 		return response()->json([
@@ -212,7 +251,8 @@ class CategoryController extends BaseController
 	 *                 @OA\Property(property="is_featured", type="integer"),
 	 *                 @OA\Property(property="icon", type="string"),
 	 *                 @OA\Property(property="icon_image", type="string", format="binary"),
-	 *                 @OA\Property(property="slug", type="string", example="electronics")
+	 *                 @OA\Property(property="slug", type="string", example="electronics"),
+	 *  			   @OA\Property(property="last_child", type="string", example="635,665,686"),
 	 *             )
 	 *         )
 	 *     ),
@@ -264,7 +304,8 @@ class CategoryController extends BaseController
 			'website_ids' => 'nullable|string|max:255',
 			'icon' => 'nullable|string|max:191',
 			'icon_image' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
-			'slug' => 'nullable|string|max:191|unique:categories,slug'
+			'slug' => 'nullable|string|max:191|unique:categories,slug',
+			'last_child' => 'nullable|string|regex:/^(\d+)(,\d+)*$/',
 		]);
 
 		$disk = 's3'; // or use config
@@ -388,9 +429,19 @@ class CategoryController extends BaseController
 			}
 
 			if ($category->icon_image) {
-				$category->icon_image =  $category->icon_image;
+				$category->icon_image = $category->icon_image;
 			}
 
+			$lastChildIds = !empty($category->last_child)
+				? array_map('intval', explode(',', $category->last_child))
+				: [];
+
+			if (!empty($lastChildIds)) {
+				$category->last_children = Category::whereIn('id', $lastChildIds)
+					->get(['id', 'name', 'slug']);
+			} else {
+				$category->last_children = collect();
+			}
 			return response()->json([
 				'success' => true,
 				'category' => $category
@@ -435,7 +486,8 @@ class CategoryController extends BaseController
 	 *                 @OA\Property(property="is_featured", type="integer"),
 	 *                 @OA\Property(property="icon", type="string"),
 	 *                 @OA\Property(property="icon_image", type="string", format="binary"),
-	 *                 @OA\Property(property="slug", type="string", example="electronics")
+	 *                 @OA\Property(property="slug", type="string", example="electronics"),
+	 *  			   @OA\Property(property="last_child", type="string", example="635,665,686"),
 	 *             )
 	 *         )
 	 *     ),
@@ -490,6 +542,7 @@ class CategoryController extends BaseController
 			'icon' => 'nullable|string|max:191',
 			'icon_image' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
 			'slug' => 'nullable|string|max:191|unique:categories,slug,' . $category->id,
+			'last_child' => 'nullable|string|regex:/^(\d+)(,\d+)*$/',
 		]);
 
 		$disk = 's3';
@@ -833,16 +886,16 @@ class CategoryController extends BaseController
 			$category = Category::findOrFail($id);
 			$parentId = $category->parent_id;
 
-					// Find the category directly above this one
+			// Find the category directly above this one
 			$aboveCategory = Category::where('parent_id', $parentId)
-			->where('order', '<', $category->order)
-			->orderBy('order', 'desc')
-			->first();
+				->where('order', '<', $category->order)
+				->orderBy('order', 'desc')
+				->first();
 
 			if ($aboveCategory) {
 				\DB::beginTransaction();
 
-						// Swap orders
+				// Swap orders
 				$tempOrder = $aboveCategory->order;
 				$aboveCategory->order = $category->order;
 				$category->order = $tempOrder;
@@ -852,7 +905,7 @@ class CategoryController extends BaseController
 
 				\DB::commit();
 
-						// Clear cache
+				// Clear cache
 				Cache::forget('all_categories');
 
 				return response()->json([
@@ -872,7 +925,7 @@ class CategoryController extends BaseController
 				'message' => 'Category not found'
 			], 404);
 		} catch (\Exception $e) {
-					// Rollback transaction if it was started
+			// Rollback transaction if it was started
 			if (\DB::transactionLevel() > 0) {
 				\DB::rollBack();
 			}
@@ -930,9 +983,9 @@ class CategoryController extends BaseController
 
 			// Find the category directly below this one
 			$belowCategory = Category::where('parent_id', $parentId)
-			->where('order', '>', $category->order)
-			->orderBy('order', 'asc')
-			->first();
+				->where('order', '>', $category->order)
+				->orderBy('order', 'asc')
+				->first();
 
 			if ($belowCategory) {
 				\DB::beginTransaction();
@@ -980,4 +1033,105 @@ class CategoryController extends BaseController
 			], 500);
 		}
 	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/allLastChild",
+	 *     summary="Get All Last Child Categories",
+	 *     description="Fetches a hierarchical list of categories. Each category includes its child categories recursively.",
+	 *     tags={"Categories"},
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successful operation",
+	 *         @OA\JsonContent(
+	 *             type="array",
+	 *             @OA\Items(
+	 *                 type="object",
+	 *                 @OA\Property(property="id", type="integer", example=1),
+	 *                 @OA\Property(property="name", type="string", example="Electronics"),
+	 *                 @OA\Property(property="slug", type="string", example="electronics"),
+	 *                 @OA\Property(
+	 *                     property="children_recursive",
+	 *                     type="array",
+	 *                     @OA\Items(
+	 *                         type="object",
+	 *                         @OA\Property(property="id", type="integer", example=2),
+	 *                         @OA\Property(property="name", type="string", example="Mobile Phones"),
+	 *                         @OA\Property(property="slug", type="string", example="mobile-phones"),
+	 *                         @OA\Property(
+	 *                             property="children_recursive",
+	 *                             type="array",
+	 *                             @OA\Items(
+	 *                                 type="object",
+	 *                                 @OA\Property(property="id", type="integer", example=3),
+	 *                                 @OA\Property(property="name", type="string", example="Smartphones"),
+	 *                                 @OA\Property(property="slug", type="string", example="smartphones")
+	 *                             )
+	 *                         )
+	 *                     )
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthorized",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+	 *         )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function allLastChildCategories()
+	{
+		if (!auth()->user()->can('list category')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
+		$categories = Cache::remember('all_last_child_categories', 3600, function () {
+			return Category::whereDoesntHave('children')
+				->with(['parent.parent.parent']) // Load parent hierarchy
+				->orderBy('order', 'asc')
+				->get(['id', 'name', 'slug', 'order', 'parent_id'])
+				->map(function ($category) {
+					// Build full category path
+					$path = $this->getCategoryPath($category);
+					return [
+						'id' => $category->id,
+						'name' => $category->name,
+						'slug' => $category->slug,
+						'order' => $category->order,
+						'parent_id' => $category->parent_id,
+						'full_path' => $path,
+					];
+				});
+		});
+
+		return response()->json([
+			'success' => true,
+			'message' => 'All Last Child Categories List',
+			'categories' => $categories
+		]);
+	}
+
+
+
+	// Helper method to build category path
+	private function getCategoryPath($category)
+	{
+		$path = [$category->name];
+		$parent = $category->parent;
+
+		while ($parent) {
+			array_unshift($path, $parent->name);
+			$parent = $parent->parent;
+		}
+
+		return implode(' > ', $path);
+	}
+
+
 }

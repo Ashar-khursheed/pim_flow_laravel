@@ -115,11 +115,13 @@ class OrderPlacedMail extends Mailable
 
 		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
 		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $order->is_inside_delivery ? 250 : 0;
 
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
-		$taxPercent = in_array(config('app.website'), ['UAE', 'UAE_T']) ? round($order->tax_percentage) : $order->tax_percentage;
+		$taxPercent = $order->tax_percentage;
+		$taxPercent = $taxPercent + 0;
 		$taxAmount = $order->tax_amount ?? 0;
 		$discount = $order->discount ?? 0;
 		$total = $order->total_amount ?? 0;
@@ -161,6 +163,7 @@ class OrderPlacedMail extends Mailable
 
 			'liftGateCharge' => $liftGateCharge,
 			'residentialAddressCharge' => $residentialAddressCharge,
+			'insideDeliveryCharge' => $insideDeliveryCharge,
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
 			'taxName' => $taxName,

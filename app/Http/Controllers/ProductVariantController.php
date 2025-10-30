@@ -242,12 +242,45 @@ class ProductVariantController extends Controller
 
             $data = $validator->validated();
 
-            $createdRecord = ProductVariant::create([
-                'parent_id' => $data['parent_id'],
-                'child_ids' => json_encode($data['child_ids']),
-                'variants' => json_encode($data['variants']),
-                'created_by' => Auth::id() ?? 1,
-            ]);
+            // $createdRecord = ProductVariant::create([
+            //     'parent_id' => $data['parent_id'],
+            //     'child_ids' => json_encode($data['child_ids']),
+            //     'variants' => json_encode($data['variants']),
+            //     'created_by' => Auth::id() ?? 1,
+            // ]);
+
+
+            // Normalize child IDs
+            $childIds = is_array($data['child_ids'])
+                ? $data['child_ids']
+                : array_map('intval', explode(',', $data['child_ids']));
+
+            // Remove duplicates and parent ID itself if mistakenly included
+            $childIds = array_values(array_unique(array_diff($childIds, [$data['parent_id']])));
+
+            // ✅ Create parent record
+            $createdRecord = ProductVariant::updateOrCreate(
+                ['parent_id' => $data['parent_id']],
+                [
+                    'child_ids' => json_encode($childIds),
+                    'variants' => json_encode($data['variants'] ?? []),
+                    'created_by' => Auth::id() ?? 1,
+                ]
+            );
+
+            // ✅ Create reciprocal child records
+            foreach ($childIds as $childId) {
+                $relatedIds = array_diff(array_merge([$data['parent_id']], $childIds), [$childId]);
+
+                ProductVariant::updateOrCreate(
+                    ['parent_id' => $childId],
+                    [
+                        'child_ids' => json_encode(array_values($relatedIds)),
+                        'variants' => json_encode($data['variants'] ?? []),
+                        'created_by' => Auth::id() ?? 1,
+                    ]
+                );
+            }
 
             return response()->json([
                 'success' => true,
@@ -351,12 +384,56 @@ class ProductVariantController extends Controller
 
 
             $data = $validator->validated();
+
+
+            $parentId = (int) $data['parent_id'];
+
+            $childIds = is_array($data['child_ids'])
+                ? $data['child_ids']
+                : array_map('intval', explode(',', $data['child_ids']));
+
+            $childIds = array_values(array_unique(array_diff($childIds, [$parentId])));
+
+
+            $existingVariant = ProductVariant::where('parent_id', $parentId)->first();
+            $oldChildIds = is_array($existingVariant?->child_ids)
+                ? $existingVariant->child_ids
+                : json_decode($existingVariant?->child_ids ?? '[]', true);
+
+
             $variant->update([
-                'parent_id' => $data['parent_id'],
-                'child_ids' => json_encode($data['child_ids']),
-                'variants' => json_encode($data['variants']),
+                'parent_id' => $parentId,
+                'child_ids' => json_encode($childIds),
+                'variants' => json_encode($data['variants'] ?? []),
                 'updated_by' => Auth::id() ?? 1,
             ]);
+
+            foreach ($childIds as $childId) {
+                $relatedIds = array_diff(array_merge([$parentId], $childIds), [$childId]);
+
+                ProductVariant::updateOrCreate(
+                    ['parent_id' => $childId],
+                    [
+                        'child_ids' => json_encode(array_values($relatedIds)),
+                        'variants' => json_encode($data['variants'] ?? []),
+                        'updated_by' => Auth::id() ?? 1,
+                    ]
+                );
+            }
+
+            $removedIds = array_diff($oldChildIds, $childIds);
+            if (!empty($removedIds)) {
+                foreach ($removedIds as $removedId) {
+                    $record = ProductVariant::where('parent_id', $removedId)->first();
+                    if ($record) {
+                        $updatedChildren = array_diff(
+                            is_array($record->child_ids) ? $record->child_ids : json_decode($record->child_ids ?? '[]', true),
+                            [$parentId]
+                        );
+                        $record->update(['child_ids' => json_encode(array_values($updatedChildren))]);
+                    }
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -453,25 +530,25 @@ class ProductVariantController extends Controller
             $countId = count($productIds);
             // Fetch attributes
             $attributes = ProductAttribute::whereIn('product_id', $productIds)
-            ->join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
-            ->select(
-            'product_attributes.attribute_id',
-            'attributes.name as attribute_name',
-            \DB::raw('GROUP_CONCAT(DISTINCT product_attributes.product_id ORDER BY product_attributes.product_id) as product_ids'),
-            \DB::raw('COUNT(DISTINCT product_attributes.product_id) as product_count')
-            )
-            ->groupBy('product_attributes.attribute_id', 'attributes.name')
-            ->having('product_count', '=', $countId)
-            ->get();
-            
+                ->join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
+                ->select(
+                    'product_attributes.attribute_id',
+                    'attributes.name as attribute_name',
+                    \DB::raw('GROUP_CONCAT(DISTINCT product_attributes.product_id ORDER BY product_attributes.product_id) as product_ids'),
+                    \DB::raw('COUNT(DISTINCT product_attributes.product_id) as product_count')
+                )
+                ->groupBy('product_attributes.attribute_id', 'attributes.name')
+                ->having('product_count', '=', $countId)
+                ->get();
+
 
             $attributeList = $attributes->map(function ($attr) {
-        
-            return [
-            'attribute_id' => $attr->attribute_id,
-            'attribute_name' => $attr->attribute_name,
-            'group_id' => $attr->product_ids,
-            ];
+
+                return [
+                    'attribute_id' => $attr->attribute_id,
+                    'attribute_name' => $attr->attribute_name,
+                    'group_id' => $attr->product_ids,
+                ];
             });
 
             return response()->json([
@@ -508,8 +585,35 @@ class ProductVariantController extends Controller
     public function destroy($id)
     {
         try {
-            $variant = ProductVariant::findOrFail($id);
-            $variant->delete();
+
+            $parentVariant = ProductVariant::findOrFail($id);
+
+            $childIds = json_decode($parentVariant->child_ids ?? '[]', true);
+            if (!is_array($childIds)) {
+                $childIds = [];
+            }
+
+
+            foreach ($childIds as $childId) {
+                $childVariant = ProductVariant::where('parent_id', $childId)->first();
+
+                if ($childVariant) {
+                    $updatedChildIds = json_decode($childVariant->child_ids ?? '[]', true) ?? [];
+                    $updatedChildIds = array_diff($updatedChildIds, [$parentVariant->parent_id]);
+
+
+                    $childVariant->update([
+                        'child_ids' => json_encode(array_values($updatedChildIds)),
+                        'updated_by' => Auth::id() ?? 1,
+                    ]);
+
+                    if (empty($updatedChildIds)) {
+                        $childVariant->delete();
+                    }
+                }
+            }
+            $parentVariant->delete();
+
             return response()->json([
                 'success' => true,
                 'message' => 'product variant deleted successfully'
@@ -564,19 +668,19 @@ class ProductVariantController extends Controller
             }
             // Ensure variant_id is always an array
             $productIds = $request->variant_id;
- 
+
             if (empty($productIds)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No product IDs provided'
                 ], 422);
             }
-            $variant = ProductVariant::where('id',$productIds)->with([
+            $variant = ProductVariant::where('id', $productIds)->with([
                 'parentProduct:id,name,sku',
                 'createdBy:id,username',
                 'updatedBy:id,username'
             ])->first();
- 
+
             $childIds = json_decode($variant->child_ids, true) ?? [];
             $variants = json_decode($variant->variants, true) ?? [];
 

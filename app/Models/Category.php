@@ -39,7 +39,8 @@ class Category extends Model
 		'is_featured',
 		'icon',
 		'icon_image',
-		'slug'
+		'slug',
+		'last_child'
 	];
 
 	public function parent()
@@ -189,16 +190,24 @@ class Category extends Model
 
 		$leafIds = $leafCategories->where('status', 'published')->pluck('id')->toArray();
 
-		return Product::query()
+		// return Product::query()
+		// ->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
+		// ->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
+		// ->whereIn('product_categories.category_id', $leafIds)
+		// ->where('ec_products.status', 'published')
+		// ->select('ec_brands.id', 'ec_brands.name')
+		// ->distinct()
+		// ->get();
+
+		return Brand::query()
+		->join('ec_products', 'ec_brands.id', '=', 'ec_products.brand_id')
 		->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
-		->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
 		->whereIn('product_categories.category_id', $leafIds)
 		->where('ec_products.status', 'published')
 		->select('ec_brands.id', 'ec_brands.name')
 		->distinct()
 		->get();
 	}
-
 
 	public function category_url()
 	{

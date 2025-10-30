@@ -250,7 +250,10 @@ class CustomerCartController extends Controller
 				$cartShipping += $product['shipping_charge'];
 			}
 
-			$taxAmount = round($cartAmount * ($request->tax_percentage / 100), 2);
+			$customer = auth()->user();
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
@@ -284,8 +287,9 @@ class CustomerCartController extends Controller
 			$customerCart->shipping_charge        = $cartShipping;
 			$customerCart->is_lift_gate           = $request->is_lift_gate ?? null;
 			$customerCart->is_residential_address = $request->is_residential_address ?? null;
+			$customerCart->is_inside_delivery     = $request->is_inside_delivery ?? null;
 			$customerCart->amount                 = $cartAmount;
-			$customerCart->tax_percentage         = $request->tax_percentage;
+			$customerCart->tax_percentage         = $taxPercentage;
 			$customerCart->tax_amount             = $taxAmount;
 			$customerCart->total_amount           = $totalAmount;
 			$customerCart->total_products         = $totalProducts;
@@ -352,7 +356,7 @@ class CustomerCartController extends Controller
 				'address'                => $customerCart->customerAddress,
 				'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 				'amount'                 => number_format($cartAmount, 2, '.', ''),
-				'tax_percentage'         => $request->tax_percentage,
+				'tax_percentage'         => $taxPercentage,
 				'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 				'total_amount'           => number_format($totalAmount, 2, '.', ''),
 				'total_products'         => $totalProducts,

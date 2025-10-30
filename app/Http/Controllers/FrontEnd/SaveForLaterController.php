@@ -310,7 +310,10 @@ public function showSaveForLater(Request $request)
             'return_policy' => $firstSupplier->return_policy ?? null,
             'free_shipping' => $firstSupplier->free_shipping ?? null,
             'warranty_information' => $firstSupplier->warranty_information ?? null,
-            'quantity' => $item->quantity ?? 1, // Include saved quantity
+            'min_quantity' => $firstSupplier->min_quantity ?? 0,
+            'is_fixed' => $firstSupplier->is_fixed ?? 0,
+            'quantity' => $item->quantity ?? 1,  
+            'quote_available' => $product->quote_available ?? null,
         ];
     })->filter()->values(); // Remove nulls
 

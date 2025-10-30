@@ -218,7 +218,7 @@ class StripeController extends Controller
             'order_id' => 'required',
 
         ]);
-
+        $url = config('app.url');
         $totalAmount = ($request->amount) * 100;
         $itemName = $request->itemName;
         $currency = $request->currency;
@@ -230,8 +230,9 @@ class StripeController extends Controller
                 'message' => 'Invalid order_id, not found in records'
             ], 404);
         }
-        $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = url('/api/stripe/failed');
+
+        $success_url = config('app.url').'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancel_url = config('app.url').'/failed';
         $stripeSecret = config('services.stripe.secret');
 
         $res = Http::withOptions(['verify' => false])
@@ -265,8 +266,8 @@ class StripeController extends Controller
                 'payment_url' => $body['url'],
             ],
             'checkout_options' => [
-                'success_url' => url('/api/stripe/thanks?order_id=' . $order_id),
-                'failed_url' => url('/api/stripe/failed?order_id=' . $order_id)
+                'success_url' => config('app.url').'/thanks?session_id={CHECKOUT_SESSION_ID}' ,
+                'failed_url' => config('app.url').'/failed?session_id={CHECKOUT_SESSION_ID}'
             ]
         ];
         // You now have a permanent payment link
@@ -278,7 +279,7 @@ class StripeController extends Controller
 
     public function generatePaymentLink($order)
     {
-        $totalAmount = (int) round($order->total_amount * 100);
+        $totalAmount = (int) round($order->pending_amount * 100);
 
         // Handle both real orders and test objects
         if (is_object($order) && isset($order->orderProducts)) {
@@ -289,16 +290,11 @@ class StripeController extends Controller
         } else {
             $itemName = "Order #" . $order->order_number;
         }
-        $url = config('app.url');
+             
         $stripeSecret = config('services.stripe.secret');
         $currency = "AED";        
-        $success_url = 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = 'https://development.d28qosi1cuigvb.amplifyapp.com/failed';
-        //  $success_url = $url.'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
-        //  $cancel_url = $url.'/failed';
-
-        // $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
-        // $cancel_url = url('/api/stripe/failed');
+        $success_url = config('app.url').'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancel_url = config('app.url').'/failed'.'?session_id={CHECKOUT_SESSION_ID}';        
         $res = Http::withOptions(['verify' => false])
             ->withToken($stripeSecret)
             ->asForm()

@@ -12,13 +12,6 @@
 				padding: 20px !important;
 			}
 
-			{{-- .product-table th,
-			.product-table td {
-				display: block;
-				width: 100% !important;
-				text-align: left !important;
-			} --}}
-
 			.order-button {
 				display: block;
 				margin: 15px 0;
@@ -217,6 +210,13 @@
 											<tr>
 												<td style="font-family: 'Noto Sans',  sans-serif; ">Residential Address Charge</td>
 												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($residentialAddressCharge, 2, '.', ',') }}</td>
+											</tr>
+											@endif
+
+											@if ($insideDeliveryCharge > 0)
+											<tr>
+												<td style="font-family: 'Noto Sans',  sans-serif; ">Inside Delivery Charge</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($insideDeliveryCharge, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 

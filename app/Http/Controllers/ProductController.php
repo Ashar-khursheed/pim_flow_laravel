@@ -17,6 +17,7 @@ use App\Models\Vendor;
 use App\Models\Review;
 use App\Models\Brand;
 use App\Models\Slug;
+use App\Models\ProductSupplier;
 use App\Models\TransactionLog;
 use App\Models\Faq;
 use App\Models\Attribute;
@@ -25,7 +26,7 @@ use App\Jobs\ImportProductJob;
 use App\Services\ExcelImporterService;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
-
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends BaseController
 {
@@ -200,6 +201,7 @@ class ProductController extends BaseController
 					'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 					'brand' => optional($product->brand)->name,
 					'status' => $product->status,
+					'quote_available' => $product->quote_available,
 					'price' => null,
 					'sale_price' => null,
 					'margin' => null,
@@ -227,6 +229,7 @@ class ProductController extends BaseController
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
 				'status' => $product->status,
+				'quote_available' => $product->quote_available,
 				'price' => $firstSupplier->price,
 				'sale_price' => $firstSupplier->sale_price,
 				'min_quantity' => $firstSupplier->min_quantity,
@@ -302,11 +305,18 @@ class ProductController extends BaseController
 		$product->sku = $request->sku;
 		$product->website_ids = implode(',', $request->websites);
 		$product->status = 'draft';
+		if ($request->quote_available) {
+			$product->quote_available = $request->quote_available;
+		}
 		$product->created_at = now();
 		$product->updated_at = now();
-		// $product->created_by_id = auth()->id();
-		// $product->created_by_type = User::class;
+		$product->created_by = auth()->id();
 		$product->save();
+
+		/* Create English translation */
+		$product->translateOrNew('en')->name_tr = $request->name;
+		$product->save();
+
 		$this->saveProductCategory($product, $request->product_family);
 
 		return response()->json([
@@ -355,8 +365,18 @@ class ProductController extends BaseController
 	 *         description="Filter product attributes by category",
 	 *         @OA\Schema(
 	 *             type="string",
-	 *             enum={"General", "Inventory & Stock Management", "Pricing & Sales", "Marketing", "Media", "Shipping & Dimensions", "Product Variations", "Store & Vendor Information", "Performance & Analytics", "Comparison & Bundling", "SEO", "Other", "All"},
+	 *             enum={"General", "Inventory & Stock Management", "Pricing & Sales", "Marketing", "Media", "Shipping & Dimensions", "Product Variations", "Store & Vendor Information", "Performance & Analytics", "Comparison & Bundling", "Other", "All"},
 	 *             example="General"
+	 *         )
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="locale",
+	 *         in="query",
+	 *         required=true,
+	 *         @OA\Schema(
+	 *             type="string",
+	 *             enum={"ar", "en"},
+	 *             example="ar"
 	 *         )
 	 *     ),
 	 *     @OA\Response(
@@ -371,16 +391,16 @@ class ProductController extends BaseController
 	 */
 	public function show($productId, Request $request)
 	{
+		$locale = in_array($request->locale ?? 'en', ['ar', 'en']) ? ($request->locale ?? 'en') : 'en';
 		$attributeGroup = [
 			'General' => ['sku', 'barcode', 'status', 'approved'],
 
 			'Inventory & Stock Management' => ['stock_status'],
 			'Pricing & Sales' => ['tax_id', 'currency_id', 'approved_by'],
-			'Marketing' => ['name', 'description', 'gen_type'],
+			'Marketing' => ['name', 'description', 'gen_type' , 'quote_available'],
 			'Media' => ['images', 'video_path', 'documents', 'benefits_features'],
 			'Store & Vendor Information' => ['brand_id'],
 			'Performance & Analytics' => ['views', 'units_sold'],
-			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
 			'Other' => ['order', 'website_ids'],
 			'All' => []
 		];
@@ -392,7 +412,6 @@ class ProductController extends BaseController
 			'Pricing & Sales' => ['currency:id,title'],
 			'Shipping & Dimensions' => [],
 			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
-			'SEO' => [],
 			'Pricing' => ['vendors:id,name,price,sale_price,delivery_days,inventory,in_stock'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
 		];
@@ -412,12 +431,15 @@ class ProductController extends BaseController
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+		$translation = $product->translations->firstWhere('locale', $locale);
+
 		if (!$product) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Product does not exist.'
 			]);
 		}
+
 		// Extract first vendor's price and sale_price
 		$firstVendor = $product->vendors->first();
 		$productPrice = $firstVendor?->pivot?->price ?? null;
@@ -473,13 +495,15 @@ class ProductController extends BaseController
 		->whereNull('customer_id')
 		->get();
 
-
 		/* Fetch FAQs using the FAQ model */
-		$faqs = FAQ::where('product_id', $productId)->get();
+		$faqs = FAQ::where('product_id', $productId)->get()->each(function ($faq) use ($locale) {
+			$translation = $faq->translations->firstWhere('locale', $locale);
 
-		if (!empty($product->images) && is_string($product->images)) {
-			$product->images = json_decode($product->images, true) ?? [];
-		}
+			$faq->question = $translation?->question_tr ?? $faq->question;
+			$faq->answer = $translation?->answer_tr ?? $faq->answer;
+
+			unset($faq->translations, $faq->question_tr, $faq->answer_tr);
+		});
 
 		if (!empty($product->video_path) && is_string($product->video_path)) {
 			$product->video_path = json_decode($product->video_path, true) ?? [];
@@ -537,7 +561,6 @@ class ProductController extends BaseController
 				'total_cost_per_item' => $productSupplier->total_cost_per_item,
 				'inventory' => $productSupplier->inventory,
 				'in_stock' => $productSupplier->in_stock,
-				'vendor_id' => $productSupplier->vendor_id,
 				'vendor_name' => $productSupplier->vendor->name,
 			];
 		});
@@ -546,24 +569,23 @@ class ProductController extends BaseController
 			$value = $product->$attribute ?? null;
 
 			switch ($attribute) {
-				case 'refund':
-				$formattedProduct[$attribute] = [['value' => $value]];
 
-				break;
-				case 'variant_requires_shipping':
-				case 'is_variation':
-				$formattedProduct[$attribute] = [
-					'type' => 'checkbox',
-					'selected' => (int) $value,
-					'values' => [
-						'0' => 'unchecked',
-						'1' => 'checked'
-					]
-				];
+				case 'name':
+				$field = $attribute . '_tr';
+				$value = $translation ? $translation->$field : $value;
+				$formattedProduct[$attribute] = $value;
 				break;
 
 				case 'benefits_features':
-				$formattedProduct['benefits_features'] = json_decode($value, true);
+				case 'description':
+				case 'images':
+				$field = $attribute . '_tr';
+				$value = $translation ? $translation->$field : $value;
+				$formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true);
+				break;
+
+				case 'refund':
+				$formattedProduct[$attribute] = [['value' => $value]];
 				break;
 
 				case 'stock_status':
@@ -619,13 +641,6 @@ class ProductController extends BaseController
 				}) : [];
 				break;
 
-				case 'description':
-				$decodedDescription = json_decode($value, true);
-					// Send as array if valid, else send raw string
-				$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
-				break;
-
-				case 'images':
 				case 'video_path':
 				case 'documents':
 				$formattedProduct[$attribute] = is_array($value) ? $value : [];
@@ -717,12 +732,11 @@ class ProductController extends BaseController
 	 *                 @OA\Property(property="video_path[]", type="array", @OA\Items(type="string", format="binary")),
 	 *                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
 	 *                 @OA\Property(property="is_variation", type="boolean", example=false),
+	 *                 @OA\Property(property="quote_available", type="boolean", example=false),
 	 *                 @OA\Property(property="vendor_id", type="integer", example=7),
 	 *                 @OA\Property(property="brand_id", type="integer", example=13),
 	 *                 @OA\Property(property="views", type="integer", example=200),
 	 *                 @OA\Property(property="units_sold", type="integer", example=50),
-	 *                 @OA\Property(property="google_shopping_category", type="string", example="Electronics"),
-	 *                 @OA\Property(property="google_shopping_mpn", type="string", example="123-ABC"),
 	 *                 @OA\Property(property="order", type="integer", example=1),
 	 *                 @OA\Property(property="box_quantity", type="integer", example=5),
 	 *                 @OA\Property(property="delivery_days", type="integer", example=3),
@@ -829,8 +843,14 @@ class ProductController extends BaseController
 	 */
 	public function update(Request $request, $productId)
 	{
-		/* Log the incoming request for debugging */
 
+		/* Handle FAQs with content writer permission check */
+		$locale = $request->locale ?? 'en';
+		$imagePath = 'production/products';
+		$videoPath = 'production/videos';
+		$documentPath = 'production/documents';
+
+		/* Log the incoming request for debugging */
 		$product = Product::find($productId);
 
 		if (!$product) {
@@ -1001,133 +1021,440 @@ class ProductController extends BaseController
 			}
 		}
 
-		// Handle FAQs with content writer permission check
-		if ($request->has('faqs')) {
-			$faqs = $request->input('faqs', []);
-			$hasNewFaqData = false;
+		if ($canModifyContent) {
+			/* Handle multilingual product description */
+			if ($request->has('name')) {
+				$updatedName = $request->input('name', '');
+				/* use translated table */
+				$existingName = optional($product->translate($locale))->name ?? [];
 
-			// Decode if it's a JSON string
-			if (is_string($faqs)) {
-				$decoded = json_decode($faqs, true);
-				if (json_last_error() !== JSON_ERROR_NONE) {
+				/* Only save if changed */
+				if ($updatedName !== $existingName) {
+					if ($locale === 'en') {
+						$product->name = $updatedName;
+					}
+
+					$product->translateOrNew($locale)->name_tr = $updatedName;
+					$product->save();
+				}
+			}
+
+			/* Handle multilingual product description */
+			if ($request->has('description')) {
+				$descriptions = $request->input('description', []);
+				$updatedDescriptions = [];
+
+				/* Decode if JSON string provided */
+				if (is_string($descriptions)) {
+					$decoded = json_decode($descriptions, true);
+					if (json_last_error() !== JSON_ERROR_NONE) {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for description.'
+						], 400);
+					}
+					$updatedDescriptions = $decoded;
+				} elseif (is_array($descriptions)) {
+					$updatedDescriptions = $descriptions;
+				} else {
 					return response()->json([
 						'success' => false,
-						'message' => 'Invalid JSON format for faqs.'
+						'message' => 'Invalid description format. Must be JSON string or array.'
 					], 400);
 				}
-				$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
-			}
 
-			// Fetch existing FAQs for comparison
-			$existingFaqs = Faq::where('product_id', $product->id)->get()->keyBy('id');
-			$processedFaqIds = [];
+				/* use translated table */
+				$existingDescriptions = json_decode(optional($product->translate($locale))->description, true) ?? [];
 
-			// Check if there are actual changes
-			if (is_array($faqs) && !empty($faqs)) {
-				foreach ($faqs as $faqData) {
-					$id = $faqData['id'] ?? null;
-					$question = trim($faqData['question'] ?? '');
-					$answer = trim($faqData['answer'] ?? '');
+				/* Only save if changed */
+				if ($updatedDescriptions !== $existingDescriptions) {
+					$jsonEncoded = json_encode($updatedDescriptions);
 
-					// Create or update
-					if ($id && isset($existingFaqs[$id])) {
-						$existing = $existingFaqs[$id];
-						if (
-							$existing->question !== $question ||
-							$existing->answer !== $answer ||
-							$existing->category_id != ($faqData['category_id'] ?? null)
-						) {
-							$hasNewFaqData = true;
-							break;
-						}
-					} elseif (!empty($question) || !empty($answer)) {
-						$hasNewFaqData = true;
-						break;
+					if ($locale === 'en') {
+						$product->description = $jsonEncoded;
 					}
+
+					$product->translateOrNew($locale)->description_tr = $jsonEncoded;
+
+					$product->save();
 				}
 			}
 
-			// If user is trying to modify and has no permission
-			if ($hasNewFaqData && !$canModifyContent) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You do not have permission to modify product FAQs.'
-				], 403);
-			}
+			/* Handle multilingual benefits & features */
+			if ($request->has('benefits_features')) {
+				$benefitsFeatures = $request->input('benefits_features', []);
+				$updatedBenefitsFeatures = [];
 
-			// If no real changes or user has permission, continue saving
-			if ($canModifyContent && is_array($faqs)) {
+				/* Decode if JSON string provided */
+				if (is_string($benefitsFeatures)) {
+					$decoded = json_decode($benefitsFeatures, true);
+					if (json_last_error() !== JSON_ERROR_NONE) {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for benefits_features.'
+						], 400);
+					}
+					$updatedBenefitsFeatures = $decoded;
+				} elseif (is_array($benefitsFeatures)) {
+					$updatedBenefitsFeatures = $benefitsFeatures;
+				} else {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+					], 400);
+				}
+
+				/* use translated table */
+				$existingBenefitsFeatures = json_decode(optional($product->translate($locale))->benefits_features, true) ?? [];
+
+				/* Only save if changed */
+				if ($updatedBenefitsFeatures !== $existingBenefitsFeatures) {
+					$jsonEncoded = json_encode($updatedBenefitsFeatures);
+
+					if ($locale === 'en') {
+						$product->benefits_features = $jsonEncoded;
+					}
+
+					$product->translateOrNew($locale)->benefits_features_tr = $jsonEncoded;
+					$product->save();
+				}
+			}
+			/* Handle multilingual FAQs with sync */
+			if ($request->has('faqs')) {
+				$faqs = $request->input('faqs', []);
+
+				/* Decode JSON if string */
+				if (is_string($faqs)) {
+					$decoded = json_decode($faqs, true);
+					if (json_last_error() !== JSON_ERROR_NONE) {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for FAQs.'
+						], 400);
+					}
+					$faqs = is_array($decoded) && isset($decoded[0])
+					? $decoded
+					: ($decoded['faqs'] ?? []);
+				}
+
+				if (!is_array($faqs)) {
+					return response()->json([
+						'success' => false,
+						'message' => 'No valid FAQs provided.'
+					], 400);
+				}
+
+				$updatedFaqIds = [];
+
 				foreach ($faqs as $faqData) {
-					if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-						if (!empty($faqData['id'])) {
-							$faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
-							if ($faq) {
-								$faq->update([
-									'question' => $faqData['question'],
-									'answer' => $faqData['answer'],
-									'category_id' => $faqData['category_id'] ?? null,
-									'status' => 'published',
-								]);
-								$processedFaqIds[] = $faq->id;
-							}
-						} else {
-							$newFaq = Faq::create([
-								'product_id' => $product->id,
+					if (empty($faqData['question']) || empty($faqData['answer'])) {
+						continue; // skip invalid
+					}
+
+					$faq = null;
+
+					/* Update existing if id provided */
+					if (!empty($faqData['id'])) {
+						$faq = $product->faqs()->where('id', $faqData['id'])->first();
+					}
+
+					/* Create new FAQ if not found */
+					if (!$faq) {
+						$faq = $product->faqs()->create([
+							'question' => $locale === 'en' ? $faqData['question'] : 'NA',
+							'answer' => $locale === 'en' ? $faqData['answer'] : 'NA',
+							'category_id' => $faqData['category_id'] ?? null,
+							'status' => 'published',
+						]);
+					} else {
+						/* Update base table fields only if locale is en */
+						if ($locale === 'en') {
+							$faq->update([
 								'question' => $faqData['question'],
 								'answer' => $faqData['answer'],
-								'category_id' => $faqData['category_id'] ?? null,
+								'category_id' => $faqData['category_id'] ?? $faq->category_id,
 								'status' => 'published',
 							]);
-							$processedFaqIds[] = $newFaq->id;
 						}
+					}
+
+					/* Update translation for current locale */
+					$faq->translateOrNew($locale)->question_tr = $faqData['question'];
+					$faq->translateOrNew($locale)->answer_tr = $faqData['answer'];
+					$faq->save();
+
+					$updatedFaqIds[] = $faq->id;
+				}
+
+				/* Delete any existing FAQ not in updatedFaqIds */
+				$product->faqs()->whereNotIn('id', $updatedFaqIds)->get()->each(
+					function ($faq) {
+						$faq->delete();
+					}
+				);
+			}
+		}
+
+		if ($canModifyImages) {
+			if ($request->has('images') && !empty(array_filter($request->images))) {
+				$updatedImages = [];
+				$manager = new ImageManager(new Driver()); // ✅ Initialize once
+
+				foreach ($request->images as $key => $image) {
+					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+						$updatedImages[] = $image;
+					} elseif ($request->hasFile("images.$key")) {
+						$file = $request->file("images.$key");
+
+						$img = $manager->read($file->getRealPath())->scale(width: 1000); /* keep aspect ratio, max width 1000px */
+
+						/* Dynamically adjust quality to keep under 100 KB */
+						$quality = 90;
+						do {
+							$encoded = $img->toWebp($quality);
+							$size = strlen($encoded);
+							$quality -= 5;
+						} while ($size > 102400 && $quality > 10);
+
+						$tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
+						file_put_contents($tempPath, $encoded);
+
+						$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
+						$updatedImages[] = Storage::disk('s3')->url($path);
+
+						@unlink($tempPath);
 					}
 				}
 
-				// Remove deleted FAQs
-				$existingFaqIds = $existingFaqs->keys()->toArray();
-				$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
-				if (!empty($faqsToDelete)) {
-					Faq::where('product_id', $product->id)
-					->whereIn('id', $faqsToDelete)
-					->delete();
+				/* use translated table */
+				$existingImages = json_decode(optional($product->translate($locale))->images, true) ?? [];
+
+				/* Only save if changed */
+				if ($updatedImages !== $existingImages) {
+					$jsonEncoded = json_encode($updatedImages);
+
+					if ($locale === 'en') {
+						$product->images = $jsonEncoded;
+					}
+
+					$product->translateOrNew($locale)->images_tr = $jsonEncoded;
+					$product->save();
 				}
 			}
 		}
 
-		/* Get all input data except '_method' */
-		$input = $request->except('_method', 'status');
-		/* Remove 'faqs' from the input before validation */
 
-		$fieldsToUnset = ['faqs', 'categories']; /* Added categories to fields to unset */
+		// // Handle FAQs with content writer permission check
+		// if ($request->has('faqs') && $canModifyContent) {
+		// 	$faqs = $request->input('faqs', []);
+		// 	$hasNewFaqData = false;
 
-		foreach ($fieldsToUnset as $field) {
-			unset($input[$field]);
-		}
+		// 	if (is_string($faqs)) {
+		// 		$decoded = json_decode($faqs, true);
+		// 		if (json_last_error() !== JSON_ERROR_NONE) {
+		// 			return response()->json([
+		// 				'success' => false,
+		// 				'message' => 'Invalid JSON format for faqs.'
+		// 			], 400);
+		// 		}
+		// 		$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
+		// 	}
 
-		$imagePath = 'production/products';
-		$videoPath = 'production/videos';
-		$documentPath = 'production/documents';
+		// 	// Fetch existing FAQs for comparison
+		// 	$existingFaqs = Faq::where('product_id', $product->id)->get()->keyBy('id');
+		// 	$processedFaqIds = [];
 
-		// Handle images with role-based permission - CORRECTED VERSION
+		// 	// Check if there are actual changes
+		// 	if (is_array($faqs) && !empty($faqs)) {
+		// 		foreach ($faqs as $faqData) {
+		// 			$id = $faqData['id'] ?? null;
+		// 			$question = trim($faqData['question'] ?? '');
+		// 			$answer = trim($faqData['answer'] ?? '');
+
+		// 			// Create or update
+		// 			if ($id && isset($existingFaqs[$id])) {
+		// 				$existing = $existingFaqs[$id];
+		// 				if (
+		// 					$existing->question !== $question ||
+		// 					$existing->answer !== $answer ||
+		// 					$existing->category_id != ($faqData['category_id'] ?? null)
+		// 				) {
+		// 					$hasNewFaqData = true;
+		// 					break;
+		// 				}
+		// 			} elseif (!empty($question) || !empty($answer)) {
+		// 				$hasNewFaqData = true;
+		// 				break;
+		// 			}
+		// 		}
+		// 	}
+
+		// 	// If user is trying to modify and has no permission
+		// 	if ($hasNewFaqData && !$canModifyContent) {
+		// 		return response()->json([
+		// 			'success' => false,
+		// 			'message' => 'You do not have permission to modify product FAQs.'
+		// 		], 403);
+		// 	}
+
+		// 	// If no real changes or user has permission, continue saving
+		// 	if ($canModifyContent && is_array($faqs)) {
+		// 		foreach ($faqs as $faqData) {
+		// 			if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+		// 				if (!empty($faqData['id'])) {
+		// 					$faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
+		// 					if ($faq) {
+		// 						$faq->update([
+		// 							'question' => $faqData['question'],
+		// 							'answer' => $faqData['answer'],
+		// 							'category_id' => $faqData['category_id'] ?? null,
+		// 							'status' => 'published',
+		// 						]);
+		// 						$processedFaqIds[] = $faq->id;
+		// 					}
+		// 				} else {
+		// 					$newFaq = Faq::create([
+		// 						'product_id' => $product->id,
+		// 						'question' => $faqData['question'],
+		// 						'answer' => $faqData['answer'],
+		// 						'category_id' => $faqData['category_id'] ?? null,
+		// 						'status' => 'published',
+		// 					]);
+		// 					$processedFaqIds[] = $newFaq->id;
+		// 				}
+		// 			}
+		// 		}
+
+		// 		// Remove deleted FAQs
+		// 		$existingFaqIds = $existingFaqs->keys()->toArray();
+		// 		$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
+		// 		if (!empty($faqsToDelete)) {
+		// 			Faq::where('product_id', $product->id)
+		// 				->whereIn('id', $faqsToDelete)
+		// 				->delete();
+		// 		}
+		// 	}
+		// }
+
+
+		// if ($request->has('benefits_features')) {
+		// 	$benefitsInput = $request->input('benefits_features');
+
+		// 	if ($canModifyContent) {
+		// 		// Decode and validate input
+		// 		if (is_string($benefitsInput)) {
+		// 			$decoded = json_decode($benefitsInput, true);
+		// 			if (json_last_error() === JSON_ERROR_NONE) {
+		// 				$newBenefits = $decoded;
+		// 			} else {
+		// 				return response()->json([
+		// 					'success' => false,
+		// 					'message' => 'Invalid JSON format for benefits_features.'
+		// 				], 400);
+		// 			}
+		// 		} elseif (is_array($benefitsInput)) {
+		// 			$newBenefits = $benefitsInput;
+		// 		} else {
+		// 			return response()->json([
+		// 				'success' => false,
+		// 				'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+		// 			], 400);
+		// 		}
+
+		// 		// Ensure it's an array
+		// 		if (!is_array($newBenefits)) {
+		// 			$newBenefits = [];
+		// 		}
+
+		// 		// Get existing saved benefits
+		// 		$existingBenefits = json_decode($product->benefits_features, true);
+		// 		if (!is_array($existingBenefits)) {
+		// 			$existingBenefits = [];
+		// 		}
+
+		// 		// Only save if changed
+		// 		if ($newBenefits !== $existingBenefits) {
+		// 			$input['benefits_features'] = json_encode($newBenefits);
+		// 		} else {
+		// 			// No change, so ignore it
+		// 			unset($input['benefits_features']);
+		// 		}
+		// 	} else {
+		// 		// User tried to modify benefits but doesn't have permission
+		// 		unset($input['benefits_features']);
+		// 	}
+		// }
+
+		// if ($request->has('description')) {
+		// 	if ($canModifyContent) {
+		// 		$descriptionInput = $request->input('description');
+
+		// 		// Decode and validate input
+		// 		if (is_string($descriptionInput)) {
+		// 			$decoded = json_decode($descriptionInput, true);
+		// 			if (json_last_error() === JSON_ERROR_NONE) {
+		// 				$newDescription = $decoded;
+		// 			} else {
+		// 				return response()->json([
+		// 					'success' => false,
+		// 					'message' => 'Invalid JSON format for description.'
+		// 				], 400);
+		// 			}
+		// 		} elseif (is_array($descriptionInput)) {
+		// 			$newDescription = $descriptionInput;
+		// 		} else {
+		// 			return response()->json([
+		// 				'success' => false,
+		// 				'message' => 'Invalid description format. Must be JSON string or array.'
+		// 			], 400);
+		// 		}
+
+		// 		// Ensure it's an array
+		// 		if (!is_array($newDescription)) {
+		// 			$newDescription = [];
+		// 		}
+
+		// 		// Save the description
+		// 		$input['description'] = json_encode($newDescription);
+		// 	} else {
+		// 		// User tried to modify description but doesn't have permission
+		// 		// For now, let's just remove it from input to prevent overwriting
+		// 		// This matches the behavior when no actual change is detected
+		// 		unset($input['description']);
+		// 	}
+		// }
+
 		// if ($request->has('images') && !empty(array_filter($request->images))) {
 		// 	if ($canModifyImages) {
 		// 		$finalImages = [];
+		// 		$manager = new ImageManager(new Driver()); // ✅ Initialize once
+
 		// 		foreach ($request->images as $key => $image) {
 		// 			if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
 		// 				$finalImages[] = $image;
 		// 			} elseif ($request->hasFile("images.$key")) {
 		// 				$file = $request->file("images.$key");
-		// 				// ✅ Check file size (max 100 KB)
-		// 				if ($file->getSize() > 102400) {
-		// 					return response()->json([
-		// 						'success' => false,
-		// 						'message' => 'Image size must not exceed 100 KB.'
-		// 					], 400);
-		// 				}
-		// 				$path = $file->store($imagePath, 's3');
+
+		// 				$img = $manager->read($file->getRealPath())->scale(width: 1000); /* keep aspect ratio, max width 1000px */
+
+		// 				/* Dynamically adjust quality to keep under 100 KB */
+		// 				$quality = 90;
+		// 				do {
+		// 					$encoded = $img->toWebp($quality);
+		// 					$size = strlen($encoded);
+		// 					$quality -= 5;
+		// 				} while ($size > 102400 && $quality > 10);
+
+		// 				$tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
+		// 				file_put_contents($tempPath, $encoded);
+
+		// 				$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
 		// 				$finalImages[] = Storage::disk('s3')->url($path);
+
+		// 				@unlink($tempPath);
 		// 			}
 		// 		}
+
 		// 		if (!empty($finalImages)) {
 		// 			$input['images'] = json_encode($finalImages);
 		// 		}
@@ -1138,55 +1465,15 @@ class ProductController extends BaseController
 		// 	unset($input['images']); // preserve existing
 		// }
 
-		if ($request->has('images') && !empty(array_filter($request->images))) {
-			if ($canModifyImages) {
-				$finalImages = [];
-				$manager = new ImageManager(new Driver()); // ✅ Initialize once
+		/* Get all input data except '_method' */
+		$input = $request->except('_method', 'status');
+		/* Remove 'faqs' from the input before validation */
 
-				foreach ($request->images as $key => $image) {
-					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-						// ✅ If already a valid URL, keep as is
-						$finalImages[] = $image;
+		$fieldsToUnset = ['categories', 'name', 'benefits_features', 'description', 'faqs', 'images'];
 
-					} elseif ($request->hasFile("images.$key")) {
-						$file = $request->file("images.$key");
-
-						// ✅ Load image with Intervention v3
-						$img = $manager->read($file->getRealPath())
-							->scale(width: 1000); // keep aspect ratio, max width 1000px
-
-						// ✅ Dynamically adjust quality to keep under 100 KB
-							$quality = 90;
-							do {
-							$encoded = $img->toWebp($quality); // 🔄 now WebP instead of JPEG
-							$size = strlen($encoded); // bytes
-							$quality -= 5;
-						} while ($size > 102400 && $quality > 10);
-
-						// ✅ Save compressed image to temp file
-						$tempPath = sys_get_temp_dir() . '/' . uniqid('', true) . '.webp';
-						file_put_contents($tempPath, $encoded);
-
-						// ✅ Upload to S3
-						$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
-						$finalImages[] = Storage::disk('s3')->url($path);
-
-						// ✅ Cleanup
-						@unlink($tempPath);
-					}
-				}
-
-				if (!empty($finalImages)) {
-					$input['images'] = json_encode($finalImages);
-				}
-			} else {
-				unset($input['images']);
-			}
-		} else {
-			unset($input['images']); // preserve existing
+		foreach ($fieldsToUnset as $field) {
+			unset($input[$field]);
 		}
-
-
 
 		// Handle videos with role-based permission - CORRECTED VERSION
 		if ($request->has('video_path')) {
@@ -1275,11 +1562,8 @@ class ProductController extends BaseController
 		/* Convert to JSON with unescaped slashes */
 		$input['documents'] = json_encode($input['documents']);
 
-		$input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-		$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-
 		/* List of valid fields allowed for updating */
-		$validArray = ["sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "images", "video_path", "documents", "brand_id", "views", "units_sold", "google_shopping_category", "google_shopping_mpn", "order", "benefits_features", "gen_type", "approved"];
+		$validArray = ["sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "video_path", "documents", "brand_id", "views", "units_sold", "order", "benefits_features", "gen_type", "approved"];
 
 		unset($input['product_attributes']);
 		unset($input['vendor_id']);
@@ -1288,93 +1572,6 @@ class ProductController extends BaseController
 
 		/* Initialize an error array to store validation errors */
 		$rowError = [];
-
-		if ($request->has('benefits_features')) {
-			$benefitsInput = $request->input('benefits_features');
-
-			if ($canModifyContent) {
-				// Decode and validate input
-				if (is_string($benefitsInput)) {
-					$decoded = json_decode($benefitsInput, true);
-					if (json_last_error() === JSON_ERROR_NONE) {
-						$newBenefits = $decoded;
-					} else {
-						return response()->json([
-							'success' => false,
-							'message' => 'Invalid JSON format for benefits_features.'
-						], 400);
-					}
-				} elseif (is_array($benefitsInput)) {
-					$newBenefits = $benefitsInput;
-				} else {
-					return response()->json([
-						'success' => false,
-						'message' => 'Invalid benefits_features format. Must be JSON string or array.'
-					], 400);
-				}
-
-				// Ensure it's an array
-				if (!is_array($newBenefits)) {
-					$newBenefits = [];
-				}
-
-				// Get existing saved benefits
-				$existingBenefits = json_decode($product->benefits_features, true);
-				if (!is_array($existingBenefits)) {
-					$existingBenefits = [];
-				}
-
-				// Only save if changed
-				if ($newBenefits !== $existingBenefits) {
-					$input['benefits_features'] = json_encode($newBenefits);
-				} else {
-					// No change, so ignore it
-					unset($input['benefits_features']);
-				}
-			} else {
-				// User tried to modify benefits but doesn't have permission
-				unset($input['benefits_features']);
-			}
-		}
-
-		if ($request->has('description')) {
-			if ($canModifyContent) {
-				$descriptionInput = $request->input('description');
-
-				// Decode and validate input
-				if (is_string($descriptionInput)) {
-					$decoded = json_decode($descriptionInput, true);
-					if (json_last_error() === JSON_ERROR_NONE) {
-						$newDescription = $decoded;
-					} else {
-						return response()->json([
-							'success' => false,
-							'message' => 'Invalid JSON format for description.'
-						], 400);
-					}
-				} elseif (is_array($descriptionInput)) {
-					$newDescription = $descriptionInput;
-				} else {
-					return response()->json([
-						'success' => false,
-						'message' => 'Invalid description format. Must be JSON string or array.'
-					], 400);
-				}
-
-				// Ensure it's an array
-				if (!is_array($newDescription)) {
-					$newDescription = [];
-				}
-
-				// Save the description
-				$input['description'] = json_encode($newDescription);
-			} else {
-				// User tried to modify description but doesn't have permission
-				// For now, let's just remove it from input to prevent overwriting
-				// This matches the behavior when no actual change is detected
-				unset($input['description']);
-			}
-		}
 
 		/* Tax ID validation */
 		if (isset($input['tax_id'])) {
@@ -1396,18 +1593,6 @@ class ProductController extends BaseController
 				$product->currency_id = (int) $input['currency_id'];
 				unset($input['currency_id']); /* Remove processed field */
 			}
-		}
-
-		/* Unit ID validation for length, weight, and shipping */
-
-		if (isset($input['google_shopping_category'])) {
-			$product->google_shopping_category = $input['google_shopping_category'];
-			unset($input['google_shopping_category']);
-		}
-
-		if (isset($input['google_shopping_mpn'])) {
-			$product->google_shopping_mpn = $input['google_shopping_mpn'];
-			unset($input['google_shopping_mpn']);
 		}
 
 		/* Brand ID validation */
@@ -1434,12 +1619,14 @@ class ProductController extends BaseController
 		foreach ($input as $key => $value) {
 			$product->$key = $value;
 		}
-
+		if ($request->quote_available) {
+			$product->quote_available = $request->quote_available;
+		}
 		/* Save the product */
 		$product->save();
 
 		if (isset($request->status)) {
-			$validStatuses = ['draft', 'published', 'pending','awaiting Price','temporary out of stock'];
+			$validStatuses = ['draft', 'published', 'pending', 'awaiting Price', 'temporary out of stock'];
 
 			if (!in_array($request->status, $validStatuses)) {
 				return response()->json([
@@ -2160,51 +2347,70 @@ class ProductController extends BaseController
 	 *     summary="Create a product duplicate",
 	 *     description="Creates a new product with the required details.",
 	 *     tags={"Products"},
-	 *  	@OA\Property(property="product", type="string", example="product id"),
-	 * 		@OA\Property(property="sku", type="string", example="Enter sku"),
-	 *     	@OA\Response(
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"product", "sku"},
+	 *             @OA\Property(property="product", type="string", example="12345"),
+	 *             @OA\Property(property="sku", type="string", example="SKU-NEW-001")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
 	 *         response=201,
 	 *         description="Success",
-	 *          @OA\MediaType(
-	 *              mediaType="application/json",
-	 *          )
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="message", type="string", example="Product duplicated successfully"),
+	 *             @OA\Property(property="new_product_id", type="integer", example=6789)
+	 *         )
 	 *     ),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function productDuplicate(Request $request)
 	{
-		/* Validate request data */
-		$request->validate([
-			'product' => "required|integer",
+		$validator = Validator::make($request->all(), [
+			'product' => 'required|exists:ec_products,id',
 			'sku' => "required",
 		]);
+
+		if ($validator->fails()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors' => $validator->errors()
+			], 422);
+		}
+
+		$locale = $request->locale ?? 'en';
 		try {
 			$mainProduct = Product::findOrFail(trim($request->input('product')));
 			if (!empty($mainProduct)) {
-				$checkSku = Product::where('sku', trim($mainProduct->sku . "-" . $request->input('sku')))->count();
+				$checkSku = Product::where('sku', $request->input('sku'))->count();
 
 				if (!$checkSku) {
 					$product = new Product();
 					$product->name = $mainProduct->name;
-					$product->sku = $mainProduct->sku . "-" . $request->input('sku');
-					$product->website_ids = $mainProduct->website_ids;
-					$product->gen_type = $mainProduct->gen_type;
 					$product->description = $mainProduct->description;
 					$product->benefits_features = $mainProduct->benefits_features;
 					$product->images = $mainProduct->images;
+
+					$product->translateOrNew($locale)->name_tr = $mainProduct->name;
+					$product->translateOrNew($locale)->description_tr = $mainProduct->description;
+					$product->translateOrNew($locale)->benefits_features_tr = $mainProduct->benefits_features;
+					$product->translateOrNew($locale)->images_tr = $mainProduct->images;
+
+					$product->sku = $request->input('sku');
+					$product->website_ids = $mainProduct->website_ids;
+					$product->gen_type = $mainProduct->gen_type;
 					$product->order = '0';
 					$product->is_featured = $mainProduct->is_featured;
 					$product->brand_id = $mainProduct->brand_id;
 					$product->quote_available = $mainProduct->quote_available;
-					$product->is_variation = $mainProduct->is_variation;
 					$product->tax_id = $mainProduct->tax_id;
 					$product->views = '0';
 					$product->stock_status = $mainProduct->stock_status;
 					$product->barcode = $mainProduct->barcode;
 					$product->approved_by = $mainProduct->approved_by;
-					$product->google_shopping_category = $mainProduct->google_shopping_category;
-					$product->google_shopping_mpn = $mainProduct->google_shopping_mpn;
 					$product->documents = $mainProduct->documents;
 					$product->video_path = $mainProduct->video_path;
 					$product->units_sold = $mainProduct->units_sold;
@@ -2335,6 +2541,96 @@ class ProductController extends BaseController
 							}
 						}
 					}
+
+					$firstSupplier = $mainProduct->productSuppliers->first();
+
+					if (!empty($firstSupplier)) {
+
+						/* Check if a record with the same SKU and vendor_id already exists */
+						$existingEntry = ProductSupplier::where('product_id', $product->id)
+						->where('vendor_id', $firstSupplier->vendor_id)
+						->first();
+
+						if (!$existingEntry) {
+
+							$data = [];
+							$rowErrors = [];
+
+
+							$data['product_id'] = $product->id;
+							$data['vendor_id'] = $firstSupplier->vendor_id;
+							$data['vendor_sku'] = $product->sku;
+							$data['list_price'] = $firstSupplier->list_price;
+							$data['cost_per_item'] = $firstSupplier->cost_per_item ?? 0;
+
+							$data['multiple'] = $firstSupplier->multiple ?? null;
+							$data['surcharge'] = $firstSupplier->surcharge ?? 0;
+							$data['additional_cost'] = $firstSupplier->additional_cost ?? 0;
+							$data['map'] = $firstSupplier->map ?? null;
+							$data['sale_price'] = $firstSupplier->sale_price ?? null;
+							$data['price'] = $firstSupplier->price ?? 0;
+							$data['inventory'] = $firstSupplier->inventory ?? 0;
+
+							$data['in_stock'] = $firstSupplier->in_stock ?? 'Yes';
+							$data['min_quantity'] = $firstSupplier->min_quantity ?? 1;
+							$data['is_fixed'] = $firstSupplier->is_fixed ?? 'Yes';
+
+							$data['delivery_days'] = $firstSupplier->delivery_days ?? '';
+							$data['return_policy'] = $firstSupplier->return_policy ?? '';
+							$data['free_shipping'] = $firstSupplier->free_shipping ?? '0';
+							$data['shipping_charge'] = $firstSupplier->shipping_charge ?? 0;
+							$data['warranty_information'] = $firstSupplier->warranty_information ?? null;
+							$data['restocking_fees'] = $firstSupplier->restocking_fees ?? 0;
+
+							/* --- Calculate cost_per_item --- */
+							if (!empty($data['list_price']) && !empty($data['multiple'])) {
+								$data['cost_per_item'] = (float) $data['list_price'] * (float) $data['multiple'];
+							}
+
+							$data['surcharge'] = !empty($data['surcharge'])
+							? $data['cost_per_item'] * ((float) $data['surcharge'] / 100)
+							: 0;
+
+							$data['additional_cost'] = !empty($data['additional_cost'])
+							? $data['cost_per_item'] * ((float) $data['additional_cost'] / 100)
+							: 0;
+
+							$data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
+
+							/* --- Price & Sale Price fallback --- */
+							$data['sale_price'] = !empty($data['sale_price']) ? (float) $data['sale_price'] : null;
+							$data['price'] = !empty($data['price']) ? (float) $data['price'] : 0;
+
+							/* --- Margin calculation --- */
+							if (!empty($data['sale_price']) && $data['sale_price'] > 0) {
+								$data['margin'] = (($data['sale_price'] - $data['total_cost_per_item']) / $data['sale_price']) * 100;
+							} elseif ($data['price'] > 0) {
+								$data['margin'] = (($data['price'] - $data['total_cost_per_item']) / $data['price']) * 100;
+							} else {
+								$data['margin'] = null;
+							}
+
+							/* --- Stock flags --- */
+							$data['in_stock'] = ($data['inventory'] > 0 || strtolower($data['in_stock']) === 'yes') ? 1 : 0;
+							$data['is_fixed'] = strtolower($data['is_fixed']) === 'yes' ? 1 : 0;
+							$data['free_shipping'] = strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
+							$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : $data['shipping_charge'];
+
+							$data['created_by'] = auth()->id();
+
+
+							$record = ProductSupplier::create($data);
+						}
+
+					}
+
+
+
+
+
+
+
+
 					return response()->json([
 						'success' => true,
 						'message' => 'Product created successfully',
@@ -2401,19 +2697,19 @@ class ProductController extends BaseController
 	public function deleteProductDocument(Request $request)
 	{
 		$request->validate([
-			'product_id'     => 'required|string',
-			'document_path'  => 'required|string'
+			'product_id' => 'required|string',
+			'document_path' => 'required|string'
 		]);
 
 		try {
-			$productId    = $request->input('product_id');
+			$productId = $request->input('product_id');
 			$documentPath = $request->input('document_path');
 			$product = Product::find($productId);
 
 			if (!$product) {
 				return response()->json([
 					'success' => false,
-					'error'   => 'Product not found'
+					'error' => 'Product not found'
 				], 404);
 			}
 
@@ -2422,7 +2718,7 @@ class ProductController extends BaseController
 			if (empty($currentDocuments)) {
 				return response()->json([
 					'success' => false,
-					'error'   => 'No documents found'
+					'error' => 'No documents found'
 				], 404);
 			}
 
@@ -2449,29 +2745,29 @@ class ProductController extends BaseController
 			if (!$found) {
 				return response()->json([
 					'success' => false,
-					'error'   => 'Document not found'
+					'error' => 'Document not found'
 				], 404);
 			}
 
 			//Reindex array
-			if(!empty($currentDocuments)){
+			if (!empty($currentDocuments)) {
 				$currentDocuments = array_values($currentDocuments);
 				$product->documents = json_encode($currentDocuments);
-			}else{
-				$product->documents="";
+			} else {
+				$product->documents = "";
 			}
 			$product->save();
 
 			return response()->json([
 				'success' => true,
 				'message' => 'Document deleted successfully',
-				'documents' => $currentDocuments?$currentDocuments:'',
+				'documents' => $currentDocuments ? $currentDocuments : '',
 			]);
 
 		} catch (\Exception $e) {
 			return response()->json([
 				'success' => false,
-				'error'   => $e->getMessage()
+				'error' => $e->getMessage()
 			], 500);
 		}
 	}

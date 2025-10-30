@@ -6696,6 +6696,10 @@
                                     "slug": {
                                         "type": "string",
                                         "example": "electronics"
+                                    },
+                                    "last_child": {
+                                        "type": "string",
+                                        "example": "635,665,686"
                                     }
                                 },
                                 "type": "object"
@@ -6989,6 +6993,10 @@
                                     "slug": {
                                         "type": "string",
                                         "example": "electronics"
+                                    },
+                                    "last_child": {
+                                        "type": "string",
+                                        "example": "635,665,686"
                                     }
                                 },
                                 "type": "object"
@@ -7344,6 +7352,106 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Category not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/allLastChild": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get All Last Child Categories",
+                "description": "Fetches a hierarchical list of categories. Each category includes its child categories recursively.",
+                "operationId": "529b63b093e5e46307ea0adb0003294c",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Electronics"
+                                            },
+                                            "slug": {
+                                                "type": "string",
+                                                "example": "electronics"
+                                            },
+                                            "children_recursive": {
+                                                "type": "array",
+                                                "items": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 2
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Mobile Phones"
+                                                        },
+                                                        "slug": {
+                                                            "type": "string",
+                                                            "example": "mobile-phones"
+                                                        },
+                                                        "children_recursive": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 3
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "Smartphones"
+                                                                    },
+                                                                    "slug": {
+                                                                        "type": "string",
+                                                                        "example": "smartphones"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
                                         }
                                     },
                                     "type": "object"
@@ -8667,6 +8775,10 @@
                                         "type": "boolean",
                                         "example": true
                                     },
+                                    "is_inside_delivery": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "is_new_customer": {
                                         "type": "boolean",
                                         "example": false
@@ -8933,6 +9045,22 @@
                                         "type": "string",
                                         "example": "John Doe"
                                     },
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "Acme Corporation"
+                                    },
+                                    "business_licence": {
+                                        "description": "Business licence PDF (max 2MB)",
+                                        "type": "file"
+                                    },
+                                    "trn_number": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "vat_certificate": {
+                                        "description": "VAT certificate PDF (max 2MB)",
+                                        "type": "file"
+                                    },
                                     "email": {
                                         "type": "string",
                                         "format": "email",
@@ -8961,8 +9089,16 @@
                                         "example": "971500000000"
                                     },
                                     "profile_img": {
-                                        "description": "Profile image (jpeg, png, webp only, max 1 mb)",
+                                        "description": "Profile image (jpeg, png, webp only, max 1 MB)",
                                         "type": "file"
+                                    },
+                                    "is_tax_free": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "approval_action_notes": {
+                                        "type": "string",
+                                        "example": "Customer provided valid exemption certificate."
                                     }
                                 },
                                 "type": "object"
@@ -9054,6 +9190,22 @@
                                         "type": "string",
                                         "example": "John Doe"
                                     },
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "Acme Corporation"
+                                    },
+                                    "business_licence": {
+                                        "description": "Business licence PDF (max 2MB)",
+                                        "type": "file"
+                                    },
+                                    "trn_number": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "vat_certificate": {
+                                        "description": "VAT certificate PDF (max 2MB)",
+                                        "type": "file"
+                                    },
                                     "email": {
                                         "type": "string",
                                         "format": "email",
@@ -9063,6 +9215,10 @@
                                         "type": "string",
                                         "format": "password",
                                         "example": "secret123"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Business"
                                     },
                                     "dob": {
                                         "type": "string",
@@ -9082,28 +9238,16 @@
                                         "example": "https://example.com/image.png"
                                     },
                                     "profile_img": {
-                                        "description": "Profile image (jpeg, jpg, png, webp only, max 1MB)",
+                                        "description": "Profile image (jpeg, png, webp only, max 1 MB)",
                                         "type": "file"
                                     },
-                                    "business_name": {
+                                    "is_tax_free": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "approval_action_notes": {
                                         "type": "string",
-                                        "example": "Acme Corporation"
-                                    },
-                                    "business_licence": {
-                                        "description": "Business licence PDF (max 2MB)",
-                                        "type": "file"
-                                    },
-                                    "trn_number": {
-                                        "type": "string",
-                                        "example": "1234567890"
-                                    },
-                                    "vat_certificate": {
-                                        "description": "VAT certificate PDF (max 2MB)",
-                                        "type": "file"
-                                    },
-                                    "type": {
-                                        "type": "string",
-                                        "example": "vendor"
+                                        "example": "Customer provided valid exemption certificate."
                                     }
                                 },
                                 "type": "object"
@@ -18468,6 +18612,104 @@
                 }
             }
         },
+        "/api/frontend/made-to-orders": {
+            "post": {
+                "tags": [
+                    "Frontend Made to Orders"
+                ],
+                "summary": "Create a new made-to-order request",
+                "description": "This API allows users to create a new made-to-order request with customer and product details.",
+                "operationId": "712c2833e61a93af31baeae6d9730f73",
+                "requestBody": {
+                    "description": "Made to Order form data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "quantity",
+                                    "name",
+                                    "email",
+                                    "phone_number",
+                                    "notes"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "description": "ID of the product to order",
+                                        "type": "integer",
+                                        "example": 1808
+                                    },
+                                    "quantity": {
+                                        "description": "Quantity of the product",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "name": {
+                                        "description": "Customer full name",
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "description": "Customer email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "address": {
+                                        "description": "Shipping address",
+                                        "type": "string",
+                                        "example": "123 Main Street, Connaught Place"
+                                    },
+                                    "city": {
+                                        "description": "City name",
+                                        "type": "string",
+                                        "example": "New Delhi"
+                                    },
+                                    "state": {
+                                        "description": "State name",
+                                        "type": "string",
+                                        "example": "Delhi"
+                                    },
+                                    "country": {
+                                        "description": "Country name",
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "zipcode": {
+                                        "description": "Postal or ZIP code",
+                                        "type": "string",
+                                        "example": "110001"
+                                    },
+                                    "phone_number": {
+                                        "description": "Customer contact number",
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "notes": {
+                                        "description": "Optional order notes",
+                                        "type": "string",
+                                        "example": "Need delivery before 25th December"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Made to Order request created successfully"
+                    },
+                    "400": {
+                        "description": "Validation error or bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    }
+                }
+            }
+        },
         "/api/frontend/menu-banners": {
             "get": {
                 "tags": [
@@ -18653,6 +18895,10 @@
                                         "example": true
                                     },
                                     "is_residential_address": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_inside_delivery": {
                                         "type": "boolean",
                                         "example": true
                                     },
@@ -26793,6 +27039,347 @@
                 ]
             }
         },
+        "/api/get-llms-seo-monitoring": {
+            "get": {
+                "tags": [
+                    "Google Console Monitoring"
+                ],
+                "summary": "Get a list of LLMS Google sitemap SERP monitoring data",
+                "description": "Returns product performance data including ID, URL, clicks, position, impressions, and CTR.",
+                "operationId": "286a907504cbd0b073ddf61addb94806",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date filter",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-01"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date filter",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-02"
+                        }
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search term",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "url",
+                                "clicks",
+                                "impressions",
+                                "ctr",
+                                "position"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "desc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "LLMS Google sitemap SERP monitoring data retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Records retrieved successfully"
+                                        },
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 250
+                                        },
+                                        "total_pages": {
+                                            "type": "integer",
+                                            "example": 13
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "https://example.com/product-1"
+                                                    },
+                                                    "date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2025-10-02"
+                                                    },
+                                                    "keyword": {
+                                                        "type": "string",
+                                                        "example": "best coffee machine"
+                                                    },
+                                                    "country": {
+                                                        "type": "string",
+                                                        "example": "UAE"
+                                                    },
+                                                    "device": {
+                                                        "type": "string",
+                                                        "example": "mobile"
+                                                    },
+                                                    "clicks": {
+                                                        "type": "integer",
+                                                        "example": 150
+                                                    },
+                                                    "impressions": {
+                                                        "type": "integer",
+                                                        "example": 2000
+                                                    },
+                                                    "ctr": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 7.5
+                                                    },
+                                                    "position": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 3.2
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/save-llms-seo-monitoring": {
+            "post": {
+                "tags": [
+                    "Google Console Monitoring"
+                ],
+                "summary": "Save LLMS Google sitemap SERP monitoring data",
+                "description": "Returns product performance data including ID, URL, clicks, position, impressions, and CTR.",
+                "operationId": "e76dad7297dafd2be384a9c74594e4b1",
+                "responses": {
+                    "200": {
+                        "description": "LLMS Google sitemap SERP monitoring data retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 101
+                                        },
+                                        "url": {
+                                            "type": "string",
+                                            "example": "https://example.com/product-1"
+                                        },
+                                        "clicks": {
+                                            "type": "integer",
+                                            "example": 150
+                                        },
+                                        "impressions": {
+                                            "type": "integer",
+                                            "example": 2000
+                                        },
+                                        "ctr": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 7.5
+                                        },
+                                        "position": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 3.2
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/live-show-llms-seo-monitoring": {
+            "get": {
+                "tags": [
+                    "Google Console Monitoring"
+                ],
+                "summary": "Live Show of LLMS Google sitemap SERP monitoring data",
+                "description": "Returns product performance data including ID, URL, clicks, position, impressions, and CTR.",
+                "operationId": "670170b3c5521150a34bc6112ff1c461",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date filter",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-01"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date filter",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-02"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "LLMS Google sitemap SERP monitoring data retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 101
+                                        },
+                                        "url": {
+                                            "type": "string",
+                                            "example": "https://example.com/product-1"
+                                        },
+                                        "clicks": {
+                                            "type": "integer",
+                                            "example": 150
+                                        },
+                                        "impressions": {
+                                            "type": "integer",
+                                            "example": 2000
+                                        },
+                                        "ctr": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 7.5
+                                        },
+                                        "position": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 3.2
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/countries": {
             "get": {
                 "tags": [
@@ -27017,6 +27604,394 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/made-to-orders": {
+            "get": {
+                "tags": [
+                    "Made to Orders"
+                ],
+                "summary": "Get all made-to-orders with pagination and filters",
+                "description": "Retrieve a paginated list of made-to-orders with optional search and sorting parameters.",
+                "operationId": "354c1c5028ff1d5b40d82e65ede127be",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search term (name, email, city, state, country, phone_number)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "John"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "email"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Orders retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 20
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 20
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 100
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Made to Orders"
+                ],
+                "summary": "Create a new made-to-order request",
+                "description": "This API allows users to create a new made-to-order request with customer and product details.",
+                "operationId": "67950a4d28e32df84b866b4cf17a2050",
+                "requestBody": {
+                    "description": "Made to Order form data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "quantity",
+                                    "name",
+                                    "email",
+                                    "phone_number",
+                                    "notes"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "description": "ID of the product to order",
+                                        "type": "integer",
+                                        "example": 1795
+                                    },
+                                    "quantity": {
+                                        "description": "Quantity of the product",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "name": {
+                                        "description": "Customer full name",
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "description": "Customer email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "address": {
+                                        "description": "Shipping address",
+                                        "type": "string",
+                                        "example": "123 Main Street, Connaught Place"
+                                    },
+                                    "city": {
+                                        "description": "City name",
+                                        "type": "string",
+                                        "example": "New Delhi"
+                                    },
+                                    "state": {
+                                        "description": "State name",
+                                        "type": "string",
+                                        "example": "Delhi"
+                                    },
+                                    "country": {
+                                        "description": "Country name",
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "zipcode": {
+                                        "description": "Postal or ZIP code",
+                                        "type": "string",
+                                        "example": "110001"
+                                    },
+                                    "phone_number": {
+                                        "description": "Customer contact number",
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "notes": {
+                                        "description": "Optional order notes",
+                                        "type": "string",
+                                        "example": "Need delivery before 25th December"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Made to Order request created successfully"
+                    },
+                    "400": {
+                        "description": "Validation error or bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/made-to-orders/{id}": {
+            "get": {
+                "tags": [
+                    "Made to Orders"
+                ],
+                "summary": "Get a specific made-to-order",
+                "description": "Retrieve details of a single made-to-order by its ID.",
+                "operationId": "622679db4ea07a2e657fc4662136a8e1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Made-to-order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Made-to-order retrieved successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    },
+                    "404": {
+                        "description": "Made-to-order not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Made to Orders"
+                ],
+                "summary": "Update an existing made-to-order",
+                "description": "Update details of an existing made-to-order by its ID.",
+                "operationId": "748ae0c1366399c5adeb1f7f7d330b5b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The ID of the made-to-order record to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Updated made-to-order data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "quantity",
+                                    "name",
+                                    "email",
+                                    "phone_number",
+                                    "notes"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1795
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Street Name"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "New Delhi"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "Delhi"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "zipcode": {
+                                        "type": "string",
+                                        "example": "110001"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Urgent delivery requested"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Made-to-order updated successfully"
+                    },
+                    "404": {
+                        "description": "Made-to-order not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Made to Orders"
+                ],
+                "summary": "Delete a made-to-order",
+                "operationId": "c526ca667d51b066033f4f412fc1e5ab",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/measurement-types": {
@@ -27987,6 +28962,10 @@
                                         "type": "boolean",
                                         "example": true
                                     },
+                                    "is_inside_delivery": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "example": 5
@@ -28152,6 +29131,10 @@
                                         "type": "boolean",
                                         "example": true
                                     },
+                                    "is_inside_delivery": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "example": 5
@@ -28177,6 +29160,15 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "additional_amount_name": {
+                                        "type": "string",
+                                        "example": "Accessory 1"
+                                    },
+                                    "additional_amount_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
                                     },
                                     "products": {
                                         "type": "array",
@@ -31075,11 +32067,23 @@
                                 "Store & Vendor Information",
                                 "Performance & Analytics",
                                 "Comparison & Bundling",
-                                "SEO",
                                 "Other",
                                 "All"
                             ],
                             "example": "General"
+                        }
+                    },
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ar",
+                                "en"
+                            ],
+                            "example": "ar"
                         }
                     }
                 ],
@@ -31241,6 +32245,10 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "quote_available": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "vendor_id": {
                                         "type": "integer",
                                         "example": 7
@@ -31256,14 +32264,6 @@
                                     "units_sold": {
                                         "type": "integer",
                                         "example": 50
-                                    },
-                                    "google_shopping_category": {
-                                        "type": "string",
-                                        "example": "Electronics"
-                                    },
-                                    "google_shopping_mpn": {
-                                        "type": "string",
-                                        "example": "123-ABC"
                                     },
                                     "order": {
                                         "type": "integer",
@@ -31852,11 +32852,49 @@
                 "summary": "Create a product duplicate",
                 "description": "Creates a new product with the required details.",
                 "operationId": "36292e068d0fb7811644935f30fdee50",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product",
+                                    "sku"
+                                ],
+                                "properties": {
+                                    "product": {
+                                        "type": "string",
+                                        "example": "12345"
+                                    },
+                                    "sku": {
+                                        "type": "string",
+                                        "example": "SKU-NEW-001"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "Success",
                         "content": {
-                            "application/json": {}
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product duplicated successfully"
+                                        },
+                                        "new_product_id": {
+                                            "type": "integer",
+                                            "example": 6789
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
                         }
                     }
                 },
@@ -32921,6 +33959,83 @@
                                         }
                                     },
                                     "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vendor-brand-product-export": {
+            "post": {
+                "tags": [
+                    "Vendor wise brand and product export"
+                ],
+                "summary": "Export product report",
+                "description": "Exports product report as Vendor wise brand and product export.",
+                "operationId": "3894e8cf668a1006c2771e6f266b14db",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "vendor_id": {
+                                        "type": "integer",
+                                        "example": 40
+                                    },
+                                    "range_from": {
+                                        "description": "Starting product index (must be >= 1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending product index (max range allowed: 500 products)",
+                                        "type": "integer",
+                                        "example": 500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product report export",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "vendor_id": {
+                                                        "type": "integer",
+                                                        "example": 22
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
                                 }
                             }
                         }
@@ -34512,6 +35627,78 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/feed/products.xml": {
+            "get": {
+                "tags": [
+                    "Product Feed XML"
+                ],
+                "summary": "Get product feed for DataFeedWatch",
+                "description": "Returns dynamic XML feed with all products for DataFeedWatch integration",
+                "operationId": "669eeff82606c5b773d2ec5868881f78",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page (default: 50)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 50
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number (default: 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort by column (default: id)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_direction",
+                        "in": "query",
+                        "description": "Sort direction (asc/desc, default: desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "asc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {}
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid parameters"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
             }
         },
         "/api/quotes": {
@@ -38159,6 +39346,176 @@
                 ]
             }
         },
+        "/api/temporaryCategories/{id}": {
+            "get": {
+                "tags": [
+                    "Temp Categories"
+                ],
+                "summary": "Get Temporary category details",
+                "description": "Returns details of a specific category",
+                "operationId": "7c551699f19b604d969fc6ab97561179",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "category": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Temp Categories"
+                ],
+                "summary": "Update existing category (uses POST due to image upload)",
+                "description": "Updates an existing category with the given details. Uses POST instead of PUT because of file uploads.",
+                "operationId": "e4b40dbd4e7be5acf2dc176756b2aa51",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Electronics"
+                                    },
+                                    "parent_id": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "slug": {
+                                        "type": "string",
+                                        "example": "electronics"
+                                    },
+                                    "last_child": {
+                                        "type": "string",
+                                        "example": "635,665,686"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Category updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category updated successfully"
+                                        },
+                                        "category": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation error"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/transaction-logs": {
             "get": {
                 "tags": [
@@ -41752,6 +43109,10 @@
             "description": "API Endpoints for managing product variants"
         },
         {
+            "name": "Product Feed XML",
+            "description": "API Endpoints for managing product XML Data FeedWatch"
+        },
+        {
             "name": "Categories",
             "description": "API Endpoints for Category Management"
         },
@@ -41996,6 +43357,10 @@
             "description": "Frontend-Location"
         },
         {
+            "name": "Frontend Made to Orders",
+            "description": "Frontend Made to Orders"
+        },
+        {
             "name": "Frontend Menu Banners",
             "description": "Frontend Menu Banners"
         },
@@ -42116,8 +43481,16 @@
             "description": "Inquiries"
         },
         {
+            "name": "Google Console Monitoring",
+            "description": "Google Console Monitoring"
+        },
+        {
             "name": "Locations",
             "description": "Locations"
+        },
+        {
+            "name": "Made to Orders",
+            "description": "Made to Orders"
         },
         {
             "name": "Measurement",
@@ -42162,6 +43535,10 @@
         {
             "name": "Product Questions",
             "description": "Product Questions"
+        },
+        {
+            "name": "Vendor wise brand and product export",
+            "description": "Vendor wise brand and product export"
         },
         {
             "name": "Product Suppliers",
@@ -42210,6 +43587,10 @@
         {
             "name": "Temp Products",
             "description": "Temp Products"
+        },
+        {
+            "name": "Temp Categories",
+            "description": "Temp Categories"
         },
         {
             "name": "Translations",
