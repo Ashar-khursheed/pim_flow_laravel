@@ -420,7 +420,7 @@ class ProductReportController extends Controller
 
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
-			 
+			$firstSupplier = $product->productSuppliers->first();
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
@@ -429,11 +429,12 @@ class ProductReportController extends Controller
 				'status' => $product->status,				 
 				'category_name' => $product->categories->pluck('name')->implode(', '),				 
 				'vendor_name' => $product->vendors->pluck('name')->first(),
+				 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 			];
 		});
 
 
-		$excelHeaders = ['id', 'Product Name', 'sku', 'brand name', 'status','category_name','vendor_name'];
+		$excelHeaders = ['id', 'Product Name', 'sku', 'brand name', 'status','category_name','vendor_name','vendor_sku'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
