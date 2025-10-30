@@ -85,7 +85,8 @@ class Product extends Model implements TranslatableContract
 		'frequently_bought_together' => 'array',
 		'benefits_features' => 'array',
 		'gen_type' => 'nullable|integer',
-		'approved' => 'nullable|integer'
+		'approved' => 'nullable|integer',
+		'ar_approved' => 'nullable|integer'
 
 	];
 
