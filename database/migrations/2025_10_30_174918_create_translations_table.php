@@ -15,13 +15,36 @@ return new class extends Migration
 		Schema::dropIfExists('attribute_translations');
 		Schema::dropIfExists('attribute_value_translations');
 		Schema::dropIfExists('product_attribute_translations');
+
+		Schema::create('attribute_group_translations', function (Blueprint $table) {
+			$table->id();
+			$table->string("locale", 2);
+			$table->integer("attribute_group_id");
+			$table->text("name_tr");
+		});
+
+		Schema::create('attribute_translations', function (Blueprint $table) {
+			$table->id();
+			$table->string("locale", 2);
+			$table->integer("attribute_id");
+			$table->text("name_tr");
+		});
+
+		Schema::create('attribute_value_translations', function (Blueprint $table) {
+			$table->id();
+			$table->string("locale", 2);
+			$table->integer("attribute_value_id");
+			$table->text("attribute_value_tr");
+		});
+
+		Schema::create('product_attribute_translations', function (Blueprint $table) {
+			$table->id();
+			$table->string("locale", 2);
+			$table->integer("product_attribute_id");
+			$table->text("attribute_value_tr");
+		});
+
 		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-			Schema::create('attribute_group_translations', function (Blueprint $table) {
-				$table->id();
-				$table->string("locale", 2);
-				$table->integer("attribute_group_id");
-				$table->text("name_tr");
-			});
 			$records = DB::table('attribute_groups')->select('id', 'name')->get();
 			foreach ($records as $record) {
 				DB::table('attribute_group_translations')->insert([
@@ -30,13 +53,6 @@ return new class extends Migration
 					'name_tr' => $record->name,
 				]);
 			}
-
-			Schema::create('attribute_translations', function (Blueprint $table) {
-				$table->id();
-				$table->string("locale", 2);
-				$table->integer("attribute_id");
-				$table->text("name_tr");
-			});
 			$records = DB::table('attributes')->select('id', 'name')->get();
 			foreach ($records as $record) {
 				DB::table('attribute_translations')->insert([
@@ -46,12 +62,6 @@ return new class extends Migration
 				]);
 			}
 
-			Schema::create('attribute_value_translations', function (Blueprint $table) {
-				$table->id();
-				$table->string("locale", 2);
-				$table->integer("attribute_value_id");
-				$table->text("attribute_value_tr");
-			});
 			$records = DB::table('attribute_values')->select('id', 'attribute_value')->get();
 			foreach ($records as $record) {
 				DB::table('attribute_value_translations')->insert([
@@ -61,12 +71,6 @@ return new class extends Migration
 				]);
 			}
 
-			Schema::create('product_attribute_translations', function (Blueprint $table) {
-				$table->id();
-				$table->string("locale", 2);
-				$table->integer("product_attribute_id");
-				$table->text("attribute_value_tr");
-			});
 			$records = DB::table('product_attributes')->select('id', 'attribute_value')->get();
 			foreach ($records as $record) {
 				DB::table('product_attribute_translations')->insert([

@@ -16,16 +16,26 @@ return new class extends Migration
 		Schema::dropIfExists('attribute_value_translations');
 		Schema::dropIfExists('product_translations');
 		Schema::dropIfExists('faq_translations');
+
+		Schema::create('product_translations', function (Blueprint $table) {
+			$table->id();
+			$table->string('locale', 2);
+			$table->integer('product_id');
+			$table->text('name_tr')->nullable();
+			$table->longText('description_tr')->nullable();
+			$table->longText('benefits_features_tr')->nullable();
+			$table->text('images_tr')->nullable();
+		});
+
+		Schema::create('faq_translations', function (Blueprint $table) {
+			$table->id();
+			$table->string('locale', 2);
+			$table->integer('faq_id');
+			$table->longText('question_tr')->nullable();
+			$table->longText('answer_tr')->nullable();
+		});
+
 		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-			Schema::create('product_translations', function (Blueprint $table) {
-				$table->id();
-				$table->string('locale', 2);
-				$table->integer('product_id');
-				$table->text('name_tr')->nullable();
-				$table->longText('description_tr')->nullable();
-				$table->longText('benefits_features_tr')->nullable();
-				$table->text('images_tr')->nullable();
-			});
 			$records = DB::table('ec_products')->select('id', 'name', 'description', 'benefits_features', 'images')->get();
 			foreach ($records as $record) {
 				DB::table('product_translations')->insert([
@@ -37,14 +47,6 @@ return new class extends Migration
 					'images_tr' => $record->images,
 				]);
 			}
-
-			Schema::create('faq_translations', function (Blueprint $table) {
-				$table->id();
-				$table->string('locale', 2);
-				$table->integer('faq_id');
-				$table->longText('question_tr')->nullable();
-				$table->longText('answer_tr')->nullable();
-			});
 			$records = DB::table('faqs')->select('id', 'question', 'answer')->get();
 			foreach ($records as $record) {
 				DB::table('faq_translations')->insert([
