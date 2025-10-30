@@ -6,6 +6,7 @@ use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
 use App\Models\Language;
+use App\Models\AttributeGroup;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\ProductAttribute;
@@ -26,7 +27,7 @@ class TranslationController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             @OA\Property(property="type", type="string", enum={"attribute", "attribute_value", "product_attribute", "product"}, example="attribute"),
+	 *             @OA\Property(property="type", type="string", enum={"attribute_group", "attribute", "attribute_value", "product_attribute", "product"}, example="attribute"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 5000 more)")
 	 *         )
@@ -41,7 +42,7 @@ class TranslationController extends BaseController
 		$maxRange = ($request->type === 'product') ? $request->range_from + 1000 : $request->range_from + 2000;
 
 		$request->validate([
-			'type' => 'required|string|in:attribute,attribute_value,product_attribute,product',
+			'type' => 'required|string|in:attribute_group,attribute,attribute_value,product_attribute,product',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => "required|integer|gte:range_from|max:$maxRange",
 		]);
@@ -51,7 +52,14 @@ class TranslationController extends BaseController
 
 		/* Prepare header row */
 		$localizedTitleHeaders = [];
-		if ($request->type === 'product') {
+		if (in_array($request->type, ['attribute_group', 'attribute', 'attribute_value', 'product_attribute'])) {
+			$localizedTitleHeaders = collect($langCodeArray)->flatMap(function ($code) {
+				$prefix = strtoupper($code);
+				return [
+					"{$prefix}_Title",
+				];
+			})->toArray();
+		} elseif ($request->type === 'product') {
 			$localizedTitleHeaders = collect($langCodeArray)->flatMap(function ($code) {
 				$prefix = strtoupper($code);
 				return [
@@ -69,13 +77,16 @@ class TranslationController extends BaseController
 
 		if ($request->type === 'product') {
 			$baseArray = ['ID', 'Name', 'Description', 'Benefits Features', 'Images'];
-		} else {
+		} elseif (in_array($request->type, ['attribute_group', 'attribute', 'attribute_value', 'product_attribute'])) {
 			$baseArray = ['ID', 'Name'];
+		} else {
+			$baseArray = ['ID', 'Title'];
 		}
 
 		$excelHeaders = array_merge($baseArray, $localizedTitleHeaders);
 
 		$model = match ($request->type) {
+			'attribute_group' => AttributeGroup::class,
 			'attribute' => Attribute::class,
 			'attribute_value' => AttributeValue::class,
 			'product_attribute' => ProductAttribute::class,
@@ -94,7 +105,7 @@ class TranslationController extends BaseController
 		$records = $records->map(function ($table) use ($langCodeArray, $request) {
 			$translations = $table->translations->keyBy('locale');
 
-			if ($request->type === 'attribute') {
+			if (in_array($request->type, ['attribute_group', 'attribute'])) {
 				$row = [
 					$table->id,
 					$table->name,
