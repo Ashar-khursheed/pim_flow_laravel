@@ -33998,6 +33998,16 @@
                                         "description": "Ending product index (max range allowed: 500 products)",
                                         "type": "integer",
                                         "example": 500
+                                    },
+                                    "status": {
+                                        "description": "Filter products by status",
+                                        "type": "string",
+                                        "enum": [
+                                            "all",
+                                            "published",
+                                            "draft"
+                                        ],
+                                        "example": "all"
                                     }
                                 },
                                 "type": "object"
