@@ -296,7 +296,7 @@ class OrderController extends BaseController
 			}
 			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
-			$orderAmount += $request->boolean('is_inside_delivery') ? 250 : 0;
+			$orderAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
 			$discountedAmount = $orderAmount - $discount;
 

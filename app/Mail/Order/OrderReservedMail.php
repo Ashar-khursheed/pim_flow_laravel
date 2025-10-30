@@ -95,7 +95,7 @@ class OrderReservedMail extends Mailable
 
 		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
 		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
-		$insideDeliveryCharge = $order->is_inside_delivery ? 250 : 0;
+		$insideDeliveryCharge = $order->is_inside_delivery ? 249 : 0;
 
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
