@@ -182,7 +182,7 @@ class CustomerCartController extends Controller
 					$cartAmount += 199;
 				}
 				if ($record->is_inside_delivery) {
-					$cartAmount += 250;
+					$cartAmount += 249;
 				}
 
 				/* Tax calculations */
@@ -316,7 +316,7 @@ class CustomerCartController extends Controller
 
 			$cartAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$cartAmount += $request->boolean('is_residential_address') ? 199 : 0;
-			$cartAmount += $request->boolean('is_inside_delivery') ? 250 : 0;
+			$cartAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
 			$customer = Customer::find($request->customer_id);
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
