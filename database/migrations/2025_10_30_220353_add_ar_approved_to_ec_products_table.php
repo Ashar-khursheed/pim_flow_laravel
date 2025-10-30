@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('ec_products', function (Blueprint $table) {
             // Add the ar_approved flag with default value 0 (not approved)
-            $table->boolean('ar_approved')->default(0)->after('status');
+            $table->integer('ar_approved')->default(0)->after('status');
         });
     }
 

@@ -138,11 +138,12 @@ class ProductController extends BaseController
 		$search = $request->input('search');
 		$status = $request->input('status');
 		$approved = $request->input('approved');
+		$ar_approved = $request->input('ar_approved');
 		$sortBy = $request->input('sort_by', 'id');
 		$sortDirection = $request->input('sort_direction', 'desc');
 
 		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved' , 'ar_approved'];
 		if (!in_array($sortBy, $allowedSortColumns)) {
 			$sortBy = 'id'; // Default to id if invalid column
 		}
@@ -159,7 +160,7 @@ class ProductController extends BaseController
 			'productSuppliers.vendor:id,name', // Updated to include vendor relationship
 			'vendors:id,name' // Make sure to select the name field
 		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved']);
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved' , 'ar_approved']);
 
 		/* Apply search if provided */
 
@@ -169,6 +170,9 @@ class ProductController extends BaseController
 		}
 		if ($approved !== null) {
 			$query->where('approved', $approved);
+		}
+		if ($ar_approved !== null) {
+			$query->where('ar_approved', $ar_approved);
 		}
 
 		if ($search) {
@@ -197,6 +201,7 @@ class ProductController extends BaseController
 					'name' => $product->name,
 					'gen_type' => $product->gen_type,
 					'approved' => $product->approved,
+					'ar_approved' => $product->ar_approved,
 					'sku' => $product->sku,
 					'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 					'brand' => optional($product->brand)->name,
@@ -225,6 +230,7 @@ class ProductController extends BaseController
 				'name' => $product->name,
 				'gen_type' => $product->gen_type,
 				'approved' => $product->approved,
+				'ar_approved' => $product->ar_approved,
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
@@ -393,7 +399,7 @@ class ProductController extends BaseController
 	{
 		$locale = in_array($request->locale ?? 'en', ['ar', 'en']) ? ($request->locale ?? 'en') : 'en';
 		$attributeGroup = [
-			'General' => ['sku', 'barcode', 'status', 'approved'],
+			'General' => ['sku', 'barcode', 'status', 'approved' , 'ar_approved'],
 
 			'Inventory & Stock Management' => ['stock_status'],
 			'Pricing & Sales' => ['tax_id', 'currency_id', 'approved_by'],
@@ -868,6 +874,13 @@ class ProductController extends BaseController
 			return response()->json([
 				'success' => false,
 				'message' => 'This product is approved and can only be updated by Super Admin or Admin.'
+			], 403);
+		}
+
+		if ($product->ar_approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
+			return response()->json([
+				'success' => false,
+				'message' => 'This product is approved and can only be updated by.'
 			], 403);
 		}
 
@@ -1563,7 +1576,7 @@ class ProductController extends BaseController
 		$input['documents'] = json_encode($input['documents']);
 
 		/* List of valid fields allowed for updating */
-		$validArray = ["sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "video_path", "documents", "brand_id", "views", "units_sold", "order", "benefits_features", "gen_type", "approved"];
+		$validArray = ["sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "video_path", "documents", "brand_id", "views", "units_sold", "order", "benefits_features", "gen_type", "approved" , "ar_approved"];
 
 		unset($input['product_attributes']);
 		unset($input['vendor_id']);
