@@ -348,7 +348,8 @@ class ProductReportController extends Controller
 	 *         @OA\JsonContent(
 	 *             @OA\Property(property="vendor_id", type="integer", example=40),
 	 *   		   @OA\Property(property="range_from", type="integer", example=1, description="Starting product index (must be >= 1)"),
-	 *             @OA\Property(property="range_to", type="integer", example=500, description="Ending product index (max range allowed: 500 products)")
+	 *             @OA\Property(property="range_to", type="integer", example=500, description="Ending product index (max range allowed: 500 products)"),
+	 * 			   @OA\Property(property="status", type="string", enum={"all","published","draft"}, example="all", description="Filter products by status"),
 	 *         )
 	 *     ),
 	 *     @OA\Response(
@@ -384,6 +385,7 @@ class ProductReportController extends Controller
 			'vendor_id' => 'required|integer',
 			'range_from' => 'nullable|integer|min:1',
 			'range_to' => 'nullable|integer|min:1',
+			'status' => 'string|in:all,draft,published',
 		]);
 
 		$query = Product::with([
@@ -404,7 +406,9 @@ class ProductReportController extends Controller
 				$q->where('vendors.id', $request->vendor_id);
 			});
 		}
-
+		if ($request->status != 'all') {
+			$query->where('status', $request->status);
+		}
 		// Apply range filters if provided
 		if ($request->range_from && $request->range_to) {
 			$offset = $request->range_from - 1;
@@ -416,22 +420,20 @@ class ProductReportController extends Controller
 
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
+			 
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
-				'sku' => $product->sku,
-				'brand_id' => optional($product->brand)->id,
+				'sku' => $product->sku,				 
 				'brand' => optional($product->brand)->name,
-				'status' => $product->status,
-				'category_id' => $product->categories->pluck('id')->implode(', '),
-				'category_name' => $product->categories->pluck('name')->implode(', '),
-				'vendor_id' => $product->vendors->pluck('id')->first(),
+				'status' => $product->status,				 
+				'category_name' => $product->categories->pluck('name')->implode(', '),				 
 				'vendor_name' => $product->vendors->pluck('name')->first(),
 			];
 		});
 
 
-		$excelHeaders = ['id', 'Product Name', 'sku', 'brand_id', 'brand name', 'status', 'category_id', 'category_name', 'vendor_id', 'vendor_name'];
+		$excelHeaders = ['id', 'Product Name', 'sku', 'brand name', 'status','category_name','vendor_name'];
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
