@@ -39744,6 +39744,7 @@
                                     "type": {
                                         "type": "string",
                                         "enum": [
+                                            "attribute_group",
                                             "attribute",
                                             "attribute_value",
                                             "product_attribute",
