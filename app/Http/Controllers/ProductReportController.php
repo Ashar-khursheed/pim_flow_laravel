@@ -420,7 +420,7 @@ class ProductReportController extends Controller
 
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
-			  $firstSupplier = $product->productSuppliers->first();
+			$firstSupplier = $product->productSuppliers->first();
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
