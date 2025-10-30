@@ -102,31 +102,51 @@ class TranslationController extends BaseController
 		->orderBy('id', 'asc')
 		->get();
 
+
+
 		$records = $records->map(function ($table) use ($langCodeArray, $request) {
 			$translations = $table->translations->keyBy('locale');
 
-			if (in_array($request->type, ['attribute_group', 'attribute'])) {
-				$row = [
-					$table->id,
-					$table->name,
-				];
-			} elseif (in_array($request->type, ['attribute_value', 'product_attribute'])) {
-				$row = [
-					$table->id,
-					$table->attribute_value,
-				];
-			} elseif ($request->type === 'product') {
-				$row = [
-					$table->id,
-					$table->name,
-					$table->description,
-					$table->benefits_features,
-					$table->images,
-				];
+			/* Define field mapping based on type */
+			$fieldMapping = [
+				'attribute_group' => ['id', 'name'],
+				'attribute' => ['id', 'name'],
+				'attribute_value' => ['id', 'attribute_value'],
+				'product_attribute' => ['id', 'attribute_value'],
+				'product' => ['id', 'name', 'description', 'benefits_features', 'images'],
+			];
+
+			/* Define translation field mapping */
+			$translationFields = [
+				'attribute_group' => 'name_tr',
+				'attribute' => 'name_tr',
+				'attribute_value' => 'attribute_value_tr',
+				'product_attribute' => 'attribute_value_tr',
+				'product' => ['name_tr', 'description_tr', 'benefits_features_tr', 'images_tr'],
+			];
+
+			/* Build base row */
+			$row = [];
+			$fields = $fieldMapping[$request->type] ?? [];
+
+			foreach ($fields as $field) {
+				$row[] = $table->$field ?? '';
 			}
 
+			/* Add translations for each language */
 			foreach ($langCodeArray as $code) {
-				$row[] = optional($translations->get($code))->title ?? '';
+				$translation = $translations->get($code);
+				$transFields = $translationFields[$request->type] ?? [];
+
+				if (is_array($transFields)) {
+					/* Multiple translation fields (product) */
+					foreach ($transFields as $transField) {
+						$row[] = $translation?->$transField ?? '';
+					}
+				} else {
+					/* Single translation field */
+					$row[] = $translation?->$transFields ?? '';
+				}
 			}
 
 			return $row;
@@ -164,7 +184,7 @@ class TranslationController extends BaseController
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"upload_file"},
-	 *                 @OA\Property(property="type", type="string", enum={"attribute", "attribute_value", "product_attribute", "product"}, example="attribute"),
+	 *                 @OA\Property(property="type", type="string", enum={"attribute_group", "attribute", "attribute_value", "product_attribute", "product"}, example="attribute"),
 	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB")
 	 *             )
 	 *         )
@@ -177,45 +197,84 @@ class TranslationController extends BaseController
 	{
 		/* Validate request data */
 		$request->validate([
-			'type' => 'required|string|in:attribute,attribute_value,product_attribute,product',
+			'type' => 'required|string|in:attribute_group,attribute,attribute_value,product_attribute,product,faq',
 			'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
 		]);
 
 		try {
 			$langCodeArray = Language::pluck('code')->toArray();
 
-			if ($request->type === 'product') {
-				$keywordFileFormatArray = [
-					'ID'   => 'id',
-					'Name' => 'name',
-					'Description' => 'description',
-					'Benefits Features' => 'benefits_features',
-					'Images' => 'images',
-				];
-			} else {
-				$keywordFileFormatArray = [
-					'ID'   => 'id',
-					'Name' => 'name',
-				];
-			}
+			/* Define base columns and translation fields based on type */
+			$typeConfig = [
+				'attribute_group' => [
+					'base' => ['ID' => 'id', 'Name' => 'name'],
+					'trans' => ['{CODE}_Name' => '{code}_name']
+				],
+				'attribute' => [
+					'base' => ['ID' => 'id', 'Name' => 'name'],
+					'trans' => ['{CODE}_Name' => '{code}_name']
+				],
+				'attribute_value' => [
+					'base' => ['ID' => 'id', 'Attribute Value' => 'attribute_value'],
+					'trans' => ['{CODE}_AttributeValue' => '{code}_attribute_value']
+				],
+				'product_attribute' => [
+					'base' => ['ID' => 'id', 'Attribute Value' => 'attribute_value'],
+					'trans' => ['{CODE}_AttributeValue' => '{code}_attribute_value']
+				],
+				'product' => [
+					'base' => [
+						'ID' => 'id',
+						'Name' => 'name',
+						'Description' => 'description',
+						'Benefits Features' => 'benefits_features',
+						'Images' => 'images',
+					],
+					'trans' => [
+						'{CODE}_Name' => '{code}_name',
+						'{CODE}_Description' => '{code}_description',
+						'{CODE}_BenefitsFeatures' => '{code}_benefits_features',
+						'{CODE}_Images' => '{code}_images',
+					]
+				],
+				'faq' => [
+					'base' => [
+						'ID' => 'id',
+						'Question' => 'question',
+						'Answer' => 'answer',
+					],
+					'trans' => [
+						'{CODE}_Question' => '{code}_question',
+						'{CODE}_Answer' => '{code}_answer',
+					]
+				],
+			];
 
+			$config = $typeConfig[$request->type] ?? ['base' => [], 'trans' => []];
+
+			/* Build keyword file format array */
+			$keywordFileFormatArray = $config['base'];
+
+			/* Add translation columns for each language */
 			foreach ($langCodeArray as $code) {
 				$upperCode = strtoupper($code);
-				if ($request->type === 'product') {
-					$keywordFileFormatArray["{$upperCode}_Name"]             = "{$code}_name";
-					$keywordFileFormatArray["{$upperCode}_Description"]      = "{$code}_description";
-					$keywordFileFormatArray["{$upperCode}_BenefitsFeatures"] = "{$code}_benefits_features";
-					$keywordFileFormatArray["{$upperCode}_Images"]           = "{$code}_images";
-				} else {
-					$keywordFileFormatArray["{$upperCode}_Title"] = "{$code}_title";
+
+				foreach ($config['trans'] as $keyTemplate => $valueTemplate) {
+					$key = str_replace('{CODE}', $upperCode, $keyTemplate);
+					$value = str_replace('{code}', $code, $valueTemplate);
+					$keywordFileFormatArray[$key] = $value;
 				}
 			}
 
+			/* Define module name */
 			$module = match ($request->type) {
+				'attribute_group' => 'Attribute Group Translation',
 				'attribute' => 'Attribute Translation',
 				'attribute_value' => 'Attribute Value Translation',
 				'product_attribute' => 'Product Attribute Translation',
 				'product' => 'Product Translation',
+				'faq' => 'FAQ Translation',
+				default => 'Translation'
 			};
 
 			$excelImporter->processExcelImport(
@@ -231,14 +290,24 @@ class TranslationController extends BaseController
 				'success' => true,
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
+
 		} catch(\Exception $exception) {
-			$error[] = 'Error: ' . $exception->getMessage();
-			$error[] = 'File: ' . $exception->getFile();
-			$error[] = 'Line: ' . $exception->getLine();
+			\Log::error('Translation Import Error', [
+				'message' => $exception->getMessage(),
+				'file' => $exception->getFile(),
+				'line' => $exception->getLine(),
+				'trace' => $exception->getTraceAsString()
+			]);
+
 			return response()->json([
 				'success' => false,
-				'message' => $error
-			]);
+				'message' => 'Import failed: ' . $exception->getMessage(),
+				'error' => [
+					'message' => $exception->getMessage(),
+					'file' => $exception->getFile(),
+					'line' => $exception->getLine(),
+				]
+			], 500);
 		}
 	}
 

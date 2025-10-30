@@ -11,12 +11,12 @@ return new class extends Migration
 	 */
 	public function up(): void
 	{
-		Schema::dropIfExists('attribute_groups_translations');
+		Schema::dropIfExists('attribute_group_translations');
 		Schema::dropIfExists('attribute_translations');
 		Schema::dropIfExists('attribute_value_translations');
 		Schema::dropIfExists('product_attribute_translations');
 		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-			Schema::create('attribute_groups_translations', function (Blueprint $table) {
+			Schema::create('attribute_group_translations', function (Blueprint $table) {
 				$table->id();
 				$table->string("locale", 2);
 				$table->integer("attribute_group_id");
@@ -24,7 +24,7 @@ return new class extends Migration
 			});
 			$records = DB::table('attribute_groups')->select('id', 'name')->get();
 			foreach ($records as $record) {
-				DB::table('attribute_groups_translations')->insert([
+				DB::table('attribute_group_translations')->insert([
 					'locale' => 'en',
 					'attribute_group_id' => $record->id,
 					'name_tr' => $record->name,
@@ -83,7 +83,7 @@ return new class extends Migration
 	 */
 	public function down(): void
 	{
-		Schema::dropIfExists('attribute_groups_translations');
+		Schema::dropIfExists('attribute_group_translations');
 		Schema::dropIfExists('attribute_translations');
 		Schema::dropIfExists('attribute_value_translations');
 		Schema::dropIfExists('product_attribute_translations');

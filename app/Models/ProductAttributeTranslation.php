@@ -10,6 +10,6 @@ class ProductAttributeTranslation extends Model
 	protected $fillable = [
 		'locale',
 		'product_attribute_id',
-		'title',
+		'attribute_value_tr',
 	];
 }
