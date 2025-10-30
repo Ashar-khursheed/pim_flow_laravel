@@ -80,7 +80,7 @@ product_json = {
     "attributes": attrs
 }
 model = ChatOpenAI(
-   model="gpt-4o-mini",
+   model="gpt-4",
     api_key=os.getenv("OPENAI_API_KEY")
 )
 
