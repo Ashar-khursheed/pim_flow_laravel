@@ -126,7 +126,9 @@ class ImportTranslationJob implements ShouldQueue
 						$images = ${$locale . '_images'} ?? null;
 
 						if (!empty($name) || !empty($description) || !empty($benefits) || !empty($images)) {
-							$translation = $record->translateOrNew($locale);
+							if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+								$translation = $record->translateOrNew($locale);
+							}
 							$translation->name_tr = $name;
 							$translation->description_tr = $description;
 							$translation->benefits_features_tr = $benefits;
@@ -136,7 +138,9 @@ class ImportTranslationJob implements ShouldQueue
 						$title = ${$locale . '_title'} ?? null;
 
 						if (!empty($title)) {
-							$record->translateOrNew($locale)->title = $title;
+							if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+								$record->translateOrNew($locale)->title = $title;
+							}
 						}
 					}
 				}
