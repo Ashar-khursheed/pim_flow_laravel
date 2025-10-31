@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Brand;
 use App\Models\SeoManagement;
 use App\Models\TransactionLog;
 use App\Models\SeoSecondaryKeyword;
@@ -650,7 +651,7 @@ class SeoManagementController extends Controller
 					'message' => "The URL '{$request->url}' is already assigned to {$typeName} '{$relatedName}'.",
 				], 403);
 			}
-			// $relational_type =$request->relational_type;
+			//  $relational_type =$request->relational_type;
 			if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
 				return response()->json([
 					'success' => false,
@@ -1093,6 +1094,74 @@ class SeoManagementController extends Controller
 			}
 		}
 
+		if ($seo->relational_type === 'Category' && $seo->relational_id) {
+
+		$category = Category::with(['parent.parent.parent'])
+		->where('id', $seo->relational_id)
+		->first(['id', 'name', 'slug', 'order', 'parent_id']);
+
+		$url = null;
+		if ($category) {
+		$url = $this->getCategoryPath($category);		 
+		}
+	 
+			 
+			/* If not a product, return the generic WebPage schema */
+			return [
+				"@context" => "https://schema.org",
+				"@type" => $seo->relational_type ?? 'WebPage',
+				"url" => $url,
+				"name" => $seo->meta_title,
+				"description" => $seo->meta_description,
+				"keywords" => $seo->tags,
+				"image" => [
+					"@type" => "ImageObject",
+					"url" => $seo->og_image_url,
+					"name" => $seo->og_image_name,
+					"description" => $seo->og_image_alt_text
+				],
+				"aggregateRating" => [
+					"@type" => "AggregateRating",
+					"ratingValue" => $seo->schema_rating,
+					"reviewCount" => $seo->schema_reviews_count
+				]
+			];
+
+		}
+		if ($seo->relational_type === 'Brand' && $seo->relational_id) {
+
+		 $brand = Brand::findOrFail($seo->relational_id);
+		$url = null;
+		 
+		if($brand){
+	 		$url = $brand->seoUrl->url;
+		}
+			 
+			/* If not a product, return the generic WebPage schema */
+			return [
+				"@context" => "https://schema.org",
+				"@type" => $seo->relational_type ?? 'WebPage',
+				"url" => $url,
+				"name" => $seo->meta_title,
+				"description" => $seo->meta_description,
+				"keywords" => $seo->tags,
+				"image" => [
+					"@type" => "ImageObject",
+					"url" => $seo->og_image_url,
+					"name" => $seo->og_image_name,
+					"description" => $seo->og_image_alt_text
+				],				 
+				"aggregateRating" => [
+					"@type" => "AggregateRating",
+					"ratingValue" => $seo->schema_rating,
+					"reviewCount" => $seo->schema_reviews_count
+				]
+			];
+
+		}
+
+ 
+					 
 		/* If not a product, return the generic WebPage schema */
 		return [
 			"@context" => "https://schema.org",
@@ -1115,6 +1184,19 @@ class SeoManagementController extends Controller
 		];
 	}
 
+	// Helper method to build category path
+	private function getCategoryPath($category)
+	{
+		$path = [$category->slug];
+		$parent = $category->parent;
+
+		while ($parent) {
+			array_unshift($path, $parent->slug);
+			$parent = $parent->parent;
+		}
+
+		return implode('/', $path);
+	}
 	/**
 	 * @OA\Post(
 	 *     path="/api/seo-management/import",
