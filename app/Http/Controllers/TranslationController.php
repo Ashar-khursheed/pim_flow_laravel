@@ -208,19 +208,19 @@ class TranslationController extends BaseController
 			$typeConfig = [
 				'attribute_group' => [
 					'base' => ['ID' => 'id', 'Name' => 'name'],
-					'trans' => ['{CODE}_Name' => '{code}_name']
+					'trans' => ['{CODE}_Title' => '{code}_name']
 				],
 				'attribute' => [
 					'base' => ['ID' => 'id', 'Name' => 'name'],
-					'trans' => ['{CODE}_Name' => '{code}_name']
+					'trans' => ['{CODE}_Title' => '{code}_name']
 				],
 				'attribute_value' => [
 					'base' => ['ID' => 'id', 'Attribute Value' => 'attribute_value'],
-					'trans' => ['{CODE}_AttributeValue' => '{code}_attribute_value']
+					'trans' => ['{CODE}_Title' => '{code}_attribute_value']
 				],
 				'product_attribute' => [
 					'base' => ['ID' => 'id', 'Attribute Value' => 'attribute_value'],
-					'trans' => ['{CODE}_AttributeValue' => '{code}_attribute_value']
+					'trans' => ['{CODE}_Title' => '{code}_attribute_value']
 				],
 				'product' => [
 					'base' => [
