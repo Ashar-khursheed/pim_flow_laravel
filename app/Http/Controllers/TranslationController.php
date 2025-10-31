@@ -38,6 +38,13 @@ class TranslationController extends BaseController
 	 */
 	public function export(Request $request, ExcelRepository $excelRepo)
 	{
+		if (!in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+			return response()->json([
+				'success' => false,
+				'message' => "This feature is restricted and only available for UAE and SA websites.",
+			]);
+		}
+
 		/* Validate the request data */
 		$maxRange = ($request->type === 'product') ? $request->range_from + 1000 : $request->range_from + 2000;
 
@@ -195,6 +202,12 @@ class TranslationController extends BaseController
 	 */
 	public function import(Request $request, ExcelImporterService $excelImporter)
 	{
+		if (!in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+			return response()->json([
+				'success' => false,
+				'message' => "This feature is restricted and only available for UAE and SA websites.",
+			]);
+		}
 		/* Validate request data */
 		$request->validate([
 			'type' => 'required|string|in:attribute_group,attribute,attribute_value,product_attribute,product,faq',
@@ -312,46 +325,6 @@ class TranslationController extends BaseController
 	}
 
 	/**
-	 * Display a listing of the resource.
-	 */
-	public function index()
-	{
-		//
-	}
-
-	/**
-	 * Store a newly created resource in storage.
-	 */
-	public function store(Request $request)
-	{
-		//
-	}
-
-	/**
-	 * Display the specified resource.
-	 */
-	public function show(AppKeyword $appKeyword)
-	{
-		//
-	}
-
-	/**
-	 * Update the specified resource in storage.
-	 */
-	public function update(Request $request, AppKeyword $appKeyword)
-	{
-		//
-	}
-
-	/**
-	 * Remove the specified resource from storage.
-	 */
-	public function destroy(AppKeyword $appKeyword)
-	{
-		//
-	}
-
-	/**
 	 * @OA\Post(
 	 *     path="/api/translations/generate-translate",
 	 *     summary="Generate translation from ID",
@@ -369,6 +342,13 @@ class TranslationController extends BaseController
 	 */
 	public function generateTranslate(Request $request)
 	{
+		if (!in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+			return response()->json([
+				'success' => false,
+				'message' => "This feature is restricted and only available for UAE and SA websites.",
+			]);
+		}
+
 		$request->validate([
 			'translate_to' => 'required|string|in:ar,en',
 			'product_id' => 'required|integer|exists:ec_products,id',
