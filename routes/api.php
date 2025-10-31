@@ -517,6 +517,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/seoManagement/schema-update/{seo_id}', [SeoManagementController::class, 'schemaUpdate']);
 
 	Route::resource('seo-management', SeoManagementController::class);
+	Route::post('seo-management/{id}', [SeoManagementController::class,'update']);
+ 
 
 	Route::post('seo-details', [SeoDetailController::class, 'store']);
 	Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);

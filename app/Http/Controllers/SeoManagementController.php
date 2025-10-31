@@ -487,7 +487,7 @@ class SeoManagementController extends Controller
 
 
 	/**
-	 * @OA\Post(
+	 * @OA\Put(
 	 *     path="/api/seo-management/{id}",
 	 *     summary="Update an existing SEO record",
 	 *     tags={"SEO Management"},
@@ -552,186 +552,16 @@ class SeoManagementController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	// public function update(Request $request, $id)
-	// {
-	// 	if (!auth()->user()->can('update seo mgmt')) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => "You don't have permission to access this module.",
-	// 		]);
-	// 	}
-	// 	try {
-	// 		/* Validate the incoming data */
-	// 		$validated = $request->validate([
-	// 			'relational_id' => 'required|integer',
-	// 			'relational_type' => 'required|string',
-	// 			'url' => 'required|string',
-	// 			'primary_keyword' => 'required|string',
-	// 			'monthly_search_volume' => 'required|integer',
-	// 			'title_tag' => 'required|string',
-	// 			'meta_title' => 'required|string',
-	// 			'meta_description' => 'required|string',
-	// 			'internal_links' => 'nullable|string',
-	// 			'indexing' => 'required|in:0,1,true,false',
-	// 			'og_title' => 'nullable|string',
-	// 			'og_description' => 'nullable|string',
-	// 			'og_image_url' => 'nullable|string',
-	// 			'og_image_alt_text' => 'nullable|string',
-	// 			'og_image_name' => 'nullable|string',
-	// 			'tags' => 'nullable|string',
-	// 			'schema_rating' => 'nullable|integer',
-	// 			'schema_reviews_count' => 'nullable|integer',
-	// 			'created_by' => 'required|integer',
-	// 			'updated_by' => 'nullable|integer',
-	// 			'og_image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp', // ✅ fixed here
-	// 			'secondary_keywords' => 'nullable|string',
-	// 			'paragraph_1' => 'nullable|string',
-	// 			'paragraph_2' => 'nullable|string',
-	// 			'paragraph_3' => 'nullable|string',
-	// 			'paragraph_4' => 'nullable|string',
-	// 			'popular_tags' => 'nullable|string', /* Expecting array like ["tag1", "tag2"] */
-	// 			'google_shopping_feed_title' => 'nullable|string',
-	// 			'google_shopping_feed_description' => 'nullable|string',
-	// 			'short_title_variant' => 'nullable|string',
-	// 			'gen_type' => 'nullable|integer',
-
-	// 		]);
-
-	// 		/* Find the existing SEO record by ID */
-	// 		$seo = SeoManagement::findOrFail($id);
-
-
-	// 		/* Check if relational_type and relational_id match */
-	// 		if ($seo->relational_type !== $validated['relational_type'] || $seo->relational_id != $validated['relational_id']) {
-	// 			return response()->json([
-	// 				'success' => false,
-	// 				'message' => 'The provided relational_type or relational_id does not match the existing record.',
-	// 			], 403);
-	// 		}
-	// 					/* Prepare the data for updating the SEO management record */
-	// 		// $seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
-	// 		$seoData = $validated;
-
-	// 		$optionalParagraphs = ['paragraph_1', 'paragraph_2', 'paragraph_3', 'paragraph_4'];
-
-	// 		foreach ($optionalParagraphs as $field) {
-	// 			if (!$request->has($field)) {
-	// 				$seoData[$field] = ''; // force empty if not sent at all
-	// 			}
-	// 		}
-
-	// 		// Remove any keys we still want to skip
-	// 		$seoData = collect($seoData)->except(['secondary_keywords', 'og_image_file'])->toArray();
-
-
-	// 		/* Convert indexing boolean */
-	// 		$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
-	// 		if (!empty($validated['popular_tags'])) {
-	// 			if (is_string($validated['popular_tags'])) {
-	// 				/* Try to decode if it's a JSON string */
-	// 				$decoded = json_decode($validated['popular_tags'], true);
-
-	// 				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-	// 					$seoData['popular_tags'] = $decoded;
-	// 				} else {
-	// 					/* Fallback: treat it as a plain comma-separated string */
-	// 					$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
-	// 				}
-	// 			} else {
-	// 				$seoData['popular_tags'] = $validated['popular_tags'];
-	// 			}
-	// 		}
-
-	// 		/* Handle OG image file upload if provided */
-	// 		if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
-	// 			$storage = app('Illuminate\Support\Facades\Storage');
-
-	// 			/* Define folder path for upload */
-	// 			$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
-
-	// 			/* Store the file */
-	// 			$imagePath = $request->file('og_image_file')->store($folderPath, 's3');
-
-	// 			/* Generate URL for the stored file */
-	// 			$imageUrl = $storage::disk('s3')->url($imagePath);
-
-	// 			/* Update the og_image_url in the data if provided */
-	// 			$seoData['og_image_url'] = $imageUrl;
-
-	// 			/* Update the og_image_name if not provided */
-	// 			if (empty($seoData['og_image_name'])) {
-	// 				$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
-	// 			}
-	// 		}
-
-	// 	/* Update the SEO record if there is any change */
-	// 	foreach ($seoData as $key => $value) {
-	// 		// Overwrite even if empty string — but skip only if it's explicitly null
-	// 		$seo->$key = $value ?? '';
-	// 	}
-
-
-
-	// 		/* Generate schema and add it to the data (as an array) */
-	// 		$schemaArray = $this->generateSchema($seo);
-	// 		$seo->schema = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-	// 		/* Save the updated SEO record */
-	// 		$seo->save();
-
-	// 		/* Process secondary keywords if provided */
-	// 		/* In the update function, replace the secondary keywords section with: */
-	// 		if (!empty($validated['secondary_keywords'])) {
-	// 			/* First delete existing secondary keywords */
-	// 			SeoSecondaryKeyword::where('primary_keyword_id', $seo->id)->delete();
-
-	// 			/* Parse the secondary keywords - handle both string and array inputs */
-	// 			$secondaryKeywords = is_string($validated['secondary_keywords'])
-	// 			? json_decode($validated['secondary_keywords'], true)
-	// 			: $validated['secondary_keywords'];
-
-	// 			if (is_array($secondaryKeywords)) {
-	// 				foreach ($secondaryKeywords as $keyword) {
-	// 					if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
-	// 						SeoSecondaryKeyword::create([
-	// 							'primary_keyword_id' => $seo->id,
-	// 							'secondary_keyword' => $keyword['secondary_keyword'],
-	// 							'monthly_search_volume' => $keyword['monthly_search_volume'],
-	// 						]);
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-
-	// 		/* Return response with updated SEO record */
-	// 		return response()->json([
-	// 			'success' => true,
-	// 			'message' => 'SEO record updated successfully',
-	// 			'data' => $seo->load('secondaryKeywordDetails')
-	// 		], 200);
-
-	// 	} catch (\Exception $e) {
-	// 		/* Log the error */
-	// 		\Log::error('SEO Management update error: ' . $e->getMessage());
-
-	// 		/* Return a proper JSON error response */
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'Failed to update SEO record',
-	// 			'error' => $e->getMessage()
-	// 		], 422);
-	// 	}
-	// }
-
-	public function update(Request $request, $relational_type, $id)
-	{
+	 
+	public function update(Request $request, $id)
+	{  
 		if (!auth()->user()->can('update seo mgmt')) {
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-
+ 
 		try {
 			$rules = [
 				'relational_id' => 'required|integer',
@@ -820,7 +650,7 @@ class SeoManagementController extends Controller
 					'message' => "The URL '{$request->url}' is already assigned to {$typeName} '{$relatedName}'.",
 				], 403);
 			}
-
+			$relational_type ='Product';
 			if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
 				return response()->json([
 					'success' => false,
@@ -889,6 +719,9 @@ class SeoManagementController extends Controller
 				$seoData['banner_image_file'] = $bannerImageUrl;
 			}
 
+			$schemaArray = $this->generateSchema($seo);
+			$seoData['schema'] = json_encode($schemaArray);
+ 
 			$seo->update($seoData);
 			$seo->refresh();
 
@@ -1249,7 +1082,7 @@ class SeoManagementController extends Controller
 						"@type" => "Offer",
 						"priceCurrency" => $currencyName,
 						"price" => $firstSupplier->price ?? 0, /* Default to 0 if no price found */
-						"url" => $seo->url,
+						"url" => $url,
 					],
 					"sku" => $product->sku ?? null, /* SKU if available */
 					"brand" => [
