@@ -650,7 +650,7 @@ class SeoManagementController extends Controller
 					'message' => "The URL '{$request->url}' is already assigned to {$typeName} '{$relatedName}'.",
 				], 403);
 			}
-			$relational_type ='Product';
+			$relational_type =$request->relational_type;
 			if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
 				return response()->json([
 					'success' => false,
@@ -720,8 +720,7 @@ class SeoManagementController extends Controller
 			}
 
 			$schemaArray = $this->generateSchema($seo);
-			$seoData['schema'] = json_encode($schemaArray);
- 
+			$seoData['schema'] = json_encode($schemaArray); 
 			$seo->update($seoData);
 			$seo->refresh();
 
@@ -1058,7 +1057,7 @@ class SeoManagementController extends Controller
 				$url = $product->parent_category_url() . '/' .
                      $product->category_url() . '/' .
                      ($product->seoProductUrl->url ?? "");
-					 
+					  
 				/* Generate schema with product-specific details */
 				return [
 					"@context" => "https://schema.org",
