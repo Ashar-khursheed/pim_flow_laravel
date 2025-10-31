@@ -282,7 +282,7 @@ class TranslationController extends BaseController
 				$keywordFileFormatArray,
 				$module, /* Module name */
 				config('app.website') . '_TRANS', /* Job name */
-				'Import Keywords', /* Batch name */
+				'Import Translation', /* Batch name */
 				ImportTranslationJob::class
 			);
 
