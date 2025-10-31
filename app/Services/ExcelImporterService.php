@@ -77,7 +77,7 @@ class ExcelImporterService
 		}
 
 		$action = str_contains($module, ' Translation') ? "Import_Translation" : "Import";
-		$batch = Bus::batch([])->before(function (Batch $batch) use ($module, $totalRecords) {
+		$batch = Bus::batch([])->before(function (Batch $batch) use ($module, $totalRecords, $action) {
 			TransactionLog::create([
 				'module' => $module,
 				'action' => $action,
