@@ -487,7 +487,7 @@ class SeoManagementController extends Controller
 
 
 	/**
-	 * @OA\Put(
+	 * @OA\Post(
 	 *     path="/api/seo-management/{id}",
 	 *     summary="Update an existing SEO record",
 	 *     tags={"SEO Management"},

@@ -37522,12 +37522,12 @@
             }
         },
         "/api/seo-management/{id}": {
-            "put": {
+            "post": {
                 "tags": [
                     "SEO Management"
                 ],
                 "summary": "Update an existing SEO record",
-                "operationId": "58961f1b16803df093a67a96090d7175",
+                "operationId": "9b1ad71a28d2dc3a5c0ba87649d40ab0",
                 "parameters": [
                     {
                         "name": "id",
