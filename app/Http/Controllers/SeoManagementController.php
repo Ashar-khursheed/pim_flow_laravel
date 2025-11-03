@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Blog;
 use App\Models\Brand;
 use App\Models\SeoManagement;
 use App\Models\TransactionLog;
@@ -554,8 +555,8 @@ class SeoManagementController extends Controller
 	 * )
 	 */
 	 
-	public function update(Request $request,$relational_type, $id)
-	{  
+	public function update(Request $request,$relational_type,$id)
+	{   
 		if (!auth()->user()->can('update seo mgmt')) {
 			return response()->json([
 				'success' => false,
@@ -651,7 +652,7 @@ class SeoManagementController extends Controller
 					'message' => "The URL '{$request->url}' is already assigned to {$typeName} '{$relatedName}'.",
 				], 403);
 			}
-			//  $relational_type =$request->relational_type;
+			//   $relational_type =$request->relational_type;
 			if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
 				return response()->json([
 					'success' => false,
@@ -959,7 +960,6 @@ class SeoManagementController extends Controller
 
 	public function schemaUpdate(Request $request, $seo_id)
 	{
-
 		$validated = $request->validate([
 			'relational_id' => 'required|integer|exists:seo_management,relational_id',
 			'relational_type' => 'required|string',
@@ -1055,7 +1055,7 @@ class SeoManagementController extends Controller
 				$currencyName = $product->currency ? $product->currency->title : 'USD'; /* Default to 'USD' if no currency found */
 				$brandName = $product->brand ? $product->brand->name : 'Default Brand'; /* Default to 'Default Brand' if no brand found */
 				$firstSupplier = $product->productSuppliers->first();
-				$url = $product->parent_category_url() . '/' .
+				$url = config('app.url').'/'.$product->parent_category_url() . '/' .
                      $product->category_url() . '/' .
                      ($product->seoProductUrl->url ?? "");
 					  
@@ -1094,71 +1094,160 @@ class SeoManagementController extends Controller
 			}
 		}
 
-		// if ($seo->relational_type === 'Category' && $seo->relational_id) {
+		if ($seo->relational_type === 'Category' && $seo->relational_id) {
 
-		// $category = Category::with(['parent.parent.parent'])
-		// ->where('id', $seo->relational_id)
-		// ->first(['id', 'name', 'slug', 'order', 'parent_id']);
+		$category = Category::with(['parent.parent.parent'])
+		->where('id', $seo->relational_id)
+		->first(['id', 'name', 'slug', 'order', 'parent_id']);
 
-		// $url = null;
-		// if ($category) {
-		// $url = $this->getCategoryPath($category);		 
-		// }
+		$url = null;
+		if ($category) {
+		$url = $this->getCategoryPath($category);		 
+		}
 	 
 			 
-		// 	/* If not a product, return the generic WebPage schema */
-		// 	return [
-		// 		"@context" => "https://schema.org",
-		// 		"@type" => $seo->relational_type ?? 'WebPage',
-		// 		"url" => $url,
-		// 		"name" => $seo->meta_title,
-		// 		"description" => $seo->meta_description,
-		// 		"keywords" => $seo->tags,
-		// 		"image" => [
-		// 			"@type" => "ImageObject",
-		// 			"url" => $seo->og_image_url,
-		// 			"name" => $seo->og_image_name,
-		// 			"description" => $seo->og_image_alt_text
-		// 		],
-		// 		"aggregateRating" => [
-		// 			"@type" => "AggregateRating",
-		// 			"ratingValue" => $seo->schema_rating,
-		// 			"reviewCount" => $seo->schema_reviews_count
-		// 		]
-		// 	];
+			/* If not a product, return the generic WebPage schema */
+			// return [
+			// 	"@context" => "https://schema.org",
+			// 	"@type" => $seo->relational_type ?? 'WebPage',
+			// 	"url" => $url,
+			// 	"name" => $seo->meta_title,
+			// 	"description" => $seo->meta_description,
+			// 	"keywords" => $seo->tags,
+			// 	"image" => [
+			// 		"@type" => "ImageObject",
+			// 		"url" => $seo->og_image_url,
+			// 		"name" => $seo->og_image_name,
+			// 		"description" => $seo->og_image_alt_text
+			// 	],
+			// 	"aggregateRating" => [
+			// 		"@type" => "AggregateRating",
+			// 		"ratingValue" => $seo->schema_rating,
+			// 		"reviewCount" => $seo->schema_reviews_count
+			// 	]
+			// ];
 
-		// }
-		// if ($seo->relational_type === 'Brand' && $seo->relational_id) {
+			return [
+					[
+						"@context" => "https://schema.org",
+						"@type" => $seo->relational_type ?? "CollectionPage",
+						"name" => $seo->meta_title,
+						"description" => $seo->meta_description,
+						"url" => config('app.url').'/'.$url,
+						"mainEntity" => [
+							"@type" => "ItemList",
+							"name" => $seo->primary_keyword,
+							"description" => $seo->meta_description,
+							"itemListElement" => [],
+						],
+						"image" => [
+							$seo->og_image_url,
+						],
+					],
+					[
+						"@context" => "https://schema.org",
+						"@type" => "BreadcrumbList",
+						"itemListElement" => [
+							[
+								"@type" => "ListItem",
+								"position" => 1,
+								"name" => "Home",
+								"item" => config('app.url'),
+							],
+							[
+								"@type" => "ListItem",
+								"position" => 2,
+								"name" => $seo->meta_title,
+								"item" => config('app.url').'/'.$url,
+							],
+						],
+					],
+				];
 
-		//  $brand = Brand::findOrFail($seo->relational_id);
-		// $url = null;
+		}
+		if ($seo->relational_type === 'Brand' && $seo->relational_id) {
+
+		 	$brand = Brand::findOrFail($seo->relational_id);
+			$url = null;
 		 
-		// if($brand){
-	 	// 	$url = $brand->seoUrl->url;
-		// }
+			if($brand){
+				$url = config('app.url').'/brands/' . $brand->seoUrl->url;
+			}
 			 
-		// 	/* If not a product, return the generic WebPage schema */
-		// 	return [
-		// 		"@context" => "https://schema.org",
-		// 		"@type" => $seo->relational_type ?? 'WebPage',
-		// 		"url" => $url,
-		// 		"name" => $seo->meta_title,
-		// 		"description" => $seo->meta_description,
-		// 		"keywords" => $seo->tags,
-		// 		"image" => [
-		// 			"@type" => "ImageObject",
-		// 			"url" => $seo->og_image_url,
-		// 			"name" => $seo->og_image_name,
-		// 			"description" => $seo->og_image_alt_text
-		// 		],				 
-		// 		"aggregateRating" => [
-		// 			"@type" => "AggregateRating",
-		// 			"ratingValue" => $seo->schema_rating,
-		// 			"reviewCount" => $seo->schema_reviews_count
-		// 		]
-		// 	];
+			/* If not a Brand, return the generic WebPage schema */
+			return [
+				"@context" => "https://schema.org",
+				"@type" => $seo->relational_type ?? 'WebPage',
+				"url" => $url,
+				"name" => $seo->meta_title,
+				"description" => $seo->meta_description,
+				"keywords" => $seo->tags,
+				"sameAs"=>[],
+				"image" => [
+					"@type" => "ImageObject",
+					"url" => $seo->og_image_url,
+					"name" => $seo->og_image_name,
+					"description" => $seo->og_image_alt_text
+				],				 
+				"aggregateRating" => [
+					"@type" => "AggregateRating",
+					"ratingValue" => $seo->schema_rating,
+					"reviewCount" => $seo->schema_reviews_count
+				]
+			];
 
-		// }
+		}
+
+		if ($seo->relational_type === 'Blog' && $seo->relational_id) {
+
+		 $blog = Blog::findOrFail($seo->relational_id);
+		$url = null;
+		 
+		if($blog){
+	 		$url = config('app.url').'/blog/'.$blog->slug;
+		}
+			 
+			/* If not a Blog, return the generic WebPage schema */
+			return [
+				"@context" => "https://schema.org",
+				"@type" => $seo->relational_type ?? 'WebPage',
+				"url" => $url,
+				"name" => $seo->meta_title,
+				"headline" => $seo->primary_keyword,
+				"description" => $seo->meta_description,
+				"keywords" => $seo->tags,
+				"mainEntityOfPage" => [
+					"@type" => "WebPage",
+					"@id" => $url,
+				],
+				"author" => [
+					"@type" => "Person",
+					"name" => "Asha Verma",
+					"url" => config('app.url'),
+				],
+				"publisher" => [
+					"@type" => "Organization",
+					"name" => "horecastore",
+					"logo" => [
+						"@type" => "ImageObject",
+						"url" => "https://www.horecastore.ae/images/us_logo.png",
+					],
+				],
+				"image" => [
+					"@type" => "ImageObject",
+					"url" => $seo->og_image_url,
+					"name" => $seo->og_image_name,
+					"description" => $seo->og_image_alt_text,
+				],
+				"aggregateRating" => [
+					"@type" => "AggregateRating",
+					"ratingValue" => $seo->schema_rating,
+					"reviewCount" => $seo->schema_reviews_count,
+				],
+			];
+
+
+		}
 
  
 					 
