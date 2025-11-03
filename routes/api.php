@@ -459,7 +459,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/product-report-export', [ProductReportController::class, 'index']);
 	Route::post('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
 	Route::post('/vendor-brand-product-export', [ProductReportController::class, 'vendorBrandProductExport']);
-	
+
 	Route::get('/get-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'index']);
 	Route::post('/save-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'store']);
 	Route::get('/live-show-llms-seo-monitoring', [LLmsSeoMonitoringController::class, 'show']);
@@ -540,7 +540,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 
 	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
-	
+
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::post('/categories/{id}', [CategoryController::class, 'update']);
 
@@ -550,10 +550,10 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('categories', CategoryController::class);
 	Route::get('/allLastChild', [CategoryController::class ,'allLastChildCategories']);
 	Route::apiResource('temporaryCategories', TemporaryCategoryController::class);
-	
+
     Route::get('/allTemporaryCategories', [TemporaryCategoryController::class, 'allTemporaryCategories']);
 	Route::post('/temporaryCategories/{id}', [TemporaryCategoryController::class, 'update']);
- 
+
 
 	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
@@ -627,7 +627,7 @@ Route::Post('frontend/attribute-product-variants', [FndProductVariantController:
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
-	Route::apiResource('frontend/carts', F_CustomerCartController::class);
+	Route::apiResource('frontend/carts', F_CustomerCartController::class)->names('frontend.carts');;
 
 
 	Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
