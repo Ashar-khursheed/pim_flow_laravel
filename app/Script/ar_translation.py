@@ -93,8 +93,8 @@ Write in Modern Standard Arabic (MSA) — clear, factual, and professional.
 Maintain a B2B tone: informative, concise, and confident.
 Use active voice, no fluff, no marketing exaggeration.
 All text must be Right-to-Left (RTL) aligned.
-Write all numbers in Arabic numerals (٠١٢٣٤٥٦٧٨٩).
-Decimal points must remain as points (e.g., ١.٦ not ١,٦).
+Write all numbers using English digits (e.g., 1, 2, 3).
+Keep decimal points as dots (.) and not commas (e.g., 1.6 not 1,6).
 Sentences must always end with a period (no em dashes).
 Do not include section titles in descriptions. The first line must be a natural sentence, not a heading.
 
