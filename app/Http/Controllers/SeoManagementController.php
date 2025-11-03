@@ -1094,71 +1094,71 @@ class SeoManagementController extends Controller
 			}
 		}
 
-		if ($seo->relational_type === 'Category' && $seo->relational_id) {
+		// if ($seo->relational_type === 'Category' && $seo->relational_id) {
 
-		$category = Category::with(['parent.parent.parent'])
-		->where('id', $seo->relational_id)
-		->first(['id', 'name', 'slug', 'order', 'parent_id']);
+		// $category = Category::with(['parent.parent.parent'])
+		// ->where('id', $seo->relational_id)
+		// ->first(['id', 'name', 'slug', 'order', 'parent_id']);
 
-		$url = null;
-		if ($category) {
-		$url = $this->getCategoryPath($category);		 
-		}
+		// $url = null;
+		// if ($category) {
+		// $url = $this->getCategoryPath($category);		 
+		// }
 	 
 			 
-			/* If not a product, return the generic WebPage schema */
-			return [
-				"@context" => "https://schema.org",
-				"@type" => $seo->relational_type ?? 'WebPage',
-				"url" => $url,
-				"name" => $seo->meta_title,
-				"description" => $seo->meta_description,
-				"keywords" => $seo->tags,
-				"image" => [
-					"@type" => "ImageObject",
-					"url" => $seo->og_image_url,
-					"name" => $seo->og_image_name,
-					"description" => $seo->og_image_alt_text
-				],
-				"aggregateRating" => [
-					"@type" => "AggregateRating",
-					"ratingValue" => $seo->schema_rating,
-					"reviewCount" => $seo->schema_reviews_count
-				]
-			];
+		// 	/* If not a product, return the generic WebPage schema */
+		// 	return [
+		// 		"@context" => "https://schema.org",
+		// 		"@type" => $seo->relational_type ?? 'WebPage',
+		// 		"url" => $url,
+		// 		"name" => $seo->meta_title,
+		// 		"description" => $seo->meta_description,
+		// 		"keywords" => $seo->tags,
+		// 		"image" => [
+		// 			"@type" => "ImageObject",
+		// 			"url" => $seo->og_image_url,
+		// 			"name" => $seo->og_image_name,
+		// 			"description" => $seo->og_image_alt_text
+		// 		],
+		// 		"aggregateRating" => [
+		// 			"@type" => "AggregateRating",
+		// 			"ratingValue" => $seo->schema_rating,
+		// 			"reviewCount" => $seo->schema_reviews_count
+		// 		]
+		// 	];
 
-		}
-		if ($seo->relational_type === 'Brand' && $seo->relational_id) {
+		// }
+		// if ($seo->relational_type === 'Brand' && $seo->relational_id) {
 
-		 $brand = Brand::findOrFail($seo->relational_id);
-		$url = null;
+		//  $brand = Brand::findOrFail($seo->relational_id);
+		// $url = null;
 		 
-		if($brand){
-	 		$url = $brand->seoUrl->url;
-		}
+		// if($brand){
+	 	// 	$url = $brand->seoUrl->url;
+		// }
 			 
-			/* If not a product, return the generic WebPage schema */
-			return [
-				"@context" => "https://schema.org",
-				"@type" => $seo->relational_type ?? 'WebPage',
-				"url" => $url,
-				"name" => $seo->meta_title,
-				"description" => $seo->meta_description,
-				"keywords" => $seo->tags,
-				"image" => [
-					"@type" => "ImageObject",
-					"url" => $seo->og_image_url,
-					"name" => $seo->og_image_name,
-					"description" => $seo->og_image_alt_text
-				],				 
-				"aggregateRating" => [
-					"@type" => "AggregateRating",
-					"ratingValue" => $seo->schema_rating,
-					"reviewCount" => $seo->schema_reviews_count
-				]
-			];
+		// 	/* If not a product, return the generic WebPage schema */
+		// 	return [
+		// 		"@context" => "https://schema.org",
+		// 		"@type" => $seo->relational_type ?? 'WebPage',
+		// 		"url" => $url,
+		// 		"name" => $seo->meta_title,
+		// 		"description" => $seo->meta_description,
+		// 		"keywords" => $seo->tags,
+		// 		"image" => [
+		// 			"@type" => "ImageObject",
+		// 			"url" => $seo->og_image_url,
+		// 			"name" => $seo->og_image_name,
+		// 			"description" => $seo->og_image_alt_text
+		// 		],				 
+		// 		"aggregateRating" => [
+		// 			"@type" => "AggregateRating",
+		// 			"ratingValue" => $seo->schema_rating,
+		// 			"reviewCount" => $seo->schema_reviews_count
+		// 		]
+		// 	];
 
-		}
+		// }
 
  
 					 
