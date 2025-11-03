@@ -1227,10 +1227,10 @@ class SeoManagementController extends Controller
 				],
 				"publisher" => [
 					"@type" => "Organization",
-					"name" => "horecastore",
+					"name" => "Horeca Store",
 					"logo" => [
 						"@type" => "ImageObject",
-						"url" => "https://www.horecastore.ae/images/us_logo.png",
+						"url" => $seo->og_image_url,
 					],
 				],
 				"image" => [
