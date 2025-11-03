@@ -1252,25 +1252,25 @@ class SeoManagementController extends Controller
  
 					 
 		/* If not a product, return the generic WebPage schema */
-		return [
-			"@context" => "https://schema.org",
-			"@type" => $seo->relational_type ?? 'WebPage',
-			"url" => $seo->url,
-			"name" => $seo->meta_title,
-			"description" => $seo->meta_description,
-			"keywords" => $seo->tags,
-			"image" => [
-				"@type" => "ImageObject",
-				"url" => $seo->og_image_url,
-				"name" => $seo->og_image_name,
-				"description" => $seo->og_image_alt_text
-			],
-			"aggregateRating" => [
-				"@type" => "AggregateRating",
-				"ratingValue" => $seo->schema_rating,
-				"reviewCount" => $seo->schema_reviews_count
-			]
-		];
+		// return [
+		// 	"@context" => "https://schema.org",
+		// 	"@type" => $seo->relational_type ?? 'WebPage',
+		// 	"url" => config('app.url').'/'.$seo->url,
+		// 	"name" => $seo->meta_title,
+		// 	"description" => $seo->meta_description,
+		// 	"keywords" => $seo->tags,
+		// 	"image" => [
+		// 		"@type" => "ImageObject",
+		// 		"url" => $seo->og_image_url,
+		// 		"name" => $seo->og_image_name,
+		// 		"description" => $seo->og_image_alt_text
+		// 	],
+		// 	"aggregateRating" => [
+		// 		"@type" => "AggregateRating",
+		// 		"ratingValue" => $seo->schema_rating,
+		// 		"reviewCount" => $seo->schema_reviews_count
+		// 	]
+		// ];
 	}
 
 	// Helper method to build category path

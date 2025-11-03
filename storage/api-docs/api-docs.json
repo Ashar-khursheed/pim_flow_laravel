@@ -17667,6 +17667,67 @@
                 ]
             }
         },
+        "/api/frontend/attribute-product-variants": {
+            "post": {
+                "tags": [
+                    "Frontend Product variants"
+                ],
+                "summary": "Get list of Frontend Attribute Product Variants",
+                "operationId": "71ea8d13f3f70dd83bcd4c1d5ff9e3f4",
+                "parameters": [
+                    {
+                        "name": "attribute_id",
+                        "in": "query",
+                        "description": "Filter by attribute ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 7
+                        }
+                    },
+                    {
+                        "name": "variant_id",
+                        "in": "query",
+                        "description": "Filter by variant ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product Variants retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/location-info": {
             "get": {
                 "tags": [
