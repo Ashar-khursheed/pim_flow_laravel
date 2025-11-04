@@ -291,66 +291,91 @@ class FndProductVariantController extends Controller
             $childIds = json_decode($variant->child_ids, true) ?? [];
             $variants = json_decode($variant->variants, true) ?? [];
 
-            if (empty($childIds)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No child products found for this variant',
-                ], 404);
-            }
+            // Early return if no children or variants
+			if (empty($childIds) || empty($variants)) {
+				return [];
+			}
 
-            // Step 4: Load only children that have matching attribute_id
-            $children = Product::whereIn('id', $childIds)
-                ->whereIn('id', $productIds)
-                ->get(['id', 'name', 'sku']);
+			// Fetch all child products at once
+			$children = Product::whereIn('id', $childIds)
+				->select('id', 'sku')
+				->get();
 
-            // Step 5: Get attribute names
-            $attributeIds = collect($variants)->pluck('attribute_id')->filter()->all();
-            $attributes = \DB::table('attributes')
-                ->whereIn('id', $attributeIds)
-                ->pluck('name', 'id');
+			// Fetch all attribute names at once
+			$attributeIds = array_column($variants, 'attribute_id');
+			$attributes = Attribute::whereIn('id', $attributeIds)
+				->pluck('name', 'id');
 
-            // Step 6: Build attribute-value map from ProductAttribute
-            $attributeValues = ProductAttribute::whereIn('product_id', $childIds)
-                ->whereIn('attribute_id', $attributeIds)
-                ->get(['product_id', 'attribute_id', 'attribute_value']);
+			// Fetch all product attributes at once
+			$productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+				->whereIn('attribute_id', $attributeIds)
+				->get()
+				->groupBy('product_id');
 
-            // Step 7: Map variant attributes and filter only those that exist in children
-            $mappedVariants = collect($variants)->map(function ($v) use ($attributes, $attributeValues, $children) {
-                $attributeName = $attributes[$v['attribute_id']] ?? null;
+			// Fetch all SEO URLs at once
+			$seoUrls = SeoManagement::whereIn('relational_id', $childIds)
+				->pluck('url', 'relational_id');
 
-                // Find value used by any child product for this attribute
-                $matchingValues = $attributeValues
-                    ->where('attribute_id', $v['attribute_id'])
-                    ->pluck('attribute_value')
-                    ->unique()
-                    ->values();
+			$result = [];
 
-                return $matchingValues->map(fn($val) => [
-                    'attribute_id' => $v['attribute_id'],
-                    'attribute_name' => $attributeName,
-                    'value' => $val,
-                ]);
-            })->flatten(1);
+			foreach ($variants as $v) {
+				$attributeId = $v['attribute_id'];
+				$attributeName = $attributes[$attributeId] ?? null;
 
-            // Step 8: Ensure unique attribute name + value pairs
-            $uniqueVariants = $mappedVariants->unique(function ($item) {
-                return $item['attribute_name'] . '-' . $item['value'];
-            })->values();
+				if (!$attributeName) {
+					continue; // Skip if attribute not found
+				}
 
-            // Step 9: Final response structure
-            $data = [
-                'variant_id' => $variant->id,
-                'parent_id' => $variant->parent_id,
-                'parent_name' => $variant->parentProduct?->name,
-                'parent_sku' => $variant->parentProduct?->sku,
-                'variants' => $uniqueVariants,
-                'children' => $children,
-            ];
+				// Track unique attribute values for this specific attribute
+				$seenAttributeValues = [];
+				$childrenData = [];
 
+				foreach ($children as $child) {
+					// Get attribute value for this child and attribute
+					$attrValue = $productAttributes->get($child->id)?->firstWhere('attribute_id', $attributeId)?->attribute_value ?? null;
+
+					// Skip if no attribute value or if we've already seen this value
+					if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+						continue;
+					}
+
+					// Mark this attribute value as seen
+					$seenAttributeValues[$attrValue] = true;
+
+					$slug = $seoUrls[$child->id] ?? null;
+					$full_slug = $child->parent_category_url() . '/' .
+								$child->category_url() . '/' .
+								($child->seoProductUrl->url ?? "");
+
+					$childrenData[] = [
+						'id' => $child->id,
+						'sku' => $child->sku,
+						'attribute_value' => $attrValue,
+						'slug' => $slug,
+						'parent_slug' => $child->parent_category_url(),
+						'child_slug' => $child->category_url(),
+						'full_slug' => $full_slug,
+						'parent_id' => $variant->parent_id,
+						'variant_id' => $variant->id,
+					];
+				}
+
+				// Only add if we have children data
+				if (!empty($childrenData)) {
+					$result[] = [
+						'attribute_id' => $attributeId,
+						'attribute_name' => $attributeName,
+						'label' => $v['labels'] ?? $attributeName,
+						'type' => $v['type'] ?? 'dropdown',
+						'child' => $childrenData,
+						'variant_id' => $variant->id,
+					];
+				}
+			}
             return response()->json([
                 'success' => true,
                 'message' => 'Product variants fetched successfully',
-                'data' => $data
+                'data' => $result
             ], 200);
 
         } catch (\Exception $e) {
