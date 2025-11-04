@@ -10768,6 +10768,428 @@
                 ]
             }
         },
+        "/api/finances": {
+            "get": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Get all finance records",
+                "operationId": "99cfbabd34cf251b6fc2c85f250f231f",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Pending",
+                                "Completed",
+                                "Failed",
+                                "Cancelled",
+                                "Refunded",
+                                "all"
+                            ],
+                            "example": "all"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by order id, transaction_id",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by (id, order_id, status)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "order_id",
+                                "status"
+                            ],
+                            "example": "id"
+                        }
+                    },
+                    {
+                        "name": "sort_direction",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Create a new finance record",
+                "operationId": "7e61ac9781248944f1952c93b6424563",
+                "parameters": [
+                    {
+                        "name": "payment_selection",
+                        "in": "query",
+                        "description": "Credit,Debit Card,Net Banking,Net Payment Terms",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "Credit"
+                    },
+                    {
+                        "name": "payment_options",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "term_selection",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "Net 30 Days"
+                    },
+                    {
+                        "name": "amount",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        }
+                    },
+                    {
+                        "name": "documents",
+                        "in": "query",
+                        "description": "File path or filename",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "payment_due",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "type_of_business",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "business_name",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "business_address",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "country",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "state",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "zip",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "annual_revenue",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "years_in_business",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "5 – 10 years"
+                    },
+                    {
+                        "name": "accounts_payable_email",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "email"
+                        }
+                    },
+                    {
+                        "name": "accounts_payable_phone",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "duns_number",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    }
+                }
+            }
+        },
+        "/api/finances/{id}": {
+            "get": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Get finance record by ID",
+                "operationId": "25843867cf87a12f822cbce46c7bca1e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Update finance record",
+                "operationId": "d16598d89b93e3cb0d3e4d71c23559c8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "business_name",
+                                    "type_of_business"
+                                ],
+                                "properties": {
+                                    "payment_selection": {
+                                        "type": "string"
+                                    },
+                                    "payment_options": {
+                                        "type": "string"
+                                    },
+                                    "term_selection": {
+                                        "type": "string",
+                                        "example": "Net 30 Days"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "documents": {
+                                        "type": "string"
+                                    },
+                                    "payment_due": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "type_of_business": {
+                                        "type": "string"
+                                    },
+                                    "business_name": {
+                                        "type": "string"
+                                    },
+                                    "business_address": {
+                                        "type": "string"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "city": {
+                                        "type": "string"
+                                    },
+                                    "state": {
+                                        "type": "string"
+                                    },
+                                    "zip": {
+                                        "type": "string"
+                                    },
+                                    "annual_revenue": {
+                                        "type": "string"
+                                    },
+                                    "years_in_business": {
+                                        "type": "string",
+                                        "example": "5 – 10 years"
+                                    },
+                                    "accounts_payable_email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "accounts_payable_phone": {
+                                        "type": "string"
+                                    },
+                                    "duns_number": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Updated"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Delete finance record",
+                "operationId": "f26a7de13fdd90ca6198cf5026cf449e",
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    }
+                }
+            }
+        },
         "/api/flash-sales": {
             "get": {
                 "tags": [
@@ -17674,89 +18096,47 @@
                 ],
                 "summary": "Get list of Frontend Attribute Product Variants",
                 "operationId": "71ea8d13f3f70dd83bcd4c1d5ff9e3f4",
-                "parameters": [
-                    {
-                        "name": "attribute_id",
-                        "in": "query",
-                        "description": "Filter by attribute ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": "7"
-                        }
-                    },
-                    {
-                        "name": "attribute_value",
-                        "in": "query",
-                        "description": "Filter by attribute value",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "Adjustable Stainless Steel Legs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Product Variants retrieved successfully"
-                                        },
-                                        "data": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "attribute": {
+                                        "description": "Array of attribute objects",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "attribute_value": {
+                                                    "type": "string",
+                                                    "example": "Leveling Legs"
+                                                }
+                                            },
                                             "type": "object"
                                         }
-                                    },
-                                    "type": "object"
+                                    }
+                                },
+                                "type": "object",
+                                "example": {
+                                    "attribute": [
+                                        {
+                                            "attribute_id": 7,
+                                            "attribute_value": "Leveling Legs"
+                                        },
+                                        {
+                                            "attribute_id": 1134,
+                                            "attribute_value": "Cast Aluminum"
+                                        }
+                                    ]
                                 }
                             }
                         }
                     }
                 },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/attribute-all-product-variants": {
-            "post": {
-                "tags": [
-                    "Frontend Product variants"
-                ],
-                "summary": "Get list of Frontend Attribute All Product Variants",
-                "operationId": "83cfca4ac6a2941675c7f14fbb4dd23b",
-                "parameters": [
-                    {
-                        "name": "attribute_id",
-                        "in": "query",
-                        "description": "Filter by attribute ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": "7"
-                        }
-                    },
-                    {
-                        "name": "attribute_value",
-                        "in": "query",
-                        "description": "Filter by attribute value",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "Adjustable Stainless Steel Legs"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -43245,6 +43625,10 @@
         {
             "name": "Product Feed XML",
             "description": "API Endpoints for managing product XML Data FeedWatch"
+        },
+        {
+            "name": "Finance",
+            "description": "API Endpoints for Finance Management"
         },
         {
             "name": "Categories",

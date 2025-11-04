@@ -77,6 +77,10 @@ use App\Http\Controllers\Controller;
  *     description="API Endpoints for managing product XML Data FeedWatch"
  * )
  * @OA\Tag(
+ *     name="Finance",
+ *     description="API Endpoints for Finance Management"
+ * )  
+ * @OA\Tag(
  *     name="Categories",
  *     description="API Endpoints for Category Management"
  * )
