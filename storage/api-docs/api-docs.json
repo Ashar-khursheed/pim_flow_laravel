@@ -17682,17 +17682,17 @@
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "example": 7
+                            "example": "7"
                         }
                     },
                     {
-                        "name": "variant_id",
+                        "name": "attribute_value",
                         "in": "query",
-                        "description": "Filter by variant ID",
+                        "description": "Filter by attribute value",
                         "required": false,
                         "schema": {
-                            "type": "integer",
-                            "example": 5
+                            "type": "string",
+                            "example": "Adjustable Stainless Steel Legs"
                         }
                     }
                 ],
@@ -32308,7 +32308,7 @@
                                     },
                                     "quote_available": {
                                         "type": "boolean",
-                                        "example": false
+                                        "example": true
                                     },
                                     "vendor_id": {
                                         "type": "integer",

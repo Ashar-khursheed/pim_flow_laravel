@@ -555,8 +555,8 @@ class SeoManagementController extends Controller
 	 * )
 	 */
 	 
-	public function update(Request $request,$relational_type,$id)
-	{   
+	public function update(Request $request,$relational_type, $id)
+	{   //$relational_type
 		if (!auth()->user()->can('update seo mgmt')) {
 			return response()->json([
 				'success' => false,
@@ -652,7 +652,7 @@ class SeoManagementController extends Controller
 					'message' => "The URL '{$request->url}' is already assigned to {$typeName} '{$relatedName}'.",
 				], 403);
 			}
-			//   $relational_type =$request->relational_type;
+			 //  $relational_type =$request->relational_type;
 			if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
 				return response()->json([
 					'success' => false,
