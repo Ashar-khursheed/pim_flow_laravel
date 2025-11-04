@@ -17,6 +17,7 @@ class ProductAccessory extends Model
         'product_id',
         'name',        
         'isapproved',
+        'isRequired',
         'approved_by',
         'created_by',
         'updated_by'

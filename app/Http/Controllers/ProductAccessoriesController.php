@@ -147,6 +147,7 @@ class ProductAccessoriesController extends Controller
                     'name' => $accessory->name,
                     'product_name' => $accessory->product->name,
                     'isapproved' => $accessory->isapproved,
+                    'isRequired' => $accessory->isRequired,
                     'approved_by' => $accessory->approvedBy?->username ?? null,
                     'created_by' => $accessory->createdBy?->username ?? null,
                     'updated_by' => $accessory->updatedBy?->username ?? null,
@@ -206,7 +207,8 @@ class ProductAccessoriesController extends Controller
      *                         {"name":"button","price":52}
      *                     }
      *                 ),
-     *                 @OA\Property(property="isapproved", type="boolean", example=0)
+     *                 @OA\Property(property="isapproved", type="boolean", example=0),
+     *                 @OA\Property(property="isRequired", type="boolean", example=0),
      *             )
      *         )
      *     ),
@@ -228,7 +230,8 @@ class ProductAccessoriesController extends Controller
                 'product_id' => 'required|integer|exists:ec_products,id',
                 'name' => 'required|string|max:255',
                 'accessories' => 'required|array',
-                'isapproved' => 'sometimes|boolean'
+                'isapproved' => 'sometimes|boolean',
+                'isRequired' => 'sometimes|boolean'
             ]);
 
             if ($validator->fails()) {
@@ -243,6 +246,7 @@ class ProductAccessoriesController extends Controller
                 'product_id' => $request->product_id,
                 'name' => $request->name,
                 'isapproved' => $request->get('isapproved', 0),
+                'isRequired' => $request->get('isRequired', 0),
                 'created_by' => Auth::id() ?? 1
             ]);
 
@@ -318,6 +322,7 @@ class ProductAccessoriesController extends Controller
                 'product_name' => $accessory->product->name,
                 'sku' => $accessory->product->sku,
                 'isapproved' => $accessory->isapproved,
+                'isRequired' => $accessory->isRequired,
                 'approved_by' => $accessory->approved_by,
                 'created_by' => $accessory->created_by,
                 'updated_by' => $accessory->updated_by,
@@ -430,6 +435,7 @@ class ProductAccessoriesController extends Controller
      *                 }
      *             ),
      *             @OA\Property(property="isapproved", type="integer", example=1),
+     *             @OA\Property(property="isRequired", type="integer", example=0),
      *             @OA\Property(property="approved_by", type="integer", example=2)
      *         )
      *     ),
@@ -477,7 +483,8 @@ class ProductAccessoriesController extends Controller
             $accessory->update([
                 'product_id' => $request->product_id,
                 'name' => $request->name,
-                'isapproved' => $request->get('isapproved', $accessory->isapproved),
+                'isapproved' => $request->get('isapproved'),
+                'isRequired' => $request->get('isRequired'),
                 'updated_by' => Auth::id() ?? 1
             ]);
 

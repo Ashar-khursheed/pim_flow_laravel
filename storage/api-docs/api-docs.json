@@ -18109,7 +18109,7 @@
                                             "properties": {
                                                 "attribute_id": {
                                                     "type": "integer",
-                                                    "example": 2
+                                                    "example": 7
                                                 },
                                                 "attribute_value": {
                                                     "type": "string",
@@ -31638,6 +31638,10 @@
                                     "isapproved": {
                                         "type": "boolean",
                                         "example": 0
+                                    },
+                                    "isRequired": {
+                                        "type": "boolean",
+                                        "example": 0
                                     }
                                 },
                                 "type": "object"
@@ -31780,6 +31784,10 @@
                                     "isapproved": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "isRequired": {
+                                        "type": "integer",
+                                        "example": 0
                                     },
                                     "approved_by": {
                                         "type": "integer",
