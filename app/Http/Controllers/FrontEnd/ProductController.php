@@ -78,7 +78,7 @@ class ProductController extends Controller
 		// Keep existing user and wishlist logic
 		$userId = Auth::id();
 		$isUserLoggedIn = $userId !== null;
-
+ 
 		Log::info('User logged in:', ['user_id' => $userId]);
 
 		$wishlistProductIds = [];
@@ -99,6 +99,7 @@ class ProductController extends Controller
 
 
 		$productId = $request->input('product_id'); // numeric ID
+	 
 		$slug = $request->input('slug');           // string slug
 		if ($productId) {
 			$query->where('id', $productId);
@@ -506,13 +507,13 @@ class ProductController extends Controller
 				->get();
 
 			$result = [];
-
+ 
 			foreach ($variants as $v) {
 				// Get attribute name
 				$attributeName = Attribute::where('id', $v['attribute_id'])->value('name');
 
 				// Collect child data with this attribute
-				$childrenData = $children->map(function ($child) use ($v) {
+				$childrenData = $children->map(function ($child) use ($v,$variant) {
 					$attrValue = ProductAttribute::where('product_id', $child->id)
 						->where('attribute_id', $v['attribute_id'])
 						->value('attribute_value');
@@ -532,6 +533,7 @@ class ProductController extends Controller
 						'parent_slug' => $child->parent_category_url(),
 						'child_slug' => $child->category_url(),
 						'full_slug' => $full_slug,
+						'parent_id' => $variant->parent_id,
 					];
 				})
 				->filter(fn($item) => !empty($item['attribute_value'])) // remove null/empty
