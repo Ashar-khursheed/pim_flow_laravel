@@ -64,9 +64,9 @@ return [
         'ses' => [
             'transport' => 'ses',
             'options' => [
-                'key' => env('MAIL_AWS_ACCESS_KEY_ID'),
-                'secret' => env('MAIL_AWS_SECRET_ACCESS_KEY'),
-                'region' => env('MAIL_AWS_SES_REGION', env('MAIL_AWS_DEFAULT_REGION', 'us-east-1')),
+                'key' => env('AWS_ACCESS_KEY_ID'),
+                'secret' => env('AWS_SECRET_ACCESS_KEY'),
+                'region' => env('AWS_SES_REGION', env('AWS_DEFAULT_REGION', 'us-east-1')),
                 'options' => [
                     'ConfigurationSetName' => env('AWS_SES_CONFIGURATION_SET'),
                     'EmailTags' => [
