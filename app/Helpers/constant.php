@@ -790,8 +790,9 @@ if (!function_exists('quote_cc_mails')) {
 	function quote_cc_mails()
 	{
 		$usMails = [
-			'webdeveloper01@horecastore.ae',
-			'webdeveloper04@horecastore.ae',
+			'noman.peera@thehorecastore.com',
+			'css07@thehorecastore.com',
+			'sales@thehorecastore.com',
 		];
 
 		$uaeMails = [

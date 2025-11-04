@@ -90,7 +90,8 @@ trait GeneratesQuotePdf
 				// : $currency . ' ' . number_format($quoteProduct->shipping_charge, 2, '.', ',');
 
 				$product->deliveryDays = $productSupplierDetail->delivery_days ?? null;
-				$product->productURL = config('app.url') . '/products/' . $productDetail->seoProductUrl->url ?? $productDetail->id;
+
+				$product->productURL = config('app.url') . '/' . $productDetail->parent_category_url() . '/' . $productDetail->category_url() . '/' . ($productDetail->seoProductUrl->url ?? $productDetail->id);
 
 				$images = is_array($productDetail->images)
 				? $productDetail->images
