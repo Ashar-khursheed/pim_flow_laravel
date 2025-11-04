@@ -614,8 +614,12 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'fm@horecastore.ae',
 		];
 
-		$testMails = [
+		$usTestMails = [
 			'qa03@horecastore.ae',
+			'qa06@horecastore.ae',
+		];
+
+		$uaeTestMails = [
 			'qa04@horecastore.ae',
 			'qa05@horecastore.ae',
 		];
@@ -634,11 +638,11 @@ if (!function_exists('glitch_error_reporting_mails')) {
 				break;
 
 			case 'US_T':
-				$mails = $testMails;
+				$mails = $usTestMails;
 				break;
 
 			case 'UAE_T':
-				$mails = $testMails;
+				$mails = $uaeTestMails;
 				break;
 
 			case 'LOCAL':
@@ -677,8 +681,12 @@ if (!function_exists('order_cc_mails')) {
 			'customerservice02@horecastore.ae',
 		];
 
-		$testMails = [
+		$usTestMails = [
 			'qa03@horecastore.ae',
+			'qa06@horecastore.ae',
+		];
+
+		$uaeTestMails = [
 			'qa04@horecastore.ae',
 			'qa05@horecastore.ae',
 		];
@@ -697,11 +705,11 @@ if (!function_exists('order_cc_mails')) {
 				break;
 
 			case 'US_T':
-				$mails = $testMails;
+				$mails = $usTestMails;
 				break;
 
 			case 'UAE_T':
-				$mails = $testMails;
+				$mails = $uaeTestMails;
 				break;
 
 			case 'LOCAL':
@@ -735,8 +743,12 @@ if (!function_exists('inquiry_cc_mails')) {
 			'pm@horecastore.ae',
 		];
 
-		$testMails = [
+		$usTestMails = [
 			'qa03@horecastore.ae',
+			'qa06@horecastore.ae',
+		];
+
+		$uaeTestMails = [
 			'qa04@horecastore.ae',
 			'qa05@horecastore.ae',
 		];
@@ -755,11 +767,11 @@ if (!function_exists('inquiry_cc_mails')) {
 				break;
 
 			case 'US_T':
-				$mails = $testMails;
+				$mails = $usTestMails;
 				break;
 
 			case 'UAE_T':
-				$mails = $testMails;
+				$mails = $uaeTestMails;
 				break;
 
 			case 'LOCAL':
@@ -791,8 +803,12 @@ if (!function_exists('quote_cc_mails')) {
 			'pm@horecastore.ae',
 		];
 
-		$testMails = [
+		$usTestMails = [
 			'qa03@horecastore.ae',
+			'qa06@horecastore.ae',
+		];
+
+		$uaeTestMails = [
 			'qa04@horecastore.ae',
 			'qa05@horecastore.ae',
 		];
@@ -811,11 +827,11 @@ if (!function_exists('quote_cc_mails')) {
 				break;
 
 			case 'US_T':
-				$mails = $testMails;
+				$mails = $usTestMails;
 				break;
 
 			case 'UAE_T':
-				$mails = $testMails;
+				$mails = $uaeTestMails;
 				break;
 
 			case 'LOCAL':
