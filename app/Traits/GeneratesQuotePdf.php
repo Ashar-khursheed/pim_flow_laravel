@@ -91,7 +91,7 @@ trait GeneratesQuotePdf
 
 				$product->deliveryDays = $productSupplierDetail->delivery_days ?? null;
 
-				$product->productURL = config('app.url') . '/' . $product->parent_category_url() . '/' . $product->category_url() . '/' . ($productDetail->seoProductUrl->url ?? $productDetail->id);
+				$product->productURL = config('app.url') . '/' . $productDetail->parent_category_url() . '/' . $productDetail->category_url() . '/' . ($productDetail->seoProductUrl->url ?? $productDetail->id);
 
 				$images = is_array($productDetail->images)
 				? $productDetail->images
