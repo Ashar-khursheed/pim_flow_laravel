@@ -496,36 +496,67 @@ class ProductController extends Controller
 				$product->accessories = [];
 			}
 
-
-			$product->productVariants = $product->productVariants->map(function ($variant) {
+ 		$product->productVariants = $product->productVariants->map(function ($variant) {
 			$childIds = json_decode($variant->child_ids, true) ?? [];
 			$variants = json_decode($variant->variants, true) ?? [];
+
+			// Early return if no children or variants
+			if (empty($childIds) || empty($variants)) {
+				return [];
+			}
 
 			// Fetch all child products at once
 			$children = Product::whereIn('id', $childIds)
 				->select('id', 'sku')
 				->get();
 
+			// Fetch all attribute names at once
+			$attributeIds = array_column($variants, 'attribute_id');
+			$attributes = Attribute::whereIn('id', $attributeIds)
+				->pluck('name', 'id');
+
+			// Fetch all product attributes at once
+			$productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+				->whereIn('attribute_id', $attributeIds)
+				->get()
+				->groupBy('product_id');
+
+			// Fetch all SEO URLs at once
+			$seoUrls = SeoManagement::whereIn('relational_id', $childIds)
+				->pluck('url', 'relational_id');
+
 			$result = [];
- 
+
 			foreach ($variants as $v) {
-				// Get attribute name
-				$attributeName = Attribute::where('id', $v['attribute_id'])->value('name');
+				$attributeId = $v['attribute_id'];
+				$attributeName = $attributes[$attributeId] ?? null;
 
-				// Collect child data with this attribute
-				$childrenData = $children->map(function ($child) use ($v,$variant) {
-					$attrValue = ProductAttribute::where('product_id', $child->id)
-						->where('attribute_id', $v['attribute_id'])
-						->value('attribute_value');
+				if (!$attributeName) {
+					continue; // Skip if attribute not found
+				}
 
-					$slug = SeoManagement::where('relational_id', $child->id)
-						->value('url');
+				// Track unique attribute values for this specific attribute
+				$seenAttributeValues = [];
+				$childrenData = [];
 
+				foreach ($children as $child) {
+					// Get attribute value for this child and attribute
+					$attrValue = $productAttributes->get($child->id)?->firstWhere('attribute_id', $attributeId)?->attribute_value ?? null;
+
+					// Skip if no attribute value or if we've already seen this value
+					if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+						continue;
+					}
+
+					// Mark this attribute value as seen
+					$seenAttributeValues[$attrValue] = true;
+
+					$slug = $seoUrls[$child->id] ?? null;
 					$full_slug = $child->parent_category_url() . '/' .
 								$child->category_url() . '/' .
 								($child->seoProductUrl->url ?? "");
 
-					return [
+					$childrenData[] = [
 						'id' => $child->id,
 						'sku' => $child->sku,
 						'attribute_value' => $attrValue,
@@ -535,23 +566,22 @@ class ProductController extends Controller
 						'full_slug' => $full_slug,
 						'parent_id' => $variant->parent_id,
 					];
-				})
-				->filter(fn($item) => !empty($item['attribute_value'])) // remove null/empty
-				->unique('attribute_value') // ✅ make attribute_value unique
-				->values(); // reindex
+				}
 
-				$result[] = [
-					'attribute_id' => $v['attribute_id'],
-					'attribute_name' => $attributeName,
-					'label' => $v['labels'] ?? $attributeName,
-					'type' => $v['type'] ?? 'dropdown',
-					'child' => $childrenData,
-				];
+				// Only add if we have children data
+				if (!empty($childrenData)) {
+					$result[] = [
+						'attribute_id' => $attributeId,
+						'attribute_name' => $attributeName,
+						'label' => $v['labels'] ?? $attributeName,
+						'type' => $v['type'] ?? 'dropdown',
+						'child' => $childrenData,
+					];
+				}
 			}
 
 			return $result;
 		})->flatten(1)->values();
-
 
 			if ($product->productVariants->isEmpty()) {
 				$product->productVariants = [];
@@ -1015,31 +1045,63 @@ class ProductController extends Controller
 			$childIds = json_decode($variant->child_ids, true) ?? [];
 			$variants = json_decode($variant->variants, true) ?? [];
 
+			// Early return if no children or variants
+			if (empty($childIds) || empty($variants)) {
+				return [];
+			}
+
 			// Fetch all child products at once
 			$children = Product::whereIn('id', $childIds)
 				->select('id', 'sku')
 				->get();
 
+			// Fetch all attribute names at once
+			$attributeIds = array_column($variants, 'attribute_id');
+			$attributes = Attribute::whereIn('id', $attributeIds)
+				->pluck('name', 'id');
+
+			// Fetch all product attributes at once
+			$productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+				->whereIn('attribute_id', $attributeIds)
+				->get()
+				->groupBy('product_id');
+
+			// Fetch all SEO URLs at once
+			$seoUrls = SeoManagement::whereIn('relational_id', $childIds)
+				->pluck('url', 'relational_id');
+
 			$result = [];
 
 			foreach ($variants as $v) {
-				// Get attribute name
-				$attributeName = Attribute::where('id', $v['attribute_id'])->value('name');
+				$attributeId = $v['attribute_id'];
+				$attributeName = $attributes[$attributeId] ?? null;
 
-				// Collect child data with this attribute
-				$childrenData = $children->map(function ($child) use ($v) {
-					$attrValue = ProductAttribute::where('product_id', $child->id)
-						->where('attribute_id', $v['attribute_id'])
-						->value('attribute_value');
+				if (!$attributeName) {
+					continue; // Skip if attribute not found
+				}
 
-					$slug = SeoManagement::where('relational_id', $child->id)
-						->value('url');
+				// Track unique attribute values for this specific attribute
+				$seenAttributeValues = [];
+				$childrenData = [];
 
+				foreach ($children as $child) {
+					// Get attribute value for this child and attribute
+					$attrValue = $productAttributes->get($child->id)?->firstWhere('attribute_id', $attributeId)?->attribute_value ?? null;
+
+					// Skip if no attribute value or if we've already seen this value
+					if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+						continue;
+					}
+
+					// Mark this attribute value as seen
+					$seenAttributeValues[$attrValue] = true;
+
+					$slug = $seoUrls[$child->id] ?? null;
 					$full_slug = $child->parent_category_url() . '/' .
 								$child->category_url() . '/' .
 								($child->seoProductUrl->url ?? "");
 
-					return [
+					$childrenData[] = [
 						'id' => $child->id,
 						'sku' => $child->sku,
 						'attribute_value' => $attrValue,
@@ -1047,19 +1109,20 @@ class ProductController extends Controller
 						'parent_slug' => $child->parent_category_url(),
 						'child_slug' => $child->category_url(),
 						'full_slug' => $full_slug,
+						'parent_id' => $variant->parent_id,
 					];
-				})
-				->filter(fn($item) => !empty($item['attribute_value'])) // remove null/empty
-				->unique('attribute_value') // ✅ make attribute_value unique
-				->values(); // reindex
+				}
 
-				$result[] = [
-					'attribute_id' => $v['attribute_id'],
-					'attribute_name' => $attributeName,
-					'label' => $v['labels'] ?? $attributeName,
-					'type' => $v['type'] ?? 'dropdown',
-					'child' => $childrenData,
-				];
+				// Only add if we have children data
+				if (!empty($childrenData)) {
+					$result[] = [
+						'attribute_id' => $attributeId,
+						'attribute_name' => $attributeName,
+						'label' => $v['labels'] ?? $attributeName,
+						'type' => $v['type'] ?? 'dropdown',
+						'child' => $childrenData,
+					];
+				}
 			}
 
 			return $result;
