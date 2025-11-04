@@ -311,9 +311,9 @@ class ProductController extends BaseController
 		$product->sku = $request->sku;
 		$product->website_ids = implode(',', $request->websites);
 		$product->status = 'draft';
-		if ($request->quote_available) {
-			$product->quote_available = $request->quote_available;
-		}
+		 
+		$product->quote_available = $request->quote_available;
+		
 		$product->created_at = now();
 		$product->updated_at = now();
 		$product->created_by = auth()->id();
@@ -740,7 +740,7 @@ class ProductController extends BaseController
 	 *                 @OA\Property(property="video_path[]", type="array", @OA\Items(type="string", format="binary")),
 	 *                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
 	 *                 @OA\Property(property="is_variation", type="boolean", example=false),
-	 *                 @OA\Property(property="quote_available", type="boolean", example=false),
+	 *                 @OA\Property(property="quote_available", type="boolean", example=true),
 	 *                 @OA\Property(property="vendor_id", type="integer", example=7),
 	 *                 @OA\Property(property="brand_id", type="integer", example=13),
 	 *                 @OA\Property(property="views", type="integer", example=200),
@@ -1644,9 +1644,9 @@ class ProductController extends BaseController
 		foreach ($input as $key => $value) {
 			$product->$key = $value;
 		}
-		if ($request->quote_available) {
-			$product->quote_available = $request->quote_available;
-		}
+	 
+		$product->quote_available = $request->quote_available;
+		
 		/* Save the product */
 		$product->save();
 
