@@ -44,7 +44,7 @@ class OrderPlacedMailJob implements ShouldQueue
 				'US'  => 'orders@thehorecastore.com',
 				'UAE'  => 'orders@horecastore.ae',
 				'US_T' => 'test_us@thehorecastore.co',
-				'UAE_T' => 'orders@horecastore.ae',
+				'UAE_T' => 'test_uae@thehorecastore.co',
 				default => 'test@thehorecastore.co',
 			};
 
