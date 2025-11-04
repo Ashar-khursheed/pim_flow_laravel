@@ -496,7 +496,64 @@ class ProductController extends Controller
 				$product->accessories = [];
 			}
 
- 		$product->productVariants = $product->productVariants->map(function ($variant) {
+
+		// 	$product->productVariants = $product->productVariants->map(function ($variant) {
+		// 	$childIds = json_decode($variant->child_ids, true) ?? [];
+		// 	$variants = json_decode($variant->variants, true) ?? [];
+
+		// 	// Fetch all child products at once
+		// 	$children = Product::whereIn('id', $childIds)
+		// 		->select('id', 'sku')
+		// 		->get();
+
+		// 	$result = [];
+ 
+		// 	foreach ($variants as $v) {
+		// 		// Get attribute name
+		// 		$attributeName = Attribute::where('id', $v['attribute_id'])->value('name');
+
+		// 		// Collect child data with this attribute
+		// 		$childrenData = $children->map(function ($child) use ($v,$variant) {
+		// 			$attrValue = ProductAttribute::where('product_id', $child->id)
+		// 				->where('attribute_id', $v['attribute_id'])
+		// 				->value('attribute_value');
+
+		// 			$slug = SeoManagement::where('relational_id', $child->id)
+		// 				->value('url');
+
+		// 			$full_slug = $child->parent_category_url() . '/' .
+		// 						$child->category_url() . '/' .
+		// 						($child->seoProductUrl->url ?? "");
+
+		// 			return [
+		// 				'id' => $child->id,
+		// 				'sku' => $child->sku,
+		// 				'attribute_value' => $attrValue,
+		// 				'slug' => $slug,
+		// 				'parent_slug' => $child->parent_category_url(),
+		// 				'child_slug' => $child->category_url(),
+		// 				'full_slug' => $full_slug,
+		// 				'parent_id' => $variant->parent_id,
+		// 			];
+		// 		})
+		// 		->filter(fn($item) => !empty($item['attribute_value'])) // remove null/empty
+		// 		->unique('attribute_value') // ✅ make attribute_value unique
+		// 		->values(); // reindex
+
+		// 		$result[] = [
+		// 			'attribute_id' => $v['attribute_id'],
+		// 			'attribute_name' => $attributeName,
+		// 			'label' => $v['labels'] ?? $attributeName,
+		// 			'type' => $v['type'] ?? 'dropdown',
+		// 			'child' => $childrenData,
+		// 		];
+		// 	}
+
+		// 	return $result;
+		// })->flatten(1)->values();
+
+
+		$product->productVariants = $product->productVariants->map(function ($variant) {
 			$childIds = json_decode($variant->child_ids, true) ?? [];
 			$variants = json_decode($variant->variants, true) ?? [];
 
@@ -565,6 +622,7 @@ class ProductController extends Controller
 						'child_slug' => $child->category_url(),
 						'full_slug' => $full_slug,
 						'parent_id' => $variant->parent_id,
+						'variant_id' => $variant->id,
 					];
 				}
 
@@ -576,6 +634,7 @@ class ProductController extends Controller
 						'label' => $v['labels'] ?? $attributeName,
 						'type' => $v['type'] ?? 'dropdown',
 						'child' => $childrenData,
+						'variant_id' => $variant->id,
 					];
 				}
 			}
@@ -1040,7 +1099,6 @@ class ProductController extends Controller
 				$product->accessories = [];
 			}
 
-		 
 			$product->productVariants = $product->productVariants->map(function ($variant) {
 			$childIds = json_decode($variant->child_ids, true) ?? [];
 			$variants = json_decode($variant->variants, true) ?? [];
@@ -1110,6 +1168,7 @@ class ProductController extends Controller
 						'child_slug' => $child->category_url(),
 						'full_slug' => $full_slug,
 						'parent_id' => $variant->parent_id,
+						'variant_id' => $variant->id,
 					];
 				}
 
@@ -1121,6 +1180,7 @@ class ProductController extends Controller
 						'label' => $v['labels'] ?? $attributeName,
 						'type' => $v['type'] ?? 'dropdown',
 						'child' => $childrenData,
+						'variant_id' => $variant->id,
 					];
 				}
 			}
