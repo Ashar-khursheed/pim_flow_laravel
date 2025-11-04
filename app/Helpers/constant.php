@@ -674,6 +674,7 @@ if (!function_exists('order_cc_mails')) {
 			'cbfb@horecastore.ae',
 			'procurement@horecastore.ae',
 			'saas@horecastore.ae',
+			'customerservice02@horecastore.ae',
 		];
 
 		$testMails = [
