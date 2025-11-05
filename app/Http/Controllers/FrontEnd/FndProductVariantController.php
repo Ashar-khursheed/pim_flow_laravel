@@ -40,8 +40,9 @@ class FndProductVariantController extends Controller
      */
     public function index(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
-            'product_id' => 'required',
+            'product_id' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -62,6 +63,25 @@ class FndProductVariantController extends Controller
         }
 
         try {
+            // ✅ Fixed: Removed .product_id from with() - it's a column, not a relationship
+            $currentProduct = Product::with(['productAttributes'])
+                ->find($productIds);
+
+            if (!$currentProduct) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found'
+                ], 404);
+            }
+
+            // ✅ Get current product's attribute values for comparison
+            $currentProductAttributes = $currentProduct->productAttributes
+                ->pluck('attribute_value', 'attribute_id')
+                ->toArray();
+
+            // ✅ Remove dd() for production
+            // dd($currentProductAttributes);
+
             $variant = ProductVariant::with([
                 'parentProduct:id,name,sku',
                 'createdBy:id,username',
@@ -122,7 +142,6 @@ class FndProductVariantController extends Controller
 
                 // Track unique attribute values for this specific attribute
                 $seenAttributeValues = [];
-                $childrenData = [];
 
                 foreach ($children as $child) {
                     // Get attribute value for this child and attribute
@@ -137,17 +156,20 @@ class FndProductVariantController extends Controller
                     $seenAttributeValues[$attrValue] = true;
 
                     $slug = $seoUrls[$child->id] ?? null;
-                    $full_slug = $child->parent_category_url() . '/' .
-                        $child->category_url() . '/' .
-                        ($child->seoProductUrl->url ?? "");
+
+                   
+                    $isSelected = isset($currentProductAttributes[$attributeId])
+                        && $currentProductAttributes[$attributeId] == $attrValue;
 
                     $result[] = [
-
+                        'product_id' => $child->id,
                         'attribute_id' => $attributeId,
                         'attribute_value' => $attrValue,
                         'attribute_name' => $attributeName,
                         'type' => $v['type'] ?? 'dropdown',
                         'label' => $v['labels'] ?? $attributeName,
+                        'selected' => $isSelected,
+                        'slug' => $slug,
                     ];
                 }
             }
@@ -156,16 +178,18 @@ class FndProductVariantController extends Controller
                 'success' => true,
                 'message' => 'Product variants retrieved successfully',
                 'data' => $result
-
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('Product variant error: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while retrieving variants',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
             ], 500);
         }
+
 
 
 

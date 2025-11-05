@@ -10898,7 +10898,10 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "business_name"
+                                    "business_name",
+                                    "business_address",
+                                    "country",
+                                    "city"
                                 ],
                                 "properties": {
                                     "payment_selection": {
@@ -10939,9 +10942,15 @@
                                         "example": "E-commerce"
                                     },
                                     "business_name": {
-                                        "description": "Registered business name",
+                                        "description": "Legal business name",
                                         "type": "string",
                                         "example": "ABC Pvt Ltd"
+                                    },
+                                    "business_email": {
+                                        "description": "Business Email",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "abc@domain.com"
                                     },
                                     "business_address": {
                                         "description": "Business address",
@@ -10954,15 +10963,19 @@
                                     },
                                     "address": {
                                         "type": "string",
-                                        "example": "B-21, Connaught Place, Delhi"
+                                        "example": "8800 Bissonnet Street, Ste A, Houston, Texas 77074"
                                     },
                                     "city": {
                                         "type": "string",
-                                        "example": "New Delhi"
+                                        "example": "Houston"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "Texas"
                                     },
                                     "zip": {
                                         "type": "string",
-                                        "example": "110001"
+                                        "example": "77074"
                                     },
                                     "annual_revenue": {
                                         "type": "string",
@@ -11057,6 +11070,7 @@
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "Finance record ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -11065,19 +11079,114 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success"
+                        "description": "Finance record retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record retrieved successfully."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "payment_selection": {
+                                                    "type": "string",
+                                                    "example": "Credit"
+                                                },
+                                                "amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 5000.75
+                                                },
+                                                "business_name": {
+                                                    "type": "string",
+                                                    "example": "ABC Pvt Ltd"
+                                                },
+                                                "business_email": {
+                                                    "type": "string",
+                                                    "example": "abc@domain.com"
+                                                },
+                                                "documents": {
+                                                    "type": "string",
+                                                    "example": "https://s3.amazonaws.com/path/to/document.pdf"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-01-01T10:00:00Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-01-02T15:30:00Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
-                        "description": "Not Found"
+                        "description": "Finance record not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
-            "put": {
+            "post": {
                 "tags": [
                     "Finance"
                 ],
                 "summary": "Update an existing finance record",
-                "operationId": "d16598d89b93e3cb0d3e4d71c23559c8",
+                "operationId": "440c66a001e8557bb071101ee842547c",
                 "parameters": [
                     {
                         "name": "id",
@@ -11136,9 +11245,14 @@
                                         "example": "E-commerce"
                                     },
                                     "business_name": {
-                                        "description": "Registered business name",
+                                        "description": "Legal business name",
                                         "type": "string",
                                         "example": "ABC Pvt Ltd"
+                                    },
+                                    "business_email": {
+                                        "description": "business Email",
+                                        "type": "string",
+                                        "example": "abc@domain.com"
                                     },
                                     "business_address": {
                                         "description": "Business address",

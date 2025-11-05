@@ -441,7 +441,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('product-variants/show', [ProductVariantController::class, 'show']);
 	Route::apiResource('made-to-orders', MadeToOrderController::class);
 	Route::apiResource('finances', FinanceController::class);
-
+	Route::post('finances/{id}', [FinanceController::class, 'update']);
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
 	Route::post('/products/export', [ProductExportController::class, 'export']);
