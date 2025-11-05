@@ -581,7 +581,7 @@ class CategoryController extends BaseController
 			if (
 				$data['status'] === 'published' &&
 				$category->children->isEmpty() &&
-				$category->products()->take(3)->count() < 3
+				$category->products()->count() > 0
 			) {
 				return response()->json([
 					'success' => false,
