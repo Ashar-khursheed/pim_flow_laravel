@@ -348,7 +348,7 @@ class CategoryController extends BaseController
 			if ($data['status'] == 'published') {
 				return response()->json([
 					'success' => false,
-					'message' => 'At least 3 products must be assigned to the product family before it can be published.'
+					'message' => 'At least 1 products must be assigned to the product family before it can be published.'
 				]);
 			}
 
