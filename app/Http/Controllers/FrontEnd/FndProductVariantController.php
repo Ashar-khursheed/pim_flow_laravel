@@ -156,7 +156,7 @@ class FndProductVariantController extends Controller
                     $seenAttributeValues[$attrValue] = true;
 
                     $slug = $seoUrls[$child->id] ?? null;
-                   
+
                     $isSelected = isset($currentProductAttributes[$attributeId])
                         && $currentProductAttributes[$attributeId] == $attrValue;
 
@@ -257,17 +257,17 @@ class FndProductVariantController extends Controller
             }
 
             $attributes = $request->input('attribute', []);
- 
+
             // ✅ Step 1: Find products that have ALL specified attributes
             $query = ProductAttribute::query();
 
             // Start with the first attribute
-             $firstAttr = array_shift($attributes);
-             
+            $firstAttr = array_shift($attributes);
+
             $productIds = ProductAttribute::where('attribute_id', $firstAttr['attribute_id'])
                 ->where('attribute_value', $firstAttr['attribute_value'])
                 ->pluck('product_id');
- 
+
             // For each remaining attribute, intersect with products that have it
             foreach ($attributes as $attr) {
                 $matchingIds = ProductAttribute::where('attribute_id', $attr['attribute_id'])
@@ -279,7 +279,7 @@ class FndProductVariantController extends Controller
             }
 
             $productIds = $productIds->values()->toArray();
- 
+
             if (empty($productIds)) {
                 return response()->json([
                     'success' => false,
@@ -387,7 +387,7 @@ class FndProductVariantController extends Controller
     public function getAttributeByProductVariant(Request $request)
     {
         try {
-            // ✅ Validate incoming data
+             
             $validator = Validator::make($request->all(), [
                 'attribute' => 'required|array',
                 'attribute.*.attribute_id' => 'required|integer',
@@ -404,12 +404,10 @@ class FndProductVariantController extends Controller
 
             $attributes = $request->input('attribute', []);
 
-            // ✅ Step 1: Find products that have ALL specified attributes
-            $query = ProductAttribute::query();
-
-            // Start with the first attribute
+           
             $firstAttr = array_shift($attributes);
-            dd($firstAttr);
+
+            // Get initial product IDs from ProductAttribute
             $productIds = ProductAttribute::where('attribute_id', $firstAttr['attribute_id'])
                 ->where('attribute_value', $firstAttr['attribute_value'])
                 ->pluck('product_id');
@@ -424,32 +422,52 @@ class FndProductVariantController extends Controller
                 $productIds = $productIds->intersect($matchingIds);
             }
 
-            $productIds = $productIds->values()->toArray();
-
-            if (empty($productIds)) {
+            if ($productIds->isEmpty()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No products found with all these attributes',
                 ], 404);
             }
 
-            // ✅ Step 2: Eager-load related data for optimization
-            $products = Product::whereIn('id', $productIds)
+            //Filter products that have variants with the specified attribute IDs
+            $attributeIds = collect($request->input('attribute'))->pluck('attribute_id')->toArray();
+
+            // Only get products that exist in ProductVariant with matching attribute IDs
+            $validProductIds = ProductVariant::whereIn('parent_id', $productIds->toArray())
+                ->pluck('parent_id')
+                ->unique();
+
+            if ($validProductIds->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No product variants found with these attribute IDs',
+                ], 404);
+            }
+
+            //Eager-load related data for optimization
+            $products = Product::whereIn('id', $validProductIds)
                 ->select('id', 'sku')
                 ->get()
                 ->keyBy('id');
 
-            $seoUrls = SeoManagement::whereIn('relational_id', $productIds)
+            $seoUrls = SeoManagement::whereIn('relational_id', $validProductIds)
                 ->pluck('url', 'relational_id');
+
+            // Fetch all product attributes for the valid products
+            $productAttributes = ProductAttribute::whereIn('product_id', $validProductIds)
+                ->whereIn('attribute_id', $attributeIds)
+                ->select('product_id', 'attribute_id', 'attribute_value')
+                ->get()
+                ->groupBy('product_id');
 
             $result = [];
 
-            foreach ($productIds as $productId) {
+            foreach ($validProductIds as $productId) {
                 $product = $products->get($productId);
                 if (!$product)
                     continue;
 
-                $slug = $seoUrls[$product->id] ?? null;
+                $slug = $seoUrls[$productId] ?? null;
 
                 // Build complete SEO slug
                 $parentSlug = $product->parent_category_url() ?? '';
@@ -458,11 +476,20 @@ class FndProductVariantController extends Controller
 
                 $fullSlug = trim($parentSlug . '/' . $categorySlug . '/' . $productSlug, '/');
 
+                // Get attributes for this product
+                $productAttrs = $productAttributes->get($productId, collect())->map(function ($attr) {
+                    return [
+                        'attribute_id' => $attr->attribute_id,
+                        'attribute_value' => $attr->attribute_value,
+                    ];
+                })->values()->toArray();
+
                 $result[] = [
                     'product_id' => $product->id,
                     'sku' => $product->sku,
                     'slug' => $slug,
                     'full_slug' => $fullSlug,
+                    'attributes' => $productAttrs,
                 ];
             }
 
@@ -484,8 +511,5 @@ class FndProductVariantController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
             ], 500);
         }
-
     }
-
-
 }
