@@ -18316,8 +18316,96 @@
                                             "attribute_value": "Leveling Legs"
                                         },
                                         {
-                                            "attribute_id": 1134,
-                                            "attribute_value": "Cast Aluminum"
+                                            "attribute_id": 401,
+                                            "attribute_value": "Gas"
+                                        },
+                                        {
+                                            "attribute_id": 48,
+                                            "attribute_value": "82 lb"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product Variants retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/product-variants-by-attribute": {
+            "post": {
+                "tags": [
+                    "Frontend Product variants"
+                ],
+                "summary": "Get list of Frontend Attribute all Product Variants",
+                "operationId": "c1feacb55dff97c60d6d22569427ca7b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "attribute": {
+                                        "description": "Array of attribute objects",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "attribute_value": {
+                                                    "type": "string",
+                                                    "example": "Leveling Legs"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object",
+                                "example": {
+                                    "attribute": [
+                                        {
+                                            "attribute_id": 7,
+                                            "attribute_value": "Leveling Legs"
+                                        },
+                                        {
+                                            "attribute_id": 401,
+                                            "attribute_value": "Gas"
+                                        },
+                                        {
+                                            "attribute_id": 48,
+                                            "attribute_value": "82 lb"
                                         }
                                     ]
                                 }
@@ -20753,7 +20841,7 @@
                 "tags": [
                     "Frontend-Product"
                 ],
-                "summary": "Get all products with filters and pagination (for authenticated and guest users)",
+                "summary": "Get all products with filters and pagination (for authenticated and guest userss)",
                 "operationId": "ab47768b1c6409dad7a7a8870ee94dea",
                 "parameters": [
                     {

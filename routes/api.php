@@ -625,7 +625,7 @@ Route::post('frontend/compare-table-product', [CompareProductController::class, 
 Route::get('frontend/product-accessories', [FnProductAccessoriesController::class, 'index']);
 Route::Post('frontend/product-variants', [FndProductVariantController::class, 'index']);
 Route::Post('frontend/attribute-product-variants', [FndProductVariantController::class, 'getAttributeByProduct']);
-Route::Post('frontend/attribute-all-product-variants', [FndProductVariantController::class, 'getAttributeByProductAll']);
+Route::Post('frontend/product-variants-by-attribute', [FndProductVariantController::class, 'getAttributeByProductVariant']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 

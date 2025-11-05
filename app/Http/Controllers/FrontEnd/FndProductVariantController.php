@@ -218,7 +218,8 @@ class FndProductVariantController extends Controller
      *                 example={
      *                     "attribute": {
      *                         {"attribute_id": 7, "attribute_value": "Leveling Legs"},
-     *                         {"attribute_id": 1134, "attribute_value": "Cast Aluminum"}
+     *                         {"attribute_id": 401, "attribute_value": "Gas"},
+     *                         {"attribute_id": 48, "attribute_value": "82 lb"},
      *                     }
      *                 }
      *             )
@@ -256,12 +257,159 @@ class FndProductVariantController extends Controller
             }
 
             $attributes = $request->input('attribute', []);
+ 
+            // ✅ Step 1: Find products that have ALL specified attributes
+            $query = ProductAttribute::query();
+
+            // Start with the first attribute
+             $firstAttr = array_shift($attributes);
+             
+            $productIds = ProductAttribute::where('attribute_id', $firstAttr['attribute_id'])
+                ->where('attribute_value', $firstAttr['attribute_value'])
+                ->pluck('product_id');
+ 
+            // For each remaining attribute, intersect with products that have it
+            foreach ($attributes as $attr) {
+                $matchingIds = ProductAttribute::where('attribute_id', $attr['attribute_id'])
+                    ->where('attribute_value', $attr['attribute_value'])
+                    ->pluck('product_id');
+
+                // Keep only products that exist in both sets (intersection)
+                $productIds = $productIds->intersect($matchingIds);
+            }
+
+            $productIds = $productIds->values()->toArray();
+ 
+            if (empty($productIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No products found with all these attributes',
+                ], 404);
+            }
+
+            // ✅ Step 2: Eager-load related data for optimization
+            $products = Product::whereIn('id', $productIds)
+                ->select('id', 'sku')
+                ->get()
+                ->keyBy('id');
+
+            $seoUrls = SeoManagement::whereIn('relational_id', $productIds)
+                ->pluck('url', 'relational_id');
+
+            $result = [];
+
+            foreach ($productIds as $productId) {
+                $product = $products->get($productId);
+                if (!$product)
+                    continue;
+
+                $slug = $seoUrls[$product->id] ?? null;
+
+                // Build complete SEO slug
+                $parentSlug = $product->parent_category_url() ?? '';
+                $categorySlug = $product->category_url() ?? '';
+                $productSlug = $product->seoProductUrl->url ?? '';
+
+                $fullSlug = trim($parentSlug . '/' . $categorySlug . '/' . $productSlug, '/');
+
+                $result[] = [
+                    'product_id' => $product->id,
+                    'sku' => $product->sku,
+                    'slug' => $slug,
+                    'full_slug' => $fullSlug,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product variants fetched successfully',
+                'data' => $result,
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Product variant fetch error: ' . $e->getMessage(), [
+                'request' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch product variants',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+            ], 500);
+        }
+
+    }
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/product-variants-by-attribute",
+     *     summary="Get list of Frontend Attribute all Product Variants",
+     *     tags={"Frontend Product variants"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="attribute",
+     *                     type="array",
+     *                     description="Array of attribute objects",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="attribute_id", type="integer", example=7),
+     *                         @OA\Property(property="attribute_value", type="string", example="Leveling Legs")
+     *                     )
+     *                 ),
+     *                 example={
+     *                     "attribute": {
+     *                         {"attribute_id": 7, "attribute_value": "Leveling Legs"},
+     *                         {"attribute_id": 401, "attribute_value": "Gas"},
+     *                         {"attribute_id": 48, "attribute_value": "82 lb"},
+     *                     }
+     *                 }
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Product Variants retrieved successfully"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+
+    public function getAttributeByProductVariant(Request $request)
+    {
+        try {
+            // ✅ Validate incoming data
+            $validator = Validator::make($request->all(), [
+                'attribute' => 'required|array',
+                'attribute.*.attribute_id' => 'required|integer',
+                'attribute.*.attribute_value' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $attributes = $request->input('attribute', []);
 
             // ✅ Step 1: Find products that have ALL specified attributes
             $query = ProductAttribute::query();
 
             // Start with the first attribute
             $firstAttr = array_shift($attributes);
+            dd($firstAttr);
             $productIds = ProductAttribute::where('attribute_id', $firstAttr['attribute_id'])
                 ->where('attribute_value', $firstAttr['attribute_value'])
                 ->pluck('product_id');
