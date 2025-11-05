@@ -110,7 +110,7 @@ class GlitchErrorController extends BaseController
 		$images = json_encode($uploadedImages);
 		$record = GlitchError::create([
 			'email' => $request->email,
-			'mobile_number' => $request->email,
+			'mobile_number' => $request->mobile_number,
 			'description' => $request->description,
 			'device' => $request->device,
 			'images' => $images,
