@@ -171,7 +171,7 @@ class FndProductVariantController extends Controller
 
     }
 
-     /**
+    /**
      * @OA\Post(
      *     path="/api/frontend/attribute-product-variants",
      *     summary="Get list of Frontend Attribute Product Variants",
@@ -216,96 +216,104 @@ class FndProductVariantController extends Controller
 
     public function getAttributeByProduct(Request $request)
     {
-
         try {
-    // ✅ Validate incoming data
-    $validator = Validator::make($request->all(), [
-        'attribute' => 'required|array',
-        'attribute.*.attribute_id' => 'required|integer',
-        'attribute.*.attribute_value' => 'required|string',
-    ]);
+            // ✅ Validate incoming data
+            $validator = Validator::make($request->all(), [
+                'attribute' => 'required|array',
+                'attribute.*.attribute_id' => 'required|integer',
+                'attribute.*.attribute_value' => 'required|string',
+            ]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors' => $validator->errors()
-        ], 422);
-    }
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
 
-    $attributes = $request->input('attribute', []);
+            $attributes = $request->input('attribute', []);
 
-    $productIds = collect();
+            // ✅ Step 1: Find products that have ALL specified attributes
+            $query = ProductAttribute::query();
 
-    // ✅ Step 1: For each attribute pair, collect matching product IDs
-    foreach ($attributes as $attr) {
-        $ids = ProductAttribute::where('attribute_id', $attr['attribute_id'])
-            ->where('attribute_value', $attr['attribute_value'])
-            ->pluck('product_id');
-        $productIds = $productIds->merge($ids);
-    }
- 
-    $productIds = $productIds->unique()->values()->toArray();
+            // Start with the first attribute
+            $firstAttr = array_shift($attributes);
+            $productIds = ProductAttribute::where('attribute_id', $firstAttr['attribute_id'])
+                ->where('attribute_value', $firstAttr['attribute_value'])
+                ->pluck('product_id');
 
-    if (empty($productIds)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No products found with these attributes',
-        ], 404);
-    }
+            // For each remaining attribute, intersect with products that have it
+            foreach ($attributes as $attr) {
+                $matchingIds = ProductAttribute::where('attribute_id', $attr['attribute_id'])
+                    ->where('attribute_value', $attr['attribute_value'])
+                    ->pluck('product_id');
 
-    // ✅ Step 2: Eager-load related data for optimization
-    $products = Product::whereIn('id', $productIds)
-        ->select('id', 'sku')
-        ->get()
-        ->keyBy('id');
+                // Keep only products that exist in both sets (intersection)
+                $productIds = $productIds->intersect($matchingIds);
+            }
 
-    $seoUrls = SeoManagement::whereIn('relational_id', $productIds)
-        ->pluck('url', 'relational_id');
+            $productIds = $productIds->values()->toArray();
 
-    $result = [];
+            if (empty($productIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No products found with all these attributes',
+                ], 404);
+            }
 
-    foreach ($productIds as $productId) {
-        $product = $products->get($productId);
-        if (!$product) continue;
+            // ✅ Step 2: Eager-load related data for optimization
+            $products = Product::whereIn('id', $productIds)
+                ->select('id', 'sku')
+                ->get()
+                ->keyBy('id');
 
-        $slug = $seoUrls[$product->id] ?? null;
+            $seoUrls = SeoManagement::whereIn('relational_id', $productIds)
+                ->pluck('url', 'relational_id');
 
-        // Build complete SEO slug
-        $parentSlug = $product->parent_category_url() ?? '';
-        $categorySlug = $product->category_url() ?? '';
-        $productSlug = $product->seoProductUrl->url ?? '';
+            $result = [];
 
-        $fullSlug = trim($parentSlug . '/' . $categorySlug . '/' . $productSlug, '/');
+            foreach ($productIds as $productId) {
+                $product = $products->get($productId);
+                if (!$product)
+                    continue;
 
-        $result[] = [
-            'product_id' => $product->id,
-            'sku' => $product->sku,
-            'slug' => $slug,
-            'full_slug' => $fullSlug,
-        ];
-    }
+                $slug = $seoUrls[$product->id] ?? null;
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Product variants fetched successfully',
-        'data' => $result,
-    ], 200);
+                // Build complete SEO slug
+                $parentSlug = $product->parent_category_url() ?? '';
+                $categorySlug = $product->category_url() ?? '';
+                $productSlug = $product->seoProductUrl->url ?? '';
 
-} catch (\Exception $e) {
-    \Log::error('Product variant fetch error: ' . $e->getMessage(), [
-        'request' => $request->all(),
-        'trace' => $e->getTraceAsString()
-    ]);
+                $fullSlug = trim($parentSlug . '/' . $categorySlug . '/' . $productSlug, '/');
 
-    return response()->json([
-        'success' => false,
-        'message' => 'Failed to fetch product variants',
-        'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-    ], 500);
-}
+                $result[] = [
+                    'product_id' => $product->id,
+                    'sku' => $product->sku,
+                    'slug' => $slug,
+                    'full_slug' => $fullSlug,
+                ];
+            }
 
-       
+            return response()->json([
+                'success' => true,
+                'message' => 'Product variants fetched successfully',
+                'data' => $result,
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Product variant fetch error: ' . $e->getMessage(), [
+                'request' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch product variants',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+            ], 500);
+        }
+
     }
 
 
