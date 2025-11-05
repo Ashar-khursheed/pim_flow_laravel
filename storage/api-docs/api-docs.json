@@ -19642,7 +19642,7 @@
                     "Frontend-Payments"
                 ],
                 "summary": "Get all payments with search, sort, and pagination",
-                "operationId": "d63c8a68eda5aa3c025fec14d228b3eb",
+                "operationId": "64c0c2bd4b168d52664f3f846d0b907f",
                 "parameters": [
                     {
                         "name": "search",
@@ -19785,7 +19785,7 @@
                     "Frontend-Payments"
                 ],
                 "summary": "Get a single payment",
-                "operationId": "7813adfa61bef8dd454edae65387352d",
+                "operationId": "f9d29e6fe17b83ea28576573a7b02226",
                 "parameters": [
                     {
                         "name": "id",
@@ -19816,7 +19816,7 @@
                     "Frontend-Payments"
                 ],
                 "summary": "Update a payment",
-                "operationId": "528e54c518ec4365d59895d1ec3a90db",
+                "operationId": "44a1a95790d12f285dcd70e553124378",
                 "parameters": [
                     {
                         "name": "id",
@@ -19895,7 +19895,7 @@
                     "Frontend-Payments"
                 ],
                 "summary": "Delete a payment",
-                "operationId": "093ba4470d3f0e87ca8e37888b059acb",
+                "operationId": "686ab3b23b4d55f6e83e39a2f2d26ab4",
                 "parameters": [
                     {
                         "name": "id",
@@ -23179,12 +23179,25 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "product_id"
+                                    "product_id",
+                                    "quantity",
+                                    "vendor_id"
                                 ],
                                 "properties": {
                                     "product_id": {
+                                        "description": "ID of the product",
                                         "type": "integer",
                                         "example": 123
+                                    },
+                                    "quantity": {
+                                        "description": "Quantity to move",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "vendor_id": {
+                                        "description": "Vendor ID related to the product",
+                                        "type": "integer",
+                                        "example": 1
                                     }
                                 },
                                 "type": "object"
@@ -23199,6 +23212,10 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "message": {
                                             "type": "string",
                                             "example": "Product has been moved to Save for Later."
@@ -23215,9 +23232,36 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
                                         "message": {
                                             "type": "string",
                                             "example": "Product not found in cart."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
