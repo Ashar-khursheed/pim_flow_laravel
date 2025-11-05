@@ -156,7 +156,6 @@ class FndProductVariantController extends Controller
                     $seenAttributeValues[$attrValue] = true;
 
                     $slug = $seoUrls[$child->id] ?? null;
-
                    
                     $isSelected = isset($currentProductAttributes[$attributeId])
                         && $currentProductAttributes[$attributeId] == $attrValue;
@@ -169,7 +168,7 @@ class FndProductVariantController extends Controller
                         'type' => $v['type'] ?? 'dropdown',
                         'label' => $v['labels'] ?? $attributeName,
                         'selected' => $isSelected,
-                        'slug' => $slug,
+                        // 'slug' => $slug,
                     ];
                 }
             }
