@@ -24,7 +24,7 @@ class ProductController extends Controller
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/products",
-	 *     summary="Get all products with filters and pagination (for authenticated and guest users)",
+	 *     summary="Get all products with filters and pagination (for authenticated and guest userss)",
 	 *     tags={"Frontend-Product"},
 	 *     security={{"bearerAuth": {}}},
 	 *     @OA\Parameter(
@@ -34,7 +34,7 @@ class ProductController extends Controller
 	 *         required=false,
 	 *         @OA\Schema(type="string")
 	 *     ),
-	 *     @OA\Parameter(
+	 *     @OA\Parameter( 
 	 *         name="page",
 	 *         in="query",
 	 *         description="Page number for pagination",
