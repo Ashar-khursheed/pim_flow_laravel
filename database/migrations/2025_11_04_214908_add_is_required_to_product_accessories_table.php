@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('product_accessories', function (Blueprint $table) {
             $table->boolean('isRequired')
                 ->default(false)
-                ->after('isapproved ');
+                ->after('isapproved');
                 
         });
     }

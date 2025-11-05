@@ -165,142 +165,67 @@ class FinanceController extends Controller
         ]);
     }
 
-     /**
- * @OA\Post(
- *     path="/api/finances",
- *     summary="Create a new finance record",
- *     tags={"Finance"},
- *     @OA\Parameter(
- *         name="payment_selection",
- *         in="query",
- *         required=false,
- *         description="Credit,Debit Card,Net Banking,Net Payment Terms",
- *         @OA\Schema(type="string"),
- *         example="Credit"
- *     ),
- *     @OA\Parameter(
- *         name="payment_options",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="term_selection",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string"),
- *         example="Net 30 Days"
- *     ),
- *     @OA\Parameter(
- *         name="amount",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="number", format="float")
- *     ),
- *     @OA\Parameter(
- *         name="documents",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string"),
- *         description="File path or filename"
- *     ),
- *     @OA\Parameter(
- *         name="payment_due",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string", format="date")
- *     ),
- *     @OA\Parameter(
- *         name="type_of_business",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="business_name",
- *         in="query",
- *         required=true,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="business_address",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="country",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="address",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="city",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="state",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="zip",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="annual_revenue",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="years_in_business",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string"),
- *         example="5 – 10 years"
- *     ),
- *     @OA\Parameter(
- *         name="accounts_payable_email",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string", format="email")
- *     ),
- *     @OA\Parameter(
- *         name="accounts_payable_phone",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="duns_number",
- *         in="query",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Response(response=201, description="Created")
- * )
- */
-
+    /**
+     * @OA\Post(
+     *     path="/api/finances",
+     *     summary="Create a new finance record",
+     *     tags={"Finance"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 required={"business_name"},
+     *                 @OA\Property(property="payment_selection", type="string", example="Credit", description="Credit, Debit Card, Net Banking, Net Payment Terms"),
+     *                 @OA\Property(property="payment_options", type="string", example="Net Payment Terms", description="Payment option description"),
+     *                 @OA\Property(property="term_selection", type="string", example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
+     *                 @OA\Property(property="amount", type="number", format="float", example=5000.75, description="Enter amount"),
+     *                 @OA\Property(property="documents", type="string", format="binary", description="Upload supporting document file"),
+     *                 @OA\Property(property="payment_due", type="string", format="date", example="2025-12-31", description="Payment due date"),
+     *                 @OA\Property(property="type_of_business", type="string", example="E-commerce", description="Type of business (Advertising / E-commerce)"),
+     *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd", description="Registered business name"),
+     *                 @OA\Property(property="business_address", type="string", example="123 Street, Delhi", description="Business address"),
+     *                 @OA\Property(property="country", type="string", example="India"),
+     *                 @OA\Property(property="address", type="string", example="B-21, Connaught Place, Delhi"),
+     *                 @OA\Property(property="city", type="string", example="New Delhi"),
+     *                 @OA\Property(property="zip", type="string", example="110001"),
+     *                 @OA\Property(property="annual_revenue", type="string", example="10M USD"),
+     *                 @OA\Property(property="years_in_business", type="string", example="5 – 10 years"),
+     *                 @OA\Property(property="accounts_payable_email", type="string", format="email", example="finance@abc.com"),
+     *                 @OA\Property(property="accounts_payable_phone", type="string", example="+91-9876543210"),
+     *                 @OA\Property(property="duns_number", type="string", example="123456789")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Finance record created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Finance record created successfully."),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-          'payment_selection' => 'nullable|string',
+            'payment_selection' => 'nullable|string',
             'payment_options' => 'nullable|string',
             'term_selection' => 'nullable|string',
-            'amount' => 'required|integer|string',
-            'documents' => 'nullable|string',
+            'amount' => 'required|numeric|string',            
             'payment_due' => 'nullable|date',
             'type_of_business' => 'nullable|string|max:255',
             'business_name' => 'required|string|max:255',
@@ -309,7 +234,7 @@ class FinanceController extends Controller
             'address' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
             'state' => 'nullable|string|max:255',
-            'annual_revenue' => 'nullable|numeric',
+            'annual_revenue' => 'nullable|string',
             'zip' => 'nullable|numeric',
             'years_in_business' => 'nullable|string',
             'accounts_payable_email' => 'nullable|email',
@@ -327,6 +252,15 @@ class FinanceController extends Controller
         }
 
         $data = $validator->validated();
+        // Upload payment image if available
+        $data['created_by'] = Auth::id() ?? 1;
+        $data['updated_by'] = "0";
+        $data['documents'] = uploadImageToWebpS3FromFile(
+            $request,
+            'documents',
+            env('STORAGE_ENV') . '/documents'
+        );
+ 
         $finance = Finance::create($data);
         return response()->json([
             'success' => true,
@@ -353,56 +287,82 @@ class FinanceController extends Controller
         if (!$finance) {
             return response()->json(['message' => 'Record not found'], 404);
         }
-         return response()->json([
+        return response()->json([
             'success' => true,
             'message' => 'Finance details successfully',
             'data' => $finance
         ], 201);
-         
-    }
 
-    
+    } 
      /**
-     * @OA\Put(
-     *     path="/api/finances/{id}",
-     *     summary="Update finance record",
-     *     tags={"Finance"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"business_name","type_of_business"},
-     *             @OA\Property(property="payment_selection", type="string"),
-     *             @OA\Property(property="payment_options", type="string"),
-     *             @OA\Property(property="term_selection", type="string", example="Net 30 Days"),
-     *             @OA\Property(property="amount", type="number", format="float"),
-     *             @OA\Property(property="documents", type="string"),
-     *             @OA\Property(property="payment_due", type="string", format="date"),
-     *             @OA\Property(property="type_of_business", type="string"),
-     *             @OA\Property(property="business_name", type="string"),
-     *             @OA\Property(property="business_address", type="string"),
-     *             @OA\Property(property="country", type="string"),
-     *             @OA\Property(property="address", type="string"),
-     *             @OA\Property(property="city", type="string"),
-     *             @OA\Property(property="state", type="string"),
-     *             @OA\Property(property="zip", type="string"),
-     *             @OA\Property(property="annual_revenue", type="string"),
-     *             @OA\Property(property="years_in_business", type="string", example="5 – 10 years"),
-     *             @OA\Property(property="accounts_payable_email", type="string", format="email"),
-     *             @OA\Property(property="accounts_payable_phone", type="string"),
-     *             @OA\Property(property="duns_number", type="string")
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Updated")
-     * )
-     */
+ * @OA\Put(
+ *     path="/api/finances/{id}",
+ *     summary="Update an existing finance record",
+ *     tags={"Finance"},
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="Finance record ID",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 type="object",
+ *                 required={"business_name"},
+ *                 @OA\Property(property="payment_selection", type="string", example="Credit", description="Payment type: Credit, Debit Card, Net Banking, etc."),
+ *                 @OA\Property(property="payment_options", type="string", example="Net Payment Terms", description="Payment options details"),
+ *                 @OA\Property(property="term_selection", type="string", example="Net 30 Days", description="Payment term duration"),
+ *                 @OA\Property(property="amount", type="number", format="float", example=5000.75, description="Transaction amount"),
+ *                 @OA\Property(property="documents", type="string", format="binary", description="Upload related document"),
+ *                 @OA\Property(property="payment_due", type="string", format="date", example="2025-12-31", description="Payment due date"),
+ *                 @OA\Property(property="type_of_business", type="string", example="E-commerce", description="Type of business"),
+ *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd", description="Registered business name"),
+ *                 @OA\Property(property="business_address", type="string", example="123 Street, Delhi", description="Business address"),
+ *                 @OA\Property(property="country", type="string", example="India", description="Country name"),
+ *                 @OA\Property(property="address", type="string", example="B-21, Connaught Place, Delhi", description="Full address"),
+ *                 @OA\Property(property="city", type="string", example="New Delhi", description="City name"),
+ *                 @OA\Property(property="zip", type="string", example="110001", description="ZIP / Postal code"),
+ *                 @OA\Property(property="annual_revenue", type="string", example="10M USD", description="Annual business revenue"),
+ *                 @OA\Property(property="years_in_business", type="string", example="5 – 10 years", description="Years in business"),
+ *                 @OA\Property(property="accounts_payable_email", type="string", format="email", example="finance@abc.com", description="Accounts payable email"),
+ *                 @OA\Property(property="accounts_payable_phone", type="string", example="+91-9876543210", description="Accounts payable phone number"),
+ *                 @OA\Property(property="duns_number", type="string", example="123456789", description="DUNS number (if applicable)")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Finance record updated successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Finance record updated successfully."),
+ *             @OA\Property(property="data", type="object")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Validation failed"),
+ *             @OA\Property(property="errors", type="object")
+ *         )
+ *     )
+ * )
+ */
+
     public function update(Request $request, $id)
-    {
+    { dd($id);
         $validator = Validator::make($request->all(), [
             'payment_selection' => 'nullable|string',
             'payment_options' => 'nullable|string',
             'term_selection' => 'nullable|string',
-            'amount' => 'required|integer|string',
-            'documents' => 'nullable|string',
+            'amount' => 'required|numeric|string',           
             'payment_due' => 'nullable|date',
             'type_of_business' => 'nullable|string|max:255',
             'business_name' => 'required|string|max:255',
@@ -411,7 +371,7 @@ class FinanceController extends Controller
             'address' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
             'state' => 'nullable|string|max:255',
-            'annual_revenue' => 'nullable|numeric',
+            'annual_revenue' => 'nullable|string',
             'zip' => 'nullable|numeric',
             'years_in_business' => 'nullable|string',
             'accounts_payable_email' => 'nullable|email',
@@ -435,6 +395,11 @@ class FinanceController extends Controller
 
         $data = $validator->validated();
         $data['updated_by'] = Auth::id() ?? 1;
+         $data['documents'] = uploadImageToWebpS3FromFile(
+            $request,
+            'documents',
+            env('STORAGE_ENV') . '/documents'
+        );
         $finance->update($data);
 
 

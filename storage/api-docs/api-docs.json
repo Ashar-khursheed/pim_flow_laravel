@@ -10892,173 +10892,158 @@
                 ],
                 "summary": "Create a new finance record",
                 "operationId": "7e61ac9781248944f1952c93b6424563",
-                "parameters": [
-                    {
-                        "name": "payment_selection",
-                        "in": "query",
-                        "description": "Credit,Debit Card,Net Banking,Net Payment Terms",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        },
-                        "example": "Credit"
-                    },
-                    {
-                        "name": "payment_options",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "term_selection",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        },
-                        "example": "Net 30 Days"
-                    },
-                    {
-                        "name": "amount",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "number",
-                            "format": "float"
-                        }
-                    },
-                    {
-                        "name": "documents",
-                        "in": "query",
-                        "description": "File path or filename",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "payment_due",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "type_of_business",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "business_name",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "business_address",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "country",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "address",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "city",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "state",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "zip",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "annual_revenue",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "years_in_business",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        },
-                        "example": "5 – 10 years"
-                    },
-                    {
-                        "name": "accounts_payable_email",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "email"
-                        }
-                    },
-                    {
-                        "name": "accounts_payable_phone",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "duns_number",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "business_name"
+                                ],
+                                "properties": {
+                                    "payment_selection": {
+                                        "description": "Credit, Debit Card, Net Banking, Net Payment Terms",
+                                        "type": "string",
+                                        "example": "Credit"
+                                    },
+                                    "payment_options": {
+                                        "description": "Payment option description",
+                                        "type": "string",
+                                        "example": "Net Payment Terms"
+                                    },
+                                    "term_selection": {
+                                        "description": "Net Pay in 30/45/60 Days",
+                                        "type": "string",
+                                        "example": "Net 30 Days"
+                                    },
+                                    "amount": {
+                                        "description": "Enter amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5000.75
+                                    },
+                                    "documents": {
+                                        "description": "Upload supporting document file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "payment_due": {
+                                        "description": "Payment due date",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-12-31"
+                                    },
+                                    "type_of_business": {
+                                        "description": "Type of business (Advertising / E-commerce)",
+                                        "type": "string",
+                                        "example": "E-commerce"
+                                    },
+                                    "business_name": {
+                                        "description": "Registered business name",
+                                        "type": "string",
+                                        "example": "ABC Pvt Ltd"
+                                    },
+                                    "business_address": {
+                                        "description": "Business address",
+                                        "type": "string",
+                                        "example": "123 Street, Delhi"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "B-21, Connaught Place, Delhi"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "New Delhi"
+                                    },
+                                    "zip": {
+                                        "type": "string",
+                                        "example": "110001"
+                                    },
+                                    "annual_revenue": {
+                                        "type": "string",
+                                        "example": "10M USD"
+                                    },
+                                    "years_in_business": {
+                                        "type": "string",
+                                        "example": "5 – 10 years"
+                                    },
+                                    "accounts_payable_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "finance@abc.com"
+                                    },
+                                    "accounts_payable_phone": {
+                                        "type": "string",
+                                        "example": "+91-9876543210"
+                                    },
+                                    "duns_number": {
+                                        "type": "string",
+                                        "example": "123456789"
+                                    }
+                                },
+                                "type": "object"
+                            }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Finance record created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record created successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/finances/{id}": {
@@ -11091,79 +11076,120 @@
                 "tags": [
                     "Finance"
                 ],
-                "summary": "Update finance record",
+                "summary": "Update an existing finance record",
                 "operationId": "d16598d89b93e3cb0d3e4d71c23559c8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance record ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "business_name",
-                                    "type_of_business"
+                                    "business_name"
                                 ],
                                 "properties": {
                                     "payment_selection": {
-                                        "type": "string"
+                                        "description": "Payment type: Credit, Debit Card, Net Banking, etc.",
+                                        "type": "string",
+                                        "example": "Credit"
                                     },
                                     "payment_options": {
-                                        "type": "string"
+                                        "description": "Payment options details",
+                                        "type": "string",
+                                        "example": "Net Payment Terms"
                                     },
                                     "term_selection": {
+                                        "description": "Payment term duration",
                                         "type": "string",
                                         "example": "Net 30 Days"
                                     },
                                     "amount": {
+                                        "description": "Transaction amount",
                                         "type": "number",
-                                        "format": "float"
+                                        "format": "float",
+                                        "example": 5000.75
                                     },
                                     "documents": {
-                                        "type": "string"
+                                        "description": "Upload related document",
+                                        "type": "string",
+                                        "format": "binary"
                                     },
                                     "payment_due": {
+                                        "description": "Payment due date",
                                         "type": "string",
-                                        "format": "date"
+                                        "format": "date",
+                                        "example": "2025-12-31"
                                     },
                                     "type_of_business": {
-                                        "type": "string"
+                                        "description": "Type of business",
+                                        "type": "string",
+                                        "example": "E-commerce"
                                     },
                                     "business_name": {
-                                        "type": "string"
+                                        "description": "Registered business name",
+                                        "type": "string",
+                                        "example": "ABC Pvt Ltd"
                                     },
                                     "business_address": {
-                                        "type": "string"
+                                        "description": "Business address",
+                                        "type": "string",
+                                        "example": "123 Street, Delhi"
                                     },
                                     "country": {
-                                        "type": "string"
+                                        "description": "Country name",
+                                        "type": "string",
+                                        "example": "India"
                                     },
                                     "address": {
-                                        "type": "string"
+                                        "description": "Full address",
+                                        "type": "string",
+                                        "example": "B-21, Connaught Place, Delhi"
                                     },
                                     "city": {
-                                        "type": "string"
-                                    },
-                                    "state": {
-                                        "type": "string"
+                                        "description": "City name",
+                                        "type": "string",
+                                        "example": "New Delhi"
                                     },
                                     "zip": {
-                                        "type": "string"
+                                        "description": "ZIP / Postal code",
+                                        "type": "string",
+                                        "example": "110001"
                                     },
                                     "annual_revenue": {
-                                        "type": "string"
+                                        "description": "Annual business revenue",
+                                        "type": "string",
+                                        "example": "10M USD"
                                     },
                                     "years_in_business": {
+                                        "description": "Years in business",
                                         "type": "string",
                                         "example": "5 – 10 years"
                                     },
                                     "accounts_payable_email": {
+                                        "description": "Accounts payable email",
                                         "type": "string",
-                                        "format": "email"
+                                        "format": "email",
+                                        "example": "finance@abc.com"
                                     },
                                     "accounts_payable_phone": {
-                                        "type": "string"
+                                        "description": "Accounts payable phone number",
+                                        "type": "string",
+                                        "example": "+91-9876543210"
                                     },
                                     "duns_number": {
-                                        "type": "string"
+                                        "description": "DUNS number (if applicable)",
+                                        "type": "string",
+                                        "example": "123456789"
                                     }
                                 },
                                 "type": "object"
@@ -11172,10 +11198,58 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Updated"
+                    "200": {
+                        "description": "Finance record updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record updated successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
