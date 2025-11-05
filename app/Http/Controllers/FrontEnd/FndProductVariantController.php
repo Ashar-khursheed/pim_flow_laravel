@@ -162,7 +162,7 @@ class FndProductVariantController extends Controller
                         && $currentProductAttributes[$attributeId] == $attrValue;
 
                     $result[] = [
-                        'product_id' => $child->id,
+                        // 'product_id' => $child->id,
                         'attribute_id' => $attributeId,
                         'attribute_value' => $attrValue,
                         'attribute_name' => $attributeName,
