@@ -616,7 +616,7 @@ if (!function_exists('glitch_error_reporting_mails')) {
 
 		$usTestMails = [
 			'qa03@horecastore.ae',
-			'qa06@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$uaeTestMails = [
@@ -683,7 +683,7 @@ if (!function_exists('order_cc_mails')) {
 
 		$usTestMails = [
 			'qa03@horecastore.ae',
-			'qa06@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$uaeTestMails = [
@@ -745,7 +745,7 @@ if (!function_exists('inquiry_cc_mails')) {
 
 		$usTestMails = [
 			'qa03@horecastore.ae',
-			'qa06@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$uaeTestMails = [
@@ -806,7 +806,7 @@ if (!function_exists('quote_cc_mails')) {
 
 		$usTestMails = [
 			'qa03@horecastore.ae',
-			'qa06@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$uaeTestMails = [
