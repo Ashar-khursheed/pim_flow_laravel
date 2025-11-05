@@ -193,6 +193,12 @@ class AttributeController extends BaseController
 		$attribute->updated_at = now();
 		$attribute->save();
 
+		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+			$attribute->translateOrNew('en')->name_tr = $request->name;
+		}
+
+		$attribute->save();
+
 		return response()->json([
 			'success' => true,
 			'message' => __("msg_create"),
@@ -213,6 +219,7 @@ class AttributeController extends BaseController
 	 *         description="ID of the attribute",
 	 *         @OA\Schema(type="integer", example=1)
 	 *     ),
+	 *     @OA\Parameter(name="locale", in="query", required=true, @OA\Schema(type="string", enum={"ar", "en"}, example="ar")),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -225,6 +232,7 @@ class AttributeController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
+		$locale = in_array($request->locale ?? 'en', ['ar', 'en']) ? ($request->locale ?? 'en') : 'en';
 		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroup:id,name', 'measurementUnits:id,name,measurement_type_id'])->find($attributeId);
 
 		if (!$attribute) {
@@ -233,6 +241,8 @@ class AttributeController extends BaseController
 				'message' => __("err_exist")
 			]);
 		}
+
+		$translation = $attribute->translations->firstWhere('locale', $locale);
 
 		/* Append measurement_type from first unit if exists */
 		$firstUnit = $attribute->measurementUnits->first();
@@ -247,6 +257,9 @@ class AttributeController extends BaseController
 
 
 		$attribute->validations = json_decode($attribute->validations);
+
+		$field = 'name_tr';
+		$attribute->name = $translation ? $translation->$field : $attribute->name;
 
 		return response()->json([
 			'success' => true,
@@ -272,6 +285,7 @@ class AttributeController extends BaseController
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             required={"name", "code", "type"},
+	 *             @OA\Property(property="locale", type="string", example="ar"),
 	 *             @OA\Property(property="name", type="string", example="Size"),
 	 *             @OA\Property(property="code", type="string", example="size"),
 	 *             @OA\Property(property="type", type="string", example="select"),
@@ -322,6 +336,7 @@ class AttributeController extends BaseController
 		]);
 
 		$input = $request->all();
+		$locale = $request->locale ?? 'en';
 
 		DB::beginTransaction();
 		try {
@@ -377,7 +392,26 @@ class AttributeController extends BaseController
 			];
 			foreach ($fillableFields as $field) {
 				if (array_key_exists($field, $input)) {
-					$attribute->$field = $input[$field];
+					if ($field == 'name') {
+						$updatedName = $input['name'];
+						/* use translated table */
+						$existingName = optional($product->translate($locale))->name ?? [];
+
+						/* Only save if changed */
+						if ($updatedName !== $existingName) {
+							if ($locale === 'en') {
+								$attribute->name = $updatedName;
+							}
+
+							if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+								$attribute->translateOrNew($locale)->name_tr = $updatedName;
+							}
+							$attribute->save();
+						}
+
+					} else {
+						$attribute->$field = $input[$field];
+					}
 				}
 			}
 
@@ -448,6 +482,9 @@ class AttributeController extends BaseController
 		}
 
 		/* Proceed with deletion */
+		if (method_exists($attribute, 'translations')) {
+			$attribute->translations()->delete();
+		}
 		$attribute->delete();
 
 		return response()->json([
