@@ -97,22 +97,36 @@ class TranslationController extends BaseController
 		};
 
 		/* Fetch and format records */
-		$query = $model::with(['translations' => function ($query) use ($langCodeArray) {
-			$query->whereIn('locale', $langCodeArray);
-		}]);
-
-		// Special handling for attribute_value - group by attribute and order
 		if ($request->type === 'attribute_value') {
-			$query->with('attribute:id,name') // Load attribute relationship
-			->orderBy('attribute_id', 'asc')
-			->orderBy('id', 'asc');
-		} else {
-			$query->orderBy('id', 'asc');
-		}
+			// For attribute_value, get attribute IDs in the range first
+			$attributeIds = Attribute::orderBy('id', 'asc')
+			->offset($request->range_from - 1)
+			->limit($request->range_to - $request->range_from + 1)
+			->whereHas('attributeValues')
+			->pluck('id')
+			->toArray();
 
-		$records = $query->offset($request->range_from - 1)
-		->limit($request->range_to - $request->range_from + 1)
-		->get();
+			// Then get all attribute values for those attributes
+			$records = AttributeValue::with([
+				'attribute:id,name',
+				'translations' => function ($query) use ($langCodeArray) {
+					$query->whereIn('locale', $langCodeArray);
+				}
+			])
+			->whereIn('attribute_id', $attributeIds)
+			->orderBy('attribute_id', 'asc')
+			->orderBy('id', 'asc')
+			->get();
+		} else {
+			$query = $model::with(['translations' => function ($query) use ($langCodeArray) {
+				$query->whereIn('locale', $langCodeArray);
+			}]);
+
+			$records = $query->offset($request->range_from - 1)
+			->limit($request->range_to - $request->range_from + 1)
+			->orderBy('id', 'asc')
+			->get();
+		}
 
 		// Map records to Excel rows
 		$records = $records->map(function ($table) use ($langCodeArray, $request) {
@@ -231,7 +245,7 @@ class TranslationController extends BaseController
 					'trans' => ['{CODE}_Title' => '{code}_name']
 				],
 				'attribute_value' => [
-					'base' => ['ID' => 'id', 'Attribute Value' => 'attribute_value'],
+					'base' => ['ID' => 'id', 'Attribute Name' => 'attribute_name', 'Value' => 'attribute_value'],
 					'trans' => ['{CODE}_Title' => '{code}_attribute_value']
 				],
 				'product_attribute' => [
