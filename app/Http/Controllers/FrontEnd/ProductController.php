@@ -770,15 +770,15 @@ class ProductController extends Controller
 							return null;
 						}
 
-						// Remove all &nbsp; (HTML and UTF-8) from the string
+						// Trim and normalize spaces
 						$item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
-
-						// Optionally clean up extra spaces
-						$item = preg_replace('/\s+/', ' ', $item); // collapse spaces
+						$item = preg_replace('/\s+/', ' ', $item);
 						$item = trim($item);
 
-						// Still keep <p> tags or not? Your call — if not, uncomment below:
-						// $item = strip_tags($item);
+						// 🧠 Skip any string starting with "<p>null"
+						if (stripos($item, '<p>null<\/p>') === 0) {
+							return null;
+						}
 
 						return $item !== '' ? $item : null;
 					}, $decoded)));
