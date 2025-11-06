@@ -583,14 +583,56 @@ class BrandController extends Controller
 //     ])->header('Cache-Control', 'public, max-age=86400');
 // }
 
+// public function brandsByCategory($id): JsonResponse
+// {
+//     // Ignore category filter and just fetch all brands with logos
+//     $brands = Brand::where('status', '=', 'published')
+//         ->whereNotNull('logo')
+//         ->where('logo', '!=', 'null')
+//         ->select('id', 'name', 'logo')
+//         ->with('seoUrl')
+//         ->get()
+//         ->map(function ($brand) {
+//             return [
+//                 'id'   => $brand->id,
+//                 'name' => $brand->name,
+//                 'logo' => asset($brand->logo),
+//                 'url'  => $brand->seoUrl->url ?? null,
+//             ];
+//         })
+//         ->values();
+
+//     if ($brands->isEmpty()) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'No published brands with logos found.',
+//             'data'    => []
+//         ], 404);
+//     }
+
+//     return response()->json([
+//         'success' => true,
+//         'message' => 'Brands retrieved successfully.',
+//         'data'    => $brands
+//     ])->header('Cache-Control', 'public, max-age=86400');
+// }
 public function brandsByCategory($id): JsonResponse
 {
-    // Ignore category filter and just fetch all brands with logos
+    // Get the main category and all its child categories
+    $categoryIds = collect([$id])->merge($this->getAllChildCategoryIds($id));
+
+    // Find brands that have products in these categories
     $brands = Brand::where('status', '=', 'published')
         ->whereNotNull('logo')
         ->where('logo', '!=', 'null')
+        ->whereHas('products', function ($query) use ($categoryIds) {
+            $query->whereHas('categories', function ($categoryQuery) use ($categoryIds) {
+                $categoryQuery->whereIn('categories.id', $categoryIds);
+            });
+        })
         ->select('id', 'name', 'logo')
         ->with('seoUrl')
+        ->distinct()
         ->get()
         ->map(function ($brand) {
             return [
@@ -605,7 +647,7 @@ public function brandsByCategory($id): JsonResponse
     if ($brands->isEmpty()) {
         return response()->json([
             'success' => false,
-            'message' => 'No published brands with logos found.',
+            'message' => 'No published brands with logos found for this category.',
             'data'    => []
         ], 404);
     }
