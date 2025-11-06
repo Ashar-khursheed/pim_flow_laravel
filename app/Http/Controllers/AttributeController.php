@@ -363,24 +363,42 @@ class AttributeController extends BaseController
 				$valuesToDelete = array_diff($existingValues, $providedValues);
 				$valuesToAdd = array_diff($providedValues, $existingValues);
 
+				/* Delete removed values and their translations */
 				if (!empty($valuesToDelete)) {
 					$attributeValuesToDelete = $attribute->attributeValues()
 					->whereIn('attribute_value', $valuesToDelete)
 					->get();
 
 					foreach ($attributeValuesToDelete as $value) {
+						/* Delete translations if available */
+						if (method_exists($value, 'translations')) {
+							$value->translations()->delete();
+						}
 						$value->delete();
 					}
 				}
 
+				/* Add new values with translation */
 				foreach ($valuesToAdd as $newValue) {
-					$attribute->attributeValues()->create(['attribute_value' => $newValue]);
+					$newAttributeValue = $attribute->attributeValues()->create([
+						'attribute_value' => $newValue,
+					]);
+
+					/* Since input is always in English, save translation explicitly */
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$newAttributeValue->translateOrNew('en')->attribute_value_tr = $newValue;
+					}
+					$newAttributeValue->save();
 				}
 			}
+
 
 			/* Delete attribute values if type changed from 'select' */
 			if ($request->type !== 'select' && $attribute->type === 'select') {
 				foreach ($attribute->attributeValues as $value) {
+					if (method_exists($value, 'translations')) {
+						$value->translations()->delete();
+					}
 					$value->delete();
 				}
 			}
@@ -477,6 +495,9 @@ class AttributeController extends BaseController
 
 		if ($attribute->type === 'select') {
 			foreach ($attribute->attributeValues as $value) {
+				if (method_exists($value, 'translations')) {
+					$value->translations()->delete();
+				}
 				$value->delete();
 			}
 		}
