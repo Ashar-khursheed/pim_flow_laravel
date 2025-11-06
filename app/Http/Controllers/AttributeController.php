@@ -258,8 +258,8 @@ class AttributeController extends BaseController
 
 		$attribute->validations = json_decode($attribute->validations);
 
-		$field = 'name_tr';
-		$attribute->name = $translation ? $translation->$field : $attribute->name;
+		// $field = 'name_tr';
+		// $attribute->name = $translation ? $translation->$field : $attribute->name;
 
 		return response()->json([
 			'success' => true,
@@ -285,7 +285,6 @@ class AttributeController extends BaseController
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             required={"name", "code", "type"},
-	 *             @OA\Property(property="locale", type="string", example="ar"),
 	 *             @OA\Property(property="name", type="string", example="Size"),
 	 *             @OA\Property(property="code", type="string", example="size"),
 	 *             @OA\Property(property="type", type="string", example="select"),
@@ -756,6 +755,80 @@ class AttributeController extends BaseController
 				'success' => false,
 				'message' => $error
 			]);
+		}
+	}
+	/**
+	 * @OA\Post(
+	 *     path="/api/attributes/generate-translation",
+	 *     summary="Generate or update attribute translation",
+	 *     description="This endpoint generates or updates translations for an attribute and its values.",
+	 *     tags={"Attributes"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"id", "locale", "name"},
+	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the attribute to translate"),
+	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar, fr, de)"),
+	 *             @OA\Property(property="name", type="string", example="الحجم", description="Translated name of the attribute"),
+	 *             @OA\Property(
+	 *                 property="attribute_values",
+	 *                 type="object",
+	 *                 example={"1": "صغير", "2": "متوسط", "3": "كبير"},
+	 *                 description="Key-value pairs of attribute value translations (key = attribute_value_id, value = translated text)"
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function generateTranslation(Request $request)
+	{
+		/* Validate request data */
+		$validated = $request->validate([
+			'id' => 'required|exists:attributes,id',
+			'locale' => 'required|string|in:ar,fr',
+			'name' => 'required|string',
+			'attribute_values' => 'nullable|array',
+			'attribute_values.*' => 'string|nullable',
+		]);
+
+		$attribute = Attribute::find($validated['id']);
+
+		DB::beginTransaction();
+		try {
+			$locale = $validated['locale'];
+
+			/* Update attribute translation */
+			$attribute->translateOrNew($locale)->name_tr = $validated['name'];
+			$attribute->save();
+
+			/* Update attribute value translations */
+			if ($attribute->type === 'select' && !empty($validated['attribute_values'])) {
+				foreach ($validated['attribute_values'] as $id => $translatedValue) {
+					$attrValue = AttributeValue::find($id);
+					if ($attrValue) {
+						$attrValue->translateOrNew($locale)->attribute_value_tr = $translatedValue;
+						$attrValue->save();
+					}
+				}
+			}
+
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => __("Translations updated successfully."),
+				'data' => $attribute->load('translations', 'attributeValues.translations'),
+			]);
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => __("err_update"),
+				'error' => $e->getMessage(),
+			], 500);
 		}
 	}
 }
