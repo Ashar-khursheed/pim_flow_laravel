@@ -1695,6 +1695,19 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ar",
+                                "en"
+                            ],
+                            "example": "ar"
+                        }
                     }
                 ],
                 "responses": {
@@ -1940,6 +1953,70 @@
                 "responses": {
                     "200": {
                         "description": "Imported successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attributes/generate-translation": {
+            "post": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Generate or update attribute translation",
+                "description": "This endpoint generates or updates translations for an attribute and its values.",
+                "operationId": "77c10156d07b055eadb500eea6efd6ce",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "locale",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID of the attribute to translate",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "locale": {
+                                        "description": "Locale code for translation (e.g. ar)",
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "name": {
+                                        "description": "Translated name of the attribute",
+                                        "type": "string",
+                                        "example": "الحجم"
+                                    },
+                                    "attribute_values": {
+                                        "description": "Key-value pairs of attribute value translations (key = attribute_value_id, value = translated text)",
+                                        "type": "object",
+                                        "example": {
+                                            "1": "صغير",
+                                            "2": "متوسط",
+                                            "3": "كبير"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
                         "content": {
                             "application/json": {}
                         }

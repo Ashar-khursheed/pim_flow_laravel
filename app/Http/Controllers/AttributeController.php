@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
 use App\Models\Attribute;
+use App\Models\AttributeValue;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\TransactionLog;
@@ -242,7 +243,7 @@ class AttributeController extends BaseController
 			]);
 		}
 
-		$translation = $attribute->translations->firstWhere('locale', $locale);
+		// $translation = $attribute->translations->firstWhere('locale', $locale);
 
 		/* Append measurement_type from first unit if exists */
 		$firstUnit = $attribute->measurementUnits->first();
@@ -757,6 +758,7 @@ class AttributeController extends BaseController
 			]);
 		}
 	}
+
 	/**
 	 * @OA\Post(
 	 *     path="/api/attributes/generate-translation",
@@ -768,7 +770,7 @@ class AttributeController extends BaseController
 	 *         @OA\JsonContent(
 	 *             required={"id", "locale", "name"},
 	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the attribute to translate"),
-	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar, fr, de)"),
+	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
 	 *             @OA\Property(property="name", type="string", example="الحجم", description="Translated name of the attribute"),
 	 *             @OA\Property(
 	 *                 property="attribute_values",
@@ -787,7 +789,7 @@ class AttributeController extends BaseController
 		/* Validate request data */
 		$validated = $request->validate([
 			'id' => 'required|exists:attributes,id',
-			'locale' => 'required|string|in:ar,fr',
+			'locale' => 'required|string|in:ar',
 			'name' => 'required|string',
 			'attribute_values' => 'nullable|array',
 			'attribute_values.*' => 'string|nullable',
@@ -819,7 +821,7 @@ class AttributeController extends BaseController
 			return response()->json([
 				'success' => true,
 				'message' => __("Translations updated successfully."),
-				'data' => $attribute->load('translations', 'attributeValues.translations'),
+				'data' => $attribute->load('attributeValues'),
 			]);
 		} catch (\Exception $e) {
 			DB::rollBack();

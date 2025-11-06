@@ -62,9 +62,7 @@ class TranslationController extends BaseController
 		if (in_array($request->type, ['attribute_group', 'attribute', 'attribute_value', 'product_attribute'])) {
 			$localizedTitleHeaders = collect($langCodeArray)->flatMap(function ($code) {
 				$prefix = strtoupper($code);
-				return [
-					"{$prefix}_Title",
-				];
+				return ["{$prefix}_Title"];
 			})->toArray();
 		} elseif ($request->type === 'product') {
 			$localizedTitleHeaders = collect($langCodeArray)->flatMap(function ($code) {
@@ -76,22 +74,20 @@ class TranslationController extends BaseController
 					"{$prefix}_Images",
 				];
 			})->toArray();
-		} else {
-			$localizedTitleHeaders = array_map(function ($code) {
-				return strtoupper($code) . '_Title';
-			}, $langCodeArray);
 		}
 
+		// Define base headers based on type
 		if ($request->type === 'product') {
 			$baseArray = ['ID', 'Name', 'Description', 'Benefits Features', 'Images'];
-		} elseif (in_array($request->type, ['attribute_group', 'attribute', 'attribute_value', 'product_attribute'])) {
-			$baseArray = ['ID', 'Name'];
+		} elseif ($request->type === 'attribute_value') {
+			$baseArray = ['ID', 'Attribute Name', 'Value'];
 		} else {
-			$baseArray = ['ID', 'Title'];
+			$baseArray = ['ID', 'Name'];
 		}
 
 		$excelHeaders = array_merge($baseArray, $localizedTitleHeaders);
 
+		// Get the model class
 		$model = match ($request->type) {
 			'attribute_group' => AttributeGroup::class,
 			'attribute' => Attribute::class,
@@ -101,16 +97,24 @@ class TranslationController extends BaseController
 		};
 
 		/* Fetch and format records */
-		$records = $model::with(['translations' => function ($query) use ($langCodeArray) {
+		$query = $model::with(['translations' => function ($query) use ($langCodeArray) {
 			$query->whereIn('locale', $langCodeArray);
-		}])
-		->offset($request->range_from - 1)
+		}]);
+
+		// Special handling for attribute_value - group by attribute and order
+		if ($request->type === 'attribute_value') {
+			$query->with('attribute:id,name') // Load attribute relationship
+			->orderBy('attribute_id', 'asc')
+			->orderBy('id', 'asc');
+		} else {
+			$query->orderBy('id', 'asc');
+		}
+
+		$records = $query->offset($request->range_from - 1)
 		->limit($request->range_to - $request->range_from + 1)
-		->orderBy('id', 'asc')
 		->get();
 
-
-
+		// Map records to Excel rows
 		$records = $records->map(function ($table) use ($langCodeArray, $request) {
 			$translations = $table->translations->keyBy('locale');
 
@@ -118,17 +122,17 @@ class TranslationController extends BaseController
 			$fieldMapping = [
 				'attribute_group' => ['id', 'name'],
 				'attribute' => ['id', 'name'],
-				'attribute_value' => ['id', 'attribute_value'],
+				'attribute_value' => ['id', 'attribute_name', 'attribute_value'],
 				'product_attribute' => ['id', 'attribute_value'],
 				'product' => ['id', 'name', 'description', 'benefits_features', 'images'],
 			];
 
 			/* Define translation field mapping */
 			$translationFields = [
-				'attribute_group' => 'name_tr',
-				'attribute' => 'name_tr',
-				'attribute_value' => 'attribute_value_tr',
-				'product_attribute' => 'attribute_value_tr',
+				'attribute_group' => ['name_tr'],
+				'attribute' => ['name_tr'],
+				'attribute_value' => ['attribute_value_tr'],
+				'product_attribute' => ['attribute_value_tr'],
 				'product' => ['name_tr', 'description_tr', 'benefits_features_tr', 'images_tr'],
 			];
 
@@ -137,7 +141,12 @@ class TranslationController extends BaseController
 			$fields = $fieldMapping[$request->type] ?? [];
 
 			foreach ($fields as $field) {
-				$row[] = $table->$field ?? '';
+				if ($field === 'attribute_name' && $request->type === 'attribute_value') {
+					// Get attribute name from relationship
+					$row[] = $table->attribute->name ?? '';
+				} else {
+					$row[] = $table->$field ?? '';
+				}
 			}
 
 			/* Add translations for each language */
@@ -145,14 +154,8 @@ class TranslationController extends BaseController
 				$translation = $translations->get($code);
 				$transFields = $translationFields[$request->type] ?? [];
 
-				if (is_array($transFields)) {
-					/* Multiple translation fields (product) */
-					foreach ($transFields as $transField) {
-						$row[] = $translation?->$transField ?? '';
-					}
-				} else {
-					/* Single translation field */
-					$row[] = $translation?->$transFields ?? '';
+				foreach ($transFields as $transField) {
+					$row[] = $translation?->$transField ?? '';
 				}
 			}
 
@@ -163,7 +166,7 @@ class TranslationController extends BaseController
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
 
-		$sheetTitle = "{$request->type}_{$request->range_from}_{$request->range_to}.xlsx";
+		$sheetTitle = substr("{$request->type}_{$request->range_from}_{$request->range_to}", 0, 31);
 		$sheet->setTitle($sheetTitle);
 
 		/* Set headers */

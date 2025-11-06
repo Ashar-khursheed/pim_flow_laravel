@@ -386,6 +386,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::apiResource('users', UserController::class);
 
+	Route::post('/attributes/generate-translation', [AttributeController::class, 'generateTranslation']);
 	Route::post('/attributes/import', [AttributeController::class, 'import']);
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
@@ -520,7 +521,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::resource('seo-management', SeoManagementController::class);
 	Route::post('seo-management/{id}', [SeoManagementController::class,'update']);
- 
+
 
 	Route::post('seo-details', [SeoDetailController::class, 'store']);
 	Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
