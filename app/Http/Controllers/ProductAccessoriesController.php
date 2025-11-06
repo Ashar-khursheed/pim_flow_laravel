@@ -230,8 +230,8 @@ class ProductAccessoriesController extends Controller
                 'product_id' => 'required|integer|exists:ec_products,id',
                 'name' => 'required|string|max:255',
                 'accessories' => 'required|array',
-                'isapproved' => 'sometimes|boolean',
-                'isRequired' => 'sometimes|boolean'
+                'isapproved' => 'sometimes|boolean'
+                 
             ]);
 
             if ($validator->fails()) {
@@ -648,7 +648,7 @@ class ProductAccessoriesController extends Controller
             $accessory = ProductAccessory::findOrFail($id);
 
             $validator = Validator::make($request->all(), [
-                'isapproved' => 'required|boolean'
+                'isapproved' => 'sometimes|boolean'
             ]);
 
             if ($validator->fails()) {

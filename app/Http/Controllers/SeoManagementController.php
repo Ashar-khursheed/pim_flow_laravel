@@ -721,8 +721,8 @@ class SeoManagementController extends Controller
 				$seoData['banner_image_file'] = $bannerImageUrl;
 			}
 
-			$schemaArray = $this->generateSchema($seo);
-			$seoData['schema'] = json_encode($schemaArray); 
+			// $schemaArray = $this->generateSchema($seo);
+			// $seoData['schema'] = json_encode($schemaArray); 
 			$seo->update($seoData);
 			$seo->refresh();
 
@@ -1055,7 +1055,7 @@ class SeoManagementController extends Controller
 				$currencyName = $product->currency ? $product->currency->title : 'USD'; /* Default to 'USD' if no currency found */
 				$brandName = $product->brand ? $product->brand->name : 'Default Brand'; /* Default to 'Default Brand' if no brand found */
 				$firstSupplier = $product->productSuppliers->first();
-				$url = config('app.url').'/'.$product->parent_category_url() . '/' .
+				$url = $product->parent_category_url() . '/' .
                      $product->category_url() . '/' .
                      ($product->seoProductUrl->url ?? "");
 					  
@@ -1133,7 +1133,7 @@ class SeoManagementController extends Controller
 						"@type" => $seo->relational_type ?? "CollectionPage",
 						"name" => $seo->meta_title,
 						"description" => $seo->meta_description,
-						"url" => config('app.url').'/'.$url,
+						"url" => $url,
 						"mainEntity" => [
 							"@type" => "ItemList",
 							"name" => $seo->primary_keyword,
@@ -1171,7 +1171,7 @@ class SeoManagementController extends Controller
 			$url = null;
 		 
 			if($brand){
-				$url = config('app.url').'/brands/' . $brand->seoUrl->url;
+				$url = 'brands/'.$brand->seoUrl->url;
 			}
 			 
 			/* If not a Brand, return the generic WebPage schema */
@@ -1204,7 +1204,7 @@ class SeoManagementController extends Controller
 		$url = null;
 		 
 		if($blog){
-	 		$url = config('app.url').'/blog/'.$blog->slug;
+	 		$url = '/blog/'.$blog->slug;
 		}
 			 
 			/* If not a Blog, return the generic WebPage schema */
