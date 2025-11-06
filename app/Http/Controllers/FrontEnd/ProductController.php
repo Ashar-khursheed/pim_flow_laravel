@@ -208,30 +208,35 @@ class ProductController extends Controller
 			//     }
 			// }
 			if (is_string($product->description)) {
-				$decoded = json_decode($product->description, true);
+					$decoded = json_decode($product->description, true);
 
-				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-					$product->description = array_values(array_filter(array_map(function ($item) {
-						if (is_null($item) || strtolower($item) === 'null') {
-							return null;
-						}
+					if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+						$product->description = array_values(array_filter(array_map(function ($item) {
+							if (is_null($item) || strtolower($item) === 'null') {
+								return null;
+							}
 
-						// Trim and normalize spaces
-						$item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
-						$item = preg_replace('/\s+/', ' ', $item);
-						$item = trim($item);
+							// Clean up spaces and HTML &nbsp;
+							$item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
+							$item = preg_replace('/\s+/', ' ', $item);
+							$item = trim($item);
 
-						// 🧠 Skip any string starting with "<p>null"
-						if (stripos($item, '<p>null<\/p>') === 0) {
-							return null;
-						}
+							// 🧠 Skip if it starts with "<p>null" OR equals "<p>null</p>"
+							$lowerItem = strtolower($item);
+							if (
+								stripos($lowerItem, '<p>null') === 0 ||
+								$lowerItem === '<p>null</p>'
+							) {
+								return null;
+							}
 
-						return $item !== '' ? $item : null;
-					}, $decoded)));
-				} else {
-					$product->description = [$product->description];
+							return $item !== '' ? $item : null;
+						}, $decoded)));
+					} else {
+						$product->description = [$product->description];
+					}
 				}
-			}
+
 
 			// if (is_string($product->description)) {
 			// 	$decoded = json_decode($product->description, true);
@@ -770,13 +775,17 @@ class ProductController extends Controller
 							return null;
 						}
 
-						// Trim and normalize spaces
+						// Clean up spaces and HTML &nbsp;
 						$item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
 						$item = preg_replace('/\s+/', ' ', $item);
 						$item = trim($item);
 
-						// 🧠 Skip any string starting with "<p>null"
-						if (stripos($item, '<p>null<\/p>') === 0) {
+						// 🧠 Skip if it starts with "<p>null" OR equals "<p>null</p>"
+						$lowerItem = strtolower($item);
+						if (
+							stripos($lowerItem, '<p>null') === 0 ||
+							$lowerItem === '<p>null</p>'
+						) {
 							return null;
 						}
 
@@ -786,6 +795,7 @@ class ProductController extends Controller
 					$product->description = [$product->description];
 				}
 			}
+
 
 
 
