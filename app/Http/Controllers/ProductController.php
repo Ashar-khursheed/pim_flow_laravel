@@ -872,19 +872,38 @@ class ProductController extends BaseController
 		$userRole = $user ? $user->getRoleNames()->first() : null;
 
 		// Restriction for approved products
-		if ($product->approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
-			return response()->json([
-				'success' => false,
-				'message' => 'This product is approved and can only be updated by Super Admin or Admin.'
-			], 403);
+		// if ($product->approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
+		// 	return response()->json([
+		// 		'success' => false,
+		// 		'message' => 'This product is approved and can only be updated by Super Admin or Admin.'
+		// 	], 403);
+		// }
+
+		// if ($product->ar_approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
+		// 	return response()->json([
+		// 		'success' => false,
+		// 		'message' => 'This product is approved and can only be updated by.'
+		// 	], 403);
+		// }
+				// Restriction for approved products based on locale
+		if ($locale === 'en') {
+			// English content update
+			if ($product->approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
+				return response()->json([
+					'success' => false,
+					'message' => 'This product (English version) is approved and can only be updated by Super Admin or Admin.'
+				], 403);
+			}
+		} elseif ($locale === 'ar') {
+			// Arabic content update
+			if ($product->ar_approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
+				return response()->json([
+					'success' => false,
+					'message' => 'This product (Arabic version) is approved and can only be updated by Super Admin or Admin.'
+				], 403);
+			}
 		}
 
-		if ($product->ar_approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
-			return response()->json([
-				'success' => false,
-				'message' => 'This product is approved and can only be updated by.'
-			], 403);
-		}
 
 		// Get the authenticated user and their role
 		$user = auth()->user();
