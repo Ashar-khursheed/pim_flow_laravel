@@ -62,9 +62,9 @@ class ProductController extends BaseController
 	 *		@OA\Parameter(
 	 * 				name="status",
 	 *				in="query",
-	 *				description="Filter products by status (e.g., active, inactive)",
+	 *				description="Filter products by status (e.g., draft, published)",
 	 *				required=false,
-	 *				@OA\Schema(type="string", example="active")
+	 *				@OA\Schema(type="string", example="published")
 	 *				),
 	 *     @OA\Parameter(
 	 *         name="sort_by",
@@ -126,7 +126,7 @@ class ProductController extends BaseController
 			$from = $request->from_date . ' 00:00:00';
 			$to = $request->to_date . ' 23:59:59';
 
-			$records = Product::whereBetween('created_at', [$from, $to])->pluck('id');
+			$records = Product::whereBetween('created_at', [$from, $to])->where('status', 'published')->pluck('id');
 			return response()->json([
 				'success' => true,
 				'message' => __('msg_rec_list'),
@@ -420,7 +420,7 @@ class ProductController extends BaseController
 			'Pricing & Sales' => ['currency:id,title'],
 			'Shipping & Dimensions' => [],
 			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
-			'Pricing' => ['vendors:id,name,price,sale_price,delivery_days,inventory,in_stock'],
+			'Pricing' => ['vendors:id,name,price,sale_price,delivery_days,inventory,in_stock,dropshipping'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
 		];
 
@@ -569,6 +569,8 @@ class ProductController extends BaseController
 				'inventory' => $productSupplier->inventory,
 				'in_stock' => $productSupplier->in_stock,
 				'vendor_name' => $productSupplier->vendor->name,
+				'dropshipping' => $productSupplier->vendor->dropshipping ?? null, // 👈 added line
+
 			];
 		});
 		$translation = $product->translations->firstWhere('locale', $locale);
@@ -2817,4 +2819,98 @@ class ProductController extends BaseController
 			], 500);
 		}
 	}
+
+
+
+  /**
+ * @OA\Post(
+ *     path="/api/product/full-url",
+ *     summary="Get full product URL (parent/category/product)",
+ *     description="Returns the full SEO-friendly product URL using parent category, child category, and product slug based on APP_WEBSITE (UAE/US).",
+ *     operationId="getStoreUrl",
+ *     tags={"Products"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"product_id"},
+ *             @OA\Property(property="product_id", type="integer", example=1683)
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Full product URL generated successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="product_id", type="integer", example=1683),
+ *             @OA\Property(property="store_url", type="string", example="https://www.thehorecastore.com/parent-category/sub-category/product-name")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Product not found",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Product not found.")
+ *         )
+ *     )
+ * )
+ */
+public function getStoreUrl(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'product_id' => 'required|integer|exists:ec_products,id',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $validator->errors()->first(),
+        ], 400);
+    }
+
+    // Load only your required relations
+    $product = Product::with([
+        'seoProductUrl',
+        'latestChildCategory.seoUrl',
+        'latestChildCategory.most_parent.seoUrl'
+    ])->find($request->product_id);
+
+    if (!$product) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Product not found',
+        ], 404);
+    }
+
+    // Determine base domain from .env
+    $appWebsite = env('APP_WEBSITE');
+    $baseDomain = str_contains(strtoupper($appWebsite), 'UAE')
+        ? 'https://www.horecastore.ae'
+        : 'https://www.thehorecastore.com';
+
+    // Get each part of the URL
+    $parentCategory = ltrim($product->parent_category_url() ?? '', '/');
+    $childCategory  = ltrim($product->category_url() ?? '', '/');
+    $productSlug    = ltrim(optional($product->seoProductUrl)->url ?? '', '/');
+
+    // Build the full path
+    $pathParts = array_filter([$parentCategory, $childCategory, $productSlug]);
+    $fullPath = implode('/', $pathParts);
+
+    $fullUrl = rtrim($baseDomain, '/') . '/' . $fullPath;
+
+    return response()->json([
+        'status' => 'success',
+        'product_id' => $product->id,
+        'store_url' => $fullUrl,
+    ]);
+}
+
+
+
+
+
+
+
+
 }

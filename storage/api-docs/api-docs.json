@@ -29700,6 +29700,107 @@
                 ]
             }
         },
+        "/api/nofraud/process/{order_id}": {
+            "post": {
+                "tags": [
+                    "NoFraud"
+                ],
+                "summary": "Trigger NoFraud screening for an order",
+                "description": "Fetches payment and order details (including customer and address relations) and sends the data to the NoFraud API for screening.",
+                "operationId": "processNoFraud",
+                "parameters": [
+                    {
+                        "name": "order_id",
+                        "in": "path",
+                        "description": "Unique order ID to process the NoFraud screening for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful NoFraud screening response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "decision": {
+                                            "type": "string",
+                                            "example": "pass"
+                                        },
+                                        "score": {
+                                            "type": "integer",
+                                            "example": 82
+                                        },
+                                        "nofraud_result": {
+                                            "description": "Raw NoFraud API response",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Payment or order not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payment not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Unexpected server error or NoFraud API failure",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Error processing NoFraud screening"
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Exception message"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/orders": {
             "get": {
                 "tags": [
@@ -32736,11 +32837,11 @@
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Filter products by status (e.g., active, inactive)",
+                        "description": "Filter products by status (e.g., draft, published)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "example": "active"
+                            "example": "published"
                         }
                     },
                     {
@@ -33870,6 +33971,81 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/product/full-url": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get full product URL (parent/category/product)",
+                "description": "Returns the full SEO-friendly product URL using parent category, child category, and product slug based on APP_WEBSITE (UAE/US).",
+                "operationId": "getStoreUrl",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1683
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Full product URL generated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        },
+                                        "store_url": {
+                                            "type": "string",
+                                            "example": "https://www.thehorecastore.com/parent-category/sub-category/product-name"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/products/export": {

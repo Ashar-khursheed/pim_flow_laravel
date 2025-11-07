@@ -451,6 +451,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('products/category/{category_id}', [ProductController::class, 'getProductsByCategory']);
 	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
 	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
+	Route::post('/product/full-url', [ProductController::class, 'getStoreUrl']);
 	Route::resource('products', ProductController::class);
 	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
 	Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
@@ -604,6 +605,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/carts/fetch/{id}', [CustomerCartController::class, 'fetchByID']);
 	Route::apiResource('carts', CustomerCartController::class);
+
+	Route::post('/nofraud/process/{order_id}', [NoFraudController::class, 'processNoFraud']);
+
 
 });
 
@@ -979,3 +983,4 @@ Route::get('frontend/paymob/thank', [F_PaymobController::class, 'pay']);
 Route::post('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/thanks', [F_PaymobController::class, 'response']);
+// test change
