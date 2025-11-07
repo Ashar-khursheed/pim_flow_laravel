@@ -33066,6 +33066,78 @@
                 ]
             }
         },
+        "/api/product/full-url": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get full SEO-friendly URL for a product",
+                "description": "Returns the complete product URL in the format www.thehorecastore.com/parent/category/product",
+                "operationId": "getFullProductUrl",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "description": "Product ID",
+                                        "type": "integer",
+                                        "example": 55
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Full product URL generated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "full_url": {
+                                            "type": "string",
+                                            "example": "https://www.thehorecastore.com/kitchen/coffee-machine/product-name"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/products/export": {
             "post": {
                 "tags": [
