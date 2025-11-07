@@ -2854,7 +2854,7 @@ class ProductController extends BaseController
 	public function getStoreUrl(Request $request)
 	{
 		$validator = Validator::make($request->all(), [
-			'product_id' => 'required|integer|exists:products,id',
+			'product_id' => 'required|integer',
 		]);
 
 		if ($validator->fails()) {
