@@ -33066,13 +33066,13 @@
                 ]
             }
         },
-        "/api/get-store-url": {
+        "/api/product/full-url": {
             "post": {
                 "tags": [
-                    "Store"
+                    "Products"
                 ],
                 "summary": "Get full product URL (parent/category/product)",
-                "description": "Returns the full SEO-friendly URL for the product including parent category, category, and product slug, based on the current region (US or UAE).",
+                "description": "Returns the full SEO-friendly product URL using parent category, child category, and product slug based on APP_WEBSITE (UAE/US).",
                 "operationId": "getStoreUrl",
                 "requestBody": {
                     "required": true,
@@ -33095,7 +33095,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Full product URL fetched successfully",
+                        "description": "Full product URL generated successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -33110,7 +33110,7 @@
                                         },
                                         "store_url": {
                                             "type": "string",
-                                            "example": "https://www.thehorecastore.com/parent-category/sub-category/product-slug"
+                                            "example": "https://www.thehorecastore.com/parent-category/sub-category/product-name"
                                         }
                                     },
                                     "type": "object"
@@ -33118,8 +33118,25 @@
                             }
                         }
                     },
-                    "400": {
-                        "description": "Invalid product ID"
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -43698,10 +43715,6 @@
         {
             "name": "Products Category Update",
             "description": "Products Category Update"
-        },
-        {
-            "name": "Store",
-            "description": "Store"
         },
         {
             "name": "Product Groups",

@@ -2824,11 +2824,11 @@ class ProductController extends BaseController
 
   /**
  * @OA\Post(
- *     path="/api/get-store-url",
+ *     path="/api/product/full-url",
  *     summary="Get full product URL (parent/category/product)",
- *     description="Returns the full SEO-friendly URL for the product including parent category, category, and product slug, based on the current region (US or UAE).",
+ *     description="Returns the full SEO-friendly product URL using parent category, child category, and product slug based on APP_WEBSITE (UAE/US).",
  *     operationId="getStoreUrl",
- *     tags={"Store"},
+ *     tags={"Products"},
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
@@ -2838,69 +2838,77 @@ class ProductController extends BaseController
  *     ),
  *     @OA\Response(
  *         response=200,
- *         description="Full product URL fetched successfully",
+ *         description="Full product URL generated successfully",
  *         @OA\JsonContent(
  *             @OA\Property(property="status", type="string", example="success"),
  *             @OA\Property(property="product_id", type="integer", example=1683),
- *             @OA\Property(property="store_url", type="string", example="https://www.thehorecastore.com/parent-category/sub-category/product-slug")
+ *             @OA\Property(property="store_url", type="string", example="https://www.thehorecastore.com/parent-category/sub-category/product-name")
  *         )
  *     ),
  *     @OA\Response(
- *         response=400,
- *         description="Invalid product ID"
+ *         response=404,
+ *         description="Product not found",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Product not found.")
+ *         )
  *     )
  * )
  */
-	public function getStoreUrl(Request $request)
-  {
-		$validator = Validator::make($request->all(), [
-			'product_id' => 'required|integer|exists:ec_products,id',
-		]);
+public function getStoreUrl(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'product_id' => 'required|integer|exists:ec_products,id',
+    ]);
 
-		if ($validator->fails()) {
-			return response()->json([
-				'status' => 'error',
-				'message' => $validator->errors()->first(),
-			], 400);
-		}
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $validator->errors()->first(),
+        ], 400);
+    }
 
-		// Load all related SEO & category relations
-		$product = Product::with([
-			'seoProductUrl',
-			'category_url',
-			'parent_category_url',
-		])->find($request->product_id);
+    // Load only your required relations
+    $product = Product::with([
+        'seoProductUrl',
+        'latestChildCategory.seoUrl',
+        'latestChildCategory.most_parent.seoUrl'
+    ])->find($request->product_id);
 
-		if (!$product) {
-			return response()->json([
-				'status' => 'error',
-				'message' => 'Product not found',
-			], 404);
-		}
+    if (!$product) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Product not found',
+        ], 404);
+    }
 
-		// Determine domain by APP_WEBSITE
-		$appWebsite = env('APP_WEBSITE');
-		$baseDomain = str_contains(strtoupper($appWebsite), 'UAE')
-			? 'https://www.horecastore.ae'
-				: 'https://www.thehorecastore.com';
+    // Determine base domain from .env
+    $appWebsite = env('APP_WEBSITE');
+    $baseDomain = str_contains(strtoupper($appWebsite), 'UAE')
+        ? 'https://www.horecastore.ae'
+        : 'https://www.thehorecastore.com';
 
-			// Get URLs
-			$parentCategory = ltrim($product->parent_category_url() ?? '', '/');
-			$childCategory  = ltrim($product->category_url() ?? '', '/');
-			$productSlug    = ltrim(optional($product->seoProductUrl)->url ?? ($product->slugable->key ?? ''), '/');
+    // Get each part of the URL
+    $parentCategory = ltrim($product->parent_category_url() ?? '', '/');
+    $childCategory  = ltrim($product->category_url() ?? '', '/');
+    $productSlug    = ltrim(optional($product->seoProductUrl)->url ?? '', '/');
 
-			// Construct full SEO path
-			$pathParts = array_filter([$parentCategory, $childCategory, $productSlug]);
-			$fullPath = implode('/', $pathParts);
+    // Build the full path
+    $pathParts = array_filter([$parentCategory, $childCategory, $productSlug]);
+    $fullPath = implode('/', $pathParts);
 
-			$fullUrl = rtrim($baseDomain, '/') . '/' . $fullPath;
+    $fullUrl = rtrim($baseDomain, '/') . '/' . $fullPath;
 
-			return response()->json([
-				'status' => 'success',
-				'product_id' => $product->id,
-				'store_url' => $fullUrl,
-			]);
-	}
+    return response()->json([
+        'status' => 'success',
+        'product_id' => $product->id,
+        'store_url' => $fullUrl,
+    ]);
+}
+
+
+
+
 
 
 
