@@ -271,7 +271,7 @@
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
 									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
-										We’re excited to prepare your updated order! Please complete the <strong> remaining payment of {{ $currency }} {{ number_format($total, 2, '.', ',') }} </strong>  at the earliest to avoid any delay in processing and delivery.
+										We’re excited to prepare your updated order! Please complete the <strong> remaining payment of {{ $currency }} {{ number_format($pendingAmount, 2, '.', ',') }} </strong>  at the earliest to avoid any delay in processing and delivery.
 									</td>
 								</tr>
 								<tr>
