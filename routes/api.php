@@ -545,6 +545,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
 
+	Route::post('/categories/generate-translation', [CategoryController::class, 'generateTranslation']);
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::post('/categories/{id}', [CategoryController::class, 'update']);
 

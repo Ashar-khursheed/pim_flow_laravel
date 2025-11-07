@@ -1052,8 +1052,6 @@ class CategoryController extends BaseController
 		]);
 	}
 
-
-
 	// Helper method to build category path
 	private function getCategoryPath($category)
 	{
@@ -1066,6 +1064,62 @@ class CategoryController extends BaseController
 		}
 
 		return implode(' > ', $path);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/categories/generate-translation",
+	 *     summary="Generate or update category translation",
+	 *     description="This endpoint generates or updates translations for a category and its values.",
+	 *     tags={"Categories"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"id", "locale", "name"},
+	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the attribute to translate"),
+	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
+	 *             @OA\Property(property="name", type="string", example="", description="Translated name of the attribute"),
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function generateTranslation(Request $request)
+	{
+		/* Validate request data */
+		$validated = $request->validate([
+			'id' => 'required|exists:categories,id',
+			'locale' => 'required|string|in:ar',
+			'name' => 'required|string',
+		]);
+
+		$category = Category::find($validated['id']);
+
+		DB::beginTransaction();
+		try {
+			$locale = $validated['locale'];
+
+			/* Update category translation */
+			$category->translateOrNew($locale)->name_tr = $validated['name'];
+			$category->save();
+
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => __("Translations updated successfully."),
+				'data' => $category,
+			]);
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => __("err_update"),
+				'error' => $e->getMessage(),
+			], 500);
+		}
 	}
 
 

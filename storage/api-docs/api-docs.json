@@ -7392,6 +7392,61 @@
                 ]
             }
         },
+        "/api/categories/generate-translation": {
+            "post": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Generate or update category translation",
+                "description": "This endpoint generates or updates translations for a category and its values.",
+                "operationId": "88f96f348079da1928b5d254d52a6301",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "locale",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID of the attribute to translate",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "locale": {
+                                        "description": "Locale code for translation (e.g. ar)",
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "name": {
+                                        "description": "Translated name of the attribute",
+                                        "type": "string",
+                                        "example": ""
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/measurement-unit-priorities": {
             "get": {
                 "tags": [
