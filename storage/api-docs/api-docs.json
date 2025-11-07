@@ -28807,7 +28807,7 @@
                     "NoFraud"
                 ],
                 "summary": "Trigger NoFraud screening for an order",
-                "description": "Fetches the payment record from PaymentManagement (via relation) using the given order_id, extracts billing and card data from payment_details JSON, and sends the transaction to the NoFraud API for screening.",
+                "description": "Fetches payment and order details (including customer and address relations) and sends the data to the NoFraud API for screening.",
                 "operationId": "processNoFraud",
                 "parameters": [
                     {
@@ -28816,8 +28816,8 @@
                         "description": "Unique order ID to process the NoFraud screening for",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "example": "ORD-12345"
+                            "type": "integer",
+                            "example": 123
                         }
                     }
                 ],
@@ -28850,28 +28850,8 @@
                             }
                         }
                     },
-                    "400": {
-                        "description": "Invalid payment details or validation failed",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Invalid payment details JSON"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
                     "404": {
-                        "description": "Payment not found for the given order_id",
+                        "description": "Payment or order not found",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -28906,7 +28886,7 @@
                                         },
                                         "error": {
                                             "type": "string",
-                                            "example": "cURL timeout or invalid API key"
+                                            "example": "Exception message"
                                         }
                                     },
                                     "type": "object"

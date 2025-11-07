@@ -518,7 +518,7 @@ public function processNoFraud($orderId)
 
         $order = $payment->order;
         $customer = $order->customer;
-        $address = $order->address;
+        $address = $order->customerAddress; // ✅ fixed relation
 
         if (!$customer || !$address) {
             return response()->json([
