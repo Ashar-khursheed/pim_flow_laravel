@@ -504,6 +504,7 @@ private function getCardTypeFromBin($bin)
 public function processNoFraud($orderId)
 {
     try {
+        // Load related models
         $payment = PaymentManagement::with([
             'order.customer',
             'order.customerAddress'
@@ -527,40 +528,38 @@ public function processNoFraud($orderId)
             ], 400);
         }
 
-        // ✅ Extract first/last name
+        // ✅ Split full name
         $nameParts = explode(' ', trim($customer->name ?? 'Unknown'), 2);
         $firstName = $nameParts[0] ?? 'Unknown';
         $lastName = $nameParts[1] ?? '';
 
-        // ✅ Extract card details from JSON
-       $metaRaw = $payment->payment_details ?? $payment->meta ?? '{}';
-
-        // Decode once
+        // ✅ Decode card meta safely
+        $metaRaw = $payment->payment_details ?? $payment->meta ?? '{}';
         $meta = json_decode($metaRaw, true);
-
-        // If still a string (means it was double-encoded), decode again
         if (is_string($meta)) {
             $meta = json_decode($meta, true);
         }
 
         $cardLast4 = $meta['card_last_four'] ?? $payment->card_last4 ?? null;
-        $cardBin = $meta['meta']['cardDisplay'] ?? $payment->card_bin ?? null;
-        $cardType = $meta['card_type'] ?? $payment->card_type ?? null;
-        $cardExp = $meta['card_exp'] ?? $payment->card_exp ?? null;
+        $cardBin   = $meta['meta']['cardDisplay'] ?? $payment->card_bin ?? null;
+        $cardType  = $meta['card_type'] ?? $payment->card_type ?? null;
+        $cardExp   = $meta['card_exp'] ?? $payment->card_exp ?? null;
 
         if (!$cardLast4) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Missing card information (last4)',
-                'decoded_meta' => $meta, // ✅ so you can see actual structure next time
+                'raw_meta' => $meta,
             ], 400);
         }
 
-        $order = Order::where('id', $request->order_id)->first();
-        $orderNumber = $order->order_number ?? $request->order_id; // fallback if not found
+        // ✅ Use the already-loaded order (no need to re-query)
+        $orderNumber = $order->order_number ?? $orderId;
 
+        // ✅ Prepare data for NoFraud API
         $requestData = [
-            'order_id' => $order_number,
+            // 'order_id' => $orderId, // still used for internal handling
+            'order_id' => $orderNumber, // for saving to NoFraudResponse table
             'amount' => $payment->amount ?? $order->amount ?? 0,
 
             'billing_first_name' => $firstName,
@@ -579,8 +578,11 @@ public function processNoFraud($orderId)
             'card_expiration' => $cardExp,
         ];
 
-        $request = new \Illuminate\Http\Request($requestData);
-        return app(self::class)->screenTransaction($request);
+        // ✅ Create a fake request instance to reuse screenTransaction
+        $req = new \Illuminate\Http\Request($requestData);
+
+        // ✅ Call the same controller method with correct context
+        return $this->screenTransaction($req);
 
     } catch (\Exception $e) {
         return response()->json([
@@ -590,5 +592,6 @@ public function processNoFraud($orderId)
         ], 500);
     }
 }
+
 
 }
