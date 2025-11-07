@@ -126,7 +126,7 @@ class ProductController extends BaseController
 			$from = $request->from_date . ' 00:00:00';
 			$to = $request->to_date . ' 23:59:59';
 
-			$records = Product::whereBetween('created_at', [$from, $to])->pluck('id');
+			$records = Product::whereBetween('created_at', [$from, $to])->where('status', 'published')->pluck('id');
 			return response()->json([
 				'success' => true,
 				'message' => __('msg_rec_list'),
