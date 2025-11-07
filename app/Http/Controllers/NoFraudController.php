@@ -503,7 +503,6 @@ private function getCardTypeFromBin($bin)
 public function processNoFraud($orderId)
 {
     try {
-        // Fetch payment with related order, customer, and address
         $payment = PaymentManagement::with([
             'order.customer',
             'order.customerAddress'
@@ -518,7 +517,7 @@ public function processNoFraud($orderId)
 
         $order = $payment->order;
         $customer = $order->customer;
-        $address = $order->customerAddress; // ✅ fixed relation
+        $address = $order->customerAddress;
 
         if (!$customer || !$address) {
             return response()->json([
@@ -526,34 +525,48 @@ public function processNoFraud($orderId)
                 'message' => 'Missing customer or address information'
             ], 400);
         }
+
+        // ✅ Extract first/last name
         $nameParts = explode(' ', trim($customer->name ?? 'Unknown'), 2);
         $firstName = $nameParts[0] ?? 'Unknown';
         $lastName = $nameParts[1] ?? '';
 
-        // Prepare billing & card details
+        // ✅ Extract card details from JSON
+        $meta = json_decode($payment->payment_details ?? $payment->meta ?? '{}', true);
+
+        $cardLast4 = $meta['card_last_four'] ?? $payment->card_last4 ?? null;
+        $cardBin = $meta['meta']['cardDisplay'] ?? $payment->card_bin ?? null;
+        $cardType = $meta['card_type'] ?? $payment->card_type ?? null;
+        $cardExp = $meta['card_exp'] ?? $payment->card_exp ?? null;
+
+        if (!$cardLast4) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Missing card information (last4)',
+                'raw_meta' => $meta
+            ], 400);
+        }
+
         $requestData = [
             'order_id' => $orderId,
             'amount' => $payment->amount ?? $order->amount ?? 0,
 
-            // Billing from related address
             'billing_first_name' => $firstName,
             'billing_last_name' => $lastName,
             'billing_email' => $customer->email ?? 'noemail@example.com',
             'billing_phone' => $customer->phone ?? null,
-            'billing_address' => $address->address?? '',
+            'billing_address' => $address->address ?? '',
             'billing_city' => $address->city ?? '',
             'billing_state' => $address->state ?? '',
-            'billing_zip' => $address->zip_code?? '',
+            'billing_zip' => $address->zip_code ?? '',
             'billing_country' => substr($address->country ?? 'US', 0, 2),
 
-            // Card info (optional)
-            'card_bin' => $payment->card_bin ?? null,
-            'card_last4' => $payment->card_last4 ?? null,
-            'card_type' => $payment->card_type ?? null,
-            'card_expiration' => $payment->card_exp ?? null,
+            'card_bin' => $cardBin,
+            'card_last4' => $cardLast4,
+            'card_type' => $cardType,
+            'card_expiration' => $cardExp,
         ];
 
-        // Convert to Request and call existing NoFraud transaction screening
         $request = new \Illuminate\Http\Request($requestData);
         return app(self::class)->screenTransaction($request);
 
