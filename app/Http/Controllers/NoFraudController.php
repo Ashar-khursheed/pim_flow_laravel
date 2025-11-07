@@ -88,7 +88,7 @@ public function screenTransaction(Request $request)
         'billing_phone' => 'nullable|string|max:20',
         'billing_address' => 'required|string|max:255',
         'billing_city' => 'required|string|max:100',
-        'billing_state' => 'required|string|max:10',
+        'billing_state' => 'required|string|max:50',
         'billing_zip' => 'required|string|max:20',
         'billing_country' => 'required|string|size:2',
         'card_bin' => 'nullable|digits_between:6,8',
