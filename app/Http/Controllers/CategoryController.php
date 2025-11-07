@@ -114,12 +114,12 @@ class CategoryController extends BaseController
 					$record->icon_image = asset('storage/' . $record->icon_image);
 				}
 				$lastChildIds = !empty($record->last_child)
-					? array_map('intval', explode(',', $record->last_child))
-					: [];
+				? array_map('intval', explode(',', $record->last_child))
+				: [];
 
 				if (!empty($lastChildIds)) {
 					$record->last_children = Category::whereIn('id', $lastChildIds)
-						->get(['id', 'name', 'slug']);
+					->get(['id', 'name', 'slug']);
 				} else {
 					$record->last_children = collect();
 				}
@@ -136,12 +136,12 @@ class CategoryController extends BaseController
 
 			$records->transform(function ($record) {
 				$lastChildIds = !empty($record->last_child)
-					? array_map('intval', explode(',', $record->last_child))
-					: [];
+				? array_map('intval', explode(',', $record->last_child))
+				: [];
 
 				if (!empty($lastChildIds)) {
 					$record->last_children = Category::whereIn('id', $lastChildIds)
-						->get(['id', 'name', 'slug']);
+					->get(['id', 'name', 'slug']);
 				} else {
 					$record->last_children = collect();
 				}
@@ -219,9 +219,9 @@ class CategoryController extends BaseController
 		}
 		$categories = Cache::remember('all_categories', 3600, function () {
 			return Category::where('parent_id', 0)
-				->with(['childrenRecursive'])
-				->orderBy('order', 'asc')
-				->get(['id', 'name', 'slug', 'order', 'parent_id']);
+			->with(['childrenRecursive'])
+			->orderBy('order', 'asc')
+			->get(['id', 'name', 'slug', 'order', 'parent_id']);
 		});
 
 		return response()->json([
@@ -355,6 +355,12 @@ class CategoryController extends BaseController
 			// Create the category
 			$category = Category::create($data);
 
+			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+				$category->translateOrNew('en')->name_tr = $request->name;
+			}
+
+			$category->save();
+
 			// Clear cache
 			Cache::forget('all_categories');
 
@@ -433,12 +439,12 @@ class CategoryController extends BaseController
 			}
 
 			$lastChildIds = !empty($category->last_child)
-				? array_map('intval', explode(',', $category->last_child))
-				: [];
+			? array_map('intval', explode(',', $category->last_child))
+			: [];
 
 			if (!empty($lastChildIds)) {
 				$category->last_children = Category::whereIn('id', $lastChildIds)
-					->get(['id', 'name', 'slug']);
+				->get(['id', 'name', 'slug']);
 			} else {
 				$category->last_children = collect();
 			}
@@ -591,6 +597,11 @@ class CategoryController extends BaseController
 
 			$category->update($data);
 
+			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+				$category->translateOrNew('en')->name_tr = $data['name'];
+			}
+			$category->save();
+
 			Cache::forget('all_categories');
 
 			return response()->json([
@@ -688,6 +699,9 @@ class CategoryController extends BaseController
 			}
 
 			// Delete the category
+			if (method_exists($category, 'translations')) {
+				$category->translations()->delete();
+			}
 			$category->delete();
 
 			// Commit transaction
@@ -888,9 +902,9 @@ class CategoryController extends BaseController
 
 			// Find the category directly above this one
 			$aboveCategory = Category::where('parent_id', $parentId)
-				->where('order', '<', $category->order)
-				->orderBy('order', 'desc')
-				->first();
+			->where('order', '<', $category->order)
+			->orderBy('order', 'desc')
+			->first();
 
 			if ($aboveCategory) {
 				\DB::beginTransaction();
@@ -983,9 +997,9 @@ class CategoryController extends BaseController
 
 			// Find the category directly below this one
 			$belowCategory = Category::where('parent_id', $parentId)
-				->where('order', '>', $category->order)
-				->orderBy('order', 'asc')
-				->first();
+			->where('order', '>', $category->order)
+			->orderBy('order', 'asc')
+			->first();
 
 			if ($belowCategory) {
 				\DB::beginTransaction();
@@ -1108,7 +1122,7 @@ class CategoryController extends BaseController
 						'full_path' => $path,
 					];
 				});
-		});
+			});
 
 		return response()->json([
 			'success' => true,
