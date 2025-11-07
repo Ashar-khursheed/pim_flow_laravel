@@ -448,6 +448,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('products/category/{category_id}', [ProductController::class, 'getProductsByCategory']);
 	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
 	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
+	Route::post('/product/full-url', [ProductController::class, 'getFullProductUrl']);
 	Route::resource('products', ProductController::class);
 	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
 	Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
