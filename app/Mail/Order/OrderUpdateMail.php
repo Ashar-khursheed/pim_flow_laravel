@@ -125,6 +125,7 @@ class OrderUpdateMail extends Mailable
 		$taxPercent = $taxPercent + 0;
 		$taxAmount = $order->tax_amount ?? 0;
 		$discount = $order->discount ?? 0;
+		$pendingAmount = $order->pending_amount ?? 0;
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -172,6 +173,7 @@ class OrderUpdateMail extends Mailable
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
 			'discount' => $discount,
+			'pendingAmount' => $pendingAmount,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
