@@ -62,9 +62,9 @@ class ProductController extends BaseController
 	 *		@OA\Parameter(
 	 * 				name="status",
 	 *				in="query",
-	 *				description="Filter products by status (e.g., active, inactive)",
+	 *				description="Filter products by status (e.g., draft, published)",
 	 *				required=false,
-	 *				@OA\Schema(type="string", example="active")
+	 *				@OA\Schema(type="string", example="published")
 	 *				),
 	 *     @OA\Parameter(
 	 *         name="sort_by",
