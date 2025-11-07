@@ -451,7 +451,7 @@ private function getCardTypeFromBin($bin)
 
 /**
  * @OA\Post(
- *     path="/nofraud/process/{order_id}",
+ *     path="/api/nofraud/process/{order_id}",
  *     operationId="processNoFraud",
  *     tags={"NoFraud"},
  *     summary="Trigger NoFraud screening for an order",

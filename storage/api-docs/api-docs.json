@@ -28801,7 +28801,7 @@
                 ]
             }
         },
-        "/nofraud/process/{order_id}": {
+        "/api/nofraud/process/{order_id}": {
             "post": {
                 "tags": [
                     "NoFraud"
