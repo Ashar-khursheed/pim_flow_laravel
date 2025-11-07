@@ -2877,7 +2877,7 @@ class ProductController extends BaseController
         }
 
         // 🌍 Determine base URL based on .env
-        $appUrl = env('APP_URL');
+        $appUrl = env('APP_WEBSITE');
 
         if (str_contains($appUrl, 'UAE')) {
             $baseUrl = 'https://www.horecastore.ae';
