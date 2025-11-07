@@ -420,7 +420,7 @@ class ProductController extends BaseController
 			'Pricing & Sales' => ['currency:id,title'],
 			'Shipping & Dimensions' => [],
 			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
-			'Pricing' => ['vendors:id,name,price,sale_price,delivery_days,inventory,in_stock'],
+			'Pricing' => ['vendors:id,name,price,sale_price,delivery_days,inventory,in_stock,dropshipping'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
 		];
 
@@ -570,6 +570,8 @@ class ProductController extends BaseController
 				'inventory' => $productSupplier->inventory,
 				'in_stock' => $productSupplier->in_stock,
 				'vendor_name' => $productSupplier->vendor->name,
+				'dropshipping' => $productSupplier->vendor->dropshipping ?? null, // 👈 added line
+
 			];
 		});
 
