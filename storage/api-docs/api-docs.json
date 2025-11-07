@@ -33071,8 +33071,8 @@
                 "tags": [
                     "Store"
                 ],
-                "summary": "Get full product URL based on APP_URL (US or UAE)",
-                "description": "Returns the full product URL including slug based on region (US or UAE).",
+                "summary": "Get full product URL (parent/category/product)",
+                "description": "Returns the full SEO-friendly URL for the product including parent category, category, and product slug, based on the current region (US or UAE).",
                 "operationId": "getStoreUrl",
                 "requestBody": {
                     "required": true,
@@ -33110,7 +33110,7 @@
                                         },
                                         "store_url": {
                                             "type": "string",
-                                            "example": "https://www.horecastore.ae/product/sample-product"
+                                            "example": "https://www.thehorecastore.com/parent-category/sub-category/product-slug"
                                         }
                                     },
                                     "type": "object"
@@ -33121,12 +33121,7 @@
                     "400": {
                         "description": "Invalid product ID"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/products/export": {

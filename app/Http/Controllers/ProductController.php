@@ -2823,37 +2823,36 @@ class ProductController extends BaseController
 
 
   /**
-	 * @OA\Post(
-	 *     path="/api/get-store-url",
-	 *     summary="Get full product URL based on APP_URL (US or UAE)",
-	 *     description="Returns the full product URL including slug based on region (US or UAE).",
-	 *     operationId="getStoreUrl",
-	 *     tags={"Store"},
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             required={"product_id"},
-	 *             @OA\Property(property="product_id", type="integer", example=1683)
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Full product URL fetched successfully",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="status", type="string", example="success"),
-	 *             @OA\Property(property="product_id", type="integer", example=1683),
-	 *             @OA\Property(property="store_url", type="string", example="https://www.horecastore.ae/product/sample-product")
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=400,
-	 *         description="Invalid product ID"
-	 *     ),
-	 *    security={{"bearerAuth":{}}}
-	 * )
-	 */
+ * @OA\Post(
+ *     path="/api/get-store-url",
+ *     summary="Get full product URL (parent/category/product)",
+ *     description="Returns the full SEO-friendly URL for the product including parent category, category, and product slug, based on the current region (US or UAE).",
+ *     operationId="getStoreUrl",
+ *     tags={"Store"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"product_id"},
+ *             @OA\Property(property="product_id", type="integer", example=1683)
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Full product URL fetched successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="product_id", type="integer", example=1683),
+ *             @OA\Property(property="store_url", type="string", example="https://www.thehorecastore.com/parent-category/sub-category/product-slug")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=400,
+ *         description="Invalid product ID"
+ *     )
+ * )
+ */
 	public function getStoreUrl(Request $request)
-	{
+  {
 		$validator = Validator::make($request->all(), [
 			'product_id' => 'required|integer|exists:ec_products,id',
 		]);
@@ -2865,26 +2864,45 @@ class ProductController extends BaseController
 			], 400);
 		}
 
-		$product = Product::with('slugable')->find($request->product_id);
+		// Load all related SEO & category relations
+		$product = Product::with([
+			'slugable',
+			'seoProductUrl',
+			'category_url',
+			'parent_category_url',
+		])->find($request->product_id);
 
-		// Determine environment
-		$appUrl = env('APP_WEBSITE');
-		$baseDomain = str_contains(strtoupper($appUrl), 'UAE')
+		if (!$product) {
+			return response()->json([
+				'status' => 'error',
+				'message' => 'Product not found',
+			], 404);
+		}
+
+		// Determine domain by APP_WEBSITE
+		$appWebsite = env('APP_WEBSITE');
+		$baseDomain = str_contains(strtoupper($appWebsite), 'UAE')
 			? 'https://www.horecastore.ae'
-			: 'https://www.thehorecastore.com';
+				: 'https://www.thehorecastore.com';
 
-		// Get slug (adjust based on your DB structure)
-		$slug = $product->slugable->key ?? $product->slug ?? '';
+			// Get URLs
+			$parentCategory = ltrim($product->parent_category_url() ?? '', '/');
+			$childCategory  = ltrim($product->category_url() ?? '', '/');
+			$productSlug    = ltrim(optional($product->seoProductUrl)->url ?? ($product->slugable->key ?? ''), '/');
 
-		// Build full product URL
-		$fullUrl = rtrim($baseDomain, '/') . '/product/' . $slug;
+			// Construct full SEO path
+			$pathParts = array_filter([$parentCategory, $childCategory, $productSlug]);
+			$fullPath = implode('/', $pathParts);
 
-		return response()->json([
-			'status' => 'success',
-			'product_id' => $product->id,
-			'store_url' => $fullUrl,
-		]);
+			$fullUrl = rtrim($baseDomain, '/') . '/' . $fullPath;
+
+			return response()->json([
+				'status' => 'success',
+				'product_id' => $product->id,
+				'store_url' => $fullUrl,
+			]);
 	}
+
 
 
 
