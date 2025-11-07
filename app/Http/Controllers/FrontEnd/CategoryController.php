@@ -55,25 +55,7 @@ class CategoryController extends Controller
      *         description="Limit the number of child categories returned per parent (default is 12)",
      *         @OA\Schema(type="integer", example=10)
      *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Categories tree fetched successfully",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(
-     *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="name", type="string", example="Electronics"),
-     *                 @OA\Property(property="image", type="string", example="http://example.com/storage/categories/electronics.jpg"),
-     *                 @OA\Property(property="parent_id", type="integer", nullable=true, example=null),
-     *                 @OA\Property(
-     *                     property="children",
-     *                     type="array",
-     *                     @OA\Items(ref="#/components/schemas/Category")
-     *                 )
-     *             )
-     *         )
-     *     )
+     *     @OA\Response(response=200, description="Categories tree fetched successfully", @OA\MediaType(mediaType="application/json")),
      * )
      */
 
@@ -146,7 +128,7 @@ class CategoryController extends Controller
                         $record->last_children = collect();
                     }
                 return $record;
-            });  
+            });
 
         } else {
             // Fetch all categories with seoUrl eager loaded
@@ -212,14 +194,7 @@ class CategoryController extends Controller
      *         description="Limit the number of child categories returned per parent (default is 12)",
      *         @OA\Schema(type="integer", example=10)
      *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Category tree fetched successfully",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(ref="#/components/schemas/Category")
-     *         )
-     *     ),
+     *     @OA\Response(response=200, description="Categories tree fetched successfully", @OA\MediaType(mediaType="application/json")),
      *     @OA\Response(
      *         response=404,
      *         description="Category not found",
@@ -334,13 +309,7 @@ class CategoryController extends Controller
      *         description="The ID of the category to retrieve",
      *         @OA\Schema(type="integer", example=1)
      *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Category details retrieved successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="category", ref="#/components/schemas/Category")
-     *         )
-     *     ),
+     *     @OA\Response(response=200, description="Category details retrieved successfully", @OA\MediaType(mediaType="application/json")),
      *     @OA\Response(
      *         response=404,
      *         description="Category not found",
@@ -351,7 +320,7 @@ class CategoryController extends Controller
      * )
      */
     public function show($id)
-    { 
+    {
         // Validate that the ID is numeric
         if (!is_numeric($id)) {
             return response()->json([
@@ -366,7 +335,7 @@ class CategoryController extends Controller
                 'message' => "Category with ID $id not found."
             ], 404);
         }
-       
+
 
         // // Add image URL if image exists
         // $category->image = $this->getImageUrl($category->image);
@@ -411,22 +380,7 @@ class CategoryController extends Controller
      *         description="Number of products per page (pagination)",
      *         @OA\Schema(type="integer", example=10)
      *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="List of products for the category",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="category", ref="#/components/schemas/Category"),
-     *             @OA\Property(property="products", type="object",
-     *                 @OA\Property(property="current_page", type="integer", example=1),
-     *                 @OA\Property(property="data", type="array",
-     *                     @OA\Items(ref="#/components/schemas/Product")
-     *                 ),
-     *                 @OA\Property(property="last_page", type="integer", example=5),
-     *                 @OA\Property(property="per_page", type="integer", example=10),
-     *                 @OA\Property(property="total", type="integer", example=50)
-     *             ),
-     *         )
-     *     ),
+     *     @OA\Response(response=200, description="List of products for the category", @OA\MediaType(mediaType="application/json")),
      *     @OA\Response(
      *         response=404,
      *         description="Category not found",
@@ -438,7 +392,7 @@ class CategoryController extends Controller
      */
 
     public function getProductsByCategory($categoryId)
-    { 
+    {
         $category = Category::find($categoryId);
 
         if (!$category) {
@@ -533,24 +487,7 @@ class CategoryController extends Controller
      *             @OA\Property(property="sort_by_type", type="string", example="asc", description="Sort direction (asc or desc)")
      *         )
      *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="List of filtered products and available filters",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="filters", type="array", @OA\Items(type="object")),
-     *             @OA\Property(property="products", type="array", @OA\Items(type="object")),
-     *             @OA\Property(property="brands", type="array", @OA\Items(type="object")),
-     *             @OA\Property(
-     *                 property="rating_filter",
-     *                 type="object",
-     *                 @OA\Property(property="filter_name", type="string", example="Rating"),
-     *                 @OA\Property(property="filter_type", type="string", example="rating"),
-     *                 @OA\Property(property="filter_values", type="array", @OA\Items(type="integer", example=5))
-     *             ),
-     *             @OA\Property(property="debug_info", type="object")
-     *         )
-     *     ),
+     *     @OA\Response(response=200, description="List of filtered products and available filters", @OA\MediaType(mediaType="application/json")),
      *     @OA\Response(
      *         response=400,
      *         description="Validation error or category not found",
@@ -2838,21 +2775,7 @@ class CategoryController extends Controller
      *     tags={"Frontend-Categories"},
      *     summary="Fetch a limited set of parent and child categories",
      *     description="Returns up to 14 categories including parent and child, with product count and image URL.",
-     *     @OA\Response(
-     *         response=200,
-     *         description="Categories fetched successfully",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="name", type="string", example="Electronics"),
-     *                 @OA\Property(property="slug", type="string", example="electronics"),
-     *                 @OA\Property(property="parent_id", type="integer", example=0),
-     *                 @OA\Property(property="image", type="string", example="http://example.com/storage/categories/electronics.jpg"),
-     *                 @OA\Property(property="productCount", type="integer", example=42)
-     *             )
-     *         )
-     *     )
+     *     @OA\Response(response=200, description="Categories fetched successfully", @OA\MediaType(mediaType="application/json")),
      * )
      */
 
@@ -3191,21 +3114,7 @@ class CategoryController extends Controller
      *     tags={"Frontend-Categories"},
      *     summary="Fetch all parent and child categories",
      *     description="Returns all parent and child categories with product count and image URL.",
-     *     @OA\Response(
-     *         response=200,
-     *         description="All categories fetched successfully",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(
-     *                 @OA\Property(property="id", type="integer", example=2),
-     *                 @OA\Property(property="name", type="string", example="Laptops"),
-     *                 @OA\Property(property="slug", type="string", example="laptops"),
-     *                 @OA\Property(property="parent_id", type="integer", example=1),
-     *                 @OA\Property(property="image", type="string", example="http://example.com/storage/categories/laptops.jpg"),
-     *                 @OA\Property(property="productCount", type="integer", example=15)
-     *             )
-     *         )
-     *     )
+     *     @OA\Response(response=200, description="All categories fetched successfully", @OA\MediaType(mediaType="application/json")),
      * )
      */
 
@@ -3273,48 +3182,7 @@ class CategoryController extends Controller
      *     security={{"bearerAuth":{}}},
      *     summary="Get all featured products grouped by third-level categories",
      *     description="Returns featured products grouped under third-level categories. Includes wishlist status, best price, delivery date, reviews, stock, and images.",
-     *     @OA\Response(
-     *         response=200,
-     *         description="Featured products grouped by category fetched successfully",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     type="object",
-     *                     @OA\Property(property="category_name", type="string", example="Smartphones"),
-     *                     @OA\Property(
-     *                         property="featured_products",
-     *                         type="array",
-     *                         @OA\Items(
-     *                             type="object",
-     *                             @OA\Property(property="id", type="integer", example=101),
-     *                             @OA\Property(property="name", type="string", example="iPhone 14"),
-     *                             @OA\Property(property="sku", type="string", example="IP14-256GB"),
-     *                             @OA\Property(property="price", type="number", format="float", example=999.99),
-     *                             @OA\Property(property="sale_price", type="number", format="float", example=899.99),
-     *                             @OA\Property(property="original_price", type="number", format="float", example=999.99),
-     *                             @OA\Property(property="front_sale_price", type="number", format="float", example=899.99),
-     *                             @OA\Property(property="best_price", type="number", format="float", example=899.99),
-     *                             @OA\Property(property="delivery_days", type="integer", example=3),
-     *                             @OA\Property(property="total_reviews", type="integer", example=120),
-     *                             @OA\Property(property="avg_rating", type="number", format="float", example=4.5),
-     *                             @OA\Property(property="left_stock", type="integer", example=20),
-     *                             @OA\Property(property="currency", type="string", example="USD"),
-     *                             @OA\Property(property="in_wishlist", type="boolean", example=true),
-     *                             @OA\Property(
-     *                                 property="images",
-     *                                 type="array",
-     *                                 @OA\Items(type="string", example="http://example.com/storage/products/image1.jpg")
-     *                             )
-     *                         )
-     *                     )
-     *                 )
-     *             )
-     *         )
-     *     )
+     *     @OA\Response(response=200, description="Featured products grouped by category fetched successfully", @OA\MediaType(mediaType="application/json")),
      * )
      */
 
@@ -3381,7 +3249,7 @@ class CategoryController extends Controller
                     $details = $productDetails[$product->id] ?? null;
                     if (!$details)
                         return null; // Skip if no details found
-    
+
                     $totalReviews = $details->reviews->count();
                     $avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
 
@@ -3414,7 +3282,7 @@ class CategoryController extends Controller
                     }
 
                     // Calculate per unit price
-    
+
                     $unitsPerCase = null;
                     $packType = null;
 
@@ -3497,47 +3365,7 @@ class CategoryController extends Controller
      *     tags={"Frontend-Categories"},
      *     summary="Get all featured products by category for guest users",
      *     description="Returns featured products grouped under third-level categories for guest users. Includes best price, delivery days, stock, reviews, and images.",
-     *     @OA\Response(
-     *         response=200,
-     *         description="Featured products grouped by category fetched successfully for guests",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     type="object",
-     *                     @OA\Property(property="category_name", type="string", example="Electronics"),
-     *                     @OA\Property(
-     *                         property="featured_products",
-     *                         type="array",
-     *                         @OA\Items(
-     *                             type="object",
-     *                             @OA\Property(property="id", type="integer", example=202),
-     *                             @OA\Property(property="name", type="string", example="Samsung Galaxy S22"),
-     *                             @OA\Property(property="sku", type="string", example="SG-S22-128GB"),
-     *                             @OA\Property(property="price", type="number", format="float", example=849.99),
-     *                             @OA\Property(property="sale_price", type="number", format="float", example=799.99),
-     *                             @OA\Property(property="original_price", type="number", format="float", example=849.99),
-     *                             @OA\Property(property="front_sale_price", type="number", format="float", example=799.99),
-     *                             @OA\Property(property="best_price", type="number", format="float", example=799.99),
-     *                             @OA\Property(property="delivery_days", type="integer", example=5),
-     *                             @OA\Property(property="total_reviews", type="integer", example=85),
-     *                             @OA\Property(property="avg_rating", type="number", format="float", example=4.2),
-     *                             @OA\Property(property="left_stock", type="integer", example=50),
-     *                             @OA\Property(property="currency", type="string", example="USD"),
-     *                             @OA\Property(
-     *                                 property="images",
-     *                                 type="array",
-     *                                 @OA\Items(type="string", example="http://example.com/storage/products/samsung.jpg")
-     *                             )
-     *                         )
-     *                     )
-     *                 )
-     *             )
-     *         )
-     *     )
+     *     @OA\Response(response=200, description="Featured products grouped by category fetched successfully for guests", @OA\MediaType(mediaType="application/json")),
      * )
      */
 
@@ -3591,7 +3419,7 @@ class CategoryController extends Controller
                     $details = $productDetails[$product->id] ?? null;
                     if (!$details)
                         return null; // Skip if no details found
-    
+
                     $totalReviews = $details->reviews->count();
                     $avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
                     $currencyTitle = $details->currency->symbol;

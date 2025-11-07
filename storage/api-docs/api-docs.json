@@ -6851,68 +6851,7 @@
                     "200": {
                         "description": "Successful operation",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Electronics"
-                                            },
-                                            "slug": {
-                                                "type": "string",
-                                                "example": "electronics"
-                                            },
-                                            "children_recursive": {
-                                                "type": "array",
-                                                "items": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 2
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "Mobile Phones"
-                                                        },
-                                                        "slug": {
-                                                            "type": "string",
-                                                            "example": "mobile-phones"
-                                                        },
-                                                        "children_recursive": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "properties": {
-                                                                    "id": {
-                                                                        "type": "integer",
-                                                                        "example": 3
-                                                                    },
-                                                                    "name": {
-                                                                        "type": "string",
-                                                                        "example": "Smartphones"
-                                                                    },
-                                                                    "slug": {
-                                                                        "type": "string",
-                                                                        "example": "smartphones"
-                                                                    }
-                                                                },
-                                                                "type": "object"
-                                                            }
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "401": {
@@ -6960,22 +6899,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Successful operation",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "category": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "404": {
@@ -7085,24 +7011,7 @@
                     "200": {
                         "description": "Category updated successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Category updated successfully"
-                                        },
-                                        "category": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "422": {
@@ -7456,68 +7365,7 @@
                     "200": {
                         "description": "Successful operation",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Electronics"
-                                            },
-                                            "slug": {
-                                                "type": "string",
-                                                "example": "electronics"
-                                            },
-                                            "children_recursive": {
-                                                "type": "array",
-                                                "items": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 2
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "Mobile Phones"
-                                                        },
-                                                        "slug": {
-                                                            "type": "string",
-                                                            "example": "mobile-phones"
-                                                        },
-                                                        "children_recursive": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "properties": {
-                                                                    "id": {
-                                                                        "type": "integer",
-                                                                        "example": 3
-                                                                    },
-                                                                    "name": {
-                                                                        "type": "string",
-                                                                        "example": "Smartphones"
-                                                                    },
-                                                                    "slug": {
-                                                                        "type": "string",
-                                                                        "example": "smartphones"
-                                                                    }
-                                                                },
-                                                                "type": "object"
-                                                            }
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "401": {
@@ -13807,39 +13655,7 @@
                     "200": {
                         "description": "Categories tree fetched successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Electronics"
-                                            },
-                                            "image": {
-                                                "type": "string",
-                                                "example": "http://example.com/storage/categories/electronics.jpg"
-                                            },
-                                            "parent_id": {
-                                                "type": "integer",
-                                                "example": null,
-                                                "nullable": true
-                                            },
-                                            "children": {
-                                                "type": "array",
-                                                "items": {
-                                                    "$ref": "#/components/schemas/Category"
-                                                }
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -13877,16 +13693,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Category tree fetched successfully",
+                        "description": "Categories tree fetched successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Category"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "404": {
@@ -13932,16 +13741,7 @@
                     "200": {
                         "description": "Category details retrieved successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "category": {
-                                            "$ref": "#/components/schemas/Category"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "404": {
@@ -13997,43 +13797,7 @@
                     "200": {
                         "description": "List of products for the category",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "category": {
-                                            "$ref": "#/components/schemas/Category"
-                                        },
-                                        "products": {
-                                            "properties": {
-                                                "current_page": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "data": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "$ref": "#/components/schemas/Product"
-                                                    }
-                                                },
-                                                "last_page": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                },
-                                                "per_page": {
-                                                    "type": "integer",
-                                                    "example": 10
-                                                },
-                                                "total": {
-                                                    "type": "integer",
-                                                    "example": 50
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "404": {
@@ -14177,58 +13941,7 @@
                     "200": {
                         "description": "List of filtered products and available filters",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "filters": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "products": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "brands": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "rating_filter": {
-                                            "properties": {
-                                                "filter_name": {
-                                                    "type": "string",
-                                                    "example": "Rating"
-                                                },
-                                                "filter_type": {
-                                                    "type": "string",
-                                                    "example": "rating"
-                                                },
-                                                "filter_values": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "integer",
-                                                        "example": 5
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "debug_info": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "400": {
@@ -14265,40 +13978,7 @@
                     "200": {
                         "description": "Categories fetched successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Electronics"
-                                            },
-                                            "slug": {
-                                                "type": "string",
-                                                "example": "electronics"
-                                            },
-                                            "parent_id": {
-                                                "type": "integer",
-                                                "example": 0
-                                            },
-                                            "image": {
-                                                "type": "string",
-                                                "example": "http://example.com/storage/categories/electronics.jpg"
-                                            },
-                                            "productCount": {
-                                                "type": "integer",
-                                                "example": 42
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -14316,40 +13996,7 @@
                     "200": {
                         "description": "All categories fetched successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 2
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Laptops"
-                                            },
-                                            "slug": {
-                                                "type": "string",
-                                                "example": "laptops"
-                                            },
-                                            "parent_id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "image": {
-                                                "type": "string",
-                                                "example": "http://example.com/storage/categories/laptops.jpg"
-                                            },
-                                            "productCount": {
-                                                "type": "integer",
-                                                "example": 15
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -14367,106 +14014,7 @@
                     "200": {
                         "description": "Featured products grouped by category fetched successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "category_name": {
-                                                        "type": "string",
-                                                        "example": "Smartphones"
-                                                    },
-                                                    "featured_products": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "properties": {
-                                                                "id": {
-                                                                    "type": "integer",
-                                                                    "example": 101
-                                                                },
-                                                                "name": {
-                                                                    "type": "string",
-                                                                    "example": "iPhone 14"
-                                                                },
-                                                                "sku": {
-                                                                    "type": "string",
-                                                                    "example": "IP14-256GB"
-                                                                },
-                                                                "price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 999.99
-                                                                },
-                                                                "sale_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 899.99
-                                                                },
-                                                                "original_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 999.99
-                                                                },
-                                                                "front_sale_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 899.99
-                                                                },
-                                                                "best_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 899.99
-                                                                },
-                                                                "delivery_days": {
-                                                                    "type": "integer",
-                                                                    "example": 3
-                                                                },
-                                                                "total_reviews": {
-                                                                    "type": "integer",
-                                                                    "example": 120
-                                                                },
-                                                                "avg_rating": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 4.5
-                                                                },
-                                                                "left_stock": {
-                                                                    "type": "integer",
-                                                                    "example": 20
-                                                                },
-                                                                "currency": {
-                                                                    "type": "string",
-                                                                    "example": "USD"
-                                                                },
-                                                                "in_wishlist": {
-                                                                    "type": "boolean",
-                                                                    "example": true
-                                                                },
-                                                                "images": {
-                                                                    "type": "array",
-                                                                    "items": {
-                                                                        "type": "string",
-                                                                        "example": "http://example.com/storage/products/image1.jpg"
-                                                                    }
-                                                                }
-                                                            },
-                                                            "type": "object"
-                                                        }
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -14489,102 +14037,7 @@
                     "200": {
                         "description": "Featured products grouped by category fetched successfully for guests",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "category_name": {
-                                                        "type": "string",
-                                                        "example": "Electronics"
-                                                    },
-                                                    "featured_products": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "properties": {
-                                                                "id": {
-                                                                    "type": "integer",
-                                                                    "example": 202
-                                                                },
-                                                                "name": {
-                                                                    "type": "string",
-                                                                    "example": "Samsung Galaxy S22"
-                                                                },
-                                                                "sku": {
-                                                                    "type": "string",
-                                                                    "example": "SG-S22-128GB"
-                                                                },
-                                                                "price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 849.99
-                                                                },
-                                                                "sale_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 799.99
-                                                                },
-                                                                "original_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 849.99
-                                                                },
-                                                                "front_sale_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 799.99
-                                                                },
-                                                                "best_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 799.99
-                                                                },
-                                                                "delivery_days": {
-                                                                    "type": "integer",
-                                                                    "example": 5
-                                                                },
-                                                                "total_reviews": {
-                                                                    "type": "integer",
-                                                                    "example": 85
-                                                                },
-                                                                "avg_rating": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 4.2
-                                                                },
-                                                                "left_stock": {
-                                                                    "type": "integer",
-                                                                    "example": 50
-                                                                },
-                                                                "currency": {
-                                                                    "type": "string",
-                                                                    "example": "USD"
-                                                                },
-                                                                "images": {
-                                                                    "type": "array",
-                                                                    "items": {
-                                                                        "type": "string",
-                                                                        "example": "http://example.com/storage/products/samsung.jpg"
-                                                                    }
-                                                                }
-                                                            },
-                                                            "type": "object"
-                                                        }
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -14612,41 +14065,7 @@
                     "200": {
                         "description": "Successful response with category data",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "name": {
-                                            "type": "string",
-                                            "example": "Electronics"
-                                        },
-                                        "slug": {
-                                            "type": "string",
-                                            "example": "electronics"
-                                        },
-                                        "parent_id": {
-                                            "type": "integer",
-                                            "example": null,
-                                            "nullable": true
-                                        },
-                                        "image": {
-                                            "type": "string",
-                                            "format": "url",
-                                            "example": "http://yourdomain.com/storage/categories/electronics.jpg"
-                                        },
-                                        "children": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Category"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "404": {
@@ -14690,42 +14109,7 @@
                     "200": {
                         "description": "List of categories in hierarchical structure",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer"
-                                            },
-                                            "name": {
-                                                "type": "string"
-                                            },
-                                            "slug": {
-                                                "type": "string"
-                                            },
-                                            "parent_id": {
-                                                "type": "integer",
-                                                "nullable": true
-                                            },
-                                            "productCount": {
-                                                "type": "integer"
-                                            },
-                                            "image": {
-                                                "type": "string",
-                                                "format": "url"
-                                            },
-                                            "children": {
-                                                "type": "array",
-                                                "items": {
-                                                    "$ref": "#/components/schemas/Category"
-                                                }
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -43403,52 +42787,6 @@
                 },
                 "type": "object"
             },
-            "Category": {
-                "title": "Category",
-                "description": "Product Category model",
-                "required": [
-                    "id",
-                    "name"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "Electronics"
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "All electronic devices"
-                    },
-                    "status": {
-                        "type": "string",
-                        "example": "active"
-                    },
-                    "image": {
-                        "type": "string",
-                        "example": "https://example.com/category.jpg"
-                    },
-                    "parent_id": {
-                        "type": "integer",
-                        "example": null,
-                        "nullable": true
-                    },
-                    "slug": {
-                        "type": "string",
-                        "example": "electronics"
-                    },
-                    "children": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Category"
-                        }
-                    }
-                },
-                "type": "object"
-            },
             "Discount": {
                 "title": "Discount",
                 "description": "Discount model",
@@ -43957,12 +43295,6 @@
                     "in_wishlist": {
                         "type": "boolean",
                         "example": true
-                    },
-                    "categories": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Category"
-                        }
                     },
                     "brand": {
                         "$ref": "#/components/schemas/Brand"

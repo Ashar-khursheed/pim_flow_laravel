@@ -166,39 +166,7 @@ class CategoryController extends BaseController
 	 *     summary="Get All Categories",
 	 *     description="Fetches a hierarchical list of categories. Each category includes its child categories recursively.",
 	 *     tags={"Categories"},
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Successful operation",
-	 *         @OA\JsonContent(
-	 *             type="array",
-	 *             @OA\Items(
-	 *                 type="object",
-	 *                 @OA\Property(property="id", type="integer", example=1),
-	 *                 @OA\Property(property="name", type="string", example="Electronics"),
-	 *                 @OA\Property(property="slug", type="string", example="electronics"),
-	 *                 @OA\Property(
-	 *                     property="children_recursive",
-	 *                     type="array",
-	 *                     @OA\Items(
-	 *                         type="object",
-	 *                         @OA\Property(property="id", type="integer", example=2),
-	 *                         @OA\Property(property="name", type="string", example="Mobile Phones"),
-	 *                         @OA\Property(property="slug", type="string", example="mobile-phones"),
-	 *                         @OA\Property(
-	 *                             property="children_recursive",
-	 *                             type="array",
-	 *                             @OA\Items(
-	 *                                 type="object",
-	 *                                 @OA\Property(property="id", type="integer", example=3),
-	 *                                 @OA\Property(property="name", type="string", example="Smartphones"),
-	 *                                 @OA\Property(property="slug", type="string", example="smartphones")
-	 *                             )
-	 *                         )
-	 *                     )
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
+	 *     @OA\Response(response=200, description="Successful operation", @OA\MediaType(mediaType="application/json")),
 	 *     @OA\Response(
 	 *         response=401,
 	 *         description="Unauthorized",
@@ -396,14 +364,7 @@ class CategoryController extends BaseController
 	 *             type="integer"
 	 *         )
 	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Success",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="category", type="object")
-	 *         )
-	 *     ),
+	 *     @OA\Response(response=200, description="Successful operation", @OA\MediaType(mediaType="application/json")),
 	 *     @OA\Response(
 	 *         response=404,
 	 *         description="Category not found",
@@ -497,15 +458,7 @@ class CategoryController extends BaseController
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Category updated successfully",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Category updated successfully"),
-	 *             @OA\Property(property="category", type="object")
-	 *         )
-	 *     ),
+	 *     @OA\Response(response=200, description="Category updated successfully", @OA\MediaType(mediaType="application/json")),
 	 *     @OA\Response(
 	 *         response=422,
 	 *         description="Validation error",
@@ -1054,39 +1007,7 @@ class CategoryController extends BaseController
 	 *     summary="Get All Last Child Categories",
 	 *     description="Fetches a hierarchical list of categories. Each category includes its child categories recursively.",
 	 *     tags={"Categories"},
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Successful operation",
-	 *         @OA\JsonContent(
-	 *             type="array",
-	 *             @OA\Items(
-	 *                 type="object",
-	 *                 @OA\Property(property="id", type="integer", example=1),
-	 *                 @OA\Property(property="name", type="string", example="Electronics"),
-	 *                 @OA\Property(property="slug", type="string", example="electronics"),
-	 *                 @OA\Property(
-	 *                     property="children_recursive",
-	 *                     type="array",
-	 *                     @OA\Items(
-	 *                         type="object",
-	 *                         @OA\Property(property="id", type="integer", example=2),
-	 *                         @OA\Property(property="name", type="string", example="Mobile Phones"),
-	 *                         @OA\Property(property="slug", type="string", example="mobile-phones"),
-	 *                         @OA\Property(
-	 *                             property="children_recursive",
-	 *                             type="array",
-	 *                             @OA\Items(
-	 *                                 type="object",
-	 *                                 @OA\Property(property="id", type="integer", example=3),
-	 *                                 @OA\Property(property="name", type="string", example="Smartphones"),
-	 *                                 @OA\Property(property="slug", type="string", example="smartphones")
-	 *                             )
-	 *                         )
-	 *                     )
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
+	 *     @OA\Response(response=200, description="Successful operation", @OA\MediaType(mediaType="application/json")),
 	 *     @OA\Response(
 	 *         response=401,
 	 *         description="Unauthorized",
