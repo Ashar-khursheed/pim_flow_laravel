@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Models\PaymentManagement;
+use App\Models\FrontEnd\Order;
 
 class NoFraudController extends Controller
 {
@@ -555,8 +556,11 @@ public function processNoFraud($orderId)
             ], 400);
         }
 
+        $order = Order::where('id', $request->order_id)->first();
+        $orderNumber = $order->order_number ?? $request->order_id; // fallback if not found
+
         $requestData = [
-            'order_id' => $orderId,
+            'order_id' => $order_number,
             'amount' => $payment->amount ?? $order->amount ?? 0,
 
             'billing_first_name' => $firstName,
