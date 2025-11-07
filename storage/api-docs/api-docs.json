@@ -33066,14 +33066,14 @@
                 ]
             }
         },
-        "/api/product/full-url": {
+        "/api/get-store-url": {
             "post": {
                 "tags": [
-                    "Products"
+                    "Store"
                 ],
-                "summary": "Get full SEO-friendly URL for a product",
-                "description": "Returns the complete product URL in the format www.thehorecastore.com/parent/category/product",
-                "operationId": "getFullProductUrl",
+                "summary": "Get Store URL based on region",
+                "description": "Returns the store URL based on APP_URL (US or UAE).",
+                "operationId": "getStoreUrl",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -33084,9 +33084,8 @@
                                 ],
                                 "properties": {
                                     "product_id": {
-                                        "description": "Product ID",
                                         "type": "integer",
-                                        "example": 55
+                                        "example": 123
                                     }
                                 },
                                 "type": "object"
@@ -33096,7 +33095,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Full product URL generated successfully",
+                        "description": "Store URL fetched successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -33105,9 +33104,13 @@
                                             "type": "string",
                                             "example": "success"
                                         },
-                                        "full_url": {
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 123
+                                        },
+                                        "store_url": {
                                             "type": "string",
-                                            "example": "https://www.thehorecastore.com/kitchen/coffee-machine/product-name"
+                                            "example": "https://www.horecastore.ae"
                                         }
                                     },
                                     "type": "object"
@@ -33115,32 +33118,10 @@
                             }
                         }
                     },
-                    "404": {
-                        "description": "Product not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Product not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                    "400": {
+                        "description": "Invalid product ID"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/products/export": {
@@ -43717,6 +43698,10 @@
         {
             "name": "Products Category Update",
             "description": "Products Category Update"
+        },
+        {
+            "name": "Store",
+            "description": "Store"
         },
         {
             "name": "Product Groups",

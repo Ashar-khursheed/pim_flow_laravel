@@ -2822,83 +2822,62 @@ class ProductController extends BaseController
 
 
 
-    /**
-     * @OA\Post(
-     *     path="/api/product/full-url",
-     *     operationId="getFullProductUrl",
-     *     tags={"Products"},
-     *     summary="Get full SEO-friendly URL for a product",
-     *     description="Returns the complete product URL in the format www.thehorecastore.com/parent/category/product",
-     * 
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"product_id"},
-     *             @OA\Property(property="product_id", type="integer", example=55, description="Product ID")
-     *         )
-     *     ),
-     * 
-     *     @OA\Response(
-     *         response=200,
-     *         description="Full product URL generated successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="full_url", type="string", example="https://www.thehorecastore.com/kitchen/coffee-machine/product-name")
-     *         )
-     *     ),
-     * 
-     *     @OA\Response(
-     *         response=404,
-     *         description="Product not found",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="error"),
-     *             @OA\Property(property="message", type="string", example="Product not found.")
-     *         )
-     *     ),
-	 *     security={{"bearerAuth":{}}}
-     * )
-     */
-    public function getFullProductUrl(Request $request)
-    {
-        $request->validate([
-            'product_id' => 'required|integer'
-        ]);
+   /**
+	 * @OA\Post(
+	 *     path="/api/get-store-url",
+	 *     summary="Get Store URL based on region",
+	 *     description="Returns the store URL based on APP_URL (US or UAE).",
+	 *     operationId="getStoreUrl",
+	 *     tags={"Store"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"product_id"},
+	 *             @OA\Property(property="product_id", type="integer", example=123)
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Store URL fetched successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="status", type="string", example="success"),
+	 *             @OA\Property(property="product_id", type="integer", example=123),
+	 *             @OA\Property(property="store_url", type="string", example="https://www.horecastore.ae")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=400,
+	 *         description="Invalid product ID"
+	 *     )
+	 * )
+	 */
+	public function getStoreUrl(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'product_id' => 'required|integer|exists:products,id',
+		]);
 
-        $product = Product::with([
-            'seoProductUrl',
-            'latestChildCategory.seoUrl',
-            'latestChildCategory.most_parent.seoUrl'
-        ])->find($request->product_id);
+		if ($validator->fails()) {
+			return response()->json([
+				'status' => 'error',
+				'message' => $validator->errors()->first(),
+			], 400);
+		}
 
-        if (!$product) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Product not found.'
-            ], 404);
-        }
+		$productId = $request->input('product_id');
 
-        // 🌍 Determine base URL based on .env
-        $appUrl = env('APP_WEBSITE');
+		// Determine environment and domain
+		$appUrl = env('APP_URL');
+		$storeUrl = str_contains(strtoupper($appUrl), 'UAE')
+			? 'https://www.horecastore.ae'
+			: 'https://www.thehorecastore.com';
 
-        if (str_contains($appUrl, 'UAE')) {
-            $baseUrl = 'https://www.horecastore.ae';
-        } else {
-            $baseUrl = 'https://www.thehorecastore.com';
-        }
-
-        // 🧩 Build segments
-        $parentUrl  = $product->parent_category_url();
-        $categoryUrl = $product->category_url();
-        $productUrl  = optional($product->seoProductUrl)->url;
-
-        $segments = array_filter([$parentUrl, $categoryUrl, $productUrl]);
-        $fullUrl = $baseUrl . '/' . implode('/', $segments);
-
-        return response()->json([
-            'status' => 'success',
-            'full_url' => $fullUrl,
-        ]);
-    }
+		return response()->json([
+			'status' => 'success',
+			'product_id' => $productId,
+			'store_url' => $storeUrl,
+		]);
+	}
 
 
 
