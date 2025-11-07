@@ -532,7 +532,15 @@ public function processNoFraud($orderId)
         $lastName = $nameParts[1] ?? '';
 
         // ✅ Extract card details from JSON
-        $meta = json_decode($payment->payment_details ?? $payment->meta ?? '{}', true);
+       $metaRaw = $payment->payment_details ?? $payment->meta ?? '{}';
+
+        // Decode once
+        $meta = json_decode($metaRaw, true);
+
+        // If still a string (means it was double-encoded), decode again
+        if (is_string($meta)) {
+            $meta = json_decode($meta, true);
+        }
 
         $cardLast4 = $meta['card_last_four'] ?? $payment->card_last4 ?? null;
         $cardBin = $meta['meta']['cardDisplay'] ?? $payment->card_bin ?? null;
@@ -543,7 +551,7 @@ public function processNoFraud($orderId)
             return response()->json([
                 'status' => 'error',
                 'message' => 'Missing card information (last4)',
-                'raw_meta' => $meta
+                'decoded_meta' => $meta, // ✅ so you can see actual structure next time
             ], 400);
         }
 
