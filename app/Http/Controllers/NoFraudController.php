@@ -455,14 +455,14 @@ private function getCardTypeFromBin($bin)
  *     operationId="processNoFraud",
  *     tags={"NoFraud"},
  *     summary="Trigger NoFraud screening for an order",
- *     description="Fetches the payment record from PaymentManagement (via relation) using the given order_id, extracts billing and card data from payment_details JSON, and sends the transaction to the NoFraud API for screening.",
+ *     description="Fetches payment and order details (including customer and address relations) and sends the data to the NoFraud API for screening.",
  *
  *     @OA\Parameter(
  *         name="order_id",
  *         in="path",
  *         required=true,
  *         description="Unique order ID to process the NoFraud screening for",
- *         @OA\Schema(type="string", example="ORD-12345")
+ *         @OA\Schema(type="integer", example=123)
  *     ),
  *
  *     @OA\Response(
@@ -480,87 +480,77 @@ private function getCardTypeFromBin($bin)
  *             )
  *         )
  *     ),
- *
- *     @OA\Response(
- *         response=400,
- *         description="Invalid payment details or validation failed",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="status", type="string", example="error"),
- *             @OA\Property(property="message", type="string", example="Invalid payment details JSON")
- *         )
- *     ),
- *
  *     @OA\Response(
  *         response=404,
- *         description="Payment not found for the given order_id",
+ *         description="Payment or order not found",
  *         @OA\JsonContent(
- *             type="object",
  *             @OA\Property(property="status", type="string", example="error"),
  *             @OA\Property(property="message", type="string", example="Payment not found")
  *         )
  *     ),
- *
  *     @OA\Response(
  *         response=500,
  *         description="Unexpected server error or NoFraud API failure",
  *         @OA\JsonContent(
- *             type="object",
  *             @OA\Property(property="status", type="string", example="error"),
  *             @OA\Property(property="message", type="string", example="Error processing NoFraud screening"),
- *             @OA\Property(property="error", type="string", example="cURL timeout or invalid API key")
+ *             @OA\Property(property="error", type="string", example="Exception message")
  *         )
  *     ),
- *
  *     security={{"bearerAuth": {}}}
  * )
  */
-
 public function processNoFraud($orderId)
 {
     try {
-        // 1. Fetch payment via relationship
-        $payment = PaymentManagement::with('order')->where('order_id', $orderId)->first();
+        // Fetch payment with related order, customer, and address
+        $payment = PaymentManagement::with([
+            'order.customer',
+            'order.customerAddress'
+        ])->where('order_id', $orderId)->first();
 
-        if (!$payment) {
+        if (!$payment || !$payment->order) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Payment not found'
+                'message' => 'Payment or order not found'
             ], 404);
         }
 
-        // 2. Decode payment_details JSON
-        $details = json_decode($payment->payment_details, true);
+        $order = $payment->order;
+        $customer = $order->customer;
+        $address = $order->address;
 
-        if (json_last_error() !== JSON_ERROR_NONE || empty($details)) {
+        if (!$customer || !$address) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid payment details JSON'
+                'message' => 'Missing customer or address information'
             ], 400);
         }
 
-        // 3. Prepare data for the existing screenTransaction method
+        // Prepare billing & card details
         $requestData = [
             'order_id' => $orderId,
-            'amount' => $payment->amount ?? ($payment->order->amount ?? 0),
+            'amount' => $payment->amount ?? $order->amount ?? 0,
 
-            'billing_first_name' => $details['customer']['firstname'] ?? 'Unknown',
-            'billing_last_name' => $details['customer']['lastname'] ?? '',
-            'billing_email' => $details['customer']['email'] ?? 'noemail@example.com',
-            'billing_phone' => $details['customer']['phone'] ?? null,
-            'billing_address' => $details['customer']['address_1'] ?? '',
-            'billing_city' => $details['customer']['address_city'] ?? '',
-            'billing_state' => $details['customer']['address_state'] ?? '',
-            'billing_zip' => $details['customer']['address_zip'] ?? '',
-            'billing_country' => substr($details['customer']['address_country'] ?? 'US', 0, 2),
+            // Billing from related address
+            'billing_first_name' => $customer->first_name ?? 'Unknown',
+            'billing_last_name' => $customer->last_name ?? '',
+            'billing_email' => $customer->email ?? 'noemail@example.com',
+            'billing_phone' => $customer->phone ?? null,
+            'billing_address' => $address->address_1 ?? '',
+            'billing_city' => $address->city ?? '',
+            'billing_state' => $address->state ?? '',
+            'billing_zip' => $address->zip ?? '',
+            'billing_country' => substr($address->country ?? 'US', 0, 2),
 
-            'card_bin' => $details['meta']['cardDisplay'] ?? null,
-            'card_last4' => $details['card_last_four'] ?? null,
-            'card_type' => $details['card_type'] ?? null,
-            'card_expiration' => $details['card_exp'] ?? null,
+            // Card info (optional)
+            'card_bin' => $payment->card_bin ?? null,
+            'card_last4' => $payment->card_last4 ?? null,
+            'card_type' => $payment->card_type ?? null,
+            'card_expiration' => $payment->card_exp ?? null,
         ];
 
-        // 4. Convert to a Request and call existing screenTransaction
+        // Convert to Request and call existing NoFraud transaction screening
         $request = new \Illuminate\Http\Request($requestData);
         return app(self::class)->screenTransaction($request);
 
