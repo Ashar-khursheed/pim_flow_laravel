@@ -2866,7 +2866,6 @@ class ProductController extends BaseController
 
 		// Load all related SEO & category relations
 		$product = Product::with([
-			'slugable',
 			'seoProductUrl',
 			'category_url',
 			'parent_category_url',
