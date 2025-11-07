@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Models\PaymentManagement;
+
 class NoFraudController extends Controller
 {
   /**
@@ -444,4 +446,63 @@ private function getCardTypeFromBin($bin)
     
     return 'Unknown';
 }
+
+
+public function processNoFraud($orderId)
+{
+    try {
+        // 1. Fetch payment via relationship
+        $payment = PaymentManagement::with('order')->where('order_id', $orderId)->first();
+
+        if (!$payment) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Payment not found'
+            ], 404);
+        }
+
+        // 2. Decode payment_details JSON
+        $details = json_decode($payment->payment_details, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || empty($details)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid payment details JSON'
+            ], 400);
+        }
+
+        // 3. Prepare data for the existing screenTransaction method
+        $requestData = [
+            'order_id' => $orderId,
+            'amount' => $payment->amount ?? ($payment->order->amount ?? 0),
+
+            'billing_first_name' => $details['customer']['firstname'] ?? 'Unknown',
+            'billing_last_name' => $details['customer']['lastname'] ?? '',
+            'billing_email' => $details['customer']['email'] ?? 'noemail@example.com',
+            'billing_phone' => $details['customer']['phone'] ?? null,
+            'billing_address' => $details['customer']['address_1'] ?? '',
+            'billing_city' => $details['customer']['address_city'] ?? '',
+            'billing_state' => $details['customer']['address_state'] ?? '',
+            'billing_zip' => $details['customer']['address_zip'] ?? '',
+            'billing_country' => substr($details['customer']['address_country'] ?? 'US', 0, 2),
+
+            'card_bin' => $details['meta']['cardDisplay'] ?? null,
+            'card_last4' => $details['card_last_four'] ?? null,
+            'card_type' => $details['card_type'] ?? null,
+            'card_expiration' => $details['card_exp'] ?? null,
+        ];
+
+        // 4. Convert to a Request and call existing screenTransaction
+        $request = new \Illuminate\Http\Request($requestData);
+        return app(self::class)->screenTransaction($request);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Error processing NoFraud screening',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 }

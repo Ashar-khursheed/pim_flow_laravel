@@ -600,6 +600,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/carts/fetch/{id}', [CustomerCartController::class, 'fetchByID']);
 	Route::apiResource('carts', CustomerCartController::class);
 
+	Route::post('/nofraud/process/{order_id}', [NoFraudController::class, 'processNoFraud']);
+
+
 });
 
 
