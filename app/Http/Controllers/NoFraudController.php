@@ -526,6 +526,9 @@ public function processNoFraud($orderId)
                 'message' => 'Missing customer or address information'
             ], 400);
         }
+        $nameParts = explode(' ', trim($customer->name ?? 'Unknown'), 2);
+        $firstName = $nameParts[0] ?? 'Unknown';
+        $lastName = $nameParts[1] ?? '';
 
         // Prepare billing & card details
         $requestData = [
@@ -533,14 +536,14 @@ public function processNoFraud($orderId)
             'amount' => $payment->amount ?? $order->amount ?? 0,
 
             // Billing from related address
-            'billing_first_name' => $customer->first_name ?? 'Unknown',
-            'billing_last_name' => $customer->last_name ?? '',
+            'billing_first_name' => $firstName,
+            'billing_last_name' => $lastName,
             'billing_email' => $customer->email ?? 'noemail@example.com',
             'billing_phone' => $customer->phone ?? null,
-            'billing_address' => $address->address_1 ?? '',
+            'billing_address' => $address->address?? '',
             'billing_city' => $address->city ?? '',
             'billing_state' => $address->state ?? '',
-            'billing_zip' => $address->zip ?? '',
+            'billing_zip' => $address->zip_code?? '',
             'billing_country' => substr($address->country ?? 'US', 0, 2),
 
             // Card info (optional)
