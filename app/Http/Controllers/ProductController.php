@@ -2856,6 +2856,7 @@ class ProductController extends BaseController
      *         )
      *     )
      * )
+	 *     security={{"bearerAuth":{}}}
      */
     public function getFullProductUrl(Request $request)
     {
