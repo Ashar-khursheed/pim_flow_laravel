@@ -2822,39 +2822,40 @@ class ProductController extends BaseController
 
 
 
-   /**
+  /**
 	 * @OA\Post(
 	 *     path="/api/get-store-url",
-	 *     summary="Get Store URL based on region",
-	 *     description="Returns the store URL based on APP_URL (US or UAE).",
+	 *     summary="Get full product URL based on APP_URL (US or UAE)",
+	 *     description="Returns the full product URL including slug based on region (US or UAE).",
 	 *     operationId="getStoreUrl",
 	 *     tags={"Store"},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             required={"product_id"},
-	 *             @OA\Property(property="product_id", type="integer", example=123)
+	 *             @OA\Property(property="product_id", type="integer", example=1683)
 	 *         )
 	 *     ),
 	 *     @OA\Response(
 	 *         response=200,
-	 *         description="Store URL fetched successfully",
+	 *         description="Full product URL fetched successfully",
 	 *         @OA\JsonContent(
 	 *             @OA\Property(property="status", type="string", example="success"),
-	 *             @OA\Property(property="product_id", type="integer", example=123),
-	 *             @OA\Property(property="store_url", type="string", example="https://www.horecastore.ae")
+	 *             @OA\Property(property="product_id", type="integer", example=1683),
+	 *             @OA\Property(property="store_url", type="string", example="https://www.horecastore.ae/product/sample-product")
 	 *         )
 	 *     ),
 	 *     @OA\Response(
 	 *         response=400,
 	 *         description="Invalid product ID"
-	 *     )
+	 *     ),
+	 *    security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function getStoreUrl(Request $request)
 	{
 		$validator = Validator::make($request->all(), [
-			'product_id' => 'required|integer',
+			'product_id' => 'required|integer|exists:ec_products,id',
 		]);
 
 		if ($validator->fails()) {
@@ -2864,18 +2865,24 @@ class ProductController extends BaseController
 			], 400);
 		}
 
-		$productId = $request->input('product_id');
+		$product = Product::with('slugable')->find($request->product_id);
 
-		// Determine environment and domain
-		$appUrl = env('APP_URL');
-		$storeUrl = str_contains(strtoupper($appUrl), 'UAE')
+		// Determine environment
+		$appUrl = env('APP_WEBSITE');
+		$baseDomain = str_contains(strtoupper($appUrl), 'UAE')
 			? 'https://www.horecastore.ae'
 			: 'https://www.thehorecastore.com';
 
+		// Get slug (adjust based on your DB structure)
+		$slug = $product->slugable->key ?? $product->slug ?? '';
+
+		// Build full product URL
+		$fullUrl = rtrim($baseDomain, '/') . '/product/' . $slug;
+
 		return response()->json([
 			'status' => 'success',
-			'product_id' => $productId,
-			'store_url' => $storeUrl,
+			'product_id' => $product->id,
+			'store_url' => $fullUrl,
 		]);
 	}
 

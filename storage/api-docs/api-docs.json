@@ -33071,8 +33071,8 @@
                 "tags": [
                     "Store"
                 ],
-                "summary": "Get Store URL based on region",
-                "description": "Returns the store URL based on APP_URL (US or UAE).",
+                "summary": "Get full product URL based on APP_URL (US or UAE)",
+                "description": "Returns the full product URL including slug based on region (US or UAE).",
                 "operationId": "getStoreUrl",
                 "requestBody": {
                     "required": true,
@@ -33085,7 +33085,7 @@
                                 "properties": {
                                     "product_id": {
                                         "type": "integer",
-                                        "example": 123
+                                        "example": 1683
                                     }
                                 },
                                 "type": "object"
@@ -33095,7 +33095,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Store URL fetched successfully",
+                        "description": "Full product URL fetched successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -33106,11 +33106,11 @@
                                         },
                                         "product_id": {
                                             "type": "integer",
-                                            "example": 123
+                                            "example": 1683
                                         },
                                         "store_url": {
                                             "type": "string",
-                                            "example": "https://www.horecastore.ae"
+                                            "example": "https://www.horecastore.ae/product/sample-product"
                                         }
                                     },
                                     "type": "object"
@@ -33121,7 +33121,12 @@
                     "400": {
                         "description": "Invalid product ID"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/products/export": {
