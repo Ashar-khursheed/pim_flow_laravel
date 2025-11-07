@@ -448,6 +448,74 @@ private function getCardTypeFromBin($bin)
 }
 
 
+
+/**
+ * @OA\Post(
+ *     path="/nofraud/process/{order_id}",
+ *     operationId="processNoFraud",
+ *     tags={"NoFraud"},
+ *     summary="Trigger NoFraud screening for an order",
+ *     description="Fetches the payment record from PaymentManagement (via relation) using the given order_id, extracts billing and card data from payment_details JSON, and sends the transaction to the NoFraud API for screening.",
+ *
+ *     @OA\Parameter(
+ *         name="order_id",
+ *         in="path",
+ *         required=true,
+ *         description="Unique order ID to process the NoFraud screening for",
+ *         @OA\Schema(type="string", example="ORD-12345")
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful NoFraud screening response",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="decision", type="string", example="pass"),
+ *             @OA\Property(property="score", type="integer", example=82),
+ *             @OA\Property(
+ *                 property="nofraud_result",
+ *                 type="object",
+ *                 description="Raw NoFraud API response"
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=400,
+ *         description="Invalid payment details or validation failed",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Invalid payment details JSON")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=404,
+ *         description="Payment not found for the given order_id",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Payment not found")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Unexpected server error or NoFraud API failure",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Error processing NoFraud screening"),
+ *             @OA\Property(property="error", type="string", example="cURL timeout or invalid API key")
+ *         )
+ *     ),
+ *
+ *     security={{"bearerAuth": {}}}
+ * )
+ */
+
 public function processNoFraud($orderId)
 {
     try {
