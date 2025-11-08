@@ -36,64 +36,196 @@ class ReviewController extends Controller
     /**
      * @OA\Get(
      *     path="/api/reviews",
-     *     summary="Get all reviews",
+     *     summary="Get all reviews with search and pagination",
+     *     description="Returns a paginated list of reviews. Supports global search by customer name, email, product, or comment.",
      *     tags={"Reviews"},
      *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Global search keyword (searches name, email, comment, etc.)",
+     *         required=false,
+     *         @OA\Schema(type="string", example="John")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number for pagination",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *
      *     @OA\Response(
      *         response=200,
-     *         description="List of reviews",
+     *         description="Paginated list of reviews",
      *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(ref="#/components/schemas/Review")
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Reviews fetched successfully."),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="total", type="integer", example=45),
+     *                 @OA\Property(property="last_page", type="integer", example=5),
+     *                 @OA\Property(
+     *                     property="reviews",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Review")
+     *                 )
+     *             )
      *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
      *     )
      * )
      */
 
-    public function index()
+
+    public function index(Request $request)
     {
-        if (!auth()->user()->can('list review')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
+        $query = Review::with('product');  
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('customer_name', 'LIKE', "%{$search}%")
+                    ->orWhere('customer_email', 'LIKE', "%{$search}%")
+                    ->orWhere('comment', 'LIKE', "%{$search}%")
+                    ->orWhereHas('product', function ($productQuery) use ($search) {
+                        $productQuery->where('name', 'LIKE', "%{$search}%")
+                            ->orWhere('sku', 'LIKE', "%{$search}%");
+                    });
+            });
         }
-        return response()->json(Review::all(), 200);
+
+       
+        $perPage = $request->input('per_page', 10);
+        $reviews = $query->paginate($perPage);
+
+        
+        $mappedData = $reviews->getCollection()->map(function ($review) {
+            return [
+                'id' => $review->id,
+                'customer_name' => $review->customer_name,
+                'customer_email' => $review->customer_email,
+                'star' => $review->star,
+                'comment' => $review->comment,
+                'status' => $review->status,                 
+                'product_id' => $review->product->id ?? null,
+                'product_name' => $review->product->name ?? null,
+                'sku' => $review->product->sku ?? null,                
+                'images' => $review->images ?? [],
+                'created_at' => $review->created_at ? $review->created_at->format('Y-m-d H:i:s') : null,
+            ];
+        });
+
+        // Replace paginator collection with mapped data
+        $reviews->setCollection($mappedData);
+
+        return response()->json([
+            'success' => true,
+            'message' => __("msg_rec_list"),
+            'current_page' => $reviews->currentPage(),
+            'per_page' => $reviews->perPage(),
+            'total_records' => $reviews->total(),
+            'total_pages' => $reviews->lastPage(),
+            'data' => $reviews->items(),
+        ]);
     }
+
 
     /**
      * @OA\Post(
      *     path="/api/reviews",
      *     summary="Create a new review",
-     *      security={{"bearerAuth":{}}},
+     *     description="Allows an authenticated user to create a product review with optional images.",
+     *     security={{"bearerAuth":{}}}, 
      *     tags={"Reviews"},
+     *
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 required={"customer_name", "customer_email", "product_id", "star", "comment"},
-     *                 @OA\Property(property="customer_name", type="string", example="John Doe"),
-     *                 @OA\Property(property="customer_email", type="string", format="email", example="john@example.com"),
-     *                 @OA\Property(property="product_id", type="integer", example=1),
-     *                 @OA\Property(property="star", type="integer", example=5),
-     *                 @OA\Property(property="comment", type="string", example="Great product!"),
-     *                 @OA\Property(property="status", type="string", example="published"),
-     *                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary"))
+     *
+     *                 @OA\Property(
+     *                     property="customer_name",
+     *                     type="string",
+     *                     example="John Doe"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="customer_email",
+     *                     type="string",
+     *                     format="email",
+     *                     example="john@example.com"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="product_id",
+     *                     type="integer",
+     *                     example=1
+     *                 ),
+     *                 @OA\Property(
+     *                     property="star",
+     *                     type="integer",
+     *                     example=5
+     *                 ),
+     *                 @OA\Property(
+     *                     property="comment",
+     *                     type="string",
+     *                     example="Great product!"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="status",
+     *                     type="string",
+     *                     example="published"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="images[]",
+     *                     description="Multiple review images (optional)",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="string",
+     *                         format="binary"
+     *                     )
+     *                 )
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=201, description="Review created")
+     *
+     *     @OA\Response(
+     *         response=201,
+     *         description="Review created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Review created successfully."),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     )
      * )
      */
+
+
     public function store(Request $request)
     {
-        if (!auth()->user()->can('add review')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $validator = Validator::make($request->all(), [
             'customer_name' => 'required|string|max:191',
             'customer_email' => 'required|email|max:191',
@@ -101,8 +233,8 @@ class ReviewController extends Controller
             'star' => 'required|integer|min:1|max:5',
             'comment' => 'required|string',
             'status' => 'nullable|string|max:60',
+            'images' => 'nullable|array',
             'images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
-
         ]);
 
         if ($validator->fails()) {
@@ -110,13 +242,16 @@ class ReviewController extends Controller
         }
 
         $imagePaths = [];
-        if ($request->hasFile('images')) {
+
+        // ✅ Only loop if there are uploaded files
+        if ($request->hasFile('images') && count($request->file('images')) > 0) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('production/reviews', 's3');
                 $imagePaths[] = Storage::disk('s3')->url($path);
             }
         }
 
+        // ✅ Ensure default empty array for images
         $review = Review::create([
             'customer_name' => $request->customer_name,
             'customer_email' => $request->customer_email,
@@ -124,10 +259,15 @@ class ReviewController extends Controller
             'star' => $request->star,
             'comment' => $request->comment,
             'status' => $request->status ?? 'published',
-            'images' => $imagePaths // Store as an array, not JSON string
+            'images' => !empty($imagePaths) ? $imagePaths : [], // safe default
         ]);
 
-        return response()->json(['message' => 'Review added', 'review' => $review], 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Review added successfully',
+            'review' => $review
+        ], 201);
+
     }
 
 
@@ -395,7 +535,7 @@ class ReviewController extends Controller
      */
 
     public function export(Request $request, ExcelRepository $excelRepo)
-    {            
+    {
 
         /* Excel headers */
         $excelHeaders = ['product_id', 'Review1', 'Review2', 'Review3', 'Review4', 'Review5'];
@@ -443,7 +583,7 @@ class ReviewController extends Controller
 
         return $excelRepo->downloadFile($fileName, $spreadsheet);
     }
-    
+
     /**
      * @OA\Post(
      *     path="/api/reviews/exportReview",
@@ -462,8 +602,8 @@ class ReviewController extends Controller
      */
     public function exportReview(Request $request, ExcelRepository $excelRepo)
     {
-         
-        
+
+
         /* Validate the request data */
         $request->validate([
             'range_from' => 'required|integer|min:1',
@@ -472,7 +612,7 @@ class ReviewController extends Controller
 
         /* Get available language codes */
 
-        $excelHeaders = array_merge(['customer_id','customer_name','customer_email','product_id','star', 'comment']);
+        $excelHeaders = array_merge(['customer_id', 'customer_name', 'customer_email', 'product_id', 'star', 'comment']);
 
         /* Fetch and format records */
         $records = Review::get()
