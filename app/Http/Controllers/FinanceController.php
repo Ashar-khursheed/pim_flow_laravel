@@ -184,6 +184,8 @@ class FinanceController extends Controller
      *                 @OA\Property(property="payment_due", type="string", format="date", example="2025-12-31", description="Payment due date"),
      *                 @OA\Property(property="type_of_business", type="string", example="E-commerce", description="Type of business (Advertising / E-commerce)"),
      *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd", description="Legal business name"),
+     *                 @OA\Property(property="first_name", type="string", example="first name", description="first_name"),
+     *                 @OA\Property(property="last_name", type="string", example="last name", description="last name"),
      *                 @OA\Property(property="business_email", type="string", format="email", example="abc@domain.com", description="Business Email"),
      *                 @OA\Property(property="business_address", type="string", example="123 Street, Delhi", description="Business address"),
      *                 @OA\Property(property="country", type="string", example="India"),
@@ -220,7 +222,7 @@ class FinanceController extends Controller
      * )
      */
     public function store(Request $request)
-    {
+    {  
         $validator = Validator::make($request->all(), [
             'payment_selection' => 'nullable|string',
             'payment_options' => 'nullable|string',
@@ -230,7 +232,9 @@ class FinanceController extends Controller
             'payment_due' => 'nullable|date',
             'type_of_business' => 'nullable|string|max:255',
             'business_name' => 'required|string|max:255',
-            'business_email' => 'nullable|email|max:255',
+            'business_email' => 'nullable|email|max:255',            
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
             'business_address' => 'required|string|max:255',
             'country' => 'required|string|max:255',
             'address' => 'nullable|string|max:255',
@@ -255,9 +259,10 @@ class FinanceController extends Controller
 
         $data = $validator->validated();
         $data['created_by'] = Auth::id() ?? 1;
-        $data['updated_by'] = Auth::id() ?? 1; // ✅ Changed from "0" to actual user ID
+        $data['updated_by'] = '0';
+       
 
-        // ✅ Handle file upload properly - only if file exists
+      
         if ($request->hasFile('documents')) {
             $data['documents'] = uploadImageToWebpS3FromFile(
                 $request,
@@ -265,7 +270,7 @@ class FinanceController extends Controller
                 env('STORAGE_ENV') . '/documents'
             );
         } else {
-            $data['documents'] = null; // ✅ Set to null if no file uploaded
+            $data['documents'] = null;  
         }
 
         $finance = Finance::create($data);
@@ -301,6 +306,8 @@ class FinanceController extends Controller
      *                 @OA\Property(property="payment_selection", type="string", example="Credit"),
      *                 @OA\Property(property="amount", type="number", format="float", example=5000.75),
      *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd"),
+     *                  @OA\Property(property="first_name", type="string", example="first name", description="first name"),
+     *                 @OA\Property(property="last_name", type="string", example="last name", description="last name"),
      *                 @OA\Property(property="business_email", type="string", example="abc@domain.com"),
      *                 @OA\Property(property="documents", type="string", example="https://s3.amazonaws.com/path/to/document.pdf"),
      *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-01T10:00:00Z"),
@@ -370,6 +377,8 @@ class FinanceController extends Controller
      *                 @OA\Property(property="payment_due", type="string", format="date", example="2025-12-31", description="Payment due date"),
      *                 @OA\Property(property="type_of_business", type="string", example="E-commerce", description="Type of business"),
      *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd", description="Legal business name"),
+     *                 @OA\Property(property="first_name", type="string", example="first name", description="first name"),
+     *                 @OA\Property(property="last_name", type="string", example="last name", description="last name"),
      *                 @OA\Property(property="business_email", type="string", example="abc@domain.com", description="business Email"),
      *                 @OA\Property(property="business_address", type="string", example="123 Street, Delhi", description="Business address"),
      *                 @OA\Property(property="country", type="string", example="India", description="Country name"),
@@ -406,7 +415,7 @@ class FinanceController extends Controller
      */
 
     public function update(Request $request, $id)
-    {
+    {  
         $validator = Validator::make($request->all(), [
             'payment_selection' => 'nullable|string',
             'payment_options' => 'nullable|string',
@@ -416,7 +425,9 @@ class FinanceController extends Controller
             'payment_due' => 'nullable|date',
             'type_of_business' => 'nullable|string|max:255',
             'business_name' => 'required|string|max:255',
-            'business_email' => 'nullable|email|max:255',
+            'business_email' => 'nullable|email|max:255',                
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
             'business_address' => 'required|string|max:255',
             'country' => 'required|string|max:255',
             'address' => 'nullable|string|max:255',
@@ -448,9 +459,10 @@ class FinanceController extends Controller
         }
 
         $data = $validator->validated();
+        
         $data['updated_by'] = Auth::id() ?? 1;
 
-        // ✅ Handle file upload properly
+        
         if ($request->hasFile('documents')) {
             $data['documents'] = uploadImageToWebpS3FromFile(
                 $request,
@@ -458,9 +470,7 @@ class FinanceController extends Controller
                 env('STORAGE_ENV') . '/documents'
             );
         } else {
-
             $data['documents'] = $finance->documents;
-
         }
 
         $finance->update($data);
@@ -476,11 +486,40 @@ class FinanceController extends Controller
     /**
      * @OA\Delete(
      *     path="/api/finances/{id}",
-     *     summary="Delete finance record",
+     *     summary="Delete a finance record",
+     *     description="Deletes a finance record by its unique ID.",
      *     tags={"Finance"},
-     *     @OA\Response(response=204, description="Deleted")
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Finance record ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Finance record deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Finance record deleted successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Finance record not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Finance record not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
      * )
      */
+
     public function destroy($id)
     {
         $finance = Finance::find($id);

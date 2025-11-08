@@ -10946,6 +10946,16 @@
                                         "type": "string",
                                         "example": "ABC Pvt Ltd"
                                     },
+                                    "first_name": {
+                                        "description": "first_name",
+                                        "type": "string",
+                                        "example": "first name"
+                                    },
+                                    "last_name": {
+                                        "description": "last name",
+                                        "type": "string",
+                                        "example": "last name"
+                                    },
                                     "business_email": {
                                         "description": "Business Email",
                                         "type": "string",
@@ -11111,6 +11121,16 @@
                                                     "type": "string",
                                                     "example": "ABC Pvt Ltd"
                                                 },
+                                                "first_name": {
+                                                    "description": "first name",
+                                                    "type": "string",
+                                                    "example": "first name"
+                                                },
+                                                "last_name": {
+                                                    "description": "last name",
+                                                    "type": "string",
+                                                    "example": "last name"
+                                                },
                                                 "business_email": {
                                                     "type": "string",
                                                     "example": "abc@domain.com"
@@ -11249,6 +11269,16 @@
                                         "type": "string",
                                         "example": "ABC Pvt Ltd"
                                     },
+                                    "first_name": {
+                                        "description": "first name",
+                                        "type": "string",
+                                        "example": "first name"
+                                    },
+                                    "last_name": {
+                                        "description": "last name",
+                                        "type": "string",
+                                        "example": "last name"
+                                    },
                                     "business_email": {
                                         "description": "business Email",
                                         "type": "string",
@@ -11369,13 +11399,71 @@
                 "tags": [
                     "Finance"
                 ],
-                "summary": "Delete finance record",
+                "summary": "Delete a finance record",
+                "description": "Deletes a finance record by its unique ID.",
                 "operationId": "f26a7de13fdd90ca6198cf5026cf449e",
-                "responses": {
-                    "204": {
-                        "description": "Deleted"
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance record ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
-                }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Finance record deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance record not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/flash-sales": {
