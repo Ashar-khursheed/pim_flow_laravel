@@ -11,12 +11,7 @@ return new class extends Migration
 	 */
 	public function up(): void
 	{
-		Schema::dropIfExists('attribute_translations');
-		Schema::dropIfExists('product_attribute_translations');
-		Schema::dropIfExists('attribute_value_translations');
 		Schema::dropIfExists('product_translations');
-		Schema::dropIfExists('faq_translations');
-
 		Schema::create('product_translations', function (Blueprint $table) {
 			$table->id();
 			$table->string('locale', 2);
@@ -27,6 +22,7 @@ return new class extends Migration
 			$table->text('images_tr')->nullable();
 		});
 
+		Schema::dropIfExists('faq_translations');
 		Schema::create('faq_translations', function (Blueprint $table) {
 			$table->id();
 			$table->string('locale', 2);
@@ -36,26 +32,31 @@ return new class extends Migration
 		});
 
 		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-			$records = DB::table('ec_products')->select('id', 'name', 'description', 'benefits_features', 'images')->get();
-			foreach ($records as $record) {
-				DB::table('product_translations')->insert([
-					'locale' => 'en',
-					'product_id' => $record->id,
-					'name_tr' => $record->name,
-					'description_tr' => $record->description,
-					'benefits_features_tr' => $record->benefits_features,
-					'images_tr' => $record->images,
-				]);
-			}
-			$records = DB::table('faqs')->select('id', 'question', 'answer')->get();
-			foreach ($records as $record) {
-				DB::table('faq_translations')->insert([
-					'locale' => 'en',
-					'faq_id' => $record->id,
-					'question_tr' => $record->question,
-					'answer_tr' => $record->answer,
-				]);
-			}
+			/* Direct SQL insert for products - fastest and most memory efficient */
+			DB::table('product_translations')->insertUsing(
+				['locale', 'product_id', 'name_tr', 'description_tr', 'benefits_features_tr', 'images_tr'],
+				DB::table('ec_products')
+				->select(
+					DB::raw("'en' as locale"),
+					'id as product_id',
+					'name as name_tr',
+					'description as description_tr',
+					'benefits_features as benefits_features_tr',
+					'images as images_tr'
+				)
+			);
+
+			/* Direct SQL insert for FAQs - fastest and most memory efficient */
+			DB::table('faq_translations')->insertUsing(
+				['locale', 'faq_id', 'question_tr', 'answer_tr'],
+				DB::table('faqs')
+				->select(
+					DB::raw("'en' as locale"),
+					'id as faq_id',
+					'question as question_tr',
+					'answer as answer_tr'
+				)
+			);
 		}
 	}
 
@@ -64,9 +65,6 @@ return new class extends Migration
 	 */
 	public function down(): void
 	{
-		Schema::dropIfExists('attribute_translations');
-		Schema::dropIfExists('product_attribute_translations');
-		Schema::dropIfExists('attribute_value_translations');
 		Schema::dropIfExists('product_translations');
 		Schema::dropIfExists('faq_translations');
 	}
