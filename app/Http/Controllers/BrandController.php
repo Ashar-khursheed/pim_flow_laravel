@@ -366,7 +366,7 @@ class BrandController extends BaseController
 
 			// Validate incoming data
 			$validated = $request->validate([
-				'name' => 'sometimes|required|string|max:191',
+				'name' => 'required|string|max:191',
 				'description' => 'nullable|string',
 				'website' => 'nullable|url|max:191',
 				'status' => 'sometimes|required|string|in:published,draft',
@@ -377,10 +377,8 @@ class BrandController extends BaseController
 				'ar_thumbnail' => 'nullable|file|image|mimes:webp,png|max:2048',
 			]);
 
-			// Prepare data for update
 			$updateData = [];
 
-			// Add text fields to update data
 			foreach(['name', 'description', 'website', 'status', 'order'] as $field) {
 				if (isset($validated[$field])) {
 					$updateData[$field] = $validated[$field];
@@ -391,9 +389,6 @@ class BrandController extends BaseController
 			if (isset($validated['is_featured'])) {
 				$updateData['is_featured'] = (bool)$validated['is_featured'];
 			}
-
-			// Handle logo as file upload
-
 
 			if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
 				// Import Storage facade
@@ -464,6 +459,12 @@ class BrandController extends BaseController
 			// Update the brand
 			$brand->update($updateData);
 
+			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+				$brand->translateOrNew('en')->name_tr = $validated['name'];
+				$brand->translateOrNew('en')->description_tr = $validated['description'] ?? null;
+			}
+			$brand->save();
+
 			// Return a response with the updated brand
 			return response()->json([
 				'success' => true,
@@ -519,6 +520,11 @@ class BrandController extends BaseController
 
 		if ($brand->logo) {
 			Storage::disk('public')->delete($brand->logo);
+		}
+
+		/* Proceed with deletion */
+		if (method_exists($brand, 'translations')) {
+			$brand->translations()->delete();
 		}
 
 		$brand->delete();
