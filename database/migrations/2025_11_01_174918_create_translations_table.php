@@ -42,52 +42,6 @@ return new class extends Migration
 			$table->integer("product_attribute_id");
 			$table->text("attribute_value_tr");
 		});
-
-		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-			/* Direct SQL insert for attribute groups */
-			// DB::table('attribute_group_translations')->insertUsing(
-			// 	['locale', 'attribute_group_id', 'name_tr'],
-			// 	DB::table('attribute_groups')
-			// 	->select(
-			// 		DB::raw("'en' as locale"),
-			// 		'id as attribute_group_id',
-			// 		'name as name_tr'
-			// 	)
-			// );
-
-			/* Direct SQL insert for attributes */
-			DB::table('attribute_translations')->insertUsing(
-				['locale', 'attribute_id', 'name_tr'],
-				DB::table('attributes')
-				->select(
-					DB::raw("'en' as locale"),
-					'id as attribute_id',
-					'name as name_tr'
-				)
-			);
-
-			/* Direct SQL insert for attribute values */
-			DB::table('attribute_value_translations')->insertUsing(
-				['locale', 'attribute_value_id', 'attribute_value_tr'],
-				DB::table('attribute_values')
-				->select(
-					DB::raw("'en' as locale"),
-					'id as attribute_value_id',
-					'attribute_value as attribute_value_tr'
-				)
-			);
-
-			/* Direct SQL insert for product attributes */
-			// DB::table('product_attribute_translations')->insertUsing(
-			// 	['locale', 'product_attribute_id', 'attribute_value_tr'],
-			// 	DB::table('product_attributes')
-			// 	->select(
-			// 		DB::raw("'en' as locale"),
-			// 		'id as product_attribute_id',
-			// 		'attribute_value as attribute_value_tr'
-			// 	)
-			// );
-		}
 	}
 
 	/**
