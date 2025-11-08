@@ -73,6 +73,18 @@ return new class extends Migration
 				)
 			);
 
+			/* Direct SQL insert for categories */
+			DB::table('brand_translations')->insertUsing(
+				['locale', 'category_id', 'name_tr', 'description_tr'],
+				DB::table('ec_brands')
+				->select(
+					DB::raw("'en' as locale"),
+					'id as category_id',
+					'name as name_tr',
+					'description as description_tr',
+				)
+			);
+
 			/* Direct SQL insert for product attributes */
 			// DB::table('product_attribute_translations')->insertUsing(
 			// 	['locale', 'product_attribute_id', 'attribute_value_tr'],

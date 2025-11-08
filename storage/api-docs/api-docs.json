@@ -4641,6 +4641,61 @@
                 ]
             }
         },
+        "/api/brands/generate-translation": {
+            "post": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Generate or update brand translation",
+                "description": "This endpoint generates or updates translations for an brand and its values.",
+                "operationId": "2bc9087fc1ae58a0119221b3454ac9a9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "locale",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID of the brand to translate",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "locale": {
+                                        "description": "Locale code for translation (e.g. ar)",
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "name": {
+                                        "description": "Translated name of the brand",
+                                        "type": "string",
+                                        "example": "الحجم"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/brand-temp-1": {
             "get": {
                 "tags": [

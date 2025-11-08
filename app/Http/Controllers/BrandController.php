@@ -1003,4 +1003,62 @@ class BrandController extends BaseController
 			'categories' => $categories
 		]);
 	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/brands/generate-translation",
+	 *     summary="Generate or update brand translation",
+	 *     description="This endpoint generates or updates translations for an brand and its values.",
+	 *     tags={"Brands"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"id", "locale", "name"},
+	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the brand to translate"),
+	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
+	 *             @OA\Property(property="name", type="string", example="الحجم", description="Translated name of the brand")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function generateTranslation(Request $request)
+	{
+		/* Validate request data */
+		$validated = $request->validate([
+			'id' => 'required|exists:ec_brands,id',
+			'locale' => 'required|string|in:ar',
+			'name' => 'required|string',
+			'description' => 'required|string',
+		]);
+
+		$brand = Brand::find($validated['id']);
+
+		DB::beginTransaction();
+		try {
+			$locale = $validated['locale'];
+
+			/* Update brand translation */
+			$brand->translateOrNew($locale)->name_tr = $validated['name'];
+			$brand->translateOrNew($locale)->description_tr = $validated['description'];
+			$brand->save();
+
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => __("Translations updated successfully."),
+				'data' => $brand->fresh(),
+			]);
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => __("err_update"),
+				'error' => $e->getMessage(),
+			], 500);
+		}
+	}
 }
