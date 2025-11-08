@@ -84,6 +84,9 @@ class FinanceController extends Controller
 
                 $q->where('business_name', 'like', "%{$search}%")
                     ->orWhere('amount', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('business_email', 'like', "%{$search}%")
                     ->orWhere('payment_due', 'like', "%{$search}%")
                     ->orWhere('city', 'like', "%{$search}%")
                     ->orWhere('duns_number', 'like', "%{$search}%")
@@ -131,6 +134,9 @@ class FinanceController extends Controller
                 'amount' => number_format($finance->amount, 2), // Format amount
                 'status' => $finance->status,
                 'business_name' => $finance->business_name,
+                'first_name' => $finance->first_name,
+                'last_name' => $finance->last_name,
+                'business_email' => $finance->business_email,
                 'business_address' => $finance->business_address,
                 'country' => $finance->country,
                 'address' => $finance->address,
