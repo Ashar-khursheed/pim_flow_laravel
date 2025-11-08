@@ -12,7 +12,6 @@ return new class extends Migration
 	public function up(): void
 	{
 		Schema::dropIfExists('category_translations');
-
 		Schema::create('category_translations', function (Blueprint $table) {
 			$table->id();
 			$table->string("locale", 2);
@@ -21,14 +20,16 @@ return new class extends Migration
 		});
 
 		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-			$records = DB::table('categories')->select('id', 'name')->get();
-			foreach ($records as $record) {
-				DB::table('category_translations')->insert([
-					'locale' => 'en',
-					'category_id' => $record->id,
-					'name_tr' => $record->name,
-				]);
-			}
+			/* Direct SQL insert for categories */
+			DB::table('category_translations')->insertUsing(
+				['locale', 'category_id', 'name_tr'],
+				DB::table('categories')
+				->select(
+					DB::raw("'en' as locale"),
+					'id as category_id',
+					'name as name_tr'
+				)
+			);
 		}
 	}
 
