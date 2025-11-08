@@ -681,6 +681,74 @@ class ProductAccessoriesController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/api/product-accessories/isRequired/{id}",
+     *     summary="isRequired a product accessory",
+     *     tags={"Product Accessories"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Product accessory ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"isRequired"},
+     *             @OA\Property(property="isRequired", type="integer", example=1, description="1 for required, 0 for not required")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="isRequired updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="is Required not found"
+     *     ),
+     *      security={{"bearerAuth":{}}}
+     * )
+     */
+    public function updateIsRequired(Request $request, $id): JsonResponse
+    {
+        try {
+
+            $accessory = ProductAccessory::findOrFail($id);
+
+            $validator = Validator::make($request->all(), [
+                'isRequired' => 'sometimes|boolean'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $accessory->update([
+                'isRequired' => $request->isRequired  
+                 
+            ]);
+
+             
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Is Required updated successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update is required',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/get-product-list",
      *     summary="Get list of product list",

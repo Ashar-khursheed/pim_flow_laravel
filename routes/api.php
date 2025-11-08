@@ -434,6 +434,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/delivery/get-price-ordernumber', [PaymentHistoryController::class,'getPriceOrderNumber']);
 	Route::resource('product-accessories', ProductAccessoriesController::class);
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
+	Route::post('/product-accessories/isRequired/{id}', [ProductAccessoriesController::class, 'updateIsRequired']);
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
 	Route::get('/get-product-list', [ProductAccessoriesController::class, 'getProductList']);
 
