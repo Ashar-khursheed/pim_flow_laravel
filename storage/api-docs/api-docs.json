@@ -32487,6 +32487,59 @@
                 ]
             }
         },
+        "/api/product-accessories/isRequired/{id}": {
+            "post": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "isRequired a product accessory",
+                "operationId": "c4856ac792c0fd12fec50e4a97a53e30",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "isRequired"
+                                ],
+                                "properties": {
+                                    "isRequired": {
+                                        "description": "1 for required, 0 for not required",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "isRequired updated successfully"
+                    },
+                    "404": {
+                        "description": "is Required not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/get-product-list": {
             "get": {
                 "tags": [
