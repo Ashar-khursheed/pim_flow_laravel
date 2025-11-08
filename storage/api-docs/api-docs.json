@@ -42558,51 +42558,6 @@
                 },
                 "type": "object"
             },
-            "Brand": {
-                "title": "Brand",
-                "description": "Brand model",
-                "required": [
-                    "id",
-                    "name"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "Apple"
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "Premium electronics brand"
-                    },
-                    "website": {
-                        "type": "string",
-                        "format": "url",
-                        "example": "https://www.apple.com"
-                    },
-                    "logo": {
-                        "type": "string",
-                        "format": "url",
-                        "example": "https://example.com/logo.jpg"
-                    },
-                    "status": {
-                        "type": "string",
-                        "example": "active"
-                    },
-                    "order": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "is_featured": {
-                        "type": "boolean",
-                        "example": true
-                    }
-                },
-                "type": "object"
-            },
             "BrandTemp1": {
                 "properties": {
                     "id": {
@@ -43491,9 +43446,6 @@
                     "in_wishlist": {
                         "type": "boolean",
                         "example": true
-                    },
-                    "brand": {
-                        "$ref": "#/components/schemas/Brand"
                     }
                 },
                 "type": "object"

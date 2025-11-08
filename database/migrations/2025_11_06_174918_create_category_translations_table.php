@@ -19,6 +19,15 @@ return new class extends Migration
 			$table->text("name_tr");
 		});
 
+		Schema::dropIfExists('brand_translations');
+		Schema::create('brand_translations', function (Blueprint $table) {
+			$table->id();
+			$table->string("locale", 2);
+			$table->integer("brand_id");
+			$table->string("name_tr");
+			$table->text("description_tr")->nullable();
+		});
+
 		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
 			/* Direct SQL insert for attribute groups */
 			// DB::table('attribute_group_translations')->insertUsing(
@@ -83,5 +92,6 @@ return new class extends Migration
 	public function down(): void
 	{
 		Schema::dropIfExists('category_translations');
+		Schema::dropIfExists('brand_translations');
 	}
 };
