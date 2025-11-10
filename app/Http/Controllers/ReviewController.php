@@ -370,9 +370,8 @@ class ReviewController extends Controller
             'comment' => 'required|string',
             'status' => 'nullable|string|in:published,pending,rejected',
             'images' => 'nullable|array',
-            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-            'delete_images' => 'nullable|array',
-            'delete_images.*' => 'string',
+            // 'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+           
             'customer_name' => 'nullable|string|max:191',
             'customer_email' => 'nullable|email|max:191'
         ]);
@@ -406,7 +405,7 @@ class ReviewController extends Controller
         }
 
         // Store updated images list as JSON (Fix double escaping issue)
-        $review->images = json_encode(array_values($existingImages), JSON_UNESCAPED_SLASHES);
+        $review->images = $existingImages;
 
         // Allow modification of created_at only
 
@@ -612,8 +611,12 @@ class ReviewController extends Controller
         $excelHeaders = ['customer_id', 'customer_name', 'customer_email', 'product_id', 'star', 'comment'];
 
         /* Fetch filtered records */
-        $records = Review::whereBetween('id', [$request->range_from, $request->range_to])
-            ->get()
+        $records = Review::query();          
+        $records = $records->offset($request->range_from - 1)
+		->limit($request->range_to - $request->range_from + 1)
+		->orderBy('id', 'asc')
+		  ->get()
+
             ->map(function ($review) {
                 return [
                     $review->customer_id,
