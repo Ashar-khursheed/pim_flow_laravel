@@ -477,6 +477,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('ai-alternate-status', [AIAlternateProductController::class, 'alternateStatus']);
 	Route::post('ai-alternate-priority', [AIAlternateProductController::class, 'alternatePriority']);
 
+	Route::post('/brands/generate-translation', [BrandController::class, 'generateTranslation']);
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
