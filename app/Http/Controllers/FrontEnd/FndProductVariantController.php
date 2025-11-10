@@ -258,24 +258,30 @@ class FndProductVariantController extends Controller
 
             $attributes = $request->input('attribute', []);
 
-            // ✅ Step 1: Initialize with the first attribute's matching products
-            $firstAttr = array_shift($attributes);
- 
-            $productIds = ProductAttribute::where('attribute_id', $firstAttr['attribute_id'])
-                ->where('attribute_value', $firstAttr['attribute_value'])
-                ->pluck('product_id');
- 
-            // For each remaining attribute, intersect with products that have it
-            foreach ($attributes as $attr) {
+             
+            $productIds = null;
+
+            // For each attribute, intersect with products that have it
+            foreach ($attributes as $index => $attr) {
                 $matchingIds = ProductAttribute::where('attribute_id', $attr['attribute_id'])
                     ->where('attribute_value', $attr['attribute_value'])
                     ->pluck('product_id');
 
-                // Keep only products that exist in both sets (intersection)
-                $productIds = $productIds->intersect($matchingIds);
+                // If first iteration, initialize productIds
+                if ($index === 0) {
+                    $productIds = $matchingIds;
+                } else {
+                    // Keep only products that exist in both sets (intersection)
+                    $productIds = $productIds->intersect($matchingIds);
+                }
+
+                // Early exit if no products remain
+                if ($productIds->isEmpty()) {
+                    break;
+                }
             }
 
-            $productIds = $productIds->values()->toArray();
+            $productIds = $productIds ? $productIds->values()->toArray() : [];
 
             if (empty($productIds)) {
                 return response()->json([
@@ -284,7 +290,7 @@ class FndProductVariantController extends Controller
                 ], 404);
             }
 
-            // ✅ Step 2: Eager-load related data for optimization
+            
             $products = Product::whereIn('id', $productIds)
                 ->select('id', 'sku')
                 ->get()
