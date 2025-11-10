@@ -93,7 +93,7 @@ class ReviewController extends Controller
 
     public function index(Request $request)
     {
-        $query = Review::with('product');  
+        $query = Review::with('product');
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('customer_name', 'LIKE', "%{$search}%")
@@ -106,11 +106,11 @@ class ReviewController extends Controller
             });
         }
 
-       
+
         $perPage = $request->input('per_page', 10);
         $reviews = $query->paginate($perPage);
 
-        
+
         $mappedData = $reviews->getCollection()->map(function ($review) {
             return [
                 'id' => $review->id,
@@ -118,10 +118,10 @@ class ReviewController extends Controller
                 'customer_email' => $review->customer_email,
                 'star' => $review->star,
                 'comment' => $review->comment,
-                'status' => $review->status,                 
+                'status' => $review->status,
                 'product_id' => $review->product->id ?? null,
                 'product_name' => $review->product->name ?? null,
-                'sku' => $review->product->sku ?? null,                
+                'sku' => $review->product->sku ?? null,
                 'images' => $review->images ?? [],
                 'created_at' => $review->created_at ? $review->created_at->format('Y-m-d H:i:s') : null,
             ];
@@ -225,7 +225,7 @@ class ReviewController extends Controller
 
 
     public function store(Request $request)
-    {  
+    {
         $validator = Validator::make($request->all(), [
             'customer_name' => 'required|string|max:191',
             'customer_email' => 'required|email|max:191',
@@ -233,10 +233,10 @@ class ReviewController extends Controller
             'star' => 'required|integer|min:1|max:5',
             'comment' => 'required|string',
             'status' => 'nullable|string|max:60',
-             'images' => 'nullable|array',
+            'images' => 'nullable|array',
             //'images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
-               
+
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
@@ -369,10 +369,10 @@ class ReviewController extends Controller
             'star' => 'nullable|integer|min:1|max:5',
             'comment' => 'required|string',
             'status' => 'nullable|string|in:published,pending,rejected',
-             'images' => 'nullable|array',
+            'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
             'delete_images' => 'nullable|array',
-            'delete_images.*' => 'string',            
+            'delete_images.*' => 'string',
             'customer_name' => 'nullable|string|max:191',
             'customer_email' => 'nullable|email|max:191'
         ]);
@@ -409,7 +409,7 @@ class ReviewController extends Controller
         $review->images = json_encode(array_values($existingImages), JSON_UNESCAPED_SLASHES);
 
         // Allow modification of created_at only
-       
+
         $review->created_at = now();
         $review->save();
 
@@ -602,31 +602,27 @@ class ReviewController extends Controller
     public function exportReview(Request $request, ExcelRepository $excelRepo)
     {
 
-
         /* Validate the request data */
         $request->validate([
             'range_from' => 'required|integer|min:1',
             'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 5000),
         ]);
 
-        /* Get available language codes */
+        /* Define headers */
+        $excelHeaders = ['customer_id', 'customer_name', 'customer_email', 'product_id', 'star', 'comment'];
 
-        $excelHeaders = array_merge(['customer_id', 'customer_name', 'customer_email', 'product_id', 'star', 'comment']);
-
-        /* Fetch and format records */
-        $records = Review::get()
-            ->map(function ($reviews) use ($excelHeaders) {
-
-                $row = [
-                    $reviews->customer_id,
-                    $reviews->customer_name,
-                    $reviews->customer_email,
-                    $reviews->product_id,
-                    $reviews->star,
-                    $reviews->comment,
+        /* Fetch filtered records */
+        $records = Review::whereBetween('id', [$request->range_from, $request->range_to])
+            ->get()
+            ->map(function ($review) {
+                return [
+                    $review->customer_id,
+                    $review->customer_name,
+                    $review->customer_email,
+                    $review->product_id,
+                    $review->star,
+                    $review->comment,
                 ];
-
-                return $row;
             });
 
         /* Prepare spreadsheet */
@@ -643,9 +639,12 @@ class ReviewController extends Controller
             $excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
         }
 
+        /* Generate file name */
         $fileName = 'review_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
+        /* Return downloadable Excel */
         return $excelRepo->downloadFile($fileName, $spreadsheet);
+
     }
 
 }
