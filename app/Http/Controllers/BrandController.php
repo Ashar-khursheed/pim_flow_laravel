@@ -1016,7 +1016,8 @@ class BrandController extends BaseController
 	 *             required={"id", "locale", "name"},
 	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the brand to translate"),
 	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
-	 *             @OA\Property(property="name", type="string", example="الحجم", description="Translated name of the brand")
+	 *             @OA\Property(property="name", type="string", example="الحجم", description="Translated name of the brand"),
+	 *             @OA\Property(property="description", type="string", example="الحجم", description="Translated name of the description")
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),

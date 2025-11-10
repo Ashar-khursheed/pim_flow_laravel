@@ -4674,6 +4674,11 @@
                                         "description": "Translated name of the brand",
                                         "type": "string",
                                         "example": "الحجم"
+                                    },
+                                    "description": {
+                                        "description": "Translated name of the description",
+                                        "type": "string",
+                                        "example": "الحجم"
                                     }
                                 },
                                 "type": "object"
