@@ -225,7 +225,7 @@ class ReviewController extends Controller
 
 
     public function store(Request $request)
-    {
+    {  
         $validator = Validator::make($request->all(), [
             'customer_name' => 'required|string|max:191',
             'customer_email' => 'required|email|max:191',
@@ -233,9 +233,10 @@ class ReviewController extends Controller
             'star' => 'required|integer|min:1|max:5',
             'comment' => 'required|string',
             'status' => 'nullable|string|max:60',
-            'images' => 'nullable|array',
-            'images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
+             'images' => 'nullable|array',
+            //'images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+               
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
@@ -328,12 +329,12 @@ class ReviewController extends Controller
     *                     description="Upload new images"
     *                 ),
     *                 @OA\Property(
-    *                     property="delete_images",
+    *                     property="delete_images[]",
     *                     type="array",
     *                     @OA\Items(type="string"),
     *                     description="List of image URLs to delete"
     *                 ),
-    *                 @OA\Property(property="created_at", type="string", format="date-time", example="2024-03-13T12:00:00Z", description="Modify review creation time"),
+    *                 
     *             )
     *         )
     *     ),
@@ -368,10 +369,10 @@ class ReviewController extends Controller
             'star' => 'nullable|integer|min:1|max:5',
             'comment' => 'required|string',
             'status' => 'nullable|string|in:published,pending,rejected',
+             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
             'delete_images' => 'nullable|array',
-            'delete_images.*' => 'string',
-            'created_at' => 'nullable|date',
+            'delete_images.*' => 'string',            
             'customer_name' => 'nullable|string|max:191',
             'customer_email' => 'nullable|email|max:191'
         ]);
@@ -408,10 +409,8 @@ class ReviewController extends Controller
         $review->images = json_encode(array_values($existingImages), JSON_UNESCAPED_SLASHES);
 
         // Allow modification of created_at only
-        if ($request->has('created_at')) {
-            $review->created_at = $request->created_at;
-        }
-
+       
+        $review->created_at = now();
         $review->save();
 
         return response()->json([

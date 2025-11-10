@@ -38197,18 +38197,12 @@
                                             "format": "binary"
                                         }
                                     },
-                                    "delete_images": {
+                                    "delete_images[]": {
                                         "description": "List of image URLs to delete",
                                         "type": "array",
                                         "items": {
                                             "type": "string"
                                         }
-                                    },
-                                    "created_at": {
-                                        "description": "Modify review creation time",
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2024-03-13T12:00:00Z"
                                     }
                                 },
                                 "type": "object"

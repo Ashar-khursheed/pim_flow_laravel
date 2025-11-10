@@ -258,16 +258,13 @@ class FndProductVariantController extends Controller
 
             $attributes = $request->input('attribute', []);
 
-            // ✅ Step 1: Find products that have ALL specified attributes
-            $query = ProductAttribute::query();
-
-            // Start with the first attribute
+            // ✅ Step 1: Initialize with the first attribute's matching products
             $firstAttr = array_shift($attributes);
-
+ 
             $productIds = ProductAttribute::where('attribute_id', $firstAttr['attribute_id'])
                 ->where('attribute_value', $firstAttr['attribute_value'])
                 ->pluck('product_id');
-
+ 
             // For each remaining attribute, intersect with products that have it
             foreach ($attributes as $attr) {
                 $matchingIds = ProductAttribute::where('attribute_id', $attr['attribute_id'])
@@ -387,7 +384,7 @@ class FndProductVariantController extends Controller
     public function getAttributeByProductVariant(Request $request)
     {
         try {
-             
+
             $validator = Validator::make($request->all(), [
                 'attribute' => 'required|array',
                 'attribute.*.attribute_id' => 'required|integer',
@@ -404,7 +401,7 @@ class FndProductVariantController extends Controller
 
             $attributes = $request->input('attribute', []);
 
-           
+
             $firstAttr = array_shift($attributes);
 
             // Get initial product IDs from ProductAttribute
