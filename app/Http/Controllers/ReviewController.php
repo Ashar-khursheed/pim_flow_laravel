@@ -472,12 +472,12 @@ class ReviewController extends Controller
     public function import(Request $request, ExcelImporterService $excelImporter)
     {
         /* Permission Check */
-        if (!auth()->user()->can('import keywords')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+        // if (!auth()->user()->can('import keywords')) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => "You don't have permission to access this module.",
+        //     ]);
+        // }
 
         /* Validate request data */
         $request->validate([
