@@ -565,9 +565,8 @@ class ReviewController extends Controller
         $excelHeaders = ['product_id', 'Review1', 'Review2', 'Review3', 'Review4', 'Review5'];
 
         /* Fetch reviews and group by product_id */
-        $groupedReviews = Review::whereBetween('id', [1, 6])
-            ->orderBy('product_id')
-            ->orderBy('id')
+        $groupedReviews = Review::whereBetween('id', [1, 6])            
+            ->orderBy('id','desc')
             ->get()
             ->groupBy('product_id'); // Group all reviews by product_id
 
@@ -640,7 +639,7 @@ class ReviewController extends Controller
         $records = Review::query();
         $records = $records->offset($request->range_from - 1)
             ->limit($request->range_to - $request->range_from + 1)
-            ->orderBy('id', 'asc')
+            ->orderBy('id', 'desc')
             ->get()
 
             ->map(function ($review) {

@@ -311,8 +311,7 @@ class ProductController extends BaseController
 		$product->sku = $request->sku;
 		$product->website_ids = implode(',', $request->websites);
 		$product->status = 'draft';
-		 
-		$product->quote_available = $request->quote_available;
+			$product->quote_available = $request->quote_available;
 		
 		$product->created_at = now();
 		$product->updated_at = now();
@@ -1665,8 +1664,8 @@ class ProductController extends BaseController
 		foreach ($input as $key => $value) {
 			$product->$key = $value;
 		}
-	 
-		$product->quote_available = $request->quote_available;
+
+			$product->quote_available = $request->quote_available;
 		
 		/* Save the product */
 		$product->save();
@@ -2852,7 +2851,8 @@ class ProductController extends BaseController
  *             @OA\Property(property="status", type="string", example="error"),
  *             @OA\Property(property="message", type="string", example="Product not found.")
  *         )
- *     )
+ *     ),
+ *  security={{"bearerAuth":{}}}
  * )
  */
 public function getStoreUrl(Request $request)
@@ -2869,11 +2869,20 @@ public function getStoreUrl(Request $request)
     }
 
     // Load only your required relations
-    $product = Product::with([
-        'seoProductUrl',
-        'latestChildCategory.seoUrl',
-        'latestChildCategory.most_parent.seoUrl'
-    ])->find($request->product_id);
+		$product = Product::find($request->product_id); // no with()
+
+		if (!$product) {
+			return response()->json([
+				'status' => 'error',
+				'message' => 'Product not found',
+			], 404);
+		}
+
+		// now you can safely call your methods
+		$parentCategory = ltrim($product->parent_category_url() ?? '', '/');
+		$childCategory  = ltrim($product->category_url() ?? '', '/');
+		$productSlug    = ltrim(optional($product->seoProductUrl)->url ?? '', '/');
+
 
     if (!$product) {
         return response()->json([
