@@ -2852,7 +2852,8 @@ class ProductController extends BaseController
  *             @OA\Property(property="status", type="string", example="error"),
  *             @OA\Property(property="message", type="string", example="Product not found.")
  *         )
- *     )
+ *     ),
+ *  security={{"bearerAuth":{}}}
  * )
  */
 public function getStoreUrl(Request $request)
@@ -2869,11 +2870,20 @@ public function getStoreUrl(Request $request)
     }
 
     // Load only your required relations
-    $product = Product::with([
-        'seoProductUrl',
-        'latestChildCategory.seoUrl',
-        'latestChildCategory.most_parent.seoUrl'
-    ])->find($request->product_id);
+		$product = Product::find($request->product_id); // no with()
+
+		if (!$product) {
+			return response()->json([
+				'status' => 'error',
+				'message' => 'Product not found',
+			], 404);
+		}
+
+		// now you can safely call your methods
+		$parentCategory = ltrim($product->parent_category_url() ?? '', '/');
+		$childCategory  = ltrim($product->category_url() ?? '', '/');
+		$productSlug    = ltrim(optional($product->seoProductUrl)->url ?? '', '/');
+
 
     if (!$product) {
         return response()->json([
