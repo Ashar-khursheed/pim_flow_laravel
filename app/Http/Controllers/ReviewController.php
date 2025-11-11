@@ -12,73 +12,81 @@ use App\Repository\ExcelRepository;
 
 use App\Jobs\ImportReviewJob;
 use App\Services\ExcelImporterService;
- 
+
 class ReviewController extends Controller
 {
-     /**
- * @OA\Get(
- *     path="/api/reviews",
- *     summary="Get all reviews with search and pagination",
- *     description="Returns a paginated list of reviews. Supports global search by customer name, email, product, or comment.",
- *     tags={"Reviews"},
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Parameter(
- *         name="search",
- *         in="query",
- *         description="Global search keyword (searches name, email, comment, etc.)",
- *         required=false,
- *         @OA\Schema(type="string", example="John")
- *     ),
- *     @OA\Parameter(
- *         name="page",
- *         in="query",
- *         description="Page number for pagination",
- *         required=false,
- *         @OA\Schema(type="integer", example=1)
- *     ),
- *     @OA\Parameter(
- *         name="per_page",
- *         in="query",
- *         description="Number of items per page",
- *         required=false,
- *         @OA\Schema(type="integer", example=10)
- *     ),
- *     @OA\Parameter(
- *         name="sort_by",
- *         in="query",
- *         description="Column name to sort by",
- *         required=false,
- *         @OA\Schema(type="string", enum={"id"}, example="id")
- *     ),
- *     @OA\Parameter(
- *         name="sort_dir",
- *         in="query",
- *         description="Sort direction (asc or desc)",
- *         required=false,
- *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="Paginated list of reviews",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Reviews fetched successfully."),
- *             @OA\Property(property="current_page", type="integer", example=1),
- *             @OA\Property(property="per_page", type="integer", example=10),
- *             @OA\Property(property="total_records", type="integer", example=45),
- *             @OA\Property(property="total_pages", type="integer", example=5),
- *            
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized"
- *     )
- * )
- */
+    /**
+     * @OA\Get(
+     *     path="/api/reviews",
+     *     summary="Get all reviews with search and pagination",
+     *     description="Returns a paginated list of reviews. Supports global search by customer name, email, product, or comment.",
+     *     tags={"Reviews"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Global search keyword (searches name, email, comment, etc.)",
+     *         required=false,
+     *         @OA\Schema(type="string", example="John")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number for pagination",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *      @OA\Parameter(
+     * 				name="status",
+     *				in="query",
+     *				description="Filter products by status (e.g., draft, published)",
+     *				required=false,
+     *				@OA\Schema(type="string", enum={"draft","published"},example="published")
+     *				),
+     *     @OA\Parameter(
+     *         name="sort_by",
+     *         in="query",
+     *         description="Column name to sort by",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"id"}, example="id")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_dir",
+     *         in="query",
+     *         description="Sort direction (asc or desc)",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Paginated list of reviews",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Reviews fetched successfully."),
+     *             @OA\Property(property="current_page", type="integer", example=1),
+     *             @OA\Property(property="per_page", type="integer", example=10),
+     *             @OA\Property(property="total_records", type="integer", example=45),
+     *             @OA\Property(property="total_pages", type="integer", example=5),
+     *            
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     )
+     * )
+     */
 
     public function index(Request $request)
     {
@@ -90,14 +98,18 @@ class ReviewController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('customer_name', 'LIKE', "%{$search}%")
                     ->orWhere('customer_email', 'LIKE', "%{$search}%")
-                    ->orWhere('comment', 'LIKE', "%{$search}%")
+                    ->orWhere( 'comment', 'LIKE', "%{$search}%")
+                    ->orWhere('product_id', 'LIKE', "%{$search}%")
                     ->orWhereHas('product', function ($productQuery) use ($search) {
                         $productQuery->where('name', 'LIKE', "%{$search}%")
                             ->orWhere('sku', 'LIKE', "%{$search}%");
                     });
             });
         }
-
+        $status = $request->input('status');
+        if ($status !== null) {
+            $query->where('status', $status);
+        }
         // Apply sorting
         $sortBy = $request->input('sort_by', 'created_at');
         $sortDir = $request->input('sort_dir', 'desc');

@@ -47,7 +47,7 @@ class ProductXMLFeedWatchController extends Controller
     public function getProductFeed(Request $request)
     {
         // Cache the feed for 1 hour with pagination parameters
-        $cacheKey = 'datafeedwatch_feed' . md5($request->fullUrl());
+        $cacheKey = 'datafeedwatch_feed_r' . md5($request->fullUrl());
 
         $data = Cache::remember($cacheKey, 3600, function () use ($request) {
             return $this->generateProductFeed($request);
@@ -218,27 +218,26 @@ class ProductXMLFeedWatchController extends Controller
 
         $website = config('app.url', 'https://www.thehorecastore.com');
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';           
         $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
-
 
         foreach ($formattedProducts as $product) {
             $xml .= '<channel>';
             $xml .= '<title>The Horeca Store</title>';
-            $xml .= '<link>' . htmlspecialchars($website) . '</link>';
+            $xml .= '<link>' . $website . '</link>';
             $xml .= '<description>' . htmlspecialchars($product['description']) . '</description>';
             $xml .= '<item>';
-            $xml .= '<g:id>' . htmlspecialchars($product['id']) . '</g:id>';
-            $xml .= '<g:title>' . htmlspecialchars($product['name']) . '</g:title>';
-            $xml .= '<g:link>' . htmlspecialchars($website . '/' . $product['slug']) . '</g:link>';
+            $xml .= '<g:id>' . $product['id'] . '</g:id>';
+            $xml .= '<g:title>' . $product['name'] . '</g:title>';
+            $xml .= '<g:link>' . $website . '/' . $product['slug'] . '</g:link>';
             $xml .= '<g:description>' . htmlspecialchars($product['description']) . '</g:description>';
             $xml .= '<g:price>' . number_format($product['price'], 2) . '</g:price>';
             $xml .= '<g:sale_price>' . number_format($product['sale_price'], 2) . '</g:sale_price>';
-            $xml .= '<g:availability>' . htmlspecialchars($product['availability'] ?? 'in stock') . '</g:availability>';
-            $xml .= '<g:brand>' . htmlspecialchars($product['brand'] ?? '') . '</g:brand>';
+            $xml .= '<g:availability>' . $product['availability'] . '</g:availability>';
+            $xml .= '<g:brand>' . $product['brand']. '</g:brand>';
 
             if ($product['image']) {
-                $xml .= '<g:image_link>' . htmlspecialchars($product['image']) . '</g:image_link>';
+                $xml .= '<g:image_link>' . $product['image'] . '</g:image_link>';
             }
 
             // Attributes
@@ -246,8 +245,8 @@ class ProductXMLFeedWatchController extends Controller
                 foreach ($product['attributes'] as $attr) {
                     $xml .= '<g:product_detail>';
                     $xml .= '<g:section_name>Key Specification</g:section_name>';
-                    $xml .= '<g:attribute_name>' . htmlspecialchars($attr['attribute_name']) . '</g:attribute_name>';
-                    $xml .= '<g:attribute_value>' . htmlspecialchars($attr['attribute_value']) . '</g:attribute_value>';
+                    $xml .= '<g:attribute_name>' . $attr['attribute_name'] . '</g:attribute_name>';
+                    $xml .= '<g:attribute_value>' . $attr['attribute_value'] . '</g:attribute_value>';
                     $xml .= '</g:product_detail>';
                 }
             }
@@ -256,14 +255,14 @@ class ProductXMLFeedWatchController extends Controller
             if (!empty($product['product_highlight'])) {
                 foreach ($product['product_highlight'] as $highlight) {
 
-                    $xml .= '<g:product_highlight>' . htmlspecialchars($highlight['attribute_name'] ?? '') . ' : ' . htmlspecialchars($highlight['attrValue'] ?? '') . '</g:product_highlight>';
+                    $xml .= '<g:product_highlight>' . $highlight['attribute_name'] ?? '' . ' : ' . $highlight['attrValue'] ?? '' . '</g:product_highlight>';
                 }
             }
 
             $xml .= '<g:identifier_exists>no</g:identifier_exists>';
             $xml .= '<g:condition>new</g:condition>';
-            $xml .= '<g:google_product_category>Home & Garden > Kitchen & Dining > Barware > Beer Dispensers & Taps</g:google_product_category>';
-            $xml .= '<g:product_type>' . htmlspecialchars($product['product_type']) . '</g:product_type>';
+            $xml .= '<g:google_product_category>'.$product['google_product_category'].'</g:google_product_category>';
+            $xml .= '<g:product_type>' . $product['product_type'] . '</g:product_type>';
             $xml .= '</item>';
             $xml .= '</channel>';
         }
