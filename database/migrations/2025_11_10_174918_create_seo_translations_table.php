@@ -15,22 +15,21 @@ return new class extends Migration
 		Schema::create('seo_management_translations', function (Blueprint $table) {
 			$table->id();
 			$table->string("locale", 2);
-			$table->integer("seo_id");
-			$table->string("primary_keyword");
-			$table->string("title_tag")->nullable();
-			$table->string("meta_title")->nullable();
-			$table->string("meta_description")->nullable();
-			$table->string("og_title")->nullable();
-			$table->string("og_description")->nullable();
-			$table->text("og_image_url")->nullable();
-			$table->string("og_image_alt_text")->nullable();
-			$table->string("og_image_name")->nullable();
+			$table->integer("seo_management_id");$table->string("primary_keyword_tr");
+			$table->string("title_tag_tr")->nullable();
+			$table->string("meta_title_tr")->nullable();
+			$table->string("meta_description_tr")->nullable();
+			$table->string("og_title_tr")->nullable();
+			$table->string("og_description_tr")->nullable();
+			$table->text("og_image_url_tr")->nullable();
+			$table->string("og_image_alt_text_tr")->nullable();
+			$table->string("og_image_name_tr")->nullable();
 			$table->text("paragraph_1_tr")->nullable();
 			$table->text("paragraph_2_tr")->nullable();
 			$table->text("paragraph_3_tr")->nullable();
 			$table->text("paragraph_4_tr")->nullable();
-			$table->text("banner_image_file")->nullable();
-			$table->string("banner_image_alt_text")->nullable();
+			$table->text("banner_image_file_tr")->nullable();
+			$table->string("banner_image_alt_text_tr")->nullable();
 		});
 
 		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {

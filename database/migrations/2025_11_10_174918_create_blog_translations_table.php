@@ -66,11 +66,11 @@ return new class extends Migration
 
 			/* Direct SQL insert for categories */
 			DB::table('brand_translations')->insertUsing(
-				['locale', 'category_id', 'name_tr', 'description_tr'],
+				['locale', 'brand_id', 'name_tr', 'description_tr'],
 				DB::table('ec_brands')
 				->select(
 					DB::raw("'en' as locale"),
-					'id as category_id',
+					'id as brand_id',
 					'name as name_tr',
 					'description as description_tr',
 				)

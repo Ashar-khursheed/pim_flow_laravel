@@ -435,6 +435,11 @@ class SeoManagementController extends Controller
 	 *         required=true,
 	 *         @OA\Schema(type="integer")
 	 *     ),
+	 *     @OA\Parameter(
+	 *         name="relational_type",
+	 *         in="query",
+	 *         required=true
+	 *     ),
 	 *     @OA\Response(response=200, description="Single SEO Record"),
 	 *     @OA\Response(response=404, description="Not found"),
 	 *     security={{"bearerAuth":{}}}
@@ -1582,25 +1587,28 @@ class SeoManagementController extends Controller
 	 *     tags={"SEO Management"},
 	 *     @OA\RequestBody(
 	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             required={"id", "locale", "primary_keyword", "title_tag", "meta_title", "meta_description"},
-	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the SEO record to translate"),
-	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
-	 *             @OA\Property(property="primary_keyword", type="string", example="best restaurant equipment", description="Primary keyword"),
-	 *             @OA\Property(property="title_tag", type="string", example="Restaurant Equipment | HorecaStore", description="Title tag"),
-	 *             @OA\Property(property="meta_title", type="string", example="Best Restaurant Equipment", description="Meta title"),
-	 *             @OA\Property(property="meta_description", type="string", example="Find the best restaurant equipment", description="Meta description"),
-	 *             @OA\Property(property="og_title", type="string", example="Restaurant Equipment", description="OG title"),
-	 *             @OA\Property(property="og_description", type="string", example="Quality equipment for restaurants", description="OG description"),
-	 *             @OA\Property(property="og_image_file", type="string", format="binary", description="OG image file"),
-	 *             @OA\Property(property="og_image_alt_text", type="string", example="Restaurant equipment image", description="OG image alt text"),
-	 *             @OA\Property(property="og_image_name", type="string", example="equipment.jpg", description="OG image name"),
-	 *             @OA\Property(property="paragraph_1", type="string", example="First paragraph content", description="Paragraph 1"),
-	 *             @OA\Property(property="paragraph_2", type="string", example="Second paragraph content", description="Paragraph 2"),
-	 *             @OA\Property(property="paragraph_3", type="string", example="Third paragraph content", description="Paragraph 3"),
-	 *             @OA\Property(property="paragraph_4", type="string", example="Fourth paragraph content", description="Paragraph 4"),
-	 *             @OA\Property(property="banner_image_file", type="string", format="binary", description="Banner image file"),
-	 *             @OA\Property(property="banner_image_alt_text", type="string", example="Banner image", description="Banner image alt text"),
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"id", "locale", "primary_keyword", "title_tag", "meta_title", "meta_description"},
+	 *                 @OA\Property(property="id", type="integer", example=1, description="ID of the SEO record to translate"),
+	 *                 @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
+	 *                 @OA\Property(property="primary_keyword", type="string", example="best restaurant equipment", description="Primary keyword"),
+	 *                 @OA\Property(property="title_tag", type="string", example="Restaurant Equipment | HorecaStore", description="Title tag"),
+	 *                 @OA\Property(property="meta_title", type="string", example="Best Restaurant Equipment", description="Meta title"),
+	 *                 @OA\Property(property="meta_description", type="string", example="Find the best restaurant equipment", description="Meta description"),
+	 *                 @OA\Property(property="og_title", type="string", example="Restaurant Equipment", description="OG title"),
+	 *                 @OA\Property(property="og_description", type="string", example="Quality equipment for restaurants", description="OG description"),
+	 *                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG image file"),
+	 *                 @OA\Property(property="og_image_alt_text", type="string", example="Restaurant equipment image", description="OG image alt text"),
+	 *                 @OA\Property(property="og_image_name", type="string", example="equipment.jpg", description="OG image name"),
+	 *                 @OA\Property(property="paragraph_1", type="string", example="First paragraph content", description="Paragraph 1"),
+	 *                 @OA\Property(property="paragraph_2", type="string", example="Second paragraph content", description="Paragraph 2"),
+	 *                 @OA\Property(property="paragraph_3", type="string", example="Third paragraph content", description="Paragraph 3"),
+	 *                 @OA\Property(property="paragraph_4", type="string", example="Fourth paragraph content", description="Paragraph 4"),
+	 *                 @OA\Property(property="banner_image_file", type="string", format="binary", description="Banner image file"),
+	 *                 @OA\Property(property="banner_image_alt_text", type="string", example="Banner image", description="Banner image alt text")
+	 *             )
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
@@ -1650,8 +1658,8 @@ class SeoManagementController extends Controller
 				$validated['banner_image_file'] = $bannerImagePath;
 			}
 
-			$validated['og_image_url'] = $this->uploadImageToWebpS3FromFile($request, 'og_image_file', env('STORAGE_ENV') . '/seo/og_img');
-			$validated['banner_image_file'] = $this->uploadImageToWebpS3FromFile($request, 'banner_image_file', env('STORAGE_ENV') . '/seo/banners');
+			$validated['og_image_url'] = uploadImageToWebpS3FromFile($request, 'og_image_file', env('STORAGE_ENV') . '/seo/og_img');
+			$validated['banner_image_file'] = uploadImageToWebpS3FromFile($request, 'banner_image_file', env('STORAGE_ENV') . '/seo/banners');
 
 			/* Update SEO translation - required fields */
 			$seo->translateOrNew($locale)->primary_keyword_tr = $validated['primary_keyword'];

@@ -38227,6 +38227,11 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "relational_type",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -38672,6 +38677,134 @@
                 "responses": {
                     "200": {
                         "description": "URL availability checked successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/seo-management/save-translation": {
+            "post": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Save or update SEO translation",
+                "description": "This endpoint saves or updates translations for SEO management.",
+                "operationId": "0c334136c55255b8db36bfd8fc4b6cda",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "locale",
+                                    "primary_keyword",
+                                    "title_tag",
+                                    "meta_title",
+                                    "meta_description"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID of the SEO record to translate",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "locale": {
+                                        "description": "Locale code for translation (e.g. ar)",
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "primary_keyword": {
+                                        "description": "Primary keyword",
+                                        "type": "string",
+                                        "example": "best restaurant equipment"
+                                    },
+                                    "title_tag": {
+                                        "description": "Title tag",
+                                        "type": "string",
+                                        "example": "Restaurant Equipment | HorecaStore"
+                                    },
+                                    "meta_title": {
+                                        "description": "Meta title",
+                                        "type": "string",
+                                        "example": "Best Restaurant Equipment"
+                                    },
+                                    "meta_description": {
+                                        "description": "Meta description",
+                                        "type": "string",
+                                        "example": "Find the best restaurant equipment"
+                                    },
+                                    "og_title": {
+                                        "description": "OG title",
+                                        "type": "string",
+                                        "example": "Restaurant Equipment"
+                                    },
+                                    "og_description": {
+                                        "description": "OG description",
+                                        "type": "string",
+                                        "example": "Quality equipment for restaurants"
+                                    },
+                                    "og_image_file": {
+                                        "description": "OG image file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "og_image_alt_text": {
+                                        "description": "OG image alt text",
+                                        "type": "string",
+                                        "example": "Restaurant equipment image"
+                                    },
+                                    "og_image_name": {
+                                        "description": "OG image name",
+                                        "type": "string",
+                                        "example": "equipment.jpg"
+                                    },
+                                    "paragraph_1": {
+                                        "description": "Paragraph 1",
+                                        "type": "string",
+                                        "example": "First paragraph content"
+                                    },
+                                    "paragraph_2": {
+                                        "description": "Paragraph 2",
+                                        "type": "string",
+                                        "example": "Second paragraph content"
+                                    },
+                                    "paragraph_3": {
+                                        "description": "Paragraph 3",
+                                        "type": "string",
+                                        "example": "Third paragraph content"
+                                    },
+                                    "paragraph_4": {
+                                        "description": "Paragraph 4",
+                                        "type": "string",
+                                        "example": "Fourth paragraph content"
+                                    },
+                                    "banner_image_file": {
+                                        "description": "Banner image file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "banner_image_alt_text": {
+                                        "description": "Banner image alt text",
+                                        "type": "string",
+                                        "example": "Banner image"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
                         "content": {
                             "application/json": {}
                         }
