@@ -24248,7 +24248,51 @@
                 ],
                 "summary": "Get products.xml",
                 "description": "Returns the XML sitemap containing public URLs of the website.",
-                "operationId": "1e4d462adaad8731bb1bbbe38a5cb9c1",
+                "operationId": "8a4b35836832c6da804d9d35b554f2c3",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-1.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "386cdad0e9d90ba7c5c6f37ca2e2e0d7",
                 "responses": {
                     "200": {
                         "description": "Sitemap XML generated successfully",
@@ -36379,47 +36423,11 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Number of items per page (default: 50)",
+                        "description": "Number of items per page (default: 500)",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "example": 50
-                        }
-                    },
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number (default: 1)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "sort_by",
-                        "in": "query",
-                        "description": "Sort by column (default: id)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "id"
-                            ]
-                        }
-                    },
-                    {
-                        "name": "sort_direction",
-                        "in": "query",
-                        "description": "Sort direction (asc/desc, default: desc)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ],
-                            "example": "asc"
+                            "example": 500
                         }
                     }
                 ],
@@ -37498,21 +37506,121 @@
                 "tags": [
                     "Reviews"
                 ],
-                "summary": "Get all reviews",
+                "summary": "Get all reviews with search and pagination",
+                "description": "Returns a paginated list of reviews. Supports global search by customer name, email, product, or comment.",
                 "operationId": "346169ce6ab0c633530a7cedc1a25fab",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Global search keyword (searches name, email, comment, etc.)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "John"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter products by status (e.g., draft, published)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "published"
+                            ],
+                            "example": "published"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id"
+                            ],
+                            "example": "id"
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of reviews",
+                        "description": "Paginated list of reviews",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Review"
-                                    }
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Reviews fetched successfully."
+                                        },
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 45
+                                        },
+                                        "total_pages": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
                     }
                 },
                 "security": [
@@ -37526,6 +37634,7 @@
                     "Reviews"
                 ],
                 "summary": "Create a new review",
+                "description": "Allows an authenticated user to create a product review with optional images.",
                 "operationId": "154c71f5f72b459d998f5ea451bd4c96",
                 "requestBody": {
                     "required": true,
@@ -37566,6 +37675,7 @@
                                         "example": "published"
                                     },
                                     "images[]": {
+                                        "description": "Multiple review images (optional)",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
@@ -37580,7 +37690,33 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Review created"
+                        "description": "Review created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Review created successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
                     }
                 },
                 "security": [
@@ -37680,18 +37816,12 @@
                                             "format": "binary"
                                         }
                                     },
-                                    "delete_images": {
+                                    "delete_images[]": {
                                         "description": "List of image URLs to delete",
                                         "type": "array",
                                         "items": {
                                             "type": "string"
                                         }
-                                    },
-                                    "created_at": {
-                                        "description": "Modify review creation time",
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2024-03-13T12:00:00Z"
                                     }
                                 },
                                 "type": "object"
@@ -37758,6 +37888,114 @@
                     },
                     "404": {
                         "description": "Review not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/reviews/import": {
+            "post": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Import reviews from an excel file",
+                "operationId": "25479395a594297be7bb58b491428c80",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "upload_file": {
+                                        "description": "xlsx file (.xlsx) max 2MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Imported successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/reviews/export": {
+            "post": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Export Excel Format",
+                "operationId": "3ad267d7bb7c580c6e6103735d7cd491",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/reviews/exportReview": {
+            "post": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Export app keyword data to Excel",
+                "operationId": "69c7bfe0b29ae0a3cc8420d38d24cdfa",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "range_from": {
+                                        "description": "Starting range (must be >=1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and max 5000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -42572,58 +42810,6 @@
                         "items": {
                             "$ref": "#/components/schemas/CategoryHierarchy"
                         }
-                    }
-                },
-                "type": "object"
-            },
-            "Review": {
-                "title": "Review",
-                "description": "Review Model",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "customer_name": {
-                        "type": "string",
-                        "example": "John Doe"
-                    },
-                    "customer_email": {
-                        "type": "string",
-                        "example": "john@example.com"
-                    },
-                    "product_id": {
-                        "type": "integer",
-                        "example": 10
-                    },
-                    "star": {
-                        "type": "integer",
-                        "example": 5
-                    },
-                    "comment": {
-                        "type": "string",
-                        "example": "Great product!"
-                    },
-                    "status": {
-                        "type": "string",
-                        "example": "published"
-                    },
-                    "images": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "example": "https://s3.amazonaws.com/bucket/review1.jpg"
-                        }
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-03-13T12:34:56Z"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-03-14T12:34:56Z"
                     }
                 },
                 "type": "object"

@@ -507,6 +507,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 
 	Route::apiResource('reviews', ReviewController::class);
+	Route::post('reviews/import', [ReviewController::class,'import']);
+	Route::post('reviews/export', [ReviewController::class,'export']);
+	Route::post('reviews/exportReview', [ReviewController::class,'exportReview']);
 	Route::apiResource('sliders', SliderController::class);
 
 	// Discount API Routes
@@ -884,7 +887,7 @@ Route::post('/frontend/made-to-orders', [F_MadeToOrderController::class, 'store'
 Route::post('/find-shipping-charges', [ShippingReportController::class, 'findShippingCharges']);
 Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
 Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
-// Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
+Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
 
 Route::get('/frontend/products-1.xml', [SitemapController::class, 'getProductsSitemap1']);
 Route::get('/frontend/products-2.xml', [SitemapController::class, 'getProductsSitemap2']);

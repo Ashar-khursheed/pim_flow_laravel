@@ -1667,7 +1667,6 @@ class ProductController extends BaseController
 		}
 
 		$product->quote_available = $request->quote_available;
-
 		/* Save the product */
 		$product->save();
 
