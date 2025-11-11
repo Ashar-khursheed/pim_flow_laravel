@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
@@ -310,11 +311,11 @@ class SeoManagementController extends Controller
 
 			// Create/update the SEO record first
 			$seoRecord = SeoManagement::where('url', $request->url)
-				->where(function ($query) use ($request) {
-					$query->where('relational_id', '!=', $request->relational_id)
-						->orWhere('relational_type', '!=', $request->relational_type);
-				})
-				->first();
+			->where(function ($query) use ($request) {
+				$query->where('relational_id', '!=', $request->relational_id)
+				->orWhere('relational_type', '!=', $request->relational_type);
+			})
+			->first();
 
 			if ($seoRecord) {
 				return response()->json([
@@ -369,6 +370,24 @@ class SeoManagementController extends Controller
 			$seoData['schema'] = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
 			$seo = SeoManagement::create($seoData);
+			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+				$seo->translateOrNew('en')->primary_keyword_tr = $seo->primary_keyword;
+				$seo->translateOrNew('en')->title_tag_tr = $seo->title_tag;
+				$seo->translateOrNew('en')->meta_title_tr = $seo->meta_title;
+				$seo->translateOrNew('en')->meta_description_tr = $seo->meta_description;
+				$seo->translateOrNew('en')->og_title_tr = $seo->og_title;
+				$seo->translateOrNew('en')->og_description_tr = $seo->og_description;
+				$seo->translateOrNew('en')->og_image_url_tr = $seo->og_image_url;
+				$seo->translateOrNew('en')->og_image_alt_text_tr = $seo->og_image_alt_text;
+				$seo->translateOrNew('en')->og_image_name_tr = $seo->og_image_name;
+				$seo->translateOrNew('en')->paragraph_1_tr = $seo->paragraph_1;
+				$seo->translateOrNew('en')->paragraph_2_tr = $seo->paragraph_2;
+				$seo->translateOrNew('en')->paragraph_3_tr = $seo->paragraph_3;
+				$seo->translateOrNew('en')->paragraph_4_tr = $seo->paragraph_4;
+				$seo->translateOrNew('en')->banner_image_file_tr = $seo->banner_image_file;
+				$seo->translateOrNew('en')->banner_image_alt_text_tr = $seo->banner_image_alt_text;
+				$seo->save();
+			}
 
 			if (!empty($validated['secondary_keywords'])) {
 				$secondaryKeywords = json_decode($validated['secondary_keywords'], true);
@@ -433,11 +452,11 @@ class SeoManagementController extends Controller
 		$relationalType = $request->query('relational_type');
 
 		$seoRecord = SeoManagement::with('secondaryKeywordDetails')
-			->where('relational_id', $relation_id)
-			->when($relationalType, function ($query, $relationalType) {
-				return $query->where('relational_type', $relationalType);
-			})
-			->first();
+		->where('relational_id', $relation_id)
+		->when($relationalType, function ($query, $relationalType) {
+			return $query->where('relational_type', $relationalType);
+		})
+		->first();
 
 		if (!$seoRecord) {
 			return response()->json([
@@ -554,7 +573,7 @@ class SeoManagementController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	 
+
 	public function update(Request $request,$relational_type, $id)
 	{   //$relational_type
 		if (!auth()->user()->can('update seo mgmt')) {
@@ -563,7 +582,7 @@ class SeoManagementController extends Controller
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
- 
+
 		try {
 			$rules = [
 				'relational_id' => 'required|integer',
@@ -630,8 +649,8 @@ class SeoManagementController extends Controller
 			// 	], 403);
 			// }
 			$seoRecord = SeoManagement::where('url', $request->url)
-				->where('id', '!=', $id)
-				->first();
+			->where('id', '!=', $id)
+			->first();
 
 			if ($seoRecord) {
 				$typeNameMap = [
@@ -642,10 +661,10 @@ class SeoManagementController extends Controller
 				];
 
 				$typeName = $typeNameMap[$seoRecord->relational_type] ?? $seoRecord->relational_type;
-				$relatedName = $seoRecord->relational->name 
-					?? $seoRecord->relational->title 
-					?? $seoRecord->relational->slug 
-					?? 'Unknown';
+				$relatedName = $seoRecord->relational->name
+				?? $seoRecord->relational->title
+				?? $seoRecord->relational->slug
+				?? 'Unknown';
 
 				return response()->json([
 					'success' => false,
@@ -722,8 +741,26 @@ class SeoManagementController extends Controller
 			}
 
 			// $schemaArray = $this->generateSchema($seo);
-			// $seoData['schema'] = json_encode($schemaArray); 
+			// $seoData['schema'] = json_encode($schemaArray);
 			$seo->update($seoData);
+			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+				$seo->translateOrNew('en')->primary_keyword_tr = $seo->primary_keyword;
+				$seo->translateOrNew('en')->title_tag_tr = $seo->title_tag;
+				$seo->translateOrNew('en')->meta_title_tr = $seo->meta_title;
+				$seo->translateOrNew('en')->meta_description_tr = $seo->meta_description;
+				$seo->translateOrNew('en')->og_title_tr = $seo->og_title;
+				$seo->translateOrNew('en')->og_description_tr = $seo->og_description;
+				$seo->translateOrNew('en')->og_image_url_tr = $seo->og_image_url;
+				$seo->translateOrNew('en')->og_image_alt_text_tr = $seo->og_image_alt_text;
+				$seo->translateOrNew('en')->og_image_name_tr = $seo->og_image_name;
+				$seo->translateOrNew('en')->paragraph_1_tr = $seo->paragraph_1;
+				$seo->translateOrNew('en')->paragraph_2_tr = $seo->paragraph_2;
+				$seo->translateOrNew('en')->paragraph_3_tr = $seo->paragraph_3;
+				$seo->translateOrNew('en')->paragraph_4_tr = $seo->paragraph_4;
+				$seo->translateOrNew('en')->banner_image_file_tr = $seo->banner_image_file;
+				$seo->translateOrNew('en')->banner_image_alt_text_tr = $seo->banner_image_alt_text;
+				$seo->save();
+			}
 			$seo->refresh();
 
 			return response()->json([
@@ -937,7 +974,7 @@ class SeoManagementController extends Controller
 	 *                 required={"relational_id", "relational_type"},
 	 *                 @OA\Property(property="relational_id", type="integer", example=1915, description="The related entity ID"),
 	 *                 @OA\Property(property="relational_type", type="string", example="Product", description="Type of relation, e.g., Product")
-	 *                
+	 *
 	 *             )
 	 *         )
 	 *     ),
@@ -1039,26 +1076,31 @@ class SeoManagementController extends Controller
 		}
 		$seo = SeoManagement::findOrFail($id);
 		$seo->secondaryKeywordDetails()->delete();
+
+		/* Proceed with deletion */
+		if (method_exists($seo, 'translations')) {
+			$seo->translations()->delete();
+		}
 		$seo->delete();
 
 		return response()->json(['message' => 'Deleted successfully']);
 	}
 
 	private function generateSchema(SeoManagement $seo)
-	{		 
+	{
 		/* Check if the type is 'Product' and relational_id is available */
 		if ($seo->relational_type === 'Product' && $seo->relational_id) {
 			/* Fetch product data from 'ec_products' table */
-			$product = Product::find($seo->relational_id);			 
+			$product = Product::find($seo->relational_id);
 			if ($product) {
 				/* Fetch currency and brand names using relationships */
 				$currencyName = $product->currency ? $product->currency->title : 'USD'; /* Default to 'USD' if no currency found */
 				$brandName = $product->brand ? $product->brand->name : 'Default Brand'; /* Default to 'Default Brand' if no brand found */
 				$firstSupplier = $product->productSuppliers->first();
 				$url = $product->parent_category_url() . '/' .
-                     $product->category_url() . '/' .
-                     ($product->seoProductUrl->url ?? "");
-					  
+				$product->category_url() . '/' .
+				($product->seoProductUrl->url ?? "");
+
 				/* Generate schema with product-specific details */
 				return [
 					"@context" => "https://schema.org",
@@ -1096,16 +1138,16 @@ class SeoManagementController extends Controller
 
 		if ($seo->relational_type === 'Category' && $seo->relational_id) {
 
-		$category = Category::with(['parent.parent.parent'])
-		->where('id', $seo->relational_id)
-		->first(['id', 'name', 'slug', 'order', 'parent_id']);
+			$category = Category::with(['parent.parent.parent'])
+			->where('id', $seo->relational_id)
+			->first(['id', 'name', 'slug', 'order', 'parent_id']);
 
-		$url = null;
-		if ($category) {
-		$url = $this->getCategoryPath($category);		 
-		}
-	 
-			 
+			$url = null;
+			if ($category) {
+				$url = $this->getCategoryPath($category);
+			}
+
+
 			/* If not a product, return the generic WebPage schema */
 			// return [
 			// 	"@context" => "https://schema.org",
@@ -1128,52 +1170,52 @@ class SeoManagementController extends Controller
 			// ];
 
 			return [
-					[
-						"@context" => "https://schema.org",
-						"@type" => $seo->relational_type ?? "CollectionPage",
-						"name" => $seo->meta_title,
+				[
+					"@context" => "https://schema.org",
+					"@type" => $seo->relational_type ?? "CollectionPage",
+					"name" => $seo->meta_title,
+					"description" => $seo->meta_description,
+					"url" => $url,
+					"mainEntity" => [
+						"@type" => "ItemList",
+						"name" => $seo->primary_keyword,
 						"description" => $seo->meta_description,
-						"url" => $url,
-						"mainEntity" => [
-							"@type" => "ItemList",
-							"name" => $seo->primary_keyword,
-							"description" => $seo->meta_description,
-							"itemListElement" => [],
+						"itemListElement" => [],
+					],
+					"image" => [
+						$seo->og_image_url,
+					],
+				],
+				[
+					"@context" => "https://schema.org",
+					"@type" => "BreadcrumbList",
+					"itemListElement" => [
+						[
+							"@type" => "ListItem",
+							"position" => 1,
+							"name" => "Home",
+							"item" => config('app.url'),
 						],
-						"image" => [
-							$seo->og_image_url,
+						[
+							"@type" => "ListItem",
+							"position" => 2,
+							"name" => $seo->meta_title,
+							"item" => config('app.url').'/'.$url,
 						],
 					],
-					[
-						"@context" => "https://schema.org",
-						"@type" => "BreadcrumbList",
-						"itemListElement" => [
-							[
-								"@type" => "ListItem",
-								"position" => 1,
-								"name" => "Home",
-								"item" => config('app.url'),
-							],
-							[
-								"@type" => "ListItem",
-								"position" => 2,
-								"name" => $seo->meta_title,
-								"item" => config('app.url').'/'.$url,
-							],
-						],
-					],
-				];
+				],
+			];
 
 		}
 		if ($seo->relational_type === 'Brand' && $seo->relational_id) {
 
-		 	$brand = Brand::findOrFail($seo->relational_id);
+			$brand = Brand::findOrFail($seo->relational_id);
 			$url = null;
-		 
+
 			if($brand){
 				$url = 'brands/'.$brand->seoUrl->url;
 			}
-			 
+
 			/* If not a Brand, return the generic WebPage schema */
 			return [
 				"@context" => "https://schema.org",
@@ -1188,7 +1230,7 @@ class SeoManagementController extends Controller
 					"url" => $seo->og_image_url,
 					"name" => $seo->og_image_name,
 					"description" => $seo->og_image_alt_text
-				],				 
+				],
 				"aggregateRating" => [
 					"@type" => "AggregateRating",
 					"ratingValue" => $seo->schema_rating,
@@ -1200,13 +1242,13 @@ class SeoManagementController extends Controller
 
 		if ($seo->relational_type === 'Blog' && $seo->relational_id) {
 
-		 $blog = Blog::findOrFail($seo->relational_id);
-		$url = null;
-		 
-		if($blog){
-	 		$url = '/blog/'.$blog->slug;
-		}
-			 
+			$blog = Blog::findOrFail($seo->relational_id);
+			$url = null;
+
+			if($blog){
+				$url = '/blog/'.$blog->slug;
+			}
+
 			/* If not a Blog, return the generic WebPage schema */
 			return [
 				"@context" => "https://schema.org",
@@ -1249,8 +1291,8 @@ class SeoManagementController extends Controller
 
 		}
 
- 
-					 
+
+
 		/* If not a product, return the generic WebPage schema */
 		// return [
 		// 	"@context" => "https://schema.org",
@@ -1388,11 +1430,11 @@ class SeoManagementController extends Controller
 
 		/* Fetch records with related secondary keywords */
 		$records = SeoManagement::with('secondaryKeywordDetails')
-			->where('relational_type', $request->relational_type)
-			->offset($request->range_from - 1)
-			->limit($request->range_to - $request->range_from + 1)
-			->orderBy('id', 'asc')
-			->get();
+		->where('relational_type', $request->relational_type)
+		->offset($request->range_from - 1)
+		->limit($request->range_to - $request->range_from + 1)
+		->orderBy('id', 'asc')
+		->get();
 
 		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
@@ -1530,5 +1572,145 @@ class SeoManagementController extends Controller
 			'success' => true,
 			'data' => "The URL '{$request->url}' is available and not assigned to any {$request->type}.",
 		], 200);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/seo-management/save-translation",
+	 *     summary="Save or update SEO translation",
+	 *     description="This endpoint saves or updates translations for SEO management.",
+	 *     tags={"SEO Management"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"id", "locale", "primary_keyword", "title_tag", "meta_title", "meta_description"},
+	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the SEO record to translate"),
+	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
+	 *             @OA\Property(property="primary_keyword", type="string", example="best restaurant equipment", description="Primary keyword"),
+	 *             @OA\Property(property="title_tag", type="string", example="Restaurant Equipment | HorecaStore", description="Title tag"),
+	 *             @OA\Property(property="meta_title", type="string", example="Best Restaurant Equipment", description="Meta title"),
+	 *             @OA\Property(property="meta_description", type="string", example="Find the best restaurant equipment", description="Meta description"),
+	 *             @OA\Property(property="og_title", type="string", example="Restaurant Equipment", description="OG title"),
+	 *             @OA\Property(property="og_description", type="string", example="Quality equipment for restaurants", description="OG description"),
+	 *             @OA\Property(property="og_image_file", type="string", format="binary", description="OG image file"),
+	 *             @OA\Property(property="og_image_alt_text", type="string", example="Restaurant equipment image", description="OG image alt text"),
+	 *             @OA\Property(property="og_image_name", type="string", example="equipment.jpg", description="OG image name"),
+	 *             @OA\Property(property="paragraph_1", type="string", example="First paragraph content", description="Paragraph 1"),
+	 *             @OA\Property(property="paragraph_2", type="string", example="Second paragraph content", description="Paragraph 2"),
+	 *             @OA\Property(property="paragraph_3", type="string", example="Third paragraph content", description="Paragraph 3"),
+	 *             @OA\Property(property="paragraph_4", type="string", example="Fourth paragraph content", description="Paragraph 4"),
+	 *             @OA\Property(property="banner_image_file", type="string", format="binary", description="Banner image file"),
+	 *             @OA\Property(property="banner_image_alt_text", type="string", example="Banner image", description="Banner image alt text"),
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function saveTranslation(Request $request)
+	{
+		/* Validate request data */
+		$validated = $request->validate([
+			'id' => 'required|exists:seo_management,id',
+			'locale' => 'required|string|in:ar',
+			'primary_keyword' => 'required|string',
+			'title_tag' => 'required|string',
+			'meta_title' => 'required|string',
+			'meta_description' => 'required|string',
+			'og_title' => 'nullable|string',
+			'og_description' => 'nullable|string',
+			'og_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
+			'og_image_alt_text' => 'nullable|string',
+			'og_image_name' => 'nullable|string',
+			'paragraph_1' => 'nullable|string',
+			'paragraph_2' => 'nullable|string',
+			'paragraph_3' => 'nullable|string',
+			'paragraph_4' => 'nullable|string',
+			'banner_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
+			'banner_image_alt_text' => 'nullable|string',
+		]);
+
+		$seo = SeoManagement::find($validated['id']);
+
+		if (!$seo) {
+			return response()->json([
+				'success' => false,
+				'message' => __("SEO record not found"),
+			], 404);
+		}
+
+		DB::beginTransaction();
+		try {
+			$locale = $validated['locale'];
+
+			/* Handle banner image upload if provided */
+			if ($request->hasFile('banner_image_file')) {
+				$bannerImage = $request->file('banner_image_file');
+				$bannerImagePath = $bannerImage->store('seo/banners', 'public');
+				$validated['banner_image_file'] = $bannerImagePath;
+			}
+
+			$validated['og_image_url'] = $this->uploadImageToWebpS3FromFile($request, 'og_image_file', env('STORAGE_ENV') . '/seo/og_img');
+			$validated['banner_image_file'] = $this->uploadImageToWebpS3FromFile($request, 'banner_image_file', env('STORAGE_ENV') . '/seo/banners');
+
+			/* Update SEO translation - required fields */
+			$seo->translateOrNew($locale)->primary_keyword_tr = $validated['primary_keyword'];
+			$seo->translateOrNew($locale)->title_tag_tr = $validated['title_tag'];
+			$seo->translateOrNew($locale)->meta_title_tr = $validated['meta_title'];
+			$seo->translateOrNew($locale)->meta_description_tr = $validated['meta_description'];
+
+			/* Update SEO translation - optional fields */
+			if (isset($validated['og_title'])) {
+				$seo->translateOrNew($locale)->og_title_tr = $validated['og_title'];
+			}
+			if (isset($validated['og_description'])) {
+				$seo->translateOrNew($locale)->og_description_tr = $validated['og_description'];
+			}
+			if (isset($validated['og_image_url'])) {
+				$seo->translateOrNew($locale)->og_image_url_tr = $validated['og_image_url'];
+			}
+			if (isset($validated['og_image_alt_text'])) {
+				$seo->translateOrNew($locale)->og_image_alt_text_tr = $validated['og_image_alt_text'];
+			}
+			if (isset($validated['og_image_name'])) {
+				$seo->translateOrNew($locale)->og_image_name_tr = $validated['og_image_name'];
+			}
+			if (isset($validated['paragraph_1'])) {
+				$seo->translateOrNew($locale)->paragraph_1_tr = $validated['paragraph_1'];
+			}
+			if (isset($validated['paragraph_2'])) {
+				$seo->translateOrNew($locale)->paragraph_2_tr = $validated['paragraph_2'];
+			}
+			if (isset($validated['paragraph_3'])) {
+				$seo->translateOrNew($locale)->paragraph_3_tr = $validated['paragraph_3'];
+			}
+			if (isset($validated['paragraph_4'])) {
+				$seo->translateOrNew($locale)->paragraph_4_tr = $validated['paragraph_4'];
+			}
+			if (isset($validated['banner_image_file'])) {
+				$seo->translateOrNew($locale)->banner_image_file_tr = $validated['banner_image_file'];
+			}
+			if (isset($validated['banner_image_alt_text'])) {
+				$seo->translateOrNew($locale)->banner_image_alt_text_tr = $validated['banner_image_alt_text'];
+			}
+
+			$seo->save();
+
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => __("Translations updated successfully."),
+				'data' => $seo->fresh(),
+			]);
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => __("err_update"),
+				'error' => $e->getMessage(),
+			], 500);
+		}
 	}
 }
