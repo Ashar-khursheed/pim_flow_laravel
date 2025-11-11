@@ -285,12 +285,12 @@ class ReviewController extends Controller
      */
     public function show($id)
     {
-        if (!auth()->user()->can('show review')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+        // if (!auth()->user()->can('show review')) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => "You don't have permission to access this module.",
+        //     ]);
+        // }
         $review = Review::find($id);
         if (!$review) {
             return response()->json(['message' => 'Review not found'], 404);
@@ -356,12 +356,12 @@ class ReviewController extends Controller
 
     public function update(Request $request, $id)
     {
-        if (!auth()->user()->can('update review')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+        // if (!auth()->user()->can('update review')) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => "You don't have permission to access this module.",
+        //     ]);
+        // }
         $review = Review::findOrFail($id);
 
         // Validate request
@@ -433,12 +433,12 @@ class ReviewController extends Controller
      */
     public function destroy($id)
     {
-        if (!auth()->user()->can('delete review')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+        // if (!auth()->user()->can('delete review')) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => "You don't have permission to access this module.",
+        //     ]);
+        // }
         $review = Review::find($id);
         if (!$review) {
             return response()->json(['message' => 'Review not found'], 404);
