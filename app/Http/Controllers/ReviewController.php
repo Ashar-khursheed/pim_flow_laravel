@@ -12,88 +12,80 @@ use App\Repository\ExcelRepository;
 
 use App\Jobs\ImportReviewJob;
 use App\Services\ExcelImporterService;
-/**
- * @OA\Schema(
- *     schema="Review",
- *     type="object",
- *     title="Review",
- *     description="Review Model",
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="customer_name", type="string", example="John Doe"),
- *     @OA\Property(property="customer_email", type="string", example="john@example.com"),
- *     @OA\Property(property="product_id", type="integer", example=10),
- *     @OA\Property(property="star", type="integer", example=5),
- *     @OA\Property(property="comment", type="string", example="Great product!"),
- *     @OA\Property(property="status", type="string", example="published"),
- *     @OA\Property(property="images", type="array", @OA\Items(type="string", example="https://s3.amazonaws.com/bucket/review1.jpg")),
- *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-03-13T12:34:56Z"),
- *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-03-14T12:34:56Z")
+ 
+class ReviewController extends Controller
+{
+     /**
+ * @OA\Get(
+ *     path="/api/reviews",
+ *     summary="Get all reviews with search and pagination",
+ *     description="Returns a paginated list of reviews. Supports global search by customer name, email, product, or comment.",
+ *     tags={"Reviews"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="search",
+ *         in="query",
+ *         description="Global search keyword (searches name, email, comment, etc.)",
+ *         required=false,
+ *         @OA\Schema(type="string", example="John")
+ *     ),
+ *     @OA\Parameter(
+ *         name="page",
+ *         in="query",
+ *         description="Page number for pagination",
+ *         required=false,
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Parameter(
+ *         name="per_page",
+ *         in="query",
+ *         description="Number of items per page",
+ *         required=false,
+ *         @OA\Schema(type="integer", example=10)
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_by",
+ *         in="query",
+ *         description="Column name to sort by",
+ *         required=false,
+ *         @OA\Schema(type="string", enum={"id"}, example="id")
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_dir",
+ *         in="query",
+ *         description="Sort direction (asc or desc)",
+ *         required=false,
+ *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Paginated list of reviews",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Reviews fetched successfully."),
+ *             @OA\Property(property="current_page", type="integer", example=1),
+ *             @OA\Property(property="per_page", type="integer", example=10),
+ *             @OA\Property(property="total_records", type="integer", example=45),
+ *             @OA\Property(property="total_pages", type="integer", example=5),
+ *            
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized"
+ *     )
  * )
  */
 
-class ReviewController extends Controller
-{
-    /**
-     * @OA\Get(
-     *     path="/api/reviews",
-     *     summary="Get all reviews with search and pagination",
-     *     description="Returns a paginated list of reviews. Supports global search by customer name, email, product, or comment.",
-     *     tags={"Reviews"},
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Parameter(
-     *         name="search",
-     *         in="query",
-     *         description="Global search keyword (searches name, email, comment, etc.)",
-     *         required=false,
-     *         @OA\Schema(type="string", example="John")
-     *     ),
-     *     @OA\Parameter(
-     *         name="page",
-     *         in="query",
-     *         description="Page number for pagination",
-     *         required=false,
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *     @OA\Parameter(
-     *         name="per_page",
-     *         in="query",
-     *         description="Number of items per page",
-     *         required=false,
-     *         @OA\Schema(type="integer", example=10)
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Paginated list of reviews",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Reviews fetched successfully."),
-     *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="current_page", type="integer", example=1),
-     *                 @OA\Property(property="per_page", type="integer", example=10),
-     *                 @OA\Property(property="total", type="integer", example=45),
-     *                 @OA\Property(property="last_page", type="integer", example=5),
-     *                 @OA\Property(
-     *                     property="reviews",
-     *                     type="array",
-     *                     @OA\Items(ref="#/components/schemas/Review")
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized"
-     *     )
-     * )
-     */
-
-
     public function index(Request $request)
     {
-        $query = Review::with('product');
+        // Build query with product relationship
+        $query = Review::with('product:id,name,sku');
+
+        // Apply search filters
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('customer_name', 'LIKE', "%{$search}%")
@@ -106,11 +98,31 @@ class ReviewController extends Controller
             });
         }
 
+        // Apply sorting
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortDir = $request->input('sort_dir', 'desc');
 
+        // Validate sort parameters
+        $allowedSortColumns = ['id', 'customer_name', 'customer_email', 'star', 'status', 'created_at'];
+        if (!in_array($sortBy, $allowedSortColumns)) {
+            $sortBy = 'created_at';
+        }
+
+        if (!in_array(strtolower($sortDir), ['asc', 'desc'])) {
+            $sortDir = 'desc';
+        }
+
+        $query->orderBy($sortBy, $sortDir);
+
+        // Paginate results
         $perPage = $request->input('per_page', 10);
+
+        // Validate per_page value
+        $perPage = max(1, min((int) $perPage, 100)); // Limit between 1 and 100
+
         $reviews = $query->paginate($perPage);
 
-
+        // Map the data
         $mappedData = $reviews->getCollection()->map(function ($review) {
             return [
                 'id' => $review->id,
@@ -119,11 +131,14 @@ class ReviewController extends Controller
                 'star' => $review->star,
                 'comment' => $review->comment,
                 'status' => $review->status,
-                'product_id' => $review->product->id ?? null,
-                'product_name' => $review->product->name ?? null,
-                'sku' => $review->product->sku ?? null,
-                'images' => $review->images ?? [],
-                'created_at' => $review->created_at ? $review->created_at->format('Y-m-d H:i:s') : null,
+                'product_id' => $review->product?->id,
+                'product_name' => $review->product?->name,
+                'sku' => $review->product?->sku,
+                'images' => is_string($review->images)
+                    ? json_decode($review->images, true) ?? []
+                    : ($review->images ?? []),
+                'created_at' => $review->created_at?->format('Y-m-d H:i:s'),
+                'updated_at' => $review->updated_at?->format('Y-m-d H:i:s'),
             ];
         });
 
@@ -140,7 +155,6 @@ class ReviewController extends Controller
             'data' => $reviews->items(),
         ]);
     }
-
 
     /**
      * @OA\Post(
@@ -371,7 +385,7 @@ class ReviewController extends Controller
             'status' => 'nullable|string|in:published,pending,rejected',
             'images' => 'nullable|array',
             // 'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-           
+
             'customer_name' => 'nullable|string|max:191',
             'customer_email' => 'nullable|email|max:191'
         ]);
@@ -508,7 +522,7 @@ class ReviewController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+                'message' => 'The import process has been scheduled successfully.'
             ]);
         } catch (\Exception $exception) {
             $error[] = 'Error: ' . $exception->getMessage();
@@ -611,11 +625,11 @@ class ReviewController extends Controller
         $excelHeaders = ['customer_id', 'customer_name', 'customer_email', 'product_id', 'star', 'comment'];
 
         /* Fetch filtered records */
-        $records = Review::query();          
+        $records = Review::query();
         $records = $records->offset($request->range_from - 1)
-		->limit($request->range_to - $request->range_from + 1)
-		->orderBy('id', 'asc')
-		  ->get()
+            ->limit($request->range_to - $request->range_from + 1)
+            ->orderBy('id', 'asc')
+            ->get()
 
             ->map(function ($review) {
                 return [

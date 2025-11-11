@@ -36798,47 +36798,11 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Number of items per page (default: 50)",
+                        "description": "Number of items per page (default: 500)",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "example": 50
-                        }
-                    },
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number (default: 1)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "sort_by",
-                        "in": "query",
-                        "description": "Sort by column (default: id)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "id"
-                            ]
-                        }
-                    },
-                    {
-                        "name": "sort_direction",
-                        "in": "query",
-                        "description": "Sort direction (asc/desc, default: desc)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ],
-                            "example": "asc"
+                            "example": 500
                         }
                     }
                 ],
@@ -37950,6 +37914,33 @@
                             "type": "integer",
                             "example": 10
                         }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id"
+                            ],
+                            "example": "id"
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
                     }
                 ],
                 "responses": {
@@ -37967,32 +37958,21 @@
                                             "type": "string",
                                             "example": "Reviews fetched successfully."
                                         },
-                                        "data": {
-                                            "properties": {
-                                                "current_page": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "per_page": {
-                                                    "type": "integer",
-                                                    "example": 10
-                                                },
-                                                "total": {
-                                                    "type": "integer",
-                                                    "example": 45
-                                                },
-                                                "last_page": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                },
-                                                "reviews": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "$ref": "#/components/schemas/Review"
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 45
+                                        },
+                                        "total_pages": {
+                                            "type": "integer",
+                                            "example": 5
                                         }
                                     },
                                     "type": "object"
@@ -43058,58 +43038,6 @@
                         "items": {
                             "$ref": "#/components/schemas/CategoryHierarchy"
                         }
-                    }
-                },
-                "type": "object"
-            },
-            "Review": {
-                "title": "Review",
-                "description": "Review Model",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "customer_name": {
-                        "type": "string",
-                        "example": "John Doe"
-                    },
-                    "customer_email": {
-                        "type": "string",
-                        "example": "john@example.com"
-                    },
-                    "product_id": {
-                        "type": "integer",
-                        "example": 10
-                    },
-                    "star": {
-                        "type": "integer",
-                        "example": 5
-                    },
-                    "comment": {
-                        "type": "string",
-                        "example": "Great product!"
-                    },
-                    "status": {
-                        "type": "string",
-                        "example": "published"
-                    },
-                    "images": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "example": "https://s3.amazonaws.com/bucket/review1.jpg"
-                        }
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-03-13T12:34:56Z"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-03-14T12:34:56Z"
                     }
                 },
                 "type": "object"

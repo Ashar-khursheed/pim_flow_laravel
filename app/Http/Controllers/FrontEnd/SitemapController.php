@@ -481,7 +481,7 @@ class SitemapController extends Controller
             $xml .= '</url>';
         }
 
-        $xml .= '</urlset>';
+        $xml .= '</urlset>  ';
 
         return response($xml, 200)->header('Content-Type', 'application/xml');
     }
