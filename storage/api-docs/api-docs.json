@@ -24672,7 +24672,51 @@
                 ],
                 "summary": "Get products.xml",
                 "description": "Returns the XML sitemap containing public URLs of the website.",
-                "operationId": "1e4d462adaad8731bb1bbbe38a5cb9c1",
+                "operationId": "8a4b35836832c6da804d9d35b554f2c3",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-1.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "386cdad0e9d90ba7c5c6f37ca2e2e0d7",
                 "responses": {
                     "200": {
                         "description": "Sitemap XML generated successfully",
