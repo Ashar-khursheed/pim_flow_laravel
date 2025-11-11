@@ -885,7 +885,8 @@ Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
 Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
 Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
 
-Route::get('/frontend/products-1.xml', [SitemapController::class, 'getProductsSitemap1']);
+Route::get('/frontend/
+.xml', [SitemapController::class, 'getProductsSitemap1']);
 Route::get('/frontend/products-2.xml', [SitemapController::class, 'getProductsSitemap2']);
 Route::get('/frontend/products-3.xml', [SitemapController::class, 'getProductsSitemap3']);
 Route::get('/frontend/products-4.xml', [SitemapController::class, 'getProductsSitemap4']);
@@ -903,6 +904,11 @@ Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
 Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'getProductFeed']);
+Route::get('/feed/products-1.xml', [ProductXMLFeedWatchController::class, 'getProductFeed1']);
+Route::get('/feed/products-2.xml', [ProductXMLFeedWatchController::class, 'getProductFeed2']);
+Route::get('/feed/products-3.xml', [ProductXMLFeedWatchController::class, 'getProductFeed3']);
+Route::get('/feed/products-4.xml', [ProductXMLFeedWatchController::class, 'getProductFeed4']);
+Route::get('/feed/products-5.xml', [ProductXMLFeedWatchController::class, 'getProductFeed5']);
 Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
