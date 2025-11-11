@@ -565,8 +565,8 @@ class ReviewController extends Controller
         $excelHeaders = ['product_id', 'Review1', 'Review2', 'Review3', 'Review4', 'Review5'];
 
         /* Fetch reviews and group by product_id */
-        $groupedReviews = Review::whereBetween('id', [1, 6])            
-            ->orderBy('id','desc')
+        $groupedReviews = Review::whereBetween('id', [0, 0])            
+            ->orderBy('id','asc')
             ->get()
             ->groupBy('product_id'); // Group all reviews by product_id
 
