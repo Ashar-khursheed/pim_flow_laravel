@@ -2870,16 +2870,11 @@ public function getStoreUrl(Request $request)
     }
 
     // Load only your required relations
-  $product = Product::find($request->product_id);
-
-	if ($product) {
-		$product->loadMissing([
+		$product = Product::with([
 			'seoProductUrl',
-			'latestChildCategory.seoUrl',
-			'latestChildCategory.most_parent.seoUrl'
-		]);
-	}
-
+			'latestChildCategoryRelation.seoUrl',
+			'latestChildCategoryRelation.most_parent.seoUrl'
+		])->find($request->product_id);
 
     if (!$product) {
         return response()->json([
