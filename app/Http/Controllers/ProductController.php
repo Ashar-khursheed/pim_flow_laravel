@@ -2852,7 +2852,8 @@ class ProductController extends BaseController
  *             @OA\Property(property="status", type="string", example="error"),
  *             @OA\Property(property="message", type="string", example="Product not found.")
  *         )
- *     )
+ *     ),
+ *  security={{"bearerAuth":{}}}
  * )
  */
 public function getStoreUrl(Request $request)
