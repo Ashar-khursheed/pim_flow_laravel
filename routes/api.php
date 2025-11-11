@@ -377,6 +377,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);
 	Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
 	Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
+	Route::put('/product-supplier/{id}/update-price', [ProductSupplierController::class, 'updatePrice']);
+
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
 	// Bulk operations
