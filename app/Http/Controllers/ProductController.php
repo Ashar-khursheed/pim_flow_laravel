@@ -311,9 +311,8 @@ class ProductController extends BaseController
 		$product->sku = $request->sku;
 		$product->website_ids = implode(',', $request->websites);
 		$product->status = 'draft';
-		if ($request->quote_available) {
 			$product->quote_available = $request->quote_available;
-		}
+		
 		$product->created_at = now();
 		$product->updated_at = now();
 		$product->created_by = auth()->id();
@@ -1665,9 +1664,9 @@ class ProductController extends BaseController
 		foreach ($input as $key => $value) {
 			$product->$key = $value;
 		}
-		if ($request->quote_available) {
+
 			$product->quote_available = $request->quote_available;
-		}
+		
 		/* Save the product */
 		$product->save();
 
