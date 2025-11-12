@@ -905,7 +905,7 @@ Route::get('/frontend/image.xml', [SitemapController::class, 'getImageSitemap'])
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
-Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'getProductFeed']);
+Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'generateProductFeed']);
 Route::get('/feed/products-1.xml', [ProductXMLFeedWatchController::class, 'getProductFeed1']);
 Route::get('/feed/products-2.xml', [ProductXMLFeedWatchController::class, 'getProductFeed2']);
 Route::get('/feed/products-3.xml', [ProductXMLFeedWatchController::class, 'getProductFeed3']);

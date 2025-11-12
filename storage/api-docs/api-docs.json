@@ -37357,7 +37357,7 @@
                 ],
                 "summary": "Get product feed for DataFeedWatch",
                 "description": "Returns dynamic XML feed with all products for DataFeedWatch integration",
-                "operationId": "669eeff82606c5b773d2ec5868881f78",
+                "operationId": "b100704161a3bf0d799006cd4d8e4f3a",
                 "parameters": [
                     {
                         "name": "per_page",
