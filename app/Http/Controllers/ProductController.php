@@ -136,12 +136,18 @@ class ProductController extends BaseController
 			]);
 		}
 
-		  if ($request->filled('updated_from_date') && $request->filled('updated_to_date')) {
+		 if ($request->filled('updated_from_date') && $request->filled('updated_to_date')) {
 			$from = $request->updated_from_date . ' 00:00:00';
 			$to = $request->updated_to_date . ' 23:59:59';
 
-			$records = Product::whereBetween('updated_at', [$from, $to])
-				->where('status', 'published')
+			// Get products updated within range OR whose suppliers were updated in range
+			$records = Product::where('status', 'published')
+				->where(function ($query) use ($from, $to) {
+					$query->whereBetween('updated_at', [$from, $to])
+						->orWhereHas('productSuppliers', function ($supplierQuery) use ($from, $to) {
+							$supplierQuery->whereBetween('updated_at', [$from, $to]);
+						});
+				})
 				->pluck('id');
 
 			return response()->json([
@@ -150,6 +156,7 @@ class ProductController extends BaseController
 				'data' => $records,
 			]);
 		}
+
 
 		$perPage = $request->input('per_page', 50);
 		$search = $request->input('search');
