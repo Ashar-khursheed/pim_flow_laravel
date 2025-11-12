@@ -84,6 +84,10 @@ use App\Http\Controllers\Controller;
  *     name="Categories",
  *     description="API Endpoints for Category Management"
  * )
+ * @OA\Tag(
+ *     name="Customers",
+ *     description="API Endpoints for Customers"
+ * )
  *
  * @OA\Tag(
  *     name="Transaction Logs",
