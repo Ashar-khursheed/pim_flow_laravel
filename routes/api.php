@@ -23,6 +23,7 @@ use App\Http\Controllers\CategoryAttributeController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FaqCategoryController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\CustomerCartExportController;
 use App\Http\Controllers\ProductExportController;
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\DiscountController;
@@ -511,6 +512,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('reviews/export', [ReviewController::class,'export']);
 	Route::post('reviews/exportReview', [ReviewController::class,'exportReview']);
 	Route::apiResource('sliders', SliderController::class);
+
+	Route::post('customerCartExport/export', [CustomerCartExportController::class,'export']);
 
 	// Discount API Routes
 	Route::apiResource('discounts', DiscountController::class);

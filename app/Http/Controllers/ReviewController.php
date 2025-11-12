@@ -251,7 +251,7 @@ class ReviewController extends Controller
 
 
     public function store(Request $request)
-    {
+    {  
         $validator = Validator::make($request->all(), [
             'customer_name' => 'required|string|max:191',
             'customer_email' => 'required|email|max:191',
@@ -270,7 +270,7 @@ class ReviewController extends Controller
 
         $imagePaths = [];
 
-        // ✅ Only loop if there are uploaded files
+        //  Only loop if there are uploaded files
         if ($request->hasFile('images') && count($request->file('images')) > 0) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('production/reviews', 's3');
@@ -278,7 +278,7 @@ class ReviewController extends Controller
             }
         }
 
-        // ✅ Ensure default empty array for images
+        // Ensure default empty array for images
         $review = Review::create([
             'customer_name' => $request->customer_name,
             'customer_email' => $request->customer_email,
