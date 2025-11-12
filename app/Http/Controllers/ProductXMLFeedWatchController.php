@@ -44,19 +44,19 @@ class ProductXMLFeedWatchController extends Controller
      *     )
      * )
      */
-    public function getProductFeed(Request $request)
-    {
-        // Cache the feed for 1 hour with pagination parameters
-        $cacheKey = 'datafeedwatch_feed_r' . md5($request->fullUrl());
+    // public function getProductFeed(Request $request)
+    // {
+    //     // Cache the feed for 1 hour with pagination parameters
+    //     $cacheKey = 'datafeedwatch_feed_r' . md5($request->fullUrl());
 
-        $data = Cache::remember($cacheKey, 3600, function () use ($request) {
-            return $this->generateProductFeed($request);
-        });
+    //     $data = Cache::remember($cacheKey, 3600, function () use ($request) {
+    //         return $this->generateProductFeed($request);
+    //     });
 
-        return $data;
-    }
+    //     return $data;
+    // }
 
-    private function generateProductFeed(Request $request)
+    public function generateProductFeed(Request $request)
     {
         $perPage = $request->input('per_page', 500);
         $allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
