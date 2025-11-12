@@ -41,7 +41,7 @@ class CustomerCartExportController extends Controller
 
         $customerCarts = CustomerCart::with([
             'customer:id,name,email,country_code,mobile_number',
-            'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
+            'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,amount,total_amount',
             'customerCartProducts.product:id,name,images,sku,currency_id,barcode',
             'customerCartProducts.product.currency:id,symbol',
             'creator:id,username'
@@ -58,10 +58,11 @@ class CustomerCartExportController extends Controller
 
         /* Build dynamic headers */
         $excelHeaders = [
+            'reference_number',
             'customer_id',
             'customer_name',
             'customer_email',
-            'customer_phone',
+            'customer_phone',           
             'total_products',             
         ];
 
@@ -71,12 +72,15 @@ class CustomerCartExportController extends Controller
             $excelHeaders[] = "product_{$i}_name";
             $excelHeaders[] = "product_{$i}_sku";
             $excelHeaders[] = "product_{$i}_quantity";
+            $excelHeaders[] = "product_{$i}_price";
+            $excelHeaders[] = "product_{$i}_total_amout";
         }
 
         /* Transform data */
         $exportData = $customerCarts->map(function ($cart) use ($maxProducts) {
             // dd($cart);
             $row = [
+                '#C-'.$cart->reference_number ?? '',
                 $cart->customer_id ?? '',
                 $cart->customer->name ?? '',
                 $cart->customer->email ?? '',
@@ -94,6 +98,8 @@ class CustomerCartExportController extends Controller
                     $row[] = $products[$i]->product->name ?? '';
                     $row[] = $products[$i]->product->sku ?? '';
                     $row[] = $products[$i]->quantity ?? 0;
+                    $row[] = $products[$i]->amount ?? 0;
+                    $row[] = $products[$i]->total_amount ?? 0;
                 } else {
                     // Empty cells if this cart has fewer products
                     $row[] = '';
