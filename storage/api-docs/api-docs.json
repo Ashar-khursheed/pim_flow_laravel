@@ -43782,6 +43782,28 @@
                     }
                 ]
             }
+        },
+        "/api/customerCartExport/export": {
+            "post": {
+                "tags": [
+                    "Customer Cart Export"
+                ],
+                "summary": "Export Excel Format",
+                "operationId": "bf595aa2046a83216abe6826e2e7ed92",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -45206,6 +45228,10 @@
             "description": "API Endpoints for Category Management"
         },
         {
+            "name": "Customers",
+            "description": "API Endpoints for Customers"
+        },
+        {
             "name": "Transaction Logs",
             "description": "API Endpoints for Transaction Logs Management"
         },
@@ -45296,10 +45322,6 @@
         {
             "name": "Carts",
             "description": "Carts"
-        },
-        {
-            "name": "Customers",
-            "description": "Customers"
         },
         {
             "name": "Customer Events",
@@ -45708,6 +45730,10 @@
         {
             "name": "Websites",
             "description": "Websites"
+        },
+        {
+            "name": "Customer Cart Export",
+            "description": "Customer Cart Export"
         }
     ],
     "security": {

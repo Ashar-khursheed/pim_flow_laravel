@@ -317,11 +317,28 @@ class ReviewController extends Controller
         //         'message' => "You don't have permission to access this module.",
         //     ]);
         // }
-        $review = Review::find($id);
+        $review = Review::with('product:id,name')->find($id); 
         if (!$review) {
             return response()->json(['message' => 'Review not found'], 404);
         }
-        return response()->json($review, 200);
+
+         return response()->json([
+            'success' => true,
+            'message' => 'Review successfully',
+            'data' => [
+                'id' => $review->id,
+                'customer_id' => $review->customer_id,
+                'customer_name' => $review->customer_name,
+                'customer_email' => $review->customer_email,
+                'product_id' => $review->product_id,
+                'product_name' => $review->product->name,
+                'star' => $review->star,               
+                'comment' => $review->comment,
+                'status' => $review->status,
+                'images' => $review->images,                
+            ]
+        ]);
+         
     }
 
 
@@ -439,6 +456,7 @@ class ReviewController extends Controller
         $review->save();
 
         return response()->json([
+            'success' => true,
             'message' => 'Review updated successfully',
             'review' => $review
         ]);
