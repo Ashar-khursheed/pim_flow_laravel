@@ -528,22 +528,43 @@ public function processNoFraud($orderId)
             ], 400);
         }
 
-        // ✅ Split full name
+        // ✅ Split customer name into first/last
         $nameParts = explode(' ', trim($customer->name ?? 'Unknown'), 2);
         $firstName = $nameParts[0] ?? 'Unknown';
-        $lastName = $nameParts[1] ?? '';
+        $lastName  = $nameParts[1] ?? '';
 
-        // ✅ Decode card meta safely
+        // ✅ Decode payment details safely (may come double-encoded or raw array)
         $metaRaw = $payment->payment_details ?? $payment->meta ?? '{}';
-        $meta = json_decode($metaRaw, true);
+        $meta = is_string($metaRaw) ? json_decode($metaRaw, true) : $metaRaw;
         if (is_string($meta)) {
             $meta = json_decode($meta, true);
         }
 
-        $cardLast4 = $meta['card_last_four'] ?? $payment->card_last4 ?? null;
-        $cardBin   = $meta['meta']['cardDisplay'] ?? $payment->card_bin ?? null;
-        $cardType  = $meta['card_type'] ?? $payment->card_type ?? null;
-        $cardExp   = $meta['card_exp'] ?? $payment->card_exp ?? null;
+        // ✅ Attempt to extract card details from multiple possible formats
+        $cardData = $meta['card'] ?? $meta['payment_method_details']['card'] ?? [];
+
+        $cardLast4 = $cardData['last4']
+            ?? $meta['card_last_four']
+            ?? $meta['last4']
+            ?? $payment->card_last4
+            ?? null;
+
+        $cardBin = $cardData['bin']
+            ?? $meta['meta']['cardDisplay']
+            ?? $meta['card_bin']
+            ?? $payment->card_bin
+            ?? null;
+
+        $cardType = $cardData['brand']
+            ?? $cardData['display_brand']
+            ?? $meta['card_type']
+            ?? $payment->card_type
+            ?? null;
+
+        // Combine expiration if available
+        $expMonth = $cardData['exp_month'] ?? $meta['exp_month'] ?? null;
+        $expYear  = $cardData['exp_year'] ?? $meta['exp_year'] ?? null;
+        $cardExp  = $expMonth && $expYear ? "$expMonth/$expYear" : ($meta['card_exp'] ?? null);
 
         if (!$cardLast4) {
             return response()->json([
@@ -553,13 +574,11 @@ public function processNoFraud($orderId)
             ], 400);
         }
 
-        // ✅ Use the already-loaded order (no need to re-query)
+        // ✅ Prepare order and billing info
         $orderNumber = $order->order_number ?? $orderId;
 
-        // ✅ Prepare data for NoFraud API
         $requestData = [
-            // 'order_id' => $orderId, // still used for internal handling
-            'order_id' => $orderNumber, // for saving to NoFraudResponse table
+            'order_id' => $orderNumber,
             'amount' => $payment->amount ?? $order->amount ?? 0,
 
             'billing_first_name' => $firstName,
@@ -578,10 +597,8 @@ public function processNoFraud($orderId)
             'card_expiration' => $cardExp,
         ];
 
-        // ✅ Create a fake request instance to reuse screenTransaction
+        // ✅ Forward to screenTransaction
         $req = new \Illuminate\Http\Request($requestData);
-
-        // ✅ Call the same controller method with correct context
         return $this->screenTransaction($req);
 
     } catch (\Exception $e) {
