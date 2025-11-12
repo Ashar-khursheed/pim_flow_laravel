@@ -20,12 +20,12 @@
 	</style>
 </head>
 @php
-	use Illuminate\Support\Str;
+use Illuminate\Support\Str;
 @endphp
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: black;">
 	<!-- Preheader text: hidden but visible in email previews -->
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-		Your updated order is ready. Complete payment to confirm your items.
+		Your order has been updated. Action required to complete payment.
 	</span>
 
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f8f8; font-family: 'Noto Sans',  sans-serif;">
@@ -40,21 +40,24 @@
 
 					<tr>
 						<td>
-							<p style="font-size:16px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
+							<p style="font-size:16px; line-height:25px; font-weight: 600; font-family: 'Noto Sans',  sans-serif; margin: 0;">
 								Thank You
 								<strong style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:16px; line-height:25px; margin: 0;">
 									{{ $name }}
 								</strong>!
 							</p>
-							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
-								Your Order Has Been Updated Successfully!
+							<p style="font-size:14px; line-height:22px; font-weight: 400; font-family: 'Noto Sans',  sans-serif; margin: 8px 0 0 0;">
+								Your order has been updated by our Order Fulfilment Team.
 							</p>
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
-								We’ve added your requested items and updated your order details. Please review the changes and complete the remaining payment to confirm your order.
+								Some items in your order have changed due to stock availability, updated pricing, or requested modifications. This has resulted in a small difference in your order total.
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
+								To complete processing, please use the secure payment link below to pay the remaining balance.
 							</p>
 
-							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
-								Complete Your Payment
+							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; font-weight: 600; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
+								Pay Remaining Balance
 							</a>
 						</td>
 					</tr>
@@ -270,18 +273,13 @@
 
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
-									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
-										We’re excited to prepare your updated order! Please complete the <strong> remaining payment of {{ $currency }} {{ number_format($pendingAmount, 2, '.', ',') }} </strong>  at the earliest to avoid any delay in processing and delivery.
-									</td>
-								</tr>
-								<tr>
-									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
-										To make sure your updated items are secured for you, please complete payment within <strong> 7 days</strong>. After that, the system may automatically release the additional items, and we’d hate for you to miss out!
+									<td style="font-weight: 500; line-height: 24px; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px;">
+										You'll receive a confirmation email once the payment is completed and your order moves to dispatch.
 									</td>
 								</tr>
 								<tr>
 									<td style="font-weight: 500; line-height: 24px; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px;">
-										Thank you for choosing HorecaStore - where your business gets the best, for less.
+										If you have questions or need help, our team is here for you.
 									</td>
 								</tr>
 								<tr>
