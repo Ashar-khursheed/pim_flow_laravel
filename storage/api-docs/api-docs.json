@@ -8969,6 +8969,50 @@
                 ]
             }
         },
+        "/api/customerCartExport/export": {
+            "post": {
+                "tags": [
+                    "Customer Cart Export"
+                ],
+                "summary": "Export app keyword data to Excel",
+                "operationId": "f5699385362cab4d1dfcfd876e384f71",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "range_from": {
+                                        "description": "Starting range (must be >=1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and max 5000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customers": {
             "get": {
                 "tags": [
@@ -32895,6 +32939,22 @@
                         }
                     },
                     {
+                        "name": "updated_from_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "updated_to_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Number of products per page (default: 50)",
@@ -35953,6 +36013,120 @@
                 ]
             }
         },
+        "/api/product-supplier/update-price-by-sku/{sku}": {
+            "put": {
+                "tags": [
+                    "Product Supplier"
+                ],
+                "summary": "Update price, sale price, and total cost per item for a product supplier using SKU",
+                "operationId": "58710bc07edbc1f57a6e615709997b98",
+                "parameters": [
+                    {
+                        "name": "sku",
+                        "in": "path",
+                        "description": "SKU of the product",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150
+                                    },
+                                    "sale_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 120
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated product supplier price by SKU",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product supplier updated successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product or supplier not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product or supplier not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/product-title-formula": {
             "get": {
                 "tags": [
@@ -36933,7 +37107,7 @@
                 ],
                 "summary": "Get product feed for DataFeedWatch",
                 "description": "Returns dynamic XML feed with all products for DataFeedWatch integration",
-                "operationId": "669eeff82606c5b773d2ec5868881f78",
+                "operationId": "b100704161a3bf0d799006cd4d8e4f3a",
                 "parameters": [
                     {
                         "name": "per_page",
@@ -44815,6 +44989,10 @@
             "description": "API Endpoints for Category Management"
         },
         {
+            "name": "Customers",
+            "description": "API Endpoints for Customers"
+        },
+        {
             "name": "Transaction Logs",
             "description": "API Endpoints for Transaction Logs Management"
         },
@@ -44907,8 +45085,8 @@
             "description": "Carts"
         },
         {
-            "name": "Customers",
-            "description": "Customers"
+            "name": "Customer Cart Export",
+            "description": "Customer Cart Export"
         },
         {
             "name": "Customer Events",

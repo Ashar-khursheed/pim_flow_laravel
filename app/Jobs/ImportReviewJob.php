@@ -15,6 +15,7 @@ use App\Models\TransactionLog;
 use Illuminate\Support\Facades\Log;
 use App\Models\Language;
 use App\Models\Review;
+use App\Models\FrontEnd\Customer;
 
 
 
@@ -117,7 +118,7 @@ class ImportReviewJob implements ShouldQueue
                     }
 
                     // Get random customer for each review
-                    $randomCustomer = \DB::table('customers')->inRandomOrder()->first();
+                    $randomCustomer = Customer::inRandomOrder()->first();
  
                     if (!$randomCustomer) {
                         continue;

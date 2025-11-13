@@ -25,7 +25,7 @@ use Illuminate\Support\Str;
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: black;">
 	<!-- Preheader text: hidden but visible in email previews -->
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-		Your order has been updated. No action required – your total remains the same.
+		Your order has been updated. A refund is being processed for the difference.
 	</span>
 
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f8f8; font-family: 'Noto Sans',  sans-serif;">
@@ -40,20 +40,20 @@ use Illuminate\Support\Str;
 
 					<tr>
 						<td>
-							<p style="font-size:16px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
+							<p style="font-size:16px; line-height:25px; font-weight: 600; font-family: 'Noto Sans',  sans-serif; margin: 0;">
 								Thank You
 								<strong style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:16px; line-height:25px; margin: 0;">
 									{{ $name }}
 								</strong>!
 							</p>
-							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
+							<p style="font-size:14px; line-height:25px; font-weight: 400; font-family: 'Noto Sans',  sans-serif; margin: 8px 0 0 0;">
 								Your order has been updated by our Order Fulfilment Team.
 							</p>
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
-								We made some changes to your order due to stock availability, product updates, or special pricing. A discount has been applied, and your revised total remains the same so
-								<strong>
-									no additional payment is required.
-								</strong>
+								Some items in your order have changed due to stock availability, updated pricing, or requested modifications. This has resulted in a lower total amount than originally charged.
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
+								A refund will now be processed back to your original payment method. Refunds typically take 7–10 business days depending on your bank.
 							</p>
 						</td>
 					</tr>
@@ -263,6 +263,11 @@ use Illuminate\Support\Str;
 												<td style="font-weight: bold;font-family: 'Noto Sans',  sans-serif;">Total Amount</td>
 												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans',  sans-serif;">{{ $currency }} {{ number_format($total, 2, '.', ',') }}</td>
 											</tr>
+
+											<tr style="font-weight: bold;">
+												<td style="font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; color: #26683A;">Amount to be Refunded</td>
+												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px;">{{ $currency }} {{ number_format(abs($pendingAmount), 2, '.', ',') }}</td>
+											</tr>
 										</table>
 									</td>
 								</tr>
@@ -276,18 +281,13 @@ use Illuminate\Support\Str;
 
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
-									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
-										We’re excited to prepare your updated order! Please complete the <strong> remaining payment of {{ $currency }} {{ number_format($pendingAmount, 2, '.', ',') }} </strong>  at the earliest to avoid any delay in processing and delivery.
-									</td>
-								</tr>
-								<tr>
-									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
-										To make sure your updated items are secured for you, please complete payment within <strong> 7 days</strong>. After that, the system may automatically release the additional items, and we’d hate for you to miss out!
+									<td style="font-weight: 500; line-height: 24px; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px;">
+										No action is required from your side.
 									</td>
 								</tr>
 								<tr>
 									<td style="font-weight: 500; line-height: 24px; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px;">
-										Thank you for choosing HorecaStore - where your business gets the best, for less.
+										If you need assistance, feel free to reach out any time.
 									</td>
 								</tr>
 								<tr>
