@@ -505,7 +505,10 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('roles', RoleController::class);
 
 
-	Route::apiResource('reviews', ReviewController::class);
+		Route::apiResource('reviews', ReviewController::class);
+	Route::post('reviews/import', [ReviewController::class,'import']);
+	Route::post('reviews/export', [ReviewController::class,'export']);
+	Route::post('reviews/exportReview', [ReviewController::class,'exportReview']);
 	Route::apiResource('sliders', SliderController::class);
 
 	// Discount API Routes
