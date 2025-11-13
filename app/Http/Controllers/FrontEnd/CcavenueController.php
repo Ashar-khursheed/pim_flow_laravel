@@ -286,7 +286,7 @@ class CcavenueController extends Controller
      *     path="/api/frontend/ccavenue/payment-status/{orderId}",
      *     summary="Get payment status by order ID",
      *     description="Check the status of a payment using order ID",
-     *     operationId="getPaymentStatus", 
+     *     operationId="getPaymentStatus",
      *     tags={"CCAvenue"},
      *     @OA\Parameter(
      *         name="orderId",
@@ -364,14 +364,14 @@ class CcavenueController extends Controller
     public function createCCavenuePaymentLink($order)
     {
         $url = config('app.url');
-        $backendUrl = config('app.backend_url');         
+        $backendUrl = config('app.backend_url');
         $customerAddress = CustomerAddress::find($order->customer_address_id);
         $customer = Customer::find($order->customer_id);
         $orderList = array();
-        $orderList['order_id'] = $order->id;
+        $orderList['order_id'] = $order->order_number;
         $orderList['redirect_url'] = $url.'/thanks';
-        $orderList['cancel_url'] = $url.'/failed';        
-        $orderList['notify_url'] = $backendUrl.'/api/payment/ccavenue/notify';       
+        $orderList['cancel_url'] = $url.'/failed';
+        $orderList['notify_url'] = $backendUrl.'/api/payment/ccavenue/notify';
         $orderList['currency'] = "AED";
         $orderList['amount'] = $order->pending_amount;
         $orderList['language'] = "EN";
@@ -383,7 +383,7 @@ class CcavenueController extends Controller
         $orderList['billing_email'] = $customer->email;
         $orderList['delivery_tel'] = $customer->mobile_number;
         $orderList['delivery_zip'] = "";
- 
+
 
         $allowedKeys = [
             'order_id',
@@ -392,7 +392,7 @@ class CcavenueController extends Controller
             'redirect_url',
             'cancel_url',
             'webhook_url',
-            'notify_url',             
+            'notify_url',
             'language'
         ];
         $merchantId = $this->ccavenueService->getMerchantId();
@@ -434,51 +434,51 @@ class CcavenueController extends Controller
         $workingKey = env('CCAVENUE_WORKING_KEY');
         $accessCode = env('CCAVENUE_ACCESS_CODE');
         \Log::error('CCAvenue Webhook Received', $request->all());
-       
+
         $encResponse = $request->input('encResp');
      //   $encResponse = $request->encResp;
         //This is the response sent by the CCAvenue Server
         $rcvdString = CcavenueHelper::decrypt($encResponse, $workingKey);
         //Crypto Decryption used as per the specified working key.
- 
+
         $order_status = "";
         $decryptValues = explode('&', $rcvdString);
         $dataSize = sizeof($decryptValues);
- 
+
         for ($i = 0; $i < $dataSize; $i++) {
             $information = explode('=', $decryptValues[$i]);
             if ($i == 3)
                 $order_status = $information[1];
         }
- 
+
         if ($order_status === "Success") {
             $msg = "Thank you for registering with us. We will be sending you the registration slip very soon on your email id.";
- 
+
         } else if ($order_status === "Aborted") {
             $msg = "Sorry, you have not been registered with us.However,the transaction has been declined & Security Error. Illegal access detected.";
- 
+
         } else if ($order_status === "Failure") {
             $msg = "Sorry, you have not been registered with us.However,the transaction has been declined.";
         } else {
             $msg = "Sorry, you have not been registered with us.However,the transaction has been declined & Security Error. Illegal access detected " . $order_status;
- 
+
         }
- 
- 
- 
- 
+
+
+
+
         $information = array();
         foreach ($decryptValues as $value) {
             $t = explode('=', $value);
             $information[$t[0]] = urldecode($t[1]);
         }
         $information = json_decode(json_encode($information));
- 
- 
+
+
         $status = $order_status;
         if (isset($information)) {
- 
- 
+
+
             $order = Order::where('id', $information->order_id)->first();
             if (!$order) {
                 return response()->json(['success' => false, 'message' => 'Order not found'], 404);
@@ -505,7 +505,7 @@ class CcavenueController extends Controller
                     $status = "Pending";
             }
         }
- 
+
         if ($information->order_status == 'Success') {
             if ($order->amount_total == $information->amount) {
                 // Mark order as paid and remove payment link
@@ -524,10 +524,10 @@ class CcavenueController extends Controller
                     'payment_link' => null,
                     'is_reserved' => false,
                 ]);
- 
+
             }
         }
- 
+
         PaymentManagement::create([
             'order_id' => $information->order_id,
             'transaction_id' => $information->tracking_id,
@@ -539,24 +539,24 @@ class CcavenueController extends Controller
             'notes' => $information->status_message,
             'payment_details' => ''
         ]);
- 
+
         if ($information) {
- 
+
             return response()->json([
                 'success' => true,
                 'message' => $msg,
                 'data' => $information
             ]);
- 
+
         } else {
- 
+
             return response()->json([
                 'success' => false,
                 'message' => $msg,
                 'data' => $information
             ]);
         }
- 
+
     }
 
     /**
