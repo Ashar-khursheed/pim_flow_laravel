@@ -12,7 +12,7 @@ use App\Repository\ExcelRepository;
 
 use App\Jobs\ImportReviewJob;
 use App\Services\ExcelImporterService;
-
+use Carbon\Carbon;
 class ReviewController extends Controller
 {
     /**
@@ -251,7 +251,7 @@ class ReviewController extends Controller
 
 
     public function store(Request $request)
-    {  
+    {   
         $validator = Validator::make($request->all(), [
             'customer_name' => 'required|string|max:191',
             'customer_email' => 'required|email|max:191',
@@ -277,7 +277,7 @@ class ReviewController extends Controller
                 $imagePaths[] = Storage::disk('s3')->url($path);
             }
         }
-
+ 
         // Ensure default empty array for images
         $review = Review::create([
             'customer_name' => $request->customer_name,
@@ -286,7 +286,9 @@ class ReviewController extends Controller
             'star' => $request->star,
             'comment' => $request->comment,
             'status' => $request->status ?? 'published',
-            'images' => !empty($imagePaths) ? $imagePaths : [], // safe default
+            'images' => !empty($imagePaths) ? $imagePaths : [],  
+            'created_at' => Carbon::now()->subDays(rand(60, 730)),
+            
         ]);
 
         return response()->json([
