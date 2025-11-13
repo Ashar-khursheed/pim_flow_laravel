@@ -1117,7 +1117,7 @@ class OrderController extends Controller
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 						\Log::info("In website: ".config('app.website'));
 					try {
-						$paymentLink = app(\App\Http\Controllers\FrontEnd\PaymobController::class)->generatePaymobPaymentLink($order);
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
 						\Log::info("Paymob Payment Link: {$paymentLink}");
 						if ($paymentLink) {
 							$order = Order::find($order->id);
