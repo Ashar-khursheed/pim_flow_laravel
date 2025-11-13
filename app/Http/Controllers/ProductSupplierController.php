@@ -918,9 +918,9 @@ class ProductSupplierController extends BaseController
 
 	/**
 	 * @OA\Put(
-	 *     path="/api/products/update-price-by-sku/{sku}",
-	 *     summary="Update price, sale price, and total cost per item for a product using SKU",
-	 *     tags={"Products"},
+	 *     path="/api/product-supplier/update-price-by-sku/{sku}",
+	 *     summary="Update price, sale price, and total cost per item for a product supplier using SKU",
+	 *     tags={"Product Supplier"},
 	 *     @OA\Parameter(
 	 *         name="sku",
 	 *         in="path",
@@ -937,19 +937,19 @@ class ProductSupplierController extends BaseController
 	 *     ),
 	 *     @OA\Response(
 	 *         response=200,
-	 *         description="Successfully updated product price by SKU",
+	 *         description="Successfully updated product supplier price by SKU",
 	 *         @OA\JsonContent(
 	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Product price updated successfully."),
+	 *             @OA\Property(property="message", type="string", example="Product supplier updated successfully."),
 	 *             @OA\Property(property="data", type="object")
 	 *         )
 	 *     ),
 	 *     @OA\Response(
 	 *         response=404,
-	 *         description="Product not found",
+	 *         description="Product or supplier not found",
 	 *         @OA\JsonContent(
 	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="Product not found.")
+	 *             @OA\Property(property="message", type="string", example="Product or supplier not found.")
 	 *         )
 	 *     ),
 	 *     @OA\Response(
@@ -965,7 +965,7 @@ class ProductSupplierController extends BaseController
 	 */
 	public function updatePriceBySku(Request $request, $sku)
 	{
-		// Find product using SKU
+		// Step 1: Find product by SKU
 		$product = Product::where('sku', $sku)->first();
 
 		if (!$product) {
@@ -975,13 +975,23 @@ class ProductSupplierController extends BaseController
 			], 404);
 		}
 
-		// Validate request
+		// Step 2: Find supplier record linked to this product
+		$supplier = ProductSupplier::where('product_id', $product->id)->first();
+
+		if (!$supplier) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Supplier not found for this product.'
+			], 404);
+		}
+
+		// Step 3: Validate request
 		$data = $request->validate([
 			'price' => 'required|numeric|min:0',
-			'sale_price' => 'nullable|numeric|min:0',
+			'sale_price' => 'nullable|numeric|min:0'
 		]);
 
-		// Business rule: price cannot be less than sale price
+		// Business rule
 		if (!empty($data['sale_price']) && $data['price'] < $data['sale_price']) {
 			return response()->json([
 				'success' => false,
@@ -989,16 +999,16 @@ class ProductSupplierController extends BaseController
 			], 422);
 		}
 
-		// Update product
-		$product->update([
+		// Step 4: Update supplier record
+		$supplier->update([
 			'price' => $data['price'],
-			'sale_price' => $data['sale_price'] ?? null,
+			'sale_price' => $data['sale_price'] ?? null
 		]);
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Product price updated successfully.',
-			'data' => $product
+			'message' => 'Product supplier updated successfully.',
+			'data' => $supplier
 		], 200);
 	}
 

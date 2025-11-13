@@ -34982,13 +34982,13 @@
                 ]
             }
         },
-        "/api/products/update-price-by-sku/{sku}": {
+        "/api/product-supplier/update-price-by-sku/{sku}": {
             "put": {
                 "tags": [
-                    "Products"
+                    "Product Supplier"
                 ],
-                "summary": "Update price, sale price, and total cost per item for a product using SKU",
-                "operationId": "0face8004f750e8862fc77af9fbf1cb2",
+                "summary": "Update price, sale price, and total cost per item for a product supplier using SKU",
+                "operationId": "58710bc07edbc1f57a6e615709997b98",
                 "parameters": [
                     {
                         "name": "sku",
@@ -35024,7 +35024,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Successfully updated product price by SKU",
+                        "description": "Successfully updated product supplier price by SKU",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -35035,7 +35035,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Product price updated successfully."
+                                            "example": "Product supplier updated successfully."
                                         },
                                         "data": {
                                             "type": "object"
@@ -35047,7 +35047,7 @@
                         }
                     },
                     "404": {
-                        "description": "Product not found",
+                        "description": "Product or supplier not found",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -35058,7 +35058,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Product not found."
+                                            "example": "Product or supplier not found."
                                         }
                                     },
                                     "type": "object"
