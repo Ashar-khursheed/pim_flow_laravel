@@ -8929,6 +8929,50 @@
                 ]
             }
         },
+        "/api/customerCartExport/export": {
+            "post": {
+                "tags": [
+                    "Customer Cart Export"
+                ],
+                "summary": "Export app keyword data to Excel",
+                "operationId": "f5699385362cab4d1dfcfd876e384f71",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "range_from": {
+                                        "description": "Starting range (must be >=1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and max 5000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customers": {
             "get": {
                 "tags": [
@@ -43798,50 +43842,6 @@
                     }
                 ]
             }
-        },
-        "/api/customerCartExport/export": {
-            "post": {
-                "tags": [
-                    "Customer Cart Export"
-                ],
-                "summary": "Export app keyword data to Excel",
-                "operationId": "f5699385362cab4d1dfcfd876e384f71",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "range_from": {
-                                        "description": "Starting range (must be >=1)",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "range_to": {
-                                        "description": "Ending range (must be >= range_from and max 5000 more)",
-                                        "type": "integer",
-                                        "example": 50
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
         }
     },
     "components": {
@@ -45362,6 +45362,10 @@
             "description": "Carts"
         },
         {
+            "name": "Customer Cart Export",
+            "description": "Customer Cart Export"
+        },
+        {
             "name": "Customer Events",
             "description": "Customer Events"
         },
@@ -45768,10 +45772,6 @@
         {
             "name": "Websites",
             "description": "Websites"
-        },
-        {
-            "name": "Customer Cart Export",
-            "description": "Customer Cart Export"
         }
     ],
     "security": {

@@ -62,8 +62,8 @@ class CustomerCartExportController extends Controller
             'customer_id',
             'customer_name',
             'customer_email',
-            'customer_phone',           
-            'total_products',             
+            'customer_phone',
+            'total_products',
         ];
 
         // Add dynamic product columns
@@ -80,15 +80,14 @@ class CustomerCartExportController extends Controller
         $exportData = $customerCarts->map(function ($cart) use ($maxProducts) {
             // dd($cart);
             $row = [
-                '#C-'.$cart->reference_number ?? '',
+                '#C-' . $cart->reference_number ?? '',
                 $cart->customer_id ?? '',
                 $cart->customer->name ?? '',
                 $cart->customer->email ?? '',
                 ($cart->customer->country_code ?? '') . ($cart->customer->mobile_number ?? ''),
                 $cart->customerCartProducts->count(),
-                 
-            ];
 
+            ];
             $products = $cart->customerCartProducts;
 
             // Add each product's data
@@ -107,7 +106,6 @@ class CustomerCartExportController extends Controller
                     $row[] = '';
                 }
             }
-
             return $row;
         })->toArray();
 
