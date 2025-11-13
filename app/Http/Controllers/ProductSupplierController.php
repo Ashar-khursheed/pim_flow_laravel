@@ -916,6 +916,95 @@ class ProductSupplierController extends BaseController
         ], 200);
     }
 
+	/**
+	 * @OA\Put(
+	 *     path="/api/products/update-price-by-sku/{sku}",
+	 *     summary="Update price, sale price, and total cost per item for a product using SKU",
+	 *     tags={"Products"},
+	 *     @OA\Parameter(
+	 *         name="sku",
+	 *         in="path",
+	 *         description="SKU of the product",
+	 *         required=true,
+	 *         @OA\Schema(type="string")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="price", type="number", format="float", example=150),
+	 *             @OA\Property(property="sale_price", type="number", format="float", example=120),
+	 *             @OA\Property(property="total_cost_per_item", type="number", format="float", example=100)
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successfully updated product price by SKU",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Product price updated successfully."),
+	 *             @OA\Property(property="data", type="object")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="Product not found",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Product not found.")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation errors",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="errors", type="array", @OA\Items(type="string"))
+	 *         )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function updatePriceBySku(Request $request, $sku)
+	{
+		// Find product using SKU
+		$product = Product::where('sku', $sku)->first();
+
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product not found.'
+			], 404);
+		}
+
+		// Validate request
+		$data = $request->validate([
+			'price' => 'required|numeric|min:0',
+			'sale_price' => 'nullable|numeric|min:0',
+			'total_cost_per_item' => 'required|numeric|min:0',
+		]);
+
+		// Business rule: price cannot be less than sale price
+		if (!empty($data['sale_price']) && $data['price'] < $data['sale_price']) {
+			return response()->json([
+				'success' => false,
+				'errors' => ['Price cannot be less than sale price.']
+			], 422);
+		}
+
+		// Update product
+		$product->update([
+			'price' => $data['price'],
+			'sale_price' => $data['sale_price'] ?? null,
+			'total_cost_per_item' => $data['total_cost_per_item'],
+		]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Product price updated successfully.',
+			'data' => $product
+		], 200);
+	}
+
 
 
 }
