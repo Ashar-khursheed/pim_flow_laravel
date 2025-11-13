@@ -385,90 +385,155 @@ class CcavenueController extends Controller
     //         return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment/failure');
     //     }
     // }
+//     public function handleResponse(Request $request)
+// {
+//     try {
+//         $encResponse = $request->input('encResp');
+
+//         if (empty($encResponse)) {
+//             \Log::warning('CCAvenue handleResponse called without encResp', $request->all());
+//             return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment/declined');
+//         }
+
+//         // decrypt and parse
+//         $responseData = $this->ccavenueService->parseResponse($encResponse);
+
+//         \Log::info('CCAvenue decrypted response', $responseData);
+
+//         // map common fields safely (use null coalescing)
+//         $orderId      = $responseData['order_id'] ?? null;
+//         $status       = $responseData['order_status'] ?? ($responseData['status'] ?? 'Unknown');
+//         $amount       = $responseData['amount'] ?? null;
+//         $currency     = $responseData['currency'] ?? null;
+//         $trackingId   = $responseData['tracking_id'] ?? $responseData['bank_ref_no'] ?? null;
+//         $bankRefNo    = $responseData['bank_ref_no'] ?? null;
+//         $paymentMode  = $responseData['payment_mode'] ?? null;
+//         $responseCode = $responseData['response_code'] ?? null;
+//         $statusMsg    = $responseData['status_message'] ?? null;
+//         $transDate    = $responseData['trans_date'] ?? null;
+
+//         // card info (if provided, likely masked)
+//         $cardBrand    = $responseData['card_brand'] ?? $responseData['card_type'] ?? null;
+//         $cardHolder   = $responseData['card_holder_name'] ?? null;
+//         $maskedCard   = $responseData['card_number'] ?? $responseData['card_no'] ?? null; // usually masked
+
+//         // merchant params (if you used them)
+//         $merchantParam1 = $responseData['merchant_param1'] ?? null;
+//         // ... merchant_param2..5
+
+//         // Save or update payments table
+//         \DB::table('payments')->updateOrInsert(
+//             ['order_id' => $orderId],
+//             [
+//                 'order_id'      => $orderId,
+//                 'status'        => $status,
+//                 'amount'        => $amount,
+//                 'currency'      => $currency,
+//                 'tracking_id'   => $trackingId,
+//                 'bank_ref_no'   => $bankRefNo,
+//                 'payment_mode'  => $paymentMode,
+//                 'response_code' => $responseCode,
+//                 'status_message'=> $statusMsg,
+//                 'trans_date'    => $transDate,
+//                 'card_brand'    => $cardBrand,
+//                 'card_holder'   => $cardHolder,
+//                 'card_mask'     => $maskedCard,
+//                 'response_raw'  => json_encode($responseData),
+//                 'updated_at'    => now(),
+//                 'created_at'    => now()
+//             ]
+//         );
+
+//         // Call order service for successful payments
+//         if (strtolower($status) === 'success' || $status === 'Success') {
+//             // Your existing order creation logic
+//             try {
+//                 $this->orderService->createOrderFromPayment($responseData);
+//             } catch (\Exception $e) {
+//                 \Log::error('Order creation failed after payment', ['error' => $e->getMessage(), 'order' => $orderId]);
+//             }
+//         }
+
+//         // Redirect user to frontend result page
+//         $frontend = rtrim(env('CCAVENUE_REDIRECT_URL', 'https://uae.thehorecastore.co'), '/');
+//         if ($orderId) {
+//             $redirect = $frontend . '/payment-result/' . urlencode($orderId);
+//         } else {
+//             $redirect = $frontend . '/payment-result';
+//         }
+
+//         return redirect($redirect);
+
+//     } catch (\Exception $e) {
+//         \Log::error('CCAvenue handleResponse exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+//         return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment-failure');
+//     }
+// }
     public function handleResponse(Request $request)
-{
-    try {
-        $encResponse = $request->input('encResp');
+    {
+        try {
+            $encResponse = $request->input('encResp');
 
-        if (empty($encResponse)) {
-            \Log::warning('CCAvenue handleResponse called without encResp', $request->all());
-            return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment/declined');
-        }
-
-        // decrypt and parse
-        $responseData = $this->ccavenueService->parseResponse($encResponse);
-
-        \Log::info('CCAvenue decrypted response', $responseData);
-
-        // map common fields safely (use null coalescing)
-        $orderId      = $responseData['order_id'] ?? null;
-        $status       = $responseData['order_status'] ?? ($responseData['status'] ?? 'Unknown');
-        $amount       = $responseData['amount'] ?? null;
-        $currency     = $responseData['currency'] ?? null;
-        $trackingId   = $responseData['tracking_id'] ?? $responseData['bank_ref_no'] ?? null;
-        $bankRefNo    = $responseData['bank_ref_no'] ?? null;
-        $paymentMode  = $responseData['payment_mode'] ?? null;
-        $responseCode = $responseData['response_code'] ?? null;
-        $statusMsg    = $responseData['status_message'] ?? null;
-        $transDate    = $responseData['trans_date'] ?? null;
-
-        // card info (if provided, likely masked)
-        $cardBrand    = $responseData['card_brand'] ?? $responseData['card_type'] ?? null;
-        $cardHolder   = $responseData['card_holder_name'] ?? null;
-        $maskedCard   = $responseData['card_number'] ?? $responseData['card_no'] ?? null; // usually masked
-
-        // merchant params (if you used them)
-        $merchantParam1 = $responseData['merchant_param1'] ?? null;
-        // ... merchant_param2..5
-
-        // Save or update payments table
-        \DB::table('payments')->updateOrInsert(
-            ['order_id' => $orderId],
-            [
-                'order_id'      => $orderId,
-                'status'        => $status,
-                'amount'        => $amount,
-                'currency'      => $currency,
-                'tracking_id'   => $trackingId,
-                'bank_ref_no'   => $bankRefNo,
-                'payment_mode'  => $paymentMode,
-                'response_code' => $responseCode,
-                'status_message'=> $statusMsg,
-                'trans_date'    => $transDate,
-                'card_brand'    => $cardBrand,
-                'card_holder'   => $cardHolder,
-                'card_mask'     => $maskedCard,
-                'response_raw'  => json_encode($responseData),
-                'updated_at'    => now(),
-                'created_at'    => now()
-            ]
-        );
-
-        // Call order service for successful payments
-        if (strtolower($status) === 'success' || $status === 'Success') {
-            // Your existing order creation logic
-            try {
-                $this->orderService->createOrderFromPayment($responseData);
-            } catch (\Exception $e) {
-                \Log::error('Order creation failed after payment', ['error' => $e->getMessage(), 'order' => $orderId]);
+            if (!$encResponse) {
+                \Log::warning('CCAvenue handleResponse called without encResp', $request->all());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No encrypted response received'
+                ], 400);
             }
+
+            // Decrypt the response
+            $responseData = $this->ccavenueService->parseResponse($encResponse);
+
+            \Log::info('CCAvenue decrypted response', $responseData);
+
+            // Save all data in DB
+            \DB::table('payments')->updateOrInsert(
+                ['order_id' => $responseData['order_id']],
+                [
+                    'order_id'       => $responseData['order_id'] ?? null,
+                    'status'         => $responseData['order_status'] ?? null,
+                    'amount'         => $responseData['amount'] ?? null,
+                    'currency'       => $responseData['currency'] ?? null,
+                    'tracking_id'    => $responseData['tracking_id'] ?? null,
+                    'bank_ref_no'    => $responseData['bank_ref_no'] ?? null,
+                    'payment_mode'   => $responseData['payment_mode'] ?? null,
+                    'card_brand'     => $responseData['card_type'] ?? null,
+                    'card_number'    => $responseData['card_number'] ?? null,
+                    'card_holder'    => $responseData['card_holder_name'] ?? null,
+                    'trans_date'     => $responseData['trans_date'] ?? null,
+                    'response_raw'   => json_encode($responseData),
+                    'updated_at'     => now(),
+                    'created_at'     => now()
+                ]
+            );
+
+            // Optional: trigger order creation
+            if (strtolower($responseData['order_status'] ?? '') === 'success') {
+                $this->orderService->createOrderFromPayment($responseData);
+            }
+
+            // Return JSON to frontend (React) with all payment info
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment processed successfully',
+                'data' => $responseData
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('CCAvenue handleResponse exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process payment response',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Redirect user to frontend result page
-        $frontend = rtrim(env('CCAVENUE_REDIRECT_URL', 'https://uae.thehorecastore.co'), '/');
-        if ($orderId) {
-            $redirect = $frontend . '/payment-result/' . urlencode($orderId);
-        } else {
-            $redirect = $frontend . '/payment-result';
-        }
-
-        return redirect($redirect);
-
-    } catch (\Exception $e) {
-        \Log::error('CCAvenue handleResponse exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-        return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment-failure');
     }
-}
+
 
 
 
