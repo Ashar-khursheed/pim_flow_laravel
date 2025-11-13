@@ -560,7 +560,9 @@ class PaymobController extends Controller
                 'notification_url' => config('app.backend_url').'/api/paymob/webhook',
 
             ]);
+
             $paymentToken = $paymentKeyResponse->json()['token'];
+\Log::info("paymentToken ". json_encode($paymentToken));
 
             //Step : Build iframe payment URL
             $paymentUrl = "{$baseUrl}/acceptance/iframes/"
