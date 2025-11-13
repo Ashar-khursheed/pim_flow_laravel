@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Language;
 use App\Models\Review;
 use App\Models\FrontEnd\Customer;
-
+use Carbon\Carbon;
 
 
 class ImportReviewJob implements ShouldQueue
@@ -133,8 +133,8 @@ class ImportReviewJob implements ShouldQueue
                         // UPDATE existing review
                         $existingReview->comment = $reviewComment;
                         $existingReview->status = "published";
-                        $existingReview->star = rand(3, 5);
-                        $existingReview->updated_at = now();                 
+                        $existingReview->star = rand(4, 5);
+                        $existingReview->updated_at = Carbon::now()->subDays(rand(60, 730));                 
                         $existingReview->save();
 
                         $updatedCount++;
@@ -145,12 +145,12 @@ class ImportReviewJob implements ShouldQueue
                         $review->product_id = $productId;
                         $review->comment = $reviewComment;
                         $review->status = "published";
-                        $review->star = rand(3, 5);
+                        $review->star = rand(4, 5);
                         $review->customer_id = $randomCustomer->id;
                         $review->customer_name = $randomCustomer->name;
                         $review->customer_email = $randomCustomer->email;
-                        $review->created_at = now();                     
-                        $review->updated_at = now();                      
+                        $review->created_at = Carbon::now()->subDays(rand(60, 730));                     
+                        $review->updated_at = Carbon::now()->subDays(rand(60, 730));                      
                         $review->images = null;
                         $review->save();
 
