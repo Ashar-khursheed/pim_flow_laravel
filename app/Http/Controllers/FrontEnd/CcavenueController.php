@@ -231,7 +231,7 @@ class CcavenueController extends Controller
         }
 
         // Validate required fields
-        $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
+        $requiredFields = ['order_id', 'amount', 'currency'];
         foreach ($requiredFields as $field) {
             if (empty($data[$field])) {
                 throw new \Exception("Required field '{$field}' is missing");
