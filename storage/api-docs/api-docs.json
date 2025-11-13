@@ -30218,11 +30218,6 @@
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "paid_amount": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 199.99
-                                    },
                                     "coupon_id": {
                                         "type": "integer",
                                         "example": 1
@@ -30240,6 +30235,11 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 100
+                                    },
+                                    "additional_discount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
                                     },
                                     "products": {
                                         "type": "array",
