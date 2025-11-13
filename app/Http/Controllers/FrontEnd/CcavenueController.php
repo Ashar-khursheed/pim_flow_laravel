@@ -112,9 +112,8 @@ class CcavenueController extends Controller
             // Set default values
             $data['language'] = $data['language'] ?? 'EN';
 
-              $data['redirect_url'] = route('ccavenue.handle-response'); // Laravel route name
-              $data['cancel_url'] = route('ccavenue.handle-response');   // you can have separate cancel route if needed
-
+             $data['redirect_url'] = env('CCAVENUE_REDIRECT_URL');
+            $data['cancel_url'] = env('CCAVENUE_CANCEL_URL');
 
             // Define allowed parameters for CCAvenue
             $allowedKeys = [
