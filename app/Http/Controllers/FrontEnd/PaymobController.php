@@ -531,7 +531,6 @@ class PaymobController extends Controller
                 'items' => [],
             ]);
             $orderID = $orderResponse->json();
-            \Log::info("orderID". json_encode($orderID));
             // Generate payment key
             $billingData = [
                 'first_name' => $order->customer->name ?? 'N/A',
@@ -553,7 +552,7 @@ class PaymobController extends Controller
                 'auth_token' => $authToken,
                 'amount_cents' => $amountCents,
                 'expiration' => 3600,
-                'order_id' => $order->id,
+                'order_id' => $orderID["id"],
                 'billing_data' => $billingData,
                 'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
                 'integration_id' => env('PAYMOB_LINK_ID'),
