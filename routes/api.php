@@ -376,6 +376,10 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);
 	Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
 	Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
+	Route::put('/product-supplier/{id}/update-price', [ProductSupplierController::class, 'updatePrice']);
+	Route::put('/product-supplier/update-price-by-sku/{sku}', [ProductSupplierController::class, 'updatePriceBySku']);
+
+
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
 	// Bulk operations
@@ -501,7 +505,10 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('roles', RoleController::class);
 
 
-	Route::apiResource('reviews', ReviewController::class);
+		Route::apiResource('reviews', ReviewController::class);
+	Route::post('reviews/import', [ReviewController::class,'import']);
+	Route::post('reviews/export', [ReviewController::class,'export']);
+	Route::post('reviews/exportReview', [ReviewController::class,'exportReview']);
 	Route::apiResource('sliders', SliderController::class);
 
 	// Discount API Routes

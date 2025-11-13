@@ -45,6 +45,8 @@ class ProductController extends BaseController
 	 *     ),
 	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date")),
+	 *     @OA\Parameter(name="updated_from_date", in="query", @OA\Schema(type="string", format="date")),
+	 *     @OA\Parameter(name="updated_to_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(
 	 *         name="per_page",
 	 *         in="query",
@@ -133,6 +135,28 @@ class ProductController extends BaseController
 				'data' => $records,
 			]);
 		}
+
+		 if ($request->filled('updated_from_date') && $request->filled('updated_to_date')) {
+			$from = $request->updated_from_date . ' 00:00:00';
+			$to = $request->updated_to_date . ' 23:59:59';
+
+			// Get products updated within range OR whose suppliers were updated in range
+			$records = Product::where('status', 'published')
+				->where(function ($query) use ($from, $to) {
+					$query->whereBetween('updated_at', [$from, $to])
+						->orWhereHas('productSuppliers', function ($supplierQuery) use ($from, $to) {
+							$supplierQuery->whereBetween('updated_at', [$from, $to]);
+						});
+				})
+				->pluck('id');
+
+			return response()->json([
+				'success' => true,
+				'message' => __('msg_rec_list'),
+				'data' => $records,
+			]);
+		}
+
 
 		$perPage = $request->input('per_page', 50);
 		$search = $request->input('search');
@@ -311,9 +335,8 @@ class ProductController extends BaseController
 		$product->sku = $request->sku;
 		$product->website_ids = implode(',', $request->websites);
 		$product->status = 'draft';
-		if ($request->quote_available) {
 			$product->quote_available = $request->quote_available;
-		}
+		
 		$product->created_at = now();
 		$product->updated_at = now();
 		$product->created_by = auth()->id();
@@ -1665,9 +1688,9 @@ class ProductController extends BaseController
 		foreach ($input as $key => $value) {
 			$product->$key = $value;
 		}
-		if ($request->quote_available) {
+
 			$product->quote_available = $request->quote_available;
-		}
+		
 		/* Save the product */
 		$product->save();
 
