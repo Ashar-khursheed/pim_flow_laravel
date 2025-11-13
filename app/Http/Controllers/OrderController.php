@@ -1111,14 +1111,11 @@ class OrderController extends Controller
 
 			DB::commit();
 
-						\Log::info("Order updated");
 			if ($pendingAmount > 0) {
 				$paymentLink = null;
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-						\Log::info("In website: ".config('app.website'));
 					try {
-						$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
-						\Log::info("Paymob Payment Link: {$paymentLink}");
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\PaymobController::class)->generatePaymobPaymentLink($order);
 						if ($paymentLink) {
 							$order = Order::find($order->id);
 							$order->payment_link = $paymentLink;
