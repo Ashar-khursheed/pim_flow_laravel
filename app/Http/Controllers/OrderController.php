@@ -1046,6 +1046,9 @@ class OrderController extends Controller
 			$paidAmount = $order->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
 
+			/* Get original total amount before update */
+			$originalTotalAmount = $order->total_amount;
+
 			$order->update([
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $orderShipping,
@@ -1112,7 +1115,7 @@ class OrderController extends Controller
 				$paymentLink = null;
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					try {
-						$paymentLink = app(\App\Http\Controllers\FrontEnd\PaymobController::class)->generatePaymobPaymentLink($order);
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
 						if ($paymentLink) {
 							$order = Order::find($order->id);
 							$order->payment_link = $paymentLink;
@@ -1142,7 +1145,9 @@ class OrderController extends Controller
 						]);
 					}
 				}
+			}
 
+			if ($originalTotalAmount != $totalAmount) {
 				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
 				$batch->add(new OrderUpdateMailJob([
