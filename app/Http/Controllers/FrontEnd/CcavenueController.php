@@ -392,7 +392,7 @@ class CcavenueController extends Controller
 
         if (empty($encResponse)) {
             \Log::warning('CCAvenue handleResponse called without encResp', $request->all());
-            return redirect(env('FRONTEND_URL') . '/payment/declined');
+            return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment/declined');
         }
 
         // decrypt and parse
