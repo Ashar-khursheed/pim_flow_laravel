@@ -519,7 +519,7 @@ class PaymobController extends Controller
             $authToken = $authResponse->json()['token'];
 
             // Step Create order
-            $merchantOrderId = random_int(1000000000, 9999999999);
+            $merchantOrderId = $order->order_number ?? uniqid('order_');
             $amountCents = (int) ($order->pending_amount * 100);
 
             $orderResponse = Http::post("{$baseUrl}/ecommerce/orders", [
@@ -560,9 +560,7 @@ class PaymobController extends Controller
                 'notification_url' => config('app.backend_url').'/api/paymob/webhook',
 
             ]);
-
             $paymentToken = $paymentKeyResponse->json()['token'];
-\Log::info("paymentToken ". json_encode($paymentToken));
 
             //Step : Build iframe payment URL
             $paymentUrl = "{$baseUrl}/acceptance/iframes/"
