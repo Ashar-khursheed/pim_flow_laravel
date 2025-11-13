@@ -100,100 +100,174 @@ class CcavenueController extends Controller
      *     )
      * )
      */
+    // public function initiatePayment(PaymentRequest $request): JsonResponse
+    // {
+    //     try {
+    //         $data = $request->validated();
+    //         $data['amount'] = number_format((float) $data['amount'], 2, '.', '');
+
+    //         // Get merchant ID
+    //         $merchantId = $this->ccavenueService->getMerchantId();
+
+    //         // Set default values
+    //         $data['language'] = $data['language'] ?? 'EN';
+
+    //          $data['redirect_url'] = env('CCAVENUE_REDIRECT_URL');
+    //         $data['cancel_url'] = env('CCAVENUE_CANCEL_URL');
+
+    //         // Define allowed parameters for CCAvenue
+    //         $allowedKeys = [
+    //             'order_id',
+    //             'currency',
+    //             'amount',
+    //             'redirect_url',
+    //             'cancel_url',
+    //             'language',
+    //             'billing_name',
+    //             'billing_address',
+    //             'billing_city',
+    //             'billing_state',
+    //             'billing_zip',
+    //             'billing_country',
+    //             'billing_tel',
+    //             'billing_email',
+    //             'delivery_name',
+    //             'delivery_address',
+    //             'delivery_city',
+    //             'delivery_state',
+    //             'delivery_zip',
+    //             'delivery_country',
+    //             'delivery_tel',
+    //             'merchant_param1',
+    //             'merchant_param2',
+    //             'merchant_param3',
+    //             'merchant_param4',
+    //             'merchant_param5',
+    //             'promo_code',
+    //             'customer_identifier'
+    //         ];
+
+    //         // Build merchant data string - start with merchant_id
+    //         $merchantData = "merchant_id={$merchantId}";
+
+    //         foreach ($data as $key => $value) {
+    //             if (in_array($key, $allowedKeys) && !empty($value)) {
+    //                 $merchantData .= "&{$key}={$value}";
+    //             }
+    //         }
+
+    //         // Validate required fields
+    //         $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
+    //         foreach ($requiredFields as $field) {
+    //             if (empty($data[$field])) {
+    //                 throw new \Exception("Required field '{$field}' is missing");
+    //             }
+    //         }
+
+    //         \Log::info('Final merchant data:', [$merchantData]);
+    //         \Log::info('Data being processed:', $data);
+
+    //         // Generate payment URL
+    //         $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Payment URL generated successfully',
+    //             'data' => [
+    //                 'payment_url' => $paymentUrl,
+    //                 'order_id' => $data['order_id'],
+    //                 'amount' => $data['amount'],
+    //                 'currency' => $data['currency']
+    //             ]
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         \Log::error('CCAvenue payment initiation failed:', [
+    //             'error' => $e->getMessage(),
+    //             'trace' => $e->getTraceAsString()
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to generate payment URL',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
     public function initiatePayment(PaymentRequest $request): JsonResponse
-    {
-        try {
-            $data = $request->validated();
-            $data['amount'] = number_format((float) $data['amount'], 2, '.', '');
+{
+    try {
+        $data = $request->validated();
+        $data['amount'] = number_format((float) $data['amount'], 2, '.', '');
 
-            // Get merchant ID
-            $merchantId = $this->ccavenueService->getMerchantId();
+        // Get merchant ID
+        $merchantId = $this->ccavenueService->getMerchantId();
 
-            // Set default values
-            $data['language'] = $data['language'] ?? 'EN';
+        // Set default values
+        $data['language'] = $data['language'] ?? 'EN';
 
-             $data['redirect_url'] = env('CCAVENUE_REDIRECT_URL');
-            $data['cancel_url'] = env('CCAVENUE_CANCEL_URL');
+        // Always use backend URLs
+        $data['redirect_url'] = env('CCAVENUE_REDIRECT_URL'); // e.g., https://yourdomain.com/payment/success
+        $data['cancel_url'] = env('CCAVENUE_CANCEL_URL');     // e.g., https://yourdomain.com/payment/cancel
 
-            // Define allowed parameters for CCAvenue
-            $allowedKeys = [
-                'order_id',
-                'currency',
-                'amount',
-                'redirect_url',
-                'cancel_url',
-                'language',
-                'billing_name',
-                'billing_address',
-                'billing_city',
-                'billing_state',
-                'billing_zip',
-                'billing_country',
-                'billing_tel',
-                'billing_email',
-                'delivery_name',
-                'delivery_address',
-                'delivery_city',
-                'delivery_state',
-                'delivery_zip',
-                'delivery_country',
-                'delivery_tel',
-                'merchant_param1',
-                'merchant_param2',
-                'merchant_param3',
-                'merchant_param4',
-                'merchant_param5',
-                'promo_code',
-                'customer_identifier'
-            ];
+        // Allowed parameters for CCAvenue
+        $allowedKeys = [
+            'order_id', 'currency', 'amount', 'redirect_url', 'cancel_url', 'language',
+            'billing_name', 'billing_address', 'billing_city', 'billing_state', 'billing_zip',
+            'billing_country', 'billing_tel', 'billing_email',
+            'delivery_name', 'delivery_address', 'delivery_city', 'delivery_state', 'delivery_zip',
+            'delivery_country', 'delivery_tel',
+            'merchant_param1','merchant_param2','merchant_param3','merchant_param4','merchant_param5',
+            'promo_code', 'customer_identifier'
+        ];
 
-            // Build merchant data string - start with merchant_id
-            $merchantData = "merchant_id={$merchantId}";
-
-            foreach ($data as $key => $value) {
-                if (in_array($key, $allowedKeys) && !empty($value)) {
-                    $merchantData .= "&{$key}={$value}";
-                }
+        // Build merchant data string
+        $merchantData = "merchant_id={$merchantId}";
+        foreach ($data as $key => $value) {
+            if (in_array($key, $allowedKeys) && !empty($value)) {
+                $merchantData .= "&{$key}={$value}";
             }
-
-            // Validate required fields
-            $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
-            foreach ($requiredFields as $field) {
-                if (empty($data[$field])) {
-                    throw new \Exception("Required field '{$field}' is missing");
-                }
-            }
-
-            \Log::info('Final merchant data:', [$merchantData]);
-            \Log::info('Data being processed:', $data);
-
-            // Generate payment URL
-            $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment URL generated successfully',
-                'data' => [
-                    'payment_url' => $paymentUrl,
-                    'order_id' => $data['order_id'],
-                    'amount' => $data['amount'],
-                    'currency' => $data['currency']
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('CCAvenue payment initiation failed:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to generate payment URL',
-                'error' => $e->getMessage()
-            ], 500);
         }
+
+        // Validate required fields
+        $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                throw new \Exception("Required field '{$field}' is missing");
+            }
+        }
+
+        \Log::info('Final merchant data:', [$merchantData]);
+        \Log::info('Data being processed:', $data);
+
+        // Generate payment URL
+        $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment URL generated successfully',
+            'data' => [
+                'payment_url' => $paymentUrl,
+                'order_id'    => $data['order_id'],
+                'amount'      => $data['amount'],
+                'currency'    => $data['currency']
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('CCAvenue payment initiation failed:', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to generate payment URL',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * @OA\Post(
