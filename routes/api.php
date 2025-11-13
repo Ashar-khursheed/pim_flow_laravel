@@ -23,6 +23,7 @@ use App\Http\Controllers\CategoryAttributeController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FaqCategoryController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\CustomerCartExportController;
 use App\Http\Controllers\ProductExportController;
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\DiscountController;
@@ -378,6 +379,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
 	Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
 	Route::put('/product-supplier/{id}/update-price', [ProductSupplierController::class, 'updatePrice']);
+	Route::put('/product-supplier/update-price-by-sku/{sku}', [ProductSupplierController::class, 'updatePriceBySku']);
+
 
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
@@ -513,6 +516,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('reviews/export', [ReviewController::class,'export']);
 	Route::post('reviews/exportReview', [ReviewController::class,'exportReview']);
 	Route::apiResource('sliders', SliderController::class);
+
+	Route::post('customerCartExport/export', [CustomerCartExportController::class,'export']);
 
 	// Discount API Routes
 	Route::apiResource('discounts', DiscountController::class);
@@ -909,7 +914,7 @@ Route::get('/frontend/image.xml', [SitemapController::class, 'getImageSitemap'])
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
-Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'getProductFeed']);
+Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'generateProductFeed']);
 Route::get('/feed/products-1.xml', [ProductXMLFeedWatchController::class, 'getProductFeed1']);
 Route::get('/feed/products-2.xml', [ProductXMLFeedWatchController::class, 'getProductFeed2']);
 Route::get('/feed/products-3.xml', [ProductXMLFeedWatchController::class, 'getProductFeed3']);

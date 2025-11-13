@@ -230,7 +230,7 @@ class OrderController extends Controller
 					}
 				}
 
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -623,7 +623,7 @@ class OrderController extends Controller
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}
@@ -817,7 +817,7 @@ class OrderController extends Controller
 			}
 		}
 
-		foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+		foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
 				$order->$key = number_format($order->$key, 2, '.', '');
 			}
@@ -900,11 +900,11 @@ class OrderController extends Controller
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
-	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
 	 *             @OA\Property(property="additional_amount_name", type="string", example="Accessory 1"),
 	 *             @OA\Property(property="additional_amount_price", type="number", format="float", example=100),
+	 *             @OA\Property(property="additional_discount", type="number", format="float", example=200),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -963,6 +963,7 @@ class OrderController extends Controller
 
 			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
 			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
+			'additional_discount' => 'nullable|numeric|min:0',
 
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
@@ -1038,8 +1039,15 @@ class OrderController extends Controller
 			}
 
 			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
-			$paidAmount = $request->paid_amount ?? 0;
+
+			$additionalDiscount = $request->additional_discount ?? 0;
+			$totalAmount -= (float) $additionalDiscount;
+
+			$paidAmount = $order->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
+
+			/* Get original total amount before update */
+			$originalTotalAmount = $order->total_amount;
 
 			$order->update([
 				'customer_address_id' => $request->customer_address_id,
@@ -1054,6 +1062,7 @@ class OrderController extends Controller
 				'discount' => $discount,
 				'additional_amount_name' => $request->additional_amount_name ?? null,
 				'additional_amount_price' => $request->additional_amount_price ?? null,
+				'additional_discount' => $additionalDiscount,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
@@ -1106,10 +1115,10 @@ class OrderController extends Controller
 				$paymentLink = null;
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					try {
-						$paymentLink = app(\App\Http\Controllers\FrontEnd\PaymobController::class)->generatePaymobPaymentLink($order);
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
 						if ($paymentLink) {
 							$order = Order::find($order->id);
-							$order->additional_amount_details = $paymentLink;
+							$order->payment_link = $paymentLink;
 							$order->save();
 						}
 					} catch (\Exception $e) {
@@ -1125,7 +1134,7 @@ class OrderController extends Controller
 						->createStaxPaymentLink($order);
 						if ($paymentLink) {
 							$order = Order::find($order->id);
-							$order->additional_amount_details = $paymentLink;
+							$order->payment_link = $paymentLink;
 							$order->save();
 						}
 					} catch (\Exception $e) {
@@ -1136,7 +1145,9 @@ class OrderController extends Controller
 						]);
 					}
 				}
+			}
 
+			if ($originalTotalAmount != $totalAmount) {
 				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
 				$batch->add(new OrderUpdateMailJob([
@@ -1195,7 +1206,7 @@ class OrderController extends Controller
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}

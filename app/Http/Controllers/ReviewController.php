@@ -12,7 +12,7 @@ use App\Repository\ExcelRepository;
 
 use App\Jobs\ImportReviewJob;
 use App\Services\ExcelImporterService;
-
+use Carbon\Carbon;
 class ReviewController extends Controller
 {
     /**
@@ -251,7 +251,7 @@ class ReviewController extends Controller
 
 
     public function store(Request $request)
-    {
+    {   
         $validator = Validator::make($request->all(), [
             'customer_name' => 'required|string|max:191',
             'customer_email' => 'required|email|max:191',
@@ -270,15 +270,15 @@ class ReviewController extends Controller
 
         $imagePaths = [];
 
-        // ✅ Only loop if there are uploaded files
+        //  Only loop if there are uploaded files
         if ($request->hasFile('images') && count($request->file('images')) > 0) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('production/reviews', 's3');
                 $imagePaths[] = Storage::disk('s3')->url($path);
             }
         }
-
-        // ✅ Ensure default empty array for images
+ 
+        // Ensure default empty array for images
         $review = Review::create([
             'customer_name' => $request->customer_name,
             'customer_email' => $request->customer_email,
@@ -286,7 +286,9 @@ class ReviewController extends Controller
             'star' => $request->star,
             'comment' => $request->comment,
             'status' => $request->status ?? 'published',
-            'images' => !empty($imagePaths) ? $imagePaths : [], // safe default
+            'images' => !empty($imagePaths) ? $imagePaths : [],  
+            'created_at' => Carbon::now()->subDays(rand(60, 730)),
+            
         ]);
 
         return response()->json([
@@ -317,11 +319,28 @@ class ReviewController extends Controller
         //         'message' => "You don't have permission to access this module.",
         //     ]);
         // }
-        $review = Review::find($id);
+        $review = Review::with('product:id,name')->find($id); 
         if (!$review) {
             return response()->json(['message' => 'Review not found'], 404);
         }
-        return response()->json($review, 200);
+
+         return response()->json([
+            'success' => true,
+            'message' => 'Review successfully',
+            'data' => [
+                'id' => $review->id,
+                'customer_id' => $review->customer_id,
+                'customer_name' => $review->customer_name,
+                'customer_email' => $review->customer_email,
+                'product_id' => $review->product_id,
+                'product_name' => $review->product->name,
+                'star' => $review->star,               
+                'comment' => $review->comment,
+                'status' => $review->status,
+                'images' => $review->images,                
+            ]
+        ]);
+         
     }
 
 
@@ -439,6 +458,7 @@ class ReviewController extends Controller
         $review->save();
 
         return response()->json([
+            'success' => true,
             'message' => 'Review updated successfully',
             'review' => $review
         ]);

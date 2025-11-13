@@ -44,19 +44,19 @@ class ProductXMLFeedWatchController extends Controller
      *     )
      * )
      */
-    public function getProductFeed(Request $request)
-    {
-        // Cache the feed for 1 hour with pagination parameters
-        $cacheKey = 'datafeedwatch_feed_r' . md5($request->fullUrl());
+    // public function getProductFeed(Request $request)
+    // {
+    //     // Cache the feed for 1 hour with pagination parameters
+    //     $cacheKey = 'datafeedwatch_feed_r' . md5($request->fullUrl());
 
-        $data = Cache::remember($cacheKey, 3600, function () use ($request) {
-            return $this->generateProductFeed($request);
-        });
+    //     $data = Cache::remember($cacheKey, 3600, function () use ($request) {
+    //         return $this->generateProductFeed($request);
+    //     });
 
-        return $data;
-    }
+    //     return $data;
+    // }
 
-    private function generateProductFeed(Request $request)
+    public function generateProductFeed(Request $request)
     {
         $perPage = $request->input('per_page', 500);
         $allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
@@ -121,7 +121,9 @@ class ProductXMLFeedWatchController extends Controller
                 $categorySlug .= $currentCategory->name . '/';
             }
 
-            $fullSlug = $categorySlug . ($product->seoProductUrl->url ?? $product->name);
+            $fullSlug =  $product->parent_category_url() . '/' .
+                     $product->category_url() . '/' .
+                     ($product->seoProductUrl->url ?? "");
 
             // Build product type and google category
             $product_type = '';
@@ -210,7 +212,7 @@ class ProductXMLFeedWatchController extends Controller
                 'product_type' => $product_type,
                 'google_product_category' => $google_product_category,
                 'image' => $image,
-                'product_highlight' => $productVariants ?? [],
+                'product_highlight' => $productVariants,
                 'current_category' => $currentCategory?->name,
                 'parent_category' => $parentCategory?->name,
             ];
@@ -255,7 +257,7 @@ class ProductXMLFeedWatchController extends Controller
             if (!empty($product['product_highlight'])) {
                 foreach ($product['product_highlight'] as $highlight) {
 
-                    $xml .= '<g:product_highlight>' . $highlight['attribute_name'] ?? '' . ' : ' . $highlight['attrValue'] ?? '' . '</g:product_highlight>';
+                    $xml .= '<g:product_highlight>' . $highlight['attribute_name']. ' : ' . $highlight['attrValue']. '</g:product_highlight>';
                 }
             }
 
@@ -494,7 +496,9 @@ class ProductXMLFeedWatchController extends Controller
                 $categorySlug .= $currentCategory->name . '/';
             }
 
-            $fullSlug = $categorySlug . ($product->seoProductUrl->url ?? $product->name);
+            $fullSlug =  $product->parent_category_url() . '/' .
+                     $product->category_url() . '/' .
+                     ($product->seoProductUrl->url ?? "");
 
             // Build product type and google category
             $product_type = '';

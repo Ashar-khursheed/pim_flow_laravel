@@ -31,6 +31,7 @@ class Order extends Model
 		'additional_amount_name',
 		'additional_amount_price',
 		'additional_amount_details',
+		'additional_discount',
 		'total_amount',
 		'total_products',
 		'ship_all_at_once',
