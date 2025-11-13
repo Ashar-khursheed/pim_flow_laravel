@@ -932,8 +932,7 @@ class ProductSupplierController extends BaseController
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             @OA\Property(property="price", type="number", format="float", example=150),
-	 *             @OA\Property(property="sale_price", type="number", format="float", example=120),
-	 *             @OA\Property(property="total_cost_per_item", type="number", format="float", example=100)
+	 *             @OA\Property(property="sale_price", type="number", format="float", example=120)
 	 *         )
 	 *     ),
 	 *     @OA\Response(
@@ -980,7 +979,6 @@ class ProductSupplierController extends BaseController
 		$data = $request->validate([
 			'price' => 'required|numeric|min:0',
 			'sale_price' => 'nullable|numeric|min:0',
-			'total_cost_per_item' => 'required|numeric|min:0',
 		]);
 
 		// Business rule: price cannot be less than sale price
@@ -995,7 +993,6 @@ class ProductSupplierController extends BaseController
 		$product->update([
 			'price' => $data['price'],
 			'sale_price' => $data['sale_price'] ?? null,
-			'total_cost_per_item' => $data['total_cost_per_item'],
 		]);
 
 		return response()->json([

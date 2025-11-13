@@ -35015,11 +35015,6 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 120
-                                    },
-                                    "total_cost_per_item": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 100
                                     }
                                 },
                                 "type": "object"
