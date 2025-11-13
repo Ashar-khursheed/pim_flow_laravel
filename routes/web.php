@@ -67,17 +67,20 @@ Route::get('/compress-pdf', [DocumentUploadController::class, 'compress']);
 Route::get('/ccavenue-proxy', function (Request $request) {
     $targetUrl = $request->query('url');
 
-    // ✅ Security: allow only valid CCAvenue URLs
-    if (!$targetUrl || !preg_match('#^https://(secure|test)\.ccavenue\.com/#i', $targetUrl)) {
+    // ✅ Allow only valid CCAvenue URLs
+    if (!$targetUrl || !preg_match('#^https://(secure|test)\.ccavenue\.(com|ae)/#i', $targetUrl)) {
         return response('Invalid or unauthorized URL', 403);
     }
 
     try {
-        $response = Http::withHeaders([
-            'User-Agent' => 'Mozilla/5.0 (ProxyBot)',
-        ])->get($targetUrl);
+        // ✅ Forward request to CCAvenue with SSL verification off (in case of cert mismatch)
+        $response = Http::withoutVerifying()
+            ->withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (ProxyBot)',
+            ])
+            ->get($targetUrl);
 
-        // ✅ Return content with headers safe for iframe
+        // ✅ Return response body with safe headers for iframe
         return response($response->body(), $response->status())
             ->header('Content-Type', $response->header('Content-Type', 'text/html'))
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
@@ -87,5 +90,4 @@ Route::get('/ccavenue-proxy', function (Request $request) {
         \Log::error('CCAvenue Proxy Error', ['error' => $e->getMessage()]);
         return response('Proxy failed: ' . $e->getMessage(), 500);
     }
-});
-
+})->withoutMiddleware(['web']); // ✅ Disable session & CSRF middleware

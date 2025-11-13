@@ -152,6 +152,8 @@ use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
 use App\Http\Controllers\FrontEnd\FndProductVariantController;
 use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
 use App\Http\Controllers\FrontEnd\PaymobController as F_PaymobController;
+use App\Http\Controllers\FrontEnd\FinanceController as F_FinanceController;
+
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -971,6 +973,8 @@ Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']
 ->where('from', '.*');
 
 Route::prefix('frontend/auth')->group(function () {
+
+	Route::post('finances/post', [F_FinanceController::class, 'store']); // get payment_token
 
 	// Stax Payment Routes
 	Route::post('/Stax', [F_StaxPaymentController::class, 'checkout'])
