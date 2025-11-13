@@ -40,13 +40,13 @@ use Illuminate\Support\Str;
 
 					<tr>
 						<td>
-							<p style="font-size:16px; line-height:25px; font-weight: 600; font-family: 'Noto Sans',  sans-serif; margin: 0;">
+							<p style="font-size:16px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
 								Thank You
 								<strong style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:16px; line-height:25px; margin: 0;">
 									{{ $name }}
 								</strong>!
 							</p>
-							<p style="font-size:14px; line-height:25px; font-weight: 400; font-family: 'Noto Sans',  sans-serif; margin: 8px 0 0 0;">
+							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
 								Your order has been updated by our Order Fulfilment Team.
 							</p>
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
