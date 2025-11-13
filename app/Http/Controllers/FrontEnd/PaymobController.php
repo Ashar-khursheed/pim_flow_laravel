@@ -531,7 +531,7 @@ class PaymobController extends Controller
                 'items' => [],
             ]);
             $orderID = $orderResponse->json();
-            \Log::info("orderID". $orderID);
+            \Log::info("orderID". json_encode($orderID));
             // Generate payment key
             $billingData = [
                 'first_name' => $order->customer->name ?? 'N/A',
