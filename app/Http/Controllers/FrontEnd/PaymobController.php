@@ -519,7 +519,7 @@ class PaymobController extends Controller
             $authToken = $authResponse->json()['token'];
 
             // Step Create order
-            $merchantOrderId = $order->order_number ?? uniqid('order_');
+            $merchantOrderId = random_int(1000000000, 9999999999);
             $amountCents = (int) ($order->pending_amount * 100);
 
             $orderResponse = Http::post("{$baseUrl}/ecommerce/orders", [
