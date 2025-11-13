@@ -479,7 +479,7 @@ class CcavenueController extends Controller
         if (isset($information)) {
 
 
-            $order = Order::where('id', $information->order_id)->first();
+            $order = Order::where('order_number', $information->order_id)->first();
             if (!$order) {
                 return response()->json(['success' => false, 'message' => 'Order not found'], 404);
             }

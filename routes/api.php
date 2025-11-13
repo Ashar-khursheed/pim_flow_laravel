@@ -89,6 +89,7 @@ use App\Http\Controllers\FinanceController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
+use App\Http\Controllers\FrontEnd\FndFinanceController;
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
 use App\Http\Controllers\FrontEnd\UserReviewController as F_UserReviewController;
 use App\Http\Controllers\FrontEnd\SeoManagementController as F_SeoManagementController;
@@ -630,6 +631,7 @@ Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
 
 
+Route::post('frontend/finances', [FndFinanceController::class, 'store']);
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
