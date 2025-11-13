@@ -531,6 +531,7 @@ class PaymobController extends Controller
                 'items' => [],
             ]);
             $orderID = $orderResponse->json();
+            \Log::info("orderID". $orderID);
             // Generate payment key
             $billingData = [
                 'first_name' => $order->customer->name ?? 'N/A',
@@ -547,17 +548,17 @@ class PaymobController extends Controller
                 'country' => $customerAddress->country ?? '',
                 'state' => $customerAddress->state ?? ''
             ];
-          
+
             $paymentKeyResponse = Http::post("{$baseUrl}/acceptance/payment_keys", [
                 'auth_token' => $authToken,
                 'amount_cents' => $amountCents,
                 'expiration' => 3600,
-                'order_id' => $orderID["id"],
+                'order_id' => $order->id,
                 'billing_data' => $billingData,
                 'currency' => 'AED', // Fixed: Should be AED for UAE, not EGP
                 'integration_id' => env('PAYMOB_LINK_ID'),
                 'redirect_url' => config('app.url').'/thanks',
-                'notification_url' => config('app.backend_url').'/api/paymob/webhook',             
+                'notification_url' => config('app.backend_url').'/api/paymob/webhook',
 
             ]);
             $paymentToken = $paymentKeyResponse->json()['token'];
