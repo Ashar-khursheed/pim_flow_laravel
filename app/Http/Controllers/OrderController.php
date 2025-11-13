@@ -1046,6 +1046,9 @@ class OrderController extends Controller
 			$paidAmount = $order->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
 
+			/* Get original total amount before update */
+			$originalTotalAmount = $order->total_amount;
+
 			$order->update([
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $orderShipping,
@@ -1144,11 +1147,13 @@ class OrderController extends Controller
 				}
 			}
 
-			$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
-			$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
-			$batch->add(new OrderUpdateMailJob([
-				'recordId' => $order->id
-			]));
+			if ($originalTotalAmount != $totalAmount) {
+				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
+				$batch->add(new OrderUpdateMailJob([
+					'recordId' => $order->id
+				]));
+			}
 
 			/* Load relationships */
 			$order->load([
