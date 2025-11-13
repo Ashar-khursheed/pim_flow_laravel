@@ -321,42 +321,71 @@ class CcavenueController extends Controller
      *     )
      * )
      */
+    // public function handleResponse(Request $request)
+    // {
+    //     try {
+    //         $encResponse = $request->input('encResp');
+
+    //         if (empty($encResponse)) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Invalid encrypted response'
+    //             ], 400);
+    //         }
+
+    //         // Decrypt and parse response
+    //         $responseData = $this->ccavenueService->parseResponse($encResponse);
+
+    //         // Determine payment status
+    //         $orderStatus = $responseData['order_status'] ?? 'Unknown';
+    //         $statusMessage = $this->getStatusMessage($orderStatus);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Payment response processed successfully',
+    //             'data' => array_merge($responseData, [
+    //                 'status_message' => $statusMessage,
+    //                 'is_success' => $orderStatus === 'Success'
+    //             ])
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to process payment response',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
     public function handleResponse(Request $request)
     {
         try {
             $encResponse = $request->input('encResp');
 
-            if (empty($encResponse)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid encrypted response'
-                ], 400);
+            if (!$encResponse) {
+                return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment/failure'); // fallback redirect
             }
 
-            // Decrypt and parse response
+            // Decrypt CCAvenue response
             $responseData = $this->ccavenueService->parseResponse($encResponse);
 
-            // Determine payment status
-            $orderStatus = $responseData['order_status'] ?? 'Unknown';
-            $statusMessage = $this->getStatusMessage($orderStatus);
+            $orderStatus = $responseData['order_status'] ?? 'Failure';
+            $orderId     = $responseData['order_id'] ?? null;
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment response processed successfully',
-                'data' => array_merge($responseData, [
-                    'status_message' => $statusMessage,
-                    'is_success' => $orderStatus === 'Success'
-                ])
-            ]);
+            if ($orderStatus === 'Success') {
+                // Payment successful
+                return redirect(env('CCAVENUE_REDIRECT_URL') . "/payment/success?order_id={$orderId}");
+            } else {
+                // Payment failed
+                return redirect(env('CCAVENUE_REDIRECT_URL') . "/payment/declined?order_id={$orderId}");
+            }
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to process payment response',
-                'error' => $e->getMessage()
-            ], 500);
+            return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment/failure');
         }
     }
+
 
     /**
      * @OA\Get(
