@@ -32,7 +32,7 @@ class OrderUpdateMail extends Mailable
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . '/logo.png';
 		$name = $order->customer->name ?? 'User';
-		$paymentUrl = $order->additional_amount_details ?? url("/");
+		$paymentUrl = $order->payment_link ?? url("/");
 
 		$orderNumber = $order->order_number;
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
@@ -125,6 +125,7 @@ class OrderUpdateMail extends Mailable
 		$taxPercent = $taxPercent + 0;
 		$taxAmount = $order->tax_amount ?? 0;
 		$discount = $order->discount ?? 0;
+		$additionalDiscount = $order->additional_discount ?? 0;
 		$pendingAmount = $order->pending_amount ?? 0;
 
 		$siteUrl = match (config('app.website')) {
@@ -173,14 +174,34 @@ class OrderUpdateMail extends Mailable
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
 			'discount' => $discount,
+			'additionalDiscount' => $additionalDiscount,
 			'pendingAmount' => $pendingAmount,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject("Your HorecaStore Updated Order #{$orderNumber} Awaits Payment – Pay Now")
-		->markdown('emails.orders.order-update')
+		/* Determine email subject and template based on pending amount */
+		if ($pendingAmount > 0) {
+			/* Customer needs to pay remaining amount */
+			$subject = "Update on Your HorecaStore Order #{$orderNumber} – Action Required";
+			$bladeName = "order-update-pending";
+		} elseif ($pendingAmount < 0) {
+			/* Customer will receive a refund */
+			$subject = "Update on Your HorecaStore Order #{$orderNumber} – Refund Processing";
+			$bladeName = "order-update-refund";
+		} elseif ($pendingAmount == 0 && $additionalDiscount > 0) {
+			/* Discount applied, no payment needed */
+			$subject = "Update on Your HorecaStore Order #{$orderNumber} – No Action Required";
+			$bladeName = "order-update";
+		} else {
+			/* Default: standard order update */
+			$subject = "Your HorecaStore Updated Order #{$orderNumber} Awaits Payment – Pay Now";
+			$bladeName = "order-update";
+		}
+
+		return $this->subject($subject)
+		->markdown("emails.orders.{$bladeName}")
 		->with($params);
 	}
 }
