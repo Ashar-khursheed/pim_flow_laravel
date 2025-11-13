@@ -15,7 +15,7 @@ class FndFinanceController extends Controller
      * @OA\Post(
      *     path="/api/frontend/finances",
      *     summary="Create a new finance record",
-     *     tags={"frontend Finance"},
+     *     tags={"Frontend Finance"},
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,

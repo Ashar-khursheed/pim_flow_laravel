@@ -18362,7 +18362,7 @@
         "/api/frontend/finances": {
             "post": {
                 "tags": [
-                    "frontend Finance"
+                    "Frontend Finance"
                 ],
                 "summary": "Create a new finance record",
                 "operationId": "8e1f1f0683325135482562a7f6069bd7",
@@ -45776,8 +45776,8 @@
             "description": "Frontend Product Accessories"
         },
         {
-            "name": "frontend Finance",
-            "description": "frontend Finance"
+            "name": "Frontend Finance",
+            "description": "Frontend Finance"
         },
         {
             "name": "Frontend Product variants",
