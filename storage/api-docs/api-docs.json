@@ -18359,6 +18359,190 @@
                 ]
             }
         },
+        "/api/frontend/finances": {
+            "post": {
+                "tags": [
+                    "frontend Finance"
+                ],
+                "summary": "Create a new finance record",
+                "operationId": "8e1f1f0683325135482562a7f6069bd7",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "business_name",
+                                    "business_address",
+                                    "country",
+                                    "city"
+                                ],
+                                "properties": {
+                                    "payment_selection": {
+                                        "description": "Credit, Debit Card, Net Banking, Net Payment Terms",
+                                        "type": "string",
+                                        "example": "Credit"
+                                    },
+                                    "payment_options": {
+                                        "description": "Payment option description",
+                                        "type": "string",
+                                        "example": "Net Payment Terms"
+                                    },
+                                    "term_selection": {
+                                        "description": "Net Pay in 30/45/60 Days",
+                                        "type": "string",
+                                        "example": "Net 30 Days"
+                                    },
+                                    "amount": {
+                                        "description": "Enter amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5000.75
+                                    },
+                                    "documents": {
+                                        "description": "Upload supporting document file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "payment_due": {
+                                        "description": "Payment due date",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-12-31"
+                                    },
+                                    "type_of_business": {
+                                        "description": "Type of business (Advertising / E-commerce)",
+                                        "type": "string",
+                                        "example": "E-commerce"
+                                    },
+                                    "business_name": {
+                                        "description": "Legal business name",
+                                        "type": "string",
+                                        "example": "ABC Pvt Ltd"
+                                    },
+                                    "first_name": {
+                                        "description": "first_name",
+                                        "type": "string",
+                                        "example": "first name"
+                                    },
+                                    "last_name": {
+                                        "description": "last name",
+                                        "type": "string",
+                                        "example": "last name"
+                                    },
+                                    "business_email": {
+                                        "description": "Business Email",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "abc@domain.com"
+                                    },
+                                    "business_address": {
+                                        "description": "Business address",
+                                        "type": "string",
+                                        "example": "123 Street, Delhi"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "8800 Bissonnet Street, Ste A, Houston, Texas 77074"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "Houston"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "Texas"
+                                    },
+                                    "zip": {
+                                        "type": "string",
+                                        "example": "77074"
+                                    },
+                                    "annual_revenue": {
+                                        "type": "string",
+                                        "example": "10M USD"
+                                    },
+                                    "years_in_business": {
+                                        "type": "string",
+                                        "example": "5 – 10 years"
+                                    },
+                                    "accounts_payable_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "finance@abc.com"
+                                    },
+                                    "accounts_payable_phone": {
+                                        "type": "string",
+                                        "example": "+91-9876543210"
+                                    },
+                                    "duns_number": {
+                                        "type": "string",
+                                        "example": "123456789"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Finance record created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record created successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/product-variants": {
             "post": {
                 "tags": [
@@ -45590,6 +45774,10 @@
         {
             "name": "Frontend Product Accessories",
             "description": "Frontend Product Accessories"
+        },
+        {
+            "name": "frontend Finance",
+            "description": "frontend Finance"
         },
         {
             "name": "Frontend Product variants",
