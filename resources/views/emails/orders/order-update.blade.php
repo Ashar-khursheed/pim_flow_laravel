@@ -50,17 +50,80 @@ use Illuminate\Support\Str;
 								Your order has been updated by our Order Fulfilment Team.
 							</p>
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
-								We made some changes to your order due to stock availability, product updates, or special pricing. A discount has been applied, and your revised total remains the same so
-								<strong>
-									no additional payment is required.
-								</strong>
+								We made some changes to your order due to stock availability, product updates, or special pricing. Below is a clear breakdown showing the difference.
+							</p>
+						</td>
+					</tr>
+
+					<tr>
+						<td style="padding: 10px 10px;">
+							<table width="100%" cellspacing="0" cellpadding="0" border="0" style="border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; font-family: 'Noto Sans', sans-serif;">
+								<!-- Header -->
+								<tr>
+									<td colspan="2" style="background: #FAFAFA; padding: 15px; border-bottom: 2px solid #E2E8F0;">
+										<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 18px; line-height: 24px; font-weight: 600; margin: 0; color: #1a1a1a;">
+											Order Update Summary
+										</h3>
+									</td>
+								</tr>
+
+								<!-- Original Order Total -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										Original Order Total
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										{{ $currency }} {{ number_format($originalTotalAmount, 2, '.', ',') }}
+									</td>
+								</tr>
+
+								<!-- New Updated Total -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										New Updated Total
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										{{ $currency }} {{ number_format($total, 2, '.', ',') }}
+									</td>
+								</tr>
+
+								<!-- Amount You Already Paid -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										Discount Applied
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										{{ $currency }} {{ number_format($additionalDiscount, 2, '.', ',') }}
+									</td>
+								</tr>
+
+								<!-- Difference (Remaining to Pay) -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; background: #FAFAFA;">
+										Price Difference
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; background: #FAFAFA;">
+										{{ $currency }} 0
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+
+					<tr>
+						<td style="padding: 10px 10px;">
+							<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 22px; font-weight: 600; margin: 0 0 8px; color: #1a1a1a;">
+								What This Means
+							</h3>
+							<p style="font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; margin: 0; color: #4a4a4a;">
+								Your updated order total remains unchanged and requires no additional payment or refund.
 							</p>
 						</td>
 					</tr>
 
 					<tr>
 						<td>
-							<table cellspacing="0" cellpadding="4" style="font-family: 'Noto Sans', sans-serif; width:100%; font-size:14px; line-height:20px; margin-top:20px;">
+							<table cellspacing="0" cellpadding="4" style="font-family: 'Noto Sans', sans-serif; width:100%; font-size:14px; line-height:20px; margin-top:10px;">
 								<tr>
 									<td style="font-family: 'Noto Sans', sans-serif; vertical-align:top; width:50%; border-right:1px solid #ddd;">
 										<h3 style="font-family: 'Noto Sans', sans-serif; font-size:15px; line-height:22px; font-weight: 600; margin:0 0 10px; color: #26683A; text-decoration: underline;">
