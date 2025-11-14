@@ -17,6 +17,7 @@ use App\Models\Language;
 use App\Models\Review;
 use App\Models\FrontEnd\Customer;
 use Carbon\Carbon;
+use Faker\Factory as Faker;
 
 
 class ImportReviewJob implements ShouldQueue
@@ -116,14 +117,108 @@ class ImportReviewJob implements ShouldQueue
                     if (empty(trim($reviewComment))) {
                         continue;
                     }
+                    $faker = Faker::create();
+                    $customer = [
+                        'id'    => $faker->numberBetween(1, 999999), 
+                        'name'  => $faker->name,
+                        'email' => $faker->unique()->safeEmail,
+                        'phone' => $faker->phoneNumber,
+                    ];
+                $notin = [
+                    'webdeveloper01@horecastore.ae',
+                    'webdeveloper02@horecastore.ae',
+                    'webdeveloper03@horecastore.ae',
+                    'webdeveloper04@horecastore.ae',
+                    'webdeveloper05@horecastore.ae',
+                    'webdeveloper06@horecastore.ae',
+                    'webdeveloper07@horecastore.ae',
+                    'webdeveloper08@horecastore.ae',
+                    'marketing@rapidhotelsupplies.com',
+                    'demo@gmail.com',
+                    'qa01@mailinator',
+                    'abcd@horecastore.ae',
+                    've@horecastore.ae',
+                    'es05@horecastore.ae',
+                    'qa05@horecastore.ae',
+                    'erpsupport@horecastore.ae',
+                    'qa04@horecastore.ae',
+                    'qa0445656@horecastore.ae',
+                    'abcd@horecastore.ae',
+                    'qa07@horecastore.ae',                    
+                    'test786543@gmail.com',                    
+                    'testbususer.usa.test@sharklasers.com',                    
+                    'test52@mailinator.com',                    
+                    'ndhake899@mailsac.com',                    
+                    'test@midsummer.agency',                    
+                    'testpvtuser.usa.test@sharklasers.com',                    
+                    'test6788@gmail.com',                    
+                    'testdev@mailinator.com',                    
+                    'shezadrazzaq@gmail.com',                    
+                    'dmm@thehorecastore.com',                    
+                    'sussexmobil1@gmail.com',                    
+                    'stevemcd1977@gmail.com',                    
+                    'fserrapumba@gmail.com',                                      
+                    'testdev01@mailinator.com',                    
+                    'testing54@gmail.com',                    
+                    'thesweetestlilthings1@gmail.com',                    
+                    'testgaurav022@mailinator.com',                    
+                    'test23@gmail.com',                    
+                    'test@midsummer.agency',                    
+                    '56test@mailinator.com',                    
+                    'ndhake899@mailsac.com',                                                         
+                    'shezadrazzaq@gmail.com',                    
+                    'marouscha.dorenbos@midsummer.agency',                    
+                    'marouscha.dorenbos@midsummer.agency',                    
+                    'emmy.abdulghaffarllc@gmail.com',                    
+                    'test786543@gmail.com',                    
+                    'hassan.quantum647@hotmail.com',                    
+                    'test1230@gmail.com',                    
+                    'webdeveloper01@rapid-supplies.com',                    
+                    'test.jasper@shopify.com',                    
+                    'testmail@gmail.com',                    
+                    'test43567@gmail.com',                    
+                    'qa01@mailinator.com',                    
+                    'dmm@thehorecastore.com',                    
+                    'test786543@gmail.com',                    
+                    'nikhiltest@gmail.com',                    
+                    'qa01@mailinator.com',                    
+                    'test@testkkk.com',                    
+                    'jack@yopmail.com',                    
+                    'jixaci8513@bawsny.com',                    
+                    'testdev@mailinator.com',                    
+                    'testsitelink@gmail.com',                    
+                    'test6788@gmail.com',                    
+                    'a1@mailinator.com',                    
+                    '56test@mailinator.com',                    
+                    'es05@horecastore.ae',                    
+                    'jixaci8513@bawsny.com',                    
+                    'test@midsummer.agency',                    
+                    'moghlhashan@gmail.com',                    
+                    'test45789@gmail.com',                    
+                    'yesy@test.com',                    
+                    'marymelito@aol.com',                    
+                    'testtest@gmail.com',                    
+                    'devtest@gmail.com',                    
+                    'horecastore@mailinator.com',                    
+                    'nailamemon1122@gmail.com',                    
+                    'testshaki@gmail.com',                    
+                    'test@example.com',                    
+                    'testdev03@mailinator.com',                    
+                    'whitestephen@example.com',                    
+                    'hhartman@example.net',                    
+                    'gfrancis@example.org',                    
+                    ];
+                    // Get random customer NOT in these emails
+                    $randomCustomer = Customer::whereNotIn('email', $notin)
+                    ->inRandomOrder()
+                    ->first();
 
-                    // Get random customer for each review
-                    $randomCustomer = Customer::inRandomOrder()->first();
  
                     if (!$randomCustomer) {
                         continue;
                     }
-
+                 
+ 
                     // Check if review already exists with this product_id and customer_id
                     $existingReview = Review::where('product_id', $productId)
                         ->where('customer_id', $randomCustomer->id)
@@ -134,6 +229,9 @@ class ImportReviewJob implements ShouldQueue
                         $existingReview->comment = $reviewComment;
                         $existingReview->status = "published";
                         $existingReview->star = rand(4, 5);
+                        $existingReview->customer_name = $customer['name'];
+                        $existingReview->customer_email = $customer['email'];
+                        $existingReview->created_at = Carbon::now()->subDays(rand(60, 730)); 
                         $existingReview->updated_at = Carbon::now()->subDays(rand(60, 730));                 
                         $existingReview->save();
 
@@ -146,9 +244,9 @@ class ImportReviewJob implements ShouldQueue
                         $review->comment = $reviewComment;
                         $review->status = "published";
                         $review->star = rand(4, 5);
-                        $review->customer_id = $randomCustomer->id;
-                        $review->customer_name = $randomCustomer->name;
-                        $review->customer_email = $randomCustomer->email;
+                        $review->customer_id = $customer['id'];
+                        $review->customer_name = $customer['name'];
+                        $review->customer_email = $customer['email'];
                         $review->created_at = Carbon::now()->subDays(rand(60, 730));                     
                         $review->updated_at = Carbon::now()->subDays(rand(60, 730));                      
                         $review->images = null;
