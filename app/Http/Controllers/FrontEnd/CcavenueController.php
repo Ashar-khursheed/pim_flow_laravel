@@ -983,10 +983,8 @@ class CcavenueController extends Controller
     {
 
         $encResponse = $request->encResp;
-        $data = dataDecodeJsonBase64($encResponse);
-
-    
-   return response()->json([
+        $data = dataDecodeJsonBase64(o: $encResponse);    
+        return response()->json([
                 'success' => true,
                 'message' => 'Data has been successfully decrypted',
                 'data' => $data
