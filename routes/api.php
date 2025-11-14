@@ -199,7 +199,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
 
 Route::post('/ccavenue/webhook', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'successhandleWebhook']);
-Route::get('/ccavenue/thank', [F_CCavenueController::class, 'thank']);
+Route::get('/ccavenue/thank', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
@@ -516,6 +516,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('reviews/import', [ReviewController::class,'import']);
 	Route::post('reviews/export', [ReviewController::class,'export']);
 	Route::post('reviews/exportReview', [ReviewController::class,'exportReview']);
+	Route::post('reviews/fekerEmailUpdate', [ReviewController::class,'fekerEmailUpdate']);
 	Route::apiResource('sliders', SliderController::class);
 
 	Route::post('customerCartExport/export', [CustomerCartExportController::class,'export']);
