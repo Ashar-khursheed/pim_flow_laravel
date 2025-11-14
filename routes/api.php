@@ -394,6 +394,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::apiResource('users', UserController::class);
 
+	Route::post('/attributes/generate-translation', [AttributeController::class, 'generateTranslation']);
 	Route::post('/attributes/import', [AttributeController::class, 'import']);
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
@@ -484,6 +485,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('ai-alternate-status', [AIAlternateProductController::class, 'alternateStatus']);
 	Route::post('ai-alternate-priority', [AIAlternateProductController::class, 'alternatePriority']);
 
+	Route::post('/brands/generate-translation', [BrandController::class, 'generateTranslation']);
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
@@ -534,6 +536,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);
 	Route::post('/seoManagement/schema-update/{seo_id}', [SeoManagementController::class, 'schemaUpdate']);
 
+	Route::post('/seo-management/save-translation', [SeoManagementController::class, 'saveTranslation']);
 	Route::resource('seo-management', SeoManagementController::class);
 	Route::post('seo-management/{id}', [SeoManagementController::class,'update']);
 
@@ -559,6 +562,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
 
+	Route::post('/categories/generate-translation', [CategoryController::class, 'generateTranslation']);
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::post('/categories/{id}', [CategoryController::class, 'update']);
 

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
 use App\Models\Attribute;
+use App\Models\AttributeValue;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\TransactionLog;
@@ -193,6 +194,12 @@ class AttributeController extends BaseController
 		$attribute->updated_at = now();
 		$attribute->save();
 
+		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+			$attribute->translateOrNew('en')->name_tr = $request->name;
+		}
+
+		$attribute->save();
+
 		return response()->json([
 			'success' => true,
 			'message' => __("msg_create"),
@@ -213,6 +220,7 @@ class AttributeController extends BaseController
 	 *         description="ID of the attribute",
 	 *         @OA\Schema(type="integer", example=1)
 	 *     ),
+	 *     @OA\Parameter(name="locale", in="query", required=true, @OA\Schema(type="string", enum={"ar", "en"}, example="ar")),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -225,6 +233,7 @@ class AttributeController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
+		$locale = in_array($request->locale ?? 'en', ['ar', 'en']) ? ($request->locale ?? 'en') : 'en';
 		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroup:id,name', 'measurementUnits:id,name,measurement_type_id'])->find($attributeId);
 
 		if (!$attribute) {
@@ -233,6 +242,8 @@ class AttributeController extends BaseController
 				'message' => __("err_exist")
 			]);
 		}
+
+		// $translation = $attribute->translations->firstWhere('locale', $locale);
 
 		/* Append measurement_type from first unit if exists */
 		$firstUnit = $attribute->measurementUnits->first();
@@ -247,6 +258,9 @@ class AttributeController extends BaseController
 
 
 		$attribute->validations = json_decode($attribute->validations);
+
+		// $field = 'name_tr';
+		// $attribute->name = $translation ? $translation->$field : $attribute->name;
 
 		return response()->json([
 			'success' => true,
@@ -322,6 +336,7 @@ class AttributeController extends BaseController
 		]);
 
 		$input = $request->all();
+		$locale = $request->locale ?? 'en';
 
 		DB::beginTransaction();
 		try {
@@ -348,24 +363,42 @@ class AttributeController extends BaseController
 				$valuesToDelete = array_diff($existingValues, $providedValues);
 				$valuesToAdd = array_diff($providedValues, $existingValues);
 
+				/* Delete removed values and their translations */
 				if (!empty($valuesToDelete)) {
 					$attributeValuesToDelete = $attribute->attributeValues()
 					->whereIn('attribute_value', $valuesToDelete)
 					->get();
 
 					foreach ($attributeValuesToDelete as $value) {
+						/* Delete translations if available */
+						if (method_exists($value, 'translations')) {
+							$value->translations()->delete();
+						}
 						$value->delete();
 					}
 				}
 
+				/* Add new values with translation */
 				foreach ($valuesToAdd as $newValue) {
-					$attribute->attributeValues()->create(['attribute_value' => $newValue]);
+					$newAttributeValue = $attribute->attributeValues()->create([
+						'attribute_value' => $newValue,
+					]);
+
+					/* Since input is always in English, save translation explicitly */
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$newAttributeValue->translateOrNew('en')->attribute_value_tr = $newValue;
+					}
+					$newAttributeValue->save();
 				}
 			}
+
 
 			/* Delete attribute values if type changed from 'select' */
 			if ($request->type !== 'select' && $attribute->type === 'select') {
 				foreach ($attribute->attributeValues as $value) {
+					if (method_exists($value, 'translations')) {
+						$value->translations()->delete();
+					}
 					$value->delete();
 				}
 			}
@@ -377,7 +410,26 @@ class AttributeController extends BaseController
 			];
 			foreach ($fillableFields as $field) {
 				if (array_key_exists($field, $input)) {
-					$attribute->$field = $input[$field];
+					if ($field == 'name') {
+						$updatedName = $input['name'];
+						/* use translated table */
+						$existingName = optional($product->translate($locale))->name ?? [];
+
+						/* Only save if changed */
+						if ($updatedName !== $existingName) {
+							if ($locale === 'en') {
+								$attribute->name = $updatedName;
+							}
+
+							if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+								$attribute->translateOrNew($locale)->name_tr = $updatedName;
+							}
+							$attribute->save();
+						}
+
+					} else {
+						$attribute->$field = $input[$field];
+					}
 				}
 			}
 
@@ -443,11 +495,17 @@ class AttributeController extends BaseController
 
 		if ($attribute->type === 'select') {
 			foreach ($attribute->attributeValues as $value) {
+				if (method_exists($value, 'translations')) {
+					$value->translations()->delete();
+				}
 				$value->delete();
 			}
 		}
 
 		/* Proceed with deletion */
+		if (method_exists($attribute, 'translations')) {
+			$attribute->translations()->delete();
+		}
 		$attribute->delete();
 
 		return response()->json([
@@ -701,90 +759,78 @@ class AttributeController extends BaseController
 		}
 	}
 
+	/**
+	 * @OA\Post(
+	 *     path="/api/attributes/generate-translation",
+	 *     summary="Generate or update attribute translation",
+	 *     description="This endpoint generates or updates translations for an attribute and its values.",
+	 *     tags={"Attributes"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"id", "locale", "name"},
+	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the attribute to translate"),
+	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
+	 *             @OA\Property(property="name", type="string", example="الحجم", description="Translated name of the attribute"),
+	 *             @OA\Property(
+	 *                 property="attribute_values",
+	 *                 type="object",
+	 *                 example={"1": "صغير", "2": "متوسط", "3": "كبير"},
+	 *                 description="Key-value pairs of attribute value translations (key = attribute_value_id, value = translated text)"
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function generateTranslation(Request $request)
+	{
+		/* Validate request data */
+		$validated = $request->validate([
+			'id' => 'required|exists:attributes,id',
+			'locale' => 'required|string|in:ar',
+			'name' => 'required|string',
+			'attribute_values' => 'nullable|array',
+			'attribute_values.*' => 'string|nullable',
+		]);
 
+		$attribute = Attribute::find($validated['id']);
 
-	// 		$mandatoryHeaders = ['ID', 'SKU', 'Name'];
+		DB::beginTransaction();
+		try {
+			$locale = $validated['locale'];
 
-	// 		$file = $request->file('upload_file');
-	// 		$spreadsheet = $this->excel->loadFile($file->getRealPath());
-	// 		$sheet = $spreadsheet->getActiveSheet();
-	// 		$data = $sheet->toArray();
-	// 		$header = array_shift($data);
+			/* Update attribute translation */
+			$attribute->translateOrNew($locale)->name_tr = $validated['name'];
+			$attribute->save();
 
-	// 		/* Check required header */
-	// 		$missingHeaders = array_diff($mandatoryHeaders, $header);
-	// 		if (!empty($missingHeaders)) {
-	// 			return response()->json([
-	// 				'success' => false,
-	// 				'message' => 'Missing mandatory columns: ' . implode(', ', $missingHeaders)
-	// 			]);
-	// 		}
+			/* Update attribute value translations */
+			if ($attribute->type === 'select' && !empty($validated['attribute_values'])) {
+				foreach ($validated['attribute_values'] as $id => $translatedValue) {
+					$attrValue = AttributeValue::find($id);
+					if ($attrValue) {
+						$attrValue->translateOrNew($locale)->attribute_value_tr = $translatedValue;
+						$attrValue->save();
+					}
+				}
+			}
 
-	// 		$totalRecords = count($data);
-	// 		if ($totalRecords == 0) {
-	// 			return response()->json([
-	// 				'success' => false,
-	// 				'message' => 'The uploaded Excel file does not contain any records. Please ensure the file has valid data and try again.'
-	// 			]);
-	// 		}
+			DB::commit();
 
-	// 		if ($totalRecords > 2000) {
-	// 			return response()->json([
-	// 				'success' => false,
-	// 				'message' => 'The uploaded Excel file contains more than 2000 records. Please reduce the number of rows and try again.'
-	// 			]);
-	// 		}
+			return response()->json([
+				'success' => true,
+				'message' => __("Translations updated successfully."),
+				'data' => $attribute->load('attributeValues'),
+			]);
+		} catch (\Exception $e) {
+			DB::rollBack();
 
-	// 		/* Create batch */
-	// 		$batch = Bus::batch([])
-	// 		->before(function (Batch $batch) use ($totalRecords) {
-	// 			$descArray = [
-	// 				"Total Count" => $totalRecords,
-	// 				"Success Count" => 0,
-	// 				"Failed Count" => 0,
-	// 				"Errors" => []
-	// 			];
-	// 			/* Save transaction log */
-	// 			$log = new TransactionLog();
-	// 			$log->module = "Product Attribute";
-	// 			$log->action = "Import";
-	// 			$log->identifier = $batch->id;
-	// 			$log->status = 'In-progress';
-	// 			$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
-	// 			$log->created_by = auth()->id() ?? null;
-	// 			$log->created_at = now();
-	// 			$log->save();
-	// 		})
-	// 		->finally(function (Batch $batch) {
-	// 			$log = TransactionLog::where('identifier', $batch->id)->first();
-	// 			TransactionLog::where('id', $log->id)->update([
-	// 				'status' => 'Completed',
-	// 			]);
-	// 		})
-	// 		->name("Import Product Attributes")
-	// 		->dispatch();
-
-	// 		/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
-	// 		$chunkSize = 50;
-	// 		$chunks = array_chunk($data, $chunkSize);
-
-	// 		foreach ($chunks as $chunk) {
-	// 			$data = [
-	// 				'header' => $header,
-	// 				'chunk' => $chunk
-	// 			];
-	// 			$batch->options['queue'] = 'JOB2';
-	// 			$batch->add(new ImportProductAttributeJob($data));
-	// 		}
-	// 		return response()->json([
-	// 			'success' => true,
-	// 			'message' => 'The import process has been scheduled successfully. Please track it under import log.'
-	// 		]);
-	// 	} catch(\Exception $exception) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => $exception->getMessage()
-	// 		]);
-	// 	}
-	// }
+			return response()->json([
+				'success' => false,
+				'message' => __("err_update"),
+				'error' => $e->getMessage(),
+			], 500);
+		}
+	}
 }

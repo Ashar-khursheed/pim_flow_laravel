@@ -335,8 +335,9 @@ class ProductController extends BaseController
 		$product->sku = $request->sku;
 		$product->website_ids = implode(',', $request->websites);
 		$product->status = 'draft';
-			$product->quote_available = $request->quote_available;
-		
+
+		$product->quote_available = $request->quote_available;
+
 		$product->created_at = now();
 		$product->updated_at = now();
 		$product->created_by = auth()->id();
@@ -462,7 +463,6 @@ class ProductController extends BaseController
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
-		$translation = $product->translations->firstWhere('locale', $locale);
 
 		if (!$product) {
 			return response()->json([
@@ -597,6 +597,7 @@ class ProductController extends BaseController
 
 			];
 		});
+		$translation = $product->translations->firstWhere('locale', $locale);
 
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
@@ -1689,8 +1690,7 @@ class ProductController extends BaseController
 			$product->$key = $value;
 		}
 
-			$product->quote_available = $request->quote_available;
-		
+		$product->quote_available = $request->quote_available;
 		/* Save the product */
 		$product->save();
 

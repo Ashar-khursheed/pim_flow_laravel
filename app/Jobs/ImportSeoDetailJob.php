@@ -324,6 +324,25 @@ class ImportSeoDetailJob implements ShouldQueue
 						],
 						$primaryData
 					);
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$seo->translateOrNew('en')->primary_keyword_tr = $seo->primary_keyword;
+						$seo->translateOrNew('en')->title_tag_tr = $seo->title_tag;
+						$seo->translateOrNew('en')->meta_title_tr = $seo->meta_title;
+						$seo->translateOrNew('en')->meta_description_tr = $seo->meta_description;
+						$seo->translateOrNew('en')->og_title_tr = $seo->og_title;
+						$seo->translateOrNew('en')->og_description_tr = $seo->og_description;
+						$seo->translateOrNew('en')->og_image_url_tr = $seo->og_image_url;
+						$seo->translateOrNew('en')->og_image_alt_text_tr = $seo->og_image_alt_text;
+						$seo->translateOrNew('en')->og_image_name_tr = $seo->og_image_name;
+						$seo->translateOrNew('en')->paragraph_1_tr = $seo->paragraph_1;
+						$seo->translateOrNew('en')->paragraph_2_tr = $seo->paragraph_2;
+						$seo->translateOrNew('en')->paragraph_3_tr = $seo->paragraph_3;
+						$seo->translateOrNew('en')->paragraph_4_tr = $seo->paragraph_4;
+						$seo->translateOrNew('en')->banner_image_file_tr = $seo->banner_image_file;
+						$seo->translateOrNew('en')->banner_image_alt_text_tr = $seo->banner_image_alt_text;
+						$seo->save();
+					}
+
 
 					// Process secondary keywords
 					// foreach ($group['secondary'] as $secondary) {
