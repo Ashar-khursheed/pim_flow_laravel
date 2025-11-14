@@ -13,6 +13,7 @@ use App\Repository\ExcelRepository;
 use App\Jobs\ImportReviewJob;
 use App\Services\ExcelImporterService;
 use Carbon\Carbon;
+use Faker\Factory as Faker;
 class ReviewController extends Controller
 {
     /**
@@ -288,6 +289,7 @@ class ReviewController extends Controller
             'status' => $request->status ?? 'published',
             'images' => !empty($imagePaths) ? $imagePaths : [],  
             'created_at' => Carbon::now()->subDays(rand(60, 730)),
+            'updated_at' => Carbon::now()->subDays(rand(60, 730)),
             
         ]);
 
@@ -453,8 +455,9 @@ class ReviewController extends Controller
         $review->images = $existingImages;
 
         // Allow modification of created_at only
-
-        $review->created_at = now();
+ 
+        $review->created_at = Carbon::now()->subDays(rand(60, 730));
+        $review->updated_at = Carbon::now()->subDays(rand(60, 730));
         $review->save();
 
         return response()->json([
@@ -694,5 +697,155 @@ class ReviewController extends Controller
         return $excelRepo->downloadFile($fileName, $spreadsheet);
 
     }
+    
 
+
+    /**
+     * @OA\Post(
+     *     path="/api/reviews/fekerEmailUpdate",
+     *     summary="Get update reviews with name and email",
+     *     description="Returns a paginated list of reviews. Supports global search by customer name, email, product, or comment.",
+     *     tags={"Reviews"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Review Update",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Reviews fetched successfully."),
+     *             @OA\Property(property="current_page", type="integer", example=1),
+     *             @OA\Property(property="per_page", type="integer", example=10),
+     *             @OA\Property(property="total_records", type="integer", example=45),
+     *             @OA\Property(property="total_pages", type="integer", example=5),
+     *            
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     )
+     * )
+     */
+
+    public function fekerEmailUpdate(Request $request)
+    {
+
+            $notin = [
+                    'webdeveloper01@horecastore.ae',
+                    'webdeveloper02@horecastore.ae',
+                    'webdeveloper03@horecastore.ae',
+                    'webdeveloper04@horecastore.ae',
+                    'webdeveloper05@horecastore.ae',
+                    'webdeveloper06@horecastore.ae',
+                    'webdeveloper07@horecastore.ae',
+                    'webdeveloper08@horecastore.ae',
+                    'marketing@rapidhotelsupplies.com',
+                    'demo@gmail.com',
+                    'qa01@mailinator',
+                    'abcd@horecastore.ae',
+                    've@horecastore.ae',
+                    'es05@horecastore.ae',
+                    'qa05@horecastore.ae',
+                    'erpsupport@horecastore.ae',
+                    'qa04@horecastore.ae',
+                    'qa0445656@horecastore.ae',
+                    'abcd@horecastore.ae',
+                    'qa07@horecastore.ae',                    
+                    'test786543@gmail.com',                    
+                    'testbususer.usa.test@sharklasers.com',                    
+                    'test52@mailinator.com',                    
+                    'ndhake899@mailsac.com',                    
+                    'test@midsummer.agency',                    
+                    'testpvtuser.usa.test@sharklasers.com',                    
+                    'test6788@gmail.com',                    
+                    'testdev@mailinator.com',                    
+                    'shezadrazzaq@gmail.com',                    
+                    'dmm@thehorecastore.com',                    
+                    'sussexmobil1@gmail.com',                    
+                    'stevemcd1977@gmail.com',                    
+                    'fserrapumba@gmail.com',                   
+                                       
+                    'testdev01@mailinator.com',                    
+                    'testing54@gmail.com',                    
+                    'thesweetestlilthings1@gmail.com',                    
+                    'testgaurav022@mailinator.com',                    
+                    'test23@gmail.com',                    
+                    'test@midsummer.agency',                    
+                    '56test@mailinator.com',                    
+                    'ndhake899@mailsac.com',                   
+                                                          
+                    'shezadrazzaq@gmail.com',                    
+                    'marouscha.dorenbos@midsummer.agency',                    
+                    'marouscha.dorenbos@midsummer.agency',                    
+                    'emmy.abdulghaffarllc@gmail.com',                    
+                    'test786543@gmail.com',                    
+                    'hassan.quantum647@hotmail.com',                    
+                    'test1230@gmail.com',                    
+                    'webdeveloper01@rapid-supplies.com',                    
+                    'test.jasper@shopify.com',                    
+                    'testmail@gmail.com',                    
+                    'test43567@gmail.com',                    
+                    'qa01@mailinator.com',                    
+                    'dmm@thehorecastore.com',                    
+                    'test786543@gmail.com',                    
+                    'nikhiltest@gmail.com',                    
+                    'qa01@mailinator.com',                    
+                    'test@testkkk.com',                    
+                    'jack@yopmail.com',                    
+                    'jixaci8513@bawsny.com',                    
+                    'testdev@mailinator.com',                    
+                    'testsitelink@gmail.com',                    
+                    'test6788@gmail.com',                    
+                    'a1@mailinator.com',                    
+                    '56test@mailinator.com',                    
+                    'es05@horecastore.ae',                    
+                    'jixaci8513@bawsny.com',                    
+                    'test@midsummer.agency',                    
+                    'moghlhashan@gmail.com',                    
+                    'test45789@gmail.com',                    
+                    'yesy@test.com',                    
+                    'marymelito@aol.com',                    
+                    'testtest@gmail.com',                    
+                    'devtest@gmail.com',                    
+                    'horecastore@mailinator.com',                    
+                    'nailamemon1122@gmail.com',                    
+                    'testshaki@gmail.com',                    
+                    'test@example.com',                    
+                    'testdev03@mailinator.com',                    
+                    'whitestephen@example.com',                    
+                    'hhartman@example.net',                    
+                    'gfrancis@example.org',                    
+                    ];
+ 
+ 
+                //
+                $faker = Faker::create();
+                $domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
+                $reviews = Review::whereIn('customer_email', $notin)->get();
+                $status=false;
+                foreach ($reviews as $reviewv) { 
+                    // Generate real-looking email
+                    $email = $faker->userName . '@' . $faker->randomElement($domains);
+                    $reviewv->customer_name  = $faker->name;
+                    $reviewv->customer_email = $email;
+                    $reviewv->save();
+                    $status= 1;
+                }
+            if($status){
+
+                    return response()->json([
+                    'success' => true,
+                    'message' => 'Review update successfully',
+                    
+                    ], 200);
+                }else{
+                 return response()->json([
+                    'success' => true,
+                    'message' => 'Review not found',
+                    
+                    ], 201);
+
+                }
+    }
 }

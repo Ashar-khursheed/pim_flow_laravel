@@ -52,7 +52,7 @@ class FinanceController extends Controller
      *         @OA\Schema(type="string", enum={"id", "order_id", "status"}, example="id")
      *     ),
      *     @OA\Parameter(
-     *         name="sort_direction",
+     *         name="sort_dir",
      *         in="query",
      *         required=false,
      *         description="Sort direction (asc or desc)",
@@ -159,13 +159,11 @@ class FinanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => __("msg_rec_list"),
-            'data' => [
-                'current_page' => (int) $page,
-                'per_page' => (int) $perPage,
-                'total_pages' => $totalPages,
-                'total_records' => $totalRecords,
-                'data' => $formattedFinance,
-            ]
+            'current_page' => $page,
+            'per_page' => (int) $perPage,
+            'total_records' => $totalRecords,
+            'total_pages' => $totalPages,
+            'data' =>$formattedFinance,
         ]);
     }
 
