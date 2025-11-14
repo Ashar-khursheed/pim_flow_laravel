@@ -70,7 +70,7 @@ class OrderUpdateMailJob implements ShouldQueue
 				$cc = $recipients;
 				Mail::to($to)->cc($cc)->send(
 					(
-						new OrderUpdateMail($order)
+						new OrderUpdateMail($order, $this->originalTotalAmount, $this->updateReason)
 					)
 					->from($fromEmail, $fromName)
 					->replyTo($replyToEmail)
