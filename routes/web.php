@@ -60,8 +60,31 @@ Route::get('/health', function () {
 
 Route::get('/compress-pdf', [DocumentUploadController::class, 'compress']);
 
-Route::any('/ccavenue-proxy', function (Request $request) {
+
+Route::get('/ccavenue-proxy', function (Request $request) {
     $targetUrl = $request->query('url');
+
+    // ✅ Security: allow only valid CCAvenue URLs
+    if (!$targetUrl || !preg_match('#^https://(secure|test)\.ccavenue\.com/#i', $targetUrl)) {
+        return response('Invalid or unauthorized URL', 403);
+    }
+
+    try {
+        $response = Http::withHeaders([
+            'User-Agent' => 'Mozilla/5.0 (ProxyBot)',
+        ])->get($targetUrl);
+
+        // ✅ Return content with headers safe for iframe
+        return response($response->body(), $response->status())
+            ->header('Content-Type', $response->header('Content-Type', 'text/html'))
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
+    } catch (\Throwable $e) {
+        \Log::error('CCAvenue Proxy Error', ['error' => $e->getMessage()]);
+        return response('Proxy failed: ' . $e->getMessage(), 500);
+    }
+});
 
     if (!$targetUrl || !preg_match('#^https://(secure|test)\.ccavenue\.(com|ae)/#i', $targetUrl)) {
         return response('Invalid or unauthorized URL', 403);

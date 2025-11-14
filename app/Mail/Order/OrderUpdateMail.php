@@ -16,13 +16,16 @@ class OrderUpdateMail extends Mailable
 	use Queueable, SerializesModels;
 
 	public $order;
+	public $originalTotalAmount;
 
 	/**
 	 * Create a new message instance.
 	 */
-	public function __construct(Order $order)
+	public function __construct(Order $order, $originalTotalAmount)
 	{
 		$this->order = $order;
+		$this->originalTotalAmount = $originalTotalAmount;
+
 	}
 
 	public function build()
@@ -32,12 +35,17 @@ class OrderUpdateMail extends Mailable
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . '/logo.png';
 		$name = $order->customer->name ?? 'User';
-		$paymentUrl = $order->payment_link ?? url("/");
 
+		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+		$originalTotalAmount = $this->originalTotalAmount;
+		$total = $order->total_amount ?? 0;
+		$paidAmount = $order->paid_amount ?? 0;
+		$pendingAmount = $order->pending_amount ?? 0;
+
+
+		$paymentUrl = $order->payment_link ?? url("/");
 		$orderNumber = $order->order_number;
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
-		$total = $order->total_amount ?? 0;
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -126,7 +134,6 @@ class OrderUpdateMail extends Mailable
 		$taxAmount = $order->tax_amount ?? 0;
 		$discount = $order->discount ?? 0;
 		$additionalDiscount = $order->additional_discount ?? 0;
-		$pendingAmount = $order->pending_amount ?? 0;
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -146,12 +153,16 @@ class OrderUpdateMail extends Mailable
 		$params = [
 			'logoUrl' => $logoUrl,
 			'name' => $name,
-			'paymentUrl' => $paymentUrl,
 
+			'currency' => $currency,
+			'originalTotalAmount' => $originalTotalAmount,
+			'total' => $total,
+			'paidAmount' => $paidAmount,
+			'pendingAmount' => $pendingAmount,
+
+			'paymentUrl' => $paymentUrl,
 			'orderNumber' => $orderNumber,
 			'orderDate' => $orderDate,
-			'currency' => $currency,
-			'total' => $total,
 
 			'address' => $address,
 			'city' => $city,
@@ -175,7 +186,6 @@ class OrderUpdateMail extends Mailable
 			'taxAmount' => $taxAmount,
 			'discount' => $discount,
 			'additionalDiscount' => $additionalDiscount,
-			'pendingAmount' => $pendingAmount,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,

@@ -1151,7 +1151,8 @@ class OrderController extends Controller
 				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
 				$batch->add(new OrderUpdateMailJob([
-					'recordId' => $order->id
+					'recordId' => $order->id,
+					'originalTotalAmount' => $originalTotalAmount,
 				]));
 			}
 
