@@ -952,7 +952,9 @@ class OrderController extends Controller
 		}
 
 		/* For temporary use - Later updated by user forcefully */
-		$request->merge(['update_reason' => "Order updated by admin due to changes in order details."]);
+		if (!$request->has('update_reason')) {
+			$request->merge(['update_reason' => "Order updated by admin due to changes in order details."]);
+		}
 
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
