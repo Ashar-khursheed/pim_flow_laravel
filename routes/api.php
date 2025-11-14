@@ -923,9 +923,14 @@ Route::get('/feed/products-5.xml', [ProductXMLFeedWatchController::class, 'getPr
 Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
+	Route::post('/faild', [F_CCavenueController::class, 'handleResponse']);
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
-//Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
+
+ 
+
+
+Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
 
 Route::post('/stripe/create-stripe-payment-link', [F_StripeController::class, 'createStripePaymentLink']);

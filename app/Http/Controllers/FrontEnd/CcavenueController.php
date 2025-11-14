@@ -11,10 +11,12 @@ use App\Models\FrontEnd\CustomerAddress;
 use App\Models\FrontEnd\Customer;
 use App\Models\PaymentManagement;
 use Illuminate\Support\Facades\Validator;
+
 use Illuminate\Http\JsonResponse;
 use App\Models\FrontEnd\Order;
 use App\Helpers\CcavenueHelper;
 use Illuminate\Support\Facades\Http;
+ 
 
 
 class CcavenueController extends Controller
@@ -108,9 +110,110 @@ class CcavenueController extends Controller
 
             // Get merchant ID
             $merchantId = $this->ccavenueService->getMerchantId();
+            $url = config('app.url');
+        
+            $backendUrl = config('app.backend_url');
+            // Set default values   
+            $data['language'] = $data['language'] ?? 'EN';
+           // $data['redirect_url'] =  url('/api/frontend/ccavenue/handle-response');
+            $data['redirect_url'] =  $backendUrl.'/api/frontend/ccavenue/handle-response';
+            // $data['order_id'] =  rand(00000000,99999999);
+            $data['currency'] = "AED";
+            $data['cancel_url'] = $backendUrl.'/api/frontend/ccavenue/failed';
+            $data['notify_url'] = $backendUrl . '/api/payment/ccavenue/notify';
+            // Define allowed parameters for CCAvenue
+            $allowedKeys = [
+                'order_id',
+                'currency',
+                'amount',
+                'redirect_url',
+                'cancel_url',
+                'language',
+                'billing_name',
+                'billing_address',
+                'billing_city',
+                'billing_state',
+                'billing_zip',
+                'billing_country',
+                'billing_tel',
+                'billing_email',
+                'delivery_name',
+                'delivery_address',
+                'delivery_city',
+                'delivery_state',
+                'delivery_zip',
+                'delivery_country',
+                'delivery_tel',
+                'merchant_param1',
+                'merchant_param2',
+                'merchant_param3',
+                'merchant_param4',
+                'merchant_param5',
+                'promo_code',
+                'customer_identifier'
+            ];
+
+            // Build merchant data string - start with merchant_id
+            $merchantData = "merchant_id={$merchantId}";
+ 
+            foreach ($data as $key => $value) {
+                if (in_array($key, $allowedKeys) && !empty($value)) {
+                    $merchantData .= "&{$key}={$value}";
+                }
+            }
+            
+            // Validate required fields
+            $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
+            foreach ($requiredFields as $field) {
+                if (empty($data[$field])) {
+                    throw new \Exception("Required field '{$field}' is missing");
+                }
+            }
+
+            \Log::info('Final merchant data:', [$merchantData]);
+            \Log::info('Data being processed:', $data);
+
+            // Generate payment URL
+            $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
+ 
+    
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment URL generated successfully',
+                'data' => [
+                    'payment_url' =>$paymentUrl,
+                    'order_id' => $data['order_id'],
+                    'amount' => $data['amount'],
+                    'currency' => $data['currency']
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('CCAvenue payment initiation failed:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate payment URL',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function initiatePayment_old(PaymentRequest $request): JsonResponse
+    {
+        try {
+            $data = $request->validated();
+            $data['amount'] = number_format((float) $data['amount'], 2, '.', '');
+
+            // Get merchant ID
+            $merchantId = $this->ccavenueService->getMerchantId();
 
             // Set default values
             $data['language'] = $data['language'] ?? 'EN';
+
 
             // Define allowed parameters for CCAvenue
             $allowedKeys = [
@@ -152,7 +255,7 @@ class CcavenueController extends Controller
                     $merchantData .= "&{$key}={$value}";
                 }
             }
-
+            
             // Validate required fields
             $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
             foreach ($requiredFields as $field) {
@@ -248,29 +351,38 @@ class CcavenueController extends Controller
     {
         try {
             $encResponse = $request->input('encResp');
-
+ 
             if (empty($encResponse)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid encrypted response'
                 ], 400);
             }
-
+            $merchantData = "";
             // Decrypt and parse response
             $responseData = $this->ccavenueService->parseResponse($encResponse);
+ 
+            foreach ($responseData as $key => $value) {
 
+            $merchantData .= "&{$key}={$value}";
+
+            }
+
+           
             // Determine payment status
             $orderStatus = $responseData['order_status'] ?? 'Unknown';
             $statusMessage = $this->getStatusMessage($orderStatus);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment response processed successfully',
-                'data' => array_merge($responseData, [
-                    'status_message' => $statusMessage,
-                    'is_success' => $orderStatus === 'Success'
-                ])
-            ]);
+            $url = config('app.url');
+            return redirect($url.'/review-checkout?status=compete&encResp='.$merchantData);
+	 
+            // return response()->json([
+            //     'success' => true,
+            //     'message' => 'Payment response processed successfully',
+            //     'data' => array_merge($responseData, [
+            //         'status_message' => $statusMessage,
+            //         'is_success' => $orderStatus === 'Success'
+            //     ])
+            // ]);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -279,6 +391,7 @@ class CcavenueController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+
     }
 
     /**
@@ -369,9 +482,9 @@ class CcavenueController extends Controller
         $customer = Customer::find($order->customer_id);
         $orderList = array();
         $orderList['order_id'] = $order->order_number;
-        $orderList['redirect_url'] = $url.'/thanks';
-        $orderList['cancel_url'] = $url.'/failed';
-        $orderList['notify_url'] = $backendUrl.'/api/payment/ccavenue/notify';
+        $orderList['redirect_url'] = $url . '/thanks';
+        $orderList['cancel_url'] = $url . '/failed';
+        $orderList['notify_url'] = $backendUrl . '/api/payment/ccavenue/notify';
         $orderList['currency'] = "AED";
         $orderList['amount'] = $order->pending_amount;
         $orderList['language'] = "EN";
@@ -433,10 +546,10 @@ class CcavenueController extends Controller
     {
         $workingKey = env('CCAVENUE_WORKING_KEY');
         $accessCode = env('CCAVENUE_ACCESS_CODE');
-        \Log::error('CCAvenue Webhook Received', $request->all());
+        \Log::error('CCAvenue Webhook Received', context: $request->all());
 
         $encResponse = $request->input('encResp');
-     //   $encResponse = $request->encResp;
+        //   $encResponse = $request->encResp;
         //This is the response sent by the CCAvenue Server
         $rcvdString = CcavenueHelper::decrypt($encResponse, $workingKey);
         //Crypto Decryption used as per the specified working key.
@@ -682,6 +795,6 @@ class CcavenueController extends Controller
         }
 
     }
-
+ 
 
 }
