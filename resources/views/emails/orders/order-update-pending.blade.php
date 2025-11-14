@@ -51,9 +51,6 @@ use Illuminate\Support\Str;
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
 								Some items in your order have changed due to stock availability, updated pricing, or requested modifications. This has resulted in a small difference in your order total.
 							</p>
-							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
-								To complete processing, please use the secure payment link below to pay the remaining balance.
-							</p>
 						</td>
 					</tr>
 
@@ -126,7 +123,11 @@ use Illuminate\Support\Str;
 
 					<tr>
 						<td>
-							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 20px; font-size:14px; line-height:20px; font-weight: 600; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
+								To complete processing, please use the secure payment link below to pay the remaining balance.
+							</p>
+
+							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 20px; font-size:14px; margin-top: 10px; line-height:20px; font-weight: 600; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
 								Pay Remaining Balance
 							</a>
 						</td>
