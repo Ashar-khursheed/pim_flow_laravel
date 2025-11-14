@@ -30187,6 +30187,7 @@
                                 "required": [
                                     "customer_address_id",
                                     "tax_percentage",
+                                    "update_reason",
                                     "products"
                                 ],
                                 "properties": {
@@ -30240,6 +30241,9 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "update_reason": {
+                                        "type": "string"
                                     },
                                     "products": {
                                         "type": "array",
