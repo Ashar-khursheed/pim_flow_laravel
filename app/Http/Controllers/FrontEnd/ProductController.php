@@ -1424,7 +1424,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
-				 'isRequired' => $product->is_required,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 
@@ -1583,7 +1583,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
-				 'isRequired' => $product->is_required,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 
@@ -1734,7 +1734,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
-				 'isRequired' => $product->is_required,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 
@@ -2059,7 +2059,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
-				 'isRequired' => $product->is_required,
+				 'isRequired' => $product->isRequired,
 			];
 
 		});
@@ -2284,7 +2284,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
-				 'isRequired' => $product->is_required,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 

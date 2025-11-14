@@ -154,7 +154,7 @@ class SearchController extends Controller
                     : ($firstSupplier->warranty_information ?? null),
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'quote_available' => $product->quote_available ?? null,
-                 'isRequired' => $product->is_required,
+                 'isRequired' => $product->isRequired,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
                 'brand' => $product->brand ? [
                     'id' => $product->brand->id,
@@ -612,7 +612,7 @@ class SearchController extends Controller
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'quote_available' => $product->quote_available ?? null,
-                 'isRequired' => $product->is_required,
+                 'isRequired' => $product->isRequired,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
                 'brand' => $product->brand ? [
                     'id' => $product->brand->id,
