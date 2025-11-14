@@ -873,10 +873,12 @@ class CartController extends Controller
             $cartProductQuery->where('vendor_id', $vendorId);
         }
 
-        // Accessory-wise matching (ONLY accessory_id)
-        if (!empty($accessories)) {
-         foreach ($accessories as $acc) {
-          $cartProductQuery->whereJsonContains('accessories_options->accessory_id', $acc['accessory_id']);
+            if (!empty($accessories)) {
+            foreach ($accessories as $acc) {
+                $cartProductQuery->whereRaw(
+                    'JSON_CONTAINS(accessories_options, ?, "$")',
+                    [json_encode(['accessory_id' => $acc['accessory_id']])]
+                );
             }
         } else {
             // No accessories
@@ -886,6 +888,7 @@ class CartController extends Controller
                 ->orWhere('accessories_options', '');
             });
         }
+
 
 
         $cartProduct = $cartProductQuery->first();
