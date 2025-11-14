@@ -513,6 +513,7 @@ class ProductController extends Controller
 					'id' => $accessory->id,
 					'name' => $accessory->name,
 					'isapproved' => $accessory->isapproved,
+					'isRequired' => $accessory->isRequired,
 					'items' => $accessory->items->map(function ($item) {
 						return [
 							'id' => $item->id,
@@ -1120,6 +1121,7 @@ class ProductController extends Controller
 					'id' => $accessory->id,
 					'name' => $accessory->name,
 					'isapproved' => $accessory->isapproved,
+					'isRequired' => $accessory->isRequired,
 					'items' => $accessory->items->map(function ($item) {
 						return [
 							'id' => $item->id,
