@@ -350,13 +350,8 @@ use Illuminate\Support\Str;
 						<td>
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
-									<td style="font-weight: 500; line-height: 24px; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px;">
-										Your order will proceed to processing and dispatch without any delay.
-									</td>
-								</tr>
-								<tr>
-									<td style="font-weight: 500; line-height: 24px; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px;">
-										If you need anything, our team is always here to help.
+									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
+										Thank you for choosing HorecaStore - where your business gets the best, for less.
 									</td>
 								</tr>
 								<tr>
