@@ -53,14 +53,80 @@ use Illuminate\Support\Str;
 								Some items in your order have changed due to stock availability, updated pricing, or requested modifications. This has resulted in a lower total amount than originally charged.
 							</p>
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
-								A refund will now be processed back to your original payment method. Refunds typically take 7–10 business days depending on your bank.
+								A refund will now be processed back to your original payment method.
+							</p>
+						</td>
+					</tr>
+
+					<tr>
+						<td style="padding: 10px 10px;">
+							<table width="100%" cellspacing="0" cellpadding="0" border="0" style="border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; font-family: 'Noto Sans', sans-serif;">
+								<!-- Header -->
+								<tr>
+									<td colspan="2" style="background: #FAFAFA; padding: 15px; border-bottom: 2px solid #E2E8F0;">
+										<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 18px; line-height: 24px; font-weight: 600; margin: 0; color: #1a1a1a;">
+											Order Update Summary
+										</h3>
+									</td>
+								</tr>
+
+								<!-- Original Order Total -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										Original Order Total
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										{{ $currency }} {{ number_format($originalTotalAmount, 2, '.', ',') }}
+									</td>
+								</tr>
+
+								<!-- New Updated Total -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										New Updated Total
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										{{ $currency }} {{ number_format($total, 2, '.', ',') }}
+									</td>
+								</tr>
+
+								<!-- Amount You Already Paid -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										Amount You Previousl Paid
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										{{ $currency }} {{ number_format($paidAmount, 2, '.', ',') }}
+									</td>
+								</tr>
+
+								<!-- Difference (Remaining to Pay) -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; background: #FAFAFA;">
+										Refund to Be Processed
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; background: #FAFAFA;">
+										{{ $currency }} {{ number_format(abs($pendingAmount), 2, '.', ',') }}
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+
+					<tr>
+						<td style="padding: 10px 10px;">
+							<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 22px; font-weight: 600; margin: 0 0 8px; color: #1a1a1a;">
+								Refund Timeline
+							</h3>
+							<p style="font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; margin: 0; color: #4a4a4a;">
+								Refunds typically take 3-7 business days depending on your bank.
 							</p>
 						</td>
 					</tr>
 
 					<tr>
 						<td>
-							<table cellspacing="0" cellpadding="4" style="font-family: 'Noto Sans', sans-serif; width:100%; font-size:14px; line-height:20px; margin-top:20px;">
+							<table cellspacing="0" cellpadding="4" style="font-family: 'Noto Sans', sans-serif; width:100%; font-size:14px; line-height:20px;">
 								<tr>
 									<td style="font-family: 'Noto Sans', sans-serif; vertical-align:top; width:50%; border-right:1px solid #ddd;">
 										<h3 style="font-family: 'Noto Sans', sans-serif; font-size:15px; line-height:22px; font-weight: 600; margin:0 0 10px; color: #26683A; text-decoration: underline;">
@@ -262,11 +328,6 @@ use Illuminate\Support\Str;
 											<tr style="font-weight: bold; ">
 												<td style="font-weight: bold;font-family: 'Noto Sans',  sans-serif;">Total Amount</td>
 												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans',  sans-serif;">{{ $currency }} {{ number_format($total, 2, '.', ',') }}</td>
-											</tr>
-
-											<tr style="font-weight: bold;">
-												<td style="font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; color: #26683A;">Amount to be Refunded</td>
-												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px;">{{ $currency }} {{ number_format(abs($pendingAmount), 2, '.', ',') }}</td>
 											</tr>
 										</table>
 									</td>

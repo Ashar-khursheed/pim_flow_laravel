@@ -17,15 +17,16 @@ class OrderUpdateMail extends Mailable
 
 	public $order;
 	public $originalTotalAmount;
+	public $updateReason;
 
 	/**
 	 * Create a new message instance.
 	 */
-	public function __construct(Order $order, $originalTotalAmount)
+	public function __construct(Order $order, $originalTotalAmount, $updateReason)
 	{
 		$this->order = $order;
 		$this->originalTotalAmount = $originalTotalAmount;
-
+		$this->updateReason = $updateReason;
 	}
 
 	public function build()
@@ -41,7 +42,7 @@ class OrderUpdateMail extends Mailable
 		$total = $order->total_amount ?? 0;
 		$paidAmount = $order->paid_amount ?? 0;
 		$pendingAmount = $order->pending_amount ?? 0;
-
+		$updateReason = $this->updateReason;
 
 		$paymentUrl = $order->payment_link ?? url("/");
 		$orderNumber = $order->order_number;
@@ -159,6 +160,7 @@ class OrderUpdateMail extends Mailable
 			'total' => $total,
 			'paidAmount' => $paidAmount,
 			'pendingAmount' => $pendingAmount,
+			'updateReason' => $updateReason,
 
 			'paymentUrl' => $paymentUrl,
 			'orderNumber' => $orderNumber,
@@ -206,7 +208,7 @@ class OrderUpdateMail extends Mailable
 			$bladeName = "order-update";
 		} else {
 			/* Default: standard order update */
-			$subject = "Your HorecaStore Updated Order #{$orderNumber} Awaits Payment – Pay Now";
+			$subject = "Update on Your HorecaStore Order #{$orderNumber} – No Action Required";
 			$bladeName = "order-update";
 		}
 
