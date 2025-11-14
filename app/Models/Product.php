@@ -302,7 +302,7 @@ class Product extends Model implements TranslatableContract
 
 	public function getIsRequiredAttribute()
 	{
-		return $this->accessories()->where('is_required', 1)->exists();
+		return $this->accessories()->where('isRequired', 1)->exists();
 	}
 
 
