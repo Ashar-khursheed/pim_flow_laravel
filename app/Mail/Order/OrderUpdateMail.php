@@ -208,7 +208,7 @@ class OrderUpdateMail extends Mailable
 			$bladeName = "order-update";
 		} else {
 			/* Default: standard order update */
-			$subject = "Your HorecaStore Updated Order #{$orderNumber} Awaits Payment – Pay Now";
+			$subject = "Update on Your HorecaStore Order #{$orderNumber} – No Action Required";
 			$bladeName = "order-update";
 		}
 
