@@ -336,20 +336,9 @@ use Illuminate\Support\Str;
 
 					<tr>
 						<td>
-
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
 									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
-										We’re excited to prepare your updated order! Please complete the <strong> remaining payment of {{ $currency }} {{ number_format($pendingAmount, 2, '.', ',') }} </strong>  at the earliest to avoid any delay in processing and delivery.
-									</td>
-								</tr>
-								<tr>
-									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
-										To make sure your updated items are secured for you, please complete payment within <strong> 7 days</strong>. After that, the system may automatically release the additional items, and we’d hate for you to miss out!
-									</td>
-								</tr>
-								<tr>
-									<td style="font-weight: 500; line-height: 24px; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px;">
 										Thank you for choosing HorecaStore - where your business gets the best, for less.
 									</td>
 								</tr>
