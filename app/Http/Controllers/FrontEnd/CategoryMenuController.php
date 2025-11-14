@@ -28,23 +28,7 @@ class CategoryMenuController extends Controller
      *         description="Slug of the category",
      *         @OA\Schema(type="string")
      *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful response with category data",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="name", type="string", example="Electronics"),
-     *             @OA\Property(property="slug", type="string", example="electronics"),
-     *             @OA\Property(property="parent_id", type="integer", nullable=true, example=null),
-     *             @OA\Property(property="image", type="string", format="url", example="http://yourdomain.com/storage/categories/electronics.jpg"),
-     *             @OA\Property(
-     *                 property="children",
-     *                 type="array",
-     *                 @OA\Items(ref="#/components/schemas/Category")
-     *             )
-     *         )
-     *     ),
+     *     @OA\Response(response=200, description="Successful response with category data", @OA\MediaType(mediaType="application/json")),
      *     @OA\Response(
      *         response=404,
      *         description="Category not found",
@@ -222,27 +206,7 @@ class CategoryMenuController extends Controller
      *         required=false,
      *         @OA\Schema(type="integer")
      *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="List of categories in hierarchical structure",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(
-     *                 type="object",
-     *                 @OA\Property(property="id", type="integer"),
-     *                 @OA\Property(property="name", type="string"),
-     *                 @OA\Property(property="slug", type="string"),
-     *                 @OA\Property(property="parent_id", type="integer", nullable=true),
-     *                 @OA\Property(property="productCount", type="integer"),
-     *                 @OA\Property(property="image", type="string", format="url"),
-     *                 @OA\Property(
-     *                     property="children",
-     *                     type="array",
-     *                     @OA\Items(ref="#/components/schemas/Category")
-     *                 )
-     *             )
-     *         )
-     *     )
+     *     @OA\Response(response=200, description="List of categories in hierarchical structure", @OA\MediaType(mediaType="application/json")),
      * )
      */
 
