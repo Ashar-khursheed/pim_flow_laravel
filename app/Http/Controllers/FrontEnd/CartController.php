@@ -865,7 +865,7 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Cart not found']);
         }
 
-        // Build query
+        // Base query
         $cartProductQuery = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
             ->where('product_id', $productId);
 
@@ -873,12 +873,18 @@ class CartController extends Controller
             $cartProductQuery->where('vendor_id', $vendorId);
         }
 
-        // Accessory wise matching (IMPORTANT)
+        // Accessory-wise matching (ONLY accessory_id)
         if (!empty($accessories)) {
-            // Match exact accessory set
-            $cartProductQuery->whereJsonContains('accessories_options', $accessories);
+
+            // Normalize array structure to ensure consistent matching
+            $normalizedAccessories = array_map(function ($a) {
+                return ['accessory_id' => $a['accessory_id']];
+            }, $accessories);
+
+            $cartProductQuery->whereJsonContains('accessories_options', $normalizedAccessories);
+
         } else {
-            // Only update items WITHOUT accessories
+            // No accessories case → match only items with no accessories
             $cartProductQuery->where(function ($q) {
                 $q->whereNull('accessories_options')
                 ->orWhere('accessories_options', '[]')
@@ -892,13 +898,13 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Product not found in cart']);
         }
 
-        // Update quantity and amounts
+        // Update quantity and recalc amounts
         $cartProduct->quantity = $quantity;
         $cartProduct->amount = $quantity * $cartProduct->unit_price;
         $cartProduct->total_amount = $cartProduct->amount + $cartProduct->shipping_charge;
         $cartProduct->save();
 
-        // Update cart totals
+        // Update full cart totals
         $this->updateCartTotals($customerCart);
 
         $end = microtime(true);
@@ -906,6 +912,7 @@ class CartController extends Controller
 
         return response()->json(['success' => true]);
     }
+
 
 
    /**
