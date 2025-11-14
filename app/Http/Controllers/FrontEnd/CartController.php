@@ -788,12 +788,64 @@ class CartController extends Controller
      * )
      */
 
+    // public function updateCartQuantity(Request $request)
+    // {
+    //     $request->validate([
+    //         'product_id' => 'required|integer',
+    //         'quantity' => 'required|integer|min:1',
+    //         'vendor_id' => 'nullable|integer',
+    //     ]);
+
+    //     if (!Auth::check()) {
+    //         return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+    //     }
+
+    //     $start = microtime(true);
+    //     $userId = Auth::id();
+    //     $productId = $request->input('product_id');
+    //     $quantity = $request->input('quantity');
+    //     $vendorId = $request->input('vendor_id');
+
+    //     $customerCart = CustomerCart::where('customer_id', $userId)->first();
+
+    //     if (!$customerCart) {
+    //         return response()->json(['success' => false, 'message' => 'Cart not found']);
+    //     }
+
+    //     $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+    //         ->where('product_id', $productId);
+
+    //     if ($vendorId) {
+    //         $cartProduct->where('vendor_id', $vendorId);
+    //     }
+
+    //     $cartProduct = $cartProduct->first();
+
+    //     if (!$cartProduct) {
+    //         return response()->json(['success' => false, 'message' => 'Product not found in cart']);
+    //     }
+
+    //     // Update quantity and amounts
+    //     $cartProduct->quantity = $quantity;
+    //     $cartProduct->amount = $quantity * $cartProduct->unit_price;
+    //     $cartProduct->total_amount = $cartProduct->amount + $cartProduct->shipping_charge;
+    //     $cartProduct->save();
+
+    //     // Update cart totals
+    //     $this->updateCartTotals($customerCart);
+
+    //     $end = microtime(true);
+    //     Log::info('updateCartQuantity duration: ' . round(($end - $start) * 1000) . 'ms');
+
+    //     return response()->json(['success' => true]);
+    // }
     public function updateCartQuantity(Request $request)
     {
         $request->validate([
-            'product_id' => 'required|integer',
-            'quantity' => 'required|integer|min:1',
-            'vendor_id' => 'nullable|integer',
+            'product_id'   => 'required|integer',
+            'quantity'     => 'required|integer|min:1',
+            'vendor_id'    => 'nullable|integer',
+            'accessories_options' => 'nullable|array'
         ]);
 
         if (!Auth::check()) {
@@ -805,6 +857,7 @@ class CartController extends Controller
         $productId = $request->input('product_id');
         $quantity = $request->input('quantity');
         $vendorId = $request->input('vendor_id');
+        $accessories = $request->input('accessories_options', []);
 
         $customerCart = CustomerCart::where('customer_id', $userId)->first();
 
@@ -812,14 +865,28 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Cart not found']);
         }
 
-        $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+        // Build query
+        $cartProductQuery = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
             ->where('product_id', $productId);
 
         if ($vendorId) {
-            $cartProduct->where('vendor_id', $vendorId);
+            $cartProductQuery->where('vendor_id', $vendorId);
         }
 
-        $cartProduct = $cartProduct->first();
+        // Accessory wise matching (IMPORTANT)
+        if (!empty($accessories)) {
+            // Match exact accessory set
+            $cartProductQuery->whereJsonContains('accessories_options', $accessories);
+        } else {
+            // Only update items WITHOUT accessories
+            $cartProductQuery->where(function ($q) {
+                $q->whereNull('accessories_options')
+                ->orWhere('accessories_options', '[]')
+                ->orWhere('accessories_options', '');
+            });
+        }
+
+        $cartProduct = $cartProductQuery->first();
 
         if (!$cartProduct) {
             return response()->json(['success' => false, 'message' => 'Product not found in cart']);
@@ -839,6 +906,7 @@ class CartController extends Controller
 
         return response()->json(['success' => true]);
     }
+
 
    /**
      * @OA\Post(
