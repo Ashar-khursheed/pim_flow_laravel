@@ -875,22 +875,18 @@ class CartController extends Controller
 
         // Accessory-wise matching (ONLY accessory_id)
         if (!empty($accessories)) {
-
-            // Normalize array structure to ensure consistent matching
-            $normalizedAccessories = array_map(function ($a) {
-                return ['accessory_id' => $a['accessory_id']];
-            }, $accessories);
-
-            $cartProductQuery->whereJsonContains('accessories_options', $normalizedAccessories);
-
+         foreach ($accessories as $acc) {
+          $cartProductQuery->whereJsonContains('accessories_options->accessory_id', $acc['accessory_id']);
+            }
         } else {
-            // No accessories case → match only items with no accessories
+            // No accessories
             $cartProductQuery->where(function ($q) {
                 $q->whereNull('accessories_options')
                 ->orWhere('accessories_options', '[]')
                 ->orWhere('accessories_options', '');
             });
         }
+
 
         $cartProduct = $cartProductQuery->first();
 
