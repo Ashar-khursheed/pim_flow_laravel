@@ -229,6 +229,8 @@ class ImportReviewJob implements ShouldQueue
                         $existingReview->comment = $reviewComment;
                         $existingReview->status = "published";
                         $existingReview->star = rand(4, 5);
+                        $existingReview->customer_name = $customer['name'];
+                        $existingReview->customer_email = $customer['email'];
                         $existingReview->created_at = Carbon::now()->subDays(rand(60, 730)); 
                         $existingReview->updated_at = Carbon::now()->subDays(rand(60, 730));                 
                         $existingReview->save();
