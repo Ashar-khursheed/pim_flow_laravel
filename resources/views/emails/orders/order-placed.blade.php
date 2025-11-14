@@ -259,7 +259,6 @@
 
 					<tr>
 						<td>
-
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
 									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">

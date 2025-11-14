@@ -1056,6 +1056,7 @@ class OrderController extends Controller
 
 			/* Get original total amount before update */
 			$originalTotalAmount = $order->total_amount;
+			$prevPendingAmount = $order->pending_amount;
 
 			$order->update([
 				'customer_address_id' => $request->customer_address_id,
@@ -1155,7 +1156,7 @@ class OrderController extends Controller
 				}
 			}
 
-			if ($originalTotalAmount != $totalAmount) {
+			if ($originalTotalAmount != $totalAmount || $prevPendingAmount != $pendingAmount) {
 				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
 				$batch->add(new OrderUpdateMailJob([
