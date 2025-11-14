@@ -454,11 +454,11 @@ class CcavenueController extends Controller
             foreach ($responseData as $key => $value) {
                  $merchantData .= "&{$key}={$value}";
             }
-
-         
+        $giveData = dataEncodeJsonBase64($merchantData);
+       
             // Determine payment status   
             $url = config('app.url');
-            return redirect($url.'/review-checkout?status=compete&encResp='.$merchantData);
+            return redirect($url.'/review-checkout?status=compete&encResp='.$giveData);
 
     } catch (\Exception $e) {
          return response()->json([
@@ -940,5 +940,56 @@ class CcavenueController extends Controller
 
     }
 
+
+
+        function dataEncodeJsonBase64($o){
+            $o = json_encode($o);
+            $o = base64_encode($o);
+            return $o;
+            }
+        function dataDecodeJsonBase64($o){
+            $o = base64_decode($o);
+            $o = json_decode($o); 
+            
+            return $o;
+        }
+
+    /**
+     * @OA\Post(
+     *     path="/api/ccavenue/dataEncodeCCavenue",
+     *     summary="CCAvenue Payment Cancel Redirect",
+     *     tags={"CCAvenue"},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="encResp",
+     *                 type="string",
+     *                 example="b2dwx821x92x0a78sd89asd7as8d7as8d7a..."
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment was cancelled"
+     *     )
+     * )
+     */
+
+    public function dataEncodeCCavenue(Request $request)
+    {
+
+        $encResponse = $request->encResp;
+        $data = dataDecodeJsonBase64(o: $encResponse);    
+        return response()->json([
+                'success' => true,
+                'message' => 'Data has been successfully decrypted',
+                'data' => $data
+            ]);
+
+    }
 
 }

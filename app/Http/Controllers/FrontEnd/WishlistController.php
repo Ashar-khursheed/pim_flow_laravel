@@ -51,14 +51,18 @@ class WishlistController extends Controller
         // Validate the incoming request data
         $validated = $request->validate([
             'product_id' => 'required|integer|exists:ec_products,id',
+            'quantity'   => 'nullable|integer|min:1', // quantity not required but must be >= 1
         ]);
 
         $customerId = Auth::id();
-        
+
+        // If quantity not provided, set default = 1
+        $quantity = $validated['quantity'] ?? 1;
+
         // Check if product already exists in wishlist
         $existingWishlist = Wishlist::where('customer_id', $customerId)
-                                  ->where('product_id', $validated['product_id'])
-                                  ->first();
+            ->where('product_id', $validated['product_id'])
+            ->first();
 
         if ($existingWishlist) {
             return response()->json([
@@ -66,6 +70,7 @@ class WishlistController extends Controller
                 'wishlist' => [
                     'customer_id' => $existingWishlist->customer_id,
                     'product_id' => $existingWishlist->product_id,
+                    'quantity'    => $existingWishlist->quantity,
                     'in_wishlist' => 1,
                     'created_at' => $existingWishlist->created_at,
                     'updated_at' => $existingWishlist->updated_at,
@@ -77,6 +82,7 @@ class WishlistController extends Controller
         $wishlist = Wishlist::create([
             'customer_id' => $customerId,
             'product_id' => $validated['product_id'],
+            'quantity'   => $quantity,
         ]);
 
         return response()->json([
@@ -84,12 +90,14 @@ class WishlistController extends Controller
             'wishlist' => [
                 'customer_id' => $wishlist->customer_id,
                 'product_id' => $wishlist->product_id,
+                'quantity'    => $wishlist->quantity,
                 'in_wishlist' => 1,
                 'created_at' => $wishlist->created_at,
                 'updated_at' => $wishlist->updated_at,
             ]
         ], 201);
     }
+
 
     /**
      * @OA\Get(
@@ -286,6 +294,8 @@ class WishlistController extends Controller
                     }
                     $product->selling_type =$sellingType;
                 }
+                $item->quantity = $item->quantity ?? 1;
+
             }
 
             return $item;

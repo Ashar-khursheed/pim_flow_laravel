@@ -14855,6 +14855,36 @@
                 }
             }
         },
+        "/api/ccavenue/dataEncodeCCavenue": {
+            "post": {
+                "tags": [
+                    "CCAvenue"
+                ],
+                "summary": "CCAvenue Payment Cancel Redirect",
+                "operationId": "f49cc9f0739ff4053207c6a3dfb8d766",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "encResp": {
+                                        "type": "string",
+                                        "example": "b2dwx821x92x0a78sd89asd7as8d7as8d7a..."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment was cancelled"
+                    }
+                }
+            }
+        },
         "/api/frontend/company-profiles": {
             "get": {
                 "tags": [
