@@ -19,10 +19,12 @@ class OrderUpdateMailJob implements ShouldQueue
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
 	public $orderId;
+	public $originalTotalAmount;
 
 	public function __construct($data)
 	{
 		$this->orderId = $data['recordId'];
+		$this->originalTotalAmount = $data['originalTotalAmount'];
 	}
 
 	public function middleware(): array
@@ -54,7 +56,7 @@ class OrderUpdateMailJob implements ShouldQueue
 			$to = $order->customer->email;
 			Mail::to($to)->send(
 				(
-					new OrderUpdateMail($order)
+					new OrderUpdateMail($order, $this->originalTotalAmount)
 				)
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)

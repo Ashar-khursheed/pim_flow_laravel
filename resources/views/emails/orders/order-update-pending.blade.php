@@ -37,7 +37,6 @@ use Illuminate\Support\Str;
 							<img src="{{ $logoUrl }}" alt="Logo" width="120">
 						</td>
 					</tr>
-
 					<tr>
 						<td>
 							<p style="font-size:16px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
@@ -55,7 +54,78 @@ use Illuminate\Support\Str;
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
 								To complete processing, please use the secure payment link below to pay the remaining balance.
 							</p>
+						</td>
+					</tr>
 
+					<tr>
+						<td style="padding: 20px 0;">
+							<table width="100%" cellspacing="0" cellpadding="0" border="0" style="border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; font-family: 'Noto Sans', sans-serif;">
+								<!-- Header -->
+								<tr>
+									<td colspan="2" style="background: #FAFAFA; padding: 15px; border-bottom: 2px solid #E2E8F0;">
+										<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 18px; line-height: 24px; font-weight: 600; margin: 0; color: #1a1a1a;">
+											Order Update Summary
+										</h3>
+									</td>
+								</tr>
+
+								<!-- Original Order Total -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										Original Order Total
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										{{ $currency }} {{ number_format($originalTotalAmount, 2, '.', ',') }}
+									</td>
+								</tr>
+
+								<!-- New Updated Total -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										New Updated Total
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										{{ $currency }} {{ number_format($total, 2, '.', ',') }}
+									</td>
+								</tr>
+
+								<!-- Amount You Already Paid -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										Amount You Already Paid
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										{{ $currency }} {{ number_format($paidAmount, 2, '.', ',') }}
+									</td>
+								</tr>
+
+								<!-- Difference (Remaining to Pay) -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; background: #FAFAFA;">
+										Difference (Remaining to Pay)
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; background: #FAFAFA;">
+										{{ $currency }} {{ number_format($pendingAmount, 2, '.', ',') }}
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+
+					<!-- Why This Change Happened Section -->
+					<tr>
+						<td style="padding: 15px 0;">
+							<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 22px; font-weight: 600; margin: 0 0 8px; color: #1a1a1a;">
+								Why This Change Happened
+							</h3>
+							<p style="font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; margin: 0; color: #4a4a4a;">
+								{{ $updateReason ?? 'Item price updated' }}
+							</p>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
 							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; font-weight: 600; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
 								Pay Remaining Balance
 							</a>
@@ -277,7 +347,6 @@ use Illuminate\Support\Str;
 
 					<tr>
 						<td>
-
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
 									<td style="font-weight: 500; line-height: 24px; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; font-size:14px;">
