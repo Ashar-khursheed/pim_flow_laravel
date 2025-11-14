@@ -58,7 +58,7 @@ use Illuminate\Support\Str;
 					</tr>
 
 					<tr>
-						<td style="padding: 20px 5px;">
+						<td style="padding: 10px 10px;">
 							<table width="100%" cellspacing="0" cellpadding="0" border="0" style="border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; font-family: 'Noto Sans', sans-serif;">
 								<!-- Header -->
 								<tr>
@@ -114,7 +114,7 @@ use Illuminate\Support\Str;
 
 					<!-- Why This Change Happened Section -->
 					<tr>
-						<td style="padding: 15px 5px;">
+						<td style="padding: 10px 10px;">
 							<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 22px; font-weight: 600; margin: 0 0 8px; color: #1a1a1a;">
 								Why This Change Happened
 							</h3>
@@ -126,7 +126,7 @@ use Illuminate\Support\Str;
 
 					<tr>
 						<td>
-							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; font-weight: 600; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
+							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; font-size:14px; line-height:20px; font-weight: 600; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans',  sans-serif;">
 								Pay Remaining Balance
 							</a>
 						</td>
