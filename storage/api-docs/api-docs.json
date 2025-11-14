@@ -37703,6 +37703,62 @@
                 ]
             }
         },
+        "/api/reviews/fekerEmailUpdate": {
+            "post": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Get update reviews with name and email",
+                "description": "Returns a paginated list of reviews. Supports global search by customer name, email, product, or comment.",
+                "operationId": "1aed2f24041061a3e606e62d71d50806",
+                "responses": {
+                    "200": {
+                        "description": "Review Update",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Reviews fetched successfully."
+                                        },
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 45
+                                        },
+                                        "total_pages": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/roles": {
             "get": {
                 "tags": [
