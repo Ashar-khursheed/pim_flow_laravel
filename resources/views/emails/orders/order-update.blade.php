@@ -115,7 +115,7 @@ use Illuminate\Support\Str;
 							<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 22px; font-weight: 600; margin: 0 0 8px; color: #1a1a1a;">
 								What This Means
 							</h3>
-							<p style="font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; margin: 0; color: #4a4a4a;">
+							<p style="font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; margin: 0;">
 								Your updated order total remains unchanged and requires no additional payment or refund.
 							</p>
 						</td>
