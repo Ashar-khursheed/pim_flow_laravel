@@ -873,21 +873,18 @@ class CartController extends Controller
             $cartProductQuery->where('vendor_id', $vendorId);
         }
 
-            if (!empty($accessories)) {
-            foreach ($accessories as $acc) {
-                $cartProductQuery->whereRaw(
-                    'JSON_CONTAINS(accessories_options, ?, "$")',
-                    [json_encode(['accessory_id' => $acc['accessory_id']])]
-                );
+           if (!empty($accessories)) {
+                $accessoryIds = array_column($accessories, 'accessory_id');
+                $cartProductQuery->whereJsonContains('accessories_options', $accessoryIds);
+            } else {
+                // No accessories
+                $cartProductQuery->where(function ($q) {
+                    $q->whereNull('accessories_options')
+                    ->orWhere('accessories_options', '[]')
+                    ->orWhere('accessories_options', '');
+                });
             }
-        } else {
-            // No accessories
-            $cartProductQuery->where(function ($q) {
-                $q->whereNull('accessories_options')
-                ->orWhere('accessories_options', '[]')
-                ->orWhere('accessories_options', '');
-            });
-        }
+
 
 
 
