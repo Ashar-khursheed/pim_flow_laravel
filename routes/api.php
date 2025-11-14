@@ -89,6 +89,7 @@ use App\Http\Controllers\FinanceController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
+use App\Http\Controllers\FrontEnd\FndFinanceController;
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
 use App\Http\Controllers\FrontEnd\UserReviewController as F_UserReviewController;
 use App\Http\Controllers\FrontEnd\SeoManagementController as F_SeoManagementController;
@@ -152,6 +153,8 @@ use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
 use App\Http\Controllers\FrontEnd\FndProductVariantController;
 use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
 use App\Http\Controllers\FrontEnd\PaymobController as F_PaymobController;
+use App\Http\Controllers\FrontEnd\FinanceController as F_FinanceController;
+
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -632,6 +635,7 @@ Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
 
 
+Route::post('frontend/finances', [FndFinanceController::class, 'store']);
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
@@ -923,9 +927,14 @@ Route::get('/feed/products-5.xml', [ProductXMLFeedWatchController::class, 'getPr
 Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
+	Route::post('/faild', [F_CCavenueController::class, 'handleResponse']);
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
-//Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
+
+ 
+
+
+Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
 
 Route::post('/stripe/create-stripe-payment-link', [F_StripeController::class, 'createStripePaymentLink']);
@@ -975,6 +984,8 @@ Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']
 ->where('from', '.*');
 
 Route::prefix('frontend/auth')->group(function () {
+
+	Route::post('finances/post', [F_FinanceController::class, 'store']); // get payment_token
 
 	// Stax Payment Routes
 	Route::post('/Stax', [F_StaxPaymentController::class, 'checkout'])
