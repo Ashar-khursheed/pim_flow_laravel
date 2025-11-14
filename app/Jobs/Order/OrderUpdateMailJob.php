@@ -20,11 +20,13 @@ class OrderUpdateMailJob implements ShouldQueue
 
 	public $orderId;
 	public $originalTotalAmount;
+	public $updateReason;
 
 	public function __construct($data)
 	{
 		$this->orderId = $data['recordId'];
 		$this->originalTotalAmount = $data['originalTotalAmount'];
+		$this->updateReason = $data['updateReason'];
 	}
 
 	public function middleware(): array
@@ -56,7 +58,7 @@ class OrderUpdateMailJob implements ShouldQueue
 			$to = $order->customer->email;
 			Mail::to($to)->send(
 				(
-					new OrderUpdateMail($order, $this->originalTotalAmount)
+					new OrderUpdateMail($order, $this->originalTotalAmount, $this->updateReason)
 				)
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)

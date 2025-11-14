@@ -892,7 +892,7 @@ class OrderController extends Controller
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"customer_address_id", "tax_percentage", "products"},
+	 *             required={"customer_address_id", "tax_percentage", "update_reason", "products"},
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
 	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
 	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
@@ -905,6 +905,7 @@ class OrderController extends Controller
 	 *             @OA\Property(property="additional_amount_name", type="string", example="Accessory 1"),
 	 *             @OA\Property(property="additional_amount_price", type="number", format="float", example=100),
 	 *             @OA\Property(property="additional_discount", type="number", format="float", example=200),
+	 *             @OA\Property(property="update_reason", type="string"),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -950,6 +951,9 @@ class OrderController extends Controller
 			], 400);
 		}
 
+		/* For temporary use - Later updated by user forcefully */
+		$request->merge(['update_reason' => "Order updated by admin due to changes in order details."]);
+
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
@@ -964,6 +968,8 @@ class OrderController extends Controller
 			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
 			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
 			'additional_discount' => 'nullable|numeric|min:0',
+
+			'update_reason' => 'required|string',
 
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
@@ -1105,7 +1111,7 @@ class OrderController extends Controller
 			OrderTracking::create([
 				'order_id' => $order->id,
 				'status' => 'Order Updated By Backend Panel',
-				'description' => 'Order has been successfully updated',
+				'description' => $originalTotalAmount != $totalAmount ? "Amount changed from {$originalTotalAmount} to {$totalAmount}. " . ($request->update_reason ?? '') : ($request->update_reason ?? ''),
 				'created_by' => auth()->id()
 			]);
 
@@ -1153,6 +1159,7 @@ class OrderController extends Controller
 				$batch->add(new OrderUpdateMailJob([
 					'recordId' => $order->id,
 					'originalTotalAmount' => $originalTotalAmount,
+					'updateReason' => $request->update_reason,
 				]));
 			}
 
