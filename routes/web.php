@@ -60,7 +60,6 @@ Route::get('/health', function () {
 
 Route::get('/compress-pdf', [DocumentUploadController::class, 'compress']);
 
-
 Route::get('/ccavenue-proxy', function (Request $request) {
 	$targetUrl = $request->query('url');
 
@@ -85,46 +84,3 @@ Route::get('/ccavenue-proxy', function (Request $request) {
 		return response('Proxy failed: ' . $e->getMessage(), 500);
 	}
 });
-
-if (!$targetUrl || !preg_match('#^https://(secure|test)\.ccavenue\.(com|ae)/#i', $targetUrl)) {
-	return response('Invalid or unauthorized URL', 403);
-}
-
-try {
-	$response = Http::withoutVerifying()
-	->withHeaders([
-		'User-Agent' => 'Mozilla/5.0 (ProxyBot)',
-	])
-	->get($targetUrl);
-
-	$contentType = $response->header('Content-Type', 'text/html');
-
-		// ✅ Rewrite relative URLs in HTML responses
-	if (str_contains($contentType, 'text/html')) {
-		$body = $response->body();
-
-			// Replace relative URLs with proxied ones
-		$body = preg_replace_callback(
-			'#(href|src)="(?!https?://)([^"]+)"#i',
-			function ($matches) use ($targetUrl) {
-				$base = preg_replace('#/[^/]*$#', '/', $targetUrl);
-				$newUrl = $base . $matches[2];
-				$proxyUrl = url('/ccavenue-proxy?url=' . urlencode($newUrl));
-				return $matches[1] . '="' . $proxyUrl . '"';
-			},
-			$body
-		);
-	} else {
-		$body = $response->body();
-	}
-
-	return response($body, $response->status())
-	->header('Content-Type', $contentType)
-	->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-	->header('Pragma', 'no-cache')
-	->header('Expires', '0');
-} catch (\Throwable $e) {
-	\Log::error('CCAvenue Proxy Error', ['error' => $e->getMessage()]);
-	return response('Proxy failed: ' . $e->getMessage(), 500);
-}
-})->withoutMiddleware(['web']);
