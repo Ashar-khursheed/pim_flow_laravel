@@ -210,8 +210,8 @@ class CcavenueController extends Controller
         $backendUrl = config('app.backend_url');
         // Set default values   
         $data['language'] = $data['language'] ?? 'EN';       
-        //$data['redirect_url'] =  url('/api/frontend/ccavenue/handle-response');
-        $data['redirect_url'] =  $backendUrl.'/api/frontend/ccavenue/handle-response';     
+        $data['redirect_url'] =  url('/api/frontend/ccavenue/handle-response');
+        //$data['redirect_url'] =  $backendUrl.'/api/frontend/ccavenue/handle-response';     
         $data['currency'] = "AED";
         $data['order_id'] =  rand(00000000,99999999);
         $data['cancel_url'] = $backendUrl.'/api/frontend/ccavenue/failed';
@@ -398,7 +398,11 @@ class CcavenueController extends Controller
 
         if (empty($encResponse)) {
             \Log::warning('CCAvenue handleResponse called without encResp', $request->all());
-            //return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment/declined');
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve payment status',
+                'error' => 'CCAvenue handleResponse called without encResp'
+            ], 500);
         }
 
         // decrypt and parse
@@ -406,76 +410,46 @@ class CcavenueController extends Controller
  
         \Log::info('CCAvenue decrypted response', $responseData);
 
-       // map common fields safely (use null coalescing)
-        // $orderId      = $responseData['order_id'] ?? null;
-        // $status       = $responseData['order_status'] ?? ($responseData['status'] ?? 'Unknown');
-        // $amount       = $responseData['amount'] ?? null;
-        // $currency     = $responseData['currency'] ?? null;
-        // $trackingId   = $responseData['tracking_id'] ?? $responseData['bank_ref_no'] ?? null;
-        // $bankRefNo    = $responseData['bank_ref_no'] ?? null;
-        // $paymentMode  = $responseData['payment_mode'] ?? null;
-        // $responseCode = $responseData['status_code'] ?? null;
-        // $statusMsg    = $responseData['status_message'] ?? null;
-        //  $transDate    = now();
+       
+        $orderId      = $responseData['order_id'] ?? null;
+        $status       = $responseData['order_status'] ?? ($responseData['status'] ?? 'Unknown');
+        $amount       = $responseData['amount'] ?? null;
+        $currency     = $responseData['currency'] ?? null;
+        $trackingId   = $responseData['tracking_id'] ?? $responseData['bank_ref_no'] ?? null;
+        $bankRefNo    = $responseData['bank_ref_no'] ?? null;
+        $paymentMode  = $responseData['payment_mode'] ?? null;
+        $responseCode = $responseData['status_code'] ?? null;
+        $statusMsg    = $responseData['status_message'] ?? null;
+         $transDate    = now();
 
-        // // card info (if provided, likely masked)
-        // $cardBrand    = $responseData['card_name'] ?? $responseData['card_type'] ?? null;
-        // $cardHolder   = $responseData['card_holder_name'] ?? null;
-        // $maskedCard   = $responseData['card_number'] ?? $responseData['card_no'] ?? null; // usually masked
+        // card info (if provided, likely masked)
+        $cardBrand    = $responseData['card_name'] ?? $responseData['card_type'] ?? null;
+        $cardHolder   = $responseData['card_holder_name'] ?? null;
+        $maskedCard   = $responseData['card_number'] ?? $responseData['card_no'] ?? null; // usually masked
 
-        // // merchant params (if you used them)
-        // $merchantParam1 = $responseData['merchant_param1'] ?? null;
-        // // ... merchant_param2..5
-        // if($status=='success'){
-        // $status =  'Completed';
-        // }else{
-        // $status =  'Failed';
+        // merchant params (if you used them)
+        $merchantParam1 = $responseData['merchant_param1'] ?? null;
+        // ... merchant_param2..5
+        if($status=='Success'){
+        $status =  'Completed';
+        }else{
+        $status =  'Failed';
 
-        // }
-        // Save or update payments table
-        // PaymentManagement::updateOrInsert(
-        //     ['order_id' => $orderId],
-        //     [
-        //         'order_id'      => $orderId,
-        //         'status'        => $status,
-        //         'payment_method'  => "ccavenue",
-        //         'amount'        => $amount,
-        //         'currency'      => $currency,
-        //         'tracking_id'   => $trackingId,
-        //         'bank_ref_no'   => $bankRefNo,
-        //         'payment_mode'  => $paymentMode,
-        //         'response_code' => $responseCode,
-        //         'status_message'=> $statusMsg,
-        //         'trans_date'    => $transDate,
-        //         'card_brand'    => $cardBrand,
-        //         'card_holder'   => $cardHolder,
-        //         'card_mask'     => $maskedCard,
-        //         'response_raw'  => json_encode($responseData),
-        //         'updated_at'    => now(),
-        //         'created_at'    => now()
-        //     ]
-        // );
-
-        // Call order service for successful payments
-        // if (strtolower($status) === 'success' || $status === 'Success') {
-        //     // Your existing order creation logic
-        //     try {
-        //         $this->orderService->createOrderFromPayment($responseData);
-        //     } catch (\Exception $e) {
-        //         \Log::error('Order creation failed after payment', ['error' => $e->getMessage(), 'order' => $orderId]);
-        //     }
-        // }
-
-        // Redirect user to frontend result page
-        // $frontend = rtrim(env('CCAVENUE_REDIRECT_URL', 'https://uae.thehorecastore.co'), '/');
-        // if ($orderId) {
-        //     $redirect = $frontend . '/payment-result/' . urlencode($orderId);
-        // } else {
-        //     $redirect = $frontend . '/payment-result';
-        // }
-
-        // return redirect($redirect);
- 
+        }
+        
+        PaymentManagement::updateOrInsert(
+            ['order_id' => $orderId],
+            [
+                'order_id'      => $orderId,
+                'status'        => $status,
+                'payment_method'  => "ccavenue",
+                'amount'        => $amount,               
+                'transaction_id'   => $trackingId,            
+                'payment_mode'  => $paymentMode,
+                'payment_date' => now(),
+                'notes'=> json_encode($responseData),                
+            ]
+        );
             $merchantData = "";
             foreach ($responseData as $key => $value) {
                  $merchantData .= "&{$key}={$value}";
@@ -487,7 +461,12 @@ class CcavenueController extends Controller
             return redirect($url.'/review-checkout?status=compete&encResp='.$merchantData);
 
     } catch (\Exception $e) {
-        \Log::error('CCAvenue handleResponse exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+         return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve payment status',
+                'error' => $e->getMessage()
+            ], 500);
+        
         
     }
 }
