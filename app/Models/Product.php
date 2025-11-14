@@ -300,5 +300,11 @@ class Product extends Model implements TranslatableContract
 		return $this->hasMany(ProductAccessory::class, 'product_id')->approved();
 	}
 
+	public function getIsRequiredAttribute()
+	{
+		return $this->accessories()->where('is_required', 1)->exists();
+	}
+
+
 
 }

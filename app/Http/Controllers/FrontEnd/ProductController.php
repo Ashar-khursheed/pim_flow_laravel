@@ -1397,7 +1397,7 @@ class ProductController extends Controller
 				'currency' => $product->currency?->title,
 				'total_reviews' => $totalReviews,
 				'avg_rating' => $avgRating,
-
+				'isRequired' => $product->is_required,
 				'leftStock' => $leftStock,
 				'currency_title' => $product->currency
 				? ($product->currency->is_prefix_symbol
@@ -1424,6 +1424,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->is_required,
 			];
 		});
 
@@ -1582,6 +1583,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->is_required,
 			];
 		});
 
@@ -1732,6 +1734,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->is_required,
 			];
 		});
 
@@ -2056,6 +2059,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->is_required,
 			];
 
 		});
@@ -2280,6 +2284,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->is_required,
 			];
 		});
 
