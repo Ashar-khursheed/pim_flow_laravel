@@ -663,6 +663,8 @@ if (!function_exists('order_cc_mails')) {
 			'ofs@thehorecastore.com',
 			'ofs02@thehorecastore.com',
 			'dmm@thehorecastore.com',
+			'ga@thehorecastore.com',
+			'ga02@thehorecastore.com',
 		];
 
 		$uaeMails = [
