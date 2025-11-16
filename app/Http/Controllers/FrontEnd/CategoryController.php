@@ -1514,6 +1514,7 @@ class CategoryController extends Controller
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
                 'quote_available' => $product->quote_available ?? null,
+                 'isRequired' => $product->isRequired,
             ];
         });
 
@@ -3347,6 +3348,7 @@ class CategoryController extends Controller
                         'min_quantity' => $firstSupplier->min_quantity ?? 0,
                         'is_fixed' => $firstSupplier->is_fixed ?? 0,
                         'quote_available' => $details->quote_available ?? null,
+                         'isRequired' => $details->is_required,
                     ];
                 })->filter()->values(), // Remove null values and reset array keys
             ];
@@ -3505,6 +3507,7 @@ class CategoryController extends Controller
                         'min_quantity' => $firstSupplier->min_quantity ?? 0,
                         'is_fixed' => $firstSupplier->is_fixed ?? 0,
                         'quote_available' => $details->quote_available ?? null,
+                         'isRequired' => $details->is_required,
                     ];
                 })->filter()->values(), // Remove null values and reset array keys
             ];
