@@ -76,21 +76,33 @@ class StripeController extends Controller
             try {
 
         // STEP 1: Update Payment Method with Customer Billing Details
+            // STEP 1: Create a Customer in Stripe
+        $customer = \Stripe\Customer::create([
+            'name' => $request->customer_info['name'] ?? null,
+            'email' => $request->customer_info['email'] ?? null,
+        ]);
+
+        // STEP 2: Attach Payment Method to Customer
+        \Stripe\PaymentMethod::retrieve($request->payment_method_id)
+            ->attach(['customer' => $customer->id]);
+
+        // STEP 3: Update PaymentMethod with billing details (now allowed)
         \Stripe\PaymentMethod::update(
             $request->payment_method_id,
             [
                 'billing_details' => [
-                    'name'  => $request->customer_info['name'] ?? null,
+                    'name' => $request->customer_info['name'] ?? null,
                     'email' => $request->customer_info['email'] ?? null,
                 ]
             ]
         );
 
-        // STEP 2: Create the PaymentIntent
+        // STEP 4: Create PaymentIntent
         $paymentIntent = PaymentIntent::create([
             'amount' => (int) round($request->amount * 100),
             'currency' => $request->currency ?? 'aed',
             'payment_method' => $request->payment_method_id,
+            'customer' => $customer->id,   // <-- THIS ensures Stripe shows name/email
             'confirmation_method' => 'manual',
             'confirm' => true,
             'return_url' => config('app.url') . '/payment/return',
