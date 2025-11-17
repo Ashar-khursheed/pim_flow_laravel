@@ -141,10 +141,8 @@ class Coupon extends Model
             return false;
         }
         
-        if (!$this->isExpired()) {
-          if( $this->expire_date < now()){
-                return false;
-          }
+        if (!$this->isExpired() && $this->expire_date < now()) {
+            return false;
         }
  
        if ($this->hasReachedUsageLimit()) {
