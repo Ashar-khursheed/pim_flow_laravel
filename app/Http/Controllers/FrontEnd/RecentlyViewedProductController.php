@@ -253,6 +253,7 @@ class RecentlyViewedProductController extends Controller
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
                 'quote_available' => $product->quote_available ?? null,
+                 'isRequired' => $product->isRequired,
             ];
         })
         ->filter()
@@ -481,6 +482,7 @@ class RecentlyViewedProductController extends Controller
                     'min_quantity' => $firstSupplier->min_quantity ?? 0,
                     'is_fixed' => $firstSupplier->is_fixed ?? 0,
                     'quote_available' => $product->quote_available ?? null,
+                     'isRequired' => $product->isRequired,
                 ];
             }
 

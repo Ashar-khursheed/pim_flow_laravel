@@ -513,6 +513,7 @@ class ProductController extends Controller
 					'id' => $accessory->id,
 					'name' => $accessory->name,
 					'isapproved' => $accessory->isapproved,
+					'isRequired' => $accessory->isRequired,
 					'items' => $accessory->items->map(function ($item) {
 						return [
 							'id' => $item->id,
@@ -1120,6 +1121,7 @@ class ProductController extends Controller
 					'id' => $accessory->id,
 					'name' => $accessory->name,
 					'isapproved' => $accessory->isapproved,
+					'isRequired' => $accessory->isRequired,
 					'items' => $accessory->items->map(function ($item) {
 						return [
 							'id' => $item->id,
@@ -1395,7 +1397,7 @@ class ProductController extends Controller
 				'currency' => $product->currency?->title,
 				'total_reviews' => $totalReviews,
 				'avg_rating' => $avgRating,
-
+				'isRequired' => $product->is_required,
 				'leftStock' => $leftStock,
 				'currency_title' => $product->currency
 				? ($product->currency->is_prefix_symbol
@@ -1422,6 +1424,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 
@@ -1580,6 +1583,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 
@@ -1730,6 +1734,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 
@@ -2054,6 +2059,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 
 		});
@@ -2278,6 +2284,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 

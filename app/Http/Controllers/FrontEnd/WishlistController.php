@@ -203,6 +203,8 @@ class WishlistController extends Controller
                 // Images
                 $product->images = collect(json_decode($product->images, true) ?? []);
                 $product->in_wishlist = 1;
+                $product->quantity = $item->quantity ?? 1;
+
 
                 // Discounts
                 $discountIds = $productDiscounts[$product->id] ?? [];
@@ -294,7 +296,6 @@ class WishlistController extends Controller
                     }
                     $product->selling_type =$sellingType;
                 }
-                $item->quantity = $item->quantity ?? 1;
 
             }
 
