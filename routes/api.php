@@ -932,9 +932,6 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
 
- 
-
-
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
 

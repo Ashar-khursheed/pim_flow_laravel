@@ -472,64 +472,62 @@ class CcavenueController extends Controller
 }
     public function failed(Request $request)
     {
-    try {
-        $encResponse = $request->input('encResp');
-        if (empty($encResponse)) {
-            \Log::warning('CCAvenue handleResponse called without encResp', $request->all());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to retrieve payment status',
-                'error' => 'CCAvenue handleResponse called without encResp'
-            ], 500);
-        }
-
-        // decrypt and parse
-        $responseData = $this->ccavenueService->parseResponse($encResponse);
- 
-        \Log::info('CCAvenue decrypted response', $responseData);        
-        $status       = $responseData['order_status'] ?? ($responseData['status'] ?? 'Unknown');
-       
-        // ... merchant_param2..5
-        if($status=='Success'){
-        $status =  'Completed';
-        }else{
-        $status =  'Failed';
-
-        }
-        
-        // PaymentManagement::updateOrInsert(
-        //     ['order_id' => $orderId],
-        //     [
-        //         'order_id'      => $orderId,
-        //         'status'        => $status,
-        //         'payment_method'  => "ccavenue",
-        //         'amount'        => $amount,               
-        //         'transaction_id'   => $trackingId,            
-        //         'payment_mode'  => $paymentMode,
-        //         'payment_date' => now(),
-        //         'notes'=> json_encode($responseData),                
-        //     ]
-        // );
-            $merchantData = "";
-            foreach ($responseData as $key => $value) {
-                 $merchantData .= "&{$key}={$value}";
+        try {
+            $encResponse = $request->input('encResp');
+            if (empty($encResponse)) {
+                \Log::warning('CCAvenue handleResponse called without encResp', $request->all());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to retrieve payment status',
+                    'error' => 'CCAvenue handleResponse called without encResp'
+                ], 500);
             }
-        $giveData = dataEncodeJsonBase64($merchantData);
-       
-            // Determine payment status   
-            $url = config('app.url');
-            return redirect($url.'/review-checkout?status=incompete&encResp='.$giveData);
 
-    } catch (\Exception $e) {
-         return response()->json([
-                'success' => false,
-                'message' => 'Failed to retrieve payment status',
-                'error' => $e->getMessage()
-            ], 500);
+            // decrypt and parse
+            $responseData = $this->ccavenueService->parseResponse($encResponse);
+    
+            \Log::info('CCAvenue decrypted response', $responseData);        
+            $status       = $responseData['order_status'] ?? ($responseData['status'] ?? 'Unknown');
         
+            // ... merchant_param2..5
+            if($status=='Success'){
+            $status =  'Completed';
+            }else{
+            $status =  'Failed';
+
+            }
+            
+            // PaymentManagement::updateOrInsert(
+            //     ['order_id' => $orderId],
+            //     [
+            //         'order_id'      => $orderId,
+            //         'status'        => $status,
+            //         'payment_method'  => "ccavenue",
+            //         'amount'        => $amount,               
+            //         'transaction_id'   => $trackingId,            
+            //         'payment_mode'  => $paymentMode,
+            //         'payment_date' => now(),
+            //         'notes'=> json_encode($responseData),                
+            //     ]
+            // );
+                $merchantData = "";
+                foreach ($responseData as $key => $value) {
+                    $merchantData .= "&{$key}={$value}";
+                }
+            $giveData = dataEncodeJsonBase64($merchantData);
         
+                // Determine payment status   
+                $url = config('app.url');
+                return redirect($url.'/review-checkout?status=incompete&encResp='.$giveData);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to retrieve payment status',
+                    'error' => $e->getMessage()
+                ], 500);            
+        }
     }
-}
     // public function handleResponse(Request $request)
     // {
     //     try {
