@@ -146,16 +146,22 @@ class Coupon extends Model
             ->where('customer_id', $customerId)
             ->count();
 
-        $current_category_usage = CouponCategory::where('coupon_id', $this->id)->count();
-        $product_ids = CouponProduct::where('coupon_id', $this->id)->first();
+        $category_ids = CouponCategory::where('coupon_id', $this->id)
+            ->pluck('category_id')
+            ->toArray();
+        $validCategories = $this->categories()->pluck('categories.id')->toArray();
 
+        $productIds = CouponProduct::where('coupon_id', $this->id)
+            ->pluck('product_id')
+            ->toArray();
         // Validation Logic
         $is_valid = true;
         $error_message = '';
 
         // STEP 1: Check overall usage type limits (for ALL customers combined)
         if ($usage_type == 'once') {
-            if ($current_total_usage >= 1) {
+             
+            if ($current_total_usage >= 1) {                
                 $is_valid = false;
                 $error_message = 'This coupon can only be used once and has already been used.';
             }
@@ -173,12 +179,13 @@ class Coupon extends Model
                 }
             }
         }
+         
         // STEP 3: Check basis-specific limits        
         if ($is_valid) {
             switch ($basis) {
                 case 'customer':
                     // Check if this specific customer has reached their limit                   
-                    if ($usage_limit_per_customer > 0 && $current_customer_usage >= $usage_limit_per_customer) {
+                    if ($usage_limit_per_customer > 0 && $current_total_usage >= $usage_limit_per_customer) {
                         $is_valid = false;
                         $error_message = "You have reached the usage limit for this coupon.";
                     }
@@ -186,8 +193,9 @@ class Coupon extends Model
 
                 case 'category':
                     // Check if category-specific limit is reached
+                    $validCategories = $this->categories()->pluck('categories.id')->toArray();
+                    if (empty(array_intersect($category_ids, $validCategories))) {
 
-                    if ($usage_limit > 0 && $current_category_usage >= $usage_limit) {
                         $is_valid = false;
                         $error_message = "This category has reached its usage limit.";
                     }
@@ -197,12 +205,6 @@ class Coupon extends Model
                     // Check if product-specific limit is reached
 
                     $validProducts = $this->products()->pluck('ec_products.id')->toArray();
-
-                    $productIds = CouponProduct::where('coupon_id', $this->id)
-                        ->pluck('product_id')
-                        ->toArray();
-
-
                     if (empty(array_intersect($productIds, $validProducts))) {
 
                         $is_valid = false;
