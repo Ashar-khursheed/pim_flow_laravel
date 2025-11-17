@@ -850,7 +850,7 @@
 //         $encResponse = $_GET['getStax'];
 
 //         $data = dataDecodeJsonBase64($encResponse);
-//         dd($data);
+
 //         if (!empty($data)) {
 //             $amount = $data->amount / 100;
 //             $currency = $data->currency;
@@ -950,7 +950,7 @@
 //         $encResponse = $_GET['getStax'];
  
 //         $data = dataDecodeJsonBase64($encResponse);
-//         dd($data);
+
 //         if (!empty($data)) {
 //             $amount = $data->amount / 100;
 //             $currency = $data->currency;
@@ -1889,7 +1889,7 @@ class StaxPaymentController extends Controller
         $encResponse = $_GET['getStax'];
  
         $data = dataDecodeJsonBase64($encResponse);
-        dd($data);
+        
         if (!empty($data)) {
             $amount = $data->amount / 100;
             $currency = $data->currency;

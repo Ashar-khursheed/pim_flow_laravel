@@ -63,8 +63,8 @@ class Coupon extends Model
     public function customers(): BelongsToMany
     {
         return $this->belongsToMany(Customer::class, 'coupon_customers', 'coupon_id', 'customer_id')
-                    ->withPivot('usage_count')
-                    ->withTimestamps();
+            ->withPivot('usage_count')
+            ->withTimestamps();
     }
 
     public function categories(): BelongsToMany
@@ -96,9 +96,9 @@ class Coupon extends Model
     public function scopeValid($query)
     {
         return $query->active()
-                    ->approved()
-                    ->where('start_date', '<=', now())
-                    ->where('expire_date', '>=', now());
+            ->approved()
+            ->where('start_date', '<=', now())
+            ->where('expire_date', '>=', now());
     }
 
     public function scopeByBasis($query, string $basis)
@@ -109,7 +109,7 @@ class Coupon extends Model
     // Helper methods
     public function isValid(): bool
     {
-        return $this->is_active 
+        return $this->is_active
             && $this->status === 'approved'
             && $this->start_date <= now()
             && $this->expire_date >= now();
@@ -127,51 +127,128 @@ class Coupon extends Model
 
     public function hasReachedUsageLimit(): bool
     {
-         $customerUsageCount = $this->usages()               
-                ->where('coupon_id', $this->id)
-                ->count();
- 
-        return $this->hasUsageLimit() && $customerUsageCount >= $this->usage_limit;
+        return $this->hasUsageLimit() && $this->usage_count >= $this->usage_limit;
     }
 
     public function canBeUsedByCustomer(int $customerId): bool
-    {  
-        if (!$this->isValid()) {
-            return false;
-        }
-        
-        if (!$this->isExpired() && $this->expire_date < now()) {
-            return false;
-        }
- 
-       if ($this->hasReachedUsageLimit()) {
-            return false;
-        }
- 
-        if ($this->usage_type === 'once') {
-            if (!$customerId) {
-             return false;
-            }
+    {
+        $usage_type = $this->usage_type;
+        $usage_limit = $this->usage_limit;
+        $usage_limit_per_customer = $this->usage_limit_per_customer;
+        $basis = $this->basis;
 
-        // Check if the customer has already used this coupon
-            $alreadyUsed = $this->usages()
+        // Get counts - FIXED: Separate total vs customer-specific
+        $current_total_usage = $this->usage_count; // Total uses by ALL customers
+        $current_customer_usage = $this->usages()->where('customer_id', $customerId)->count(); // This customer's uses
+
+        // Basis-specific counts
+        $current_customer_count = CouponCustomer::where('coupon_id', $this->id)
             ->where('customer_id', $customerId)
-            ->where('coupon_id', $this->id)
-            ->exists(); 
-            return !$alreadyUsed;
-            
+            ->count();
+
+        $current_category_usage = CouponCategory::where('coupon_id', $this->id)->count();
+        $product_ids = CouponProduct::where('coupon_id', $this->id)->first();
+
+        // Validation Logic
+        $is_valid = true;
+        $error_message = '';
+
+        // STEP 1: Check overall usage type limits (for ALL customers combined)
+        if ($usage_type == 'once') {
+            if ($current_total_usage >= 1) {
+                $is_valid = false;
+                $error_message = 'This coupon can only be used once and has already been used.';
+            }
+        } elseif ($usage_type == 'multiple') {
+            // Check if TOTAL usage across all customers has reached limit             
+            if ($usage_limit > 0 && $current_total_usage >= $usage_limit) {
+                $is_valid = false;
+                $error_message = "This coupon has reached its usage limit of {$usage_limit}.";
+            }
+        } elseif ($usage_type == 'unlimited') {
+            if ($is_valid && $usage_limit_per_customer > 0) {
+                if ($current_customer_usage >= $usage_limit_per_customer) {
+                    $is_valid = false;
+                    $error_message = "You have reached the usage limit of {$usage_limit_per_customer} for this coupon.";
+                }
+            }
         }
-         
-        if ($this->usage_limit_per_customer) {
-            $customerUsageCount = $this->usages()
-                ->where('customer_id', $customerId)
-                ->where('coupon_id', $this->id)
-                ->count();         
-            return $customerUsageCount < $this->usage_limit_per_customer;
+        // STEP 3: Check basis-specific limits        
+        if ($is_valid) {
+            switch ($basis) {
+                case 'customer':
+                    // Check if this specific customer has reached their limit                   
+                    if ($usage_limit_per_customer > 0 && $current_customer_usage >= $usage_limit_per_customer) {
+                        $is_valid = false;
+                        $error_message = "You have reached the usage limit for this coupon.";
+                    }
+                    break;
+
+                case 'category':
+                    // Check if category-specific limit is reached
+
+                    if ($usage_limit > 0 && $current_category_usage >= $usage_limit) {
+                        $is_valid = false;
+                        $error_message = "This category has reached its usage limit.";
+                    }
+                    break;
+
+                case 'product':
+                    // Check if product-specific limit is reached
+
+                    $validProducts = $this->products()->pluck('ec_products.id')->toArray();
+
+                    $productIds = CouponProduct::where('coupon_id', $this->id)
+                        ->pluck('product_id')
+                        ->toArray();
+
+
+                    if (empty(array_intersect($productIds, $validProducts))) {
+
+                        $is_valid = false;
+                        $error_message = "This product has reached its usage limit.";
+                    }
+                    break;
+            }
         }
 
-        return true;
+        // STEP 4: Other validations
+        if (!$this->isValid()) {
+            $is_valid = false;
+            $error_message = 'This coupon is not valid.';
+        }
+
+        if (!$this->isExpired() && $this->expire_date < now()) {
+            $is_valid = false;
+            $error_message = 'This coupon has expired.';
+        }
+
+        return $is_valid;
     }
+    // public function canBeUsedByCustomer_old(int $customerId): bool
+    // {
+    //     if (!$this->isValid()) {
+    //         return false;
+    //     }
+
+    //     if ($this->hasReachedUsageLimit()) {
+    //         return false;
+    //     }
+
+    //     if ($this->usage_type === 'once') {
+    //         return !$this->usages()->where('customer_id', $customerId)->exists();
+    //     }
+
+    //     if ($this->usage_limit_per_customer) {
+    //         $customerUsageCount = $this->usages()
+    //             ->where('customer_id', $customerId)
+    //             ->count();
+
+    //         return $customerUsageCount < $this->usage_limit_per_customer;
+    //     }
+
+    //     return true;
+    // }
 
     public function calculateDiscount(float $orderValue): float
     {
