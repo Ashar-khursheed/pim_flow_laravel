@@ -261,8 +261,8 @@ class CouponController extends Controller
     //     ], 201);
     // }
     public function store(Request $request)
-{
-    $validated = $request->validate([
+    {
+     $validated = $request->validate([
         'code' => 'string|max:255|unique:coupons,code',
         'name' => 'string|max:255',
         'description' => 'nullable|string',
@@ -332,7 +332,6 @@ class CouponController extends Controller
     }
 
     $coupon->load(['creator', 'customers', 'categories', 'products']);
-
     return response()->json([
         'success' => true,
         'data' => $coupon,
@@ -646,11 +645,11 @@ class CouponController extends Controller
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
             'product_ids' => 'nullable|array',
-            'product_ids.*' => 'exists:products,id',
+            'product_ids.*' => 'exists:ec_products,id',
         ]);
 
         $coupon = Coupon::where('code', $validated['code'])->first();
-
+ 
         if (!$coupon) {
             return response()->json([
                 'success' => false,
@@ -719,7 +718,7 @@ class CouponController extends Controller
         }
 
         if ($coupon->basis === 'product' && !empty($validated['product_ids'])) {
-            $validProducts = $coupon->products()->pluck('products.id')->toArray();
+            $validProducts = $coupon->products()->pluck('ec_products.id')->toArray();
             if (empty(array_intersect($validated['product_ids'], $validProducts))) {
                 return response()->json([
                     'success' => false,
@@ -1114,6 +1113,7 @@ class CouponController extends Controller
                 'reason' => 'Coupon is inactive, expired, or not approved'
             ];
         }
+
         // Check if coupon has reached usage limit
         if ($coupon->hasReachedUsageLimit()) {
             return [
