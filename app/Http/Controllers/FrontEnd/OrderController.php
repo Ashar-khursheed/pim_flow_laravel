@@ -314,6 +314,22 @@ class OrderController extends BaseController
 
 			$discountedAmount = $orderAmount - $discount;
 
+			/* Handle cheque payment discount */
+			if ($payWithCheque) {
+				$chequeImg = uploadImageToWebpS3FromFile(
+					$request,
+					'cheque_img',
+					env('STORAGE_ENV') . '/customer/orders'
+				);
+				$chequeDiscountPercentage = cheque_discount_percentage();
+				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
+				$discountedAmount -= $chequeDiscount;
+			} else {
+				$chequeImg = null;
+				$chequeDiscountPercentage = 0;
+				$chequeDiscount = 0;
+			}
+
 			$customer = auth()->user();
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
 
@@ -324,22 +340,6 @@ class OrderController extends BaseController
 			}
 
 			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
-
-			/* Handle cheque payment discount */
-			if ($payWithCheque) {
-				$chequeImg = uploadImageToWebpS3FromFile(
-					$request,
-					'cheque_img',
-					env('STORAGE_ENV') . '/customer/orders'
-				);
-				$chequeDiscountPercentage = cheque_discount_percentage();
-				$chequeDiscount = round($totalAmount * $chequeDiscountPercentage / 100, 2);
-				$totalAmount -= $chequeDiscount;
-			} else {
-				$chequeImg = null;
-				$chequeDiscountPercentage = 0;
-				$chequeDiscount = 0;
-			}
 
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();
@@ -420,7 +420,6 @@ class OrderController extends BaseController
 				$cart->customerCartProducts()->delete();
 				$cart->delete();
 			});
-
 
 			DB::commit();
 
