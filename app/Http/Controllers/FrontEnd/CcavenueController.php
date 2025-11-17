@@ -437,19 +437,19 @@ class CcavenueController extends Controller
 
         }
         
-        PaymentManagement::updateOrInsert(
-            ['order_id' => $orderId],
-            [
-                'order_id'      => $orderId,
-                'status'        => $status,
-                'payment_method'  => "ccavenue",
-                'amount'        => $amount,               
-                'transaction_id'   => $trackingId,            
-                'payment_mode'  => $paymentMode,
-                'payment_date' => now(),
-                'notes'=> json_encode($responseData),                
-            ]
-        );
+        // PaymentManagement::updateOrInsert(
+        //     ['order_id' => $orderId],
+        //     [
+        //         'order_id'      => $orderId,
+        //         'status'        => $status,
+        //         'payment_method'  => "ccavenue",
+        //         'amount'        => $amount,               
+        //         'transaction_id'   => $trackingId,            
+        //         'payment_mode'  => $paymentMode,
+        //         'payment_date' => now(),
+        //         'notes'=> json_encode($responseData),                
+        //     ]
+        // );
             $merchantData = "";
             foreach ($responseData as $key => $value) {
                  $merchantData .= "&{$key}={$value}";
