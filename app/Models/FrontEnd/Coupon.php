@@ -127,12 +127,11 @@ class Coupon extends Model
 
     public function hasReachedUsageLimit(): bool
     {
-         $customerUsageCount = $this->usages()
-               
+         $customerUsageCount = $this->usages()               
                 ->where('coupon_id', $this->id)
                 ->count();
-
-        return $this->hasUsageLimit() && $this->usage_count >= $this->usage_limit;
+ 
+        return $this->hasUsageLimit() && $customerUsageCount >= $this->usage_limit;
     }
 
     public function canBeUsedByCustomer(int $customerId): bool
