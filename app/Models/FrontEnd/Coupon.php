@@ -3,6 +3,7 @@
 namespace App\Models\FrontEnd;
 use App\Models\User;
 use App\Models\FrontEnd\Customer;
+use App\Models\FrontEnd\CouponCustomer;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -126,28 +127,49 @@ class Coupon extends Model
 
     public function hasReachedUsageLimit(): bool
     {
+         $customerUsageCount = $this->usages()
+               
+                ->where('coupon_id', $this->id)
+                ->count();
+
         return $this->hasUsageLimit() && $this->usage_count >= $this->usage_limit;
     }
 
     public function canBeUsedByCustomer(int $customerId): bool
-    {
+    {  
         if (!$this->isValid()) {
             return false;
         }
-
-        if ($this->hasReachedUsageLimit()) {
+        
+        if (!$this->isExpired()) {
+          if( $this->expire_date < now()){
+                return false;
+          }
+        }
+ 
+       if ($this->hasReachedUsageLimit()) {
             return false;
         }
-
+ 
         if ($this->usage_type === 'once') {
-            return !$this->usages()->where('customer_id', $customerId)->exists();
-        }
+            if (!$customerId) {
+             return false;
+            }
 
+        // Check if the customer has already used this coupon
+            $alreadyUsed = $this->usages()
+            ->where('customer_id', $customerId)
+            ->where('coupon_id', $this->id)
+            ->exists(); 
+            return !$alreadyUsed;
+            
+        }
+         
         if ($this->usage_limit_per_customer) {
             $customerUsageCount = $this->usages()
                 ->where('customer_id', $customerId)
-                ->count();
-            
+                ->where('coupon_id', $this->id)
+                ->count();         
             return $customerUsageCount < $this->usage_limit_per_customer;
         }
 
