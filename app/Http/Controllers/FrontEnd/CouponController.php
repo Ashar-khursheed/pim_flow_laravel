@@ -1114,7 +1114,6 @@ class CouponController extends Controller
                 'reason' => 'Coupon is inactive, expired, or not approved'
             ];
         }
-
         // Check if coupon has reached usage limit
         if ($coupon->hasReachedUsageLimit()) {
             return [

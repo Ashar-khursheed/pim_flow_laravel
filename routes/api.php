@@ -204,7 +204,6 @@ Route::post('/ccavenue/dataEncodeCCavenue', action: [F_CCavenueController::class
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
-
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
 	$url = $request->query('url');
 
@@ -929,7 +928,7 @@ Route::get('/feed/products-5.xml', [ProductXMLFeedWatchController::class, 'getPr
 Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
-	Route::post('/faild', [F_CCavenueController::class, 'handleResponse']);
+	Route::post('/failed', [F_CCavenueController::class, 'failed']);
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
 
