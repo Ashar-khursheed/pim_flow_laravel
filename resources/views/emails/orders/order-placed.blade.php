@@ -60,7 +60,7 @@
 
 					<tr>
 						<td>
-							<table cellspacing="0" cellpadding="4" style="font-family: 'Noto Sans', sans-serif; width:100%; font-size:14px; line-height:20px; margin-top:20px;">
+							<table cellspacing="0" cellpadding="4" style="font-family: 'Noto Sans', sans-serif; width:100%; font-size:14px; line-height:20px; margin-top:5px;">
 								<tr>
 									<td style="font-family: 'Noto Sans', sans-serif; vertical-align:top; width:50%; border-right:1px solid #ddd;">
 										<h3 style="font-family: 'Noto Sans', sans-serif; font-size:15px; line-height:22px; font-weight: 600; margin:0 0 10px; color: #26683A; text-decoration: underline;">
@@ -224,23 +224,30 @@
 												<td style="font-family: 'Noto Sans',  sans-serif; ">Subtotal</td>
 												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
 											</tr>
-											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif; ">Shipping</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">
-													{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : '<span style="color: green;">Free</span>' !!}
-												</td>
-											</tr>
-											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
-												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
-											</tr>
 
 											@if ($discount > 0)
 											<tr>
 												<td style="color: #15803d; font-family: 'Noto Sans',  sans-serif;">Discount</td>
 												<td style="color: #15803d; font-family: 'Noto Sans',  sans-serif;" align="right">- {{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
 											</tr>
+
+											<tr>
+												<td style="font-family: 'Noto Sans',  sans-serif; ">Subtotal After Discount</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($subTotal-$discount, 2, '.', ',') }}</td>
+											</tr>
 											@endif
+
+											<tr>
+												<td style="font-family: 'Noto Sans',  sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
+												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
+											</tr>
+
+											<tr>
+												<td style="font-family: 'Noto Sans',  sans-serif; ">Shipping</td>
+												<td style="font-family: 'Noto Sans', sans-serif;" align="right">
+													{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : '<span style="color: green;">Free</span>' !!}
+												</td>
+											</tr>
 
 											<tr>
 												<td colspan="2" style="border-top: 2px solid #E2E8F0;"></td>
