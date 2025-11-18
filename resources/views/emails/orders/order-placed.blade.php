@@ -226,12 +226,12 @@
 
 											@if ($chequeDiscount > 0)
 											<tr>
-												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Cheque Payment Discount ({{ $chequeDiscountPercentage }}%)</td>
+												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Check Payment Discount ({{ $chequeDiscountPercentage }}%)</td>
 												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;" align="right">- {{ $currency }} {{ number_format($chequeDiscount, 2, '.', ',') }}</td>
 											</tr>
 
 											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Cheque Discount</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Check Discount</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $chequeDiscount, 2, '.', ',') }}</td>
 											</tr>
 											@endif
