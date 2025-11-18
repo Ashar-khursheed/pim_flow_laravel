@@ -11,7 +11,7 @@ return new class extends Migration
 	public function up(): void
 	{
 		Schema::table('customer_carts', function (Blueprint $table) {
-			$table->boolean('pay_with_cheque')->default(0)->after('additional_amount_details');
+			$table->boolean('pay_with_cheque')->default(0)->after('amount');
 		});
 	}
 
