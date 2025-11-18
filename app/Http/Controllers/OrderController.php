@@ -382,9 +382,6 @@ class OrderController extends Controller
 				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
 				$orderShipping += $product['shipping_charge'];
 			}
-			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
-			$orderAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
 			$discountedAmount = $orderAmount;
 			/* Handle cheque payment discount */
@@ -402,8 +399,11 @@ class OrderController extends Controller
 				$chequeDiscountPercentage = 0;
 				$chequeDiscount = 0;
 			}
-
 			$discountedAmount -= $discount;
+
+			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
 			$customer = Customer::find($request->customer_id);
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
@@ -1068,15 +1068,16 @@ class OrderController extends Controller
 				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
 				$orderShipping += $product['shipping_charge'];
 			}
-			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
-			$orderAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
 			if (!empty($request->additional_amount_price)) {
 				$orderAmount += (float) $request->additional_amount_price;
 			}
 
 			$discountedAmount = $orderAmount - $discount;
+
+			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
 			$customer = $order->customer;
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;

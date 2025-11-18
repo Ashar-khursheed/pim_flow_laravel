@@ -310,9 +310,6 @@ class OrderController extends BaseController
 				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
 				$orderShipping += $product['shipping_charge'];
 			}
-			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
-			$orderAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
 			$discountedAmount = $orderAmount;
 			/* Handle cheque payment discount */
@@ -331,8 +328,11 @@ class OrderController extends BaseController
 				$chequeDiscountPercentage = 0;
 				$chequeDiscount = 0;
 			}
-
 			$discountedAmount -= $discount;
+
+			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
 			$customer = auth()->user();
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
