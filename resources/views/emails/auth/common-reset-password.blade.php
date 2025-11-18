@@ -16,7 +16,7 @@
 
 					<!-- Logo -->
 					<tr>
-						<td style="padding-bottom: 20px; font-family: 'Noto Sans', sans-serif; ">
+						<td style="padding-bottom: 20px; font-family: 'Noto Sans', sans-serif;">
 							<img src="{{ $logoUrl }}" alt="Logo" style="width: 120px;" />
 						</td>
 					</tr>
@@ -86,7 +86,7 @@
 					</tr>
 					<!-- Signature -->
 					<tr>
-						<td style="padding-top: 10px; font-size: 14px; color: #000000; font-family: 'Noto Sans', sans-serif; ">
+						<td style="padding-top: 10px; font-size: 14px; color: #000000; font-family: 'Noto Sans', sans-serif;">
 							Stay secure,
 						</td>
 					</tr>
@@ -105,10 +105,10 @@
 				<table width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; padding:10px; border-top:3px solid #E2E8F0;  margin: 0 auto; background-color: rgba(226, 232, 240, 0.3); font-size:11px; color:#3F3F3F;">
 					<tr>
 						<td>
-							<p style="font-size: 12px;  font-family: 'Noto Sans',  sans-serif">
+							<p style="font-size: 12px;  font-family: 'Noto Sans', sans-serif">
 								©{{ date('Y') }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
 							</p>
-							<p style="font-size: 12px; font-family: 'Noto Sans',  sans-serif">
+							<p style="font-size: 12px; font-family: 'Noto Sans', sans-serif">
 								This message was sent from a notification-only address. Please do not reply directly to this email. For support or inquiries, contact us at {{ $siteEmail }}
 							</p>
 						</td>
