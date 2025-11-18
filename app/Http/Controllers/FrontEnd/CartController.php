@@ -393,6 +393,7 @@ class CartController extends Controller
 
             $cartItem = (object)[
                 'id' => $cartProduct->id,
+                'pay_with_cheque' => $customerCart->pay_with_cheque,
                 'user_id' => $cartProduct->customerCart->customer_id,
                 'product_id' => $cartProduct->product_id,
                 'quantity' => $cartProduct->quantity,
