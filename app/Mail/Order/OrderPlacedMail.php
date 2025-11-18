@@ -35,6 +35,7 @@ class OrderPlacedMail extends Mailable
 		$orderUrl = url("/my-order");
 
 		$orderNumber = $order->order_number;
+		$payWithCheque = $order->pay_with_cheque;
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 		$paidAmount = $order->paid_amount ?? 0;
@@ -147,6 +148,7 @@ class OrderPlacedMail extends Mailable
 			'orderUrl' => $orderUrl,
 
 			'orderNumber' => $orderNumber,
+			'payWithCheque' => $payWithCheque,
 			'orderDate' => $orderDate,
 			'currency' => $currency,
 			'paidAmount' => $paidAmount,
@@ -176,7 +178,12 @@ class OrderPlacedMail extends Mailable
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject("Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed")
+		if ($payWithCheque) {
+			$subject = "We Received Your Check Image – Your Order#{$orderNumber} Is Reserved";
+		} else {
+			$subject = "Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed";
+		}
+		return $this->subject($subject)
 		->markdown('emails.orders.order-placed')
 		->with($params);
 	}
