@@ -1371,11 +1371,14 @@ class CouponController extends Controller
         if ($is_valid) {
             switch ($basis) {
                 case 'customer':
-                                       
-                    if ($usage_limit_per_customer > 0 && $current_total_usage >= $usage_limit_per_customer) {
+                      $isAssigned = $coupon->customers()
+                    ->where('customer_id', $customerId)
+                    ->exists();    
+                    if (!$isAssigned) {
                         $is_valid = false;
-                        $error_message = "You have reached the usage limit for this coupon.";
-                    }
+                        $error_message = "This coupon is not valid for your account.";
+                    }             
+                     
                     break;
 
                 case 'category':
@@ -1418,18 +1421,7 @@ class CouponController extends Controller
         }
 
        
-        if ($coupon->basis === 'customer') {
-            $isAssigned = $coupon->customers()
-                ->where('customer_id', $customerId)
-                ->exists();
-
-            if (!$isAssigned) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This coupon is not valid for your account',
-                ], 403);
-            }
-        }
+        
 
         return response()->json([
             'success' => $is_valid,

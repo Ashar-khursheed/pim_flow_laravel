@@ -109,8 +109,7 @@ class Coupon extends Model
     // Helper methods
     public function isValid(): bool
     { 
-         $today = now()->toDateString();
-         
+        $today = now()->toDateString();         
         return $this->is_active
         && $this->status === 'approved'
         && $this->start_date->toDateString() <= $today
@@ -193,10 +192,13 @@ class Coupon extends Model
             switch ($basis) {
                 case 'customer':
                     // Check if this specific customer has reached their limit                   
-                    if ($usage_limit_per_customer > 0 && $current_total_usage >= $usage_limit_per_customer) {
+                    $isAssigned = $this->customers()
+                    ->where('customer_id', $customerId)
+                    ->exists();    
+                    if (!$isAssigned) {
                         $is_valid = false;
-                        $error_message = "You have reached the usage limit for this coupon.";
-                    }
+                        $error_message = "This coupon is not valid for your account.";
+                    } 
                     break;
 
                 case 'category':
