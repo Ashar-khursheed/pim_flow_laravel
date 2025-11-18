@@ -16,35 +16,48 @@ use App\Models\Product;
 
 class SaveForLaterController extends Controller
 {
-	/**
-	 * @OA\Post(
-	 *     path="/api/frontend/save-for-later",
-	 *     summary="Move a product from cart to Save for Later",
-	 *     tags={"Frontend-Save For Later"},
-	 *     security={{"bearerAuth":{}}},
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             required={"product_id"},
-	 *             @OA\Property(property="product_id", type="integer", example=123)
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Product has been moved to Save for Later",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="message", type="string", example="Product has been moved to Save for Later.")
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="Product not found in cart",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="message", type="string", example="Product not found in cart.")
-	 *         )
-	 *     )
-	 * )
-	 */
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/save-for-later",
+     *     summary="Move a product from cart to Save for Later",
+     *     tags={"Frontend-Save For Later"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"product_id", "quantity", "vendor_id"},
+     *             @OA\Property(property="product_id", type="integer", example=123, description="ID of the product"),
+     *             @OA\Property(property="quantity", type="integer", example=1, description="Quantity to move"),
+     *             @OA\Property(property="vendor_id", type="integer", example=1, description="Vendor ID related to the product")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product has been moved to Save for Later",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Product has been moved to Save for Later.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Product not found in cart",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Product not found in cart.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
 
 	// public function saveForLater(Request $request)
 	// {
@@ -95,6 +108,7 @@ public function saveForLater(Request $request)
     $request->validate([
         'product_id' => 'required|exists:ec_products,id',
         'vendor_id' => 'nullable|exists:vendors,id',
+        'quantity' => 'required|integer',
     ]);
 
     if (!Auth::check()) {
@@ -103,10 +117,11 @@ public function saveForLater(Request $request)
             'message' => 'Customer not authenticated.',
         ], 401);
     }
-
+ 
     $userId = Auth::id();
     $productId = $request->product_id;
     $vendorId = $request->vendor_id;
+    $quantity = $request->quantity;
 
     // Get product with supplier info
     $product = Product::with('productSuppliers')->find($productId);
@@ -117,7 +132,7 @@ public function saveForLater(Request $request)
         ], 404);
     }
 
-    // Determine actual vendor
+  //  Determine actual vendor
     $supplier = $vendorId
         ? $product->productSuppliers->where('vendor_id', $vendorId)->first()
         : $product->productSuppliers->first();
@@ -129,7 +144,7 @@ public function saveForLater(Request $request)
         ], 404);
     }
 
-    $quantity = 1;
+ 
 
     // Check if product exists in the cart
     $customerCart = CustomerCart::where('customer_id', $userId)->first();
@@ -314,6 +329,7 @@ public function showSaveForLater(Request $request)
             'is_fixed' => $firstSupplier->is_fixed ?? 0,
             'quantity' => $item->quantity ?? 1,  
             'quote_available' => $product->quote_available ?? null,
+             'isRequired' => $product->isRequired,
         ];
     })->filter()->values(); // Remove nulls
 

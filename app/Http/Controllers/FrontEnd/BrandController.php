@@ -235,6 +235,7 @@ class BrandController extends Controller
                             'min_quantity' => $firstSupplier->min_quantity ?? 0,
                             'is_fixed' => $firstSupplier->is_fixed ?? 0,
                             'quote_available' => $product->quote_available ?? null,
+                             'isRequired' => $product->isRequired,
 
                         ];
 
@@ -478,6 +479,7 @@ class BrandController extends Controller
                             'free_shipping' => $firstSupplier->free_shipping ?? null,
                             'warranty_information' => $firstSupplier->warranty_information ?? null,
                             'quote_available' => $details->quote_available ?? null,
+                             'isRequired' => $details->is_required,
                         ] ;
 
                     })->values(),
@@ -1395,6 +1397,7 @@ if (!is_null($categoryId)) {
                 'min_quantity' => $firstSupplier->min_quantity ?? 0,
                 'is_fixed' => $firstSupplier->is_fixed ?? 0,
                  'quote_available' => $product->quote_available ?? null,
+                  'isRequired' => $product->isRequired,
             ];
         });
 

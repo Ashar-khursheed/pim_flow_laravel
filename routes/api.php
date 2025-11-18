@@ -23,6 +23,7 @@ use App\Http\Controllers\CategoryAttributeController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FaqCategoryController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\CustomerCartExportController;
 use App\Http\Controllers\ProductExportController;
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\DiscountController;
@@ -84,9 +85,11 @@ use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\TranslationController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\MadeToOrderController;
+use App\Http\Controllers\FinanceController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
+use App\Http\Controllers\FrontEnd\FndFinanceController;
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
 use App\Http\Controllers\FrontEnd\UserReviewController as F_UserReviewController;
 use App\Http\Controllers\FrontEnd\SeoManagementController as F_SeoManagementController;
@@ -150,6 +153,8 @@ use App\Http\Controllers\FrontEnd\FnProductAccessoriesController;
 use App\Http\Controllers\FrontEnd\FndProductVariantController;
 use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
 use App\Http\Controllers\FrontEnd\PaymobController as F_PaymobController;
+use App\Http\Controllers\FrontEnd\FinanceController as F_FinanceController;
+
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
@@ -195,10 +200,10 @@ Route::middleware([CaptureUtm::class])->group(function () {
 Route::post('/ccavenue/webhook', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::get('/ccavenue/thank', [F_CCavenueController::class, 'successhandleWebhook']);
+Route::post('/ccavenue/dataEncodeCCavenue', action: [F_CCavenueController::class, 'dataEncodeCCavenue']);
 Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
 
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
-
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
 	$url = $request->query('url');
 
@@ -389,6 +394,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::apiResource('users', UserController::class);
 
+	Route::post('/attributes/generate-translation', [AttributeController::class, 'generateTranslation']);
 	Route::post('/attributes/import', [AttributeController::class, 'import']);
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
@@ -436,6 +442,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/delivery/get-price-ordernumber', [PaymentHistoryController::class,'getPriceOrderNumber']);
 	Route::resource('product-accessories', ProductAccessoriesController::class);
 	Route::post('/product-accessories/status/{id}', [ProductAccessoriesController::class, 'updateStatus']);
+	Route::post('/product-accessories/isRequired/{id}', [ProductAccessoriesController::class, 'updateIsRequired']);
 	Route::delete('/product-accessories/item/{item_id}', [ProductAccessoriesController::class, 'deleteItem']);
 	Route::get('/get-product-list', [ProductAccessoriesController::class, 'getProductList']);
 
@@ -443,7 +450,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('product-variants/getProductAttibute', [ProductVariantController::class,'getProductAttibute']);
 	Route::post('product-variants/show', [ProductVariantController::class, 'show']);
 	Route::apiResource('made-to-orders', MadeToOrderController::class);
-
+	Route::apiResource('finances', FinanceController::class);
+	Route::post('finances/{id}', [FinanceController::class, 'update']);
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
 	Route::post('/products/export', [ProductExportController::class, 'export']);
@@ -477,6 +485,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('ai-alternate-status', [AIAlternateProductController::class, 'alternateStatus']);
 	Route::post('ai-alternate-priority', [AIAlternateProductController::class, 'alternatePriority']);
 
+	Route::post('/brands/generate-translation', [BrandController::class, 'generateTranslation']);
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
@@ -505,12 +514,14 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('roles', RoleController::class);
 
 
-		Route::apiResource('reviews', ReviewController::class);
+	Route::apiResource('reviews', ReviewController::class);
 	Route::post('reviews/import', [ReviewController::class,'import']);
 	Route::post('reviews/export', [ReviewController::class,'export']);
 	Route::post('reviews/exportReview', [ReviewController::class,'exportReview']);
 	Route::post('reviews/fekerEmailUpdate', [ReviewController::class,'fekerEmailUpdate']);
 	Route::apiResource('sliders', SliderController::class);
+
+	Route::post('customerCartExport/export', [CustomerCartExportController::class,'export']);
 
 	// Discount API Routes
 	Route::apiResource('discounts', DiscountController::class);
@@ -525,7 +536,10 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);
 	Route::post('/seoManagement/schema-update/{seo_id}', [SeoManagementController::class, 'schemaUpdate']);
 
+	Route::post('/seo-management/save-translation', [SeoManagementController::class, 'saveTranslation']);
 	Route::resource('seo-management', SeoManagementController::class);
+	Route::post('seo-management/{id}', [SeoManagementController::class,'update']);
+
 
 	Route::post('seo-details', [SeoDetailController::class, 'store']);
 	Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
@@ -548,6 +562,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
 
+	Route::post('/categories/generate-translation', [CategoryController::class, 'generateTranslation']);
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::post('/categories/{id}', [CategoryController::class, 'update']);
 
@@ -621,6 +636,7 @@ Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
 
 
+Route::post('frontend/finances', [FndFinanceController::class, 'store']);
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
@@ -632,6 +648,8 @@ Route::post('frontend/compare-table-product', [CompareProductController::class, 
 
 Route::get('frontend/product-accessories', [FnProductAccessoriesController::class, 'index']);
 Route::Post('frontend/product-variants', [FndProductVariantController::class, 'index']);
+Route::Post('frontend/attribute-product-variants', [FndProductVariantController::class, 'getAttributeByProduct']);
+Route::Post('frontend/product-variants-by-attribute', [FndProductVariantController::class, 'getAttributeByProductVariant']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
@@ -881,9 +899,10 @@ Route::post('/frontend/made-to-orders', [F_MadeToOrderController::class, 'store'
 Route::post('/find-shipping-charges', [ShippingReportController::class, 'findShippingCharges']);
 Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
 Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
-// Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
+Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
 
-Route::get('/frontend/products-1.xml', [SitemapController::class, 'getProductsSitemap1']);
+Route::get('/frontend/
+.xml', [SitemapController::class, 'getProductsSitemap1']);
 Route::get('/frontend/products-2.xml', [SitemapController::class, 'getProductsSitemap2']);
 Route::get('/frontend/products-3.xml', [SitemapController::class, 'getProductsSitemap3']);
 Route::get('/frontend/products-4.xml', [SitemapController::class, 'getProductsSitemap4']);
@@ -900,13 +919,20 @@ Route::get('/frontend/image.xml', [SitemapController::class, 'getImageSitemap'])
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
-Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'getProductFeed']);
+Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'generateProductFeed']);
+Route::get('/feed/products-1.xml', [ProductXMLFeedWatchController::class, 'getProductFeed1']);
+Route::get('/feed/products-2.xml', [ProductXMLFeedWatchController::class, 'getProductFeed2']);
+Route::get('/feed/products-3.xml', [ProductXMLFeedWatchController::class, 'getProductFeed3']);
+Route::get('/feed/products-4.xml', [ProductXMLFeedWatchController::class, 'getProductFeed4']);
+Route::get('/feed/products-5.xml', [ProductXMLFeedWatchController::class, 'getProductFeed5']);
 Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
+	Route::post('/failed', [F_CCavenueController::class, 'failed']);
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
-//Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
+
+Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
 
 Route::post('/stripe/create-stripe-payment-link', [F_StripeController::class, 'createStripePaymentLink']);
@@ -956,6 +982,8 @@ Route::get('redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']
 ->where('from', '.*');
 
 Route::prefix('frontend/auth')->group(function () {
+
+	Route::post('finances/post', [F_FinanceController::class, 'store']); // get payment_token
 
 	// Stax Payment Routes
 	Route::post('/Stax', [F_StaxPaymentController::class, 'checkout'])

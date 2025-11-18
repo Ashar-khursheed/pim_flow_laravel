@@ -543,10 +543,10 @@ class ProductVariantController extends Controller
 
 
             $attributeList = $attributes->map(function ($attr) {
-
+ 
                 return [
                     'attribute_id' => $attr->attribute_id,
-                    'attribute_name' => $attr->attribute_name,
+                    'attribute_name' => $attr->attribute_name,                    
                     'group_id' => $attr->product_ids,
                 ];
             });

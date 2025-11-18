@@ -44,8 +44,6 @@ use App\Models\SeoManagement;
  *     @OA\Property(property="best_price", type="number", format="float", example=80.00),
  *     @OA\Property(property="delivery_days", type="string", nullable=true),
  *     @OA\Property(property="in_wishlist", type="boolean", example=true),
- *     @OA\Property(property="categories", type="array", @OA\Items(ref="#/components/schemas/Category")),
- *     @OA\Property(property="brand", ref="#/components/schemas/Brand")
  * )
  */
 
@@ -301,6 +299,12 @@ class Product extends Model implements TranslatableContract
 	{
 		return $this->hasMany(ProductAccessory::class, 'product_id')->approved();
 	}
+
+	public function getIsRequiredAttribute()
+	{
+		return $this->accessories()->where('isRequired', 1)->exists();
+	}
+
 
 
 }

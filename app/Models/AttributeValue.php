@@ -12,4 +12,9 @@ class AttributeValue extends Model implements TranslatableContract
 
 	public $translatedAttributes = ['attribute_value_tr'];
 	protected $fillable = ['attribute_id', 'attribute_value'];
+
+	public function attribute()
+	{
+		return $this->belongsTo(Attribute::class);
+	}
 }

@@ -13,255 +13,641 @@ class ProductXMLFeedWatchController extends Controller
 {
 
     /**
- * @OA\Get(
- *     path="/api/feed/products.xml",
- *     summary="Get product feed for DataFeedWatch",
- *     description="Returns dynamic XML feed with all products for DataFeedWatch integration",
- *     tags={"Product Feed XML"},
- *     @OA\Parameter(
- *         name="per_page",
- *         in="query",
- *         description="Number of items per page (default: 50)",
- *         required=false,
- *         @OA\Schema(type="integer", example=50)
- *     ),
- *     @OA\Parameter(
- *         name="page",
- *         in="query",
- *         description="Page number (default: 1)",
- *         required=false,
- *         @OA\Schema(type="integer", example=1)
- *     ),
- *     @OA\Parameter(
- *         name="sort_by",
- *         in="query",
- *         description="Sort by column (default: id)",
- *         required=false,
- *         @OA\Schema(type="string",enum={"id"})
- *     ),
- *     @OA\Parameter(
- *         name="sort_direction",
- *         in="query",
- *         description="Sort direction (asc/desc, default: desc)",
- *         required=false,
- *         @OA\Schema(type="string",enum={"asc", "desc"},example="asc")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Successful operation",
- *         @OA\MediaType(
- *             mediaType="application/json"
- *         )
- *     ),
- *     @OA\Response(
- *         response=400,
- *         description="Invalid parameters"
- *     ),
- *     @OA\Response(
- *         response=500,
- *         description="Server error"
- *     )
- * )
- */
-public function getProductFeed(Request $request)
-{
-    // Cache the feed for 1 hour with pagination parameters
-    $cacheKey = 'datafeedwatch_feed' . md5($request->fullUrl());
+     * @OA\Get(
+     *     path="/api/feed/products.xml",
+     *     summary="Get product feed for DataFeedWatch",
+     *     description="Returns dynamic XML feed with all products for DataFeedWatch integration",
+     *     tags={"Product Feed XML"},
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Number of items per page (default: 500)",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=500)
+     *     ),     
+     *      
+     *     
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\MediaType(
+     *             mediaType="application/json"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid parameters"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
+     */
+    // public function getProductFeed(Request $request)
+    // {
+    //     // Cache the feed for 1 hour with pagination parameters
+    //     $cacheKey = 'datafeedwatch_feed_r' . md5($request->fullUrl());
 
-    $data = Cache::remember($cacheKey, 3600, function () use ($request) {
-        return $this->generateProductFeed($request);
-    });
-    
-    return $data;
-}
+    //     $data = Cache::remember($cacheKey, 3600, function () use ($request) {
+    //         return $this->generateProductFeed($request);
+    //     });
 
-private function generateProductFeed(Request $request)
-{
-    $perPage = $request->input('per_page', 50);
-    $page = $request->input('page', 1);
-    $sortBy = $request->input('sort_by', 'id');
-    $sortDirection = $request->input('sort_direction', 'desc');
+    //     return $data;
+    // }
 
-    // Validate sort columns to prevent SQL injection
-    $allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
-    if (!in_array($sortBy, $allowedSortColumns)) {
-        $sortBy = 'id';
-    }
+    public function generateProductFeed(Request $request)
+    {
+        $perPage = $request->input('per_page', 500);
+        $allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
 
-    // Validate sort direction
-    if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
-        $sortDirection = 'desc';
-    }
+        $query = Product::with([
+            'brand:id,name,logo',
+            'categories:id,name,parent_id', // Added parent_id
+            'categories.parent:id,name', // Load parent category
+            'slug:id,key,reference_id',
+            'productSuppliers.vendor:id,name',
+            'vendors:id,name',
+            'seoUrl',
+            'seoProductUrl',
+            'productVariants'
+        ])
+            ->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved', 'description', 'quote_available', 'stock_status'])
+            ->where('status', 'published')
+            ->orderBy('id', 'desc');
 
-    $query = Product::with([
-        'brand:id,name',
-        'categories:id,name',
-        'slug:id,key,reference_id',
-        'productSuppliers.vendor:id,name',
-        'vendors:id,name',
-        'seoUrl'
-    ])
-    ->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved', 'description', 'quote_available', 'stock_status'])
-    ->where('status', 'published')
-    ->orderBy($sortBy, $sortDirection);
+        $products = $query->paginate($perPage, ['*'], 'page', 1);
 
-    $products = $query->paginate($perPage, ['*'], 'page', $page);
+        $formattedProducts = $products->map(function ($product) {
+            $firstSupplier = $product->productSuppliers->first();
+            $price = $firstSupplier->price ?? 0;
+            $salePrice = $firstSupplier->sale_price ?? 0;
 
-    /* Formatting response */
-    $formattedProducts = $products->map(function ($product) {
-        $firstSupplier = $product->productSuppliers->first();
-        
-        $price = $firstSupplier->price ?? 0;
-        $salePrice = $firstSupplier->sale_price ?? 0;
-        $margin = $salePrice - $price;
-        $marginPercent = $salePrice > 0 ? ($margin / $salePrice) * 100 : 0;
-
-        $description = [];
-        if (is_string($product->description)) {
-            $decoded = json_decode($product->description, true);
-
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                $description = array_values(array_filter(array_map(function ($item) {
-                    if (is_null($item) || strtolower($item) === 'null') {
-                        return null;
-                    }
-
-                    $item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
-                    $item = preg_replace('/\s+/', ' ', $item);
-                    $item = trim($item);
-
-                    return $item !== '' ? $item : null;
-                }, $decoded)));
-            } else {
-                $description = [$product->description];
+            $descriptionText = '';
+            if (is_string($product->description)) {
+                $decoded = json_decode($product->description, true);
+                $descriptionText = (json_last_error() === JSON_ERROR_NONE && is_array($decoded))
+                    ? implode(' ', array_filter($decoded))
+                    : $product->description;
             }
-        }
+            $descriptionText = preg_replace('/\s+/', ' ', trim(strip_tags(html_entity_decode($descriptionText))));
 
-        if ($product->brand) {
-                $brand_id = $product->brand->id;
-                $brand_name = $product->brand->name;
-                $product->brand_logo = $product->brand->logo;
+            $seoData = SeoManagement::where('relational_id', $product->id)
+                ->select('url', 'meta_title', 'meta_description', 'og_description', 'og_image_url', 'og_image_alt_text', 'og_image_name')
+                ->first();
 
-                if ($product->brand->seoUrl) {
-                    $product->brand_url = $product->brand->seoUrl->url;
-                } else {
-                    $product->brand_url = null;
-                }
+            $attributes = productAttribute::join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
+                ->where('product_id', $product->id)
+                ->select('attributes.name as attribute_name', 'product_attributes.attribute_value')
+                ->get()
+                ->map(fn($attr) => [
+                    'attribute_name' => $attr->attribute_name,
+                    'attribute_value' => $attr->attribute_value,
+                ])
+                ->toArray();
 
+            $image = ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null;
 
+            // Get current category and parent category
+            $currentCategory = $product->categories->first(); // or however you determine the main category
+            $parentCategory = $currentCategory?->parent;
 
-
-                // Get review stats directly from the database
-                $brandProductIds = \DB::table('ec_products')
-                    ->where('brand_id', $product->brand->id)
-                    ->pluck('id');
-
-                $brandReviewsQuery = \DB::table('ec_reviews')
-                    ->whereIn('product_id', $brandProductIds);
-
-                $brandReviewCount = $brandReviewsQuery->count();
-                $brandAvgRating = $brandReviewCount > 0
-                    ? round($brandReviewsQuery->avg('star'), 1)
-                    : null;
-
-                $product->brand_avg_rating = $brandAvgRating;
-                $product->brand_review_count = $brandReviewCount;
+            // Build category hierarchy for slug
+            $categorySlug = '';
+            if ($parentCategory) {
+                $categorySlug = $parentCategory->name . '/';
+            }
+            if ($currentCategory) {
+                $categorySlug .= $currentCategory->name . '/';
             }
 
-              $productVariants = $product->productVariants->map(function ($variant) {
+            $fullSlug =  $product->parent_category_url() . '/' .
+                     $product->category_url() . '/' .
+                     ($product->seoProductUrl->url ?? "");
+
+            // Build product type and google category
+            $product_type = '';
+            $google_product_category = '';
+
+            if ($parentCategory && $currentCategory) {
+                $product_type = $parentCategory->name . ' > ' . $currentCategory->name;
+                $google_product_category = $parentCategory->name . ' > ' . $currentCategory->name;
+            } elseif ($currentCategory) {
+                $product_type = $currentCategory->name;
+                $google_product_category = $currentCategory->name;
+            }
+
+            $productVariants = $product->productVariants->map(function ($variant) {
                 $childIds = json_decode($variant->child_ids, true) ?? [];
                 $variants = json_decode($variant->variants, true) ?? [];
 
-                // Fetch all child products
+                if (empty($childIds) || empty($variants)) {
+                    return [];
+                }
+
                 $children = Product::whereIn('id', $childIds)
                     ->select('id', 'sku')
                     ->get();
 
+                $attributeIds = array_column($variants, 'attribute_id');
+                $attributes = Attribute::whereIn('id', $attributeIds)
+                    ->pluck('name', 'id');
+
+                $productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+                    ->whereIn('attribute_id', $attributeIds)
+                    ->get()
+                    ->groupBy('product_id');
+
                 $result = [];
 
                 foreach ($variants as $v) {
-                    // Get attribute name
-                    $attributeName = Attribute::where('id', $v['attribute_id'])
-                        ->value('name');
+                    $attributeId = $v['attribute_id'];
+                    $attributeName = $attributes[$attributeId] ?? null;
 
-                    // Create child array for this attribute
-                    $childrenData = $children->map(function ($child) use ($v) {
-                        // Get attribute_value from product_attributes
-                        $attrValue = ProductAttribute::where('product_id', $child->id)
-                            ->where('attribute_id', $v['attribute_id'])
-                            ->value('attribute_value');
+                    if (!$attributeName) {
+                        continue;
+                    }
 
-                        // Get slug from seo_management table
-                        $slug = SeoManagement::where('relational_id', $child->id)
-                            ->value('url');
-                        $full_slug =  $child->parent_category_url() . '/' .
-                     $child->category_url() . '/' .
-                     ($child->seoProductUrl->url ?? "");
-                        return [
-                            'id' => $child->id,
-                            'sku' => $child->sku,
-                            'attribute_value' => $attrValue,
-                            'slug' => $slug,
-                            'parent_slug' => $child->parent_category_url() ,
-                            'child_slug' => $child->category_url(),
-                            'full_slug' => $full_slug,
+                    $seenAttributeValues = [];
+
+                    foreach ($children as $child) {
+                        $attrValue = $productAttributes->get($child->id)?->firstWhere('attribute_id', $attributeId)?->attribute_value ?? null;
+
+                        if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+                            continue;
+                        }
+
+                        $seenAttributeValues[$attrValue] = true;
+
+                        $result[] = [
+                            'attribute_id' => $attributeId,
+                            'attribute_name' => $attributeName,
+                            'label' => $v['labels'] ?? $attributeName,
+                            'type' => $v['type'] ?? 'dropdown',
+                            'attrValue' => $attrValue ?? '',
                         ];
-                    });
-
-                    $result[] = [
-                        'attribute_id' => $v['attribute_id'],
-                        'attribute_name' => $attributeName,
-                        'label' => $v['labels'] ?? $attributeName,
-                        'type' => $v['type'] ?? 'dropdown',
-                        'child' => $childrenData,
-                    ];
+                    }
                 }
 
                 return $result;
             })->flatten(1)->values();
 
-            
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'gen_type' => $product->gen_type,
-            'approved' => $product->approved,
-            'sku' => $product->sku,
-            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-            'brand' => optional($product->brand)->name,
-            'brand_url' => optional($product->brand->seoUrl)->url,
-            'status' => $product->status,
-            'quote_available' => $product->quote_available,
-            'price' => $price,
-            'sale_price' => $salePrice,
-            'vendor_id' => $firstSupplier->vendor_id ?? null,
-            'vendor_name' => $product->vendors->pluck('name')->first(),
-            'margin' => $margin,
-            'margin_percent' => round($marginPercent, 2),
-            'product_family' => $product->categories->pluck('name')->toArray(),
-            'taxonomy_path' => optional($product->slug)->key ?? '',
-            'title' => $product->name,
-            'description' => $description,
-            'slug' => $product->seoProductUrl->url ?? null,
-            'availability' => $product->stock_status,            
-            'productVariants' => $productVariants,            
-        ];
-    });
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'meta_title' => $seoData?->meta_title,
+                'meta_description' => $seoData?->meta_description,
+                'og_description' => $seoData?->og_description,
+                'og_image_url' => $seoData?->og_image_url,
+                'og_image_alt_text' => $seoData?->og_image_alt_text,
+                'og_image_name' => $seoData?->og_image_name,
+                'sku' => $product->sku,
+                'brand' => $product->brand?->name,
+                'slug' => $fullSlug,
+                'price' => $price,
+                'sale_price' => $salePrice,
+                'availability' => $product->stock_status,
+                'description' => $descriptionText,
+                'attributes' => $attributes,
+                'product_type' => $product_type,
+                'google_product_category' => $google_product_category,
+                'image' => $image,
+                'product_highlight' => $productVariants,
+                'current_category' => $currentCategory?->name,
+                'parent_category' => $parentCategory?->name,
+            ];
+        });
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Products retrieved successfully',
-        'data' => $formattedProducts,
-        'pagination' => [
-            'total' => $products->total(),
-            'per_page' => $products->perPage(),
-            'current_page' => $products->currentPage(),
-            'last_page' => $products->lastPage(),
-            'from' => $products->firstItem(),
-            'to' => $products->lastItem(),
-            'next_page_url' => $products->nextPageUrl(),
-            'prev_page_url' => $products->previousPageUrl(),
-        ],
-    ]);
-}
+        $website = config('app.url', 'https://www.thehorecastore.com');
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';           
+        $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
+
+        foreach ($formattedProducts as $product) {
+            $xml .= '<channel>';
+            $xml .= '<title>'.$product['meta_title'].'</title>';
+            $xml .= '<link>' . $website . '</link>';
+            $xml .= '<description>' . htmlspecialchars($product['meta_description']) . '</description>';
+            $xml .= '<item>';
+            $xml .= '<g:id>' . $product['id'] . '</g:id>';
+            $xml .= '<g:title>' . $product['meta_title'] . '</g:title>';
+            $xml .= '<g:link>' . $website . '/' . $product['slug'] . '</g:link>';
+            $xml .= '<g:description>' . htmlspecialchars($product['description']) . '</g:description>';
+            $xml .= '<g:price>' . number_format($product['price'], 2) . '</g:price>';
+            $xml .= '<g:sale_price>' . number_format($product['sale_price'], 2) . '</g:sale_price>';
+            $xml .= '<g:availability>' . $product['availability'] . '</g:availability>';
+            $xml .= '<g:brand>' . $product['brand']. '</g:brand>';
+
+            if ($product['image']) {
+                $xml .= '<g:image_link>' . $product['image'] . '</g:image_link>';
+            }
+
+            // Attributes
+            if (!empty($product['attributes'])) {
+                foreach ($product['attributes'] as $attr) {
+                    $xml .= '<g:product_detail>';
+                    $xml .= '<g:section_name>Key Specification</g:section_name>';
+                    $xml .= '<g:attribute_name>' . $attr['attribute_name'] . '</g:attribute_name>';
+                    $xml .= '<g:attribute_value>' . $attr['attribute_value'] . '</g:attribute_value>';
+                    $xml .= '</g:product_detail>';
+                }
+            }
+
+            // Product highlights
+            if (!empty($product['product_highlight'])) {
+                foreach ($product['product_highlight'] as $highlight) {
+
+                    $xml .= '<g:product_highlight>' . $highlight['attribute_name']. ' : ' . $highlight['attrValue']. '</g:product_highlight>';
+                }
+            }
+
+            $xml .= '<g:identifier_exists>no</g:identifier_exists>';
+            $xml .= '<g:condition>new</g:condition>';
+            $xml .= '<g:google_product_category>'.$product['google_product_category'].'</g:google_product_category>';
+            $xml .= '<g:product_type>' . $product['product_type'] . '</g:product_type>';
+            $xml .= '</item>';
+            $xml .= '</channel>';
+        }
+
+        $xml .= '</rss>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+    }
+
+    /**
+     * Get XML product.
+     *
+     * @OA\Get(
+     *     path="/api/feed/products-1.xml",
+     *     summary="Get products1.xml",
+     *     description="Returns dynamic XML 0-1000 feed with all products for DataFeedWatch integration.",
+     *     tags={"Product Feed XML"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+    public function getProductFeed1() { 
+        
+        return $this->productFeed(0, 1000);
+     }
+    /**
+     * Get XML product.
+     *
+     * @OA\Get(
+     *     path="/api/feed/products-2.xml",
+     *     summary="Get products2.xml",
+     *     description="Returns dynamic XML 1000-2000 feed with all products for DataFeedWatch integration.",
+     *     tags={"Product Feed XML"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+    public function getProductFeed2() { 
+        
+        return $this->productFeed(1000, 1000);
+     }
+    /**
+     * Get XML product.
+     *
+     * @OA\Get(
+     *     path="/api/feed/products-3.xml",
+     *     summary="Get products3.xml",
+     *     description="Returns dynamic XML 2000-3000 feed with all products for DataFeedWatch integration.",
+     *     tags={"Product Feed XML"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+    public function getProductFeed3() { 
+        
+        return $this->productFeed(2000, 1000);
+     }
+
+    /**
+     * Get XML product.
+     *
+     * @OA\Get(
+     *     path="/api/feed/products-4.xml",
+     *     summary="Get products4.xml",
+     *     description="Returns dynamic XML 3000-4000 feed with all products for DataFeedWatch integration.",
+     *     tags={"Product Feed XML"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+    public function getProductFeed4() { 
+        
+        return $this->productFeed(3000, 1000);
+     }
+
+    /**
+     * Get XML product.
+     *
+     * @OA\Get(
+     *     path="/api/feed/products-5.xml",
+     *     summary="Get products5.xml",
+     *     description="Returns dynamic XML 4000-5000 feed with all products for DataFeedWatch integration.",
+     *     tags={"Product Feed XML"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+    public function getProductFeed5() { 
+        
+        return $this->productFeed(4000, 1000);
+     }
+
+
+
+
+    public function productFeed($offset, $limit)
+    {
+        
+        $allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
+
+        $products = Product::with([
+            'brand:id,name,logo',
+            'categories:id,name,parent_id', // Added parent_id
+            'categories.parent:id,name', // Load parent category
+            'slug:id,key,reference_id',
+            'productSuppliers.vendor:id,name',
+            'vendors:id,name',
+            'seoUrl',
+            'seoProductUrl',
+            'productVariants'
+        ])
+            ->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved', 'description', 'quote_available', 'stock_status'])
+            ->where('status', 'published')
+            ->offset($offset)
+            ->limit($limit)
+            ->orderBy('id', 'asc')->get();
+        
+ 
+        $formattedProducts = $products->map(function ($product) {
+            $firstSupplier = $product->productSuppliers->first();
+            $price = $firstSupplier->price ?? 0;
+            $salePrice = $firstSupplier->sale_price ?? 0;
+
+            $descriptionText = '';
+            if (is_string($product->description)) {
+                $decoded = json_decode($product->description, true);
+                $descriptionText = (json_last_error() === JSON_ERROR_NONE && is_array($decoded))
+                    ? implode(' ', array_filter($decoded))
+                    : $product->description;
+            }
+            $descriptionText = preg_replace('/\s+/', ' ', trim(strip_tags(html_entity_decode($descriptionText))));
+
+            $seoData = SeoManagement::where('relational_id', $product->id)
+                ->select('url', 'meta_title', 'meta_description', 'og_description', 'og_image_url', 'og_image_alt_text', 'og_image_name')
+                ->first();
+
+            $attributes = productAttribute::join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
+                ->where('product_id', $product->id)
+                ->select('attributes.name as attribute_name', 'product_attributes.attribute_value')
+                ->get()
+                ->map(fn($attr) => [
+                    'attribute_name' => $attr->attribute_name,
+                    'attribute_value' => $attr->attribute_value,
+                ])
+                ->toArray();
+
+            $image = ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null;
+
+            // Get current category and parent category
+            $currentCategory = $product->categories->first(); // or however you determine the main category
+            $parentCategory = $currentCategory?->parent;
+
+            // Build category hierarchy for slug
+            $categorySlug = '';
+            if ($parentCategory) {
+                $categorySlug = $parentCategory->name . '/';
+            }
+            if ($currentCategory) {
+                $categorySlug .= $currentCategory->name . '/';
+            }
+
+            $fullSlug =  $product->parent_category_url() . '/' .
+                     $product->category_url() . '/' .
+                     ($product->seoProductUrl->url ?? "");
+
+            // Build product type and google category
+            $product_type = '';
+            $google_product_category = '';
+
+            if ($parentCategory && $currentCategory) {
+                $product_type = $parentCategory->name . ' > ' . $currentCategory->name;
+                $google_product_category = $parentCategory->name . ' > ' . $currentCategory->name;
+            } elseif ($currentCategory) {
+                $product_type = $currentCategory->name;
+                $google_product_category = $currentCategory->name;
+            }
+
+            $productVariants = $product->productVariants->map(function ($variant) {
+                $childIds = json_decode($variant->child_ids, true) ?? [];
+                $variants = json_decode($variant->variants, true) ?? [];
+
+                if (empty($childIds) || empty($variants)) {
+                    return [];
+                }
+
+                $children = Product::whereIn('id', $childIds)
+                    ->select('id', 'sku')
+                    ->get();
+
+                $attributeIds = array_column($variants, 'attribute_id');
+                $attributes = Attribute::whereIn('id', $attributeIds)
+                    ->pluck('name', 'id');
+
+                $productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+                    ->whereIn('attribute_id', $attributeIds)
+                    ->get()
+                    ->groupBy('product_id');
+
+                $result = [];
+
+                foreach ($variants as $v) {
+                    $attributeId = $v['attribute_id'];
+                    $attributeName = $attributes[$attributeId] ?? null;
+
+                    if (!$attributeName) {
+                        continue;
+                    }
+
+                    $seenAttributeValues = [];
+
+                    foreach ($children as $child) {
+                        $attrValue = $productAttributes->get($child->id)?->firstWhere('attribute_id', $attributeId)?->attribute_value ?? null;
+
+                        if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+                            continue;
+                        }
+
+                        $seenAttributeValues[$attrValue] = true;
+
+                        $result[] = [
+                            'attribute_id' => $attributeId,
+                            'attribute_name' => $attributeName,
+                            'label' => $v['labels'] ?? $attributeName,
+                            'type' => $v['type'] ?? 'dropdown',
+                            'attrValue' => $attrValue ?? '',
+                        ];
+                    }
+                }
+
+                return $result;
+            })->flatten(1)->values();
+
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'meta_title' => $seoData?->meta_title,
+                'meta_description' => $seoData?->meta_description,
+                'og_description' => $seoData?->og_description,
+                'og_image_url' => $seoData?->og_image_url,
+                'og_image_alt_text' => $seoData?->og_image_alt_text,
+                'og_image_name' => $seoData?->og_image_name,
+                'sku' => $product->sku,
+                'brand' => $product->brand?->name,
+                'slug' => $fullSlug,
+                'price' => $price,
+                'sale_price' => $salePrice,
+                'availability' => $product->stock_status,
+                'description' => $descriptionText,
+                'attributes' => $attributes,
+                'product_type' => $product_type,
+                'google_product_category' => $google_product_category,
+                'image' => $image,
+                'product_highlight' => $productVariants ?? [],
+                'current_category' => $currentCategory?->name,
+                'parent_category' => $parentCategory?->name,
+            ];
+        });
+
+        $website = config('app.url', 'https://www.thehorecastore.com');
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';           
+        $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
+
+        foreach ($formattedProducts as $product) {
+            $xml .= '<channel>';
+            $xml .= '<title>'.$product['meta_title'].'</title>';
+            $xml .= '<link>' . $website . '</link>';
+            $xml .= '<description>' . htmlspecialchars($product['meta_description']) . '</description>';
+            $xml .= '<item>';
+            $xml .= '<g:id>' . $product['id'] . '</g:id>';
+            $xml .= '<g:title>' . $product['meta_title'] . '</g:title>';
+            $xml .= '<g:link>' . $website . '/' . $product['slug'] . '</g:link>';
+            $xml .= '<g:description>' . htmlspecialchars($product['description']) . '</g:description>';
+            $xml .= '<g:price>' . number_format($product['price'], 2) . '</g:price>';
+            $xml .= '<g:sale_price>' . number_format($product['sale_price'], 2) . '</g:sale_price>';
+            $xml .= '<g:availability>' . $product['availability'] . '</g:availability>';
+            $xml .= '<g:brand>' . $product['brand']. '</g:brand>';
+
+            if ($product['image']) {
+                $xml .= '<g:image_link>' . $product['image'] . '</g:image_link>';
+            }
+
+            // Attributes
+            if (!empty($product['attributes'])) {
+                foreach ($product['attributes'] as $attr) {
+                    $xml .= '<g:product_detail>';
+                    $xml .= '<g:section_name>Key Specification</g:section_name>';
+                    $xml .= '<g:attribute_name>' . $attr['attribute_name'] . '</g:attribute_name>';
+                    $xml .= '<g:attribute_value>' . $attr['attribute_value'] . '</g:attribute_value>';
+                    $xml .= '</g:product_detail>';
+                }
+            }
+
+            // Product highlights
+            if (!empty($product['product_highlight'])) {
+                foreach ($product['product_highlight'] as $highlight) {
+
+                    $xml .= '<g:product_highlight>' . $highlight['attribute_name'] ?? '' . ' : ' . $highlight['attrValue'] ?? '' . '</g:product_highlight>';
+                }
+            }
+
+            $xml .= '<g:identifier_exists>no</g:identifier_exists>';
+            $xml .= '<g:condition>new</g:condition>';
+            $xml .= '<g:google_product_category>'.$product['google_product_category'].'</g:google_product_category>';
+            $xml .= '<g:product_type>' . $product['product_type'] . '</g:product_type>';
+            $xml .= '</item>';
+            $xml .= '</channel>';
+        }
+
+        $xml .= '</rss>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+    }
+
+
 }

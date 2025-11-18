@@ -75,6 +75,11 @@ class CustomerCartController extends Controller
 				foreach ($searchableColumns as $col) {
 					$q->orWhere("customer_carts.$col", 'like', '%' . $search . '%');
 				}
+
+			$q->orWhereHas('customer', function ($sub) use ($search) {
+				$sub->where('name', 'like', '%' . $search . '%')
+				->orWhere('email', 'like', '%' . $search . '%');
+				});
 			});
 		}
 

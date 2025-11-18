@@ -147,6 +147,7 @@ class ProductAccessoriesController extends Controller
                     'name' => $accessory->name,
                     'product_name' => $accessory->product->name,
                     'isapproved' => $accessory->isapproved,
+                    'isRequired' => $accessory->isRequired,
                     'approved_by' => $accessory->approvedBy?->username ?? null,
                     'created_by' => $accessory->createdBy?->username ?? null,
                     'updated_by' => $accessory->updatedBy?->username ?? null,
@@ -206,7 +207,8 @@ class ProductAccessoriesController extends Controller
      *                         {"name":"button","price":52}
      *                     }
      *                 ),
-     *                 @OA\Property(property="isapproved", type="boolean", example=0)
+     *                 @OA\Property(property="isapproved", type="boolean", example=0),
+     *                 @OA\Property(property="isRequired", type="boolean", example=0),
      *             )
      *         )
      *     ),
@@ -229,6 +231,7 @@ class ProductAccessoriesController extends Controller
                 'name' => 'required|string|max:255',
                 'accessories' => 'required|array',
                 'isapproved' => 'sometimes|boolean'
+                 
             ]);
 
             if ($validator->fails()) {
@@ -243,6 +246,7 @@ class ProductAccessoriesController extends Controller
                 'product_id' => $request->product_id,
                 'name' => $request->name,
                 'isapproved' => $request->get('isapproved', 0),
+                'isRequired' => $request->get('isRequired', 0),
                 'created_by' => Auth::id() ?? 1
             ]);
 
@@ -318,6 +322,7 @@ class ProductAccessoriesController extends Controller
                 'product_name' => $accessory->product->name,
                 'sku' => $accessory->product->sku,
                 'isapproved' => $accessory->isapproved,
+                'isRequired' => $accessory->isRequired,
                 'approved_by' => $accessory->approved_by,
                 'created_by' => $accessory->created_by,
                 'updated_by' => $accessory->updated_by,
@@ -430,6 +435,7 @@ class ProductAccessoriesController extends Controller
      *                 }
      *             ),
      *             @OA\Property(property="isapproved", type="integer", example=1),
+     *             @OA\Property(property="isRequired", type="integer", example=0),
      *             @OA\Property(property="approved_by", type="integer", example=2)
      *         )
      *     ),
@@ -477,7 +483,8 @@ class ProductAccessoriesController extends Controller
             $accessory->update([
                 'product_id' => $request->product_id,
                 'name' => $request->name,
-                'isapproved' => $request->get('isapproved', $accessory->isapproved),
+                'isapproved' => $request->get('isapproved'),
+                'isRequired' => $request->get('isRequired'),
                 'updated_by' => Auth::id() ?? 1
             ]);
 
@@ -641,7 +648,7 @@ class ProductAccessoriesController extends Controller
             $accessory = ProductAccessory::findOrFail($id);
 
             $validator = Validator::make($request->all(), [
-                'isapproved' => 'required|boolean'
+                'isapproved' => 'sometimes|boolean'
             ]);
 
             if ($validator->fails()) {
@@ -668,6 +675,74 @@ class ProductAccessoriesController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update approval status',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/product-accessories/isRequired/{id}",
+     *     summary="isRequired a product accessory",
+     *     tags={"Product Accessories"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Product accessory ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"isRequired"},
+     *             @OA\Property(property="isRequired", type="integer", example=1, description="1 for required, 0 for not required")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="isRequired updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="is Required not found"
+     *     ),
+     *      security={{"bearerAuth":{}}}
+     * )
+     */
+    public function updateIsRequired(Request $request, $id): JsonResponse
+    {
+        try {
+
+            $accessory = ProductAccessory::findOrFail($id);
+
+            $validator = Validator::make($request->all(), [
+                'isRequired' => 'sometimes|boolean'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $accessory->update([
+                'isRequired' => $request->isRequired  
+                 
+            ]);
+
+             
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Is Required updated successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update is required',
                 'error' => $e->getMessage()
             ], 404);
         }

@@ -501,6 +501,98 @@ private function getCardTypeFromBin($bin)
  *     security={{"bearerAuth": {}}}
  * )
  */
+// public function processNoFraud($orderId)
+// {
+//     try {
+//         // Load related models
+//         $payment = PaymentManagement::with([
+//             'order.customer',
+//             'order.customerAddress'
+//         ])->where('order_id', $orderId)->first();
+
+//         if (!$payment || !$payment->order) {
+//             return response()->json([
+//                 'status' => 'error',
+//                 'message' => 'Payment or order not found'
+//             ], 404);
+//         }
+
+//         $order = $payment->order;
+//         $customer = $order->customer;
+//         $address = $order->customerAddress;
+
+//         if (!$customer || !$address) {
+//             return response()->json([
+//                 'status' => 'error',
+//                 'message' => 'Missing customer or address information'
+//             ], 400);
+//         }
+
+//         // ✅ Split full name
+//         $nameParts = explode(' ', trim($customer->name ?? 'Unknown'), 2);
+//         $firstName = $nameParts[0] ?? 'Unknown';
+//         $lastName = $nameParts[1] ?? '';
+
+//         // ✅ Decode card meta safely
+//         $metaRaw = $payment->payment_details ?? $payment->meta ?? '{}';
+//         $meta = json_decode($metaRaw, true);
+//         if (is_string($meta)) {
+//             $meta = json_decode($meta, true);
+//         }
+
+//         $cardLast4 = $meta['card_last_four'] ?? $payment->card_last4 ?? null;
+//         $cardBin   = $meta['meta']['cardDisplay'] ?? $payment->card_bin ?? null;
+//         $cardType  = $meta['card_type'] ?? $payment->card_type ?? null;
+//         $cardExp   = $meta['card_exp'] ?? $payment->card_exp ?? null;
+
+//         if (!$cardLast4) {
+//             return response()->json([
+//                 'status' => 'error',
+//                 'message' => 'Missing card information (last4)',
+//                 'raw_meta' => $meta,
+//             ], 400);
+//         }
+
+//         // ✅ Use the already-loaded order (no need to re-query)
+//         $orderNumber = $order->order_number ?? $orderId;
+
+//         // ✅ Prepare data for NoFraud API
+//         $requestData = [
+//             // 'order_id' => $orderId, // still used for internal handling
+//             'order_id' => $orderNumber, // for saving to NoFraudResponse table
+//             'amount' => $payment->amount ?? $order->amount ?? 0,
+
+//             'billing_first_name' => $firstName,
+//             'billing_last_name' => $lastName,
+//             'billing_email' => $customer->email ?? 'noemail@example.com',
+//             'billing_phone' => $customer->phone ?? null,
+//             'billing_address' => $address->address ?? '',
+//             'billing_city' => $address->city ?? '',
+//             'billing_state' => $address->state ?? '',
+//             'billing_zip' => $address->zip_code ?? '',
+//             'billing_country' => substr($address->country ?? 'US', 0, 2),
+
+//             'card_bin' => $cardBin,
+//             'card_last4' => $cardLast4,
+//             'card_type' => $cardType,
+//             'card_expiration' => $cardExp,
+//         ];
+
+//         // ✅ Create a fake request instance to reuse screenTransaction
+//         $req = new \Illuminate\Http\Request($requestData);
+
+//         // ✅ Call the same controller method with correct context
+//         return $this->screenTransaction($req);
+
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'status' => 'error',
+//             'message' => 'Error processing NoFraud screening',
+//             'error' => $e->getMessage(),
+//         ], 500);
+//     }
+// }
+
 public function processNoFraud($orderId)
 {
     try {

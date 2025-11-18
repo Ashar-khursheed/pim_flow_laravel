@@ -78,7 +78,7 @@ class ProductController extends Controller
 		// Keep existing user and wishlist logic
 		$userId = Auth::id();
 		$isUserLoggedIn = $userId !== null;
-
+ 
 		Log::info('User logged in:', ['user_id' => $userId]);
 
 		$wishlistProductIds = [];
@@ -99,6 +99,7 @@ class ProductController extends Controller
 
 
 		$productId = $request->input('product_id'); // numeric ID
+	 
 		$slug = $request->input('slug');           // string slug
 		if ($productId) {
 			$query->where('id', $productId);
@@ -504,7 +505,7 @@ class ProductController extends Controller
 				];
 			})->values();
 
-			// 👉 Add this
+			// Add this
 			$basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
 			$product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
 			$product->accessories = $product->accessories->map(function ($accessory) {
@@ -512,6 +513,7 @@ class ProductController extends Controller
 					'id' => $accessory->id,
 					'name' => $accessory->name,
 					'isapproved' => $accessory->isapproved,
+					'isRequired' => $accessory->isRequired,
 					'items' => $accessory->items->map(function ($item) {
 						return [
 							'id' => $item->id,
@@ -527,57 +529,150 @@ class ProductController extends Controller
 			}
 
 
-			$product->productVariants = $product->productVariants->map(function ($variant) {
-				$childIds = json_decode($variant->child_ids, true) ?? [];
-				$variants = json_decode($variant->variants, true) ?? [];
+		// 	$product->productVariants = $product->productVariants->map(function ($variant) {
+		// 	$childIds = json_decode($variant->child_ids, true) ?? [];
+		// 	$variants = json_decode($variant->variants, true) ?? [];
 
-				// Fetch all child products
-				$children = Product::whereIn('id', $childIds)
+		// 	// Fetch all child products at once
+		// 	$children = Product::whereIn('id', $childIds)
+		// 		->select('id', 'sku')
+		// 		->get();
+
+		// 	$result = [];
+ 
+		// 	foreach ($variants as $v) {
+		// 		// Get attribute name
+		// 		$attributeName = Attribute::where('id', $v['attribute_id'])->value('name');
+
+		// 		// Collect child data with this attribute
+		// 		$childrenData = $children->map(function ($child) use ($v,$variant) {
+		// 			$attrValue = ProductAttribute::where('product_id', $child->id)
+		// 				->where('attribute_id', $v['attribute_id'])
+		// 				->value('attribute_value');
+
+		// 			$slug = SeoManagement::where('relational_id', $child->id)
+		// 				->value('url');
+
+		// 			$full_slug = $child->parent_category_url() . '/' .
+		// 						$child->category_url() . '/' .
+		// 						($child->seoProductUrl->url ?? "");
+
+		// 			return [
+		// 				'id' => $child->id,
+		// 				'sku' => $child->sku,
+		// 				'attribute_value' => $attrValue,
+		// 				'slug' => $slug,
+		// 				'parent_slug' => $child->parent_category_url(),
+		// 				'child_slug' => $child->category_url(),
+		// 				'full_slug' => $full_slug,
+		// 				'parent_id' => $variant->parent_id,
+		// 			];
+		// 		})
+		// 		->filter(fn($item) => !empty($item['attribute_value'])) // remove null/empty
+		// 		->unique('attribute_value') // ✅ make attribute_value unique
+		// 		->values(); // reindex
+
+		// 		$result[] = [
+		// 			'attribute_id' => $v['attribute_id'],
+		// 			'attribute_name' => $attributeName,
+		// 			'label' => $v['labels'] ?? $attributeName,
+		// 			'type' => $v['type'] ?? 'dropdown',
+		// 			'child' => $childrenData,
+		// 		];
+		// 	}
+
+		// 	return $result;
+		// })->flatten(1)->values();
+
+
+		$product->productVariants = $product->productVariants->map(function ($variant) {
+			$childIds = json_decode($variant->child_ids, true) ?? [];
+			$variants = json_decode($variant->variants, true) ?? [];
+
+			// Early return if no children or variants
+			if (empty($childIds) || empty($variants)) {
+				return [];
+			}
+
+			// Fetch all child products at once
+			$children = Product::whereIn('id', $childIds)
 				->select('id', 'sku')
 				->get();
 
-				$result = [];
+			// Fetch all attribute names at once
+			$attributeIds = array_column($variants, 'attribute_id');
+			$attributes = Attribute::whereIn('id', $attributeIds)
+				->pluck('name', 'id');
 
-				foreach ($variants as $v) {
-					// Get attribute name
-					$attributeName = Attribute::where('id', $v['attribute_id'])
-					->value('name');
+			// Fetch all product attributes at once
+			$productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+				->whereIn('attribute_id', $attributeIds)
+				->get()
+				->groupBy('product_id');
 
-					// Create child array for this attribute
-					$childrenData = $children->map(function ($child) use ($v) {
-						// Get attribute_value from product_attributes
-						$attrValue = ProductAttribute::where('product_id', $child->id)
-						->where('attribute_id', $v['attribute_id'])
-						->value('attribute_value');
+			// Fetch all SEO URLs at once
+			$seoUrls = SeoManagement::whereIn('relational_id', $childIds)
+				->pluck('url', 'relational_id');
 
-						// Get slug from seo_management table
-						$slug = SeoManagement::where('relational_id', $child->id)
-						->value('url');
-						$full_slug =  $child->parent_category_url() . '/' .
-						$child->category_url() . '/' .
-						($child->seoProductUrl->url ?? "");
-						return [
-							'id' => $child->id,
-							'sku' => $child->sku,
-							'attribute_value' => $attrValue,
-							'slug' => $slug,
-							'parent_slug' => $child->parent_category_url() ,
-							'child_slug' => $child->category_url(),
-							'full_slug' => $full_slug,
-						];
-					});
+			$result = [];
 
+			foreach ($variants as $v) {
+				$attributeId = $v['attribute_id'];
+				$attributeName = $attributes[$attributeId] ?? null;
+
+				if (!$attributeName) {
+					continue; // Skip if attribute not found
+				}
+
+				// Track unique attribute values for this specific attribute
+				$seenAttributeValues = [];
+				$childrenData = [];
+
+				foreach ($children as $child) {
+					// Get attribute value for this child and attribute
+					$attrValue = $productAttributes->get($child->id)?->firstWhere('attribute_id', $attributeId)?->attribute_value ?? null;
+
+					// Skip if no attribute value or if we've already seen this value
+					if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+						continue;
+					}
+
+					// Mark this attribute value as seen
+					$seenAttributeValues[$attrValue] = true;
+
+					$slug = $seoUrls[$child->id] ?? null;
+					$full_slug = $child->parent_category_url() . '/' .
+								$child->category_url() . '/' .
+								($child->seoProductUrl->url ?? "");
+
+					$childrenData[] = [
+						'id' => $child->id,
+						'sku' => $child->sku,
+						'attribute_value' => $attrValue,
+						'slug' => $slug,
+						'parent_slug' => $child->parent_category_url(),
+						'child_slug' => $child->category_url(),
+						'full_slug' => $full_slug,
+						'parent_id' => $variant->parent_id,
+						'variant_id' => $variant->id,
+					];
+				}
+
+				// Only add if we have children data
+				if (!empty($childrenData)) {
 					$result[] = [
-						'attribute_id' => $v['attribute_id'],
+						'attribute_id' => $attributeId,
 						'attribute_name' => $attributeName,
 						'label' => $v['labels'] ?? $attributeName,
 						'type' => $v['type'] ?? 'dropdown',
 						'child' => $childrenData,
+						'variant_id' => $variant->id,
 					];
 				}
+			}
 
-				return $result;
-			})->flatten(1)->values();
+			return $result;
+		})->flatten(1)->values();
 
 			if ($product->productVariants->isEmpty()) {
 				$product->productVariants = [];
@@ -1026,6 +1121,7 @@ class ProductController extends Controller
 					'id' => $accessory->id,
 					'name' => $accessory->name,
 					'isapproved' => $accessory->isapproved,
+					'isRequired' => $accessory->isRequired,
 					'items' => $accessory->items->map(function ($item) {
 						return [
 							'id' => $item->id,
@@ -1042,52 +1138,95 @@ class ProductController extends Controller
 			}
 
 			$product->productVariants = $product->productVariants->map(function ($variant) {
-				$childIds = json_decode($variant->child_ids, true) ?? [];
-				$variants = json_decode($variant->variants, true) ?? [];
+			$childIds = json_decode($variant->child_ids, true) ?? [];
+			$variants = json_decode($variant->variants, true) ?? [];
 
-				// Fetch all child products
-				$children = Product::whereIn('id', $childIds)
+			// Early return if no children or variants
+			if (empty($childIds) || empty($variants)) {
+				return [];
+			}
+
+			// Fetch all child products at once
+			$children = Product::whereIn('id', $childIds)
 				->select('id', 'sku')
 				->get();
 
-				$result = [];
+			// Fetch all attribute names at once
+			$attributeIds = array_column($variants, 'attribute_id');
+			$attributes = Attribute::whereIn('id', $attributeIds)
+				->pluck('name', 'id');
 
-				foreach ($variants as $v) {
-					// Get attribute name
-					$attributeName = Attribute::where('id', $v['attribute_id'])
-					->value('name');
+			// Fetch all product attributes at once
+			$productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+				->whereIn('attribute_id', $attributeIds)
+				->get()
+				->groupBy('product_id');
 
-					// Create child array for this attribute
-					$childrenData = $children->map(function ($child) use ($v) {
-						// Get attribute_value from product_attributes
-						$attrValue = ProductAttribute::where('product_id', $child->id)
-						->where('attribute_id', $v['attribute_id'])
-						->value('attribute_value');
+			// Fetch all SEO URLs at once
+			$seoUrls = SeoManagement::whereIn('relational_id', $childIds)
+				->pluck('url', 'relational_id');
 
-						// Get slug from seo_management table
-						$slug = SeoManagement::where('relational_id', $child->id)
-						->value('url');
+			$result = [];
 
-						return [
-							'id' => $child->id,
-							'sku' => $child->sku,
-							'attribute_value' => $attrValue,
-							'slug' => $slug,
-						];
-					});
+			foreach ($variants as $v) {
+				$attributeId = $v['attribute_id'];
+				$attributeName = $attributes[$attributeId] ?? null;
 
+				if (!$attributeName) {
+					continue; // Skip if attribute not found
+				}
+
+				// Track unique attribute values for this specific attribute
+				$seenAttributeValues = [];
+				$childrenData = [];
+
+				foreach ($children as $child) {
+					// Get attribute value for this child and attribute
+					$attrValue = $productAttributes->get($child->id)?->firstWhere('attribute_id', $attributeId)?->attribute_value ?? null;
+
+					// Skip if no attribute value or if we've already seen this value
+					if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+						continue;
+					}
+
+					// Mark this attribute value as seen
+					$seenAttributeValues[$attrValue] = true;
+
+					$slug = $seoUrls[$child->id] ?? null;
+					$full_slug = $child->parent_category_url() . '/' .
+								$child->category_url() . '/' .
+								($child->seoProductUrl->url ?? "");
+
+					$childrenData[] = [
+						'id' => $child->id,
+						'sku' => $child->sku,
+						'attribute_value' => $attrValue,
+						'slug' => $slug,
+						'parent_slug' => $child->parent_category_url(),
+						'child_slug' => $child->category_url(),
+						'full_slug' => $full_slug,
+						'parent_id' => $variant->parent_id,
+						'variant_id' => $variant->id,
+					];
+				}
+
+				// Only add if we have children data
+				if (!empty($childrenData)) {
 					$result[] = [
-						'attribute_id' => $v['attribute_id'],
+						'attribute_id' => $attributeId,
 						'attribute_name' => $attributeName,
 						'label' => $v['labels'] ?? $attributeName,
 						'type' => $v['type'] ?? 'dropdown',
 						'child' => $childrenData,
+						'variant_id' => $variant->id,
 					];
 				}
+			}
 
-				return $result;
-			})->flatten(1)->values();
+			return $result;
+		})->flatten(1)->values();
 
+			
 			if ($product->productVariants->isEmpty()) {
 				$product->productVariants = [];
 			}
@@ -1258,7 +1397,7 @@ class ProductController extends Controller
 				'currency' => $product->currency?->title,
 				'total_reviews' => $totalReviews,
 				'avg_rating' => $avgRating,
-
+				'isRequired' => $product->is_required,
 				'leftStock' => $leftStock,
 				'currency_title' => $product->currency
 				? ($product->currency->is_prefix_symbol
@@ -1285,6 +1424,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 
@@ -1443,6 +1583,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 
@@ -1593,6 +1734,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 
@@ -1917,6 +2059,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 
 		});
@@ -2141,6 +2284,7 @@ class ProductController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 		});
 

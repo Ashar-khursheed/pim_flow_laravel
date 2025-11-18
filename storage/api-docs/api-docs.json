@@ -1695,6 +1695,19 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ar",
+                                "en"
+                            ],
+                            "example": "ar"
+                        }
                     }
                 ],
                 "responses": {
@@ -1940,6 +1953,70 @@
                 "responses": {
                     "200": {
                         "description": "Imported successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attributes/generate-translation": {
+            "post": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Generate or update attribute translation",
+                "description": "This endpoint generates or updates translations for an attribute and its values.",
+                "operationId": "77c10156d07b055eadb500eea6efd6ce",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "locale",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID of the attribute to translate",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "locale": {
+                                        "description": "Locale code for translation (e.g. ar)",
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "name": {
+                                        "description": "Translated name of the attribute",
+                                        "type": "string",
+                                        "example": "الحجم"
+                                    },
+                                    "attribute_values": {
+                                        "description": "Key-value pairs of attribute value translations (key = attribute_value_id, value = translated text)",
+                                        "type": "object",
+                                        "example": {
+                                            "1": "صغير",
+                                            "2": "متوسط",
+                                            "3": "كبير"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
                         "content": {
                             "application/json": {}
                         }
@@ -4564,6 +4641,66 @@
                 ]
             }
         },
+        "/api/brands/generate-translation": {
+            "post": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Generate or update brand translation",
+                "description": "This endpoint generates or updates translations for an brand and its values.",
+                "operationId": "2bc9087fc1ae58a0119221b3454ac9a9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "locale",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID of the brand to translate",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "locale": {
+                                        "description": "Locale code for translation (e.g. ar)",
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "name": {
+                                        "description": "Translated name of the brand",
+                                        "type": "string",
+                                        "example": "الحجم"
+                                    },
+                                    "description": {
+                                        "description": "Translated name of the description",
+                                        "type": "string",
+                                        "example": "الحجم"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/brand-temp-1": {
             "get": {
                 "tags": [
@@ -6774,68 +6911,7 @@
                     "200": {
                         "description": "Successful operation",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Electronics"
-                                            },
-                                            "slug": {
-                                                "type": "string",
-                                                "example": "electronics"
-                                            },
-                                            "children_recursive": {
-                                                "type": "array",
-                                                "items": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 2
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "Mobile Phones"
-                                                        },
-                                                        "slug": {
-                                                            "type": "string",
-                                                            "example": "mobile-phones"
-                                                        },
-                                                        "children_recursive": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "properties": {
-                                                                    "id": {
-                                                                        "type": "integer",
-                                                                        "example": 3
-                                                                    },
-                                                                    "name": {
-                                                                        "type": "string",
-                                                                        "example": "Smartphones"
-                                                                    },
-                                                                    "slug": {
-                                                                        "type": "string",
-                                                                        "example": "smartphones"
-                                                                    }
-                                                                },
-                                                                "type": "object"
-                                                            }
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "401": {
@@ -6883,22 +6959,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Successful operation",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "category": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "404": {
@@ -7008,24 +7071,7 @@
                     "200": {
                         "description": "Category updated successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Category updated successfully"
-                                        },
-                                        "category": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "422": {
@@ -7379,68 +7425,7 @@
                     "200": {
                         "description": "Successful operation",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Electronics"
-                                            },
-                                            "slug": {
-                                                "type": "string",
-                                                "example": "electronics"
-                                            },
-                                            "children_recursive": {
-                                                "type": "array",
-                                                "items": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 2
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "Mobile Phones"
-                                                        },
-                                                        "slug": {
-                                                            "type": "string",
-                                                            "example": "mobile-phones"
-                                                        },
-                                                        "children_recursive": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "properties": {
-                                                                    "id": {
-                                                                        "type": "integer",
-                                                                        "example": 3
-                                                                    },
-                                                                    "name": {
-                                                                        "type": "string",
-                                                                        "example": "Smartphones"
-                                                                    },
-                                                                    "slug": {
-                                                                        "type": "string",
-                                                                        "example": "smartphones"
-                                                                    }
-                                                                },
-                                                                "type": "object"
-                                                            }
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "401": {
@@ -7457,6 +7442,61 @@
                                     "type": "object"
                                 }
                             }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/categories/generate-translation": {
+            "post": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Generate or update category translation",
+                "description": "This endpoint generates or updates translations for a category and its values.",
+                "operationId": "88f96f348079da1928b5d254d52a6301",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "locale",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID of the attribute to translate",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "locale": {
+                                        "description": "Locale code for translation (e.g. ar)",
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "name": {
+                                        "description": "Translated name of the attribute",
+                                        "type": "string",
+                                        "example": ""
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 },
@@ -8917,6 +8957,50 @@
                 "responses": {
                     "200": {
                         "description": "Deleted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/customerCartExport/export": {
+            "post": {
+                "tags": [
+                    "Customer Cart Export"
+                ],
+                "summary": "Export app keyword data to Excel",
+                "operationId": "f5699385362cab4d1dfcfd876e384f71",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "range_from": {
+                                        "description": "Starting range (must be >=1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and max 5000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
                         "content": {
                             "application/json": {}
                         }
@@ -10759,6 +10843,704 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/finances": {
+            "get": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Get all finance records",
+                "operationId": "99cfbabd34cf251b6fc2c85f250f231f",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Pending",
+                                "Completed",
+                                "Failed",
+                                "Cancelled",
+                                "Refunded",
+                                "all"
+                            ],
+                            "example": "all"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by order id, transaction_id",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by (id, order_id, status)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "order_id",
+                                "status"
+                            ],
+                            "example": "id"
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Create a new finance record",
+                "operationId": "7e61ac9781248944f1952c93b6424563",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "business_name",
+                                    "business_address",
+                                    "country",
+                                    "city"
+                                ],
+                                "properties": {
+                                    "payment_selection": {
+                                        "description": "Credit, Debit Card, Net Banking, Net Payment Terms",
+                                        "type": "string",
+                                        "example": "Credit"
+                                    },
+                                    "payment_options": {
+                                        "description": "Payment option description",
+                                        "type": "string",
+                                        "example": "Net Payment Terms"
+                                    },
+                                    "term_selection": {
+                                        "description": "Net Pay in 30/45/60 Days",
+                                        "type": "string",
+                                        "example": "Net 30 Days"
+                                    },
+                                    "amount": {
+                                        "description": "Enter amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5000.75
+                                    },
+                                    "documents": {
+                                        "description": "Upload supporting document file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "payment_due": {
+                                        "description": "Payment due date",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-12-31"
+                                    },
+                                    "type_of_business": {
+                                        "description": "Type of business (Advertising / E-commerce)",
+                                        "type": "string",
+                                        "example": "E-commerce"
+                                    },
+                                    "business_name": {
+                                        "description": "Legal business name",
+                                        "type": "string",
+                                        "example": "ABC Pvt Ltd"
+                                    },
+                                    "first_name": {
+                                        "description": "first_name",
+                                        "type": "string",
+                                        "example": "first name"
+                                    },
+                                    "last_name": {
+                                        "description": "last name",
+                                        "type": "string",
+                                        "example": "last name"
+                                    },
+                                    "business_email": {
+                                        "description": "Business Email",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "abc@domain.com"
+                                    },
+                                    "business_address": {
+                                        "description": "Business address",
+                                        "type": "string",
+                                        "example": "123 Street, Delhi"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "8800 Bissonnet Street, Ste A, Houston, Texas 77074"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "Houston"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "Texas"
+                                    },
+                                    "zip": {
+                                        "type": "string",
+                                        "example": "77074"
+                                    },
+                                    "annual_revenue": {
+                                        "type": "string",
+                                        "example": "10M USD"
+                                    },
+                                    "years_in_business": {
+                                        "type": "string",
+                                        "example": "5 – 10 years"
+                                    },
+                                    "accounts_payable_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "finance@abc.com"
+                                    },
+                                    "accounts_payable_phone": {
+                                        "type": "string",
+                                        "example": "+91-9876543210"
+                                    },
+                                    "duns_number": {
+                                        "type": "string",
+                                        "example": "123456789"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Finance record created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record created successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/finances/{id}": {
+            "get": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Get finance record by ID",
+                "operationId": "25843867cf87a12f822cbce46c7bca1e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance record ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Finance record retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record retrieved successfully."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "payment_selection": {
+                                                    "type": "string",
+                                                    "example": "Credit"
+                                                },
+                                                "amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 5000.75
+                                                },
+                                                "business_name": {
+                                                    "type": "string",
+                                                    "example": "ABC Pvt Ltd"
+                                                },
+                                                "first_name": {
+                                                    "description": "first name",
+                                                    "type": "string",
+                                                    "example": "first name"
+                                                },
+                                                "last_name": {
+                                                    "description": "last name",
+                                                    "type": "string",
+                                                    "example": "last name"
+                                                },
+                                                "business_email": {
+                                                    "type": "string",
+                                                    "example": "abc@domain.com"
+                                                },
+                                                "documents": {
+                                                    "type": "string",
+                                                    "example": "https://s3.amazonaws.com/path/to/document.pdf"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-01-01T10:00:00Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-01-02T15:30:00Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance record not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Update an existing finance record",
+                "operationId": "440c66a001e8557bb071101ee842547c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance record ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "business_name"
+                                ],
+                                "properties": {
+                                    "payment_selection": {
+                                        "description": "Payment type: Credit, Debit Card, Net Banking, etc.",
+                                        "type": "string",
+                                        "example": "Credit"
+                                    },
+                                    "payment_options": {
+                                        "description": "Payment options details",
+                                        "type": "string",
+                                        "example": "Net Payment Terms"
+                                    },
+                                    "term_selection": {
+                                        "description": "Payment term duration",
+                                        "type": "string",
+                                        "example": "Net 30 Days"
+                                    },
+                                    "amount": {
+                                        "description": "Transaction amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5000.75
+                                    },
+                                    "documents": {
+                                        "description": "Upload related document",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "payment_due": {
+                                        "description": "Payment due date",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-12-31"
+                                    },
+                                    "type_of_business": {
+                                        "description": "Type of business",
+                                        "type": "string",
+                                        "example": "E-commerce"
+                                    },
+                                    "business_name": {
+                                        "description": "Legal business name",
+                                        "type": "string",
+                                        "example": "ABC Pvt Ltd"
+                                    },
+                                    "first_name": {
+                                        "description": "first name",
+                                        "type": "string",
+                                        "example": "first name"
+                                    },
+                                    "last_name": {
+                                        "description": "last name",
+                                        "type": "string",
+                                        "example": "last name"
+                                    },
+                                    "business_email": {
+                                        "description": "business Email",
+                                        "type": "string",
+                                        "example": "abc@domain.com"
+                                    },
+                                    "business_address": {
+                                        "description": "Business address",
+                                        "type": "string",
+                                        "example": "123 Street, Delhi"
+                                    },
+                                    "country": {
+                                        "description": "Country name",
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "address": {
+                                        "description": "Full address",
+                                        "type": "string",
+                                        "example": "B-21, Connaught Place, Delhi"
+                                    },
+                                    "city": {
+                                        "description": "City name",
+                                        "type": "string",
+                                        "example": "New Delhi"
+                                    },
+                                    "zip": {
+                                        "description": "ZIP / Postal code",
+                                        "type": "string",
+                                        "example": "110001"
+                                    },
+                                    "annual_revenue": {
+                                        "description": "Annual business revenue",
+                                        "type": "string",
+                                        "example": "10M USD"
+                                    },
+                                    "years_in_business": {
+                                        "description": "Years in business",
+                                        "type": "string",
+                                        "example": "5 – 10 years"
+                                    },
+                                    "accounts_payable_email": {
+                                        "description": "Accounts payable email",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "finance@abc.com"
+                                    },
+                                    "accounts_payable_phone": {
+                                        "description": "Accounts payable phone number",
+                                        "type": "string",
+                                        "example": "+91-9876543210"
+                                    },
+                                    "duns_number": {
+                                        "description": "DUNS number (if applicable)",
+                                        "type": "string",
+                                        "example": "123456789"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Finance record updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record updated successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Delete a finance record",
+                "description": "Deletes a finance record by its unique ID.",
+                "operationId": "f26a7de13fdd90ca6198cf5026cf449e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance record ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Finance record deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance record not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error"
                     }
                 },
                 "security": [
@@ -13120,39 +13902,7 @@
                     "200": {
                         "description": "Categories tree fetched successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Electronics"
-                                            },
-                                            "image": {
-                                                "type": "string",
-                                                "example": "http://example.com/storage/categories/electronics.jpg"
-                                            },
-                                            "parent_id": {
-                                                "type": "integer",
-                                                "example": null,
-                                                "nullable": true
-                                            },
-                                            "children": {
-                                                "type": "array",
-                                                "items": {
-                                                    "$ref": "#/components/schemas/Category"
-                                                }
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -13190,16 +13940,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Category tree fetched successfully",
+                        "description": "Categories tree fetched successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Category"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "404": {
@@ -13245,16 +13988,7 @@
                     "200": {
                         "description": "Category details retrieved successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "category": {
-                                            "$ref": "#/components/schemas/Category"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "404": {
@@ -13310,43 +14044,7 @@
                     "200": {
                         "description": "List of products for the category",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "category": {
-                                            "$ref": "#/components/schemas/Category"
-                                        },
-                                        "products": {
-                                            "properties": {
-                                                "current_page": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "data": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "$ref": "#/components/schemas/Product"
-                                                    }
-                                                },
-                                                "last_page": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                },
-                                                "per_page": {
-                                                    "type": "integer",
-                                                    "example": 10
-                                                },
-                                                "total": {
-                                                    "type": "integer",
-                                                    "example": 50
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "404": {
@@ -13490,58 +14188,7 @@
                     "200": {
                         "description": "List of filtered products and available filters",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "filters": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "products": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "brands": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "rating_filter": {
-                                            "properties": {
-                                                "filter_name": {
-                                                    "type": "string",
-                                                    "example": "Rating"
-                                                },
-                                                "filter_type": {
-                                                    "type": "string",
-                                                    "example": "rating"
-                                                },
-                                                "filter_values": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "integer",
-                                                        "example": 5
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "debug_info": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "400": {
@@ -13578,40 +14225,7 @@
                     "200": {
                         "description": "Categories fetched successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Electronics"
-                                            },
-                                            "slug": {
-                                                "type": "string",
-                                                "example": "electronics"
-                                            },
-                                            "parent_id": {
-                                                "type": "integer",
-                                                "example": 0
-                                            },
-                                            "image": {
-                                                "type": "string",
-                                                "example": "http://example.com/storage/categories/electronics.jpg"
-                                            },
-                                            "productCount": {
-                                                "type": "integer",
-                                                "example": 42
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -13629,40 +14243,7 @@
                     "200": {
                         "description": "All categories fetched successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 2
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Laptops"
-                                            },
-                                            "slug": {
-                                                "type": "string",
-                                                "example": "laptops"
-                                            },
-                                            "parent_id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "image": {
-                                                "type": "string",
-                                                "example": "http://example.com/storage/categories/laptops.jpg"
-                                            },
-                                            "productCount": {
-                                                "type": "integer",
-                                                "example": 15
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -13680,106 +14261,7 @@
                     "200": {
                         "description": "Featured products grouped by category fetched successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "category_name": {
-                                                        "type": "string",
-                                                        "example": "Smartphones"
-                                                    },
-                                                    "featured_products": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "properties": {
-                                                                "id": {
-                                                                    "type": "integer",
-                                                                    "example": 101
-                                                                },
-                                                                "name": {
-                                                                    "type": "string",
-                                                                    "example": "iPhone 14"
-                                                                },
-                                                                "sku": {
-                                                                    "type": "string",
-                                                                    "example": "IP14-256GB"
-                                                                },
-                                                                "price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 999.99
-                                                                },
-                                                                "sale_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 899.99
-                                                                },
-                                                                "original_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 999.99
-                                                                },
-                                                                "front_sale_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 899.99
-                                                                },
-                                                                "best_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 899.99
-                                                                },
-                                                                "delivery_days": {
-                                                                    "type": "integer",
-                                                                    "example": 3
-                                                                },
-                                                                "total_reviews": {
-                                                                    "type": "integer",
-                                                                    "example": 120
-                                                                },
-                                                                "avg_rating": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 4.5
-                                                                },
-                                                                "left_stock": {
-                                                                    "type": "integer",
-                                                                    "example": 20
-                                                                },
-                                                                "currency": {
-                                                                    "type": "string",
-                                                                    "example": "USD"
-                                                                },
-                                                                "in_wishlist": {
-                                                                    "type": "boolean",
-                                                                    "example": true
-                                                                },
-                                                                "images": {
-                                                                    "type": "array",
-                                                                    "items": {
-                                                                        "type": "string",
-                                                                        "example": "http://example.com/storage/products/image1.jpg"
-                                                                    }
-                                                                }
-                                                            },
-                                                            "type": "object"
-                                                        }
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -13802,102 +14284,7 @@
                     "200": {
                         "description": "Featured products grouped by category fetched successfully for guests",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "category_name": {
-                                                        "type": "string",
-                                                        "example": "Electronics"
-                                                    },
-                                                    "featured_products": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "properties": {
-                                                                "id": {
-                                                                    "type": "integer",
-                                                                    "example": 202
-                                                                },
-                                                                "name": {
-                                                                    "type": "string",
-                                                                    "example": "Samsung Galaxy S22"
-                                                                },
-                                                                "sku": {
-                                                                    "type": "string",
-                                                                    "example": "SG-S22-128GB"
-                                                                },
-                                                                "price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 849.99
-                                                                },
-                                                                "sale_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 799.99
-                                                                },
-                                                                "original_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 849.99
-                                                                },
-                                                                "front_sale_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 799.99
-                                                                },
-                                                                "best_price": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 799.99
-                                                                },
-                                                                "delivery_days": {
-                                                                    "type": "integer",
-                                                                    "example": 5
-                                                                },
-                                                                "total_reviews": {
-                                                                    "type": "integer",
-                                                                    "example": 85
-                                                                },
-                                                                "avg_rating": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 4.2
-                                                                },
-                                                                "left_stock": {
-                                                                    "type": "integer",
-                                                                    "example": 50
-                                                                },
-                                                                "currency": {
-                                                                    "type": "string",
-                                                                    "example": "USD"
-                                                                },
-                                                                "images": {
-                                                                    "type": "array",
-                                                                    "items": {
-                                                                        "type": "string",
-                                                                        "example": "http://example.com/storage/products/samsung.jpg"
-                                                                    }
-                                                                }
-                                                            },
-                                                            "type": "object"
-                                                        }
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -13925,41 +14312,7 @@
                     "200": {
                         "description": "Successful response with category data",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "name": {
-                                            "type": "string",
-                                            "example": "Electronics"
-                                        },
-                                        "slug": {
-                                            "type": "string",
-                                            "example": "electronics"
-                                        },
-                                        "parent_id": {
-                                            "type": "integer",
-                                            "example": null,
-                                            "nullable": true
-                                        },
-                                        "image": {
-                                            "type": "string",
-                                            "format": "url",
-                                            "example": "http://yourdomain.com/storage/categories/electronics.jpg"
-                                        },
-                                        "children": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Category"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     },
                     "404": {
@@ -14003,42 +14356,7 @@
                     "200": {
                         "description": "List of categories in hierarchical structure",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer"
-                                            },
-                                            "name": {
-                                                "type": "string"
-                                            },
-                                            "slug": {
-                                                "type": "string"
-                                            },
-                                            "parent_id": {
-                                                "type": "integer",
-                                                "nullable": true
-                                            },
-                                            "productCount": {
-                                                "type": "integer"
-                                            },
-                                            "image": {
-                                                "type": "string",
-                                                "format": "url"
-                                            },
-                                            "children": {
-                                                "type": "array",
-                                                "items": {
-                                                    "$ref": "#/components/schemas/Category"
-                                                }
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -14530,6 +14848,36 @@
                 ],
                 "summary": "CCAvenue Payment Cancel Redirect",
                 "operationId": "4ceca77797fe7b34ac915a970b44464a",
+                "responses": {
+                    "200": {
+                        "description": "Payment was cancelled"
+                    }
+                }
+            }
+        },
+        "/api/ccavenue/dataEncodeCCavenue": {
+            "post": {
+                "tags": [
+                    "CCAvenue"
+                ],
+                "summary": "CCAvenue Payment Cancel Redirect",
+                "operationId": "f49cc9f0739ff4053207c6a3dfb8d766",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "encResp": {
+                                        "type": "string",
+                                        "example": "b2dwx821x92x0a78sd89asd7as8d7as8d7a..."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Payment was cancelled"
@@ -17617,6 +17965,190 @@
                 ]
             }
         },
+        "/api/frontend/finances": {
+            "post": {
+                "tags": [
+                    "Frontend Finance"
+                ],
+                "summary": "Create a new finance record",
+                "operationId": "8e1f1f0683325135482562a7f6069bd7",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "business_name",
+                                    "business_address",
+                                    "country",
+                                    "city"
+                                ],
+                                "properties": {
+                                    "payment_selection": {
+                                        "description": "Credit, Debit Card, Net Banking, Net Payment Terms",
+                                        "type": "string",
+                                        "example": "Credit"
+                                    },
+                                    "payment_options": {
+                                        "description": "Payment option description",
+                                        "type": "string",
+                                        "example": "Net Payment Terms"
+                                    },
+                                    "term_selection": {
+                                        "description": "Net Pay in 30/45/60 Days",
+                                        "type": "string",
+                                        "example": "Net 30 Days"
+                                    },
+                                    "amount": {
+                                        "description": "Enter amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5000.75
+                                    },
+                                    "documents": {
+                                        "description": "Upload supporting document file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "payment_due": {
+                                        "description": "Payment due date",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-12-31"
+                                    },
+                                    "type_of_business": {
+                                        "description": "Type of business (Advertising / E-commerce)",
+                                        "type": "string",
+                                        "example": "E-commerce"
+                                    },
+                                    "business_name": {
+                                        "description": "Legal business name",
+                                        "type": "string",
+                                        "example": "ABC Pvt Ltd"
+                                    },
+                                    "first_name": {
+                                        "description": "first_name",
+                                        "type": "string",
+                                        "example": "first name"
+                                    },
+                                    "last_name": {
+                                        "description": "last name",
+                                        "type": "string",
+                                        "example": "last name"
+                                    },
+                                    "business_email": {
+                                        "description": "Business Email",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "abc@domain.com"
+                                    },
+                                    "business_address": {
+                                        "description": "Business address",
+                                        "type": "string",
+                                        "example": "123 Street, Delhi"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "8800 Bissonnet Street, Ste A, Houston, Texas 77074"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "Houston"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "Texas"
+                                    },
+                                    "zip": {
+                                        "type": "string",
+                                        "example": "77074"
+                                    },
+                                    "annual_revenue": {
+                                        "type": "string",
+                                        "example": "10M USD"
+                                    },
+                                    "years_in_business": {
+                                        "type": "string",
+                                        "example": "5 – 10 years"
+                                    },
+                                    "accounts_payable_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "finance@abc.com"
+                                    },
+                                    "accounts_payable_phone": {
+                                        "type": "string",
+                                        "example": "+91-9876543210"
+                                    },
+                                    "duns_number": {
+                                        "type": "string",
+                                        "example": "123456789"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Finance record created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record created successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/product-variants": {
             "post": {
                 "tags": [
@@ -17635,6 +18167,174 @@
                         }
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product Variants retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/attribute-product-variants": {
+            "post": {
+                "tags": [
+                    "Frontend Product variants"
+                ],
+                "summary": "Get list of Frontend Attribute Product Variants",
+                "operationId": "71ea8d13f3f70dd83bcd4c1d5ff9e3f4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "attribute": {
+                                        "description": "Array of attribute objects",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "attribute_value": {
+                                                    "type": "string",
+                                                    "example": "Leveling Legs"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object",
+                                "example": {
+                                    "attribute": [
+                                        {
+                                            "attribute_id": 7,
+                                            "attribute_value": "Leveling Legs"
+                                        },
+                                        {
+                                            "attribute_id": 401,
+                                            "attribute_value": "Gas"
+                                        },
+                                        {
+                                            "attribute_id": 48,
+                                            "attribute_value": "82 lb"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product Variants retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/product-variants-by-attribute": {
+            "post": {
+                "tags": [
+                    "Frontend Product variants"
+                ],
+                "summary": "Get list of Frontend Attribute all Product Variants",
+                "operationId": "c1feacb55dff97c60d6d22569427ca7b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "attribute": {
+                                        "description": "Array of attribute objects",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "attribute_id": {
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "attribute_value": {
+                                                    "type": "string",
+                                                    "example": "Leveling Legs"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object",
+                                "example": {
+                                    "attribute": [
+                                        {
+                                            "attribute_id": 7,
+                                            "attribute_value": "Leveling Legs"
+                                        },
+                                        {
+                                            "attribute_id": 401,
+                                            "attribute_value": "Gas"
+                                        },
+                                        {
+                                            "attribute_id": 48,
+                                            "attribute_value": "82 lb"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -22677,12 +23377,25 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "product_id"
+                                    "product_id",
+                                    "quantity",
+                                    "vendor_id"
                                 ],
                                 "properties": {
                                     "product_id": {
+                                        "description": "ID of the product",
                                         "type": "integer",
                                         "example": 123
+                                    },
+                                    "quantity": {
+                                        "description": "Quantity to move",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "vendor_id": {
+                                        "description": "Vendor ID related to the product",
+                                        "type": "integer",
+                                        "example": 1
                                     }
                                 },
                                 "type": "object"
@@ -22697,6 +23410,10 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "message": {
                                             "type": "string",
                                             "example": "Product has been moved to Save for Later."
@@ -22713,9 +23430,36 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
                                         "message": {
                                             "type": "string",
                                             "example": "Product not found in cart."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -23762,7 +24506,447 @@
                 ],
                 "summary": "Get products.xml",
                 "description": "Returns the XML sitemap containing public URLs of the website.",
-                "operationId": "1e4d462adaad8731bb1bbbe38a5cb9c1",
+                "operationId": "8a4b35836832c6da804d9d35b554f2c3",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-1.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "386cdad0e9d90ba7c5c6f37ca2e2e0d7",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-2.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products2.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "197fb854f75a8ca9f836c9b36613bd7a",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-3.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products3.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "72809b2f55893e709a1e2fdf15a0889b",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-4.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products4.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "00508e8f682f4a346b23f79ba81bfbe4",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-5.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products5.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "2f2cc7c9ede6ff8a91b8d4f0f8b44d48",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-6.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products6.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "674a3f95fc68baffbf3d518853e87da7",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-7.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products7.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "5af28a284c57ba8df66765984c8a5e05",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-8.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products8.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "a6e9cc3f1a906ffcfc4a49154822db24",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-9.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products9.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "099d0d43092c5141c7aea4204f4f8068",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products-10.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get products10.xml",
+                "description": "Returns the XML sitemap containing public URLs of the website.",
+                "operationId": "c469cf5371fe5725003d5691d4999122",
                 "responses": {
                     "200": {
                         "description": "Sitemap XML generated successfully",
@@ -31241,6 +32425,10 @@
                                     "isapproved": {
                                         "type": "boolean",
                                         "example": 0
+                                    },
+                                    "isRequired": {
+                                        "type": "boolean",
+                                        "example": 0
                                     }
                                 },
                                 "type": "object"
@@ -31383,6 +32571,10 @@
                                     "isapproved": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "isRequired": {
+                                        "type": "integer",
+                                        "example": 0
                                     },
                                     "approved_by": {
                                         "type": "integer",
@@ -31652,6 +32844,59 @@
                     },
                     "404": {
                         "description": "Product accessory not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-accessories/isRequired/{id}": {
+            "post": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "isRequired a product accessory",
+                "operationId": "c4856ac792c0fd12fec50e4a97a53e30",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product accessory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "isRequired"
+                                ],
+                                "properties": {
+                                    "isRequired": {
+                                        "description": "1 for required, 0 for not required",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "isRequired updated successfully"
+                    },
+                    "404": {
+                        "description": "is Required not found"
                     }
                 },
                 "security": [
@@ -32368,7 +33613,7 @@
                                     },
                                     "quote_available": {
                                         "type": "boolean",
-                                        "example": false
+                                        "example": true
                                     },
                                     "vendor_id": {
                                         "type": "integer",
@@ -36080,52 +37325,16 @@
                 ],
                 "summary": "Get product feed for DataFeedWatch",
                 "description": "Returns dynamic XML feed with all products for DataFeedWatch integration",
-                "operationId": "669eeff82606c5b773d2ec5868881f78",
+                "operationId": "b100704161a3bf0d799006cd4d8e4f3a",
                 "parameters": [
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Number of items per page (default: 50)",
+                        "description": "Number of items per page (default: 500)",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "example": 50
-                        }
-                    },
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number (default: 1)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "sort_by",
-                        "in": "query",
-                        "description": "Sort by column (default: id)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "id"
-                            ]
-                        }
-                    },
-                    {
-                        "name": "sort_direction",
-                        "in": "query",
-                        "description": "Sort direction (asc/desc, default: desc)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ],
-                            "example": "asc"
+                            "example": 500
                         }
                     }
                 ],
@@ -36141,6 +37350,226 @@
                     },
                     "500": {
                         "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/api/feed/products-1.xml": {
+            "get": {
+                "tags": [
+                    "Product Feed XML"
+                ],
+                "summary": "Get products1.xml",
+                "description": "Returns dynamic XML 0-1000 feed with all products for DataFeedWatch integration.",
+                "operationId": "88b3a61f0df91f0d8fc8bb27fd8c5583",
+                "responses": {
+                    "200": {
+                        "description": "XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/feed/products-2.xml": {
+            "get": {
+                "tags": [
+                    "Product Feed XML"
+                ],
+                "summary": "Get products2.xml",
+                "description": "Returns dynamic XML 1000-2000 feed with all products for DataFeedWatch integration.",
+                "operationId": "b545d78ba6b84911beb4b51ad9c41f3a",
+                "responses": {
+                    "200": {
+                        "description": "XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/feed/products-3.xml": {
+            "get": {
+                "tags": [
+                    "Product Feed XML"
+                ],
+                "summary": "Get products3.xml",
+                "description": "Returns dynamic XML 2000-3000 feed with all products for DataFeedWatch integration.",
+                "operationId": "aa2db0bd206954e604b526e64ed494b1",
+                "responses": {
+                    "200": {
+                        "description": "XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/feed/products-4.xml": {
+            "get": {
+                "tags": [
+                    "Product Feed XML"
+                ],
+                "summary": "Get products4.xml",
+                "description": "Returns dynamic XML 3000-4000 feed with all products for DataFeedWatch integration.",
+                "operationId": "b783b0cc6c8eaaf9318c1a2cab940850",
+                "responses": {
+                    "200": {
+                        "description": "XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/feed/products-5.xml": {
+            "get": {
+                "tags": [
+                    "Product Feed XML"
+                ],
+                "summary": "Get products5.xml",
+                "description": "Returns dynamic XML 4000-5000 feed with all products for DataFeedWatch integration.",
+                "operationId": "f42aafc0f6b5f8cdffd6ced5e2c3fac6",
+                "responses": {
+                    "200": {
+                        "description": "XML generated successfully",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "xml",
+                                    "example": "<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating sitemap"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -38224,6 +39653,11 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "relational_type",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -38669,6 +40103,134 @@
                 "responses": {
                     "200": {
                         "description": "URL availability checked successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/seo-management/save-translation": {
+            "post": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Save or update SEO translation",
+                "description": "This endpoint saves or updates translations for SEO management.",
+                "operationId": "0c334136c55255b8db36bfd8fc4b6cda",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "locale",
+                                    "primary_keyword",
+                                    "title_tag",
+                                    "meta_title",
+                                    "meta_description"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID of the SEO record to translate",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "locale": {
+                                        "description": "Locale code for translation (e.g. ar)",
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "primary_keyword": {
+                                        "description": "Primary keyword",
+                                        "type": "string",
+                                        "example": "best restaurant equipment"
+                                    },
+                                    "title_tag": {
+                                        "description": "Title tag",
+                                        "type": "string",
+                                        "example": "Restaurant Equipment | HorecaStore"
+                                    },
+                                    "meta_title": {
+                                        "description": "Meta title",
+                                        "type": "string",
+                                        "example": "Best Restaurant Equipment"
+                                    },
+                                    "meta_description": {
+                                        "description": "Meta description",
+                                        "type": "string",
+                                        "example": "Find the best restaurant equipment"
+                                    },
+                                    "og_title": {
+                                        "description": "OG title",
+                                        "type": "string",
+                                        "example": "Restaurant Equipment"
+                                    },
+                                    "og_description": {
+                                        "description": "OG description",
+                                        "type": "string",
+                                        "example": "Quality equipment for restaurants"
+                                    },
+                                    "og_image_file": {
+                                        "description": "OG image file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "og_image_alt_text": {
+                                        "description": "OG image alt text",
+                                        "type": "string",
+                                        "example": "Restaurant equipment image"
+                                    },
+                                    "og_image_name": {
+                                        "description": "OG image name",
+                                        "type": "string",
+                                        "example": "equipment.jpg"
+                                    },
+                                    "paragraph_1": {
+                                        "description": "Paragraph 1",
+                                        "type": "string",
+                                        "example": "First paragraph content"
+                                    },
+                                    "paragraph_2": {
+                                        "description": "Paragraph 2",
+                                        "type": "string",
+                                        "example": "Second paragraph content"
+                                    },
+                                    "paragraph_3": {
+                                        "description": "Paragraph 3",
+                                        "type": "string",
+                                        "example": "Third paragraph content"
+                                    },
+                                    "paragraph_4": {
+                                        "description": "Paragraph 4",
+                                        "type": "string",
+                                        "example": "Fourth paragraph content"
+                                    },
+                                    "banner_image_file": {
+                                        "description": "Banner image file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "banner_image_alt_text": {
+                                        "description": "Banner image alt text",
+                                        "type": "string",
+                                        "example": "Banner image"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
                         "content": {
                             "application/json": {}
                         }
@@ -42563,51 +44125,6 @@
                 },
                 "type": "object"
             },
-            "Brand": {
-                "title": "Brand",
-                "description": "Brand model",
-                "required": [
-                    "id",
-                    "name"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "Apple"
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "Premium electronics brand"
-                    },
-                    "website": {
-                        "type": "string",
-                        "format": "url",
-                        "example": "https://www.apple.com"
-                    },
-                    "logo": {
-                        "type": "string",
-                        "format": "url",
-                        "example": "https://example.com/logo.jpg"
-                    },
-                    "status": {
-                        "type": "string",
-                        "example": "active"
-                    },
-                    "order": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "is_featured": {
-                        "type": "boolean",
-                        "example": true
-                    }
-                },
-                "type": "object"
-            },
             "BrandTemp1": {
                 "properties": {
                     "id": {
@@ -42984,52 +44501,6 @@
                     "updated_at": {
                         "type": "string",
                         "format": "date-time"
-                    }
-                },
-                "type": "object"
-            },
-            "Category": {
-                "title": "Category",
-                "description": "Product Category model",
-                "required": [
-                    "id",
-                    "name"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "Electronics"
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "All electronic devices"
-                    },
-                    "status": {
-                        "type": "string",
-                        "example": "active"
-                    },
-                    "image": {
-                        "type": "string",
-                        "example": "https://example.com/category.jpg"
-                    },
-                    "parent_id": {
-                        "type": "integer",
-                        "example": null,
-                        "nullable": true
-                    },
-                    "slug": {
-                        "type": "string",
-                        "example": "electronics"
-                    },
-                    "children": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Category"
-                        }
                     }
                 },
                 "type": "object"
@@ -43542,15 +45013,6 @@
                     "in_wishlist": {
                         "type": "boolean",
                         "example": true
-                    },
-                    "categories": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Category"
-                        }
-                    },
-                    "brand": {
-                        "$ref": "#/components/schemas/Brand"
                     }
                 },
                 "type": "object"
@@ -43793,8 +45255,16 @@
             "description": "API Endpoints for managing product XML Data FeedWatch"
         },
         {
+            "name": "Finance",
+            "description": "API Endpoints for Finance Management"
+        },
+        {
             "name": "Categories",
             "description": "API Endpoints for Category Management"
+        },
+        {
+            "name": "Customers",
+            "description": "API Endpoints for Customers"
         },
         {
             "name": "Transaction Logs",
@@ -43889,8 +45359,8 @@
             "description": "Carts"
         },
         {
-            "name": "Customers",
-            "description": "Customers"
+            "name": "Customer Cart Export",
+            "description": "Customer Cart Export"
         },
         {
             "name": "Customer Events",
@@ -44003,6 +45473,10 @@
         {
             "name": "Frontend Product Accessories",
             "description": "Frontend Product Accessories"
+        },
+        {
+            "name": "Frontend Finance",
+            "description": "Frontend Finance"
         },
         {
             "name": "Frontend Product variants",

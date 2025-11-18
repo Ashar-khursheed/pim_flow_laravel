@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
@@ -114,12 +115,12 @@ class CategoryController extends BaseController
 					$record->icon_image = asset('storage/' . $record->icon_image);
 				}
 				$lastChildIds = !empty($record->last_child)
-					? array_map('intval', explode(',', $record->last_child))
-					: [];
+				? array_map('intval', explode(',', $record->last_child))
+				: [];
 
 				if (!empty($lastChildIds)) {
 					$record->last_children = Category::whereIn('id', $lastChildIds)
-						->get(['id', 'name', 'slug']);
+					->get(['id', 'name', 'slug']);
 				} else {
 					$record->last_children = collect();
 				}
@@ -136,12 +137,12 @@ class CategoryController extends BaseController
 
 			$records->transform(function ($record) {
 				$lastChildIds = !empty($record->last_child)
-					? array_map('intval', explode(',', $record->last_child))
-					: [];
+				? array_map('intval', explode(',', $record->last_child))
+				: [];
 
 				if (!empty($lastChildIds)) {
 					$record->last_children = Category::whereIn('id', $lastChildIds)
-						->get(['id', 'name', 'slug']);
+					->get(['id', 'name', 'slug']);
 				} else {
 					$record->last_children = collect();
 				}
@@ -166,39 +167,7 @@ class CategoryController extends BaseController
 	 *     summary="Get All Categories",
 	 *     description="Fetches a hierarchical list of categories. Each category includes its child categories recursively.",
 	 *     tags={"Categories"},
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Successful operation",
-	 *         @OA\JsonContent(
-	 *             type="array",
-	 *             @OA\Items(
-	 *                 type="object",
-	 *                 @OA\Property(property="id", type="integer", example=1),
-	 *                 @OA\Property(property="name", type="string", example="Electronics"),
-	 *                 @OA\Property(property="slug", type="string", example="electronics"),
-	 *                 @OA\Property(
-	 *                     property="children_recursive",
-	 *                     type="array",
-	 *                     @OA\Items(
-	 *                         type="object",
-	 *                         @OA\Property(property="id", type="integer", example=2),
-	 *                         @OA\Property(property="name", type="string", example="Mobile Phones"),
-	 *                         @OA\Property(property="slug", type="string", example="mobile-phones"),
-	 *                         @OA\Property(
-	 *                             property="children_recursive",
-	 *                             type="array",
-	 *                             @OA\Items(
-	 *                                 type="object",
-	 *                                 @OA\Property(property="id", type="integer", example=3),
-	 *                                 @OA\Property(property="name", type="string", example="Smartphones"),
-	 *                                 @OA\Property(property="slug", type="string", example="smartphones")
-	 *                             )
-	 *                         )
-	 *                     )
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
+	 *     @OA\Response(response=200, description="Successful operation", @OA\MediaType(mediaType="application/json")),
 	 *     @OA\Response(
 	 *         response=401,
 	 *         description="Unauthorized",
@@ -219,9 +188,9 @@ class CategoryController extends BaseController
 		}
 		$categories = Cache::remember('all_categories', 3600, function () {
 			return Category::where('parent_id', 0)
-				->with(['childrenRecursive'])
-				->orderBy('order', 'asc')
-				->get(['id', 'name', 'slug', 'order', 'parent_id']);
+			->with(['childrenRecursive'])
+			->orderBy('order', 'asc')
+			->get(['id', 'name', 'slug', 'order', 'parent_id']);
 		});
 
 		return response()->json([
@@ -355,6 +324,12 @@ class CategoryController extends BaseController
 			// Create the category
 			$category = Category::create($data);
 
+			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+				$category->translateOrNew('en')->name_tr = $request->name;
+			}
+
+			$category->save();
+
 			// Clear cache
 			Cache::forget('all_categories');
 
@@ -390,14 +365,7 @@ class CategoryController extends BaseController
 	 *             type="integer"
 	 *         )
 	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Success",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="category", type="object")
-	 *         )
-	 *     ),
+	 *     @OA\Response(response=200, description="Successful operation", @OA\MediaType(mediaType="application/json")),
 	 *     @OA\Response(
 	 *         response=404,
 	 *         description="Category not found",
@@ -433,12 +401,12 @@ class CategoryController extends BaseController
 			}
 
 			$lastChildIds = !empty($category->last_child)
-				? array_map('intval', explode(',', $category->last_child))
-				: [];
+			? array_map('intval', explode(',', $category->last_child))
+			: [];
 
 			if (!empty($lastChildIds)) {
 				$category->last_children = Category::whereIn('id', $lastChildIds)
-					->get(['id', 'name', 'slug']);
+				->get(['id', 'name', 'slug']);
 			} else {
 				$category->last_children = collect();
 			}
@@ -491,15 +459,7 @@ class CategoryController extends BaseController
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Category updated successfully",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Category updated successfully"),
-	 *             @OA\Property(property="category", type="object")
-	 *         )
-	 *     ),
+	 *     @OA\Response(response=200, description="Category updated successfully", @OA\MediaType(mediaType="application/json")),
 	 *     @OA\Response(
 	 *         response=422,
 	 *         description="Validation error",
@@ -590,6 +550,11 @@ class CategoryController extends BaseController
 			}
 
 			$category->update($data);
+
+			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+				$category->translateOrNew('en')->name_tr = $data['name'];
+			}
+			$category->save();
 
 			Cache::forget('all_categories');
 
@@ -688,6 +653,9 @@ class CategoryController extends BaseController
 			}
 
 			// Delete the category
+			if (method_exists($category, 'translations')) {
+				$category->translations()->delete();
+			}
 			$category->delete();
 
 			// Commit transaction
@@ -888,9 +856,9 @@ class CategoryController extends BaseController
 
 			// Find the category directly above this one
 			$aboveCategory = Category::where('parent_id', $parentId)
-				->where('order', '<', $category->order)
-				->orderBy('order', 'desc')
-				->first();
+			->where('order', '<', $category->order)
+			->orderBy('order', 'desc')
+			->first();
 
 			if ($aboveCategory) {
 				\DB::beginTransaction();
@@ -983,9 +951,9 @@ class CategoryController extends BaseController
 
 			// Find the category directly below this one
 			$belowCategory = Category::where('parent_id', $parentId)
-				->where('order', '>', $category->order)
-				->orderBy('order', 'asc')
-				->first();
+			->where('order', '>', $category->order)
+			->orderBy('order', 'asc')
+			->first();
 
 			if ($belowCategory) {
 				\DB::beginTransaction();
@@ -1040,39 +1008,7 @@ class CategoryController extends BaseController
 	 *     summary="Get All Last Child Categories",
 	 *     description="Fetches a hierarchical list of categories. Each category includes its child categories recursively.",
 	 *     tags={"Categories"},
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Successful operation",
-	 *         @OA\JsonContent(
-	 *             type="array",
-	 *             @OA\Items(
-	 *                 type="object",
-	 *                 @OA\Property(property="id", type="integer", example=1),
-	 *                 @OA\Property(property="name", type="string", example="Electronics"),
-	 *                 @OA\Property(property="slug", type="string", example="electronics"),
-	 *                 @OA\Property(
-	 *                     property="children_recursive",
-	 *                     type="array",
-	 *                     @OA\Items(
-	 *                         type="object",
-	 *                         @OA\Property(property="id", type="integer", example=2),
-	 *                         @OA\Property(property="name", type="string", example="Mobile Phones"),
-	 *                         @OA\Property(property="slug", type="string", example="mobile-phones"),
-	 *                         @OA\Property(
-	 *                             property="children_recursive",
-	 *                             type="array",
-	 *                             @OA\Items(
-	 *                                 type="object",
-	 *                                 @OA\Property(property="id", type="integer", example=3),
-	 *                                 @OA\Property(property="name", type="string", example="Smartphones"),
-	 *                                 @OA\Property(property="slug", type="string", example="smartphones")
-	 *                             )
-	 *                         )
-	 *                     )
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
+	 *     @OA\Response(response=200, description="Successful operation", @OA\MediaType(mediaType="application/json")),
 	 *     @OA\Response(
 	 *         response=401,
 	 *         description="Unauthorized",
@@ -1108,7 +1044,7 @@ class CategoryController extends BaseController
 						'full_path' => $path,
 					];
 				});
-		});
+			});
 
 		return response()->json([
 			'success' => true,
@@ -1116,8 +1052,6 @@ class CategoryController extends BaseController
 			'categories' => $categories
 		]);
 	}
-
-
 
 	// Helper method to build category path
 	private function getCategoryPath($category)
@@ -1131,6 +1065,62 @@ class CategoryController extends BaseController
 		}
 
 		return implode(' > ', $path);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/categories/generate-translation",
+	 *     summary="Generate or update category translation",
+	 *     description="This endpoint generates or updates translations for a category and its values.",
+	 *     tags={"Categories"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"id", "locale", "name"},
+	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the attribute to translate"),
+	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
+	 *             @OA\Property(property="name", type="string", example="", description="Translated name of the attribute"),
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function generateTranslation(Request $request)
+	{
+		/* Validate request data */
+		$validated = $request->validate([
+			'id' => 'required|exists:categories,id',
+			'locale' => 'required|string|in:ar',
+			'name' => 'required|string',
+		]);
+
+		$category = Category::find($validated['id']);
+
+		DB::beginTransaction();
+		try {
+			$locale = $validated['locale'];
+
+			/* Update category translation */
+			$category->translateOrNew($locale)->name_tr = $validated['name'];
+			$category->save();
+
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => __("Translations updated successfully."),
+				'data' => $category,
+			]);
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => __("err_update"),
+				'error' => $e->getMessage(),
+			], 500);
+		}
 	}
 
 
