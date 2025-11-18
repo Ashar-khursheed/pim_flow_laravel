@@ -201,7 +201,7 @@
 						<td>
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
-									<td valign="top" width="50%" style="padding: 0;">
+									<td valign="top" width="40%" style="padding: 0;">
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-family: 'Noto Sans', sans-serif; background-color:#DEF9EC; font-size:14px; line-height:20px; font-weight:bold; color:#26683A;">
 											@if($totalSaved>0)
 											<tr>
@@ -216,7 +216,7 @@
 										</table>
 									</td>
 
-									<td valign="top" width="50%" style="padding-left: 20px;">
+									<td valign="top" width="60%" style="padding-left: 20px;">
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans', sans-serif;">
 
 											<tr>
