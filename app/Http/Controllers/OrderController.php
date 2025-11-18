@@ -1180,8 +1180,7 @@ class OrderController extends Controller
 					}
 				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
 					try {
-						$paymentLink = app(\App\Http\Controllers\FrontEnd\StaxPaymentController::class)
-						->createStaxPaymentLink($order);
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)->generatePaymentLink($order);
 						if ($paymentLink) {
 							$order = Order::find($order->id);
 							$order->payment_link = $paymentLink;
