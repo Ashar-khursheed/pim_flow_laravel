@@ -8823,6 +8823,10 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "pay_with_cheque": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "example": 5

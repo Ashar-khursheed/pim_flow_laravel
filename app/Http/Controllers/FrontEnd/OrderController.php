@@ -322,7 +322,8 @@ class OrderController extends BaseController
 					'cheque_img',
 					env('STORAGE_ENV') . '/customer/orders'
 				);
-				$chequeDiscountPercentage = cheque_discount_percentage();
+				$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
+				$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
 				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
 				$discountedAmount -= $chequeDiscount;
 			} else {
