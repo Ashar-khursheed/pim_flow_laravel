@@ -108,18 +108,26 @@ class Coupon extends Model
 
     // Helper methods
     public function isValid(): bool
-    {
+    { 
+         $today = now()->toDateString();
+         
         return $this->is_active
-            && $this->status === 'approved'
-            && $this->start_date <= now()
-            && $this->expire_date >= now();
+        && $this->status === 'approved'
+        && $this->start_date->toDateString() <= $today
+        && $this->expire_date->toDateString() >= $today;
     }
 
     public function isExpired(): bool
     {
-        return $this->expire_date < now();
+        $today = now()->toDateString();
+        return $this->expire_date->toDateString() < $today;
+        
     }
 
+    // public function isExpired(): bool
+    // {
+    //     return $this->expire_date < now();        
+    // }
     public function hasUsageLimit(): bool
     {
         return !is_null($this->usage_limit);
