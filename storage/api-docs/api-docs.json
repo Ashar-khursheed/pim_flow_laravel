@@ -19627,6 +19627,16 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "pay_with_cheque": {
+                                        "description": "Pay with cheque",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "cheque_img": {
+                                        "description": "Cheque image (jpeg, png, webp only, max 1 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "coupon_id": {
                                         "description": "Coupon ID",
                                         "type": "integer",
@@ -19662,16 +19672,6 @@
                                         "description": "Customer pickup",
                                         "type": "boolean",
                                         "example": false
-                                    },
-                                    "pay_with_cheque": {
-                                        "description": "Pay with cheque",
-                                        "type": "boolean",
-                                        "example": false
-                                    },
-                                    "cheque_img": {
-                                        "description": "Cheque image (jpeg, png, webp only, max 1 MB)",
-                                        "type": "string",
-                                        "format": "binary"
                                     },
                                     "products": {
                                         "description": "Array of products to order",
@@ -30255,76 +30255,104 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "customer_id",
                                     "customer_address_id",
+                                    "tax_percentage",
                                     "products"
                                 ],
                                 "properties": {
                                     "customer_id": {
+                                        "description": "Customer ID",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "customer_address_id": {
+                                        "description": "Customer address ID",
                                         "type": "integer",
-                                        "example": "1"
+                                        "example": 1
                                     },
                                     "is_lift_gate": {
+                                        "description": "Lift gate required",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "is_residential_address": {
+                                        "description": "Residential address",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "is_inside_delivery": {
+                                        "description": "Inside delivery required",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "tax_percentage": {
+                                        "description": "Tax percentage",
                                         "type": "number",
+                                        "format": "float",
                                         "example": 5
                                     },
                                     "ship_all_at_once": {
+                                        "description": "Ship all items together",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "separate_deliveries": {
+                                        "description": "Separate deliveries",
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "pay_with_cheque": {
+                                        "description": "Pay with cheque",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "cheque_img": {
+                                        "description": "Cheque image (jpeg, png, webp only, max 1 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "coupon_id": {
+                                        "description": "Coupon ID",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "discount": {
+                                        "description": "Discount amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
                                     },
                                     "is_reserved": {
+                                        "description": "Reserved order",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_payment": {
+                                        "description": "Payment gateway",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_paymob": {
+                                        "description": "Paymob payment",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_squarePayment": {
+                                        "description": "Square payment",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_customer_pickup": {
+                                        "description": "Customer pickup",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "products": {
+                                        "description": "Array of products to order",
                                         "type": "array",
                                         "items": {
                                             "required": [
@@ -30334,21 +30362,26 @@
                                             ],
                                             "properties": {
                                                 "product_id": {
+                                                    "description": "Product ID",
                                                     "type": "integer",
                                                     "example": 101
                                                 },
                                                 "vendor_id": {
+                                                    "description": "Vendor ID",
                                                     "type": "integer",
                                                     "example": 22
                                                 },
                                                 "quantity": {
+                                                    "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
                                                 },
                                                 "accessory_item_ids": {
+                                                    "description": "Array of accessory item IDs",
                                                     "type": "array",
                                                     "items": {
-                                                        "type": "integer"
+                                                        "type": "integer",
+                                                        "example": 50
                                                     }
                                                 }
                                             },

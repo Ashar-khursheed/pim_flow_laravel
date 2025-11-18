@@ -280,7 +280,7 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="is_payment", type="boolean", example=false, description="Payment gateway"),
 	 *                 @OA\Property(property="is_paymob", type="boolean", example=false, description="Paymob payment"),
 	 *                 @OA\Property(property="is_squarePayment", type="boolean", example=false, description="Square payment"),
-	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),max 1 MB)"),
+	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),
 	 *                 @OA\Property(
 	 *                     property="products",
 	 *                     type="array",
