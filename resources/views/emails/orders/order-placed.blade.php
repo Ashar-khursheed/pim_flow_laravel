@@ -226,24 +226,24 @@
 
 											@if ($chequeDiscount > 0)
 											<tr>
-												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Check Discount</td>
+												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Cheque Payment Discount ({{ $chequeDiscountPercentage }}%)</td>
 												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;" align="right">- {{ $currency }} {{ number_format($chequeDiscount, 2, '.', ',') }}</td>
 											</tr>
 
 											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Check Discount</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Cheque Discount</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $chequeDiscount, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 
 											@if ($discount > 0)
 											<tr>
-												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Discount</td>
+												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Coupon Discount</td>
 												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;" align="right">- {{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
 											</tr>
 
 											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Discount</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Coupon Discount</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $chequeDiscount - $discount, 2, '.', ',') }}</td>
 											</tr>
 											@endif
@@ -251,28 +251,28 @@
 
 											@if ($liftGateCharge > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Lift Gate Charge</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Lift Gate Service</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($liftGateCharge, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 
 											@if ($residentialAddressCharge > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Residential Address Charge</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Residential Delivery Fee</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($residentialAddressCharge, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 
 											@if ($insideDeliveryCharge > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Inside Delivery Charge</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Inside Delivery Service</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($insideDeliveryCharge, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 
 											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Grand Subtotal</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($$subTotal - $chequeDiscount - $discount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 600;">Amount Before Tax</td>
+												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 600;" align="right">{{ $currency }} {{ number_format($subTotal - $chequeDiscount - $discount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge, 2, '.', ',') }}</td>
 											</tr>
 
 											<tr>
@@ -281,7 +281,7 @@
 											</tr>
 
 											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Shipping</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Shipping Charge</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">
 													{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : '<span style="color: green;">Free</span>' !!}
 												</td>
@@ -290,8 +290,8 @@
 											<tr>
 												<td colspan="2" style="border-top: 2px solid #E2E8F0;"></td>
 											</tr>
-											<tr style="font-weight: bold; ">
-												<td style="font-weight: bold;font-family: 'Noto Sans', sans-serif;">Total Amount</td>
+											<tr style="font-weight: bold;">
+												<td style="font-weight: bold; font-family: 'Noto Sans', sans-serif;">Total Amount</td>
 												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans', sans-serif;">{{ $currency }} {{ number_format($total, 2, '.', ',') }}</td>
 											</tr>
 										</table>
