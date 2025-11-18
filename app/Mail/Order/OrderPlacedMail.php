@@ -36,6 +36,7 @@ class OrderPlacedMail extends Mailable
 
 		$orderNumber = $order->order_number;
 		$payWithCheque = $order->pay_with_cheque;
+		$chequeDiscount = $order->cheque_discount;
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 		$paidAmount = $order->paid_amount ?? 0;
@@ -149,6 +150,7 @@ class OrderPlacedMail extends Mailable
 
 			'orderNumber' => $orderNumber,
 			'payWithCheque' => $payWithCheque,
+			'chequeDiscount' => $chequeDiscount,
 			'orderDate' => $orderDate,
 			'currency' => $currency,
 			'paidAmount' => $paidAmount,
