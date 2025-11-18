@@ -741,6 +741,10 @@ if (!function_exists('inquiry_cc_mails')) {
 			'imran@horecastore.ae',
 			'dmm@thehorecastore.com',
 			'pm@horecastore.ae',
+			'css01@horecastore.ae',
+			'css03@horecastore.ae',
+			'css09@horecastore.ae',
+			'hello@horecastore.ae',
 		];
 
 		$usTestMails = [
