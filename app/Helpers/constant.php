@@ -604,6 +604,8 @@ if (!function_exists('glitch_error_reporting_mails')) {
 		$uaeMails = [
 			'nomanpeera@horecastore.ae',
 			'hello@horecastore.ae',
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
 			'css01@horecastore.ae',
 			'fm@horecastore.ae',
 			'qa04@horecastore.ae',
