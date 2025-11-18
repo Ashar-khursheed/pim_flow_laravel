@@ -388,7 +388,7 @@ class CartController extends Controller
             ->get()
             ->keyBy('id');
 
-        $transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $productDiscounts, $discounts) {
+        $transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $productDiscounts, $discounts, $customerCart) {
             $product = $cartProduct->product;
 
             $cartItem = (object)[
