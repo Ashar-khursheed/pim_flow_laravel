@@ -260,32 +260,43 @@ class OrderController extends Controller
 	 *     tags={"Orders"},
 	 *     @OA\RequestBody(
 	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             required={"customer_id", "customer_address_id", "products"},
-	 *             @OA\Property(property="customer_id", type="integer", example=1),
-	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
-	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
-	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
-	 *             @OA\Property(property="is_inside_delivery", type="boolean", example=true),
-	 *             @OA\Property(property="tax_percentage", type="number", example=5),
-	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
-	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
-	 *             @OA\Property(property="coupon_id", type="integer", example=1),
-	 *             @OA\Property(property="discount", type="number", format="float", example=200),
-	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
-	 *             @OA\Property(property="is_payment", type="boolean", example=false),
-	 *             @OA\Property(property="is_paymob", type="boolean", example=false),
-	 *             @OA\Property(property="is_squarePayment", type="boolean", example=false),
-	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
-	 *             @OA\Property(
-	 *                 property="products",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity"},
-	 *                     @OA\Property(property="product_id", type="integer", example=101),
-	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="accessory_item_ids", type="array", @OA\Items(type="integer"))
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"customer_id", "customer_address_id", "tax_percentage", "products"},
+	 *                 @OA\Property(property="customer_id", type="integer", example=1, description="Customer ID"),
+	 *                 @OA\Property(property="customer_address_id", type="integer", example=1, description="Customer address ID"),
+	 *                 @OA\Property(property="is_lift_gate", type="boolean", example=true, description="Lift gate required"),
+	 *                 @OA\Property(property="is_residential_address", type="boolean", example=true, description="Residential address"),
+	 *                 @OA\Property(property="is_inside_delivery", type="boolean", example=true, description="Inside delivery required"),
+	 *                 @OA\Property(property="tax_percentage", type="number", format="float", example=5, description="Tax percentage"),
+	 *                 @OA\Property(property="ship_all_at_once", type="boolean", example=true, description="Ship all items together"),
+	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
+	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
+	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only,
+	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
+	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
+	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
+	 *                 @OA\Property(property="is_payment", type="boolean", example=false, description="Payment gateway"),
+	 *                 @OA\Property(property="is_paymob", type="boolean", example=false, description="Paymob payment"),
+	 *                 @OA\Property(property="is_squarePayment", type="boolean", example=false, description="Square payment"),
+	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),max 1 MB)"),
+	 *                 @OA\Property(
+	 *                     property="products",
+	 *                     type="array",
+	 *                     description="Array of products to order",
+	 *                     @OA\Items(
+	 *                         required={"product_id", "vendor_id", "quantity"},
+	 *                         @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
+	 *                         @OA\Property(property="vendor_id", type="integer", example=22, description="Vendor ID"),
+	 *                         @OA\Property(property="quantity", type="integer", example=5, description="Product quantity"),
+	 *                         @OA\Property(
+	 *                             property="accessory_item_ids",
+	 *                             type="array",
+	 *                             description="Array of accessory item IDs",
+	 *                             @OA\Items(type="integer", example=50)
+	 *                         )
+	 *                     )
 	 *                 )
 	 *             )
 	 *         )
@@ -302,11 +313,15 @@ class OrderController extends Controller
 			'is_lift_gate' => 'nullable|boolean',
 			'is_residential_address' => 'nullable|boolean',
 			'is_inside_delivery' => 'nullable|boolean',
-			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
+
+			'pay_with_cheque' => 'nullable|boolean',
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:1024',
+
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
+			'tax_percentage' => 'required|numeric|min:0',
 			'is_reserved' => 'nullable|boolean',
 			'is_payment' => 'nullable|boolean',
 			'is_paymob' => 'nullable|boolean',
@@ -356,6 +371,7 @@ class OrderController extends Controller
 				];
 			}
 
+			$payWithCheque = $request->boolean('pay_with_cheque', false);
 			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
@@ -370,7 +386,24 @@ class OrderController extends Controller
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$orderAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
-			$discountedAmount = $orderAmount - $discount;
+			$discountedAmount = $orderAmount;
+			/* Handle cheque payment discount */
+			if ($payWithCheque) {
+				$chequeImg = uploadImageToWebpS3FromFile(
+					$request,
+					'cheque_img',
+					env('STORAGE_ENV') . '/customer/orders'
+				);
+				$chequeDiscountPercentage = 0;
+				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
+				$discountedAmount -= $chequeDiscount;
+			} else {
+				$chequeImg = null;
+				$chequeDiscountPercentage = 0;
+				$chequeDiscount = 0;
+			}
+
+			$discountedAmount -= $discount;
 
 			$customer = Customer::find($request->customer_id);
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
@@ -396,15 +429,23 @@ class OrderController extends Controller
 				'order_number' => $orderNumber,
 				'customer_id' => $request->customer_id,
 				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $orderShipping,
 				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
 				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-				'tax_percentage' => $taxPercentage,
-				'tax_amount' => $taxAmount,
+
+				'pay_with_cheque' => $payWithCheque,
+				'cheque_discount_percentage' => $chequeDiscountPercentage,
+				'cheque_discount' => $chequeDiscount,
+				'cheque_img' => $chequeImg,
+
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
+
+				'tax_percentage' => $taxPercentage,
+				'tax_amount' => $taxAmount,
+				'shipping_charge' => $orderShipping,
+
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),

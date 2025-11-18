@@ -200,6 +200,8 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="ship_all_at_once", type="boolean", example=true, description="Ship all items together"),
 	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
 	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
+	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
+	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 1 MB)"),
 	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
 	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
@@ -207,8 +209,6 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="is_paymob", type="boolean", example=false, description="Paymob payment"),
 	 *                 @OA\Property(property="is_squarePayment", type="boolean", example=false, description="Square payment"),
 	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),
-	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
-	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 1 MB)"),
 	 *                 @OA\Property(
 	 *                     property="products",
 	 *                     type="array",
@@ -244,6 +244,10 @@ class OrderController extends BaseController
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
 			'is_cod' => 'nullable|boolean',
+
+			'pay_with_cheque' => 'nullable|boolean',
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:1024',
+
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 			'is_reserved' => 'nullable|boolean',
@@ -251,8 +255,6 @@ class OrderController extends BaseController
 			'is_paymob' => 'nullable|boolean',
 			'is_squarePayment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
-			'pay_with_cheque' => 'nullable|boolean',
-			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:1024',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -312,8 +314,7 @@ class OrderController extends BaseController
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$orderAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
-			$discountedAmount = $orderAmount - $discount;
-
+			$discountedAmount = $orderAmount;
 			/* Handle cheque payment discount */
 			if ($payWithCheque) {
 				$chequeImg = uploadImageToWebpS3FromFile(
@@ -329,6 +330,8 @@ class OrderController extends BaseController
 				$chequeDiscountPercentage = 0;
 				$chequeDiscount = 0;
 			}
+
+			$discountedAmount -= $discount;
 
 			$customer = auth()->user();
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
@@ -355,19 +358,23 @@ class OrderController extends BaseController
 				'order_number' => $orderNumber,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $orderShipping,
 				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
 				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-				'tax_percentage' => $taxPercentage,
-				'tax_amount' => $taxAmount,
-				'coupon_id' => $request->coupon_id ?? null,
-				'discount' => $discount,
+
 				'pay_with_cheque' => $payWithCheque,
 				'cheque_discount_percentage' => $chequeDiscountPercentage,
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
+
+				'coupon_id' => $request->coupon_id ?? null,
+				'discount' => $discount,
+
+				'tax_percentage' => $taxPercentage,
+				'tax_amount' => $taxAmount,
+				'shipping_charge' => $orderShipping,
+
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
