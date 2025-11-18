@@ -28,10 +28,10 @@ use Illuminate\Support\Str;
 		Your order has been updated. No action required – your total remains the same.
 	</span>
 
-	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f8f8; font-family: 'Noto Sans',  sans-serif;">
+	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f8f8; font-family: 'Noto Sans', sans-serif;">
 		<tr>
 			<td align="center">
-				<table class="container" width="650" cellspacing="0" cellpadding="10" border="0" style="background:#ffffff; border:1px solid #eaeaea; font-family: 'Noto Sans',  sans-serif;">
+				<table class="container" width="650" cellspacing="0" cellpadding="10" border="0" style="background:#ffffff; border:1px solid #eaeaea; font-family: 'Noto Sans', sans-serif;">
 					<tr>
 						<td align="left">
 							<img src="{{ $logoUrl }}" alt="Logo" width="120">
@@ -40,16 +40,16 @@ use Illuminate\Support\Str;
 
 					<tr>
 						<td>
-							<p style="font-size:16px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
+							<p style="font-size:16px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
 								Thank You
-								<strong style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:16px; line-height:25px; margin: 0;">
+								<strong style="color:#26683A; font-family: 'Noto Sans', sans-serif; font-size:16px; line-height:25px; margin: 0;">
 									{{ $name }}
 								</strong>!
 							</p>
-							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
+							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
 								Your order has been updated by our Order Fulfilment Team.
 							</p>
-							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
 								We made some changes to your order due to stock availability, product updates, or special pricing. Below is a clear breakdown showing the difference.
 							</p>
 						</td>
@@ -205,15 +205,15 @@ use Illuminate\Support\Str;
 
 					<tr>
 						<td>
-							<table class="product-table" width="100%" cellspacing="0" cellpadding="8" border="0" style="border-collapse:collapse; font-size:14px; line-height:20px; font-family: 'Noto Sans',  sans-serif;">
-								<tr style="background:#FAFAFA; font-weight:bold; border-bottom: 1px solid #26683A; font-family: 'Noto Sans',  sans-serif; line-height:22px;">
-									<td colspan="2" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
+							<table class="product-table" width="100%" cellspacing="0" cellpadding="8" border="0" style="border-collapse:collapse; font-size:14px; line-height:20px; font-family: 'Noto Sans', sans-serif;">
+								<tr style="background:#FAFAFA; font-weight:bold; border-bottom: 1px solid #26683A; font-family: 'Noto Sans', sans-serif; line-height:22px;">
+									<td colspan="2" style="font-family: 'Noto Sans', sans-serif; line-height:22px;">
 										Items Ordered
 									</td>
-									<td align="center" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
+									<td align="center" style="font-family: 'Noto Sans', sans-serif; line-height:22px;">
 										Quantity
 									</td>
-									<td align="right" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
+									<td align="right" style="font-family: 'Noto Sans', sans-serif; line-height:22px;">
 										Total
 									</td>
 								</tr>
@@ -224,15 +224,15 @@ use Illuminate\Support\Str;
 										<img src="{{ $product->image }}" alt="Product" width="54" height="54" style="display: block; width: 54px; height: 54px; border: 1px solid #DFDFDF; border-radius: 4px; object-fit: cover;">
 									</td>
 									<td style="width: 60%">
-										<strong style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ Str::limit($product->name, 90, '...') }}</strong><br>
-										<span style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">Arriving</span>
-										<span style="color:#26683A; font-style:italic; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $product->expectedShippingDate }}</span><br>
-										<span style="color:#BE2535; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $currency }} {{ number_format($product->priceBeforeDiscount, 2, '.', ',') }}{{ $product->discount ? ' | Save '.number_format($product->discount, 2).'%' : '' }}</span>
+										<strong style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">{{ Str::limit($product->name, 90, '...') }}</strong><br>
+										<span style="color:#26683A; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">Arriving</span>
+										<span style="color:#26683A; font-style:italic; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">{{ $product->expectedShippingDate }}</span><br>
+										<span style="color:#BE2535; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">{{ $currency }} {{ number_format($product->priceBeforeDiscount, 2, '.', ',') }}{{ $product->discount ? ' | Save '.number_format($product->discount, 2).'%' : '' }}</span>
 									</td>
-									<td align="center" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px; width:10%;">
+									<td align="center" style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px; width:10%;">
 										{{ $product->quantity }}
 									</td>
-									<td align="right" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px; width:18%; ">
+									<td align="right" style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px; width:18%; ">
 										{{ $currency }} {{ number_format($product->total, 2, '.', ',') }}
 									</td>
 								</tr>
@@ -246,13 +246,13 @@ use Illuminate\Support\Str;
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
 									<td valign="top" width="50%" style="padding: 0;">
-										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-family: 'Noto Sans',  sans-serif; background-color:#DEF9EC; font-size:14px; line-height:20px; font-weight:bold; color:#26683A;">
+										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-family: 'Noto Sans', sans-serif; background-color:#DEF9EC; font-size:14px; line-height:20px; font-weight:bold; color:#26683A;">
 											@if($totalSaved>0)
 											<tr>
-												<td style="font-weight: bold; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
+												<td style="font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
 													You Saved
 												</td>
-												<td align="right" style="font-weight: bold; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
+												<td align="right" style="font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
 													{{ $currency }} {{ number_format($totalSaved, 2, '.', ',') }}
 												</td>
 											</tr>
@@ -261,61 +261,61 @@ use Illuminate\Support\Str;
 									</td>
 
 									<td valign="top" width="50%" style="padding-left: 20px;">
-										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans',  sans-serif;">
+										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans', sans-serif;">
 											@if ($liftGateCharge > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif; ">Lift Gate Charge</td>
-												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($liftGateCharge, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Lift Gate Charge</td>
+												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($liftGateCharge, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 
 											@if ($residentialAddressCharge > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif; ">Residential Address Charge</td>
-												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($residentialAddressCharge, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Residential Address Charge</td>
+												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($residentialAddressCharge, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 
 											@if ($insideDeliveryCharge > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif; ">Inside Delivery Charge</td>
-												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($insideDeliveryCharge, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Inside Delivery Charge</td>
+												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($insideDeliveryCharge, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 
 											@if ($additionalAmountPrice > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif; ">{{ $additionalAmountName }}</td>
-												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($additionalAmountPrice, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">{{ $additionalAmountName }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($additionalAmountPrice, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif; ">Subtotal</td>
-												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal</td>
+												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
 											</tr>
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif; ">Shipping</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Shipping</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">
 													{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : '<span style="color: green;">Free</span>' !!}
 												</td>
 											</tr>
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
-												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
+												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
 											</tr>
 
 											@if ($discount > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif;">Coupon Discount</td>
-												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Coupon Discount</td>
+												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 
 											@if ($additionalDiscount > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif;">Additional Discount</td>
-												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ number_format($additionalDiscount, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Additional Discount</td>
+												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($additionalDiscount, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 
@@ -323,8 +323,8 @@ use Illuminate\Support\Str;
 												<td colspan="2" style="border-top: 2px solid #E2E8F0;"></td>
 											</tr>
 											<tr style="font-weight: bold; ">
-												<td style="font-weight: bold;font-family: 'Noto Sans',  sans-serif;">Total Amount</td>
-												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans',  sans-serif;">{{ $currency }} {{ number_format($total, 2, '.', ',') }}</td>
+												<td style="font-weight: bold;font-family: 'Noto Sans', sans-serif;">Total Amount</td>
+												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans', sans-serif;">{{ $currency }} {{ number_format($total, 2, '.', ',') }}</td>
 											</tr>
 										</table>
 									</td>
@@ -338,13 +338,13 @@ use Illuminate\Support\Str;
 						<td>
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
-									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
+									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans', sans-serif">
 										Thank you for choosing HorecaStore - where your business gets the best, for less.
 									</td>
 								</tr>
 								<tr>
-									<td style="font-size:14px; color: #26683A; font-weight: 500; line-height:22px; font-family: 'Noto Sans',  sans-serif">
-										<p style="padding: 5px 0; color: #26683A; font-weight: 500; font-size: 14px; margin: 0; line-height: 20px; font-family: 'Noto Sans',  sans-serif;">
+									<td style="font-size:14px; color: #26683A; font-weight: 500; line-height:22px; font-family: 'Noto Sans', sans-serif">
+										<p style="padding: 5px 0; color: #26683A; font-weight: 500; font-size: 14px; margin: 0; line-height: 20px; font-family: 'Noto Sans', sans-serif;">
 											&ndash; Team HorecaStore
 										</p>
 									</td>
