@@ -203,7 +203,7 @@
 								<tr>
 									<td valign="top" width="40%" style="padding: 0;">
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-family: 'Noto Sans', sans-serif; background-color:#DEF9EC; font-size:14px; line-height:20px; font-weight:bold; color:#26683A;">
-											@if(floatval($totalSaved) > 0)
+											@if (floatval($totalSaved) > 0)
 											<tr>
 												<td style="font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
 													You Saved
@@ -218,7 +218,6 @@
 
 									<td valign="top" width="60%" style="padding-left: 20px;">
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans', sans-serif;">
-
 											<tr>
 												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
@@ -281,7 +280,7 @@
 
 											<tr>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 600;">Amount Before Tax</td>
-												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 600;" align="right">{{ $currency }} {{ number_format(($subTotal - $chequeDiscount - $discount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge)), 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 600;" align="right">{{ $currency }} {{ number_format($amountBeforeTax, 2, '.', ',') }}</td>
 											</tr>
 
 											<tr>
