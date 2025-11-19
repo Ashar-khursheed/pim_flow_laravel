@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request; 
-use App\Models\SeoMonitoring; 
+use Illuminate\Http\Request;
+use App\Models\SeoMonitoring;
 use Google\Client as Google_Client;
 use Google\Service\SearchConsole as Google_Service_SearchConsole;
 use Google\Service\SearchConsole\SearchAnalyticsQueryRequest as Google_Service_SearchConsole_SearchAnalyticsQueryRequest;
 use App\Events\SeoMonitors;
+
 class LLmsSeoMonitoringController extends Controller
 {
     /**
@@ -103,6 +104,7 @@ class LLmsSeoMonitoringController extends Controller
      */
     public function index(Request $request)
     {
+        SeoMonitors::dispatch();
         ini_set('max_execution_time', 712);
         set_time_limit(712);
 
@@ -189,7 +191,18 @@ class LLmsSeoMonitoringController extends Controller
      *     description="Returns product performance data including ID, URL, clicks, position, impressions, and CTR.",
      *     tags={"Google Console Monitoring"},      
      *     security={{"bearerAuth":{}}},
-     *
+     *     @OA\Parameter(
+     *         name="from_date",
+     *         in="query",
+     *         description="Start date filter",
+     *         @OA\Schema(type="string", format="date", example="2025-10-01")
+     *     ),
+     *     @OA\Parameter(
+     *         name="to_date",
+     *         in="query",
+     *         description="End date filter",
+     *         @OA\Schema(type="string", format="date", example="2025-10-02")
+     *     ),  
      *     @OA\Response(
      *         response=200,
      *         description="LLMS Google sitemap SERP monitoring data retrieved successfully",
@@ -250,14 +263,14 @@ class LLmsSeoMonitoringController extends Controller
         ]);
         $response = json_decode(curl_exec($curl), true);
         curl_close($curl);
- 
+
         if (empty($response['access_token'])) {
             return response()->json(['success' => false, 'message' => 'Unable to fetch access token']);
         }
         $token = $response['access_token'];
 
         // 4️⃣ Determine site URL
-        $siteUrl = $request->input('site_url'); // user can pass site_url
+        $siteUrl = config('app.url'); // user can pass site_url
         if (empty($siteUrl)) {
             $ch = curl_init();
             curl_setopt_array($ch, [
@@ -282,16 +295,22 @@ class LLmsSeoMonitoringController extends Controller
             return response()->json(['success' => false, 'message' => 'No verified site found']);
         }
 
+        if (!empty($request->from_date)) {
+            $startDate = date('Y-m-d', strtotime($request->from_date));
+        } else {
+            $startDate = date('Y-m-d', strtotime('-5 days'));
+        }
 
+        if (!empty($request->to_date)) {
+            $endDate = date('Y-m-d', strtotime($request->to_date));
+        } else {
+            $endDate = date('Y-m-d');
+        }
 
-        $startDate = date('Y-m-d', strtotime('-5 days'));
-        $endDate = date('Y-m-d');
         $length = 20;
-        $maxRows = 5000;
+        $maxRows = 50000;
         $startRow = 0;
         $sitemapList = [];
-
-
         do {
             $payload = json_encode([
                 "startDate" => $startDate,
@@ -419,7 +438,6 @@ class LLmsSeoMonitoringController extends Controller
      *     )
      * )
      */
-
     public function show(Request $request)
     {
         ini_set('max_execution_time', 300);
@@ -447,19 +465,19 @@ class LLmsSeoMonitoringController extends Controller
         $sitemapList = [];
         $startDate = date('Y-m-d', strtotime('-2 days'));
         $endDate = date('Y-m-d');
-         if (!empty($request->from_date)) {
+        if (!empty($request->from_date)) {
             $startDate = date('Y-m-d', strtotime($request->from_date));
-            } else {
-                $startDate = date('Y-m-d', strtotime('-2 days'));                
-            }
+        } else {
+            $startDate = date('Y-m-d', strtotime('-2 days'));
+        }
 
-            if (!empty($request->to_date)) {
-                $endDate = date('Y-m-d', strtotime($request->to_date));
-            } else {
-                $endDate = date('Y-m-d');                
-            }
-            $length = (int) $request->length;         
-            $page = (int) $request->page;
+        if (!empty($request->to_date)) {
+            $endDate = date('Y-m-d', strtotime($request->to_date));
+        } else {
+            $endDate = date('Y-m-d');
+        }
+        $length = (int) $request->length;
+        $page = (int) $request->page;
         do {
             $request = new \Google_Service_SearchConsole_SearchAnalyticsQueryRequest();
             $request->setStartDate($startDate);
@@ -467,14 +485,14 @@ class LLmsSeoMonitoringController extends Controller
             $request->setDimensions(["date", "page", "query", "country", "device"]);
             $request->setRowLimit($length);
             $request->setStartRow(($page - 1) * $length);
-             
+
             $response = $service->searchanalytics->query($siteUrl, $request);
             $rows = $response->getRows() ?? [];
             $count = count($rows);
 
             foreach ($rows as $row) {
                 $keys = $row->getKeys();
-                $sitemapList[] = [                   
+                $sitemapList[] = [
 
                     'url' => $keys[1] ?? null,
                     'date' => $keys[0] ?? null,
@@ -482,15 +500,15 @@ class LLmsSeoMonitoringController extends Controller
                     'country' => $keys[3] ?? null,
                     'device' => $keys[4] ?? null,
                     'total_clicks' => $row->getClicks() ?? 0,
-                    'impressions' =>$row->getImpressions(),
-                    'click_rate' =>  round($row->getCtr(), 4),
+                    'impressions' => $row->getImpressions(),
+                    'click_rate' => round($row->getCtr(), 4),
                     'position' => round($row->getPosition(), 3),
                 ];
             }
-       
+
             $startRow += $length;
             $maxRows = 500;
-        } while ($count === $length && $startRow < $maxRows);     
+        } while ($count === $length && $startRow < $maxRows);
         return response()->json([
             'success' => true,
             'total_records' => count($sitemapList),
@@ -498,23 +516,6 @@ class LLmsSeoMonitoringController extends Controller
             'total_pages' => ceil(count($sitemapList) / $length),
             'data' => $sitemapList,
             'message' => 'Horecastore Google console monitoring data fetched successfully',
-        ]);
-    }    
-
-
-
-    public function autoStore()
-    {
-        // Trigger the event
-        event(new SeoMonitors([
-            'url' => 'https://example.com',
-            'keyword' => 'test keyword'
-        ]));
-        
-        // Or using the dispatch method
-        SeoMonitors::dispatch([
-            'url' => 'https://example.com',
-            'keyword' => 'test keyword'
         ]);
     }
 }

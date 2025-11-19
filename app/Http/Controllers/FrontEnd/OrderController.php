@@ -431,7 +431,13 @@ class OrderController extends BaseController
 
 			DB::commit();
 
-			if ($request->boolean('is_cod')) {
+			if ($request->boolean('pay_with_cheque')) {
+				$batch = Bus::batch([])->name("Order Placed by Customer (CHECK) - #{$order->order_number}")->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+				$batch->add(new OrderPlacedMailJob([
+					'recordId' => $order->id
+				]));
+			} else if ($request->boolean('is_cod')) {
 				$batch = Bus::batch([])->name("Order Placed by Customer (COD) - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
