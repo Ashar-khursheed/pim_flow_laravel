@@ -188,7 +188,18 @@ class LLmsSeoMonitoringController extends Controller
      *     description="Returns product performance data including ID, URL, clicks, position, impressions, and CTR.",
      *     tags={"Google Console Monitoring"},      
      *     security={{"bearerAuth":{}}},
-     *
+     *     @OA\Parameter(
+     *         name="from_date",
+     *         in="query",
+     *         description="Start date filter",
+     *         @OA\Schema(type="string", format="date", example="2025-10-01")
+     *     ),
+     *     @OA\Parameter(
+     *         name="to_date",
+     *         in="query",
+     *         description="End date filter",
+     *         @OA\Schema(type="string", format="date", example="2025-10-02")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="LLMS Google sitemap SERP monitoring data retrieved successfully",
@@ -282,15 +293,25 @@ class LLmsSeoMonitoringController extends Controller
         }
 
 
+       
+        
+        if (!empty($request->from_date)) {
+            $startDate = date('Y-m-d', strtotime($request->from_date));
+            } else {
+                $startDate = date('Y-m-d', strtotime('-5 days'));                
+            }
 
-        $startDate = date('Y-m-d', strtotime('-5 days'));
-        $endDate = date('Y-m-d');
+            if (!empty($request->to_date)) {
+                $endDate = date('Y-m-d', strtotime($request->to_date));
+            } else {
+                $endDate = date('Y-m-d');                
+            }
+    //    dd($startDate.'=='.$endDate);
+        
         $length = 20;
-        $maxRows = 5000;
+        $maxRows = 50000;
         $startRow = 0;
         $sitemapList = [];
-
-
         do {
             $payload = json_encode([
                 "startDate" => $startDate,

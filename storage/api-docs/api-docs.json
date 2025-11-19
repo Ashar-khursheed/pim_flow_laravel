@@ -28444,6 +28444,28 @@
                 "summary": "Save LLMS Google sitemap SERP monitoring data",
                 "description": "Returns product performance data including ID, URL, clicks, position, impressions, and CTR.",
                 "operationId": "e76dad7297dafd2be384a9c74594e4b1",
+                "parameters": [
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date filter",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-01"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date filter",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-02"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "LLMS Google sitemap SERP monitoring data retrieved successfully",
