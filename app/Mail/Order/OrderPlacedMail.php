@@ -186,7 +186,7 @@ class OrderPlacedMail extends Mailable
 			'taxAmount' => $taxAmount,
 			'discount' => $discount,
 			'total' => $total,
-
+  		    'amountBeforeTax' => $amountBeforeTax, // <<< ADD THIS
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
