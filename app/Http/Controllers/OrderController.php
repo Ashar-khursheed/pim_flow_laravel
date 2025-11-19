@@ -188,8 +188,9 @@ class OrderController extends Controller
 					$data = [];
 				}
 
-				$record->nofraud_decision = $data['decision'] ?? null;
-				unset($record->nofraudResponse);
+				$record->nofraud_decision = $data['decision'] ?? 'Organic';
+					unset($record->nofraudResponse);
+
 
 
 				unset($record->creator, $record->updator);
