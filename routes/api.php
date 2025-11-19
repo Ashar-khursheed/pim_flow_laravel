@@ -161,7 +161,19 @@ use App\Models\Utm;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 // routes/api.php
+use App\Events\SeoMonitors;
 
+Route::get('/test-seo', function () {
+    $data = [
+        'url' => 'http://localhost/test',
+        'total_clicks' => rand(1, 100),
+        'checked_at' => now(),
+    ];
+	 
+    SeoMonitors::dispatch($data);
+
+    return "Event fired!";
+});
 
 Route::middleware([CaptureUtm::class])->group(function () {
 
