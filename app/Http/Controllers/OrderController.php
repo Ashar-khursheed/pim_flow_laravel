@@ -192,18 +192,7 @@ class OrderController extends Controller
 				unset($record->nofraudResponse);
 
 
-								// Default UTM to 'Organic' if not present
-				if ($record->utm) {
-					$record->utm_source = $record->utm->utm_source ?? 'Organic';
-					$record->utm_medium = $record->utm->utm_medium ?? 'Organic';
-					$record->utm_campaign = $record->utm->utm_campaign ?? 'Organic';
-				} else {
-					$record->utm_source = 'Organic';
-					$record->utm_medium = 'Organic';
-					$record->utm_campaign = 'Organic';
-				}
-
-				unset($record->creator, $record->updator, $record->utm);
+				unset($record->creator, $record->updator);
 
 				foreach ($record->orderProducts as $orderProduct) {
 					$product = $orderProduct->product;
