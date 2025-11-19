@@ -311,7 +311,8 @@ class OrderController extends BaseController
 				$orderShipping += $product['shipping_charge'];
 			}
 
-			$discountedAmount = $orderAmount;
+			$discountedAmount = $orderAmount - $discount;
+
 			/* Handle cheque payment discount */
 			if ($payWithCheque) {
 				$chequeImg = uploadImageToWebpS3FromFile(
@@ -328,7 +329,6 @@ class OrderController extends BaseController
 				$chequeDiscountPercentage = 0;
 				$chequeDiscount = 0;
 			}
-			$discountedAmount -= $discount;
 
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
@@ -337,13 +337,18 @@ class OrderController extends BaseController
 			$customer = auth()->user();
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
 
-			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$orderShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
+				$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
+			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+				$taxableAmount = $discountedAmount + $orderShipping;
+				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+				$totalAmount = $discountedAmount + $orderShipping + $taxAmount;
+			} else {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 			}
-
-			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();

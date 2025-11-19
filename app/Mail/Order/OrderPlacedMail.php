@@ -36,8 +36,6 @@ class OrderPlacedMail extends Mailable
 
 		$orderNumber = $order->order_number;
 		$payWithCheque = $order->pay_with_cheque;
-		$chequeDiscount = $order->cheque_discount;
-		$chequeDiscountPercentage = $order->cheque_discount_percentage;
 
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
@@ -122,13 +120,22 @@ class OrderPlacedMail extends Mailable
 		$insideDeliveryCharge = $order->is_inside_delivery ? 249 : 0;
 
 		$subTotal = $order->amount ?? 0;
-		$shippingCharge = $order->shipping_charge ?? 0;
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
-		$taxPercent = $order->tax_percentage;
-		$taxPercent = $taxPercent + 0;
-		$taxAmount = $order->tax_amount ?? 0;
 		$discount = $order->discount ?? 0;
+
+		$chequeDiscount = $order->cheque_discount ?? 0;
+		$chequeDiscountPercentage = $order->cheque_discount_percentage ?? 0;
+
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
+		$taxPercent = ($order->tax_percentage ?? 0) + 0;
+		$taxAmount = $order->tax_amount ?? 0;
+
+		$shippingCharge = $order->shipping_charge ?? 0;
 		$total = $order->total_amount ?? 0;
+
+
+		/* Amount Before Tax */
+		$amountBeforeTax = $subTotal - $discount - $chequeDiscount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
