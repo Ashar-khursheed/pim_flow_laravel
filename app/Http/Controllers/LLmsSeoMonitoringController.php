@@ -7,6 +7,7 @@ use App\Models\SeoMonitoring;
 use Google\Client as Google_Client;
 use Google\Service\SearchConsole as Google_Service_SearchConsole;
 use Google\Service\SearchConsole\SearchAnalyticsQueryRequest as Google_Service_SearchConsole_SearchAnalyticsQueryRequest;
+use App\Events\SeoMonitors;
 class LLmsSeoMonitoringController extends Controller
 {
     /**
@@ -499,4 +500,21 @@ class LLmsSeoMonitoringController extends Controller
             'message' => 'Horecastore Google console monitoring data fetched successfully',
         ]);
     }    
+
+
+
+    public function autoStore()
+    {
+        // Trigger the event
+        event(new SeoMonitors([
+            'url' => 'https://example.com',
+            'keyword' => 'test keyword'
+        ]));
+        
+        // Or using the dispatch method
+        SeoMonitors::dispatch([
+            'url' => 'https://example.com',
+            'keyword' => 'test keyword'
+        ]);
+    }
 }
