@@ -250,7 +250,7 @@
 
 											@if ($liftGateCharge > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Lift Gate Service</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Lift Gate Fee</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($liftGateCharge, 2, '.', ',') }}</td>
 											</tr>
 											@endif
@@ -264,7 +264,7 @@
 
 											@if ($insideDeliveryCharge > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Inside Delivery Service</td>
+												<td style="font-family: 'Noto Sans', sans-serif;">Inside Delivery Fee</td>
 												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($insideDeliveryCharge, 2, '.', ',') }}</td>
 											</tr>
 											@endif
