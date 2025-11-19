@@ -414,7 +414,7 @@ class OrderController extends Controller
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-				$orderShipping = ($discountedAmount < 300) ? 25 : 0;
+				$orderShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
 				$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
 				$taxableAmount = $discountedAmount + $orderShipping;
@@ -1097,7 +1097,22 @@ class OrderController extends Controller
 				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			}
 
-			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
+			/* Tax rules */
+			$customer = $order->customer;
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
+				$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
+			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+				$taxableAmount = $discountedAmount + $orderShipping;
+				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+				$totalAmount = $discountedAmount + $orderShipping + $taxAmount;
+			} else {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
+			}
 
 			$additionalDiscount = $request->additional_discount ?? 0;
 			$totalAmount -= (float) $additionalDiscount;
