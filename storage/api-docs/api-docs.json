@@ -16574,6 +16574,16 @@
                             "type": "string",
                             "example": "SUMMER2025"
                         }
+                    },
+                    {
+                        "name": "orderValue",
+                        "in": "query",
+                        "description": "The orderValue to validate",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": "500"
+                        }
                     }
                 ],
                 "responses": {
