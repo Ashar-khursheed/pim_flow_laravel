@@ -1266,6 +1266,13 @@ class CouponController extends Controller
      *         description="The coupon code to validate",
      *         @OA\Schema(type="string", example="SUMMER2025")
      *     ),
+     *  @OA\Parameter(
+     *         name="orderValue",
+     *         in="query",
+     *         required=true,
+     *         description="The orderValue to validate",
+     *         @OA\Schema(type="integer", example="500")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Coupon is valid",
@@ -1319,8 +1326,14 @@ class CouponController extends Controller
         }
  
         $couponCode = $request->query('coupon_code');
+        $orderValue = $request->query('orderValue');
         $coupon = Coupon::where('code', $couponCode)->first();
-
+        if (!$coupon) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired coupon',
+            ], 400);
+        }
         $usage_type = $coupon->usage_type;
         $usage_limit = $coupon->usage_limit;
         $usage_limit_per_customer = $coupon->usage_limit_per_customer;
@@ -1401,28 +1414,43 @@ class CouponController extends Controller
                     break;
             }
         }
+ 
+         if ($orderValue < $coupon->min_order_value) {
+            
+            $is_valid = false;          
+            $error_message = 'Minimum order value of $' . number_format($coupon->min_order_value, 2) . ' required';
+        }
 
-        
+        if ($coupon->max_order_value && $orderValue > $coupon->max_order_value) {
+            
+            $is_valid = false;
+            $error_message = 'Order value exceeds maximum limit of $' . number_format($coupon->max_order_value, 2);
+        }
+
+        if ($coupon->type === 'percentage') {    
+            $percentage =  ($orderValue * $coupon->value) / 100;
+             if ($coupon->max_order_value && $percentage > $coupon->max_order_value) {
+                $is_valid = false;
+                $error_message = 'Order value exceeds maximum limit of $' . number_format($coupon->max_order_value, 2);
+             }
+
+            if ($percentage < $coupon->min_order_value) {
+                $is_valid = false;          
+                $error_message = 'Minimum order value of $' . number_format($coupon->min_order_value, 2) . ' required';
+            }
+             
+        }
+       
         if (!$coupon->isValid()) {
             $is_valid = false;
-            $error_message = 'This coupon is not valid.';
+            $error_message = 'This coupon is not valid OR expired coupon.';
         }
  
         if ($coupon->isExpired()) {
             $is_valid = false;
             $error_message = 'This coupon has expired.';
         }
-
-        if (!$coupon) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid or expired coupon',
-            ], 400);
-        }
-
-       
-        
-
+        if($is_valid){
         return response()->json([
             'success' => $is_valid,
             'message' => $error_message,
@@ -1436,6 +1464,16 @@ class CouponController extends Controller
                 'expire_date' => $coupon->expire_date,
             ],
         ]);
+    }else{
+          return response()->json([
+            'success' => $is_valid,
+            'message' => $error_message,
+            'data' => [],
+        ]);
+
+    }
+
+        
     }
     // public function checkCustomerCoupon_old(Request $request)
     // {
