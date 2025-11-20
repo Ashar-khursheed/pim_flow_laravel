@@ -104,7 +104,7 @@ class LLmsSeoMonitoringController extends Controller
      */
     public function index(Request $request)
     {
-        // SeoMonitors::dispatch();
+        SeoMonitors::dispatch();
         ini_set('max_execution_time', 712);
         set_time_limit(712);
 
@@ -273,8 +273,7 @@ class LLmsSeoMonitoringController extends Controller
             $token = $response['access_token'];
 
             // 4️⃣ Determine site URL
-            $siteUrl = config('app.url'); // user can pass site_url
-            if (empty($siteUrl)) {
+                $siteUrl = "";
                 $ch = curl_init();
                 curl_setopt_array($ch, [
                     CURLOPT_URL => "https://searchconsole.googleapis.com/webmasters/v3/sites",
@@ -292,7 +291,7 @@ class LLmsSeoMonitoringController extends Controller
                         }
                     }
                 }
-            }
+            
 
             if (empty($siteUrl)) {
                 return response()->json(['success' => false, 'message' => 'No verified site found']);

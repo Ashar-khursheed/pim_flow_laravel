@@ -16,7 +16,7 @@ class SeoMonitorsListener
      */
     public function handle(SeoMonitors $event): void
     {             
-         ini_set('max_execution_time', 712);
+        ini_set('max_execution_time', 712);
         set_time_limit(712);
 
         // 1️⃣ Load credentials
@@ -55,7 +55,7 @@ class SeoMonitorsListener
         $token = $response['access_token'];
 
         // 4️⃣ Determine site URL
-        $siteUrl = config('app.url'); // user can pass site_url
+        $siteUrl = ""; // user can pass site_url
         if (empty($siteUrl)) {
             $ch = curl_init();
             curl_setopt_array($ch, [
