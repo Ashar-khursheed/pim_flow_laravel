@@ -410,12 +410,29 @@ class AttributeController extends BaseController
 			];
 			foreach ($fillableFields as $field) {
 				if (array_key_exists($field, $input)) {
+					// if ($field == 'name') {
+					// 	$updatedName = $input['name'];
+					// 	/* use translated table */
+					// 	$existingName = optional($product->translate($locale))->name ?? [];
+
+					// 	/* Only save if changed */
+					// 	if ($updatedName !== $existingName) {
+					// 		if ($locale === 'en') {
+					// 			$attribute->name = $updatedName;
+					// 		}
+
+					// 		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+					// 			$attribute->translateOrNew($locale)->name_tr = $updatedName;
+					// 		}
+					// 		$attribute->save();
+					// 	}
 					if ($field == 'name') {
 						$updatedName = $input['name'];
-						/* use translated table */
-						$existingName = optional($product->translate($locale))->name ?? [];
 
-						/* Only save if changed */
+						// Use translated table correctly
+						$existingName = optional($attribute->translate($locale))->name ?? [];
+
+						// Only save if changed
 						if ($updatedName !== $existingName) {
 							if ($locale === 'en') {
 								$attribute->name = $updatedName;
@@ -424,6 +441,7 @@ class AttributeController extends BaseController
 							if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
 								$attribute->translateOrNew($locale)->name_tr = $updatedName;
 							}
+
 							$attribute->save();
 						}
 
