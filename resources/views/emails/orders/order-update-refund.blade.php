@@ -250,7 +250,7 @@ use Illuminate\Support\Str;
 								<tr>
 									<td valign="top" width="50%" style="padding: 0;">
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-family: 'Noto Sans', sans-serif; background-color:#DEF9EC; font-size:14px; line-height:20px; font-weight:bold; color:#26683A;">
-											@if($totalSaved>0)
+											@if (floatval($totalSaved) > 0)
 											<tr>
 												<td style="font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
 													You Saved

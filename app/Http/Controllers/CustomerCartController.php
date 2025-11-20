@@ -247,6 +247,7 @@ class CustomerCartController extends Controller
 	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
 	 *             @OA\Property(property="is_inside_delivery", type="boolean", example=true),
 	 *             @OA\Property(property="is_new_customer", type="boolean", example=false),
+	 *             @OA\Property(property="pay_with_cheque", type="boolean", example=false),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(
 	 *                 property="products",
@@ -273,6 +274,7 @@ class CustomerCartController extends Controller
 			'is_residential_address' => 'nullable|boolean',
 			'is_inside_delivery' => 'nullable|boolean',
 			'is_new_customer' => 'nullable|boolean',
+			'pay_with_cheque' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
@@ -360,6 +362,7 @@ class CustomerCartController extends Controller
 			$customerCart->is_lift_gate           = $request->is_lift_gate;
 			$customerCart->is_residential_address = $request->is_residential_address;
 			$customerCart->is_inside_delivery     = $request->is_inside_delivery;
+			$customerCart->pay_with_cheque        = $request->pay_with_cheque;
 			$customerCart->amount                 = $cartAmount;
 			$customerCart->tax_percentage         = $taxPercentage;
 			$customerCart->tax_amount             = $taxAmount;

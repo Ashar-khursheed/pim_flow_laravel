@@ -427,23 +427,25 @@ class AttributeController extends BaseController
 					// 		$attribute->save();
 					// 	}
 					if ($field == 'name') {
-						$updatedName = $input['name'];
+							$updatedName = $input['name'];
 
-						// Use translated table correctly
-						$existingName = optional($attribute->translate($locale))->name ?? [];
+							// Use translated table correctly
+							$existingName = optional($attribute->translate($locale))->name ?? [];
 
-						// Only save if changed
-						if ($updatedName !== $existingName) {
-							if ($locale === 'en') {
-								$attribute->name = $updatedName;
+							// Only save if changed
+							if ($updatedName !== $existingName) {
+								if ($locale === 'en') {
+									$attribute->name = $updatedName;
+								}
+
+								if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+									$attribute->translateOrNew($locale)->name_tr = $updatedName;
+								}
+
+								$attribute->save();
 							}
+						
 
-							if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-								$attribute->translateOrNew($locale)->name_tr = $updatedName;
-							}
-
-							$attribute->save();
-						}
 
 					} else {
 						$attribute->$field = $input[$field];

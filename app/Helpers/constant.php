@@ -1042,3 +1042,10 @@ function dataDecodeJsonBase64($o)
 
 	return $o;
 }
+
+if (!function_exists('cheque_discount_percentage')) {
+	function cheque_discount_percentage()
+	{
+		return 3;
+	}
+}

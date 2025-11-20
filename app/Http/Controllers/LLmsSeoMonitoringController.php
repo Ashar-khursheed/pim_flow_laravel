@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request; 
-use App\Models\SeoMonitoring; 
+use Illuminate\Http\Request;
+use App\Models\SeoMonitoring;
 use Google\Client as Google_Client;
 use Google\Service\SearchConsole as Google_Service_SearchConsole;
 use Google\Service\SearchConsole\SearchAnalyticsQueryRequest as Google_Service_SearchConsole_SearchAnalyticsQueryRequest;
+use App\Events\SeoMonitors;
+
 class LLmsSeoMonitoringController extends Controller
 {
     /**
@@ -102,6 +104,7 @@ class LLmsSeoMonitoringController extends Controller
      */
     public function index(Request $request)
     {
+        // SeoMonitors::dispatch();
         ini_set('max_execution_time', 712);
         set_time_limit(712);
 
@@ -188,7 +191,18 @@ class LLmsSeoMonitoringController extends Controller
      *     description="Returns product performance data including ID, URL, clicks, position, impressions, and CTR.",
      *     tags={"Google Console Monitoring"},      
      *     security={{"bearerAuth":{}}},
-     *
+     *     @OA\Parameter(
+     *         name="from_date",
+     *         in="query",
+     *         description="Start date filter",
+     *         @OA\Schema(type="string", format="date", example="2025-10-01")
+     *     ),
+     *     @OA\Parameter(
+     *         name="to_date",
+     *         in="query",
+     *         description="End date filter",
+     *         @OA\Schema(type="string", format="date", example="2025-10-02")
+     *     ),  
      *     @OA\Response(
      *         response=200,
      *         description="LLMS Google sitemap SERP monitoring data retrieved successfully",
@@ -217,146 +231,160 @@ class LLmsSeoMonitoringController extends Controller
     {
         ini_set('max_execution_time', 712);
         set_time_limit(712);
+        try {
+            // 1️⃣ Load credentials
+            $scriptPath = base_path('app/Script/the-horecastore-usa-478610-d9b99c2833ec.json');
+            $credentials = json_decode(file_get_contents($scriptPath), true);
 
-        // 1️⃣ Load credentials
-        $scriptPath = base_path('app/Script/horeca-464007-8c1c2e126143.json');
-        $credentials = json_decode(file_get_contents($scriptPath), true);
+            // 2️⃣ Create JWT for Google API
+            $jwtHeader = base64_encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+            $now = time();
+            $jwtClaim = base64_encode(json_encode([
+                'iss' => $credentials['client_email'],
+                'scope' => 'https://www.googleapis.com/auth/webmasters.readonly',
+                'aud' => 'https://oauth2.googleapis.com/token',
+                'exp' => $now + 3600,
+                'iat' => $now
+            ]));
+            $privateKey = openssl_get_privatekey($credentials['private_key']);
+            openssl_sign("$jwtHeader.$jwtClaim", $signature, $privateKey, 'sha256WithRSAEncryption');
+            $jwt = "$jwtHeader.$jwtClaim." . base64_encode($signature);
 
-        // 2️⃣ Create JWT for Google API
-        $jwtHeader = base64_encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
-        $now = time();
-        $jwtClaim = base64_encode(json_encode([
-            'iss' => $credentials['client_email'],
-            'scope' => 'https://www.googleapis.com/auth/webmasters.readonly',
-            'aud' => 'https://oauth2.googleapis.com/token',
-            'exp' => $now + 3600,
-            'iat' => $now
-        ]));
-        $privateKey = openssl_get_privatekey($credentials['private_key']);
-        openssl_sign("$jwtHeader.$jwtClaim", $signature, $privateKey, 'sha256WithRSAEncryption');
-        $jwt = "$jwtHeader.$jwtClaim." . base64_encode($signature);
-
-        // 3️⃣ Get access token
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => 'https://oauth2.googleapis.com/token',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => http_build_query([
-                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-                'assertion' => $jwt,
-            ]),
-        ]);
-        $response = json_decode(curl_exec($curl), true);
-        curl_close($curl);
- 
-        if (empty($response['access_token'])) {
-            return response()->json(['success' => false, 'message' => 'Unable to fetch access token']);
-        }
-        $token = $response['access_token'];
-
-        // 4️⃣ Determine site URL
-        $siteUrl = $request->input('site_url'); // user can pass site_url
-        if (empty($siteUrl)) {
-            $ch = curl_init();
-            curl_setopt_array($ch, [
-                CURLOPT_URL => "https://searchconsole.googleapis.com/webmasters/v3/sites",
+            // 3️⃣ Get access token
+            $curl = curl_init();
+            curl_setopt_array($curl, [
+                CURLOPT_URL => 'https://oauth2.googleapis.com/token',
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HTTPHEADER => ["Authorization: Bearer $token"],
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => http_build_query([
+                    'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                    'assertion' => $jwt,
+                ]),
             ]);
-            $siteListResponse = json_decode(curl_exec($ch), true);
-            curl_close($ch);
+            $response = json_decode(curl_exec($curl), true);
+            curl_close($curl);
 
-            if (!empty($siteListResponse['siteEntry'])) {
-                foreach ($siteListResponse['siteEntry'] as $entry) {
-                    if ($entry['permissionLevel'] !== 'siteUnverifiedUser') {
-                        $siteUrl = $entry['siteUrl'];
-                        break;
+            if (empty($response['access_token'])) {
+                return response()->json(['success' => false, 'message' => 'Unable to fetch access token']);
+            }
+            $token = $response['access_token'];
+
+            // 4️⃣ Determine site URL
+            $siteUrl = config('app.url'); // user can pass site_url
+            if (empty($siteUrl)) {
+                $ch = curl_init();
+                curl_setopt_array($ch, [
+                    CURLOPT_URL => "https://searchconsole.googleapis.com/webmasters/v3/sites",
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HTTPHEADER => ["Authorization: Bearer $token"],
+                ]);
+                $siteListResponse = json_decode(curl_exec($ch), true);
+                curl_close($ch);
+
+                if (!empty($siteListResponse['siteEntry'])) {
+                    foreach ($siteListResponse['siteEntry'] as $entry) {
+                        if ($entry['permissionLevel'] !== 'siteUnverifiedUser') {
+                            $siteUrl = $entry['siteUrl'];
+                            break;
+                        }
                     }
                 }
             }
-        }
 
-        if (empty($siteUrl)) {
-            return response()->json(['success' => false, 'message' => 'No verified site found']);
-        }
-
-
-
-        $startDate = date('Y-m-d', strtotime('-5 days'));
-        $endDate = date('Y-m-d');
-        $length = 20;
-        $maxRows = 5000;
-        $startRow = 0;
-        $sitemapList = [];
-
-
-        do {
-            $payload = json_encode([
-                "startDate" => $startDate,
-                "endDate" => $endDate,
-                "dimensions" => ["date", "page", "query", "country", "device"],
-                "rowLimit" => 5000,
-                "startRow" => 0
-            ]);
-
-            $ch = curl_init();
-            curl_setopt_array($ch, [
-                CURLOPT_URL => "https://searchconsole.googleapis.com/webmasters/v3/sites/" . urlencode($siteUrl) . "/searchAnalytics/query",
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_HTTPHEADER => [
-                    "Authorization: Bearer $token",
-                    "Content-Type: application/json"
-                ],
-                CURLOPT_POSTFIELDS => $payload
-            ]);
-
-            $result = curl_exec($ch);
-            curl_close($ch);
-
-            $data = json_decode($result, true);
-            $rows = $data['rows'] ?? [];
-            $count = count($rows);
-
-            foreach ($rows as $row) {
-                $keys = $row['keys'] ?? [];
-
-                $record = [
-                    'url' => $keys[1] ?? null,
-                    'date' => $keys[0] ?? null,
-                    'keyword' => $keys[2] ?? null,
-                    'country' => $keys[3] ?? null,
-                    'device' => $keys[4] ?? null,
-                    'total_clicks' => $row['clicks'] ?? 0,
-                    'impressions' => $row['impressions'] ?? 0,
-                    'click_rate' => round($row['ctr'] ?? 0, 4),
-                    'position' => round($row['position'] ?? 0, 3),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-
-                SeoMonitoring::updateOrCreate(
-                    [
-                        'url' => $record['url'],
-                        'date' => $record['date'],
-                        'keyword' => $record['keyword']
-
-                    ],
-                    $record
-                );
+            if (empty($siteUrl)) {
+                return response()->json(['success' => false, 'message' => 'No verified site found']);
             }
 
-            $startRow += $length;
-        } while ($count === $length && $startRow < $maxRows);
+            if (!empty($request->from_date)) {
+                $startDate = date('Y-m-d', strtotime($request->from_date));
+            } else {
+                $startDate = date('Y-m-d', strtotime('-5 days'));
+            }
+
+            if (!empty($request->to_date)) {
+                $endDate = date('Y-m-d', strtotime($request->to_date));
+            } else {
+                $endDate = date('Y-m-d');
+            }
+
+            $length = 20;
+            $maxRows = 50000;
+            $startRow = 0;
+            $sitemapList = [];
+            do {
+                $payload = json_encode([
+                    "startDate" => $startDate,
+                    "endDate" => $endDate,
+                    "dimensions" => ["date", "page", "query", "country", "device"],
+                    "rowLimit" => 5000,
+                    "startRow" => 0
+                ]);
+
+                $ch = curl_init();
+                curl_setopt_array($ch, [
+                    CURLOPT_URL => "https://searchconsole.googleapis.com/webmasters/v3/sites/" . urlencode($siteUrl) . "/searchAnalytics/query",
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_POST => true,
+                    CURLOPT_HTTPHEADER => [
+                        "Authorization: Bearer $token",
+                        "Content-Type: application/json"
+                    ],
+                    CURLOPT_POSTFIELDS => $payload
+                ]);
+
+                $result = curl_exec($ch);
+                curl_close($ch);
+
+                $data = json_decode($result, true);
+                $rows = $data['rows'] ?? [];
+                $count = count($rows);
+
+                foreach ($rows as $row) {
+                    $keys = $row['keys'] ?? [];
+
+                    $record = [
+                        'url' => $keys[1] ?? null,
+                        'date' => $keys[0] ?? null,
+                        'keyword' => $keys[2] ?? null,
+                        'country' => $keys[3] ?? null,
+                        'device' => $keys[4] ?? null,
+                        'total_clicks' => $row['clicks'] ?? 0,
+                        'impressions' => $row['impressions'] ?? 0,
+                        'click_rate' => round($row['ctr'] ?? 0, 4),
+                        'position' => round($row['position'] ?? 0, 3),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+
+                    SeoMonitoring::updateOrCreate(
+                        [
+                            'url' => $record['url'],
+                            'date' => $record['date'],
+                            'keyword' => $record['keyword']
+
+                        ],
+                        $record
+                    );
+                }
+
+                $startRow += $length;
+            } while ($count === $length && $startRow < $maxRows);
 
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data fetched and inserted successfully.',
-            'site' => "https://www.horecastore.ae/",
-            'count' => $count
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Record inserted successfully.',
+                'site' => config('app.url'),
+                'count' => $count
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => __("err_update"),
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -418,13 +446,12 @@ class LLmsSeoMonitoringController extends Controller
      *     )
      * )
      */
-
     public function show(Request $request)
     {
         ini_set('max_execution_time', 300);
         set_time_limit(300);
         $client = new \Google_Client();
-        $scriptPath = base_path('app/Script/horeca-464007-8c1c2e126143.json');
+        $scriptPath = base_path('app/Script/the-horecastore-usa-478610-d9b99c2833ec.json');
         $client->setAuthConfig($scriptPath);
         $client->addScope('https://www.googleapis.com/auth/webmasters.readonly');
 
@@ -446,19 +473,19 @@ class LLmsSeoMonitoringController extends Controller
         $sitemapList = [];
         $startDate = date('Y-m-d', strtotime('-2 days'));
         $endDate = date('Y-m-d');
-         if (!empty($request->from_date)) {
+        if (!empty($request->from_date)) {
             $startDate = date('Y-m-d', strtotime($request->from_date));
-            } else {
-                $startDate = date('Y-m-d', strtotime('-2 days'));                
-            }
+        } else {
+            $startDate = date('Y-m-d', strtotime('-2 days'));
+        }
 
-            if (!empty($request->to_date)) {
-                $endDate = date('Y-m-d', strtotime($request->to_date));
-            } else {
-                $endDate = date('Y-m-d');                
-            }
-            $length = (int) $request->length;         
-            $page = (int) $request->page;
+        if (!empty($request->to_date)) {
+            $endDate = date('Y-m-d', strtotime($request->to_date));
+        } else {
+            $endDate = date('Y-m-d');
+        }
+        $length = (int) $request->length;
+        $page = (int) $request->page;
         do {
             $request = new \Google_Service_SearchConsole_SearchAnalyticsQueryRequest();
             $request->setStartDate($startDate);
@@ -466,14 +493,14 @@ class LLmsSeoMonitoringController extends Controller
             $request->setDimensions(["date", "page", "query", "country", "device"]);
             $request->setRowLimit($length);
             $request->setStartRow(($page - 1) * $length);
-             
+
             $response = $service->searchanalytics->query($siteUrl, $request);
             $rows = $response->getRows() ?? [];
             $count = count($rows);
 
             foreach ($rows as $row) {
                 $keys = $row->getKeys();
-                $sitemapList[] = [                   
+                $sitemapList[] = [
 
                     'url' => $keys[1] ?? null,
                     'date' => $keys[0] ?? null,
@@ -481,15 +508,15 @@ class LLmsSeoMonitoringController extends Controller
                     'country' => $keys[3] ?? null,
                     'device' => $keys[4] ?? null,
                     'total_clicks' => $row->getClicks() ?? 0,
-                    'impressions' =>$row->getImpressions(),
-                    'click_rate' =>  round($row->getCtr(), 4),
+                    'impressions' => $row->getImpressions(),
+                    'click_rate' => round($row->getCtr(), 4),
                     'position' => round($row->getPosition(), 3),
                 ];
             }
-       
+
             $startRow += $length;
             $maxRows = 500;
-        } while ($count === $length && $startRow < $maxRows);     
+        } while ($count === $length && $startRow < $maxRows);
         return response()->json([
             'success' => true,
             'total_records' => count($sitemapList),
@@ -498,5 +525,5 @@ class LLmsSeoMonitoringController extends Controller
             'data' => $sitemapList,
             'message' => 'Horecastore Google console monitoring data fetched successfully',
         ]);
-    }    
+    }
 }

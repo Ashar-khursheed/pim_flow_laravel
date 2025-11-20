@@ -157,7 +157,7 @@ class OrderController extends BaseController
 						unset($orderProduct->accessoryCharges);
 					}
 				}
-				foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -188,32 +188,43 @@ class OrderController extends BaseController
 	 *     tags={"FrontEnd-Orders"},
 	 *     @OA\RequestBody(
 	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             required={"customer_address_id", "tax_percentage", "products"},
-	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
-	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
-	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
-	 *             @OA\Property(property="is_inside_delivery", type="boolean", example=true),
-	 *             @OA\Property(property="tax_percentage", type="number", example=5),
-	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
-	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
-	 *             @OA\Property(property="is_cod", type="boolean", example=false),
-	 *             @OA\Property(property="coupon_id", type="integer", example=1),
-	 *             @OA\Property(property="discount", type="number", format="float", example=200),
-	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
-	 *             @OA\Property(property="is_payment", type="boolean", example=false),
-	 * 			   @OA\Property(property="is_paymob", type="boolean", example=false),
-	 *             @OA\Property(property="is_squarePayment", type="boolean", example=false),
-	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
-	 *             @OA\Property(
-	 *                 property="products",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity"},
-	 *                     @OA\Property(property="product_id", type="integer", example=101),
-	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="accessory_item_ids", type="array", @OA\Items(type="integer"))
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"customer_address_id", "tax_percentage", "products"},
+	 *                 @OA\Property(property="customer_address_id", type="integer", example=1, description="Customer address ID"),
+	 *                 @OA\Property(property="is_lift_gate", type="boolean", example=true, description="Lift gate required"),
+	 *                 @OA\Property(property="is_residential_address", type="boolean", example=true, description="Residential address"),
+	 *                 @OA\Property(property="is_inside_delivery", type="boolean", example=true, description="Inside delivery required"),
+	 *                 @OA\Property(property="tax_percentage", type="number", format="float", example=5, description="Tax percentage"),
+	 *                 @OA\Property(property="ship_all_at_once", type="boolean", example=true, description="Ship all items together"),
+	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
+	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
+	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
+	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 1 MB)"),
+	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
+	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
+	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
+	 *                 @OA\Property(property="is_payment", type="boolean", example=false, description="Payment gateway"),
+	 *                 @OA\Property(property="is_paymob", type="boolean", example=false, description="Paymob payment"),
+	 *                 @OA\Property(property="is_squarePayment", type="boolean", example=false, description="Square payment"),
+	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),
+	 *                 @OA\Property(
+	 *                     property="products",
+	 *                     type="array",
+	 *                     description="Array of products to order",
+	 *                     @OA\Items(
+	 *                         required={"product_id", "vendor_id", "quantity"},
+	 *                         @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
+	 *                         @OA\Property(property="vendor_id", type="integer", example=22, description="Vendor ID"),
+	 *                         @OA\Property(property="quantity", type="integer", example=5, description="Product quantity"),
+	 *                         @OA\Property(
+	 *                             property="accessory_item_ids",
+	 *                             type="array",
+	 *                             description="Array of accessory item IDs",
+	 *                             @OA\Items(type="integer", example=50)
+	 *                         )
+	 *                     )
 	 *                 )
 	 *             )
 	 *         )
@@ -233,6 +244,10 @@ class OrderController extends BaseController
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
 			'is_cod' => 'nullable|boolean',
+
+			'pay_with_cheque' => 'nullable|boolean',
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:1024',
+
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 			'is_reserved' => 'nullable|boolean',
@@ -284,6 +299,7 @@ class OrderController extends BaseController
 				];
 			}
 
+			$payWithCheque = $request->boolean('pay_with_cheque', false);
 			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
@@ -294,22 +310,45 @@ class OrderController extends BaseController
 				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
 				$orderShipping += $product['shipping_charge'];
 			}
-			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
-			$orderAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
 			$discountedAmount = $orderAmount - $discount;
+
+			/* Handle cheque payment discount */
+			if ($payWithCheque) {
+				$chequeImg = uploadImageToWebpS3FromFile(
+					$request,
+					'cheque_img',
+					env('STORAGE_ENV') . '/customer/orders'
+				);
+				$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
+				$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
+				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
+				$discountedAmount -= $chequeDiscount;
+			} else {
+				$chequeImg = null;
+				$chequeDiscountPercentage = 0;
+				$chequeDiscount = 0;
+			}
+
+			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
 			$customer = auth()->user();
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
 
-			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$orderShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
+				$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
+			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+				$taxableAmount = $discountedAmount + $orderShipping;
+				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+				$totalAmount = $discountedAmount + $orderShipping + $taxAmount;
+			} else {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 			}
-
-			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();
@@ -325,15 +364,23 @@ class OrderController extends BaseController
 				'order_number' => $orderNumber,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $orderShipping,
 				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
 				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-				'tax_percentage' => $taxPercentage,
-				'tax_amount' => $taxAmount,
+
+				'pay_with_cheque' => $payWithCheque,
+				'cheque_discount_percentage' => $chequeDiscountPercentage,
+				'cheque_discount' => $chequeDiscount,
+				'cheque_img' => $chequeImg,
+
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
+
+				'tax_percentage' => $taxPercentage,
+				'tax_amount' => $taxAmount,
+				'shipping_charge' => $orderShipping,
+
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
@@ -387,10 +434,15 @@ class OrderController extends BaseController
 				$cart->delete();
 			});
 
-
 			DB::commit();
 
-			if ($request->boolean('is_cod')) {
+			if ($request->boolean('pay_with_cheque')) {
+				$batch = Bus::batch([])->name("Order Placed by Customer (CHECK) - #{$order->order_number}")->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+				$batch->add(new OrderPlacedMailJob([
+					'recordId' => $order->id
+				]));
+			} else if ($request->boolean('is_cod')) {
 				$batch = Bus::batch([])->name("Order Placed by Customer (COD) - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
@@ -442,7 +494,7 @@ class OrderController extends BaseController
 				}
 			}
 
-			foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}
@@ -573,7 +625,7 @@ class OrderController extends BaseController
 			$orderProduct->is_returnable = 'yes';
 		}
 
-		foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+		foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
 				$order->$key = number_format($order->$key, 2, '.', '');
 			}
@@ -847,130 +899,75 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	// public function buyItAgain(Request $request)
-	// {
-	// 	// Fetch last 5 delivered orders with products
-	// 	$deliveredOrders = $customer->orders()
-	// 	->where('status', 'Delivered')
-	// 	->orderByDesc('created_at')
-	// 	->take(5)
-	// 	->with(['orderProducts.product.productSuppliers', 'orderProducts.product.currency', 'orderProducts.product.brand'])
-	// 	->get();
-
-	// 	$addedProducts = collect();
-
-	// 	foreach ($deliveredOrders as $order) {
-	// 		foreach ($order->orderProducts as $orderProduct) {
-	// 			$product = $orderProduct->product;
-	// 			if (!$product) {
-	// 				continue;
-	// 			}
-
-	// 			// find a vendor_id if available
-	// 			$vendorId = $product->productSuppliers->first()->vendor_id ?? null;
-
-	// 			// build a request like addToCart expects
-	// 			$cartRequest = new Request([
-	// 				'product_id' => $product->id,
-	// 				'quantity'   => $orderProduct->quantity,
-	// 				'vendor_id'  => $vendorId,
-	// 			]);
-
-	// 			// call your CartController function
-	// 			$cartResponse = app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
-
-	// 			$addedProducts->push([
-	// 				'product_id' => $product->id,
-	// 				'name'       => $product->name,
-	// 				'quantity'   => $orderProduct->quantity,
-	// 				'unit_price' => $orderProduct->unit_price,
-	// 				'brand_name' => $product->brand->name ?? null,
-	// 			]);
-	// 		}
-	// 	}
-
-	// 	if ($addedProducts->isEmpty()) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'No delivered orders found or no valid products available to buy again.'
-	// 		], 404);
-	// 	}
-
-	// 	return response()->json([
-	// 		'success' => true,
-	// 		'message' => 'Products added to your cart successfully.',
-	// 		'data'    => $addedProducts,
-	// 	], 200);
-	// }
 	public function buyItAgain(Request $request)
-{
-    // Get authenticated customer
-    $customerId = auth()->id();
+	{
+		// Get authenticated customer
+		$customerId = auth()->id();
 
-    if (!$customerId) {
-        return response()->json([
-            'success' => false,
-            'message' => 'User not authenticated.'
-        ], 401);
-    }
+		if (!$customerId) {
+			return response()->json([
+				'success' => false,
+				'message' => 'User not authenticated.'
+			], 401);
+		}
 
-    // Fetch last 5 delivered orders with products
-    $deliveredOrders = Order::where('customer_id', $customerId)
-       ->whereIn('status', ['Delivered', 'Cancelled'])
-        ->orderByDesc('created_at')
-        ->take(5)
-        ->with([
-            'orderProducts.product.productSuppliers',
-            'orderProducts.product.currency',
-            'orderProducts.product.brand'
-        ])
-        ->get();
+		// Fetch last 5 delivered orders with products
+		$deliveredOrders = Order::where('customer_id', $customerId)
+		->whereIn('status', ['Delivered', 'Cancelled'])
+		->orderByDesc('created_at')
+		->take(5)
+		->with([
+			'orderProducts.product.productSuppliers',
+			'orderProducts.product.currency',
+			'orderProducts.product.brand'
+		])
+		->get();
 
-    $addedProducts = collect();
+		$addedProducts = collect();
 
-    foreach ($deliveredOrders as $order) {
-        foreach ($order->orderProducts as $orderProduct) {
-            $product = $orderProduct->product;
-            if (!$product) {
-                continue;
-            }
+		foreach ($deliveredOrders as $order) {
+			foreach ($order->orderProducts as $orderProduct) {
+				$product = $orderProduct->product;
+				if (!$product) {
+					continue;
+				}
 
-            // find a vendor_id if available
-            $vendorId = $product->productSuppliers->first()->vendor_id ?? null;
+				// find a vendor_id if available
+				$vendorId = $product->productSuppliers->first()->vendor_id ?? null;
 
-            // build a request like addToCart expects
-            $cartRequest = new Request([
-                'product_id' => $product->id,
-                'quantity'   => $orderProduct->quantity,
-                'vendor_id'  => $vendorId,
-            ]);
+				// build a request like addToCart expects
+				$cartRequest = new Request([
+					'product_id' => $product->id,
+					'quantity'   => $orderProduct->quantity,
+					'vendor_id'  => $vendorId,
+				]);
 
-            // call your CartController function
-            app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
+				// call your CartController function
+				app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
 
-            $addedProducts->push([
-                'product_id' => $product->id,
-                'name'       => $product->name,
-                'quantity'   => $orderProduct->quantity,
-                'unit_price' => $orderProduct->unit_price,
-                'brand_name' => $product->brand->name ?? null,
-            ]);
-        }
-    }
+				$addedProducts->push([
+					'product_id' => $product->id,
+					'name'       => $product->name,
+					'quantity'   => $orderProduct->quantity,
+					'unit_price' => $orderProduct->unit_price,
+					'brand_name' => $product->brand->name ?? null,
+				]);
+			}
+		}
 
-    if ($addedProducts->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No delivered orders found or no valid products available to buy again.'
-        ], 404);
-    }
+		if ($addedProducts->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No delivered orders found or no valid products available to buy again.'
+			], 404);
+		}
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Products added to your cart successfully.',
-        'data'    => $addedProducts,
-    ], 200);
-}
+		return response()->json([
+			'success' => true,
+			'message' => 'Products added to your cart successfully.',
+			'data'    => $addedProducts,
+		], 200);
+	}
 
 
 	/**

@@ -8823,6 +8823,10 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "pay_with_cheque": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "example": 5
@@ -16570,6 +16574,16 @@
                             "type": "string",
                             "example": "SUMMER2025"
                         }
+                    },
+                    {
+                        "name": "orderValue",
+                        "in": "query",
+                        "description": "The orderValue to validate",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": "500"
+                        }
                     }
                 ],
                 "responses": {
@@ -19578,7 +19592,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "customer_address_id",
@@ -19587,67 +19601,94 @@
                                 ],
                                 "properties": {
                                     "customer_address_id": {
+                                        "description": "Customer address ID",
                                         "type": "integer",
-                                        "example": "1"
+                                        "example": 1
                                     },
                                     "is_lift_gate": {
+                                        "description": "Lift gate required",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "is_residential_address": {
+                                        "description": "Residential address",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "is_inside_delivery": {
+                                        "description": "Inside delivery required",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "tax_percentage": {
+                                        "description": "Tax percentage",
                                         "type": "number",
+                                        "format": "float",
                                         "example": 5
                                     },
                                     "ship_all_at_once": {
+                                        "description": "Ship all items together",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "separate_deliveries": {
+                                        "description": "Separate deliveries",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_cod": {
+                                        "description": "Cash on delivery",
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "pay_with_cheque": {
+                                        "description": "Pay with cheque",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "cheque_img": {
+                                        "description": "Cheque image (jpeg, png, webp only, max 1 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "coupon_id": {
+                                        "description": "Coupon ID",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "discount": {
+                                        "description": "Discount amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
                                     },
                                     "is_reserved": {
+                                        "description": "Reserved order",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_payment": {
+                                        "description": "Payment gateway",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_paymob": {
+                                        "description": "Paymob payment",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_squarePayment": {
+                                        "description": "Square payment",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_customer_pickup": {
+                                        "description": "Customer pickup",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "products": {
+                                        "description": "Array of products to order",
                                         "type": "array",
                                         "items": {
                                             "required": [
@@ -19657,21 +19698,26 @@
                                             ],
                                             "properties": {
                                                 "product_id": {
+                                                    "description": "Product ID",
                                                     "type": "integer",
                                                     "example": 101
                                                 },
                                                 "vendor_id": {
+                                                    "description": "Vendor ID",
                                                     "type": "integer",
                                                     "example": 22
                                                 },
                                                 "quantity": {
+                                                    "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
                                                 },
                                                 "accessory_item_ids": {
+                                                    "description": "Array of accessory item IDs",
                                                     "type": "array",
                                                     "items": {
-                                                        "type": "integer"
+                                                        "type": "integer",
+                                                        "example": 50
                                                     }
                                                 }
                                             },
@@ -26931,6 +26977,178 @@
                 }
             }
         },
+        "/api/frontend/llms.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "bb8aa46914e1f31847ef3461ec01b0a2",
+                "responses": {
+                    "200": {
+                        "description": "llms.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "- [HorecaStore Supplies](https://thehorecastore.com/)"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-1.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-1.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "234038bd744c824cb4a15ef824daf4a4",
+                "responses": {
+                    "200": {
+                        "description": "llms-1.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "- [HorecaStore Supplies](https://thehorecastore.com/)"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-2.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-2.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "0be78e8db35d9283b2d429be48954c8d",
+                "responses": {
+                    "200": {
+                        "description": "llms-2.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "- [HorecaStore Supplies](https://thehorecastore.com/)"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-3.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-3.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "248be8fcbc7eb16874ecb6f7eb0408b2",
+                "responses": {
+                    "200": {
+                        "description": "llms-3.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "- [HorecaStore Supplies](https://thehorecastore.com/)"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/customer-reviews": {
             "get": {
                 "tags": [
@@ -28408,6 +28626,28 @@
                 "summary": "Save LLMS Google sitemap SERP monitoring data",
                 "description": "Returns product performance data including ID, URL, clicks, position, impressions, and CTR.",
                 "operationId": "e76dad7297dafd2be384a9c74594e4b1",
+                "parameters": [
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date filter",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-01"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date filter",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-02"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "LLMS Google sitemap SERP monitoring data retrieved successfully",
@@ -30223,76 +30463,104 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "customer_id",
                                     "customer_address_id",
+                                    "tax_percentage",
                                     "products"
                                 ],
                                 "properties": {
                                     "customer_id": {
+                                        "description": "Customer ID",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "customer_address_id": {
+                                        "description": "Customer address ID",
                                         "type": "integer",
-                                        "example": "1"
+                                        "example": 1
                                     },
                                     "is_lift_gate": {
+                                        "description": "Lift gate required",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "is_residential_address": {
+                                        "description": "Residential address",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "is_inside_delivery": {
+                                        "description": "Inside delivery required",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "tax_percentage": {
+                                        "description": "Tax percentage",
                                         "type": "number",
+                                        "format": "float",
                                         "example": 5
                                     },
                                     "ship_all_at_once": {
+                                        "description": "Ship all items together",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "separate_deliveries": {
+                                        "description": "Separate deliveries",
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "pay_with_cheque": {
+                                        "description": "Pay with cheque",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "cheque_img": {
+                                        "description": "Cheque image (jpeg, png, webp only, max 1 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "coupon_id": {
+                                        "description": "Coupon ID",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "discount": {
+                                        "description": "Discount amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
                                     },
                                     "is_reserved": {
+                                        "description": "Reserved order",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_payment": {
+                                        "description": "Payment gateway",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_paymob": {
+                                        "description": "Paymob payment",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_squarePayment": {
+                                        "description": "Square payment",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_customer_pickup": {
+                                        "description": "Customer pickup",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "products": {
+                                        "description": "Array of products to order",
                                         "type": "array",
                                         "items": {
                                             "required": [
@@ -30302,21 +30570,26 @@
                                             ],
                                             "properties": {
                                                 "product_id": {
+                                                    "description": "Product ID",
                                                     "type": "integer",
                                                     "example": 101
                                                 },
                                                 "vendor_id": {
+                                                    "description": "Vendor ID",
                                                     "type": "integer",
                                                     "example": 22
                                                 },
                                                 "quantity": {
+                                                    "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
                                                 },
                                                 "accessory_item_ids": {
+                                                    "description": "Array of accessory item IDs",
                                                     "type": "array",
                                                     "items": {
-                                                        "type": "integer"
+                                                        "type": "integer",
+                                                        "example": 50
                                                     }
                                                 }
                                             },
@@ -45617,6 +45890,10 @@
         {
             "name": "Tax",
             "description": "Tax"
+        },
+        {
+            "name": "Frontend TXT",
+            "description": "Frontend TXT"
         },
         {
             "name": "Frontend-User Reviews",

@@ -388,11 +388,12 @@ class CartController extends Controller
             ->get()
             ->keyBy('id');
 
-        $transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $productDiscounts, $discounts) {
+        $transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $productDiscounts, $discounts, $customerCart) {
             $product = $cartProduct->product;
 
             $cartItem = (object)[
                 'id' => $cartProduct->id,
+                'pay_with_cheque' => $customerCart->pay_with_cheque,
                 'user_id' => $cartProduct->customerCart->customer_id,
                 'product_id' => $cartProduct->product_id,
                 'quantity' => $cartProduct->quantity,

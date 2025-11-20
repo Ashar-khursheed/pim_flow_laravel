@@ -132,7 +132,11 @@ class Product extends Model implements TranslatableContract
 	// {
 	// 	return $this->morphOne(SeoManagement::class, 'relational');
 	// }
-
+public function seoManagement()
+{
+    return $this->hasOne(SeoManagement::class, 'relational_id')
+                ->where('relational_type', 'Product');
+}
 	public function slug()
 	{
 		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'products');

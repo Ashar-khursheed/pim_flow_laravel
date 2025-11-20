@@ -35,10 +35,14 @@ class OrderPlacedMail extends Mailable
 		$orderUrl = url("/my-order");
 
 		$orderNumber = $order->order_number;
+		$payWithCheque = $order->pay_with_cheque;
+
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 		$paidAmount = $order->paid_amount ?? 0;
-		$paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
+		// $paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
+		$paymentMethod = $order->pay_with_cheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery');
+
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -118,13 +122,22 @@ class OrderPlacedMail extends Mailable
 		$insideDeliveryCharge = $order->is_inside_delivery ? 249 : 0;
 
 		$subTotal = $order->amount ?? 0;
-		$shippingCharge = $order->shipping_charge ?? 0;
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
-		$taxPercent = $order->tax_percentage;
-		$taxPercent = $taxPercent + 0;
-		$taxAmount = $order->tax_amount ?? 0;
 		$discount = $order->discount ?? 0;
+
+		$chequeDiscount = $order->cheque_discount ?? 0;
+		$chequeDiscountPercentage = $order->cheque_discount_percentage ?? 0;
+
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
+		$taxPercent = ($order->tax_percentage ?? 0) + 0;
+		$taxAmount = $order->tax_amount ?? 0;
+
+		$shippingCharge = $order->shipping_charge ?? 0;
 		$total = $order->total_amount ?? 0;
+
+
+		/* Amount Before Tax */
+		$amountBeforeTax = $subTotal - $discount - $chequeDiscount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -147,6 +160,10 @@ class OrderPlacedMail extends Mailable
 			'orderUrl' => $orderUrl,
 
 			'orderNumber' => $orderNumber,
+			'payWithCheque' => $payWithCheque,
+			'chequeDiscount' => $chequeDiscount,
+			'chequeDiscountPercentage' => $chequeDiscountPercentage,
+
 			'orderDate' => $orderDate,
 			'currency' => $currency,
 			'paidAmount' => $paidAmount,
@@ -171,12 +188,17 @@ class OrderPlacedMail extends Mailable
 			'taxAmount' => $taxAmount,
 			'discount' => $discount,
 			'total' => $total,
-
+  		    'amountBeforeTax' => $amountBeforeTax, // <<< ADD THIS
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject("Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed")
+		if ($payWithCheque) {
+			$subject = "We Received Your Check Image – Your Order#{$orderNumber} Is Reserved";
+		} else {
+			$subject = "Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed";
+		}
+		return $this->subject($subject)
 		->markdown('emails.orders.order-placed')
 		->with($params);
 	}
