@@ -373,7 +373,7 @@ class LLmsSeoMonitoringController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Data fetched and inserted successfully.',
+                'message' => 'Record inserted successfully.',
                 'site' => config('app.url'),
                 'count' => $count
             ]);
