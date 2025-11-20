@@ -26984,10 +26984,139 @@
                 ],
                 "summary": "Get llms.txt",
                 "description": "Returns the llms.txt containing public URLs of the website.",
-                "operationId": "04c3a6690bd60a76eceb5ee3bc16f807",
+                "operationId": "bb8aa46914e1f31847ef3461ec01b0a2",
                 "responses": {
                     "200": {
                         "description": "llms.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "- [HorecaStore Supplies](https://thehorecastore.com/)"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-1.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-1.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "234038bd744c824cb4a15ef824daf4a4",
+                "responses": {
+                    "200": {
+                        "description": "llms-1.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "- [HorecaStore Supplies](https://thehorecastore.com/)"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-2.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-2.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "0be78e8db35d9283b2d429be48954c8d",
+                "responses": {
+                    "200": {
+                        "description": "llms-2.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "- [HorecaStore Supplies](https://thehorecastore.com/)"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-3.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-3.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "248be8fcbc7eb16874ecb6f7eb0408b2",
+                "responses": {
+                    "200": {
+                        "description": "llms-3.txt generated successfully",
                         "content": {
                             "text/plain": {
                                 "schema": {
