@@ -894,16 +894,13 @@ public function update(Request $request, $relational_type, $id)
             ], 403);
         }
 
-        // Prepare data for main SEO table
+        // Prepare main SEO data
         $seoData = collect($validated)
             ->except(['og_image_file', 'banner_image_file', 'secondary_keywords'])
             ->toArray();
 
-        // Ensure paragraphs are not null
         foreach (['paragraph_1', 'paragraph_2', 'paragraph_3', 'paragraph_4'] as $field) {
-            if (!$request->has($field)) {
-                $seoData[$field] = '';
-            }
+            if (!$request->has($field)) $seoData[$field] = '';
         }
 
         $seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
@@ -911,54 +908,16 @@ public function update(Request $request, $relational_type, $id)
         if (isset($validated['schema_rating'])) $seoData['schema_rating'] = (int)$validated['schema_rating'];
         if (isset($validated['schema_reviews_count'])) $seoData['schema_reviews_count'] = (int)$validated['schema_reviews_count'];
 
-        // Handle popular tags
-        if (!empty($validated['popular_tags'])) {
-            if (is_string($validated['popular_tags'])) {
-                $decoded = json_decode($validated['popular_tags'], true);
-                $seoData['popular_tags'] = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) 
-                    ? $decoded 
-                    : array_map('trim', explode(',', $validated['popular_tags']));
-            } else {
-                $seoData['popular_tags'] = $validated['popular_tags'];
-            }
-        }
-
-        // Popular tag details
-        if (!empty($validated['popularTag_details'])) {
-            $seoData['popularTag_details'] = is_string($validated['popularTag_details']) 
-                ? json_decode($validated['popularTag_details'], true)
-                : $validated['popularTag_details'];
-        }
-
-        // Schema JSON
-        if (!empty($validated['schema'])) $seoData['schema'] = $validated['schema'];
-
-        // Handle OG image
-        if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
-            $storage = app('Illuminate\Support\Facades\Storage');
-            $folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
-            $imagePath = $request->file('og_image_file')->store($folderPath, 's3');
-            $seoData['og_image_url'] = $storage::disk('s3')->url($imagePath);
-            if (empty($seoData['og_image_name'])) {
-                $seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
-            }
-        }
-
-        // Handle banner image
-        if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
-            $folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
-            $bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
-            $seoData['banner_image_file'] = \Storage::disk('s3')->url($bannerImagePath);
-        }
-
         // Update main SEO record
         $seo->update($seoData);
 
-        // Handle secondary keywords relation
-        if (!empty($validated['secondaryKeywordDetails'])) {
-            $secondaryKeywords = json_decode($validated['secondary_keywords'], true); // array of objects
+        // ✅ Handle secondary keywords properly
+        if (!empty($validated['secondary_keywords'])) {
+            $secondaryKeywords = json_decode($validated['secondary_keywords'], true);
+
             if (json_last_error() === JSON_ERROR_NONE && is_array($secondaryKeywords)) {
                 $seo->secondaryKeywordDetails()->delete(); // remove old ones
+
                 foreach ($secondaryKeywords as $sk) {
                     $seo->secondaryKeywordDetails()->create([
                         'secondary_keyword' => $sk['secondary_keyword'] ?? null,
@@ -968,7 +927,7 @@ public function update(Request $request, $relational_type, $id)
             }
         }
 
-        // Handle translations
+        // Handle translations if needed
         if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
             $translation = $seo->translateOrNew('en');
             $translation->primary_keyword_tr = $seo->primary_keyword;
@@ -1016,6 +975,7 @@ public function update(Request $request, $relational_type, $id)
         ], 422);
     }
 }
+
 
 
 	/**
