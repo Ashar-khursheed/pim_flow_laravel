@@ -234,8 +234,11 @@ class LLmsSeoMonitoringController extends Controller
         try {
             // 1️⃣ Load credentials
             $scriptPath = base_path('app/Script/the-horecastore-usa-478610-d9b99c2833ec.json');
+           if (!file_exists($scriptPath)) {
+                return response()->json(['success' => false, 'message' => 'File not found '.$scriptPath]);
+            } 
             $credentials = json_decode(file_get_contents($scriptPath), true);
-
+ 
             // 2️⃣ Create JWT for Google API
             $jwtHeader = base64_encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
             $now = time();
@@ -308,7 +311,7 @@ class LLmsSeoMonitoringController extends Controller
             }
 
             $length = 20;
-            $maxRows = 50000;
+            $maxRows = 5000;
             $startRow = 0;
             $sitemapList = [];
             do {
@@ -452,6 +455,9 @@ class LLmsSeoMonitoringController extends Controller
         set_time_limit(300);
         $client = new \Google_Client();
         $scriptPath = base_path('app/Script/the-horecastore-usa-478610-d9b99c2833ec.json');
+        if (!file_exists($scriptPath)) {
+                return response()->json(['success' => false, 'message' => 'File not found '.$scriptPath]);
+        } 
         $client->setAuthConfig($scriptPath);
         $client->addScope('https://www.googleapis.com/auth/webmasters.readonly');
 
