@@ -233,7 +233,7 @@ class LLmsSeoMonitoringController extends Controller
         set_time_limit(712);
 
         // 1️⃣ Load credentials
-        $scriptPath = base_path('app/Script/the-horecastore-usa-478610-eec1078fb015.json');
+        $scriptPath = base_path('app/Script/the-horecastore-usa-478610-d9b99c2833ec.json');
         $credentials = json_decode(file_get_contents($scriptPath), true);
 
         // 2️⃣ Create JWT for Google API
@@ -443,7 +443,7 @@ class LLmsSeoMonitoringController extends Controller
         ini_set('max_execution_time', 300);
         set_time_limit(300);
         $client = new \Google_Client();
-        $scriptPath = base_path('app/Script/the-horecastore-usa-478610-eec1078fb015.json');
+        $scriptPath = base_path('app/Script/the-horecastore-usa-478610-d9b99c2833ec.json');
         $client->setAuthConfig($scriptPath);
         $client->addScope('https://www.googleapis.com/auth/webmasters.readonly');
 

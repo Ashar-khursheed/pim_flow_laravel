@@ -20,7 +20,7 @@ class SeoMonitorsListener
         set_time_limit(712);
 
         // 1️⃣ Load credentials
-        $scriptPath = base_path('app/Script/the-horecastore-usa-478610-eec1078fb015.json');
+        $scriptPath = base_path('app/Script/the-horecastore-usa-478610-d9b99c2833ec.json');
         $credentials = json_decode(file_get_contents($scriptPath), true);
  
         // 2️⃣ Create JWT for Google API
