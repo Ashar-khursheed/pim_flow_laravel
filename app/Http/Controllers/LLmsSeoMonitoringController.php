@@ -104,7 +104,7 @@ class LLmsSeoMonitoringController extends Controller
      */
     public function index(Request $request)
     {
-        SeoMonitors::dispatch();
+        // SeoMonitors::dispatch();
         ini_set('max_execution_time', 712);
         set_time_limit(712);
 
