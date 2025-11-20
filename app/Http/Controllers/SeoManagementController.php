@@ -684,7 +684,10 @@ class SeoManagementController extends Controller
 				], 403);
 			}
 
-			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file', 'banner_image_file'])->toArray();
+			// $seoData = collect($validated)->except(['secondary_keywords', 'og_image_file', 'banner_image_file'])->toArray();
+			$seoData = collect($validated)
+				->except(['og_image_file', 'banner_image_file'])
+				->toArray();
 
 			foreach (['paragraph_1', 'paragraph_2', 'paragraph_3', 'paragraph_4'] as $field) {
 				if (!$request->has($field)) {

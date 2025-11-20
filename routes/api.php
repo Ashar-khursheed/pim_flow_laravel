@@ -146,6 +146,7 @@ use App\Http\Controllers\FrontEnd\InquiryController  as F_InquiryController;
 use App\Http\Controllers\FrontEnd\SearchLogController as F_SearchLogController ;
 use App\Http\Controllers\FrontEnd\CompareProductController;
 use App\Http\Controllers\FrontEnd\SitemapController;
+use App\Http\Controllers\FrontEnd\TxtllmsController;
 use App\Http\Controllers\FrontEnd\FilterController;
 use App\Http\Controllers\FrontEnd\ShippingReportController;
 use App\Http\Controllers\FrontEnd\CustomerCartController as F_CustomerCartController;
@@ -897,12 +898,12 @@ Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress'
 Route::post('/frontend/made-to-orders', [F_MadeToOrderController::class, 'store']);
 
 Route::post('/find-shipping-charges', [ShippingReportController::class, 'findShippingCharges']);
+Route::get('/frontend/llms.txt', [TxtllmsController::class, 'getTxt']);
 Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
 Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
 Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
 
-Route::get('/frontend/
-.xml', [SitemapController::class, 'getProductsSitemap1']);
+Route::get('/frontend/products-1.xml', [SitemapController::class, 'getProductsSitemap1']);
 Route::get('/frontend/products-2.xml', [SitemapController::class, 'getProductsSitemap2']);
 Route::get('/frontend/products-3.xml', [SitemapController::class, 'getProductsSitemap3']);
 Route::get('/frontend/products-4.xml', [SitemapController::class, 'getProductsSitemap4']);
