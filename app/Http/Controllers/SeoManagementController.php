@@ -955,12 +955,12 @@ public function update(Request $request, $relational_type, $id)
         $seo->update($seoData);
 
         // Handle secondary keywords relation
-        if (!empty($validated['secondary_keywords'])) {
+        if (!empty($validated['secondaryKeywordDetails'])) {
             $secondaryKeywords = json_decode($validated['secondary_keywords'], true); // array of objects
             if (json_last_error() === JSON_ERROR_NONE && is_array($secondaryKeywords)) {
-                $seo->secondaryKeywords()->delete(); // remove old ones
+                $seo->secondaryKeywordDetails()->delete(); // remove old ones
                 foreach ($secondaryKeywords as $sk) {
-                    $seo->secondaryKeywords()->create([
+                    $seo->secondaryKeywordDetails()->create([
                         'secondary_keyword' => $sk['secondary_keyword'] ?? null,
                         'monthly_search_volume' => $sk['monthly_search_volume'] ?? null,
                     ]);
