@@ -898,7 +898,10 @@ Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress'
 Route::post('/frontend/made-to-orders', [F_MadeToOrderController::class, 'store']);
 
 Route::post('/find-shipping-charges', [ShippingReportController::class, 'findShippingCharges']);
-Route::get('/frontend/llms.txt', [TxtllmsController::class, 'getTxt']);
+Route::get('/frontend/llms.txt', [TxtllmsController::class, 'getAllPageTxt']);
+Route::get('/frontend/llms-1.txt', [TxtllmsController::class, 'getProductsTxt1']);
+Route::get('/frontend/llms-2.txt', [TxtllmsController::class, 'getProductsTxt2']);
+Route::get('/frontend/llms-3.txt', [TxtllmsController::class, 'getProductsTxt3']);
 Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
 Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
 Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
