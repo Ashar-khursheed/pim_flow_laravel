@@ -27149,6 +27149,264 @@
                 }
             }
         },
+        "/api/frontend/llms-4.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-4.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "1a9b82d61e614b729e493408f8147f69",
+                "responses": {
+                    "200": {
+                        "description": "llms-4.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": ""
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-5.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-5.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "71cfd9c07bc7a748000a54522705bed5",
+                "responses": {
+                    "200": {
+                        "description": "llms-5.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": ""
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-6.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-6.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "ef4b80520af0e39cead6daa1874a363a",
+                "responses": {
+                    "200": {
+                        "description": "llms-6.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": ""
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-7.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-7.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "385d4341256d37f74373e12c24aa7415",
+                "responses": {
+                    "200": {
+                        "description": "llms-7.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": ""
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-8.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-8.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "3601110f102a83e5df670d90cca2b2a7",
+                "responses": {
+                    "200": {
+                        "description": "llms-8.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": ""
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/llms-9.txt": {
+            "get": {
+                "tags": [
+                    "Frontend TXT"
+                ],
+                "summary": "Get llms-9.txt",
+                "description": "Returns the llms.txt containing public URLs of the website.",
+                "operationId": "14ff13e16a2a75b40d712a8bbd22b7dd",
+                "responses": {
+                    "200": {
+                        "description": "llms-9.txt generated successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": ""
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error generating txt file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/customer-reviews": {
             "get": {
                 "tags": [
