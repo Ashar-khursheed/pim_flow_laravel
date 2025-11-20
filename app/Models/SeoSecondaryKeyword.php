@@ -18,15 +18,5 @@ class SeoSecondaryKeyword extends Model
 	{
 		return $this->belongsTo(SeoManagement::class, 'primary_keyword_id');
 	}
-	protected static function boot()
-{
-    parent::boot();
-
-    static::creating(function ($model) {
-        if (empty($model->secondary_keyword)) {
-            $model->secondary_keyword = '';
-        }
-    });
-}
-
+	
 }
