@@ -173,71 +173,160 @@ class OrderController extends Controller
 			->limit($length)
 			->get();
 
+			// $records->transform(function ($record) {
+			// 	$record->customer_name = $record->customer->name ?? null;
+			// 	$record->created_by = $record->creator->name ?? null;
+			// 	$record->updated_by = $record->updator->name ?? null;
+
+			// 	$response = $record->nofraudResponse->response ?? null;
+
+			// 	if (is_string($response)) {
+			// 		$data = json_decode($response, true);
+			// 	} elseif (is_array($response)) {
+			// 		$data = $response;
+			// 	} else {
+			// 		$data = [];
+			// 	}
+
+			// 	$record->nofraud_decision = $data['decision'] ?? null;
+			// 	unset($record->nofraudResponse);
+
+
+			// 	unset($record->creator, $record->updator);
+
+			// 	foreach ($record->orderProducts as $orderProduct) {
+			// 		$product = $orderProduct->product;
+			// 		if ($product) {
+			// 			$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+			// 			$product->brand_name = $product->brand->name ?? null;
+			// 			$product->currency_symbol = $product->currency->symbol ?? null;
+			// 			unset($product->brand, $product->currency);
+			// 		}
+			// 		$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+			// 		$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+			// 		? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+			// 		: null;
+
+			// 		if ($orderProduct->accessoryCharges) {
+			// 			$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+			// 				return [
+			// 					'id' => $charge->id,
+			// 					'accessory_item_id' => $charge->accessory_item_id,
+			// 					'accessory_item_name' => $charge->accessoryItem->name ?? null,
+			// 					'accessory_item_price' => $charge->accessoryItem->price ?? null,
+			// 					'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+			// 					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+			// 					'amount' => $charge->amount,
+			// 				];
+			// 			});
+
+			// 			unset($orderProduct->accessoryCharges);
+			// 		}
+
+			// 		foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+			// 			if (isset($orderProduct->$key)) {
+			// 				$orderProduct->$key = number_format($orderProduct->$key, 2, '.', '');
+			// 			}
+			// 		}
+			// 	}
+
+			// 	foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			// 		if (isset($record->$key)) {
+			// 			$record->$key = number_format($record->$key, 2, '.', '');
+			// 		}
+			// 	}
+
+			// 	return $record;
+			// });
 			$records->transform(function ($record) {
-				$record->customer_name = $record->customer->name ?? null;
-				$record->created_by = $record->creator->name ?? null;
-				$record->updated_by = $record->updator->name ?? null;
+    // Customer & creator/updator
+    $record->customer_name = $record->customer->name ?? null;
+    $record->created_by = $record->creator->name ?? null;
+    $record->updated_by = $record->updator->name ?? null;
 
-				$response = $record->nofraudResponse->response ?? null;
+    // Handle nofraud decision
+    $response = $record->nofraudResponse->response ?? null;
+    if (is_string($response)) {
+        $data = json_decode($response, true);
+    } elseif (is_array($response)) {
+        $data = $response;
+    } else {
+        $data = [];
+    }
+    $record->nofraud_decision = $data['decision'] ?? null;
+    unset($record->nofraudResponse);
 
-				if (is_string($response)) {
-					$data = json_decode($response, true);
-				} elseif (is_array($response)) {
-					$data = $response;
-				} else {
-					$data = [];
-				}
+    // Handle UTM: keep object, default fields to "Organic"
+    if ($record->utm) {
+        $record->utm->utm_source = $record->utm->utm_source ?? 'Organic';
+        $record->utm->utm_medium = $record->utm->utm_medium ?? 'Organic';
+        $record->utm->utm_campaign = $record->utm->utm_campaign ?? 'Organic';
+        $record->utm->utm_term = $record->utm->utm_term ?? 'Organic';
+        $record->utm->utm_content = $record->utm->utm_content ?? 'Organic';
+        $record->utm->gclid = $record->utm->gclid ?? 'Organic';
+    } else {
+        $record->utm = (object)[
+            'id' => null,
+            'utm_source' => 'Organic',
+            'utm_medium' => 'Organic',
+            'utm_campaign' => 'Organic',
+            'utm_term' => 'Organic',
+            'utm_content' => 'Organic',
+            'gclid' => 'Organic',
+            'session_id' => null,
+            'created_at' => null,
+            'updated_at' => null
+        ];
+    }
 
-				$record->nofraud_decision = $data['decision'] ?? null;
-				unset($record->nofraudResponse);
+    unset($record->creator, $record->updator);
 
+    // Handle orderProducts & formatting as before
+    foreach ($record->orderProducts as $orderProduct) {
+        $product = $orderProduct->product;
+        if ($product) {
+            $product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+            $product->brand_name = $product->brand->name ?? null;
+            $product->currency_symbol = $product->currency->symbol ?? null;
+            unset($product->brand, $product->currency);
+        }
 
-				unset($record->creator, $record->updator);
+        $orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+        $orderProduct->expectedShippingDate = $orderProduct->product_supplier
+            ? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+            : null;
 
-				foreach ($record->orderProducts as $orderProduct) {
-					$product = $orderProduct->product;
-					if ($product) {
-						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-						$product->brand_name = $product->brand->name ?? null;
-						$product->currency_symbol = $product->currency->symbol ?? null;
-						unset($product->brand, $product->currency);
-					}
-					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
+        if ($orderProduct->accessoryCharges) {
+            $orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+                return [
+                    'id' => $charge->id,
+                    'accessory_item_id' => $charge->accessory_item_id,
+                    'accessory_item_name' => $charge->accessoryItem->name ?? null,
+                    'accessory_item_price' => $charge->accessoryItem->price ?? null,
+                    'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+                    'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+                    'amount' => $charge->amount,
+                ];
+            });
+            unset($orderProduct->accessoryCharges);
+        }
 
-					if ($orderProduct->accessoryCharges) {
-						$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
-							return [
-								'id' => $charge->id,
-								'accessory_item_id' => $charge->accessory_item_id,
-								'accessory_item_name' => $charge->accessoryItem->name ?? null,
-								'accessory_item_price' => $charge->accessoryItem->price ?? null,
-								'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-								'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-								'amount' => $charge->amount,
-							];
-						});
+        foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+            if (isset($orderProduct->$key)) {
+                $orderProduct->$key = number_format($orderProduct->$key, 2, '.', '');
+            }
+        }
+    }
 
-						unset($orderProduct->accessoryCharges);
-					}
+    foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+        if (isset($record->$key)) {
+            $record->$key = number_format($record->$key, 2, '.', '');
+        }
+    }
 
-					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-						if (isset($orderProduct->$key)) {
-							$orderProduct->$key = number_format($orderProduct->$key, 2, '.', '');
-						}
-					}
-				}
+    return $record;
+});
 
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-					if (isset($record->$key)) {
-						$record->$key = number_format($record->$key, 2, '.', '');
-					}
-				}
-
-				return $record;
-			});
 		} else {
 			$records = $recordsQuery->orderBy('order_number', 'asc')->get(['id', 'order_number']);
 			$totalRecords = $records->count();
