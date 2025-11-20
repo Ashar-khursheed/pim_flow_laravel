@@ -379,7 +379,6 @@ class LLmsSeoMonitoringController extends Controller
             ]);
 
         } catch (\Exception $e) {
-
             return response()->json([
                 'success' => false,
                 'message' => __("err_update"),
