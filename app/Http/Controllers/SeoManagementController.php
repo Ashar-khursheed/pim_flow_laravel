@@ -753,7 +753,9 @@ class SeoManagementController extends Controller
 			$seo->update($seoData);
 			if (isset($validated['secondary_keywords'])) {
 					$seo->secondary_keywords = $validated['secondary_keywords'];
+					$seo->save(); // Add this to persist it
 				}
+
 			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
 				$seo->translateOrNew('en')->primary_keyword_tr = $seo->primary_keyword;
 				$seo->translateOrNew('en')->title_tag_tr = $seo->title_tag;
