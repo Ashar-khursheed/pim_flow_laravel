@@ -356,7 +356,7 @@ class CartController extends Controller
                 'success' => true,
                 'data' => [],
                 'cart_id' => $cartId,
-                'checkout_url' => url("/Checkout/{$cartId}")
+                'checkout_url' => url("review/Checkout/{$cartId}")
             ]);
         }
 
@@ -395,6 +395,8 @@ class CartController extends Controller
                 'id' => $cartProduct->id,
                 'pay_with_cheque' => $customerCart->pay_with_cheque,
                 'user_id' => $cartProduct->customerCart->customer_id,
+                'product_id' => $cartProduct->product_id,
+                'product_id' => $cartProduct->product_id,
                 'product_id' => $cartProduct->product_id,
                 'quantity' => $cartProduct->quantity,
                 'product' => $product
@@ -484,7 +486,8 @@ class CartController extends Controller
             'success' => true,
             'data' => $transformedItems,
             'cart_id' => $cartId,
-            'checkout_url' => url("/Checkout/{$cartId}")
+            'checkout_url' => url("/Checkout/{$cartId}"),
+            'customer_cart' => $customerCart,
         ]);
     }
 
