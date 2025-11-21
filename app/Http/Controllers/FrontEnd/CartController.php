@@ -494,6 +494,30 @@ class CartController extends Controller
 
                 $product->shippingCharge = $productShipping;
 
+                // ------------------- SHIPPING CHARGE LOGIC FOR CUSTOMER CART -------------------
+                $cartShippingCharge = $customerCart->shipping_charge ?? 0;
+
+                if (in_array(config('app.website'), ['US', 'US_T'])) {
+
+                    $state = $customerCart->customerAddress->state ?? null;
+
+                    if (!$customerCart->is_customer_pickup) {
+
+                        if ($state === 'Texas') {
+                            $cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 99;
+                        } else {
+                            $cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 199;
+                        }
+
+                    } else {
+                        $cartShippingCharge = 0;
+                    }
+                }
+
+                // assign final charge to customer cart model
+                $customerCart->shipping_charge = $cartShippingCharge;
+
+
 
             return $cartItem;
         });
