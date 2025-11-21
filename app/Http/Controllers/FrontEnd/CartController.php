@@ -393,7 +393,6 @@ class CartController extends Controller
 
             $cartItem = (object)[
                 'id' => $cartProduct->id,
-                'pay_with_cheque' => $customerCart->pay_with_cheque,
                 'user_id' => $cartProduct->customerCart->customer_id,
                 'product_id' => $cartProduct->product_id,
                 'product_id' => $cartProduct->product_id,
@@ -476,7 +475,24 @@ class CartController extends Controller
                         ];
                     }
                 }
+                $productShipping = $cartProduct->shipping_charge ?? 0;
 
+                if (in_array(config('app.website'), ['US', 'US_T'])) {
+
+                    $state = $customerCart->customerAddress->state ?? null;
+
+                    if (!$customerCart->is_customer_pickup) {
+                        if ($state === 'Texas') {
+                            $productShipping = ($productShipping > 0) ? $productShipping : 99;
+                        } else {
+                            $productShipping = ($productShipping > 0) ? $productShipping : 199;
+                        }
+                    } else {
+                        $productShipping = 0;
+                    }
+                }
+
+                $product->shippingCharge = $productShipping;
 
 
             return $cartItem;
