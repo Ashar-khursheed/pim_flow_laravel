@@ -748,6 +748,35 @@ class SeoManagementController extends Controller
 			// $schemaArray = $this->generateSchema($seo);
 			// $seoData['schema'] = json_encode($schemaArray);
 			$seo->update($seoData);
+			if (!empty($validated['secondary_keywords'])) {
+ 
+                $secondaryKeywords = json_decode($validated['secondary_keywords'], true);
+ 
+                if (is_array($secondaryKeywords)) {        
+                    $incomingKeywords = [];
+ 
+                    foreach ($secondaryKeywords as $keyword) {
+ 
+                        if (!empty($keyword['secondary_keyword']) && !empty($keyword['monthly_search_volume'])) {
+ 
+                            $secondaryKeyword = trim($keyword['secondary_keyword']);                    
+                            $incomingKeywords[] = $secondaryKeyword;                    
+                            SeoSecondaryKeyword::updateOrCreate(
+                                [
+                                    'primary_keyword_id' => $seo->id,
+                                    'secondary_keyword'  => $secondaryKeyword,
+                                ],
+                                [
+                                    'monthly_search_volume' => $keyword['monthly_search_volume'],
+                                ]
+                            );
+                        }
+                    }                
+                    SeoSecondaryKeyword::where('primary_keyword_id', $seo->id)
+                        ->whereNotIn('secondary_keyword', $incomingKeywords)
+                        ->delete();
+                }
+            }
 			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
 				$seo->translateOrNew('en')->primary_keyword_tr = $seo->primary_keyword;
 				$seo->translateOrNew('en')->title_tag_tr = $seo->title_tag;
