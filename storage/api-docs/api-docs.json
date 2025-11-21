@@ -28285,6 +28285,242 @@
                 ]
             }
         },
+        "/api/get-in-touch": {
+            "get": {
+                "tags": [
+                    "GetInTouch"
+                ],
+                "summary": "List all get-in-touch submissions with search, sorting, and pagination",
+                "operationId": "50716cb197f0753aa3b95161dfa65ee7",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search name, email, phone, topic, message, order_number",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "john"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "How many items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "List retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 120
+                                                },
+                                                "records": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "john@example.com"
+                                                            },
+                                                            "phone": {
+                                                                "type": "string",
+                                                                "example": "971500000000"
+                                                            },
+                                                            "topic": {
+                                                                "type": "string",
+                                                                "example": "Regarding my order"
+                                                            },
+                                                            "order_number": {
+                                                                "type": "string",
+                                                                "example": "1001"
+                                                            },
+                                                            "message": {
+                                                                "type": "string",
+                                                                "example": "Description goes here"
+                                                            },
+                                                            "image_url": {
+                                                                "type": "string",
+                                                                "example": "https://bucket.s3.amazonaws.com/get_in_touch/abc.webp"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "example": "2025-01-20 10:30:00"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/get-in-touch/{id}": {
+            "get": {
+                "tags": [
+                    "GetInTouch"
+                ],
+                "summary": "Get a single get-in-touch entry",
+                "operationId": "02125c076d3688fd6ff8eb1ffbd2e21a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the form submission",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Record retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "971500000000"
+                                                },
+                                                "topic": {
+                                                    "type": "string",
+                                                    "example": "Regarding my order"
+                                                },
+                                                "order_number": {
+                                                    "type": "string",
+                                                    "example": "1001"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Description goes here"
+                                                },
+                                                "image_url": {
+                                                    "type": "string",
+                                                    "example": "https://bucket.s3.amazonaws.com/get_in_touch/abc.webp"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "example": "2025-01-20 10:30:00"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Record not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/calculate-grade": {
             "post": {
                 "tags": [
@@ -46160,6 +46396,10 @@
         {
             "name": "Frontend-Wishlist",
             "description": "Frontend-Wishlist"
+        },
+        {
+            "name": "GetInTouch",
+            "description": "GetInTouch"
         },
         {
             "name": "Grading",

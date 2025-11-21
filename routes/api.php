@@ -86,6 +86,7 @@ use App\Http\Controllers\TranslationController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\MadeToOrderController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\GetInTouchController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -626,6 +627,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('carts', CustomerCartController::class);
 
 	Route::post('/nofraud/process/{order_id}', [NoFraudController::class, 'processNoFraud']);
+
+	Route::apiResource('/get-in-touch', GetInTouchController::class);
 
 
 });
