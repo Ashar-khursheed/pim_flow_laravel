@@ -8831,6 +8831,15 @@
                                         "type": "number",
                                         "example": 5
                                     },
+                                    "additional_amount_name": {
+                                        "type": "string",
+                                        "example": "Accessory 1"
+                                    },
+                                    "additional_amount_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
                                     "products": {
                                         "type": "array",
                                         "items": {

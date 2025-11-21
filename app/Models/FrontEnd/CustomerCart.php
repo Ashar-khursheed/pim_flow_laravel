@@ -20,6 +20,8 @@ class CustomerCart extends Model
 		'tax_amount',
 		'total_amount',
 		'total_products',
+		'additional_amount_name',
+		'additional_amount_price',
 		'created_by',
 		'updated_by',
 	];
