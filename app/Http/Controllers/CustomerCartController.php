@@ -249,6 +249,8 @@ class CustomerCartController extends Controller
 	 *             @OA\Property(property="is_new_customer", type="boolean", example=false),
 	 *             @OA\Property(property="pay_with_cheque", type="boolean", example=false),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
+	 *  		   @OA\Property(property="additional_amount_name", type="string", example="Accessory 1"),
+	 *             @OA\Property(property="additional_amount_price", type="number", format="float", example=100),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -280,6 +282,8 @@ class CustomerCartController extends Controller
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
@@ -319,6 +323,10 @@ class CustomerCartController extends Controller
 				$totalProducts += $product['quantity'];
 				$cartAmount += $product['quantity'] * $product['unit_price'];
 				$cartShipping += $product['shipping_charge'];
+			}
+
+			if (!empty($request->additional_amount_price)) {
+				$cartAmount += (float) $request->additional_amount_price;
 			}
 
 			$cartAmount += $request->boolean('is_lift_gate') ? 75 : 0;
@@ -369,6 +377,8 @@ class CustomerCartController extends Controller
 			$customerCart->total_amount           = $totalAmount;
 			$customerCart->total_products         = $totalProducts;
 			$customerCart->updated_by             = auth()->id();
+			$customerCart->additional_amount_name = $request->additional_amount_name ?? null;
+			$customerCart->additional_amount_price = $request->additional_amount_price ?? null;
 
 			$customerCart->save();
 
@@ -450,6 +460,8 @@ class CustomerCartController extends Controller
 				'address'                => $customerCart->customerAddress,
 				'is_lift_gate'           => $customerCart->is_lift_gate,
 				'is_residential_address' => $customerCart->is_residential_address,
+				'additional_amount_name' => $customerCart->additional_amount_name,
+				'additional_amount_price' => $customerCart->additional_amount_price,
 				'is_inside_delivery'     => $customerCart->is_inside_delivery,
 				'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 				'amount'                 => number_format($cartAmount, 2, '.', ''),
@@ -586,7 +598,7 @@ class CustomerCartController extends Controller
 			'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 			'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 			'total_amount'           => number_format($totalAmount, 2, '.', ''),
-			'total_products'         => $totalProducts,
+			'total_products'         => $totalProducts,			 			 
 			'products'               => $cartProducts,
 			'creator'                => $record->creator,
 			'created_at'             => $record->created_at,
@@ -684,6 +696,9 @@ class CustomerCartController extends Controller
 		if ($customerCart->is_inside_delivery) {
 			$cartAmount += 250;
 		}
+		if ($customerCart->additional_amount_price) {
+			$cartAmount += $customerCart->additional_amount_price;
+		}
 
 		/* Tax calculations */
 		$taxPercentage = $customerCart->tax_percentage ?? 0;
@@ -709,6 +724,8 @@ class CustomerCartController extends Controller
 			'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 			'total_amount'           => number_format($totalAmount, 2, '.', ''),
 			'total_products'         => $totalProducts,
+			'additional_amount_name' => $customerCart->additional_amount_name,
+			'additional_amount_price' => $customerCart->additional_amount_price,	
 			'products'               => $cartProducts,
 		];
 

@@ -101,6 +101,8 @@ class CartCreationMail extends Mailable
 		$liftGateCharge = $customerCart->is_lift_gate ? 75 : 0;
 		$residentialAddressCharge = $customerCart->is_residential_address ? 199 : 0;
 		$insideDeliveryCharge = $customerCart->is_inside_delivery ? 249 : 0;
+		$additionalAmountName = $customerCart->additional_amount_name;
+		$additionalAmountPrice = $customerCart->additional_amount_price;
 
 		$subTotal = $customerCart->amount ?? 0;
 		$shippingCharge = $customerCart->shipping_charge ?? 0;
@@ -150,6 +152,8 @@ class CartCreationMail extends Mailable
 			'liftGateCharge' => $liftGateCharge,
 			'residentialAddressCharge' => $residentialAddressCharge,
 			'insideDeliveryCharge' => $insideDeliveryCharge,
+			'additionalAmountName' => $additionalAmountName,
+			'additionalAmountPrice' => $additionalAmountPrice,
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
 			'taxName' => $taxName,
