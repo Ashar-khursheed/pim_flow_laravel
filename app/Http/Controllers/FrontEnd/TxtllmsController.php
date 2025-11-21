@@ -90,7 +90,7 @@ class TxtllmsController extends Controller
 
     public function getProductsTxt1()
     {
-        return $this->getProductsTxt(0, 5000);
+        return $this->getProductsTxt(0, 1000);
     }
 
     /**
@@ -125,7 +125,7 @@ class TxtllmsController extends Controller
 
     public function getProductsTxt2()
     {
-        return $this->getProductsTxt(5000, 5000);
+        return $this->getProductsTxt(1000, 1000);
     }
 
     /**
@@ -162,12 +162,228 @@ class TxtllmsController extends Controller
 
     public function getProductsTxt3()
     {
-        return $this->getProductsTxt(10000, 5000);
+        return $this->getProductsTxt(2000, 1000);
+    }
+    /**
+     * Get LLMS TXT
+     *
+     * @OA\Get(
+     *     path="/api/frontend/llms-4.txt",
+     *     summary="Get llms-4.txt",
+     *     description="Returns the llms.txt containing public URLs of the website.",
+     *     tags={"Frontend TXT"},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="llms-4.txt generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="text/plain",
+     *             @OA\Schema(
+     *                 type="string",
+     *                 example=""
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating txt file")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getProductsTxt4()
+    {
+        return $this->getProductsTxt(3000, 1000);
+    }
+    /**
+     * Get LLMS TXT
+     *
+     * @OA\Get(
+     *     path="/api/frontend/llms-5.txt",
+     *     summary="Get llms-5.txt",
+     *     description="Returns the llms.txt containing public URLs of the website.",
+     *     tags={"Frontend TXT"},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="llms-5.txt generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="text/plain",
+     *             @OA\Schema(
+     *                 type="string",
+     *                 example=""
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating txt file")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getProductsTxt5()
+    {
+        return $this->getProductsTxt(4000, 1000);
+    }
+    /**
+     * Get LLMS TXT
+     *
+     * @OA\Get(
+     *     path="/api/frontend/llms-6.txt",
+     *     summary="Get llms-6.txt",
+     *     description="Returns the llms.txt containing public URLs of the website.",
+     *     tags={"Frontend TXT"},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="llms-6.txt generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="text/plain",
+     *             @OA\Schema(
+     *                 type="string",
+     *                 example=""
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating txt file")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getProductsTxt6()
+    {
+        return $this->getProductsTxt(5000, 1000);
+    }
+    /**
+     * Get LLMS TXT
+     *
+     * @OA\Get(
+     *     path="/api/frontend/llms-7.txt",
+     *     summary="Get llms-7.txt",
+     *     description="Returns the llms.txt containing public URLs of the website.",
+     *     tags={"Frontend TXT"},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="llms-7.txt generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="text/plain",
+     *             @OA\Schema(
+     *                 type="string",
+     *                 example=""
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating txt file")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getProductsTxt7()
+    {
+        return $this->getProductsTxt(6000, 1000);
+    }
+    /**
+     * Get LLMS TXT
+     *
+     * @OA\Get(
+     *     path="/api/frontend/llms-8.txt",
+     *     summary="Get llms-8.txt",
+     *     description="Returns the llms.txt containing public URLs of the website.",
+     *     tags={"Frontend TXT"},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="llms-8.txt generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="text/plain",
+     *             @OA\Schema(
+     *                 type="string",
+     *                 example=""
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating txt file")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getProductsTxt8()
+    {
+        return $this->getProductsTxt(7000, 1000);
+    }
+    /**
+     * Get LLMS TXT
+     *
+     * @OA\Get(
+     *     path="/api/frontend/llms-9.txt",
+     *     summary="Get llms-9.txt",
+     *     description="Returns the llms.txt containing public URLs of the website.",
+     *     tags={"Frontend TXT"},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="llms-9.txt generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="text/plain",
+     *             @OA\Schema(
+     *                 type="string",
+     *                 example=""
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating txt file")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getProductsTxt9()
+    {
+        return $this->getProductsTxt(7000, 1000);
     }
 
 
     public function getProductsTxt($offset, $limit)
-    {
+    { 
         try {
 
             $txt = "";

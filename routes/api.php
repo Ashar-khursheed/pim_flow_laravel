@@ -86,6 +86,7 @@ use App\Http\Controllers\TranslationController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\MadeToOrderController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\GetInTouchController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -627,6 +628,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/nofraud/process/{order_id}', [NoFraudController::class, 'processNoFraud']);
 
+	Route::apiResource('/get-in-touch', GetInTouchController::class);
+
 
 });
 
@@ -902,6 +905,12 @@ Route::get('/frontend/llms.txt', [TxtllmsController::class, 'getAllPageTxt']);
 Route::get('/frontend/llms-1.txt', [TxtllmsController::class, 'getProductsTxt1']);
 Route::get('/frontend/llms-2.txt', [TxtllmsController::class, 'getProductsTxt2']);
 Route::get('/frontend/llms-3.txt', [TxtllmsController::class, 'getProductsTxt3']);
+Route::get('/frontend/llms-4.txt', [TxtllmsController::class, 'getProductsTxt4']);
+Route::get('/frontend/llms-5.txt', [TxtllmsController::class, 'getProductsTxt5']);
+Route::get('/frontend/llms-6.txt', [TxtllmsController::class, 'getProductsTxt6']);
+Route::get('/frontend/llms-7.txt', [TxtllmsController::class, 'getProductsTxt7']);
+Route::get('/frontend/llms-8.txt', [TxtllmsController::class, 'getProductsTxt8']);
+Route::get('/frontend/llms-9.txt', [TxtllmsController::class, 'getProductsTxt9']);
 Route::get('/frontend/sitemap.xml', [SitemapController::class, 'getSitemap']);
 Route::get('/frontend/categories.xml', [SitemapController::class, 'getCategoriesSitemap']);
 Route::get('/frontend/products.xml', [SitemapController::class, 'getProductsSitemap']);
