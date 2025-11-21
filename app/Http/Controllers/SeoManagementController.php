@@ -684,7 +684,7 @@ class SeoManagementController extends Controller
 				], 403);
 			}
 
-			// $seoData = collect($validated)->except(['secondary_keywords', 'og_image_file', 'banner_image_file'])->toArray();
+			 $seoData = collect($validated)->except(['secondary_keywords', 'og_image_file', 'banner_image_file'])->toArray();
 
 			foreach (['paragraph_1', 'paragraph_2', 'paragraph_3', 'paragraph_4'] as $field) {
 				if (!$request->has($field)) {
@@ -694,6 +694,9 @@ class SeoManagementController extends Controller
 
 			$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
 
+			if (isset($validated['url'])) {
+				$seoData['url'] = $validated['url'];
+			}
 			if (isset($validated['schema_rating'])) {
 				$seoData['schema_rating'] = (int) $validated['schema_rating'];
 			}
