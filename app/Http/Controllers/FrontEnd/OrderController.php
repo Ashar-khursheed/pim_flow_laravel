@@ -288,6 +288,33 @@ class OrderController extends BaseController
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
+				// Determine shipping charge based on Texas rules ONLY for US site
+				$state = $address->state;
+				$dbShipping = $fetchedDetail->shipping_charge ?? 0;
+
+				// Default shipping = DB value or 0
+				$finalShipping = $dbShipping;
+
+				// Apply rules ONLY if website is US or US_T
+				if (in_array(config('app.website'), ['US', 'US_T'])) {
+
+					// Customer pickup → always free
+					if ($request->boolean('is_customer_pickup')) {
+						$finalShipping = 0;
+
+					} else {
+						if ($state === 'Texas') {
+							// Texas → If DB shipping is 0 → make it 99
+							$finalShipping = ($dbShipping > 0) ? $dbShipping : 99;
+
+						} else {
+							// Outside Texas → If DB shipping is 0 → make it 199
+							$finalShipping = ($dbShipping > 0) ? $dbShipping : 199;
+						}
+					}
+				}
+
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -295,7 +322,7 @@ class OrderController extends BaseController
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
 					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+    				'shipping_charge' => $finalShipping,
 				];
 			}
 
