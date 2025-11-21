@@ -129,6 +129,29 @@ class OrderUpdateMail extends Mailable
 
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
+
+		// Apply Texas shipping calculation ONLY for US websites
+		if (in_array(config('app.website'), ['US', 'US_T'])) {
+
+			$state = $order->customerAddress->state ?? null;
+
+			// Only change shipping if customer did NOT pick up
+			if (!$order->is_customer_pickup) {
+				
+				if ($state === 'Texas') {
+					// Texas → if shipping was 0 ⇒ make it 99
+					$shippingCharge = ($shippingCharge > 0) ? $shippingCharge : 99;
+
+				} else {
+					// Outside Texas → if shipping was 0 ⇒ make it 199
+					$shippingCharge = ($shippingCharge > 0) ? $shippingCharge : 199;
+				}
+			} else {
+				// Pickup = free
+				$shippingCharge = 0;
+			}
+		}
+
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
 		$taxPercent = $order->tax_percentage;
 		$taxPercent = $taxPercent + 0;
