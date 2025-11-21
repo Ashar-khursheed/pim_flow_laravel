@@ -9,8 +9,8 @@ class GetInTouchController extends Controller
      * @OA\Get(
      *     path="/api/get-in-touch",
      *     summary="List all get-in-touch submissions with search, sorting, and pagination",
-     *     tags={"FrontEnd-GetInTouch"},
-     *
+     *     tags={"GetInTouch"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
@@ -124,7 +124,8 @@ class GetInTouchController extends Controller
          * @OA\Get(
          *     path="/api/frontend/get-in-touch/{id}",
          *     summary="Get a single get-in-touch entry",
-         *     tags={"FrontEnd-GetInTouch"},
+         *     tags={"GetInTouch"},
+         *     security={{"bearerAuth":{}}},
          *     @OA\Parameter(
          *         name="id",
          *         in="path",

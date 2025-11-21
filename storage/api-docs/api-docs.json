@@ -28030,7 +28030,7 @@
         "/api/get-in-touch": {
             "get": {
                 "tags": [
-                    "FrontEnd-GetInTouch"
+                    "GetInTouch"
                 ],
                 "summary": "List all get-in-touch submissions with search, sorting, and pagination",
                 "operationId": "50716cb197f0753aa3b95161dfa65ee7",
@@ -28168,13 +28168,18 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/get-in-touch/{id}": {
             "get": {
                 "tags": [
-                    "FrontEnd-GetInTouch"
+                    "GetInTouch"
                 ],
                 "summary": "Get a single get-in-touch entry",
                 "operationId": "02125c076d3688fd6ff8eb1ffbd2e21a",
@@ -28250,7 +28255,12 @@
                     "404": {
                         "description": "Record not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/calculate-grade": {
@@ -46128,6 +46138,10 @@
         {
             "name": "Frontend-Wishlist",
             "description": "Frontend-Wishlist"
+        },
+        {
+            "name": "GetInTouch",
+            "description": "GetInTouch"
         },
         {
             "name": "Grading",
