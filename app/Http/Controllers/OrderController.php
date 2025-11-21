@@ -296,6 +296,22 @@ class OrderController extends Controller
             ? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
             : null;
 
+		$shipping = $orderProduct->shipping_charge ?? 0;
+			if (in_array(config('app.website'), ['US', 'US_T'])) {
+				$state = $order->customerAddress->state ?? null;
+
+				if (!$order->is_customer_pickup) {
+					if ($state === 'Texas') {
+						$shipping = ($shipping > 0) ? $shipping : 99;
+					} else {
+						$shipping = ($shipping > 0) ? $shipping : 199;
+					}
+				} else {
+					$shipping = 0;
+				}
+			}
+		$orderProduct->shipping_charge = $shipping;	
+
         if ($orderProduct->accessoryCharges) {
             $orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
                 return [
@@ -738,6 +754,22 @@ class OrderController extends Controller
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
 
+				 $shipping = $orderProduct->shipping_charge ?? 0;
+				if (in_array(config('app.website'), ['US', 'US_T'])) {
+					$state = $order->customerAddress->state ?? null;
+
+					if (!$order->is_customer_pickup) {
+						if ($state === 'Texas') {
+							$shipping = ($shipping > 0) ? $shipping : 99;
+						} else {
+							$shipping = ($shipping > 0) ? $shipping : 199;
+						}
+					} else {
+						$shipping = 0;
+					}
+				}
+				$orderProduct->shipping_charge = $shipping;
+
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
 						return [
@@ -928,9 +960,27 @@ class OrderController extends Controller
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
 
+
+
 			$orderProduct->nofraudResponse->response ?? null;
 			$orderProduct->nofraud_decision = $data['decision'] ?? null;
 			unset($orderProduct->nofraudResponse);
+
+			 $shipping = $orderProduct->shipping_charge ?? 0;
+			if (in_array(config('app.website'), ['US', 'US_T'])) {
+				$state = $order->customerAddress->state ?? null;
+
+				if (!$order->is_customer_pickup) {
+					if ($state === 'Texas') {
+						$shipping = ($shipping > 0) ? $shipping : 99;
+					} else {
+						$shipping = ($shipping > 0) ? $shipping : 199;
+					}
+				} else {
+					$shipping = 0;
+				}
+			}
+			$orderProduct->shipping_charge = $shipping;
 
 			if ($orderProduct->accessoryCharges) {
 				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -1346,6 +1396,22 @@ class OrderController extends Controller
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
+
+				$shipping = $orderProduct->shipping_charge ?? 0;
+				if (in_array(config('app.website'), ['US', 'US_T'])) {
+					$state = $order->customerAddress->state ?? null;
+
+					if (!$order->is_customer_pickup) {
+						if ($state === 'Texas') {
+							$shipping = ($shipping > 0) ? $shipping : 99;
+						} else {
+							$shipping = ($shipping > 0) ? $shipping : 199;
+						}
+					} else {
+						$shipping = 0;
+					}
+				}
+				$orderProduct->shipping_charge = $shipping;
 
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
