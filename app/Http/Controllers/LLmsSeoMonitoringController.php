@@ -517,11 +517,36 @@ class LLmsSeoMonitoringController extends Controller
                     'click_rate' => round($row->getCtr(), 4),
                     'position' => round($row->getPosition(), 3),
                 ];
+
+                $record = [
+                'url' => $keys[1] ?? null,
+                'date' => $keys[0] ?? null,
+                'keyword' => $keys[2] ?? null,
+                'country' => $keys[3] ?? null,
+                'device' => $keys[4] ?? null,
+                'total_clicks' => $row['clicks'] ?? 0,
+                'impressions' => $row['impressions'] ?? 0,
+                'click_rate' => round($row['ctr'] ?? 0, 4),
+                'position' => round($row['position'] ?? 0, 3),
+                'created_at' => now(),
+                'updated_at' => now(),
+                ];
+                SeoMonitoring::updateOrCreate(
+                        [
+                            'url' => $record['url'],
+                            'date' => $record['date'],
+                            'keyword' => $record['keyword']
+
+                        ],
+                        $record
+                    );
+                 
             }
 
             $startRow += $length;
             $maxRows = 500;
         } while ($count === $length && $startRow < $maxRows);
+ 
         return response()->json([
             'success' => true,
             'total_records' => count($sitemapList),
