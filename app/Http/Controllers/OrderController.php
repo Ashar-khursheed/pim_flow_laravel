@@ -297,20 +297,20 @@ class OrderController extends Controller
             : null;
 
 		$shipping = $orderProduct->shipping_charge ?? 0;
-			if (in_array(config('app.website'), ['US', 'US_T'])) {
-				$state = $order->customerAddress->state ?? null;
+		// 	if (in_array(config('app.website'), ['US', 'US_T'])) {
+		// 		$state = $order->customerAddress->state ?? null;
 
-				if (!$order->is_customer_pickup) {
-					if ($state === 'Texas') {
-						$shipping = ($shipping > 0) ? $shipping : 99;
-					} else {
-						$shipping = ($shipping > 0) ? $shipping : 199;
-					}
-				} else {
-					$shipping = 0;
-				}
-			}
-		$orderProduct->shipping_charge = $shipping;	
+		// 		if (!$order->is_customer_pickup) {
+		// 			if ($state === 'Texas') {
+		// 				$shipping = ($shipping > 0) ? $shipping : 99;
+		// 			} else {
+		// 				$shipping = ($shipping > 0) ? $shipping : 199;
+		// 			}
+		// 		} else {
+		// 			$shipping = 0;
+		// 		}
+		// 	}
+		// $orderProduct->shipping_charge = $shipping;	
 
         if ($orderProduct->accessoryCharges) {
             $orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
