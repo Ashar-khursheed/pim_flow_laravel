@@ -246,8 +246,8 @@ class OrderController extends BaseController
 			'is_cod' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
-			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,1|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5024',
-			'cheque_img' => 'nullable|required_if:pay_with_cheque,1|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5024',
+			'cheque_img' => 'required_if:pay_with_cheque,1|file|mimes:jpeg,jpg,png,webp|max:5024',
+			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5024',
 
 
 			'coupon_id' => 'nullable|integer',
