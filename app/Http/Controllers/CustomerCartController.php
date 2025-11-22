@@ -647,11 +647,48 @@ class CustomerCartController extends Controller
 		$cartShipping = 0;
 		$cartProducts = [];
 
+		// foreach ($customerCart->customerCartProducts as $customerCartProduct) {
+		// 	$product = $customerCartProduct->product;
+		// 	if (!$product) continue;
+
+		// 	/* Decode images if stored as JSON string */
+		// 	$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+		// 	$image = $images[0] ?? null;
+
+		// 	$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
+
+		// 	$unitPrice = 0;
+		// 	$shippingCharge = 0;
+		// 	if ($supplier) {
+		// 		$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
+		// 		$shippingCharge = $supplier['shipping_charge'] ?? 0;
+		// 	}
+
+		// 	$quantity = $customerCartProduct->quantity ?? 0;
+		// 	$subTotal = $quantity * $unitPrice;
+
+		// 	$totalProducts += $quantity;
+		// 	$cartAmount += $subTotal;
+		// 	$cartShipping += $shippingCharge;
+
+		// 	/* Push product data */
+		// 	$cartProducts[] = [
+		// 		'product_id'      => $customerCartProduct->product_id,
+		// 		'vendor_id'       => $customerCartProduct->vendor_id,
+		// 		'name'            => $product->name,
+		// 		'image'           => $image,
+		// 		'sku'             => $product->sku,
+		// 		'currency_symbol' => $product->currency->symbol ?? null,
+		// 		'quantity'        => $quantity,
+		// 		'unit_price'      => number_format($unitPrice, 2, '.', ''),
+		// 		'sub_total'       => number_format($subTotal, 2, '.', ''),
+		// 		'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
+		// 	];
+		// }
 		foreach ($customerCart->customerCartProducts as $customerCartProduct) {
 			$product = $customerCartProduct->product;
 			if (!$product) continue;
 
-			/* Decode images if stored as JSON string */
 			$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 			$image = $images[0] ?? null;
 
@@ -660,9 +697,31 @@ class CustomerCartController extends Controller
 			$unitPrice = 0;
 			$shippingCharge = 0;
 			if ($supplier) {
-				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
+				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) 
+					? $supplier['sale_price'] 
+					: $supplier['price'];
+
 				$shippingCharge = $supplier['shipping_charge'] ?? 0;
 			}
+
+			// ============================================
+			// 🔥 ADD YOUR NEW US / US_T SHIPPING LOGIC HERE
+			// ============================================
+			if (in_array(config('app.website'), ['US', 'US_T'])) {
+
+				$state = $customerCart->customerAddress->state ?? null;
+
+				if (!$customerCart->is_customer_pickup) {
+					if ($state === 'Texas') {
+						$shippingCharge = ($shippingCharge > 0) ? $shippingCharge : 99;
+					} else {
+						$shippingCharge = ($shippingCharge > 0) ? $shippingCharge : 199;
+					}
+				} else {
+					$shippingCharge = 0;
+				}
+			}
+			// ============================================
 
 			$quantity = $customerCartProduct->quantity ?? 0;
 			$subTotal = $quantity * $unitPrice;
@@ -671,7 +730,6 @@ class CustomerCartController extends Controller
 			$cartAmount += $subTotal;
 			$cartShipping += $shippingCharge;
 
-			/* Push product data */
 			$cartProducts[] = [
 				'product_id'      => $customerCartProduct->product_id,
 				'vendor_id'       => $customerCartProduct->vendor_id,
@@ -685,6 +743,7 @@ class CustomerCartController extends Controller
 				'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
 			];
 		}
+
 
 		/* Add surcharges */
 		if ($customerCart->is_lift_gate) {
