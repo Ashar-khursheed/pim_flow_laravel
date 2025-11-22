@@ -106,11 +106,12 @@ class FndFinanceController extends Controller
         $data['created_by'] = Auth::id() ?? 1;
         $data['updated_by'] = '0';          
         $data['accountStatus'] = 'Pending';   
+        $nextPaymentDue = "";
         if ($request->term_selection == 'Net 30 Days') {
             $nextPaymentDue = "+30 Days";
         } elseif ($request->term_selection == 'Net 45 Days') {
             $nextPaymentDue = "+45 Days";
-        } else {
+        } else if($request->term_selection == 'Net 60 Days'){
             $nextPaymentDue = "+60 Days";
         }
         if(!empty($nextPaymentDue)){
