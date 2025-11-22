@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Finance;
+use App\Models\FinancesPayment;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
+
 class FinanceController extends Controller
 {
 
@@ -163,7 +165,7 @@ class FinanceController extends Controller
             'per_page' => (int) $perPage,
             'total_records' => $totalRecords,
             'total_pages' => $totalPages,
-            'data' =>$formattedFinance,
+            'data' => $formattedFinance,
         ]);
     }
 
@@ -179,10 +181,9 @@ class FinanceController extends Controller
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 type="object",
-     *                 required={"business_name", "business_address", "country", "city"},
-     *                 @OA\Property(property="payment_selection", type="string", example="Credit", description="Credit, Debit Card, Net Banking, Net Payment Terms"),
-     *                 @OA\Property(property="payment_options", type="string", example="Net Payment Terms", description="Payment option description"),
-     *                 @OA\Property(property="term_selection", type="string", example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
+     *                 required={"business_name", "business_address", "country", "city"},     *                  
+     *                 @OA\Property(property="payment_options", type="string", example="Net Payment Terms", description="Payment option description"),     * 
+     *                 @OA\Property(property="term_selection", type="string",enum={"Net 30 Days","Net 45 Days","Net 60 Days"}, example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
      *                 @OA\Property(property="amount", type="number", format="float", example=5000.75, description="Enter amount"),
      *                 @OA\Property(property="documents", type="string", format="binary", description="Upload supporting document file"),
      *                 @OA\Property(property="payment_due", type="string", format="date", example="2025-12-31", description="Payment due date"),
@@ -201,7 +202,12 @@ class FinanceController extends Controller
      *                 @OA\Property(property="years_in_business", type="string", example="5 – 10 years"),
      *                 @OA\Property(property="accounts_payable_email", type="string", format="email", example="finance@abc.com"),
      *                 @OA\Property(property="accounts_payable_phone", type="string", example="+91-9876543210"),
-     *                 @OA\Property(property="duns_number", type="string", example="123456789")
+     *                 @OA\Property(property="duns_number", type="string", example="123456789"),
+     *                 @OA\Property(property="creditLimitAmount", type="integer", example="5000"),
+     *                 @OA\Property(property="approvedAmount", type="integer", example="5000"),
+     *                 @OA\Property(property="accountStatus", type="integer", enum={"Active","Overdue","Pending"}, example="Pending"),
+     *                  
+     *                 
      *             )
      *         )
      *     ),
@@ -226,17 +232,17 @@ class FinanceController extends Controller
      * )
      */
     public function store(Request $request)
-    {  
+    {
         $validator = Validator::make($request->all(), [
             'payment_selection' => 'nullable|string',
             'payment_options' => 'nullable|string',
-            'term_selection' => 'nullable|string',
+            'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
             'amount' => 'required|numeric',
             'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
             'payment_due' => 'nullable|date',
             'type_of_business' => 'nullable|string|max:255',
             'business_name' => 'required|string|max:255',
-            'business_email' => 'nullable|email|max:255',            
+            'business_email' => 'nullable|email|max:255',
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
             'business_address' => 'required|string|max:255',
@@ -250,7 +256,9 @@ class FinanceController extends Controller
             'accounts_payable_email' => 'nullable|email',
             'accounts_payable_phone' => 'nullable|string',
             'duns_number' => 'nullable|string',
-            'status' => 'nullable|string',
+            'creditLimitAmount' => 'nullable|string',
+            'approvedAmount' => 'nullable|string',
+            'accountStatus' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -264,9 +272,29 @@ class FinanceController extends Controller
         $data = $validator->validated();
         $data['created_by'] = Auth::id() ?? 1;
         $data['updated_by'] = '0';
-       
+        if ($request->accountStatus == 'Active') {
+            $data['approvalBy'] = Auth::id();
+        }
+        if (!empty($request->creditLimitAmount) && !empty($request->approvedAmount)) {
+            $data['availableCreditAmount']  = $request->creditLimitAmount - $request->approvedAmount;
+        }
+        if (!empty($request->approvedAmount)) {
+            $data['usedCreditAmount']  = $request->approvedAmount;
+        }
+         
+ 
 
-      
+        if ($request->term_selection == 'Net 30 Days') {
+            $nextPaymentDue = "+30 Days";
+        } elseif ($request->term_selection == 'Net 45 Days') {
+            $nextPaymentDue = "+45 Days";
+        } else {
+            $nextPaymentDue = "+60 Days";
+        }
+        if(!empty($nextPaymentDue)){
+            $data['next_due_date'] =date('Y-m-d', strtotime($nextPaymentDue));
+        }
+        
         if ($request->hasFile('documents')) {
             $data['documents'] = uploadImageToWebpS3FromFile(
                 $request,
@@ -274,11 +302,30 @@ class FinanceController extends Controller
                 env('STORAGE_ENV') . '/documents'
             );
         } else {
-            $data['documents'] = null;  
+            $data['documents'] = null;
         }
 
         $finance = Finance::create($data);
 
+        // if(!empty($finance)){
+        //             if($request->term_selection == 'Net 30 Days'){
+        //                 $nextPaymentDue = "+30 Days";
+        //             }elseif($request->term_selection == 'Net 45 Days'){
+        //                 $nextPaymentDue = "+45 Days";
+        //             }else{
+        //                 $nextPaymentDue = "+60 Days";
+        //             }                    
+        //         $finance = FinancesPayment::updateOrCreate(
+        //             ['finances_id' => $finance->id],
+        //             [
+        //             'limitAmount' => $request->creditLimitAmount,
+        //             'usedAmount' => $request->approvedAmount,
+        //             'availableAmount' =>$request->creditLimitAmount - $request->approvedAmount,
+        //             'creditTerms' =>$request->term_selection,
+        //             'nextPaymentDue' =>date('Y-m-d', strtotime($nextPaymentDue)),
+        //             ]
+        //     );
+        // }
         return response()->json([
             'success' => true,
             'message' => 'Finance record created successfully.',
@@ -351,7 +398,7 @@ class FinanceController extends Controller
             'success' => true,
             'message' => 'Finance record retrieved successfully.',
             'data' => $finance
-        ], 200); // ✅ Changed from 201 to 200
+        ], 200);  
     }
     /**
      * @OA\Post(
@@ -372,10 +419,9 @@ class FinanceController extends Controller
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 type="object",
-     *                 required={"business_name"},
-     *                 @OA\Property(property="payment_selection", type="string", example="Credit", description="Payment type: Credit, Debit Card, Net Banking, etc."),
+     *                 required={"business_name"},     *                 
      *                 @OA\Property(property="payment_options", type="string", example="Net Payment Terms", description="Payment options details"),
-     *                 @OA\Property(property="term_selection", type="string", example="Net 30 Days", description="Payment term duration"),
+     *                @OA\Property(property="term_selection", type="string",enum={"Net 30 Days","Net 45 Days","Net 60 Days"}, example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
      *                 @OA\Property(property="amount", type="number", format="float", example=5000.75, description="Transaction amount"),
      *                 @OA\Property(property="documents", type="string", format="binary", description="Upload related document"),
      *                 @OA\Property(property="payment_due", type="string", format="date", example="2025-12-31", description="Payment due date"),
@@ -393,7 +439,10 @@ class FinanceController extends Controller
      *                 @OA\Property(property="years_in_business", type="string", example="5 – 10 years", description="Years in business"),
      *                 @OA\Property(property="accounts_payable_email", type="string", format="email", example="finance@abc.com", description="Accounts payable email"),
      *                 @OA\Property(property="accounts_payable_phone", type="string", example="+91-9876543210", description="Accounts payable phone number"),
-     *                 @OA\Property(property="duns_number", type="string", example="123456789", description="DUNS number (if applicable)")
+     *                 @OA\Property(property="duns_number", type="string", example="123456789", description="DUNS number (if applicable)"),
+     *                  @OA\Property(property="creditLimitAmount", type="integer", example="5000"),
+     *                 @OA\Property(property="approvedAmount", type="integer", example="5000"),
+     *                 @OA\Property(property="accountStatus", type="integer", enum={"Active","Overdue","Pending"}, example="Pending"),
      *             )
      *         )
      *     ),
@@ -419,17 +468,17 @@ class FinanceController extends Controller
      */
 
     public function update(Request $request, $id)
-    {  
+    {
         $validator = Validator::make($request->all(), [
-            'payment_selection' => 'nullable|string',
-            'payment_options' => 'nullable|string',
-            'term_selection' => 'nullable|string',
+            'payment_selection' => 'nullable|string',            
+            'payment_options' => 'nullable|string',            
+            'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
             'amount' => 'required|numeric',
             'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
             'payment_due' => 'nullable|date',
             'type_of_business' => 'nullable|string|max:255',
             'business_name' => 'required|string|max:255',
-            'business_email' => 'nullable|email|max:255',                
+            'business_email' => 'nullable|email|max:255',
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
             'business_address' => 'required|string|max:255',
@@ -444,6 +493,9 @@ class FinanceController extends Controller
             'accounts_payable_phone' => 'nullable|string',
             'duns_number' => 'nullable|string',
             'status' => 'nullable|string',
+            'creditLimitAmount' => 'nullable|string',
+            'approvedAmount' => 'nullable|string',
+            'accountStatus' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -463,10 +515,28 @@ class FinanceController extends Controller
         }
 
         $data = $validator->validated();
+        if ($request->accountStatus == 'Active') {
+            $data['approvalBy'] = Auth::id();            
+        } 
+        $data['accountStatus'] = $request->accountStatus;
+        // if (!empty($request->creditLimitAmount) && !empty($request->approvedAmount)) {
+        //     $data['availableCreditAmount']  = $request->approvedAmount - $request->approvedAmount;
+        // }
         
+         
+        if ($request->term_selection == 'Net 30 Days') {
+            $nextPaymentDue = "+30 Days";
+        } elseif ($request->term_selection == 'Net 45 Days') {
+            $nextPaymentDue = "+45 Days";
+        } else {
+            $nextPaymentDue = "+60 Days";
+        }
+        if(!empty($nextPaymentDue)){
+            $data['next_due_date'] =date('Y-m-d', strtotime($nextPaymentDue));
+        }
         $data['updated_by'] = Auth::id() ?? 1;
 
-        
+
         if ($request->hasFile('documents')) {
             $data['documents'] = uploadImageToWebpS3FromFile(
                 $request,
