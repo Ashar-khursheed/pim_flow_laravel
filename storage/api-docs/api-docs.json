@@ -18041,11 +18041,6 @@
                                     "city"
                                 ],
                                 "properties": {
-                                    "payment_selection": {
-                                        "description": "Credit, Debit Card, Net Banking, Net Payment Terms",
-                                        "type": "string",
-                                        "example": "Credit"
-                                    },
                                     "payment_options": {
                                         "description": "Payment option description",
                                         "type": "string",
@@ -18054,6 +18049,11 @@
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
                                         "type": "string",
+                                        "enum": [
+                                            "Net 30 Days",
+                                            "Net 45 Days",
+                                            "Net 60 Days"
+                                        ],
                                         "example": "Net 30 Days"
                                     },
                                     "amount": {
@@ -18068,7 +18068,7 @@
                                         "format": "binary"
                                     },
                                     "payment_due": {
-                                        "description": "Payment due date",
+                                        "description": "Payment due date add Net 30 Days",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2025-12-31"
@@ -18115,10 +18115,6 @@
                                     "city": {
                                         "type": "string",
                                         "example": "Houston"
-                                    },
-                                    "state": {
-                                        "type": "string",
-                                        "example": "Texas"
                                     },
                                     "zip": {
                                         "type": "string",

@@ -163,7 +163,7 @@ class OrderPlacedMail extends Mailable
 				}
 
 				// ===========================
-				// Apply per-product Texas shipping
+				// Apply per-product Texas shippings
 				// ===========================
 				$productShipping = $orderProduct->shipping_charge ?? 0;
 
