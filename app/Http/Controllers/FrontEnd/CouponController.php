@@ -11,6 +11,7 @@ use App\Models\FrontEnd\CouponCustomer;
 use App\Models\FrontEnd\CouponCategory;
 use App\Models\FrontEnd\CouponProduct;
 use App\Models\FrontEnd\CouponUsage;
+use App\Models\FrontEnd\Order;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
@@ -1340,7 +1341,9 @@ class CouponController extends Controller
         $basis = $coupon->basis;
 
         
-        $current_total_usage = $coupon->usage_count;  
+        $current_total_usage = Order::where('coupon_id',$coupon->id)->where('customer_id',$customerId)->get()->count();
+ 
+        // $current_total_usage = $coupon->usage_count;  
  
         $current_customer_usage = $coupon->usages()->where('customer_id', $customerId)->count(); 
 

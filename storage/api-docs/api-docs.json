@@ -11001,11 +11001,6 @@
                                     "city"
                                 ],
                                 "properties": {
-                                    "payment_selection": {
-                                        "description": "Credit, Debit Card, Net Banking, Net Payment Terms",
-                                        "type": "string",
-                                        "example": "Credit"
-                                    },
                                     "payment_options": {
                                         "description": "Payment option description",
                                         "type": "string",
@@ -11014,6 +11009,11 @@
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
                                         "type": "string",
+                                        "enum": [
+                                            "Net 30 Days",
+                                            "Net 45 Days",
+                                            "Net 60 Days"
+                                        ],
                                         "example": "Net 30 Days"
                                     },
                                     "amount": {
@@ -11104,6 +11104,23 @@
                                     "duns_number": {
                                         "type": "string",
                                         "example": "123456789"
+                                    },
+                                    "creditLimitAmount": {
+                                        "type": "integer",
+                                        "example": "5000"
+                                    },
+                                    "approvedAmount": {
+                                        "type": "integer",
+                                        "example": "5000"
+                                    },
+                                    "accountStatus": {
+                                        "type": "integer",
+                                        "enum": [
+                                            "Active",
+                                            "Overdue",
+                                            "Pending"
+                                        ],
+                                        "example": "Pending"
                                     }
                                 },
                                 "type": "object"
@@ -11324,19 +11341,19 @@
                                     "business_name"
                                 ],
                                 "properties": {
-                                    "payment_selection": {
-                                        "description": "Payment type: Credit, Debit Card, Net Banking, etc.",
-                                        "type": "string",
-                                        "example": "Credit"
-                                    },
                                     "payment_options": {
                                         "description": "Payment options details",
                                         "type": "string",
                                         "example": "Net Payment Terms"
                                     },
                                     "term_selection": {
-                                        "description": "Payment term duration",
+                                        "description": "Net Pay in 30/45/60 Days",
                                         "type": "string",
+                                        "enum": [
+                                            "Net 30 Days",
+                                            "Net 45 Days",
+                                            "Net 60 Days"
+                                        ],
                                         "example": "Net 30 Days"
                                     },
                                     "amount": {
@@ -11431,6 +11448,23 @@
                                         "description": "DUNS number (if applicable)",
                                         "type": "string",
                                         "example": "123456789"
+                                    },
+                                    "creditLimitAmount": {
+                                        "type": "integer",
+                                        "example": "5000"
+                                    },
+                                    "approvedAmount": {
+                                        "type": "integer",
+                                        "example": "5000"
+                                    },
+                                    "accountStatus": {
+                                        "type": "integer",
+                                        "enum": [
+                                            "Active",
+                                            "Overdue",
+                                            "Pending"
+                                        ],
+                                        "example": "Pending"
                                     }
                                 },
                                 "type": "object"
