@@ -36,6 +36,7 @@ class Order extends Model
 		'cheque_discount_percentage',
 		'cheque_discount',
 		'cheque_img',
+		'cheque_img_back',
 		'total_amount',
 		'total_products',
 		'ship_all_at_once',

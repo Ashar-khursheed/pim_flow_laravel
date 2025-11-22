@@ -247,6 +247,7 @@ class OrderController extends BaseController
 
 			'pay_with_cheque' => 'nullable|boolean',
 			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:1024',
+			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5024',
 
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
@@ -341,21 +342,51 @@ class OrderController extends BaseController
 			$discountedAmount = $orderAmount - $discount;
 
 			/* Handle cheque payment discount */
+			// if ($payWithCheque) {
+			// 	$chequeImg = uploadImageToWebpS3FromFile(
+			// 		$request,
+			// 		'cheque_img',
+			// 		env('STORAGE_ENV') . '/customer/orders'
+			// 	);
+			// 	$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
+			// 	$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
+			// 	$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
+			// 	$discountedAmount -= $chequeDiscount;
+			// } else {
+			// 	$chequeImg = null;
+			// 	$chequeDiscountPercentage = 0;
+			// 	$chequeDiscount = 0;
+			// }
+
 			if ($payWithCheque) {
+
+				// Upload front image
 				$chequeImg = uploadImageToWebpS3FromFile(
 					$request,
 					'cheque_img',
 					env('STORAGE_ENV') . '/customer/orders'
 				);
-				$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
-				$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
+
+				// Upload back image
+				$chequeImgBack = uploadImageToWebpS3FromFile(
+					$request,
+					'cheque_img_back',
+					env('STORAGE_ENV') . '/customer/orders'
+				);
+
+				$chequeDiscountPercentage = 0;
 				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
+
 				$discountedAmount -= $chequeDiscount;
+
 			} else {
+
 				$chequeImg = null;
+				$chequeImgBack = null;
 				$chequeDiscountPercentage = 0;
 				$chequeDiscount = 0;
 			}
+
 
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
@@ -400,7 +431,7 @@ class OrderController extends BaseController
 				'cheque_discount_percentage' => $chequeDiscountPercentage,
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
-
+				'cheque_img_back' => $cheque_img_back,
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
 
