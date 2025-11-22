@@ -1,20 +1,16 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         $tableName = 'finances';
 
-        // Numeric, date, and string columns
+        // Add numeric, string, date columns
         $columns = [
             'creditLimitAmount' => "decimal(12,2) NULL",
             'approvedAmount' => "decimal(12,2) NULL",
@@ -34,15 +30,12 @@ return new class extends Migration
             }
         }
 
-        // ENUM column handled separately
+        // ENUM column
         if (!Schema::hasColumn($tableName, 'accountStatus')) {
             DB::statement("ALTER TABLE $tableName ADD accountStatus ENUM('Active','Overdue','Pending') NOT NULL DEFAULT 'Pending'");
         }
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         $tableName = 'finances';
