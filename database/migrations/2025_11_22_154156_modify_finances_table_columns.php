@@ -10,18 +10,8 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
-
-        Schema::table('finances', function (Blueprint $table) {
-        $table->dropColumn('term_selection');
-        });
-
-        Schema::table('finances', function (Blueprint $table) {
-        $table->enum('term_selection', ['Net 30 Days', 'Net 45 Days', 'Net 60 Days'])
-        ->nullable();
-        });
-        Schema::table('finances', function (Blueprint $table) {
-         
+    {         
+        Schema::table('finances', function (Blueprint $table) {         
         $table->decimal('creditLimitAmount', 12, 2)->nullable();
         $table->decimal('approvedAmount', 12, 2)->nullable();
         $table->date('approvalDate')->nullable();
@@ -32,7 +22,7 @@ return new class extends Migration
         $table->decimal('purchaseAmount', 12, 2)->nullable();
         $table->decimal('dueCreditAmount', 12, 2)->nullable();
         $table->string('payment_mode')->nullable();         
-        $table->date('next_due_date')->nullable();
+        $table->date('next_due_date')->nullable();       
         
     });
     }
