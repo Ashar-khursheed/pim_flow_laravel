@@ -246,8 +246,8 @@ class OrderController extends BaseController
 			'is_cod' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
-			'cheque_img' => 'nullable|required_if:pay_with_cheque,true,1|file|mimes:jpeg,jpg,png,webp|max:5024',
-			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true,1|file|mimes:jpeg,jpg,png,webp|max:5024',
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,1|file|mimes:jpeg,jpg,png,webp|max:5024',
+			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,1|file|mimes:jpeg,jpg,png,webp|max:5024',
 
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
@@ -431,7 +431,7 @@ class OrderController extends BaseController
 				'cheque_discount_percentage' => $chequeDiscountPercentage,
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
-				'cheque_img_back' => $cheque_img_back,
+				'cheque_img_back' => $chequeImgBack,
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
 
