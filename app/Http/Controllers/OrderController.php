@@ -565,7 +565,7 @@ class OrderController extends Controller
 				'cheque_discount_percentage' => $chequeDiscountPercentage,
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
-				'cheque_img_back' => $cheque_img_back,
+				'cheque_img_back' => $chequeImgBack,
 				
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,

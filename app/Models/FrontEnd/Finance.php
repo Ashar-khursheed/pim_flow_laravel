@@ -1,29 +1,20 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\User;
 class Finance extends Model
 {
     protected $fillable = [
+        'customer_id',
         'payment_selection',
         'payment_options',
         'term_selection',
-        'amount',
+        'requestedAmount',
         'documents',
         'payment_due',
-        'type_of_business',
-        'business_name',
-        'first_name',
-        'last_name',
-        'business_email',
-        'business_address',
-        'country',
-        'address',
-        'city',
-        'state',
-        'zip',
+        'type_of_business',        
         'annual_revenue',
         'years_in_business',
         'accounts_payable_email',
@@ -32,8 +23,7 @@ class Finance extends Model
         'creditLimitAmount',
         'approvedAmount',
         'approvalDate',
-        'approvalBy',
-        'accountStatus',
+        'approvalBy',        
         'usedCreditAmount',
         'availableCreditAmount',
         'purchaseAmount',
@@ -55,4 +45,15 @@ class Finance extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
+    public function approvalBy()
+    {
+        return $this->belongsTo(User::class, 'approvalBy');
+    }
+
+    public function customer()
+{
+    return $this->belongsTo(Customer::class, 'customer_id');
+}
+
+
 }

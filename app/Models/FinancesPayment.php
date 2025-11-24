@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\FrontEnd\Finance;
 class FinancesPayment extends Model
 {
     protected $fillable = [

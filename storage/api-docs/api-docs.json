@@ -10995,16 +10995,20 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "business_name",
-                                    "business_address",
-                                    "country",
-                                    "city"
+                                    "customer_id",
+                                    "term_selection",
+                                    "requestedAmount"
                                 ],
                                 "properties": {
+                                    "customer_id": {
+                                        "description": "Select customer_id",
+                                        "type": "string",
+                                        "example": "19"
+                                    },
                                     "payment_options": {
                                         "description": "Payment option description",
                                         "type": "string",
-                                        "example": "Net Payment Terms"
+                                        "example": "netTerm"
                                     },
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
@@ -11016,7 +11020,7 @@
                                         ],
                                         "example": "Net 30 Days"
                                     },
-                                    "amount": {
+                                    "requestedAmount": {
                                         "description": "Enter amount",
                                         "type": "number",
                                         "format": "float",
@@ -11027,62 +11031,10 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
-                                    "payment_due": {
-                                        "description": "Payment due date",
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2025-12-31"
-                                    },
                                     "type_of_business": {
                                         "description": "Type of business (Advertising / E-commerce)",
                                         "type": "string",
                                         "example": "E-commerce"
-                                    },
-                                    "business_name": {
-                                        "description": "Legal business name",
-                                        "type": "string",
-                                        "example": "ABC Pvt Ltd"
-                                    },
-                                    "first_name": {
-                                        "description": "first_name",
-                                        "type": "string",
-                                        "example": "first name"
-                                    },
-                                    "last_name": {
-                                        "description": "last name",
-                                        "type": "string",
-                                        "example": "last name"
-                                    },
-                                    "business_email": {
-                                        "description": "Business Email",
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "abc@domain.com"
-                                    },
-                                    "business_address": {
-                                        "description": "Business address",
-                                        "type": "string",
-                                        "example": "123 Street, Delhi"
-                                    },
-                                    "country": {
-                                        "type": "string",
-                                        "example": "India"
-                                    },
-                                    "address": {
-                                        "type": "string",
-                                        "example": "8800 Bissonnet Street, Ste A, Houston, Texas 77074"
-                                    },
-                                    "city": {
-                                        "type": "string",
-                                        "example": "Houston"
-                                    },
-                                    "state": {
-                                        "type": "string",
-                                        "example": "Texas"
-                                    },
-                                    "zip": {
-                                        "type": "string",
-                                        "example": "77074"
                                     },
                                     "annual_revenue": {
                                         "type": "string",
@@ -11091,15 +11043,6 @@
                                     "years_in_business": {
                                         "type": "string",
                                         "example": "5 – 10 years"
-                                    },
-                                    "accounts_payable_email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "finance@abc.com"
-                                    },
-                                    "accounts_payable_phone": {
-                                        "type": "string",
-                                        "example": "+91-9876543210"
                                     },
                                     "duns_number": {
                                         "type": "string",
@@ -11113,7 +11056,7 @@
                                         "type": "integer",
                                         "example": "5000"
                                     },
-                                    "accountStatus": {
+                                    "status": {
                                         "type": "integer",
                                         "enum": [
                                             "Active",
@@ -11235,20 +11178,6 @@
                                                     "type": "string",
                                                     "example": "ABC Pvt Ltd"
                                                 },
-                                                "first_name": {
-                                                    "description": "first name",
-                                                    "type": "string",
-                                                    "example": "first name"
-                                                },
-                                                "last_name": {
-                                                    "description": "last name",
-                                                    "type": "string",
-                                                    "example": "last name"
-                                                },
-                                                "business_email": {
-                                                    "type": "string",
-                                                    "example": "abc@domain.com"
-                                                },
                                                 "documents": {
                                                     "type": "string",
                                                     "example": "https://s3.amazonaws.com/path/to/document.pdf"
@@ -11338,13 +11267,13 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "business_name"
+                                    "customer_id"
                                 ],
                                 "properties": {
-                                    "payment_options": {
+                                    "customer_id": {
                                         "description": "Payment options details",
-                                        "type": "string",
-                                        "example": "Net Payment Terms"
+                                        "type": "integer",
+                                        "example": "19"
                                     },
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
@@ -11356,7 +11285,7 @@
                                         ],
                                         "example": "Net 30 Days"
                                     },
-                                    "amount": {
+                                    "requestedAmount": {
                                         "description": "Transaction amount",
                                         "type": "number",
                                         "format": "float",
@@ -11367,61 +11296,10 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
-                                    "payment_due": {
-                                        "description": "Payment due date",
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2025-12-31"
-                                    },
                                     "type_of_business": {
                                         "description": "Type of business",
                                         "type": "string",
                                         "example": "E-commerce"
-                                    },
-                                    "business_name": {
-                                        "description": "Legal business name",
-                                        "type": "string",
-                                        "example": "ABC Pvt Ltd"
-                                    },
-                                    "first_name": {
-                                        "description": "first name",
-                                        "type": "string",
-                                        "example": "first name"
-                                    },
-                                    "last_name": {
-                                        "description": "last name",
-                                        "type": "string",
-                                        "example": "last name"
-                                    },
-                                    "business_email": {
-                                        "description": "business Email",
-                                        "type": "string",
-                                        "example": "abc@domain.com"
-                                    },
-                                    "business_address": {
-                                        "description": "Business address",
-                                        "type": "string",
-                                        "example": "123 Street, Delhi"
-                                    },
-                                    "country": {
-                                        "description": "Country name",
-                                        "type": "string",
-                                        "example": "India"
-                                    },
-                                    "address": {
-                                        "description": "Full address",
-                                        "type": "string",
-                                        "example": "B-21, Connaught Place, Delhi"
-                                    },
-                                    "city": {
-                                        "description": "City name",
-                                        "type": "string",
-                                        "example": "New Delhi"
-                                    },
-                                    "zip": {
-                                        "description": "ZIP / Postal code",
-                                        "type": "string",
-                                        "example": "110001"
                                     },
                                     "annual_revenue": {
                                         "description": "Annual business revenue",
@@ -11432,17 +11310,6 @@
                                         "description": "Years in business",
                                         "type": "string",
                                         "example": "5 – 10 years"
-                                    },
-                                    "accounts_payable_email": {
-                                        "description": "Accounts payable email",
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "finance@abc.com"
-                                    },
-                                    "accounts_payable_phone": {
-                                        "description": "Accounts payable phone number",
-                                        "type": "string",
-                                        "example": "+91-9876543210"
                                     },
                                     "duns_number": {
                                         "description": "DUNS number (if applicable)",
@@ -11457,7 +11324,7 @@
                                         "type": "integer",
                                         "example": "5000"
                                     },
-                                    "accountStatus": {
+                                    "status": {
                                         "type": "integer",
                                         "enum": [
                                             "Active",
@@ -17972,80 +17839,23 @@
                 }
             }
         },
-        "/api/frontend/product-accessories": {
-            "get": {
-                "tags": [
-                    "Frontend Product Accessories"
-                ],
-                "summary": "Get list of Frontend product accessories",
-                "operationId": "6eaf73ef58fa91e3b4478db517ba7d3a",
-                "parameters": [
-                    {
-                        "name": "product_id",
-                        "in": "query",
-                        "description": "Filter by product ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Product accessories retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/api/frontend/finances": {
             "post": {
                 "tags": [
                     "Frontend Finance"
                 ],
                 "summary": "Create a new finance record",
-                "operationId": "8e1f1f0683325135482562a7f6069bd7",
+                "operationId": "a7111acc3014a3bf0131545bfac5b662",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "business_name",
-                                    "business_address",
-                                    "country",
-                                    "city"
+                                    "term_selection",
+                                    "requestedAmount"
                                 ],
                                 "properties": {
-                                    "payment_selection": {
-                                        "description": "Credit, Debit Card, Net Banking, Net Payment Terms",
-                                        "type": "string",
-                                        "example": "Credit"
-                                    },
                                     "payment_options": {
                                         "description": "Payment option description",
                                         "type": "string",
@@ -18054,9 +17864,14 @@
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
                                         "type": "string",
+                                        "enum": [
+                                            "Net 30 Days",
+                                            "Net 45 Days",
+                                            "Net 60 Days"
+                                        ],
                                         "example": "Net 30 Days"
                                     },
-                                    "amount": {
+                                    "requestedAmount": {
                                         "description": "Enter amount",
                                         "type": "number",
                                         "format": "float",
@@ -18067,62 +17882,10 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
-                                    "payment_due": {
-                                        "description": "Payment due date",
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2025-12-31"
-                                    },
                                     "type_of_business": {
                                         "description": "Type of business (Advertising / E-commerce)",
                                         "type": "string",
                                         "example": "E-commerce"
-                                    },
-                                    "business_name": {
-                                        "description": "Legal business name",
-                                        "type": "string",
-                                        "example": "ABC Pvt Ltd"
-                                    },
-                                    "first_name": {
-                                        "description": "first_name",
-                                        "type": "string",
-                                        "example": "first name"
-                                    },
-                                    "last_name": {
-                                        "description": "last name",
-                                        "type": "string",
-                                        "example": "last name"
-                                    },
-                                    "business_email": {
-                                        "description": "Business Email",
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "abc@domain.com"
-                                    },
-                                    "business_address": {
-                                        "description": "Business address",
-                                        "type": "string",
-                                        "example": "123 Street, Delhi"
-                                    },
-                                    "country": {
-                                        "type": "string",
-                                        "example": "India"
-                                    },
-                                    "address": {
-                                        "type": "string",
-                                        "example": "8800 Bissonnet Street, Ste A, Houston, Texas 77074"
-                                    },
-                                    "city": {
-                                        "type": "string",
-                                        "example": "Houston"
-                                    },
-                                    "state": {
-                                        "type": "string",
-                                        "example": "Texas"
-                                    },
-                                    "zip": {
-                                        "type": "string",
-                                        "example": "77074"
                                     },
                                     "annual_revenue": {
                                         "type": "string",
@@ -18131,15 +17894,6 @@
                                     "years_in_business": {
                                         "type": "string",
                                         "example": "5 – 10 years"
-                                    },
-                                    "accounts_payable_email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "finance@abc.com"
-                                    },
-                                    "accounts_payable_phone": {
-                                        "type": "string",
-                                        "example": "+91-9876543210"
                                     },
                                     "duns_number": {
                                         "type": "string",
@@ -18190,6 +17944,56 @@
                                             "example": "Validation failed"
                                         },
                                         "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/product-accessories": {
+            "get": {
+                "tags": [
+                    "Frontend Product Accessories"
+                ],
+                "summary": "Get list of Frontend product accessories",
+                "operationId": "6eaf73ef58fa91e3b4478db517ba7d3a",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product accessories retrieved successfully"
+                                        },
+                                        "data": {
                                             "type": "object"
                                         }
                                     },
@@ -27028,6 +26832,18 @@
                 "summary": "Get llms.txt",
                 "description": "Returns the llms.txt containing public URLs of the website.",
                 "operationId": "bb8aa46914e1f31847ef3461ec01b0a2",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page (default: 500)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 500
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "llms.txt generated successfully",
@@ -46281,12 +46097,12 @@
             "description": "Frontend - FAQs"
         },
         {
-            "name": "Frontend Product Accessories",
-            "description": "Frontend Product Accessories"
-        },
-        {
             "name": "Frontend Finance",
             "description": "Frontend Finance"
+        },
+        {
+            "name": "Frontend Product Accessories",
+            "description": "Frontend Product Accessories"
         },
         {
             "name": "Frontend Product variants",
