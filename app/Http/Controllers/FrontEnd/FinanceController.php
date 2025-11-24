@@ -1,0 +1,118 @@
+<?php
+
+namespace App\Http\Controllers\FrontEnd;
+
+use Illuminate\Http\Request;
+
+use App\Models\FrontEnd\Finance;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use OpenApi\Annotations as OA;
+use App\Http\Controllers\Controller;
+class FinanceController extends Controller
+{
+  
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/finances",
+     *     summary="Create a new finance record",
+     *     tags={"Frontend Finance"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 required={"term_selection", "requestedAmount"},  
+     *                 @OA\Property(property="payment_options", type="string", example="Net Payment Terms", description="Payment option description"),                
+     *                 @OA\Property(property="term_selection", type="string",enum={"Net 30 Days","Net 45 Days","Net 60 Days"}, example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
+     *                 @OA\Property(property="requestedAmount", type="number", format="float", example=5000.75, description="Enter amount"),
+     *                 @OA\Property(property="documents", type="string", format="binary", description="Upload supporting document file"),
+     *                 
+     *                 @OA\Property(property="type_of_business", type="string", example="E-commerce", description="Type of business (Advertising / E-commerce)"),                
+     *                 @OA\Property(property="annual_revenue", type="string", example="10M USD"),
+     *                 @OA\Property(property="years_in_business", type="string", example="5 – 10 years"),               
+     *                 @OA\Property(property="duns_number", type="string", example="123456789")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Finance record created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Finance record created successfully."),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
+    public function store(Request $request)
+    {  
+        $validator = Validator::make($request->all(), [
+            
+            'payment_options' => 'nullable|string',            
+            'term_selection' => 'required|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
+            'requestedAmount' => 'required|numeric',
+            'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
+            
+            'type_of_business' => 'nullable|string|max:255',            
+            'annual_revenue' => 'nullable|string',
+            'years_in_business' => 'nullable|string',            
+            'duns_number' => 'nullable|string',           
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $data = $validator->validated();
+        $data['customer_id'] = Auth::id() ?? 1;
+        $data['created_by'] = '0';
+        $data['updated_by'] = '0';          
+       
+        // $nextPaymentDue = "";
+        // if ($request->term_selection == 'Net 30 Days') {
+        //     $nextPaymentDue = "+30 Days";
+        // } elseif ($request->term_selection == 'Net 45 Days') {
+        //     $nextPaymentDue = "+45 Days";
+        // } else if($request->term_selection == 'Net 60 Days'){
+        //     $nextPaymentDue = "+60 Days";
+        // }
+        // if(!empty($nextPaymentDue)){
+        //     $data['next_due_date'] =date('Y-m-d', strtotime($nextPaymentDue));
+        // }  
+        if ($request->hasFile('documents')) {
+            $data['documents'] = uploadImageToWebpS3FromFile(
+                $request,
+                'documents',
+                env('STORAGE_ENV') . '/documents'
+            );
+        } else {
+            $data['documents'] = null;  
+        }
+
+        $finance = Finance::create($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Finance record created successfully.',
+            'data' => $finance
+        ], 201);
+    }
+     
+}
