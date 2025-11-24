@@ -18,7 +18,13 @@ class TxtllmsController extends Controller
      *     summary="Get llms.txt",
      *     description="Returns the llms.txt containing public URLs of the website.",
      *     tags={"Frontend TXT"},
-     *
+     *    @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Number of items per page (default: 500)",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=500)
+     *     ),    
      *     @OA\Response(
      *         response=200,
      *         description="llms.txt generated successfully",
@@ -42,18 +48,56 @@ class TxtllmsController extends Controller
      * )
      */
 
-    public function getAllPageTxt()
-    {
-        try {
+    public function getAllPageTxt(Request $request)
+    {           
+
+          try {
             $txt = "- [about-us](https://thehorecastore.com/pages/about-us): HORECA STORE - Operating Supplies for Hotel & Cafe.";
             $txt .= "- [contact-us](https://thehorecastore.com/pages/contact-us): Explore HorecaStore for top-quality restaurant supplies and equipment.";
+
+            $perPage = $request->input('per_page');
+
+            $query = Product::with([
+                    'seoProductUrl:id,relational_id,url',
+                    'seoManagement:id,relational_id,title_tag,primary_keyword'
+                ])
+                ->whereHas('seoProductUrl', function ($q) {
+                    $q->whereNotNull('url');
+                })
+                ->where('status', 'published');
+
+            // 🚀 If per_page is empty/null, fetch ALL results
+            if (!empty($perPage)) {
+                $products = $query->paginate($perPage, ['*'], 'page', 1);
+            } else {
+                $products = $query->get();
+            }
+
+            $txtfiles = $products->map(function ($product) {
+                return [
+                    'fullurl' => config('app.url') . '/' . 
+                        $product->parent_category_url() . '/' .
+                        $product->category_url() . '/' .
+                        ($product->seoProductUrl->url ?? ""),
+
+                    'title_tag' => $product->seoManagement->title_tag ?? '',
+                    'primary_keyword' => $product->seoManagement->primary_keyword ?? '',
+                ];
+            });
+
+            if ($txtfiles) {
+                foreach ($txtfiles as $txtText) {
+                    $txt .= " - [" . $txtText['primary_keyword'] . "](" . $txtText['fullurl'] . "): " . $txtText['title_tag'] . "\n";
+                }
+            }
 
             return response($txt, 200)->header('Content-Type', 'text/plain');
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => 'Error generating txt file'
+                'error' => 'Error generating txt file',
+                'message' => $e->getMessage()
             ], 500);
         }
     }

@@ -58,7 +58,8 @@ class ProductXMLFeedWatchController extends Controller
 
     public function generateProductFeed(Request $request)
     {
-        $perPage = $request->input('per_page', 500);
+        $perPage = $request->input('per_page');
+        
         $allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
 
         $query = Product::with([
@@ -76,8 +77,12 @@ class ProductXMLFeedWatchController extends Controller
             ->where('status', 'published')
             ->orderBy('id', 'desc');
 
-        $products = $query->paginate($perPage, ['*'], 'page', 1);
-
+        
+        if (!empty($perPage)) {
+            $products = $query->paginate($perPage, ['*'], 'page', 1);
+        } else {
+            $products = $query->get();
+        }
         $formattedProducts = $products->map(function ($product) {
             $firstSupplier = $product->productSuppliers->first();
             $price = $firstSupplier->price ?? 0;
