@@ -667,6 +667,10 @@ if (!function_exists('order_cc_mails')) {
 			'dmm@thehorecastore.com',
 			'ga@thehorecastore.com',
 			'ga02@thehorecastore.com',
+
+			'sales@thehorecastore.com',
+			'ussales1@thehorecastore.com',
+			'css07@thehorecastore.com',
 		];
 
 		$uaeMails = [
