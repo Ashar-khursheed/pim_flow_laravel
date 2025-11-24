@@ -271,7 +271,7 @@ class FinanceController extends Controller
         if ($request->approvedAmount > $request->creditLimitAmount) {
             return response()->json([
                 'success' => false,
-                'message' => 'Approved Amount is greagter then limit amount.',
+                'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
 
             ], 201);
         }
@@ -478,7 +478,7 @@ class FinanceController extends Controller
         if ($request->approvedAmount > $request->creditLimitAmount) {
             return response()->json([
                 'success' => false,
-                'message' => 'Approved Amount is greagter then limit amount.',
+                'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
 
             ], 201);
         }
