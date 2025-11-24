@@ -513,7 +513,6 @@ class FinanceController extends Controller
                 'message' => 'Record not found'
             ], 404);
         }
-
         $data = $validator->validated();
         if ($request->accountStatus == 'Active') {
             $data['approvalBy'] = Auth::id();            
