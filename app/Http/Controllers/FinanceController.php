@@ -89,7 +89,7 @@ class FinanceController extends Controller
                     ->orWhere('requestedAmount', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('term_selection', 'like', "%{$search}%")                    
+                    ->orWhere('term_selection', 'like', "%{$search}%")
                     ->orWhere('mobile_number', 'like', "%{$search}%");
             });
         }
@@ -101,11 +101,11 @@ class FinanceController extends Controller
 
                 $q->where('business_name', 'like', "%{$search}%")
                     ->orWhere('requestedAmount', 'like', "%{$search}%")
-                    ->orWhere('term_selection', 'like', "%{$search}%")                   
+                    ->orWhere('term_selection', 'like', "%{$search}%")
                     ->orWhereHas('customer', function ($c) use ($search) {
                         $c->where('name', 'like', "%{$search}%")
-                        ->orWhere('mobile_number', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+                            ->orWhere('mobile_number', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
                     });
             });
         }
@@ -138,42 +138,42 @@ class FinanceController extends Controller
 
         // Format the results
         $formattedFinance = $financeManagement->map(function ($finance) {
-    return [
-        'id' => $finance->id,
-        'payment_selection' => $finance->payment_selection,
-        'payment_options' => $finance->payment_options,
-        'term_selection' => $finance->term_selection,
-        'type_of_business' => $finance->type_of_business,
+            return [
+                'id' => $finance->id,
+                'payment_selection' => $finance->payment_selection,
+                'payment_options' => $finance->payment_options,
+                'term_selection' => $finance->term_selection,
+                'type_of_business' => $finance->type_of_business,
 
-        'requestedAmount' => number_format($finance->requestedAmount, 2),
-        'creditLimitAmount' => number_format($finance->creditLimitAmount, 2),
-        'approvedAmount' => number_format($finance->approvedAmount, 2),
-        'approvalDate' => date('d-m-Y',strtotime($finance->approvalDate)),
-        'approvalBy' => $finance->approvalBy?->name,
+                'requestedAmount' => number_format($finance->requestedAmount, 2),
+                'creditLimitAmount' => number_format($finance->creditLimitAmount, 2),
+                'approvedAmount' => number_format($finance->approvedAmount, 2),
+                'approvalDate' => date('d-m-Y', strtotime($finance->approvalDate)),
+                'approvalBy' => $finance->approvalBy?->name,
 
-        'status' => $finance->status,
-        'business_name' => $finance->business_name,
+                'status' => $finance->status,
+                'business_name' => $finance->business_name,
 
-        // CUSTOMER FIELDS
-        'customer_name' => $finance->customer?->name,
-        'customer_email' => $finance->customer?->email,
-        'customer_mobile' => $finance->customer?->mobile_number,
+                // CUSTOMER FIELDS
+                'customer_name' => $finance->customer?->name,
+                'customer_email' => $finance->customer?->email,
+                'customer_mobile' => $finance->customer?->mobile_number,
 
-        'annual_revenue' => $finance->annual_revenue,
-        'years_in_business' => $finance->years_in_business,
+                'annual_revenue' => $finance->annual_revenue,
+                'years_in_business' => $finance->years_in_business,
 
-        'documents' => $finance->documents,
-        'duns_number' => $finance->duns_number,
-        'payment_due' => $finance->payment_due ? date('d-m-Y', strtotime($finance->payment_due)) : null,
+                'documents' => $finance->documents,
+                'duns_number' => $finance->duns_number,
+                'payment_due' => $finance->payment_due ? date('d-m-Y', strtotime($finance->payment_due)) : null,
 
-        // CREATED BY / UPDATED BY
-        'created_by' => $finance->createdBy?->username,
-        'updated_by' => $finance->updatedBy?->username,
+                // CREATED BY / UPDATED BY
+                'created_by' => $finance->createdBy?->username,
+                'updated_by' => $finance->updatedBy?->username,
 
-        'created_at' => date('d-m-Y H:i:s', strtotime($finance->created_at)),
-        'updated_at' => date('d-m-Y H:i:s', strtotime($finance->updated_at)),
-    ];
-});
+                'created_at' => date('d-m-Y H:i:s', strtotime($finance->created_at)),
+                'updated_at' => date('d-m-Y H:i:s', strtotime($finance->updated_at)),
+            ];
+        });
 
         return response()->json([
             'success' => true,
@@ -244,10 +244,10 @@ class FinanceController extends Controller
             'payment_options' => 'nullable|string',
             'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
             'requestedAmount' => 'required|numeric',
-            'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',            
-            'type_of_business' => 'nullable|string|max:255',             
+            'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
+            'type_of_business' => 'nullable|string|max:255',
             'annual_revenue' => 'nullable|string',
-            'years_in_business' => 'nullable|string',           
+            'years_in_business' => 'nullable|string',
             'duns_number' => 'nullable|string',
             'creditLimitAmount' => 'nullable|integer|string',
             'approvedAmount' => 'nullable|integer|string',
@@ -268,6 +268,13 @@ class FinanceController extends Controller
         if ($request->status == 'Active') {
             $data['approvalBy'] = Auth::id();
         }
+        if ($request->approvedAmount > $request->creditLimitAmount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Approved Amount is greagter then limit amount.',
+
+            ], 201);
+        }
         // if (!empty($request->creditLimitAmount) && !empty($request->approvedAmount)) {
         //     $data['availableCreditAmount']  = $request->creditLimitAmount - $request->approvedAmount;
         // }
@@ -285,7 +292,7 @@ class FinanceController extends Controller
         // if(!empty($nextPaymentDue)){
         //     $data['next_due_date'] =date('Y-m-d', strtotime($nextPaymentDue));
         // }
-        
+
         if ($request->hasFile('documents')) {
             $data['documents'] = uploadImageToWebpS3FromFile(
                 $request,
@@ -297,7 +304,7 @@ class FinanceController extends Controller
         }
 
         $finance = Finance::create($data);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Finance record created successfully.',
@@ -352,27 +359,27 @@ class FinanceController extends Controller
      *     )
      * )
      */
-  public function show($id)
-{
-    $finance = Finance::with([
-        'customer',
-        'createdBy',
-        'updatedBy'
-    ])->find($id);
+    public function show($id)
+    {
+        $finance = Finance::with([
+            'customer',
+            'createdBy',
+            'updatedBy'
+        ])->find($id);
 
-    if (!$finance) {
+        if (!$finance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance record not found.'
+            ], 404);
+        }
+
         return response()->json([
-            'success' => false,
-            'message' => 'Finance record not found.'
-        ], 404);
+            'success' => true,
+            'message' => 'Finance record retrieved successfully.',
+            'data' => $finance
+        ], 200);
     }
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Finance record retrieved successfully.',
-        'data' => $finance
-    ], 200);
-}
     /**
      * @OA\Post(
      *     path="/api/finances/{id}",
@@ -432,20 +439,20 @@ class FinanceController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'customer_id' => 'required|exists:customers,id',          
-            'payment_options' => 'nullable|string',            
+            'customer_id' => 'required|exists:customers,id',
+            'payment_options' => 'nullable|string',
             'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
             'requestedAmount' => 'required|numeric',
             'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
-            
-            'type_of_business' => 'nullable|string|max:255',             
+
+            'type_of_business' => 'nullable|string|max:255',
             'annual_revenue' => 'nullable|string',
-            'years_in_business' => 'nullable|string',           
+            'years_in_business' => 'nullable|string',
             'duns_number' => 'nullable|string',
             'status' => 'nullable|string',
             'creditLimitAmount' => 'nullable|string',
             'approvedAmount' => 'nullable|string',
-            
+
         ]);
 
         if ($validator->fails()) {
@@ -466,13 +473,19 @@ class FinanceController extends Controller
 
         $data = $validator->validated();
         if ($request->status == 'Active') {
-            $data['approvalBy'] = Auth::id();            
-        } 
-        
+            $data['approvalBy'] = Auth::id();
+        }
+        if ($request->approvedAmount > $request->creditLimitAmount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Approved Amount is greagter then limit amount.',
+
+            ], 201);
+        }
         // if (!empty($request->creditLimitAmount) && !empty($request->approvedAmount)) {
         //     $data['availableCreditAmount']  = $request->approvedAmount - $request->approvedAmount;
         // }
-                 
+
         // if ($request->term_selection == 'Net 30 Days') {
         //     $nextPaymentDue = "+30 Days";
         // } elseif ($request->term_selection == 'Net 45 Days') {
