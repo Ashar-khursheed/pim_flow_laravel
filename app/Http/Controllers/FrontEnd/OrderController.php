@@ -248,10 +248,15 @@ class OrderController extends BaseController
 			'is_cod' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
+<<<<<<< HEAD
 			'pay_with_netTerm' => 'nullable|boolean',
 			'cheque_img' => 'required_if:pay_with_cheque,1|file|mimes:jpeg,jpg,png,webp|max:5024',
 			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5024',
 
+=======
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+>>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
@@ -282,6 +287,8 @@ class OrderController extends BaseController
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -293,6 +300,7 @@ class OrderController extends BaseController
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
+<<<<<<< HEAD
 				// Determine shipping charge based on Texas rules ONLY for US site
 				$state = $address->state;
 				$dbShipping = $fetchedDetail->shipping_charge ?? 0;
@@ -318,14 +326,21 @@ class OrderController extends BaseController
 				}
 
 
+=======
+>>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
+<<<<<<< HEAD
 					'accessory_item_charge' => $accessoryPriceSum * $product['quantity'],
 					'shipping_charge' => $finalShipping,
+=======
+					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
+					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? $specificShipping),
+>>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 				];
 			}
 
@@ -344,50 +359,29 @@ class OrderController extends BaseController
 			$discountedAmount = $orderAmount - $discount;
 
 			/* Handle cheque payment discount */
-			// if ($payWithCheque) {
-			// 	$chequeImg = uploadImageToWebpS3FromFile(
-			// 		$request,
-			// 		'cheque_img',
-			// 		env('STORAGE_ENV') . '/customer/orders'
-			// 	);
-			// 	$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
-			// 	$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
-			// 	$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
-			// 	$discountedAmount -= $chequeDiscount;
-			// } else {
-			// 	$chequeImg = null;
-			// 	$chequeDiscountPercentage = 0;
-			// 	$chequeDiscount = 0;
-			// }
-
 			if ($payWithCheque) {
-
-				// Upload front image
 				$chequeImg = uploadImageToWebpS3FromFile(
 					$request,
 					'cheque_img',
 					env('STORAGE_ENV') . '/customer/orders'
 				);
-
-				// Upload back image
 				$chequeImgBack = uploadImageToWebpS3FromFile(
 					$request,
 					'cheque_img_back',
 					env('STORAGE_ENV') . '/customer/orders'
 				);
-
-				$chequeDiscountPercentage = 0;
+				$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
+				$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
 				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
-
 				$discountedAmount -= $chequeDiscount;
 			} else {
-
 				$chequeImg = null;
 				$chequeImgBack = null;
 				$chequeDiscountPercentage = 0;
 				$chequeDiscount = 0;
 			}
 
+<<<<<<< HEAD
 			$paynetTerm = $request->boolean('pay_with_netTerm', false);
 			if (!empty($paynetTerm)) {
 				$orderAmount = $orderAmount;
@@ -443,6 +437,8 @@ class OrderController extends BaseController
 					// ]);
 				}
 			}
+=======
+>>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
@@ -485,6 +481,7 @@ class OrderController extends BaseController
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
 				'cheque_img_back' => $chequeImgBack,
+
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
 
@@ -588,6 +585,7 @@ class OrderController extends BaseController
 					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 					: null;
 
+<<<<<<< HEAD
 				$shipping = $orderProduct->shipping_charge ?? 0;
 				if (in_array(config('app.website'), ['US', 'US_T'])) {
 					$state = $order->customerAddress->state ?? null;
@@ -604,6 +602,8 @@ class OrderController extends BaseController
 				}
 				$orderProduct->shipping_charge = $shipping;
 
+=======
+>>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
 						return [
@@ -720,6 +720,7 @@ class OrderController extends BaseController
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
 
+<<<<<<< HEAD
 			$shipping = $orderProduct->shipping_charge ?? 0;
 			if (in_array(config('app.website'), ['US', 'US_T'])) {
 				$state = $order->customerAddress->state ?? null;
@@ -736,6 +737,8 @@ class OrderController extends BaseController
 			}
 			$orderProduct->shipping_charge = $shipping;
 
+=======
+>>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 			if ($orderProduct->accessoryCharges) {
 				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
 					return [
