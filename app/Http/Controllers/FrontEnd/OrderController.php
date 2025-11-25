@@ -248,15 +248,10 @@ class OrderController extends BaseController
 			'is_cod' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
-<<<<<<< HEAD
 			'pay_with_netTerm' => 'nullable|boolean',
 			'cheque_img' => 'required_if:pay_with_cheque,1|file|mimes:jpeg,jpg,png,webp|max:5024',
 			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5024',
 
-=======
-			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
-			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
->>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
@@ -300,7 +295,6 @@ class OrderController extends BaseController
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
-<<<<<<< HEAD
 				// Determine shipping charge based on Texas rules ONLY for US site
 				$state = $address->state;
 				$dbShipping = $fetchedDetail->shipping_charge ?? 0;
@@ -326,21 +320,14 @@ class OrderController extends BaseController
 				}
 
 
-=======
->>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
-<<<<<<< HEAD
 					'accessory_item_charge' => $accessoryPriceSum * $product['quantity'],
 					'shipping_charge' => $finalShipping,
-=======
-					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? $specificShipping),
->>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 				];
 			}
 
@@ -381,7 +368,6 @@ class OrderController extends BaseController
 				$chequeDiscount = 0;
 			}
 
-<<<<<<< HEAD
 			$paynetTerm = $request->boolean('pay_with_netTerm', false);
 			if (!empty($paynetTerm)) {
 				$orderAmount = $orderAmount;
@@ -437,8 +423,6 @@ class OrderController extends BaseController
 					// ]);
 				}
 			}
-=======
->>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
@@ -585,7 +569,6 @@ class OrderController extends BaseController
 					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 					: null;
 
-<<<<<<< HEAD
 				$shipping = $orderProduct->shipping_charge ?? 0;
 				if (in_array(config('app.website'), ['US', 'US_T'])) {
 					$state = $order->customerAddress->state ?? null;
@@ -602,8 +585,6 @@ class OrderController extends BaseController
 				}
 				$orderProduct->shipping_charge = $shipping;
 
-=======
->>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
 						return [
@@ -720,7 +701,6 @@ class OrderController extends BaseController
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
 
-<<<<<<< HEAD
 			$shipping = $orderProduct->shipping_charge ?? 0;
 			if (in_array(config('app.website'), ['US', 'US_T'])) {
 				$state = $order->customerAddress->state ?? null;
@@ -737,8 +717,6 @@ class OrderController extends BaseController
 			}
 			$orderProduct->shipping_charge = $shipping;
 
-=======
->>>>>>> 5de14cde440db0b1138826289071a8fc4d569728
 			if ($orderProduct->accessoryCharges) {
 				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
 					return [
