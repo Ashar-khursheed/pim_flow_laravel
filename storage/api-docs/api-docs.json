@@ -19493,6 +19493,11 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "pay_with_netTerm": {
+                                        "description": "Pay with netTerm",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "cheque_img": {
                                         "description": "Cheque image (jpeg, png, webp only, max 1 MB)",
                                         "type": "string",
@@ -29849,6 +29854,63 @@
                         }
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/measurement-units/save-translation": {
+            "post": {
+                "tags": [
+                    "Measurement"
+                ],
+                "summary": "Generate or update measurement unit translation",
+                "description": "This endpoint generates or updates translations for a measurement unit.",
+                "operationId": "ce0968a47c140524104ee93c5414614b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "locale"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID of the measurement type",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "locale": {
+                                        "description": "Locale code for translation",
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "measurement_units": {
+                                        "description": "Key-value pairs of measurement unit translations (key = measurement_unit_id)",
+                                        "type": "object",
+                                        "example": {
+                                            "1": "صغير",
+                                            "2": "متوسط",
+                                            "3": "كبير"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Success",

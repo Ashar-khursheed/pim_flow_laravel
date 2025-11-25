@@ -8,7 +8,7 @@ use App\Models\FrontEnd\Order;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 use App\Models\FrontEnd\CustomerAddress;
-
+use App\Models\FrontEnd\Finance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -201,6 +201,7 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
 	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
+	 *                 @OA\Property(property="pay_with_netTerm", type="boolean", example=false, description="Pay with netTerm"),
 	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 1 MB)"),
 	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
 	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
@@ -246,9 +247,8 @@ class OrderController extends BaseController
 			'is_cod' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
-			'cheque_img' => 'required_if:pay_with_cheque,1|file|mimes:jpeg,jpg,png,webp|max:5024',
-			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5024',
-
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
 
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
@@ -279,6 +279,8 @@ class OrderController extends BaseController
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -290,33 +292,6 @@ class OrderController extends BaseController
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
-				// Determine shipping charge based on Texas rules ONLY for US site
-				$state = $address->state;
-				$dbShipping = $fetchedDetail->shipping_charge ?? 0;
-
-				// Default shipping = DB value or 0
-				$finalShipping = $dbShipping;
-
-				// Apply rules ONLY if website is US or US_T
-				if (in_array(config('app.website'), ['US', 'US_T'])) {
-
-					// Customer pickup → always free
-					if ($request->boolean('is_customer_pickup')) {
-						$finalShipping = 0;
-
-					} else {
-						if ($state === 'Texas') {
-							// Texas → If DB shipping is 0 → make it 99
-							$finalShipping = ($dbShipping > 0) ? $dbShipping : 99;
-
-						} else {
-							// Outside Texas → If DB shipping is 0 → make it 199
-							$finalShipping = ($dbShipping > 0) ? $dbShipping : 199;
-						}
-					}
-				}
-
-
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -324,7 +299,7 @@ class OrderController extends BaseController
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
 					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-    				'shipping_charge' => $finalShipping,
+					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? $specificShipping),
 				];
 			}
 
@@ -343,51 +318,27 @@ class OrderController extends BaseController
 			$discountedAmount = $orderAmount - $discount;
 
 			/* Handle cheque payment discount */
-			// if ($payWithCheque) {
-			// 	$chequeImg = uploadImageToWebpS3FromFile(
-			// 		$request,
-			// 		'cheque_img',
-			// 		env('STORAGE_ENV') . '/customer/orders'
-			// 	);
-			// 	$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
-			// 	$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
-			// 	$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
-			// 	$discountedAmount -= $chequeDiscount;
-			// } else {
-			// 	$chequeImg = null;
-			// 	$chequeDiscountPercentage = 0;
-			// 	$chequeDiscount = 0;
-			// }
-
 			if ($payWithCheque) {
-
-				// Upload front image
 				$chequeImg = uploadImageToWebpS3FromFile(
 					$request,
 					'cheque_img',
 					env('STORAGE_ENV') . '/customer/orders'
 				);
-
-				// Upload back image
 				$chequeImgBack = uploadImageToWebpS3FromFile(
 					$request,
 					'cheque_img_back',
 					env('STORAGE_ENV') . '/customer/orders'
 				);
-
-				$chequeDiscountPercentage = 0;
+				$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
+				$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
 				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
-
 				$discountedAmount -= $chequeDiscount;
-
 			} else {
-
 				$chequeImg = null;
 				$chequeImgBack = null;
 				$chequeDiscountPercentage = 0;
 				$chequeDiscount = 0;
 			}
-
 
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
@@ -427,12 +378,11 @@ class OrderController extends BaseController
 				'is_residential_address' => $request->is_residential_address,
 				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-
-				'pay_with_cheque' => $payWithCheque,
 				'cheque_discount_percentage' => $chequeDiscountPercentage,
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
 				'cheque_img_back' => $chequeImgBack,
+
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
 
@@ -535,22 +485,6 @@ class OrderController extends BaseController
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
-
-				 $shipping = $orderProduct->shipping_charge ?? 0;
-				if (in_array(config('app.website'), ['US', 'US_T'])) {
-					$state = $order->customerAddress->state ?? null;
-
-					if (!$order->is_customer_pickup) {
-						if ($state === 'Texas') {
-							$shipping = ($shipping > 0) ? $shipping : 99;
-						} else {
-							$shipping = ($shipping > 0) ? $shipping : 199;
-						}
-					} else {
-						$shipping = 0;
-					}
-				}
-				$orderProduct->shipping_charge = $shipping;
 
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -668,22 +602,6 @@ class OrderController extends BaseController
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
-
-			 $shipping = $orderProduct->shipping_charge ?? 0;
-			if (in_array(config('app.website'), ['US', 'US_T'])) {
-				$state = $order->customerAddress->state ?? null;
-
-				if (!$order->is_customer_pickup) {
-					if ($state === 'Texas') {
-						$shipping = ($shipping > 0) ? $shipping : 99;
-					} else {
-						$shipping = ($shipping > 0) ? $shipping : 199;
-					}
-				} else {
-					$shipping = 0;
-				}
-			}
-			$orderProduct->shipping_charge = $shipping;
 
 			if ($orderProduct->accessoryCharges) {
 				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
