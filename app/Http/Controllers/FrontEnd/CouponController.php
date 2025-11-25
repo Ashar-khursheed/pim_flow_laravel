@@ -1421,25 +1421,29 @@ class CouponController extends Controller
          if ($orderValue < $coupon->min_order_value) {
             
             $is_valid = false;          
-            $error_message = 'Minimum order value of $' . number_format($coupon->min_order_value, 2) . ' required';
+            $error_message = 'Minimum order value of ' . number_format($coupon->min_order_value, 2) . ' required';
+        }
+         if ($orderValue < $coupon->value ) {            
+            $is_valid = false;          
+            $error_message = "The order amount (" . number_format($orderValue, 2) . ") is greater than the coupon value (" . number_format($coupon->value, 2) . ").";
         }
 
         if ($coupon->max_order_value && $orderValue > $coupon->max_order_value) {
             
             $is_valid = false;
-            $error_message = 'Order value exceeds maximum limit of $' . number_format($coupon->max_order_value, 2);
+            $error_message = 'Order value exceeds maximum limit of ' . number_format($coupon->max_order_value, 2);
         }
 
         if ($coupon->type === 'percentage') {    
             $percentage =  ($orderValue * $coupon->value) / 100;
              if ($coupon->max_order_value && $percentage > $coupon->max_order_value) {
                 $is_valid = false;
-                $error_message = 'Order value exceeds maximum limit of $' . number_format($coupon->max_order_value, 2);
+                $error_message = 'Order value exceeds maximum limit of ' . number_format($coupon->max_order_value, 2);
              }
 
             if ($percentage < $coupon->min_order_value) {
                 $is_valid = false;          
-                $error_message = 'Minimum order value of $' . number_format($coupon->min_order_value, 2) . ' required';
+                $error_message = 'Minimum order value of ' . number_format($coupon->min_order_value, 2) . ' required';
             }
              
         }

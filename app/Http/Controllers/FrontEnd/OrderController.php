@@ -8,7 +8,7 @@ use App\Models\FrontEnd\Order;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 use App\Models\FrontEnd\CustomerAddress;
-
+use App\Models\FrontEnd\Finance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -201,6 +201,7 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
 	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
+	 *                 @OA\Property(property="pay_with_netTerm", type="boolean", example=false, description="Pay with netTerm"),
 	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 1 MB)"),
 	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
 	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
@@ -246,6 +247,7 @@ class OrderController extends BaseController
 			'is_cod' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
+			'pay_with_netTerm' => 'nullable|boolean',
 			'cheque_img' => 'required_if:pay_with_cheque,1|file|mimes:jpeg,jpg,png,webp|max:5024',
 			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5024',
 
@@ -388,7 +390,13 @@ class OrderController extends BaseController
 				$chequeDiscount = 0;
 			}
 
-
+			$paynetTerm = $request->boolean('pay_with_netTerm', false);
+			if(!empty($paynetTerm)){
+				$orderAmount = $orderAmount;
+				$customerId = auth()->id();				 
+				$finance = Finance::where('customer_id',$customerId)->where('status','Active')->orderBy('id', 'desc')->first();		 
+				 
+			}
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
