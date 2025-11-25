@@ -151,10 +151,9 @@ class MeasurementController extends BaseController
 				$measurementUnit = MeasurementUnit::find($unitId);
 
 				if (!$measurementUnit) {
-					continue; // Skip invalid IDs
+					continue;
 				}
 
-				// Save translation
 				$measurementUnit->translateOrNew($locale)->name_tr = $translatedValue;
 				$measurementUnit->save();
 			}
@@ -168,9 +167,7 @@ class MeasurementController extends BaseController
 			]);
 
 		} catch (\Exception $e) {
-
 			DB::rollBack();
-
 			return response()->json([
 				'success' => false,
 				'message' => __("err_update"),
