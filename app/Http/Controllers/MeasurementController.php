@@ -141,7 +141,6 @@ class MeasurementController extends BaseController
 		]);
 
 		DB::beginTransaction();
-
 		try {
 			$measurementType = MeasurementType::find($validated['id']);
 			$locale = $validated['locale'];
@@ -157,7 +156,6 @@ class MeasurementController extends BaseController
 				$measurementUnit->translateOrNew($locale)->name_tr = $translatedValue;
 				$measurementUnit->save();
 			}
-
 			DB::commit();
 
 			return response()->json([
