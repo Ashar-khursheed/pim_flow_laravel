@@ -235,7 +235,7 @@ class OrderController extends BaseController
 	 * )
 	 */
 	public function store(Request $request)
-	{
+	{  
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
@@ -247,7 +247,7 @@ class OrderController extends BaseController
 			'is_cod' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
-			'pay_with_netTerm' => 'nullable|boolean',
+			
 			'cheque_img' => 'required_if:pay_with_cheque,1|file|mimes:jpeg,jpg,png,webp|max:5024',
 			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5024',
 
@@ -390,13 +390,7 @@ class OrderController extends BaseController
 				$chequeDiscount = 0;
 			}
 
-			$paynetTerm = $request->boolean('pay_with_netTerm', false);
-			if(!empty($paynetTerm)){
-				$orderAmount = $orderAmount;
-				$customerId = auth()->id();				 
-				$finance = Finance::where('customer_id',$customerId)->where('status','Active')->orderBy('id', 'desc')->first();		 
-				 
-			}
+			
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
@@ -434,9 +428,7 @@ class OrderController extends BaseController
 				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
 				'is_inside_delivery' => $request->is_inside_delivery,
-				'amount' => $orderAmount,
-
-				'pay_with_cheque' => $payWithCheque,
+				'amount' => $orderAmount,			
 				'cheque_discount_percentage' => $chequeDiscountPercentage,
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
