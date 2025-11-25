@@ -9,6 +9,7 @@ use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 use App\Models\FrontEnd\CustomerAddress;
 use App\Models\FrontEnd\Finance;
+use App\Models\FrontEnd\FinancesPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -84,15 +85,15 @@ class OrderController extends BaseController
 			if ($request->has('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
-					break;
+						$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+						break;
 					case 'Unpaid':
-					$recordsQuery->where('orders.paid_amount', 0);
-					break;
+						$recordsQuery->where('orders.paid_amount', 0);
+						break;
 					case 'Partially Paid':
-					$recordsQuery->where('orders.paid_amount', '>', 0)
-					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
-					break;
+						$recordsQuery->where('orders.paid_amount', '>', 0)
+							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+						break;
 				}
 			}
 
@@ -121,9 +122,9 @@ class OrderController extends BaseController
 			}
 
 			$records = $recordsQuery
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get();
+				->offset(($page - 1) * $length)
+				->limit($length)
+				->get();
 
 			/* Transform results */
 			$records->transform(function ($record) {
@@ -138,8 +139,8 @@ class OrderController extends BaseController
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
+						? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+						: null;
 
 					if ($orderProduct->accessoryCharges) {
 						$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -235,7 +236,7 @@ class OrderController extends BaseController
 	 * )
 	 */
 	public function store(Request $request)
-	{  
+	{
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
@@ -247,7 +248,7 @@ class OrderController extends BaseController
 			'is_cod' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
-			
+			'pay_with_netTerm' => 'nullable|boolean',
 			'cheque_img' => 'required_if:pay_with_cheque,1|file|mimes:jpeg,jpg,png,webp|max:5024',
 			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5024',
 
@@ -305,12 +306,10 @@ class OrderController extends BaseController
 					// Customer pickup → always free
 					if ($request->boolean('is_customer_pickup')) {
 						$finalShipping = 0;
-
 					} else {
 						if ($state === 'Texas') {
 							// Texas → If DB shipping is 0 → make it 99
 							$finalShipping = ($dbShipping > 0) ? $dbShipping : 99;
-
 						} else {
 							// Outside Texas → If DB shipping is 0 → make it 199
 							$finalShipping = ($dbShipping > 0) ? $dbShipping : 199;
@@ -325,8 +324,8 @@ class OrderController extends BaseController
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
-					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-    				'shipping_charge' => $finalShipping,
+					'accessory_item_charge' => $accessoryPriceSum * $product['quantity'],
+					'shipping_charge' => $finalShipping,
 				];
 			}
 
@@ -381,7 +380,6 @@ class OrderController extends BaseController
 				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
 
 				$discountedAmount -= $chequeDiscount;
-
 			} else {
 
 				$chequeImg = null;
@@ -390,7 +388,61 @@ class OrderController extends BaseController
 				$chequeDiscount = 0;
 			}
 
-			
+			$paynetTerm = $request->boolean('pay_with_netTerm', false);
+			if (!empty($paynetTerm)) {
+				$orderAmount = $orderAmount;
+				$customerId = auth()->id();
+				$finance = Finance::where('customer_id', $customerId)->where('status', 'Active')->orderBy('id', 'desc')->first();
+				if(!$finance){
+					return response()->json([
+					'success' => false,
+					'message' => 'Net Term finance is either not approved or not active'
+					], 422);
+				}
+				$orderCredit = $orderAmount + $finance->usedCreditAmount;
+
+				if ($orderCredit > $finance->approvedAmount) {
+
+					return response()->json([
+						'success' => false,
+						'message' => "The order amount (" . number_format($orderCredit, 2) . ") is less than the approved amount (" . number_format($finance->approvedAmount, 2) . ").",
+					], 422);
+				}
+				 
+				if ($finance->approvedAmount == $orderCredit) {
+					$finance->availableCreditAmount = '0';
+					$finance->usedCreditAmount = $orderCredit;
+					$finance->dueCreditAmount = '0';
+				}
+
+				if ($finance->approvedAmount > $orderCredit) {
+
+					$finance->dueCreditAmount = $finance->approvedAmount - $orderCredit;
+					$finance->usedCreditAmount = $orderCredit;
+					$finance->availableCreditAmount = $finance->approvedAmount - $orderCredit;
+					$nextPaymentDue = "";
+					if ($finance->term_selection == 'Net 30 Days') {
+						$nextPaymentDue = "+30 Days";
+					} elseif ($finance->term_selection == 'Net 45 Days') {
+						$nextPaymentDue = "+45 Days";
+					} else if ($finance->term_selection == 'Net 60 Days') {
+						$nextPaymentDue = "+60 Days";
+					}
+					if (!empty($nextPaymentDue)) {
+						$finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
+					}
+
+
+					// FinancesPayment::create([
+					// 	'finances_id'=>$finance->id,
+					// 	'limitAmount'=>$finance->approvedAmount,
+					// 	'usedAmount'=>$finance->id,
+					// 	'availableAmount'=>$finance->id,
+					// 	'dueAmount'=>$finance->id,
+					// 	'creditTerms'=>$finance->term_selection,
+					// ]);
+				}
+			}
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
@@ -428,7 +480,7 @@ class OrderController extends BaseController
 				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
 				'is_inside_delivery' => $request->is_inside_delivery,
-				'amount' => $orderAmount,			
+				'amount' => $orderAmount,
 				'cheque_discount_percentage' => $chequeDiscountPercentage,
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
@@ -533,10 +585,10 @@ class OrderController extends BaseController
 				}
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
+					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 
-				 $shipping = $orderProduct->shipping_charge ?? 0;
+				$shipping = $orderProduct->shipping_charge ?? 0;
 				if (in_array(config('app.website'), ['US', 'US_T'])) {
 					$state = $order->customerAddress->state ?? null;
 
@@ -580,7 +632,6 @@ class OrderController extends BaseController
 				'message' => 'Order created successfully',
 				'data' => $order
 			], 201);
-
 		} catch (\Exception $e) {
 			DB::rollBack();
 
@@ -610,8 +661,8 @@ class OrderController extends BaseController
 	public function show($id)
 	{
 		$order = Order::where('customer_id', auth()->id())
-		->where('id', $id)
-		->first();
+			->where('id', $id)
+			->first();
 
 		if (!$order) {
 			return response()->json([
@@ -643,19 +694,19 @@ class OrderController extends BaseController
 			$product = $orderProduct->product;
 			if ($product) {
 				$product->images = is_array($product->images)
-				? $product->images
-				: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+					? $product->images
+					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
 				$product->category_url = method_exists($product, 'category_url')
-				? $product->category_url()
-				: null;
+					? $product->category_url()
+					: null;
 
 				$product->parent_category_url = method_exists($product, 'parent_category_url')
-				? $product->parent_category_url()
-				: null;
+					? $product->parent_category_url()
+					: null;
 
 				$product->url = $product->seoProductUrl->url ?? null;
 
@@ -663,13 +714,13 @@ class OrderController extends BaseController
 			}
 
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-			->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+				->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-			: null;
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 
-			 $shipping = $orderProduct->shipping_charge ?? 0;
+			$shipping = $orderProduct->shipping_charge ?? 0;
 			if (in_array(config('app.website'), ['US', 'US_T'])) {
 				$state = $order->customerAddress->state ?? null;
 
@@ -936,8 +987,13 @@ class OrderController extends BaseController
 		}
 
 		$allowedStatuses = [
-			'Pending', 'Confirmed', 'Supplier Delivery', 'International',
-			'Export', 'On hold', 'Ready to ship'
+			'Pending',
+			'Confirmed',
+			'Supplier Delivery',
+			'International',
+			'Export',
+			'On hold',
+			'Ready to ship'
 		];
 
 		if (!in_array($order->status, $allowedStatuses)) {
@@ -1004,15 +1060,15 @@ class OrderController extends BaseController
 
 		// Fetch last 5 delivered orders with products
 		$deliveredOrders = Order::where('customer_id', $customerId)
-		->whereIn('status', ['Delivered', 'Cancelled'])
-		->orderByDesc('created_at')
-		->take(5)
-		->with([
-			'orderProducts.product.productSuppliers',
-			'orderProducts.product.currency',
-			'orderProducts.product.brand'
-		])
-		->get();
+			->whereIn('status', ['Delivered', 'Cancelled'])
+			->orderByDesc('created_at')
+			->take(5)
+			->with([
+				'orderProducts.product.productSuppliers',
+				'orderProducts.product.currency',
+				'orderProducts.product.brand'
+			])
+			->get();
 
 		$addedProducts = collect();
 
