@@ -993,7 +993,7 @@ function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier
 		->first();
 
 	if ($productSupplier) {
-		$productSupplier->shipping_charge = $productSupplier->shipping_charge ?? 0;
+		$productSupplier->shipping_charge = empty($productSupplier->shipping_charge) ? null : $productSupplier->shipping_charge;
 	}
 
 	return $productSupplier;
