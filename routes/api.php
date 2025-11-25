@@ -405,6 +405,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);
 
 	Route::get('/measurement-types', [MeasurementController::class, 'getMeasurementTypes']);
+
+	Route::post('/measurement-units/save-translation', [MeasurementController::class, 'saveTranslation']);
 	Route::get('/measurement-units', [MeasurementController::class, 'getMeasurementUnitsByType']);
 	Route::get('/measurement-type-categories', [MeasurementController::class, 'getCategoriesByMeasurementType']);
 
