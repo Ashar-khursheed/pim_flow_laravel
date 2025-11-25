@@ -49,7 +49,8 @@ class TranslationController extends BaseController
 		$maxRange = ($request->type === 'product') ? $request->range_from + 1000 : $request->range_from + 2000;
 
 		$request->validate([
-			'type' => 'required|string|in:attribute_group,attribute,attribute_value,product_attribute,product',
+			// 'type' => 'required|string|in:attribute_group,attribute,attribute_value,product_attribute,product',
+			'type' => 'required|string|in:attribute,attribute_value,product_attribute',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => "required|integer|gte:range_from|max:$maxRange",
 		]);

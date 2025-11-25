@@ -3,9 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 
-class MeasurementUnit extends Model
+class MeasurementUnit extends Model implements TranslatableContract
 {
+	use Translatable;
+
+	public $translatedAttributes = ['name_tr'];
+
 	public function type()
 	{
 		return $this->belongsTo(MeasurementType::class, 'measurement_type_id');
@@ -15,10 +21,9 @@ class MeasurementUnit extends Model
 	{
 		return $this->belongsToMany(Attribute::class, 'attribute_measurements')->using(AttributeMeasurement::class);
 	}
-	// optional, for inverse relation
-		public function productAttributes()
-		{
-			return $this->hasMany(ProductAttributes::class, 'measurement_unit_id');
-		}
 
+	public function productAttributes()
+	{
+		return $this->hasMany(ProductAttributes::class, 'measurement_unit_id');
+	}
 }
