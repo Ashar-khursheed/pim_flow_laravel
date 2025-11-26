@@ -173,177 +173,94 @@ class OrderController extends Controller
 			->limit($length)
 			->get();
 
-			// $records->transform(function ($record) {
-			// 	$record->customer_name = $record->customer->name ?? null;
-			// 	$record->created_by = $record->creator->name ?? null;
-			// 	$record->updated_by = $record->updator->name ?? null;
-
-			// 	$response = $record->nofraudResponse->response ?? null;
-
-			// 	if (is_string($response)) {
-			// 		$data = json_decode($response, true);
-			// 	} elseif (is_array($response)) {
-			// 		$data = $response;
-			// 	} else {
-			// 		$data = [];
-			// 	}
-
-			// 	$record->nofraud_decision = $data['decision'] ?? null;
-			// 	unset($record->nofraudResponse);
-
-
-			// 	unset($record->creator, $record->updator);
-
-			// 	foreach ($record->orderProducts as $orderProduct) {
-			// 		$product = $orderProduct->product;
-			// 		if ($product) {
-			// 			$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-			// 			$product->brand_name = $product->brand->name ?? null;
-			// 			$product->currency_symbol = $product->currency->symbol ?? null;
-			// 			unset($product->brand, $product->currency);
-			// 		}
-			// 		$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-			// 		$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-			// 		? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-			// 		: null;
-
-			// 		if ($orderProduct->accessoryCharges) {
-			// 			$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
-			// 				return [
-			// 					'id' => $charge->id,
-			// 					'accessory_item_id' => $charge->accessory_item_id,
-			// 					'accessory_item_name' => $charge->accessoryItem->name ?? null,
-			// 					'accessory_item_price' => $charge->accessoryItem->price ?? null,
-			// 					'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-			// 					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-			// 					'amount' => $charge->amount,
-			// 				];
-			// 			});
-
-			// 			unset($orderProduct->accessoryCharges);
-			// 		}
-
-			// 		foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-			// 			if (isset($orderProduct->$key)) {
-			// 				$orderProduct->$key = number_format($orderProduct->$key, 2, '.', '');
-			// 			}
-			// 		}
-			// 	}
-
-			// 	foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-			// 		if (isset($record->$key)) {
-			// 			$record->$key = number_format($record->$key, 2, '.', '');
-			// 		}
-			// 	}
-
-			// 	return $record;
-			// });
 			$records->transform(function ($record) {
-    // Customer & creator/updator
-    $record->customer_name = $record->customer->name ?? null;
-    $record->created_by = $record->creator->name ?? null;
-    $record->updated_by = $record->updator->name ?? null;
+				$record->customer_name = $record->customer->name ?? null;
+				$record->created_by = $record->creator->name ?? null;
+				$record->updated_by = $record->updator->name ?? null;
 
-    // Handle nofraud decision
-    $response = $record->nofraudResponse->response ?? null;
-    if (is_string($response)) {
-        $data = json_decode($response, true);
-    } elseif (is_array($response)) {
-        $data = $response;
-    } else {
-        $data = [];
-    }
-    $record->nofraud_decision = $data['decision'] ?? null;
-    unset($record->nofraudResponse);
+				$response = $record->nofraudResponse->response ?? null;
 
-    // Handle UTM: keep object, default fields to "Organic"
-    if ($record->utm) {
-        $record->utm->utm_source = $record->utm->utm_source ?? 'Organic';
-        $record->utm->utm_medium = $record->utm->utm_medium ?? 'Organic';
-        $record->utm->utm_campaign = $record->utm->utm_campaign ?? 'Organic';
-        $record->utm->utm_term = $record->utm->utm_term ?? 'Organic';
-        $record->utm->utm_content = $record->utm->utm_content ?? 'Organic';
-        $record->utm->gclid = $record->utm->gclid ?? 'Organic';
-    } else {
-        $record->utm = (object)[
-            'id' => null,
-            'utm_source' => 'Organic',
-            'utm_medium' => 'Organic',
-            'utm_campaign' => 'Organic',
-            'utm_term' => 'Organic',
-            'utm_content' => 'Organic',
-            'gclid' => 'Organic',
-            'session_id' => null,
-            'created_at' => null,
-            'updated_at' => null
-        ];
-    }
+				if (is_string($response)) {
+					$data = json_decode($response, true);
+				} elseif (is_array($response)) {
+					$data = $response;
+				} else {
+					$data = [];
+				}
 
-    unset($record->creator, $record->updator);
+				$record->nofraud_decision = $data['decision'] ?? null;
+				unset($record->nofraudResponse);
 
-    // Handle orderProducts & formatting as before
-    foreach ($record->orderProducts as $orderProduct) {
-        $product = $orderProduct->product;
-        if ($product) {
-            $product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-            $product->brand_name = $product->brand->name ?? null;
-            $product->currency_symbol = $product->currency->symbol ?? null;
-            unset($product->brand, $product->currency);
-        }
+				// Handle UTM: keep object, default fields to "Organic"
+				if ($record->utm) {
+					$record->utm->utm_source = $record->utm->utm_source ?? 'Organic';
+					$record->utm->utm_medium = $record->utm->utm_medium ?? 'Organic';
+					$record->utm->utm_campaign = $record->utm->utm_campaign ?? 'Organic';
+					$record->utm->utm_term = $record->utm->utm_term ?? 'Organic';
+					$record->utm->utm_content = $record->utm->utm_content ?? 'Organic';
+					$record->utm->gclid = $record->utm->gclid ?? 'Organic';
+				} else {
+					$record->utm = (object)[
+						'id' => null,
+						'utm_source' => 'Organic',
+						'utm_medium' => 'Organic',
+						'utm_campaign' => 'Organic',
+						'utm_term' => 'Organic',
+						'utm_content' => 'Organic',
+						'gclid' => 'Organic',
+						'session_id' => null,
+						'created_at' => null,
+						'updated_at' => null
+					];
+				}
 
-        $orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-        $orderProduct->expectedShippingDate = $orderProduct->product_supplier
-            ? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-            : null;
+				unset($record->creator, $record->updator);
 
-		$shipping = $orderProduct->shipping_charge ?? 0;
-		// 	if (in_array(config('app.website'), ['US', 'US_T'])) {
-		// 		$state = $order->customerAddress->state ?? null;
+				foreach ($record->orderProducts as $orderProduct) {
+					$product = $orderProduct->product;
+					if ($product) {
+						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+						$product->brand_name = $product->brand->name ?? null;
+						$product->currency_symbol = $product->currency->symbol ?? null;
+						unset($product->brand, $product->currency);
+					}
+					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 
-		// 		if (!$order->is_customer_pickup) {
-		// 			if ($state === 'Texas') {
-		// 				$shipping = ($shipping > 0) ? $shipping : 99;
-		// 			} else {
-		// 				$shipping = ($shipping > 0) ? $shipping : 199;
-		// 			}
-		// 		} else {
-		// 			$shipping = 0;
-		// 		}
-		// 	}
-		// $orderProduct->shipping_charge = $shipping;	
+					if ($orderProduct->accessoryCharges) {
+						$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+							return [
+								'id' => $charge->id,
+								'accessory_item_id' => $charge->accessory_item_id,
+								'accessory_item_name' => $charge->accessoryItem->name ?? null,
+								'accessory_item_price' => $charge->accessoryItem->price ?? null,
+								'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+								'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+								'amount' => $charge->amount,
+							];
+						});
 
-        if ($orderProduct->accessoryCharges) {
-            $orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
-                return [
-                    'id' => $charge->id,
-                    'accessory_item_id' => $charge->accessory_item_id,
-                    'accessory_item_name' => $charge->accessoryItem->name ?? null,
-                    'accessory_item_price' => $charge->accessoryItem->price ?? null,
-                    'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-                    'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-                    'amount' => $charge->amount,
-                ];
-            });
-            unset($orderProduct->accessoryCharges);
-        }
+						unset($orderProduct->accessoryCharges);
+					}
 
-        foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-            if (isset($orderProduct->$key)) {
-                $orderProduct->$key = number_format($orderProduct->$key, 2, '.', '');
-            }
-        }
-    }
+					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+						if (isset($orderProduct->$key)) {
+							$orderProduct->$key = number_format($orderProduct->$key, 2, '.', '');
+						}
+					}
+				}
 
-    foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-        if (isset($record->$key)) {
-            $record->$key = number_format($record->$key, 2, '.', '');
-        }
-    }
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+					if (isset($record->$key)) {
+						$record->$key = number_format($record->$key, 2, '.', '');
+					}
+				}
 
-    return $record;
-});
-
-		} else {
+				return $record;
+			});
+		} else {//
 			$records = $recordsQuery->orderBy('order_number', 'asc')->get(['id', 'order_number']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
@@ -378,7 +295,8 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="ship_all_at_once", type="boolean", example=true, description="Ship all items together"),
 	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
-	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 1 MB)"),
+	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
+	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
 	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
@@ -422,8 +340,9 @@ class OrderController extends Controller
 			'separate_deliveries' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
-			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5024',
-			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5024',
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 			'tax_percentage' => 'required|numeric|min:0',
@@ -454,6 +373,8 @@ class OrderController extends Controller
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -465,6 +386,9 @@ class OrderController extends Controller
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
+				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -472,7 +396,7 @@ class OrderController extends Controller
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
 					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => $shipping,
 				];
 			}
 
@@ -491,29 +415,21 @@ class OrderController extends Controller
 			$discountedAmount = $orderAmount - $discount;
 
 			/* Handle cheque payment discount */
-		if ($payWithCheque) {
-
-				// Upload front image
+			if ($payWithCheque) {
 				$chequeImg = uploadImageToWebpS3FromFile(
 					$request,
 					'cheque_img',
 					env('STORAGE_ENV') . '/customer/orders'
 				);
-
-				// Upload back image
 				$chequeImgBack = uploadImageToWebpS3FromFile(
 					$request,
 					'cheque_img_back',
 					env('STORAGE_ENV') . '/customer/orders'
 				);
-
 				$chequeDiscountPercentage = 0;
 				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
-
 				$discountedAmount -= $chequeDiscount;
-
 			} else {
-
 				$chequeImg = null;
 				$chequeImgBack = null;
 				$chequeDiscountPercentage = 0;
@@ -566,7 +482,7 @@ class OrderController extends Controller
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
 				'cheque_img_back' => $chequeImgBack,
-				
+
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
 
@@ -628,7 +544,7 @@ class OrderController extends Controller
 				$cart->delete();
 			});
 
-			if ($request->boolean('is_reserved')) {
+			if ($request->boolean('is_reserved') && !$payWithCheque) {
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					$paymentLink = null;
 					if ($request->boolean('is_payment')) {
@@ -724,7 +640,7 @@ class OrderController extends Controller
 
 			DB::commit();
 
-			if ($request->boolean('is_reserved')) {
+			if ($request->boolean('is_reserved') && !$payWithCheque) {
 				$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_RES';
 				$batch->add(new OrderReservedMailJob([
@@ -767,22 +683,6 @@ class OrderController extends Controller
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
-
-				 $shipping = $orderProduct->shipping_charge ?? 0;
-				if (in_array(config('app.website'), ['US', 'US_T'])) {
-					$state = $order->customerAddress->state ?? null;
-
-					if (!$order->is_customer_pickup) {
-						if ($state === 'Texas') {
-							$shipping = ($shipping > 0) ? $shipping : 99;
-						} else {
-							$shipping = ($shipping > 0) ? $shipping : 199;
-						}
-					} else {
-						$shipping = 0;
-					}
-				}
-				$orderProduct->shipping_charge = $shipping;
 
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -974,27 +874,9 @@ class OrderController extends Controller
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
 
-
-
 			$orderProduct->nofraudResponse->response ?? null;
 			$orderProduct->nofraud_decision = $data['decision'] ?? null;
 			unset($orderProduct->nofraudResponse);
-
-			 $shipping = $orderProduct->shipping_charge ?? 0;
-			if (in_array(config('app.website'), ['US', 'US_T'])) {
-				$state = $order->customerAddress->state ?? null;
-
-				if (!$order->is_customer_pickup) {
-					if ($state === 'Texas') {
-						$shipping = ($shipping > 0) ? $shipping : 99;
-					} else {
-						$shipping = ($shipping > 0) ? $shipping : 199;
-					}
-				} else {
-					$shipping = 0;
-				}
-			}
-			$orderProduct->shipping_charge = $shipping;
 
 			if ($orderProduct->accessoryCharges) {
 				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -1198,6 +1080,8 @@ class OrderController extends Controller
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -1209,6 +1093,8 @@ class OrderController extends Controller
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
+				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -1216,7 +1102,7 @@ class OrderController extends Controller
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
 					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => $shipping,
 				];
 			}
 
