@@ -162,6 +162,7 @@ class FinanceController extends Controller
                 'approvalBy' => $finance->approvalUser?->username,
                 'accountsPayableEmail' => $finance->accountsPayableEmail,
                 'accountsPayablePhone' => $finance->accountsPayablePhone,
+                'accountsStatus' => $finance->accountsStatus, // <-- Added here
                 'usedCreditAmount' => $finance->usedCreditAmount,
                 'availableCreditAmount' => $finance->availableCreditAmount,
                 'purchaseAmount' => $finance->purchaseAmount,
@@ -440,204 +441,214 @@ class FinanceController extends Controller
         ], 200);
     }
 
-     /**
-     * @OA\Post(
-     *     path="/api/finances/{id}",
-     *     summary="Update an existing finance record",
-     *     tags={"Finance"},
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="Finance record ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *             @OA\Schema(
-     *                 type="object",
-     *                 required={"customer_id"},
-     *
-     *                 @OA\Property(
-     *                     property="customer_id",
-     *                     type="integer",
-     *                     example=10
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="payment_options",
-     *                     type="string",
-     *                     example="netTerm",
-     *                     description="Payment option"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="term_selection",
-     *                     type="string",
-     *                     enum={"Net 30 Days", "Net 45 Days", "Net 60 Days"},
-     *                     example="Net 30 Days",
-     *                     description="Net payment duration"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="requestedAmount",
-     *                     type="number",
-     *                     format="float",
-     *                     example=5000.75,
-     *                     description="Requested credit amount"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="documents",
-     *                     type="string",
-     *                     format="binary",
-     *                     description="Upload related document"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="type_of_business",
-     *                     type="string",
-     *                     example="E-commerce"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="accountsPayableEmail",
-     *                     type="string",
-     *                     example="pay@gmail.com"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="accountsPayablePhone",
-     *                     type="string",
-     *                     example="123456789"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="annual_revenue",
-     *                     type="string",
-     *                     example="10M USD"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="years_in_business",
-     *                     type="string",
-     *                     example="5–10 years"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="duns_number",
-     *                     type="string",
-     *                     example="123456789"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="creditLimitAmount",
-     *                     type="number",
-     *                     example=5000
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="status",
-     *                     type="string",
-     *                     enum={"Active", "Overdue", "Pending"},
-     *                     example="Pending"
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Finance record updated successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Finance record updated successfully."),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Validation failed"),
-     *             @OA\Property(property="errors", type="object")
-     *         )
-     *     )
-     * )
-     */
-    public function update(Request $request, $id)
-    {
-          
-        $validator = Validator::make($request->all(), [         
-            'payment_options' => 'nullable|string',
-            'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
-            'requestedAmount' => 'required|numeric',
-            'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
-            'type_of_business' => 'nullable|string|max:255',
-            'accountsPayableEmail' => 'required|email|string|max:255',
-            'accountsPayablePhone' => 'required|string|max:255',            
-            'annual_revenue' => 'nullable|string',
-            'years_in_business' => 'nullable|string',
-            'duns_number' => 'nullable|string',
-            'status' => 'nullable|string',
-            'creditLimitAmount' => 'nullable|string'
+    /**
+         * @OA\Post(
+         *     path="/api/finances/{id}",
+         *     summary="Update an existing finance record",
+         *     tags={"Finance"},
+         *     security={{"bearerAuth":{}}},
+         *
+         *     @OA\Parameter(
+         *         name="id",
+         *         in="path",
+         *         required=true,
+         *         description="Finance record ID",
+         *         @OA\Schema(type="integer")
+         *     ),
+         *
+         *     @OA\RequestBody(
+         *         required=true,
+         *         @OA\MediaType(
+         *             mediaType="multipart/form-data",
+         *             @OA\Schema(
+         *                 type="object",
+         *                 required={"customer_id"},
+         *
+         *                 @OA\Property(
+         *                     property="customer_id",
+         *                     type="integer",
+         *                     example=10
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="payment_options",
+         *                     type="string",
+         *                     example="netTerm"
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="term_selection",
+         *                     type="string",
+         *                     enum={"Net 30 Days", "Net 45 Days", "Net 60 Days"},
+         *                     example="Net 30 Days"
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="requestedAmount",
+         *                     type="number",
+         *                     format="float",
+         *                     example=5000.75
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="documents",
+         *                     type="string",
+         *                     format="binary",
+         *                     description="Upload related document"
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="type_of_business",
+         *                     type="string",
+         *                     example="E-commerce"
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="accountsPayableEmail",
+         *                     type="string",
+         *                     example="pay@gmail.com"
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="accountsPayablePhone",
+         *                     type="string",
+         *                     example="123456789"
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="annual_revenue",
+         *                     type="string",
+         *                     example="10M USD"
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="years_in_business",
+         *                     type="string",
+         *                     example="5–10 years"
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="duns_number",
+         *                     type="string",
+         *                     example="123456789"
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="creditLimitAmount",
+         *                     type="number",
+         *                     example=5000
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="status",
+         *                     type="string",
+         *                     enum={"Active", "Overdue", "Pending"},
+         *                     example="Pending"
+         *                 ),
+         *
+         *                 @OA\Property(
+         *                     property="accountsStatus",
+         *                     type="string",
+         *                     enum={"Pending", "Approved", "Reject"},
+         *                     example="Pending",
+         *                     description="Internal accounts payable approval status"
+         *                 )
+         *             )
+         *         )
+         *     ),
+         *
+         *     @OA\Response(
+         *         response=200,
+         *         description="Finance record updated successfully",
+         *         @OA\JsonContent(
+         *             @OA\Property(property="success", type="boolean", example=true),
+         *             @OA\Property(property="message", type="string", example="Finance record updated successfully."),
+         *             @OA\Property(property="data", type="object")
+         *         )
+         *     ),
+         *
+         *     @OA\Response(
+         *         response=422,
+         *         description="Validation error",
+         *         @OA\JsonContent(
+         *             @OA\Property(property="success", type="boolean", example=false),
+         *             @OA\Property(property="message", type="string", example="Validation failed"),
+         *             @OA\Property(property="errors", type="object")
+         *         )
+         *     )
+         * )
+         */
 
-        ]);
+        public function update(Request $request, $id)
+        {
+            $validator = Validator::make($request->all(), [
+                'payment_options' => 'nullable|string',
+                'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
+                'requestedAmount' => 'required|numeric',
+                'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
+                'type_of_business' => 'nullable|string|max:255',
+                'accountsPayableEmail' => 'required|email|string|max:255',
+                'accountsPayablePhone' => 'required|string|max:255',
+                'annual_revenue' => 'nullable|string',
+                'years_in_business' => 'nullable|string',
+                'duns_number' => 'nullable|string',
+                'status' => 'nullable|string',
+                'creditLimitAmount' => 'nullable|string',
 
-        if ($validator->fails()) {
+                // ⭐ NEW FIELD ADDED HERE
+                'accountsStatus' => 'nullable|string|in:Pending,Approved,Rejected,Hold'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $finance = Finance::find($id);
+            if (!$finance) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Record not found'
+                ], 404);
+            }
+
+            $data = $validator->validated();
+
+            if ($request->status == 'Active') {
+                $data['approvalBy'] = Auth::id();
+            }
+
+            if ($request->approvedAmount > $request->creditLimitAmount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
+                ], 201);
+            }
+
+            $data['updated_by'] = Auth::id() ?? 1;
+
+            if ($request->hasFile('documents')) {
+                $data['documents'] = uploadImageToWebpS3FromFile(
+                    $request,
+                    'documents',
+                    env('STORAGE_ENV') . '/documents'
+                );
+            } else {
+                $data['documents'] = $finance->documents;
+            }
+
+            $finance->update($data);
+
             return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'success' => true,
+                'message' => 'Finance record updated successfully.',
+                'data' => $finance
+            ], 200);
         }
 
-        $finance = Finance::find($id);
-        if (!$finance) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Record not found'
-            ], 404);
-        }
-
-        $data = $validator->validated();
-        if ($request->status == 'Active') {
-            $data['approvalBy'] = Auth::id();
-        }
-        if ($request->approvedAmount > $request->creditLimitAmount) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
-
-            ], 201);
-        }
-
-        $data['updated_by'] = Auth::id() ?? 1;
-        if ($request->hasFile('documents')) {
-            $data['documents'] = uploadImageToWebpS3FromFile(
-                $request,
-                'documents',
-                env('STORAGE_ENV') . '/documents'
-            );
-        } else {
-            $data['documents'] = $finance->documents;
-        }
-
-        $finance->update($data);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Finance record updated successfully.',
-            'data' => $finance
-        ], 200);
-    }
 
 
     /**

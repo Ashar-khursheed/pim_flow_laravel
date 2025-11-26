@@ -11275,12 +11275,10 @@
                                         "example": 10
                                     },
                                     "payment_options": {
-                                        "description": "Payment option",
                                         "type": "string",
                                         "example": "netTerm"
                                     },
                                     "term_selection": {
-                                        "description": "Net payment duration",
                                         "type": "string",
                                         "enum": [
                                             "Net 30 Days",
@@ -11290,7 +11288,6 @@
                                         "example": "Net 30 Days"
                                     },
                                     "requestedAmount": {
-                                        "description": "Requested credit amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 5000.75
@@ -11334,6 +11331,16 @@
                                             "Active",
                                             "Overdue",
                                             "Pending"
+                                        ],
+                                        "example": "Pending"
+                                    },
+                                    "accountsStatus": {
+                                        "description": "Internal accounts payable approval status",
+                                        "type": "string",
+                                        "enum": [
+                                            "Pending",
+                                            "Approved",
+                                            "Reject"
                                         ],
                                         "example": "Pending"
                                     }
