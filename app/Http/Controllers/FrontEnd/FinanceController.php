@@ -116,45 +116,50 @@ class FinanceController extends Controller
 
 
     /**
-     * @OA\Get(
-     *     path="/api/frontend/finances",
-     *     summary="Get active finance record by customer ID",
-     *     tags={"Frontend Finance"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="customer_id",
-     *         in="query",
-     *         required=true,
-     *         description="Customer ID to fetch finance",
-     *         @OA\Schema(type="integer", example=19)
-     *     ),
-     *     @OA\Parameter(
-     *         name="orderAmount",
-     *         in="query",
-     *         required=true,
-     *         description="OrderAmount",
-     *         @OA\Schema(type="integer", example=300)
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Finance record retrieved successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Finance record retrieved successfully."),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Validation failed"),
-     *             @OA\Property(property="errors", type="object")
-     *         )
-     *     )
-     * )
-     */
+ * @OA\Get(
+ *     path="/api/frontend/finances/apply",
+ *     summary="Check finance application by customer ID",
+ *     tags={"Frontend Finance"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="customer_id",
+ *         in="query",
+ *         required=true,
+ *         description="Customer ID to fetch finance details",
+ *         @OA\Schema(type="integer", example=19)
+ *     ),
+ *
+ *     @OA\Parameter(
+ *         name="orderAmount",
+ *         in="query",
+ *         required=true,
+ *         description="Order Amount for validating finance",
+ *         @OA\Schema(type="number", example=300)
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Finance record retrieved successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Finance record retrieved successfully."),
+ *             @OA\Property(property="data", type="object")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Validation failed"),
+ *             @OA\Property(property="errors", type="object")
+ *         )
+ *     )
+ * )
+ */
+
 
     public function getFinance(Request $request)
     {

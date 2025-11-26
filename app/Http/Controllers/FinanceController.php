@@ -76,7 +76,7 @@ class FinanceController extends Controller
     public function index(Request $request)
     {
 
-        $query = Finance::with(['createdBy', 'updatedBy', 'customer', 'customerAddress','approvalUser']);
+        $query = Finance::with(['createdBy', 'updatedBy', 'customer', 'customerAddress', 'approvalUser']);
         if ($request->filled('status') && $request->input('status') !== "all") {
             $query->where('status', $request->input('status'));
         }
@@ -146,8 +146,8 @@ class FinanceController extends Controller
 
         // Format the results
         $formattedFinance = $financeManagement->map(function ($finance) {
-            $address = $finance->customerAddress;            
-            
+            $address = $finance->customerAddress;
+
             return [
                 'id' => $finance->id,
                 'payment_selection' => $finance->payment_selection,
@@ -300,7 +300,7 @@ class FinanceController extends Controller
 
             ], 201);
         }
-        
+
         if ($request->hasFile('documents')) {
             $data['documents'] = uploadImageToWebpS3FromFile(
                 $request,
@@ -376,7 +376,7 @@ class FinanceController extends Controller
             'customerAddress',
             'approvalUser'
         ])->find($id);
-    
+
         if (!$finance) {
             return response()->json([
                 'success' => false,
@@ -384,53 +384,53 @@ class FinanceController extends Controller
             ], 404);
         }
         $address = $finance->customerAddress;
-            $financeData =  [
-                'id' => $finance->id,
-                'payment_selection' => $finance->payment_selection,
-                'payment_options' => $finance->payment_options,
-                'term_selection' => $finance->term_selection,
-                'type_of_business' => $finance->type_of_business,
+        $financeData =  [
+            'id' => $finance->id,
+            'payment_selection' => $finance->payment_selection,
+            'payment_options' => $finance->payment_options,
+            'term_selection' => $finance->term_selection,
+            'type_of_business' => $finance->type_of_business,
 
-                'requestedAmount' => number_format($finance->requestedAmount, 2),
-                'creditLimitAmount' => number_format($finance->creditLimitAmount, 2),
-                'approvedAmount' => number_format($finance->approvedAmount, 2),
-                'approvalDate' => date('d-m-Y', strtotime($finance->approvalDate)),
-                'approvalBy' => $finance->approvalUser?->username,
-                'accountsPayableEmail' => $finance->accountsPayableEmail,
-                'accountsPayablePhone' => $finance->accountsPayablePhone,
-                'usedCreditAmount' => $finance->usedCreditAmount,
-                'availableCreditAmount' => $finance->availableCreditAmount,
-                'purchaseAmount' => $finance->purchaseAmount,
-                'dueCreditAmount' => $finance->dueCreditAmount,
+            'requestedAmount' => number_format($finance->requestedAmount, 2),
+            'creditLimitAmount' => number_format($finance->creditLimitAmount, 2),
+            'approvedAmount' => number_format($finance->approvedAmount, 2),
+            'approvalDate' => date('d-m-Y', strtotime($finance->approvalDate)),
+            'approvalBy' => $finance->approvalUser?->username,
+            'accountsPayableEmail' => $finance->accountsPayableEmail,
+            'accountsPayablePhone' => $finance->accountsPayablePhone,
+            'usedCreditAmount' => $finance->usedCreditAmount,
+            'availableCreditAmount' => $finance->availableCreditAmount,
+            'purchaseAmount' => $finance->purchaseAmount,
+            'dueCreditAmount' => $finance->dueCreditAmount,
 
-                'status' => $finance->status,
-                'business_name' => $finance->business_name,
+            'status' => $finance->status,
+            'business_name' => $finance->business_name,
 
-                // CUSTOMER FIELDS
-                'customer_name' => $finance->customer?->name,
-                'business_name' => $finance->customer?->business_name,
-                'customer_email' => $finance->customer?->email,
-                'customer_mobile' => $finance->customer?->mobile_number,
+            // CUSTOMER FIELDS
+            'customer_name' => $finance->customer?->name,
+            'business_name' => $finance->customer?->business_name,
+            'customer_email' => $finance->customer?->email,
+            'customer_mobile' => $finance->customer?->mobile_number,
 
-                'annual_revenue' => $finance->annual_revenue,
-                'years_in_business' => $finance->years_in_business,
+            'annual_revenue' => $finance->annual_revenue,
+            'years_in_business' => $finance->years_in_business,
 
-                'documents' => $finance->documents,
-                'duns_number' => $finance->duns_number,
-                'payment_due' => $finance->payment_due ? date('d-m-Y', strtotime($finance->payment_due)) : null,
-                'address' =>  $address ? [
-                    'address' => $address->address,
-                    'city' => $address->city,
-                    'state' => $address->state,
-                    'zip_code' => $address->zip_code,
-                ] : null,
-                // CREATED BY / UPDATED BY
-                'created_by' => $finance->createdBy?->username,
-                'updated_by' => $finance->updatedBy?->username,
+            'documents' => $finance->documents,
+            'duns_number' => $finance->duns_number,
+            'payment_due' => $finance->payment_due ? date('d-m-Y', strtotime($finance->payment_due)) : null,
+            'address' =>  $address ? [
+                'address' => $address->address,
+                'city' => $address->city,
+                'state' => $address->state,
+                'zip_code' => $address->zip_code,
+            ] : null,
+            // CREATED BY / UPDATED BY
+            'created_by' => $finance->createdBy?->username,
+            'updated_by' => $finance->updatedBy?->username,
 
-                'created_at' => date('d-m-Y H:i:s', strtotime($finance->created_at)),
-                'updated_at' => date('d-m-Y H:i:s', strtotime($finance->updated_at)),
-            ];
+            'created_at' => date('d-m-Y H:i:s', strtotime($finance->created_at)),
+            'updated_at' => date('d-m-Y H:i:s', strtotime($finance->updated_at)),
+        ];
 
 
         return response()->json([
@@ -459,7 +459,7 @@ class FinanceController extends Controller
      *             @OA\Schema(
      *                 type="object",
      *                 required={"customer_id"},              
-     *                 @OA\Property(property="customer_id", type="integer", example="19", description="Payment options details"),
+     *                  
      *                @OA\Property(property="term_selection", type="string",enum={"Net 30 Days","Net 45 Days","Net 60 Days"}, example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
      *                 @OA\Property(property="requestedAmount", type="number", format="float", example=5000.75, description="Transaction amount"),
      *                 @OA\Property(property="documents", type="string", format="binary", description="Upload related document"),
@@ -467,7 +467,7 @@ class FinanceController extends Controller
      *                 @OA\Property(property="type_of_business", type="string", example="E-commerce", description="Type of business"),
      *                 @OA\Property(property="accountsPayableEmail", type="string", example="pay@gmail.com", description="accountsPayableEmail"),                
      *                 @OA\Property(property="accountsPayablePhone", type="string", example="123456789", description="Accounts Payable Phone"),                
-     *                 @OA\Property(property="customer_address_id", type="integer", example="23", description="customer address id"),                                 
+     *                                              
      *                 @OA\Property(property="annual_revenue", type="string", example="10M USD", description="Annual business revenue"),
      *                 @OA\Property(property="years_in_business", type="string", example="5 – 10 years", description="Years in business"),
      *                 @OA\Property(property="duns_number", type="string", example="123456789", description="DUNS number (if applicable)"),
@@ -500,20 +500,19 @@ class FinanceController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'customer_id' => 'required|exists:customers,id',
+         
             'payment_options' => 'nullable|string',
             'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
             'requestedAmount' => 'required|numeric',
             'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
             'type_of_business' => 'nullable|string|max:255',
             'accountsPayableEmail' => 'required|email|string|max:255',
-            'accountsPayablePhone' => 'required|string|max:255',
-            'customer_address_id' => 'required|numeric',
+            'accountsPayablePhone' => 'required|string|max:255',            
             'annual_revenue' => 'nullable|string',
             'years_in_business' => 'nullable|string',
             'duns_number' => 'nullable|string',
             'status' => 'nullable|string',
-            'creditLimitAmount' => 'nullable|string',           
+            'creditLimitAmount' => 'nullable|string',
 
         ]);
 
@@ -618,55 +617,63 @@ class FinanceController extends Controller
     }
 
 
-    /**
-     * @OA\Post(
-     *     path="/api/finances/{id}/status",
-     *     summary="Update finance account status",
-     *     tags={"Finance"},
-     *     security={{"bearerAuth":{}}},
-     *     
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="Finance ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *      @OA\Parameter(
-     *         name="approvedAmount",
-     *         in="query",
-     *         required=true,
-     *         description="approvedAmount",
-     *         @OA\Schema(type="integer", example=300)
-     *     ),
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *             @OA\Schema(
-     *                 required={"status"},
-     *                 @OA\Property(
-     *                     property="status",
-     *                     type="string",
-     *                     description="Finance Account Status",
-     *                     enum={"Active","Pending","Overdue"},
-     *                     example="Active"
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Status updated successfully"
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Finance record not found"
-     *     )
-     * )
-     */
+   /**
+ * @OA\Post(
+ *     path="/api/finances/{id}/status",
+ *     summary="Update finance account status",
+ *     tags={"Finance"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         description="Finance ID",
+ *         required=true,
+ *         @OA\Schema(type="integer", example=10)
+ *     ),
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"status", "approvedAmount"},
+ *
+ *                 @OA\Property(
+ *                     property="status",
+ *                     type="string",
+ *                     description="Finance account status",
+ *                     enum={"Active","Pending","Overdue"},
+ *                     example="Active"
+ *                 ),
+ *
+ *                 @OA\Property(
+ *                     property="approvedAmount",
+ *                     type="number",
+ *                     format="float",
+ *                     description="Approved amount",
+ *                     example=300.00
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Status updated successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Status updated successfully.")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=404,
+ *         description="Finance record not found"
+ *     )
+ * )
+ */
+
 
 
     public function updateStatus(Request $request, $id)
@@ -687,10 +694,10 @@ class FinanceController extends Controller
         if ($request->status == 'Active') {
             $finance->approvalBy = Auth::id();
             $finance->approvedAmount = $request->approvedAmount;
-        }else{
+        } else {
             $finance->approvedAmount = '0';
         }
-        $finance->status = $request->status;       
+        $finance->status = $request->status;
         $finance->save();
 
         return response()->json([
