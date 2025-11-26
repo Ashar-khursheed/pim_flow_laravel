@@ -283,6 +283,7 @@ class OrderController extends BaseController
 
 		try {
 			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
