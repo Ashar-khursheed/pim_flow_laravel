@@ -11270,8 +11270,17 @@
                                     "customer_id"
                                 ],
                                 "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "payment_options": {
+                                        "description": "Payment option",
+                                        "type": "string",
+                                        "example": "netTerm"
+                                    },
                                     "term_selection": {
-                                        "description": "Net Pay in 30/45/60 Days",
+                                        "description": "Net payment duration",
                                         "type": "string",
                                         "enum": [
                                             "Net 30 Days",
@@ -11281,7 +11290,7 @@
                                         "example": "Net 30 Days"
                                     },
                                     "requestedAmount": {
-                                        "description": "Transaction amount",
+                                        "description": "Requested credit amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 5000.75
@@ -11292,41 +11301,35 @@
                                         "format": "binary"
                                     },
                                     "type_of_business": {
-                                        "description": "Type of business",
                                         "type": "string",
                                         "example": "E-commerce"
                                     },
                                     "accountsPayableEmail": {
-                                        "description": "accountsPayableEmail",
                                         "type": "string",
                                         "example": "pay@gmail.com"
                                     },
                                     "accountsPayablePhone": {
-                                        "description": "Accounts Payable Phone",
                                         "type": "string",
                                         "example": "123456789"
                                     },
                                     "annual_revenue": {
-                                        "description": "Annual business revenue",
                                         "type": "string",
                                         "example": "10M USD"
                                     },
                                     "years_in_business": {
-                                        "description": "Years in business",
                                         "type": "string",
-                                        "example": "5 – 10 years"
+                                        "example": "5–10 years"
                                     },
                                     "duns_number": {
-                                        "description": "DUNS number (if applicable)",
                                         "type": "string",
                                         "example": "123456789"
                                     },
                                     "creditLimitAmount": {
-                                        "type": "integer",
-                                        "example": "5000"
+                                        "type": "number",
+                                        "example": 5000
                                     },
                                     "status": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "enum": [
                                             "Active",
                                             "Overdue",

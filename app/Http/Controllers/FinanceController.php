@@ -225,7 +225,7 @@ class FinanceController extends Controller
      *                 @OA\Property(property="payment_options", type="string", example="netTerm", description="Payment option description"),      
      *                 @OA\Property(property="term_selection", type="string",enum={"Net 30 Days","Net 45 Days","Net 60 Days"}, example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
      *                 @OA\Property(property="requestedAmount", type="number", format="float", example=5000.75, description="Enter amount"),
-     *                 @OA\Property(property="documents", type="string", format="binary", description="Upload supporting document file"),     *                  
+     *                 @OA\Property(property="documents", type="string", format="binary", description="Upload supporting document file"),                 
      *                 @OA\Property(property="type_of_business", type="string", example="E-commerce", description="Type of business (Advertising / E-commerce)"),
      *                 
      *                 @OA\Property(property="annual_revenue", type="string", example="10M USD"),
@@ -439,12 +439,14 @@ class FinanceController extends Controller
             'data' => $financeData
         ], 200);
     }
-    /**
+
+     /**
      * @OA\Post(
      *     path="/api/finances/{id}",
      *     summary="Update an existing finance record",
      *     tags={"Finance"},
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -452,30 +454,103 @@ class FinanceController extends Controller
      *         description="Finance record ID",
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 type="object",
-     *                 required={"customer_id"},              
-     *                  
-     *                @OA\Property(property="term_selection", type="string",enum={"Net 30 Days","Net 45 Days","Net 60 Days"}, example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
-     *                 @OA\Property(property="requestedAmount", type="number", format="float", example=5000.75, description="Transaction amount"),
-     *                 @OA\Property(property="documents", type="string", format="binary", description="Upload related document"),
-     *                 
-     *                 @OA\Property(property="type_of_business", type="string", example="E-commerce", description="Type of business"),
-     *                 @OA\Property(property="accountsPayableEmail", type="string", example="pay@gmail.com", description="accountsPayableEmail"),                
-     *                 @OA\Property(property="accountsPayablePhone", type="string", example="123456789", description="Accounts Payable Phone"),                
-     *                                              
-     *                 @OA\Property(property="annual_revenue", type="string", example="10M USD", description="Annual business revenue"),
-     *                 @OA\Property(property="years_in_business", type="string", example="5 – 10 years", description="Years in business"),
-     *                 @OA\Property(property="duns_number", type="string", example="123456789", description="DUNS number (if applicable)"),
-     *                 @OA\Property(property="creditLimitAmount", type="integer", example="5000"),     *                  
-     *                 @OA\Property(property="status", type="integer", enum={"Active","Overdue","Pending"}, example="Pending"),
+     *                 required={"customer_id"},
+     *
+     *                 @OA\Property(
+     *                     property="customer_id",
+     *                     type="integer",
+     *                     example=10
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="payment_options",
+     *                     type="string",
+     *                     example="netTerm",
+     *                     description="Payment option"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="term_selection",
+     *                     type="string",
+     *                     enum={"Net 30 Days", "Net 45 Days", "Net 60 Days"},
+     *                     example="Net 30 Days",
+     *                     description="Net payment duration"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="requestedAmount",
+     *                     type="number",
+     *                     format="float",
+     *                     example=5000.75,
+     *                     description="Requested credit amount"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="documents",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Upload related document"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="type_of_business",
+     *                     type="string",
+     *                     example="E-commerce"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="accountsPayableEmail",
+     *                     type="string",
+     *                     example="pay@gmail.com"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="accountsPayablePhone",
+     *                     type="string",
+     *                     example="123456789"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="annual_revenue",
+     *                     type="string",
+     *                     example="10M USD"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="years_in_business",
+     *                     type="string",
+     *                     example="5–10 years"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="duns_number",
+     *                     type="string",
+     *                     example="123456789"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="creditLimitAmount",
+     *                     type="number",
+     *                     example=5000
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="status",
+     *                     type="string",
+     *                     enum={"Active", "Overdue", "Pending"},
+     *                     example="Pending"
+     *                 )
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Finance record updated successfully",
@@ -485,6 +560,7 @@ class FinanceController extends Controller
      *             @OA\Property(property="data", type="object")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=422,
      *         description="Validation error",
@@ -496,11 +572,10 @@ class FinanceController extends Controller
      *     )
      * )
      */
-
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-         
+          
+        $validator = Validator::make($request->all(), [         
             'payment_options' => 'nullable|string',
             'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
             'requestedAmount' => 'required|numeric',
@@ -512,7 +587,7 @@ class FinanceController extends Controller
             'years_in_business' => 'nullable|string',
             'duns_number' => 'nullable|string',
             'status' => 'nullable|string',
-            'creditLimitAmount' => 'nullable|string',
+            'creditLimitAmount' => 'nullable|string'
 
         ]);
 
