@@ -42665,6 +42665,211 @@
                 ]
             }
         },
+        "/api/training-data": {
+            "get": {
+                "tags": [
+                    "AI Training Data"
+                ],
+                "summary": "Get paginated training data with search and sorting",
+                "operationId": "03c122d57c3a325986910d3e58337b93",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by name, business_name, phone, transcript",
+                        "required": false
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort",
+                        "required": false
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order asc/desc",
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "AI Training Data"
+                ],
+                "summary": "Create new training data",
+                "operationId": "b6a0299638ef4f613d89ddc7f186755c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "business_name": {
+                                        "type": "string"
+                                    },
+                                    "phone_number": {
+                                        "type": "string"
+                                    },
+                                    "quotation": {
+                                        "type": "boolean"
+                                    },
+                                    "call_summary": {
+                                        "type": "string"
+                                    },
+                                    "transcript": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string"
+                                    },
+                                    "successful": {
+                                        "type": "boolean"
+                                    },
+                                    "zipcode": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/training-data/{id}": {
+            "get": {
+                "tags": [
+                    "AI Training Data"
+                ],
+                "summary": "Get training data by ID",
+                "operationId": "5361bb4665ed053fe3207201f2026818",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "AI Training Data"
+                ],
+                "summary": "Update training data",
+                "operationId": "ceeece1268bc87db64dc09ddf36a8a8d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "business_name": {
+                                        "type": "string"
+                                    },
+                                    "phone_number": {
+                                        "type": "string"
+                                    },
+                                    "quotation": {
+                                        "type": "boolean"
+                                    },
+                                    "call_summary": {
+                                        "type": "string"
+                                    },
+                                    "transcript": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string"
+                                    },
+                                    "successful": {
+                                        "type": "boolean"
+                                    },
+                                    "zipcode": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "AI Training Data"
+                ],
+                "summary": "Delete training data",
+                "operationId": "5f8e4beb3f8c5aa718bcbdb669cac404",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/transaction-logs": {
             "get": {
                 "tags": [
@@ -46614,6 +46819,10 @@
         {
             "name": "Temp Categories",
             "description": "Temp Categories"
+        },
+        {
+            "name": "AI Training Data",
+            "description": "AI Training Data"
         },
         {
             "name": "Translations",

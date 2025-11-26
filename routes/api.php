@@ -87,6 +87,7 @@ use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\MadeToOrderController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\GetInTouchController;
+use App\Http\Controllers\TrainingDataController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -300,6 +301,8 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('/inquiries',  InquiryController::class);
+	Route::apiResource('training-data',TrainingDataController::class);
+
 
 	Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
 	Route::apiResource('pre-purchase-claims', PrePurchaseClaimController::class);
