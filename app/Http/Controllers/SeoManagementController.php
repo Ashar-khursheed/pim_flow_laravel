@@ -431,7 +431,9 @@ class SeoManagementController extends Controller
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to create SEO record',
-				'error' => $e->getMessage()
+				'error' => $e->getMessage(),
+				'file' => $e->getFile(),
+				'line' => $e->getLine(),
 			], 422);
 		}
 	}
@@ -765,18 +767,18 @@ class SeoManagementController extends Controller
 			// $seoData['schema'] = json_encode($schemaArray);
 			$seo->update($seoData);
 			if (!empty($validated['secondary_keywords'])) {
- 
+
                 $secondaryKeywords = json_decode($validated['secondary_keywords'], true);
- 
-                if (is_array($secondaryKeywords)) {        
+
+                if (is_array($secondaryKeywords)) {
                     $incomingKeywords = [];
- 
+
                     foreach ($secondaryKeywords as $keyword) {
- 
+
                         if (!empty($keyword['secondary_keyword']) && !empty($keyword['monthly_search_volume'])) {
- 
-                            $secondaryKeyword = trim($keyword['secondary_keyword']);                    
-                            $incomingKeywords[] = $secondaryKeyword;                    
+
+                            $secondaryKeyword = trim($keyword['secondary_keyword']);
+                            $incomingKeywords[] = $secondaryKeyword;
                             SeoSecondaryKeyword::updateOrCreate(
                                 [
                                     'primary_keyword_id' => $seo->id,
@@ -787,7 +789,7 @@ class SeoManagementController extends Controller
                                 ]
                             );
                         }
-                    }                
+                    }
                     SeoSecondaryKeyword::where('primary_keyword_id', $seo->id)
                         ->whereNotIn('secondary_keyword', $incomingKeywords)
                         ->delete();
@@ -1262,7 +1264,7 @@ class SeoManagementController extends Controller
 			$brand = Brand::findOrFail($seo->relational_id);
 			$url = null;
 
-			if($brand){
+			if($brand && $brand->seoUrl){
 				$url = 'brands/'.$brand->seoUrl->url;
 			}
 
