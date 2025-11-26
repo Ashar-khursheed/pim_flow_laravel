@@ -85,15 +85,15 @@ class OrderController extends BaseController
 			if ($request->has('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-						$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
-						break;
+					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+					break;
 					case 'Unpaid':
-						$recordsQuery->where('orders.paid_amount', 0);
-						break;
+					$recordsQuery->where('orders.paid_amount', 0);
+					break;
 					case 'Partially Paid':
-						$recordsQuery->where('orders.paid_amount', '>', 0)
-							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
-						break;
+					$recordsQuery->where('orders.paid_amount', '>', 0)
+					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+					break;
 				}
 			}
 
@@ -122,9 +122,9 @@ class OrderController extends BaseController
 			}
 
 			$records = $recordsQuery
-				->offset(($page - 1) * $length)
-				->limit($length)
-				->get();
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
 
 			/* Transform results */
 			$records->transform(function ($record) {
@@ -139,8 +139,8 @@ class OrderController extends BaseController
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-						? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-						: null;
+					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 
 					if ($orderProduct->accessoryCharges) {
 						$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -295,31 +295,6 @@ class OrderController extends BaseController
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
-				// Determine shipping charge based on Texas rules ONLY for US site
-				$state = $address->state;
-				$dbShipping = $fetchedDetail->shipping_charge ?? 0;
-
-				// Default shipping = DB value or 0
-				$finalShipping = $dbShipping;
-
-				// Apply rules ONLY if website is US or US_T
-				if (in_array(config('app.website'), ['US', 'US_T'])) {
-
-					// Customer pickup → always free
-					if ($request->boolean('is_customer_pickup')) {
-						$finalShipping = 0;
-					} else {
-						if ($state === 'Texas') {
-							// Texas → If DB shipping is 0 → make it 99
-							$finalShipping = ($dbShipping > 0) ? $dbShipping : 99;
-						} else {
-							// Outside Texas → If DB shipping is 0 → make it 199
-							$finalShipping = ($dbShipping > 0) ? $dbShipping : 199;
-						}
-					}
-				}
-
-
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -375,8 +350,8 @@ class OrderController extends BaseController
 				$finance = Finance::where('customer_id', $customerId)->where('status', 'Active')->orderBy('id', 'desc')->first();
 				if(!$finance){
 					return response()->json([
-					'success' => false,
-					'message' => 'Net Term finance is either not approved or not active'
+						'success' => false,
+						'message' => 'Net Term finance is either not approved or not active'
 					], 422);
 				}
 				$orderCredit = $orderAmount + $finance->usedCreditAmount;
@@ -388,7 +363,7 @@ class OrderController extends BaseController
 						'message' => "The order amount (" . number_format($orderCredit, 2) . ") is less than the approved amount (" . number_format($finance->approvedAmount, 2) . ").",
 					], 422);
 				}
-				 
+
 				if ($finance->approvedAmount == $orderCredit) {
 					$finance->availableCreditAmount = '0';
 					$finance->usedCreditAmount = $orderCredit;
@@ -566,24 +541,8 @@ class OrderController extends BaseController
 				}
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
-
-				$shipping = $orderProduct->shipping_charge ?? 0;
-				if (in_array(config('app.website'), ['US', 'US_T'])) {
-					$state = $order->customerAddress->state ?? null;
-
-					if (!$order->is_customer_pickup) {
-						if ($state === 'Texas') {
-							$shipping = ($shipping > 0) ? $shipping : 99;
-						} else {
-							$shipping = ($shipping > 0) ? $shipping : 199;
-						}
-					} else {
-						$shipping = 0;
-					}
-				}
-				$orderProduct->shipping_charge = $shipping;
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -642,8 +601,8 @@ class OrderController extends BaseController
 	public function show($id)
 	{
 		$order = Order::where('customer_id', auth()->id())
-			->where('id', $id)
-			->first();
+		->where('id', $id)
+		->first();
 
 		if (!$order) {
 			return response()->json([
@@ -675,19 +634,19 @@ class OrderController extends BaseController
 			$product = $orderProduct->product;
 			if ($product) {
 				$product->images = is_array($product->images)
-					? $product->images
-					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+				? $product->images
+				: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
 				$product->category_url = method_exists($product, 'category_url')
-					? $product->category_url()
-					: null;
+				? $product->category_url()
+				: null;
 
 				$product->parent_category_url = method_exists($product, 'parent_category_url')
-					? $product->parent_category_url()
-					: null;
+				? $product->parent_category_url()
+				: null;
 
 				$product->url = $product->seoProductUrl->url ?? null;
 
@@ -695,27 +654,11 @@ class OrderController extends BaseController
 			}
 
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-				->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+			->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
-
-			$shipping = $orderProduct->shipping_charge ?? 0;
-			if (in_array(config('app.website'), ['US', 'US_T'])) {
-				$state = $order->customerAddress->state ?? null;
-
-				if (!$order->is_customer_pickup) {
-					if ($state === 'Texas') {
-						$shipping = ($shipping > 0) ? $shipping : 99;
-					} else {
-						$shipping = ($shipping > 0) ? $shipping : 199;
-					}
-				} else {
-					$shipping = 0;
-				}
-			}
-			$orderProduct->shipping_charge = $shipping;
+			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+			: null;
 
 			if ($orderProduct->accessoryCharges) {
 				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
@@ -1041,15 +984,15 @@ class OrderController extends BaseController
 
 		// Fetch last 5 delivered orders with products
 		$deliveredOrders = Order::where('customer_id', $customerId)
-			->whereIn('status', ['Delivered', 'Cancelled'])
-			->orderByDesc('created_at')
-			->take(5)
-			->with([
-				'orderProducts.product.productSuppliers',
-				'orderProducts.product.currency',
-				'orderProducts.product.brand'
-			])
-			->get();
+		->whereIn('status', ['Delivered', 'Cancelled'])
+		->orderByDesc('created_at')
+		->take(5)
+		->with([
+			'orderProducts.product.productSuppliers',
+			'orderProducts.product.currency',
+			'orderProducts.product.brand'
+		])
+		->get();
 
 		$addedProducts = collect();
 
