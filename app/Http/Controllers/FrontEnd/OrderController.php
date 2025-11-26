@@ -585,10 +585,10 @@ class OrderController extends BaseController
 			
 			if ($finance->availableCreditAmount> 0){
 
-			return response()->json([
-			'success' => false,
-			'message' => "Offer Split Payment Option",
-			], 422);
+				return response()->json([
+				'success' => false,
+				'message' => "Offer Split Payment Option",
+				], 422);
 			}else{
 
 			return response()->json([
@@ -605,9 +605,9 @@ class OrderController extends BaseController
 		}
 			
 		if ($finance->approvedAmount == $orderCredit) {
-			$finance->availableCreditAmount = '0';
-			$finance->usedCreditAmount = $orderCredit;
-			$finance->dueCreditAmount = '0';
+			 
+			$finance->usedCreditAmount = $finance->usedCreditAmount +  $orderCredit;
+			$finance->dueCreditAmount = $finance->dueCreditAmount +  $orderCredit;
 		}
 
 		if ($finance->approvedAmount > $orderCredit) {
@@ -625,15 +625,14 @@ class OrderController extends BaseController
 			}
 			if (!empty($nextPaymentDue)) {
 				$finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
+				$finance->payment_due = date('Y-m-d', strtotime($nextPaymentDue));
 			}
-
-
 			// FinancesPayment::create([
 			// 	'finances_id'=>$finance->id,
 			// 	'limitAmount'=>$finance->approvedAmount,
-			// 	'usedAmount'=>$finance->id,
-			// 	'availableAmount'=>$finance->id,
-			// 	'dueAmount'=>$finance->id,
+			// 	'usedAmount'=>$orderCredit,
+			// 	'availableAmount'=>$finance->approvedAmount - $orderCredit,
+			// 	'dueAmount'=>$orderCredit,
 			// 	'creditTerms'=>$finance->term_selection,
 			// ]);
 		}
