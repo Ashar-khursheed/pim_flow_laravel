@@ -295,6 +295,8 @@ class OrderController extends BaseController
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
+				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -302,7 +304,7 @@ class OrderController extends BaseController
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
 					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : (($fetchedDetail->shipping_charge ?? $specificShipping) * $product['quantity']),
+					'shipping_charge' => $shipping,
 				];
 			}
 
