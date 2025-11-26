@@ -237,6 +237,39 @@ class OrderController extends BaseController
 	 */
 	public function store(Request $request)
 	{
+		/* Parse boolean strings to actual booleans */
+		$booleanFields = [
+			'is_lift_gate',
+			'is_residential_address',
+			'is_inside_delivery',
+			'ship_all_at_once',
+			'separate_deliveries',
+			'is_cod',
+			'pay_with_cheque',
+			'is_reserved',
+			'is_payment',
+			'is_paymob',
+			'is_squarePayment',
+			'is_customer_pickup'
+		];
+
+		/* Parse products JSON string to array */
+		foreach ($booleanFields as $field) {
+			if ($request->has($field)) {
+				$request->merge([
+					$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)
+				]);
+			}
+		}
+		if ($request->has('products') && is_string($request->products)) {
+			$productsString = $request->products;
+			if (strpos(trim($productsString), '{') === 0 && strpos(trim($productsString), '[') !== 0) {
+				$productsString = '[' . $productsString . ']';
+			}
+			$products = json_decode($productsString, true);
+			$request->merge(['products' => $products]);
+		}
+
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
