@@ -597,7 +597,7 @@ class FinanceController extends Controller
                 'creditLimitAmount' => 'nullable|string',
 
                 // ⭐ NEW FIELD ADDED HERE
-                'accountsStatus' => 'nullable|string|in:Pending,Approved,Rejected,Hold'
+                'accountsStatus' => 'nullable|string|in:Pending,Approved,Reject'
             ]);
 
             if ($validator->fails()) {
