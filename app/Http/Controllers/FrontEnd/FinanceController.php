@@ -209,4 +209,84 @@ class FinanceController extends Controller
     }
 
 
+    /**
+ * @OA\Get(
+ *     path="/api/frontend/finances/check",
+ *     summary="Check finance application by customer ID",
+ *     tags={"Frontend Finance"},
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Parameter(
+ *         name="customer_id",
+ *         in="query",
+ *         required=true,
+ *         description="Customer ID to fetch finance details",
+ *         @OA\Schema(type="integer", example=19)
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Finance record retrieved successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Finance record retrieved successfully."),
+ *             @OA\Property(property="data", type="object")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Validation failed"),
+ *             @OA\Property(property="errors", type="object")
+ *         )
+ *     )
+ * )
+ */
+
+
+    public function financeCheck(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'customer_id' => 'required|exists:customers,id'             
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $customerId = $request->customer_id;
+       
+        $finance = Finance::where('customer_id', $customerId)           
+            ->orderBy('id', 'desc')
+            ->first();
+        if(!$finance){
+            return response()->json([
+            'success' => false,
+            'message' => 'Net Term finance is either not approved or not active'
+            ], 422);
+            }
+        if($finance){                         
+            return response()->json([
+            'success' => true,
+            'message' => 'Finance status successfully.',
+            'accoutsStatus' => $finance->accountsStatus
+            ], 200);
+            }else{
+            return response()->json([
+            'success' => false,
+            'message' => 'Finance not found.',
+            'accoutsStatus' => null
+            ], 200);
+
+            }
+                   
+        
+    }
+
+
 }

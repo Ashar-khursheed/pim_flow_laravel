@@ -650,6 +650,7 @@ Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
 
 Route::post('frontend/finances', [F_FinanceController::class, 'store']);
 Route::get('frontend/finances/apply', [F_FinanceController::class, 'getFinance']);
+Route::get('frontend/finances/check', [F_FinanceController::class, 'financeCheck']);
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
