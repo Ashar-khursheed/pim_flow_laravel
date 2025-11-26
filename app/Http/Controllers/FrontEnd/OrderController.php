@@ -370,58 +370,7 @@ class OrderController extends BaseController
 
 			$paynetTerm = $request->boolean('pay_with_netTerm', false);
 			if (!empty($paynetTerm)) {
-				$orderAmount = $orderAmount;
-				$customerId = auth()->id();
-				$finance = Finance::where('customer_id', $customerId)->where('status', 'Active')->orderBy('id', 'desc')->first();
-				if(!$finance){
-					return response()->json([
-					'success' => false,
-					'message' => 'Net Term finance is either not approved or not active'
-					], 422);
-				}
-				$orderCredit = $orderAmount + $finance->usedCreditAmount;
-
-				if ($orderCredit > $finance->approvedAmount) {
-
-					return response()->json([
-						'success' => false,
-						'message' => "The order amount (" . number_format($orderCredit, 2) . ") is less than the approved amount (" . number_format($finance->approvedAmount, 2) . ").",
-					], 422);
-				}
-				 
-				if ($finance->approvedAmount == $orderCredit) {
-					$finance->availableCreditAmount = '0';
-					$finance->usedCreditAmount = $orderCredit;
-					$finance->dueCreditAmount = '0';
-				}
-
-				if ($finance->approvedAmount > $orderCredit) {
-
-					$finance->dueCreditAmount = $finance->approvedAmount - $orderCredit;
-					$finance->usedCreditAmount = $orderCredit;
-					$finance->availableCreditAmount = $finance->approvedAmount - $orderCredit;
-					$nextPaymentDue = "";
-					if ($finance->term_selection == 'Net 30 Days') {
-						$nextPaymentDue = "+30 Days";
-					} elseif ($finance->term_selection == 'Net 45 Days') {
-						$nextPaymentDue = "+45 Days";
-					} else if ($finance->term_selection == 'Net 60 Days') {
-						$nextPaymentDue = "+60 Days";
-					}
-					if (!empty($nextPaymentDue)) {
-						$finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
-					}
-
-
-					// FinancesPayment::create([
-					// 	'finances_id'=>$finance->id,
-					// 	'limitAmount'=>$finance->approvedAmount,
-					// 	'usedAmount'=>$finance->id,
-					// 	'availableAmount'=>$finance->id,
-					// 	'dueAmount'=>$finance->id,
-					// 	'creditTerms'=>$finance->term_selection,
-					// ]);
-				}
+				$this->byNetTermpayment($orderAmount);				 
 			}
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
@@ -623,6 +572,76 @@ class OrderController extends BaseController
 		}
 	}
 
+	public function byNetTermpayment($orderAmount){
+
+		$orderAmount = $orderAmount;
+		$customerId = auth()->id();
+		$finance = Finance::where('customer_id', $customerId)->where('status', 'Active')->orderBy('id', 'desc')->first();
+		if(!$finance){
+			return response()->json([
+			'success' => false,
+			'message' => 'Net Term finance is either not approved or not active'
+			], 422);
+		}
+		$orderCredit = $orderAmount + $finance->usedCreditAmount;
+
+		if ($orderCredit > $finance->approvedAmount) {
+			
+			if ($finance->availableCreditAmount> 0){
+
+			return response()->json([
+			'success' => false,
+			'message' => "Offer Split Payment Option",
+			], 422);
+			}else{
+
+			return response()->json([
+			'success' => false,
+			'message' => "Force Card Payment Only",
+			], 422);
+
+			}
+
+			return response()->json([
+				'success' => false,
+				'message' => "The order amount (" . number_format($orderCredit, 2) . ") is less than the approved amount (" . number_format($finance->approvedAmount, 2) . ").",
+			], 422);
+		}
+			
+		if ($finance->approvedAmount == $orderCredit) {
+			$finance->availableCreditAmount = '0';
+			$finance->usedCreditAmount = $orderCredit;
+			$finance->dueCreditAmount = '0';
+		}
+
+		if ($finance->approvedAmount > $orderCredit) {
+
+			$finance->dueCreditAmount = $finance->approvedAmount - $orderCredit;
+			$finance->usedCreditAmount = $orderCredit;
+			$finance->availableCreditAmount = $finance->approvedAmount - $orderCredit;
+			$nextPaymentDue = "";
+			if ($finance->term_selection == 'Net 30 Days') {
+				$nextPaymentDue = "+30 Days";
+			} elseif ($finance->term_selection == 'Net 45 Days') {
+				$nextPaymentDue = "+45 Days";
+			} else if ($finance->term_selection == 'Net 60 Days') {
+				$nextPaymentDue = "+60 Days";
+			}
+			if (!empty($nextPaymentDue)) {
+				$finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
+			}
+
+
+			// FinancesPayment::create([
+			// 	'finances_id'=>$finance->id,
+			// 	'limitAmount'=>$finance->approvedAmount,
+			// 	'usedAmount'=>$finance->id,
+			// 	'availableAmount'=>$finance->id,
+			// 	'dueAmount'=>$finance->id,
+			// 	'creditTerms'=>$finance->term_selection,
+			// ]);
+		}
+	}
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/orders/{id}",

@@ -406,10 +406,13 @@ class FinanceController extends Controller
      *                 @OA\Property(property="documents", type="string", format="binary", description="Upload related document"),
      *                 
      *                 @OA\Property(property="type_of_business", type="string", example="E-commerce", description="Type of business"),
-     *                  @OA\Property(property="annual_revenue", type="string", example="10M USD", description="Annual business revenue"),
+     *                 @OA\Property(property="accountsPayableEmail", type="string", example="pay@gmail.com", description="accountsPayableEmail"),                
+     *                 @OA\Property(property="accountsPayablePhone", type="string", example="123456789", description="Accounts Payable Phone"),                
+     *                 @OA\Property(property="customer_address_id", type="interger", example="23", description="customer address id"),                                 
+     *                 @OA\Property(property="annual_revenue", type="string", example="10M USD", description="Annual business revenue"),
      *                 @OA\Property(property="years_in_business", type="string", example="5 – 10 years", description="Years in business"),
-     *                  @OA\Property(property="duns_number", type="string", example="123456789", description="DUNS number (if applicable)"),
-     *                  @OA\Property(property="creditLimitAmount", type="integer", example="5000"),
+     *                 @OA\Property(property="duns_number", type="string", example="123456789", description="DUNS number (if applicable)"),
+     *                 @OA\Property(property="creditLimitAmount", type="integer", example="5000"),
      *                 @OA\Property(property="approvedAmount", type="integer", example="5000"),
      *                 @OA\Property(property="status", type="integer", enum={"Active","Overdue","Pending"}, example="Pending"),
      *             )
@@ -446,6 +449,9 @@ class FinanceController extends Controller
             'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
 
             'type_of_business' => 'nullable|string|max:255',
+            'accountsPayableEmail' => 'required|email|string|max:255',
+            'accountsPayablePhone' => 'required|string|max:255',
+            'customer_address_id' => 'required|numeric',
             'annual_revenue' => 'nullable|string',
             'years_in_business' => 'nullable|string',
             'duns_number' => 'nullable|string',
@@ -482,20 +488,7 @@ class FinanceController extends Controller
 
             ], 201);
         }
-        // if (!empty($request->creditLimitAmount) && !empty($request->approvedAmount)) {
-        //     $data['availableCreditAmount']  = $request->approvedAmount - $request->approvedAmount;
-        // }
 
-        // if ($request->term_selection == 'Net 30 Days') {
-        //     $nextPaymentDue = "+30 Days";
-        // } elseif ($request->term_selection == 'Net 45 Days') {
-        //     $nextPaymentDue = "+45 Days";
-        // } else {
-        //     $nextPaymentDue = "+60 Days";
-        // }
-        // if(!empty($nextPaymentDue)){
-        //     $data['next_due_date'] =date('Y-m-d', strtotime($nextPaymentDue));
-        // }
         $data['updated_by'] = Auth::id() ?? 1;
         if ($request->hasFile('documents')) {
             $data['documents'] = uploadImageToWebpS3FromFile(
@@ -564,6 +557,72 @@ class FinanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Finances deleted successfully'
+        ]);
+    }
+
+
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/finances/{id}/status",
+     *     summary="Update finance account status",
+     *     tags={"Frontend Finance"},
+     *     security={{"bearerAuth":{}}},
+     *     
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Finance ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *             @OA\Property(
+     *                 property="status",
+     *                 type="string",
+     *                 example="Active"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Status updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Finance record not found"
+     *     )
+     * )
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|string|in:Active,Overdue,Pending'
+        ]);
+
+        $finance = Finance::find($id);
+
+        if (!$finance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance record not found.'
+            ], 404);
+        }
+        if ($request->status == 'Active') {
+           $finance->approvalBy = Auth::id();
+        }
+        $finance->status = $request->status;
+        $finance->approvedAmount = $finance->creditLimitAmount;
+        $finance->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Finance account status updated successfully.',
+            'data' => $finance
         ]);
     }
 }
