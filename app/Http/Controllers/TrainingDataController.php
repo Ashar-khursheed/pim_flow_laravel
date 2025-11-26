@@ -13,6 +13,7 @@ class TrainingDataController extends Controller
      *     path="/api/training-data",
      *     summary="Get paginated training data with search and sorting",
      *     tags={"AI Training Data"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(name="search", in="query", description="Search by name, business_name, phone, transcript", required=false),
      *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort", required=false),
      *     @OA\Parameter(name="sort_order", in="query", description="Sort order asc/desc", required=false),
