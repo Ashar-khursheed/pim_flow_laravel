@@ -306,7 +306,7 @@ class PaymentHistoryController extends Controller
 					Log::channel('testLog')->info("reserve called");
 
 					$order->update(['is_reserved' => 0]);
-					$order->update(['pay_with_cheque' => 0]);
+					// $order->update(['pay_with_cheque' => 0]);
 
 					$batch = Bus::batch([])->name("Order Placed from Backend (Paid) - #{$order->order_number}")->dispatch();
 					$batch->options['queue'] = config('app.website') . '_ORD_PLC';

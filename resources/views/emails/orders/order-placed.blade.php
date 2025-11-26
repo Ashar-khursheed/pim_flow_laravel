@@ -47,7 +47,7 @@
 								</strong>!
 							</p>
 
-							@if ($payWithCheque)
+							@if ($checkIncomplete)
 							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
 								We’ve received your check image successfully, and your order is now reserved.
 							</p>
