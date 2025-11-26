@@ -37,11 +37,13 @@ class OrderPlacedMail extends Mailable
 		$orderNumber = $order->order_number;
 		$payWithCheque = $order->pay_with_cheque;
 
+		$checkIncomplete = $order->pay_with_cheque && $order->is_reserved;
+
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 		$paidAmount = $order->paid_amount ?? 0;
 		// $paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
-		$paymentMethod = $order->pay_with_cheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery');
+		$paymentMethod = $payWithCheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery');
 
 
 		$customerAddress = $order->customerAddress;
@@ -115,8 +117,8 @@ class OrderPlacedMail extends Mailable
 			if ($productDetail) {
 				$product = new \stdClass();
 
-				$images = is_array($productDetail->images) 
-					? $productDetail->images 
+				$images = is_array($productDetail->images)
+					? $productDetail->images
 					: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
@@ -239,7 +241,7 @@ class OrderPlacedMail extends Mailable
 			'orderUrl' => $orderUrl,
 
 			'orderNumber' => $orderNumber,
-			'payWithCheque' => $payWithCheque,
+			'checkIncomplete' => $checkIncomplete,
 			'chequeDiscount' => $chequeDiscount,
 			'chequeDiscountPercentage' => $chequeDiscountPercentage,
 
@@ -272,7 +274,7 @@ class OrderPlacedMail extends Mailable
 			'siteEmail' => $siteEmail,
 		];
 
-		if ($payWithCheque) {
+		if ($checkIncomplete) {
 			$subject = "We Received Your Check Image – Your Order#{$orderNumber} Is Reserved";
 		} else {
 			$subject = "Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed";
