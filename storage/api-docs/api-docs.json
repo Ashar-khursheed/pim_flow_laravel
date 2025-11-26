@@ -19674,6 +19674,11 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "pay_with_netTerm": {
+                                        "description": "pay with netTerm",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "cheque_img": {
                                         "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
                                         "type": "string",
