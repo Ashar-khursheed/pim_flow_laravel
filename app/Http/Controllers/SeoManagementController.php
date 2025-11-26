@@ -1251,7 +1251,7 @@ class SeoManagementController extends Controller
 			$brand = Brand::findOrFail($seo->relational_id);
 			$url = null;
 
-			if($brand){
+			if($brand && $brand->seoUrl){
 				$url = 'brands/'.$brand->seoUrl->url;
 			}
 
