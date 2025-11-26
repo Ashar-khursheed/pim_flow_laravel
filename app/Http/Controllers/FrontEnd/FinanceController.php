@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 
 use App\Models\FrontEnd\Finance;
 use Illuminate\Support\Facades\Validator;
-use App\Models\FrontEnd\Customer;
+use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\FinancesPayment;
@@ -89,7 +89,7 @@ class FinanceController extends Controller
         }
 
         $data = $validator->validated();
-        $data['customer_id'] = auth()->id();
+        $data['customer_id'] = Auth::id() ?? 1;
         $data['created_by'] = '0';
         $data['updated_by'] = '0';
 
