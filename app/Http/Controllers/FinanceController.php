@@ -399,6 +399,7 @@ class FinanceController extends Controller
             'approvalBy' => $finance->approvalUser?->username,
             'accountsPayableEmail' => $finance->accountsPayableEmail,
             'accountsPayablePhone' => $finance->accountsPayablePhone,
+             'accountsStatus' => $finance->accountsStatus, // <-- Added here
             'usedCreditAmount' => $finance->usedCreditAmount,
             'availableCreditAmount' => $finance->availableCreditAmount,
             'purchaseAmount' => $finance->purchaseAmount,
