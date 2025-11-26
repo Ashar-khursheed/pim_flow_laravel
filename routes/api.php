@@ -637,9 +637,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/nofraud/process/{order_id}', [NoFraudController::class, 'processNoFraud']);
 
 	Route::apiResource('/get-in-touch', GetInTouchController::class);
-Route::post('frontend/finances', [F_FinanceController::class, 'store']);
-Route::get('frontend/finances/apply', [F_FinanceController::class, 'getFinance']);
-Route::get('frontend/finances/check', [F_FinanceController::class, 'financeCheck']);
+
 
 });
 
@@ -666,6 +664,10 @@ Route::Post('frontend/attribute-product-variants', [FndProductVariantController:
 Route::Post('frontend/product-variants-by-attribute', [FndProductVariantController::class, 'getAttributeByProductVariant']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+
+	Route::post('frontend/finances', [F_FinanceController::class, 'store']);
+Route::get('frontend/finances/apply', [F_FinanceController::class, 'getFinance']);
+Route::get('frontend/finances/check', [F_FinanceController::class, 'financeCheck']);
 
 	Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
 	Route::apiResource('frontend/carts', F_CustomerCartController::class)->names('frontend.carts');;
