@@ -202,6 +202,7 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
 	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
+	 *                 @OA\Property(property="pay_with_netTerm", type="boolean", example=false, description="pay with netTerm"),
 	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
@@ -585,10 +586,10 @@ class OrderController extends BaseController
 			
 			if ($finance->availableCreditAmount> 0){
 
-			return response()->json([
-			'success' => false,
-			'message' => "Offer Split Payment Option",
-			], 422);
+				return response()->json([
+				'success' => false,
+				'message' => "Offer Split Payment Option",
+				], 422);
 			}else{
 
 			return response()->json([
@@ -605,9 +606,9 @@ class OrderController extends BaseController
 		}
 			
 		if ($finance->approvedAmount == $orderCredit) {
-			$finance->availableCreditAmount = '0';
-			$finance->usedCreditAmount = $orderCredit;
-			$finance->dueCreditAmount = '0';
+			 
+			$finance->usedCreditAmount = $finance->usedCreditAmount +  $orderCredit;
+			$finance->dueCreditAmount = $finance->dueCreditAmount +  $orderCredit;
 		}
 
 		if ($finance->approvedAmount > $orderCredit) {
@@ -625,15 +626,14 @@ class OrderController extends BaseController
 			}
 			if (!empty($nextPaymentDue)) {
 				$finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
+				$finance->payment_due = date('Y-m-d', strtotime($nextPaymentDue));
 			}
-
-
 			// FinancesPayment::create([
 			// 	'finances_id'=>$finance->id,
 			// 	'limitAmount'=>$finance->approvedAmount,
-			// 	'usedAmount'=>$finance->id,
-			// 	'availableAmount'=>$finance->id,
-			// 	'dueAmount'=>$finance->id,
+			// 	'usedAmount'=>$orderCredit,
+			// 	'availableAmount'=>$finance->approvedAmount - $orderCredit,
+			// 	'dueAmount'=>$orderCredit,
 			// 	'creditTerms'=>$finance->term_selection,
 			// ]);
 		}

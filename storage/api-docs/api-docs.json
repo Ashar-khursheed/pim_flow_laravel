@@ -11313,7 +11313,7 @@
                                     },
                                     "customer_address_id": {
                                         "description": "customer address id",
-                                        "type": "interger",
+                                        "type": "integer",
                                         "example": "23"
                                     },
                                     "annual_revenue": {
@@ -11332,10 +11332,6 @@
                                         "example": "123456789"
                                     },
                                     "creditLimitAmount": {
-                                        "type": "integer",
-                                        "example": "5000"
-                                    },
-                                    "approvedAmount": {
                                         "type": "integer",
                                         "example": "5000"
                                     },
@@ -11479,13 +11475,13 @@
                 ]
             }
         },
-        "/api/frontend/finances/{id}/status": {
+        "/api/finances/{id}/status": {
             "post": {
                 "tags": [
-                    "Frontend Finance"
+                    "Finance"
                 ],
                 "summary": "Update finance account status",
-                "operationId": "0b1ca62daec8ebdaab9c3bb11f9bfa74",
+                "operationId": "968bd4c7d2b21e5899f2d9f5bab8b315",
                 "parameters": [
                     {
                         "name": "id",
@@ -11495,19 +11491,35 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "approvedAmount",
+                        "in": "query",
+                        "description": "approvedAmount",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 300
+                        }
                     }
                 ],
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "status"
                                 ],
                                 "properties": {
                                     "status": {
+                                        "description": "Finance Account Status",
                                         "type": "string",
+                                        "enum": [
+                                            "Active",
+                                            "Pending",
+                                            "Overdue"
+                                        ],
                                         "example": "Active"
                                     }
                                 },
@@ -19659,6 +19671,11 @@
                                     },
                                     "pay_with_cheque": {
                                         "description": "Pay with cheque",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "pay_with_netTerm": {
+                                        "description": "pay with netTerm",
                                         "type": "boolean",
                                         "example": false
                                     },
@@ -46446,10 +46463,6 @@
             "description": "FAQ Categories"
         },
         {
-            "name": "Frontend Finance",
-            "description": "Frontend Finance"
-        },
-        {
             "name": "Flash Sales",
             "description": "Flash Sales"
         },
@@ -46540,6 +46553,10 @@
         {
             "name": "Frontend - FAQs",
             "description": "Frontend - FAQs"
+        },
+        {
+            "name": "Frontend Finance",
+            "description": "Frontend Finance"
         },
         {
             "name": "Frontend Product Accessories",
