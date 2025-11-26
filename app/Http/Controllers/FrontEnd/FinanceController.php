@@ -160,6 +160,7 @@ class FinanceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'customer_id' => 'required|exists:customers,id',
+            'orderAmount' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -201,4 +202,6 @@ class FinanceController extends Controller
             'data' => $data
         ], 200);
     }
+
+
 }
