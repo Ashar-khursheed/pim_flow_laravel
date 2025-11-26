@@ -20,6 +20,7 @@ class Finance extends Model
         'years_in_business',
         'accountsPayableEmail',
         'accountsPayablePhone',
+        'accountsStatus',
         'customer_address_id',
         'duns_number',
         'creditLimitAmount',
@@ -35,6 +36,7 @@ class Finance extends Model
         'status',
         'created_by',
         'updated_by',
+
     ];
 
 
