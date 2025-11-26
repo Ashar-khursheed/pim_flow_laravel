@@ -281,10 +281,10 @@ class OrderController extends BaseController
 			'separate_deliveries' => 'nullable|boolean',
 			'is_cod' => 'nullable|boolean',
 
-			'pay_with_cheque' => 'nullable|boolean',
 			'pay_with_netTerm' => 'nullable|boolean',
-			'cheque_img' => 'required_if:pay_with_cheque,1|file|mimes:jpeg,jpg,png,webp|max:5024',
-			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5024',
+			'pay_with_cheque' => 'nullable|boolean',
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
 
 
 			'coupon_id' => 'nullable|integer',
@@ -381,7 +381,7 @@ class OrderController extends BaseController
 
 			$paynetTerm = $request->boolean('pay_with_netTerm', false);
 			if (!empty($paynetTerm)) {
-				$this->byNetTermpayment($orderAmount);				 
+				$this->byNetTermpayment($orderAmount);
 			}
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
@@ -583,7 +583,7 @@ class OrderController extends BaseController
 		$orderCredit = $orderAmount + $finance->usedCreditAmount;
 
 		if ($orderCredit > $finance->approvedAmount) {
-			
+
 			if ($finance->availableCreditAmount> 0){
 
 				return response()->json([
@@ -604,9 +604,9 @@ class OrderController extends BaseController
 				'message' => "The order amount (" . number_format($orderCredit, 2) . ") is less than the approved amount (" . number_format($finance->approvedAmount, 2) . ").",
 			], 422);
 		}
-			
+
 		if ($finance->approvedAmount == $orderCredit) {
-			 
+
 			$finance->usedCreditAmount = $finance->usedCreditAmount +  $orderCredit;
 			$finance->dueCreditAmount = $finance->dueCreditAmount +  $orderCredit;
 		}
