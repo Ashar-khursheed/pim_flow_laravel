@@ -11270,11 +11270,6 @@
                                     "customer_id"
                                 ],
                                 "properties": {
-                                    "customer_id": {
-                                        "description": "Payment options details",
-                                        "type": "integer",
-                                        "example": "19"
-                                    },
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
                                         "type": "string",
@@ -11301,6 +11296,16 @@
                                         "type": "string",
                                         "example": "E-commerce"
                                     },
+                                    "accountsPayableEmail": {
+                                        "description": "accountsPayableEmail",
+                                        "type": "string",
+                                        "example": "pay@gmail.com"
+                                    },
+                                    "accountsPayablePhone": {
+                                        "description": "Accounts Payable Phone",
+                                        "type": "string",
+                                        "example": "123456789"
+                                    },
                                     "annual_revenue": {
                                         "description": "Annual business revenue",
                                         "type": "string",
@@ -11317,10 +11322,6 @@
                                         "example": "123456789"
                                     },
                                     "creditLimitAmount": {
-                                        "type": "integer",
-                                        "example": "5000"
-                                    },
-                                    "approvedAmount": {
                                         "type": "integer",
                                         "example": "5000"
                                     },
@@ -11455,6 +11456,89 @@
                     },
                     "500": {
                         "description": "Server error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/finances/{id}/status": {
+            "post": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Update finance account status",
+                "operationId": "968bd4c7d2b21e5899f2d9f5bab8b315",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "status",
+                                    "approvedAmount"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "description": "Finance account status",
+                                        "type": "string",
+                                        "enum": [
+                                            "Active",
+                                            "Pending",
+                                            "Overdue"
+                                        ],
+                                        "example": "Active"
+                                    },
+                                    "approvedAmount": {
+                                        "description": "Approved amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 300
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Status updated successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance record not found"
                     }
                 },
                 "security": [
@@ -15923,7 +16007,12 @@
                     "422": {
                         "description": "Validation errors"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -17857,9 +17946,9 @@
                                 ],
                                 "properties": {
                                     "payment_options": {
-                                        "description": "Payment option description",
+                                        "description": "Payment option netTerm",
                                         "type": "string",
-                                        "example": "Net Payment Terms"
+                                        "example": "netTerm"
                                     },
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
@@ -17886,6 +17975,21 @@
                                         "description": "Type of business (Advertising / E-commerce)",
                                         "type": "string",
                                         "example": "E-commerce"
+                                    },
+                                    "accountsPayableEmail": {
+                                        "description": "accountsPayableEmail",
+                                        "type": "string",
+                                        "example": "pay@gmail.com"
+                                    },
+                                    "accountsPayablePhone": {
+                                        "description": "Accounts Payable Phone",
+                                        "type": "string",
+                                        "example": "123456789"
+                                    },
+                                    "customer_address_id": {
+                                        "description": "customer address id",
+                                        "type": "interger",
+                                        "example": "23"
                                     },
                                     "annual_revenue": {
                                         "type": "string",
@@ -17919,6 +18023,90 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Finance record created successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/apply": {
+            "get": {
+                "tags": [
+                    "Frontend Finance"
+                ],
+                "summary": "Check finance application by customer ID",
+                "operationId": "377cbf287d74fcf579c0a806203301c5",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "description": "Customer ID to fetch finance details",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 19
+                        }
+                    },
+                    {
+                        "name": "orderAmount",
+                        "in": "query",
+                        "description": "Order Amount for validating finance",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "example": 300
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Finance record retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record retrieved successfully."
                                         },
                                         "data": {
                                             "type": "object"
@@ -19490,6 +19678,11 @@
                                     },
                                     "pay_with_cheque": {
                                         "description": "Pay with cheque",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "pay_with_netTerm": {
+                                        "description": "pay with netTerm",
                                         "type": "boolean",
                                         "example": false
                                     },
@@ -42532,7 +42725,12 @@
                     "200": {
                         "description": "Success"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "post": {
                 "tags": [

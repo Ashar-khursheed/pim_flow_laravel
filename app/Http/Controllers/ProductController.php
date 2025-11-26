@@ -986,99 +986,134 @@ class ProductController extends BaseController
 			}
 		}
 
-		if ($request->product_attributes) {
-			$productAttributes = is_array($request->product_attributes) ? $request->product_attributes : json_decode($request->product_attributes, true);
+		/* Handle multilingual product attributes with sync */
+		if ($request->has('product_attributes')) {
+			$productAttributes = $request->input('product_attributes', []);
 
-			if (is_array($productAttributes) && count($productAttributes) > 0) {
-				$productAttributes = array_filter($productAttributes, function ($value) {
-					return !is_null($value) && $value !== '';
-				});
+			/* Decode JSON if string */
+			if (is_string($productAttributes)) {
+				$decoded = json_decode($productAttributes, true);
+				if (json_last_error() !== JSON_ERROR_NONE) {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid JSON format for product attributes.'
+					], 400);
+				}
+				$productAttributes = is_array($decoded) ? $decoded : [];
+			}
 
-				$existingProductAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+			if (!is_array($productAttributes)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'No valid product attributes provided.'
+				], 400);
+			}
 
-				$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
+			/* Filter out null/empty values at the root level */
+			$productAttributes = array_filter($productAttributes, function ($value) {
+				if (is_array($value)) {
+					return !empty($value['value']) || !empty($value['measurement_id']);
+				}
+				return !is_null($value) && $value !== '';
+			});
 
-				if (!empty($attributesToDelete)) {
-					$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
+			$updatedAttributeIds = [];
+
+			foreach ($productAttributes as $attributeId => $attributeValue) {
+				/* Validate attribute exists */
+				$existingAttribute = Attribute::find($attributeId);
+				if (!$existingAttribute) {
+					return response()->json([
+						'success' => false,
+						'message' => "Attribute ID: $attributeId does not exist."
+					], 400);
 				}
 
-				foreach ($productAttributes as $attributeId => $attributeValue) {
-					$existingAttribute = Attribute::find($attributeId);
-					if (!$existingAttribute) {
+				$productAttribute = null;
+				$value = null;
+				$measurementUnitID = null;
+
+				/* Handle measurement type attributes */
+				if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
+					$value = $attributeValue['value'] ?? null;
+					$measurementUnitID = $attributeValue['measurement_id'] ?? null;
+
+					/* Validation: Either both should be present, or both should be empty */
+					if (($value && !$measurementUnitID) || (!$value && $measurementUnitID)) {
+						$messages = [];
+						if (empty($value)) {
+							$messages[] = "Value not defined for attribute: {$existingAttribute->name}";
+						}
+						if (empty($measurementUnitID)) {
+							$messages[] = "Measurement Unit not defined or invalid for attribute: {$existingAttribute->name}";
+						}
 						return response()->json([
 							'success' => false,
-							'message' => "Attribute ID: $attributeId does not exist."
+							'message' => implode(' | ', $messages)
+						], 400);
+					}
+
+					/* Skip if both are empty (will be deleted later in sync) */
+					if (empty($value) && empty($measurementUnitID)) {
+						continue;
+					}
+				} else {
+					/* Handle regular attributes */
+					$value = $attributeValue;
+
+					/* Skip if empty (will be deleted later in sync) */
+					if (empty($value)) {
+						continue;
+					}
+				}
+
+				/* Find existing product attribute */
+				$productAttribute = $product->productAttributes()
+					->where('attribute_id', $attributeId)
+					->first();
+
+				/* Create new product attribute if not found */
+				if (!$productAttribute) {
+					$productAttribute = $product->productAttributes()->create([
+						'attribute_id' => $attributeId,
+						'attribute_value' => $locale === 'en' ? $value : 'NA',
+						'measurement_unit_id' => $measurementUnitID,
+					]);
+				} else {
+					/* Update base table fields only if locale is en */
+					if ($locale === 'en') {
+						$productAttribute->update([
+							'attribute_value' => $value,
+							'measurement_unit_id' => $measurementUnitID,
 						]);
 					}
+				}
 
-					$value = null;
-					$measurementUnitID = null;
+				/* Update translation for current locale */
+				if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+					$productAttribute->translateOrNew($locale)->attribute_value_tr = $value;
+				}
 
-					if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
-						$value = $attributeValue['value'] ?? null;
-						$measurementUnitID = $attributeValue['measurement_id'] ?? null;
+				$productAttribute->save();
+				$updatedAttributeIds[] = $productAttribute->attribute_id;
 
-						/* Validation: Either both should be present, or both should be empty (for delete) */
-						if (($value && !$measurementUnitID) || (!$value && $measurementUnitID)) {
-							$messages = [];
-
-							if (empty($value)) {
-								$messages[] = "Value not defined for attribute: {$existingAttribute->name}";
-							}
-							if (empty($measurementUnitID)) {
-								$messages[] = "Measurement Unit not defined or invalid for attribute: {$existingAttribute->name}";
-							}
-
-							return response()->json([
-								'success' => false,
-								'message' => implode(' | ', $messages)
-							], 400);
-						}
-
-						if (!$value && !$measurementUnitID) {
-							/* Both missing = delete the existing attribute */
-							$product->productAttributes()
-							->where('attribute_id', $attributeId)
-							->delete();
-						} else {
-							/* Both exist = update or create attribute */
-							$product->productAttributes()->updateOrCreate(
-								['attribute_id' => $attributeId],
-								[
-									'attribute_value' => $value,
-									'measurement_unit_id' => $measurementUnitID
-								]
-							);
-						}
-					} else {
-						$value = $attributeValue;
-
-						if (empty($value)) {
-							/* Delete non-measurement attribute if empty */
-							$product->productAttributes()
-							->where('attribute_id', $attributeId)
-							->delete();
-						} else {
-							/* Update or create normal attribute */
-							$product->productAttributes()->updateOrCreate(
-								['attribute_id' => $attributeId],
-								[
-									'attribute_value' => $value,
-									'measurement_unit_id' => null
-								]
-							);
-						}
-					}
-
-					if ($existingAttribute->type === 'select') {
-						if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
-							$existingAttribute->attributeValues()->create([
-								'attribute_value' => $value
-							]);
-						}
+				/* Handle select type - auto-create new attribute values */
+				if ($existingAttribute->type === 'select' && $locale === 'en') {
+					if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
+						$existingAttribute->attributeValues()->create([
+							'attribute_value' => $value
+						]);
 					}
 				}
 			}
+
+			/* Delete any existing product attributes not in updatedAttributeIds */
+			$product->productAttributes()
+				->whereNotIn('attribute_id', $updatedAttributeIds)
+				->get()
+				->each(function ($productAttribute) {
+					$productAttribute->delete();
+				});
 		}
 
 		if ($canModifyContent) {
