@@ -419,8 +419,8 @@ class SeoManagementController extends Controller
 				'success' => false,
 				'message' => 'Failed to create SEO record',
 				'error' => $e->getMessage(),
-				'file' => $exception->getFile(),
-				'line' => $exception->getLine(),
+				'file' => $e->getFile(),
+				'line' => $e->getLine(),
 			], 422);
 		}
 	}
