@@ -18151,6 +18151,80 @@
                 ]
             }
         },
+        "/api/frontend/finances/check": {
+            "get": {
+                "tags": [
+                    "Frontend Finance"
+                ],
+                "summary": "Check finance application by customer ID",
+                "operationId": "20790c6e488f9ac8b68c1a894aa6a84b",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "description": "Customer ID to fetch finance details",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 19
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Finance record retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record retrieved successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/product-accessories": {
             "get": {
                 "tags": [
