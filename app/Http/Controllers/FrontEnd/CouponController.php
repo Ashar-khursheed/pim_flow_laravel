@@ -271,8 +271,8 @@ class CouponController extends Controller
         'code' => 'string|max:255|unique:coupons,code',
         'name' => 'string|max:255',
         'description' => 'nullable|string',
-        'type' => 'in:fixed,percentage',
-        'value' => 'required|numeric|min:0',
+        'type' => 'in:fixed,percentage',      
+        'value' => 'sometimes|required|numeric|min:0|lte:min_order_value',             
         'basis' => 'required|in:customer,category,product,promotional',
         'min_order_value' => 'nullable|numeric|min:0',
         'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
@@ -1171,7 +1171,12 @@ class CouponController extends Controller
                 'reason' => 'Order value exceeds maximum limit of ' . number_format($coupon->max_order_value, 2)
             ];
         }
-
+        if ($orderValue < $coupon->value ) {     
+            return [
+                'valid' => false,
+                'reason' =>  "The order amount (" . number_format($orderValue, 2) . ") is less than the coupon value (" . number_format($coupon->value, 2) . ").",          
+                ];                             
+        }
         // Check customer-specific coupon
         if ($coupon->basis === 'customer') {
             $isValidCustomer = $coupon->customers()->where('customer_id', $customerId)->exists();
@@ -1442,7 +1447,12 @@ class CouponController extends Controller
                 $is_valid = false;
                 $error_message = 'Order value exceeds maximum limit of ' . number_format($coupon->max_order_value, 2);
              }
-
+            if ($percentage < $coupon->value ) {     
+            return [
+                'valid' => false,
+                'reason' =>  "The order amount (" . number_format($orderValue, 2) . ") is less than the coupon value (" . number_format($coupon->value, 2) . ").",          
+                ];                             
+            }
             if ($percentage < $coupon->min_order_value) {
                 $is_valid = false;          
                 $error_message = 'Minimum order value of ' . number_format($coupon->min_order_value, 2) . ' required';
