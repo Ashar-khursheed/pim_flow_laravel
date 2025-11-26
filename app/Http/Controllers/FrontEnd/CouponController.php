@@ -1449,8 +1449,8 @@ class CouponController extends Controller
              }
             if ($percentage < $coupon->value ) {     
             return [
-                'valid' => false,
-                'reason' =>  "The order amount (" . number_format($orderValue, 2) . ") is less than the coupon value (" . number_format($coupon->value, 2) . ").",          
+                $is_valid = false,
+                $error_message =  "The order amount (" . number_format($orderValue, 2) . ") is less than the coupon value (" . number_format($coupon->value, 2) . ").",          
                 ];                             
             }
             if ($percentage < $coupon->min_order_value) {
