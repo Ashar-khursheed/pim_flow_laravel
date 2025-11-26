@@ -11301,6 +11301,21 @@
                                         "type": "string",
                                         "example": "E-commerce"
                                     },
+                                    "accountsPayableEmail": {
+                                        "description": "accountsPayableEmail",
+                                        "type": "string",
+                                        "example": "pay@gmail.com"
+                                    },
+                                    "accountsPayablePhone": {
+                                        "description": "Accounts Payable Phone",
+                                        "type": "string",
+                                        "example": "123456789"
+                                    },
+                                    "customer_address_id": {
+                                        "description": "customer address id",
+                                        "type": "interger",
+                                        "example": "23"
+                                    },
                                     "annual_revenue": {
                                         "description": "Annual business revenue",
                                         "type": "string",
@@ -11455,6 +11470,58 @@
                     },
                     "500": {
                         "description": "Server error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/{id}/status": {
+            "post": {
+                "tags": [
+                    "Frontend Finance"
+                ],
+                "summary": "Update finance account status",
+                "operationId": "0b1ca62daec8ebdaab9c3bb11f9bfa74",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "Active"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated successfully"
+                    },
+                    "404": {
+                        "description": "Finance record not found"
                     }
                 },
                 "security": [
@@ -17944,9 +18011,9 @@
                                 ],
                                 "properties": {
                                     "payment_options": {
-                                        "description": "Payment option description",
+                                        "description": "Payment option netTerm",
                                         "type": "string",
-                                        "example": "Net Payment Terms"
+                                        "example": "netTerm"
                                     },
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
@@ -17973,6 +18040,21 @@
                                         "description": "Type of business (Advertising / E-commerce)",
                                         "type": "string",
                                         "example": "E-commerce"
+                                    },
+                                    "accountsPayableEmail": {
+                                        "description": "accountsPayableEmail",
+                                        "type": "string",
+                                        "example": "pay@gmail.com"
+                                    },
+                                    "accountsPayablePhone": {
+                                        "description": "Accounts Payable Phone",
+                                        "type": "string",
+                                        "example": "123456789"
+                                    },
+                                    "customer_address_id": {
+                                        "description": "customer address id",
+                                        "type": "interger",
+                                        "example": "23"
                                     },
                                     "annual_revenue": {
                                         "type": "string",
@@ -19577,11 +19659,6 @@
                                     },
                                     "pay_with_cheque": {
                                         "description": "Pay with cheque",
-                                        "type": "boolean",
-                                        "example": false
-                                    },
-                                    "pay_with_netTerm": {
-                                        "description": "Pay with netTerm",
                                         "type": "boolean",
                                         "example": false
                                     },
@@ -46159,6 +46236,10 @@
             "description": "FAQ Categories"
         },
         {
+            "name": "Frontend Finance",
+            "description": "Frontend Finance"
+        },
+        {
             "name": "Flash Sales",
             "description": "Flash Sales"
         },
@@ -46249,10 +46330,6 @@
         {
             "name": "Frontend - FAQs",
             "description": "Frontend - FAQs"
-        },
-        {
-            "name": "Frontend Finance",
-            "description": "Frontend Finance"
         },
         {
             "name": "Frontend Product Accessories",

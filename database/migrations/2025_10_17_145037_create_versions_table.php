@@ -12,15 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('versions', function (Blueprint $table) {
-           
+
             $table->id();
             $table->string('version_id')->nullable(); // model id
-            $table->string('module')->nullable(); // model class          
+            $table->string('module')->nullable(); // model class
             $table->string('action')->nullable(); // created/updated/deleted
             $table->string('status')->nullable(); // who status
-            $table->json('description')->nullable(); // full snapshot JSON (or diff)
-            $table->json('meta')->nullable(); // extra info (ip, reason)
-            $table->string('created_by')->nullable(); 
+            $table->longText('description')->nullable(); // full snapshot JSON (or diff)
+            $table->longText('meta')->nullable(); // extra info (ip, reason)
+            $table->string('created_by')->nullable();
             $table->string('updated_by')->nullable(); //  "autosave"
             $table->timestamps();
         });

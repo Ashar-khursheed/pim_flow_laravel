@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 use App\Http\Controllers\Controller;
+use App\Models\FrontEnd\FinancesPayment;
 
 class FinanceController extends Controller
 {
@@ -26,12 +27,15 @@ class FinanceController extends Controller
      *             @OA\Schema(
      *                 type="object",
      *                 required={"term_selection", "requestedAmount"},  
-     *                 @OA\Property(property="payment_options", type="string", example="Net Payment Terms", description="Payment option description"),                
+     *                 @OA\Property(property="payment_options", type="string", example="netTerm", description="Payment option netTerm"),                
      *                 @OA\Property(property="term_selection", type="string",enum={"Net 30 Days","Net 45 Days","Net 60 Days"}, example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
      *                 @OA\Property(property="requestedAmount", type="number", format="float", example=5000.75, description="Enter amount"),
      *                 @OA\Property(property="documents", type="string", format="binary", description="Upload supporting document file"),
      *                 
      *                 @OA\Property(property="type_of_business", type="string", example="E-commerce", description="Type of business (Advertising / E-commerce)"),                
+     *                 @OA\Property(property="accountsPayableEmail", type="string", example="pay@gmail.com", description="accountsPayableEmail"),                
+     *                 @OA\Property(property="accountsPayablePhone", type="string", example="123456789", description="Accounts Payable Phone"),                
+     *                 @OA\Property(property="customer_address_id", type="interger", example="23", description="customer address id"),                
      *                 @OA\Property(property="annual_revenue", type="string", example="10M USD"),
      *                 @OA\Property(property="years_in_business", type="string", example="5 – 10 years"),               
      *                 @OA\Property(property="duns_number", type="string", example="123456789")
@@ -68,6 +72,9 @@ class FinanceController extends Controller
             'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
 
             'type_of_business' => 'nullable|string|max:255',
+            'accountsPayableEmail' => 'required|email|string|max:255',
+            'accountsPayablePhone' => 'required|string|max:255',
+            'customer_address_id' => 'required|numeric',
             'annual_revenue' => 'nullable|string',
             'years_in_business' => 'nullable|string',
             'duns_number' => 'nullable|string',
@@ -86,17 +93,7 @@ class FinanceController extends Controller
         $data['created_by'] = '0';
         $data['updated_by'] = '0';
 
-        // $nextPaymentDue = "";
-        // if ($request->term_selection == 'Net 30 Days') {
-        //     $nextPaymentDue = "+30 Days";
-        // } elseif ($request->term_selection == 'Net 45 Days') {
-        //     $nextPaymentDue = "+45 Days";
-        // } else if($request->term_selection == 'Net 60 Days'){
-        //     $nextPaymentDue = "+60 Days";
-        // }
-        // if(!empty($nextPaymentDue)){
-        //     $data['next_due_date'] =date('Y-m-d', strtotime($nextPaymentDue));
-        // }  
+      
         if ($request->hasFile('documents')) {
             $data['documents'] = uploadImageToWebpS3FromFile(
                 $request,
@@ -107,7 +104,7 @@ class FinanceController extends Controller
             $data['documents'] = null;
         }
 
-        $finance = Finance::create($data);
+        $finance = Finance::create($data);          
 
         return response()->json([
             'success' => true,
