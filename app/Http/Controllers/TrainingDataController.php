@@ -1,5 +1,5 @@
 <?php
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\TrainingData;
@@ -44,6 +44,7 @@ class TrainingDataController extends Controller
      *     path="/api/training-data",
      *     summary="Create new training data",
      *     tags={"AI Training Data"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -59,11 +60,10 @@ class TrainingDataController extends Controller
      *              @OA\Property(property="zipcode", type="string")
      *         )
      *     ),
-     *     @OA\Response(response=201, description="Created"),
-     *     security={{"bearerAuth":{}}}
-     * 
+     *     @OA\Response(response=201, description="Created")
      * )
      */
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -104,6 +104,7 @@ class TrainingDataController extends Controller
      *     path="/api/training-data/{id}",
      *     summary="Update training data",
      *     tags={"AI Training Data"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(name="id", in="path", required=true),
      *     @OA\RequestBody(
      *         @OA\JsonContent(
@@ -118,7 +119,6 @@ class TrainingDataController extends Controller
      *              @OA\Property(property="zipcode", type="string")
      *         )
      *     ),
-     *     security={{"bearerAuth":{}}}
      *     @OA\Response(response=200, description="Updated")
      * )
      */
@@ -136,7 +136,7 @@ class TrainingDataController extends Controller
      *     summary="Delete training data",
      *     tags={"AI Training Data"},
      *     @OA\Parameter(name="id", in="path", required=true),
-     *     @OA\Response(response=204, description="Deleted")
+     *     @OA\Response(response=204, description="Deleted"),
      *     security={{"bearerAuth":{}}}
      * )
      */
