@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 
 use App\Models\FrontEnd\Finance;
 use Illuminate\Support\Facades\Validator;
-
+use App\Models\FrontEnd\Customer;
 use OpenApi\Annotations as OA;
 use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\FinancesPayment;
