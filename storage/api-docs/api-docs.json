@@ -15923,7 +15923,12 @@
                     "422": {
                         "description": "Validation errors"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -17840,6 +17845,88 @@
             }
         },
         "/api/frontend/finances": {
+            "get": {
+                "tags": [
+                    "Frontend Finance"
+                ],
+                "summary": "Get active finance record by customer ID",
+                "operationId": "90d35f347ea56170ee570b302517d6e5",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "description": "Customer ID to fetch finance",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 19
+                        }
+                    },
+                    {
+                        "name": "orderAmount",
+                        "in": "query",
+                        "description": "OrderAmount",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 300
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Finance record retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record retrieved successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
                     "Frontend Finance"

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\FrontEnd\Finance;
 
-use App\Models\FinancesPayment;
+use App\Models\FrontEnd\FinancesPayment;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
