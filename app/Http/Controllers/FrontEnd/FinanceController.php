@@ -89,7 +89,7 @@ class FinanceController extends Controller
         }
 
         $data = $validator->validated();
-        $data['customer_id'] = auth()->id() ?? 1;
+        $data['customer_id'] = auth()->id();
         $data['created_by'] = '0';
         $data['updated_by'] = '0';
 
