@@ -272,6 +272,9 @@ class Coupon extends Model
             return 0;
         }
 
+        if ($orderValue < $this->value ) {     
+            return 0;                            
+        }
         if ($this->type === 'percentage') {
             return ($orderValue * $this->value) / 100;
         }

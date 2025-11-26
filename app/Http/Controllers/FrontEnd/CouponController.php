@@ -7,6 +7,7 @@ use App\Models\FrontEnd\Coupon;
 use App\Models\FrontEnd\Customers;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\FinancesPayment;
 use App\Models\FrontEnd\CouponCustomer;
 use App\Models\FrontEnd\CouponCategory;
 use App\Models\FrontEnd\CouponProduct;
@@ -59,15 +60,15 @@ class CouponController extends Controller
             $searchTerm = $request->input('global');
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('code', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('title', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('name', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('description', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('discount_amount', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('minimum_order_amount', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('maximum_discount_amount', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('value', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('min_order_value', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('max_order_value', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('usage_limit', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('status', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('basis', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('discount_type', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('usage_type', 'LIKE', '%' . $searchTerm . '%')
                     // Search in related models
                     ->orWhereHas('creator', function ($creatorQuery) use ($searchTerm) {
                         $creatorQuery->where('name', 'LIKE', '%' . $searchTerm . '%')
@@ -80,7 +81,7 @@ class CouponController extends Controller
                     ->orWhereHas('customers', function ($customerQuery) use ($searchTerm) {
                         $customerQuery->where('name', 'LIKE', '%' . $searchTerm . '%')
                             ->orWhere('email', 'LIKE', '%' . $searchTerm . '%')
-                            ->orWhere('phone', 'LIKE', '%' . $searchTerm . '%');
+                            ->orWhere('mobile_number', 'LIKE', '%' . $searchTerm . '%');
                     })
                     ->orWhereHas('categories', function ($categoryQuery) use ($searchTerm) {
                         $categoryQuery->where('name', 'LIKE', '%' . $searchTerm . '%')
@@ -270,8 +271,8 @@ class CouponController extends Controller
         'code' => 'string|max:255|unique:coupons,code',
         'name' => 'string|max:255',
         'description' => 'nullable|string',
-        'type' => 'in:fixed,percentage',
-        'value' => 'required|numeric|min:0',
+        'type' => 'in:fixed,percentage',      
+        'value' => 'sometimes|required|numeric|min:0|lte:min_order_value',             
         'basis' => 'required|in:customer,category,product,promotional',
         'min_order_value' => 'nullable|numeric|min:0',
         'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
@@ -381,6 +382,7 @@ class CouponController extends Controller
         path: '/api/coupons/{id}',
         summary: 'Update coupon',
         tags: ['Coupons'],
+        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Coupon ID', schema: new OA\Schema(type: 'integer'))
         ],
@@ -430,8 +432,8 @@ class CouponController extends Controller
             'code' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('coupons')->ignore($coupon->id)],
             'name' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'sometimes|required|in:fixed,percentage',
-            'value' => 'sometimes|required|numeric|min:0',
+            'type' => 'sometimes|required|in:fixed,percentage',          
+            'value' => 'sometimes|required|numeric|min:0|lte:min_order_value',
             'basis' => 'sometimes|required|in:customer,category,product,promotional',
             'min_order_value' => 'nullable|numeric|min:0',
             'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
@@ -1158,7 +1160,7 @@ class CouponController extends Controller
         if ($coupon->min_order_value && $orderValue < $coupon->min_order_value) {
             return [
                 'valid' => false,
-                'reason' => 'Minimum order value of $' . number_format($coupon->min_order_value, 2) . ' required'
+                'reason' => 'Minimum order value of ' . number_format($coupon->min_order_value, 2) . ' required'
             ];
         }
 
@@ -1166,10 +1168,15 @@ class CouponController extends Controller
         if ($coupon->max_order_value && $orderValue > $coupon->max_order_value) {
             return [
                 'valid' => false,
-                'reason' => 'Order value exceeds maximum limit of $' . number_format($coupon->max_order_value, 2)
+                'reason' => 'Order value exceeds maximum limit of ' . number_format($coupon->max_order_value, 2)
             ];
         }
-
+        if ($orderValue < $coupon->value ) {     
+            return [
+                'valid' => false,
+                'reason' =>  "The order amount (" . number_format($orderValue, 2) . ") is less than the coupon value (" . number_format($coupon->value, 2) . ").",          
+                ];                             
+        }
         // Check customer-specific coupon
         if ($coupon->basis === 'customer') {
             $isValidCustomer = $coupon->customers()->where('customer_id', $customerId)->exists();
@@ -1423,9 +1430,9 @@ class CouponController extends Controller
             $is_valid = false;          
             $error_message = 'Minimum order value of ' . number_format($coupon->min_order_value, 2) . ' required';
         }
-         if ($orderValue < $coupon->value ) {            
+        if ($orderValue < $coupon->value ) {            
             $is_valid = false;          
-            $error_message = "The order amount (" . number_format($orderValue, 2) . ") is greater than the coupon value (" . number_format($coupon->value, 2) . ").";
+            $error_message = "The order amount (" . number_format($orderValue, 2) . ") is less than the coupon value (" . number_format($coupon->value, 2) . ").";             
         }
 
         if ($coupon->max_order_value && $orderValue > $coupon->max_order_value) {
@@ -1440,7 +1447,12 @@ class CouponController extends Controller
                 $is_valid = false;
                 $error_message = 'Order value exceeds maximum limit of ' . number_format($coupon->max_order_value, 2);
              }
-
+            if ($percentage < $coupon->value ) {     
+            return [
+                $is_valid = false,
+                $error_message =  "The order amount (" . number_format($orderValue, 2) . ") is less than the coupon value (" . number_format($coupon->value, 2) . ").",          
+                ];                             
+            }
             if ($percentage < $coupon->min_order_value) {
                 $is_valid = false;          
                 $error_message = 'Minimum order value of ' . number_format($coupon->min_order_value, 2) . ' required';
