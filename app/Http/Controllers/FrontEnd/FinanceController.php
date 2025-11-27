@@ -179,7 +179,7 @@ class FinanceController extends Controller
         $customerId = $request->customer_id;
         $orderAmount = $request->orderAmount;
         $finance = Finance::where('customer_id', $customerId)
-            ->where('status', 'Active')
+            ->where('accountsStatus', 'Approved')
             ->orderBy('id', 'desc')
             ->first();
         if(!$finance){
