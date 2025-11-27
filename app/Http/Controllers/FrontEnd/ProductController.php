@@ -2567,62 +2567,90 @@ class ProductController extends Controller
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/sale-categories/{id}",
-	 *     summary="Get all last-child categories that have products on sale",
-	 *     description="Returns all categories (only last-child categories) which have at least one product containing a sale_price > 0. Supports optional filters such as price range and category name.",
-	 *     tags={"Categories"},
+	 *     summary="Get all sale products under a specific category",
+	 *     description="Returns all published products in a category with sale_price > 0. Supports filters like price, rating, stock, and sorting.",
+	 *     tags={"Products"},
 	 *
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Category ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="per_page",
+	 *         in="query",
+	 *         description="Items per page",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", default=10)
+	 *     ),
 	 *     @OA\Parameter(
 	 *         name="min_price",
 	 *         in="query",
-	 *         description="Minimum sale price filter",
-	 *         required=false,	
+	 *         description="Minimum sale price",
+	 *         required=false,
 	 *         @OA\Schema(type="number", example=10)
 	 *     ),
 	 *     @OA\Parameter(
 	 *         name="max_price",
 	 *         in="query",
-	 *         description="Maximum sale price filter",
+	 *         description="Maximum sale price",
 	 *         required=false,
 	 *         @OA\Schema(type="number", example=200)
 	 *     ),
 	 *     @OA\Parameter(
 	 *         name="search",
 	 *         in="query",
-	 *         description="Search category by name",
+	 *         description="Search by product name",
 	 *         required=false,
 	 *         @OA\Schema(type="string")
 	 *     ),
 	 *     @OA\Parameter(
-	 *         name="limit",
+	 *         name="min_rating",
 	 *         in="query",
-	 *         description="Limit number of categories returned",
+	 *         description="Minimum average rating",
 	 *         required=false,
-	 *         @OA\Schema(type="integer", default=20)
+	 *         @OA\Schema(type="number")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="in_stock",
+	 *         in="query",
+	 *         description="Filter only in-stock products (1=yes)",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="sort",
+	 *         in="query",
+	 *         description="Sorting: price_asc, price_desc, latest, rating_desc",
+	 *         required=false,
+	 *         @OA\Schema(type="string")
 	 *     ),
 	 *
 	 *     @OA\Response(
 	 *         response=200,
-	 *         description="Sale categories fetched successfully",
+	 *         description="Products fetched successfully",
 	 *         @OA\JsonContent(
 	 *             type="object",
 	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Sale categories found"),
-	 *             @OA\Property(
-	 *                 property="data",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     type="object",
-	 *                     @OA\Property(property="id", type="integer", example=12),
-	 *                     @OA\Property(property="name", type="string", example="Laptops"),
-	 *                     @OA\Property(property="parent_id", type="integer", example=3),
-	 *                     @OA\Property(property="image", type="string", example="category.jpg"),
-	 *                     @OA\Property(property="order", type="integer", example=1)
-	 *                 )
-	 *             )
+	 *             @OA\Property(property="message", type="string", example="Sale products fetched successfully"),
+	 *             @OA\Property(property="current_page", type="integer", example=1),
+	 *             @OA\Property(property="last_page", type="integer", example=5),
+	 *             @OA\Property(property="total", type="integer", example=50),
+	 *             @OA\Property(property="per_page", type="integer", example=10),
+	 *             @OA\Property(property="filters", type="object"),
+	 *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
 	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="Category not found"
 	 *     )
 	 * )
 	 */
+
 
 	public function saleProductsByCategory($id, Request $request)
 	{

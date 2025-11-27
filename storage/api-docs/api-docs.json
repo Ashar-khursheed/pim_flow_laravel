@@ -21819,16 +21819,35 @@
         "/api/frontend/sale-categories/{id}": {
             "get": {
                 "tags": [
-                    "Categories"
+                    "Products"
                 ],
-                "summary": "Get all last-child categories that have products on sale",
-                "description": "Returns all categories (only last-child categories) which have at least one product containing a sale_price > 0. Supports optional filters such as price range and category name.",
+                "summary": "Get all sale products under a specific category",
+                "description": "Returns all published products in a category with sale_price > 0. Supports filters like price, rating, stock, and sorting.",
                 "operationId": "ff560739ab9dbf3d7b8d52d55d7c81b3",
                 "parameters": [
                     {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
                         "name": "min_price",
                         "in": "query",
-                        "description": "Minimum sale price filter",
+                        "description": "Minimum sale price",
                         "required": false,
                         "schema": {
                             "type": "number",
@@ -21838,7 +21857,7 @@
                     {
                         "name": "max_price",
                         "in": "query",
-                        "description": "Maximum sale price filter",
+                        "description": "Maximum sale price",
                         "required": false,
                         "schema": {
                             "type": "number",
@@ -21848,26 +21867,44 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search category by name",
+                        "description": "Search by product name",
                         "required": false,
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "limit",
+                        "name": "min_rating",
                         "in": "query",
-                        "description": "Limit number of categories returned",
+                        "description": "Minimum average rating",
+                        "required": false,
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "in_stock",
+                        "in": "query",
+                        "description": "Filter only in-stock products (1=yes)",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "default": 20
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sorting: price_asc, price_desc, latest, rating_desc",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Sale categories fetched successfully",
+                        "description": "Products fetched successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -21878,33 +21915,30 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Sale categories found"
+                                            "example": "Sale products fetched successfully"
+                                        },
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 50
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "filters": {
+                                            "type": "object"
                                         },
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 12
-                                                    },
-                                                    "name": {
-                                                        "type": "string",
-                                                        "example": "Laptops"
-                                                    },
-                                                    "parent_id": {
-                                                        "type": "integer",
-                                                        "example": 3
-                                                    },
-                                                    "image": {
-                                                        "type": "string",
-                                                        "example": "category.jpg"
-                                                    },
-                                                    "order": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    }
-                                                },
                                                 "type": "object"
                                             }
                                         }
@@ -21913,6 +21947,9 @@
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Category not found"
                     }
                 }
             }
