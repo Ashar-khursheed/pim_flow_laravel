@@ -628,14 +628,14 @@ class OrderController extends BaseController
 				$finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
 				$finance->payment_due = date('Y-m-d', strtotime($nextPaymentDue));
 			}
-			FinancesPayment::create([
-				'finances_id'=>$finance->id,
-				'limitAmount'=>$finance->approvedAmount,
-				'usedAmount'=>$orderAmount,
-				'availableAmount'=>$finance->approvedAmount - $orderAmount,
-				'dueAmount'=>$orderAmount,
-				'creditTerms'=>$finance->term_selection,
-			]);
+			// FinancesPayment::create([
+			// 	'finances_id'=>$finance->id,
+			// 	'limitAmount'=>$finance->approvedAmount,
+			// 	'usedAmount'=>$orderAmount,
+			// 	'availableAmount'=>$finance->approvedAmount - $orderAmount,
+			// 	'dueAmount'=>$orderAmount,
+			// 	'creditTerms'=>$finance->term_selection,
+			// ]);
 		}
 	}
 	/**

@@ -8,14 +8,18 @@ class FinancesPayment extends Model
 {
     protected $fillable = [
         'finances_id',
-        'limitAmount',
-        'usedAmount',
-        'availableAmount',
-        'purchaseAmount',
-        'dueAmount',
+        'customer_id',
+        'due_amount',
+        'due_date',
+        'paid_amount',
+        'paid_on_date',
+        'balance',
         'creditTerms',
-        'nextPaymentDue',
-        'payment_mode'
+        'payment_mode',
+        'paid_by',
+        'updated_by',
+        'created_at',
+        'updated_at',
     ];
 
     public function finance()

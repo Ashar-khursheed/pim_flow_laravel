@@ -461,6 +461,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('finances/{id}', [FinanceController::class, 'update']);
 	Route::post('/finances/{id}/status', [FinanceController::class, 'updateStatus']);
 
+	Route::get('/finance/{id}/due', [FinanceController::class, 'getDueDetails']);
+	Route::post('/finance/pay', [FinanceController::class, 'payAmount']);
+
 	
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
@@ -825,10 +828,14 @@ Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 
 
 Route::get('/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProducts']);
 
+Route::get('/frontend/sale-categories/{id}', [F_ProductController::class, 'saleProductsByCategory']);
+
+
 Route::post('/frontend/guest/view-product', [F_RecentlyViewedProductController::class, 'saveGuestProductView']);
 Route::get('/frontend/guest/recent-products', [F_RecentlyViewedProductController::class, 'getGuestRecentProducts']);
 
 Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);
+Route::get('/frontend/categories/sale', [F_CategoryController::class, 'saleCategories']);
 Route::get('/frontend/all-categories', [F_CategoryController::class, 'fetchAllCategories']);
 Route::get('/frontend/categoryguestproducts', [F_CategoryController::class, 'getAllGuestFeaturedProductsByCategory']);
 Route::get('/frontend/categories', [F_CategoryController::class, 'index']);
