@@ -2749,9 +2749,16 @@ class ProductController extends Controller
 		// Transform Response
 		$transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
 
-			$product->images = collect($product->images)->map(fn($image) => $image);
-			$videoPaths = json_decode($product->video_path, true);
-			$product->video_path = collect($videoPaths)->map(fn($video) => $video);
+			// Decode images JSON
+			$images = collect(json_decode($product->images ?? '[]', true))->map(function ($img) use ($product) {
+				return [
+					'url' => $img,
+					'alt' => $product->alt_tags ?? null,
+				];
+			});
+
+			// Decode videos
+			$videoPaths = collect(json_decode($product->video_path ?? '[]', true));
 
 			$totalReviews = $product->reviews->count();
 			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
@@ -2767,37 +2774,17 @@ class ProductController extends Controller
 				'name' => $product->name,
 				'category_url' => $product->category_url(),
 				'parent_category_url' => $product->parent_category_url(),
-				'images' => $product->images,
-				'alt_tags' => $product->alt_tags,
-				"url" => $product->seoUrl->url ?? null,
-				'video_url' => $product->video_url,
-				'video_path' => $product->video_path,
+				'images' => $images,          // ✅ array of objects now
+				'video_path' => $videoPaths,  // array of strings
 				'sku' => $product->sku,
-
-				// Prices
 				'price' => (float)($firstSupplier->price ?? 0),
-				"sale_price" => (float)($firstSupplier->sale_price ?? 0),
-				"original_price" => (float)($firstSupplier->price ?? 0),
-				'front_sale_price' => (float)($firstSupplier->sale_price ?? 0),
-				"best_price" => (float)($firstSupplier->price ?? 0),
-
-				// Currency
+				'sale_price' => (float)($firstSupplier->sale_price ?? 0),
 				'currency' => $product->currency?->symbol,
-				'currency_title' => $product->currency?->symbol ?? null,
-
-				// Reviews
 				'total_reviews' => $totalReviews,
 				'avg_rating' => $avgRating,
-
-				// Stock
-				'leftStock' => $leftStock,
-
-				// Wishlist
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
-
-				// Supplier details
+				'leftStock' => $leftStock,
 				'vendor_id' => $firstSupplier->vendor_id ?? null,
-				'map' => (float)($firstSupplier->map ?? 0),
 				'inventory' => $firstSupplier->inventory ?? null,
 				'in_stock' => $firstSupplier->in_stock ?? null,
 				'delivery_days' => $firstSupplier->delivery_days ?? null,
@@ -2806,12 +2793,11 @@ class ProductController extends Controller
 				'warranty_information' => $firstSupplier->warranty_information ?? null,
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
-
-				// Other info
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
 			];
 		});
+
 
 		return response()->json([
 			'success' => true,
