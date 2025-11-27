@@ -21819,7 +21819,7 @@
         "/api/frontend/sale-categories/{id}": {
             "get": {
                 "tags": [
-                    "Products"
+                    "Frontend Products"
                 ],
                 "summary": "Get all sale products under a specific category",
                 "description": "Returns all published products in a category with sale_price > 0. Supports filters like price, rating, stock, and sorting.",
@@ -46930,6 +46930,10 @@
         {
             "name": "Frontend-Product",
             "description": "Frontend-Product"
+        },
+        {
+            "name": "Frontend Products",
+            "description": "Frontend Products"
         },
         {
             "name": "Product Errors",
