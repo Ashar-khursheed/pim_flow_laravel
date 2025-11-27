@@ -2566,7 +2566,7 @@ class ProductController extends Controller
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/frontend/sale-categories",
+	 *     path="/api/frontend/sale-categories/{id}",
 	 *     summary="Get all last-child categories that have products on sale",
 	 *     description="Returns all categories (only last-child categories) which have at least one product containing a sale_price > 0. Supports optional filters such as price range and category name.",
 	 *     tags={"Categories"},
