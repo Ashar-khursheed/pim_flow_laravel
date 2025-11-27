@@ -599,7 +599,7 @@ class FinanceController extends Controller
                 'years_in_business' => 'nullable|string',
                 'duns_number' => 'nullable|string',
                 'status' => 'required|in:Paid,Overdue,Pending',
-                'creditLimitAmount' => 'required|integer',
+                'creditLimitAmount' => 'required|numeric',
 
                 // ⭐ NEW FIELD ADDED HERE                
                 'accountsStatus'   => 'required|in:Pending,Approved,Rejected,Hold',                    
@@ -814,4 +814,165 @@ class FinanceController extends Controller
             'data' => $finance
         ]);
     }
+    /**
+     * @OA\Get(
+     *     path="/api/finance/{id}/due",
+     *     summary="Get finance due amount and due date",
+     *     tags={"Finance"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Finance ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Due details fetched",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="finance_id", type="integer"),
+     *                 @OA\Property(property="customer_id", type="integer"),
+     *                 @OA\Property(property="next_due_amt", type="number", format="float"),
+     *                 @OA\Property(property="due_date", type="string", format="date")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Finance not found")
+     * )
+     */
+    public function getDueDetails($id)
+    {
+        $finance = Finance::find($id);
+
+        if (!$finance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance record not found.'
+            ], 404);
+        }
+if(!empty($finance->next_due_amt)){
+        return response()->json([
+            'success' => true,
+            'message' => 'Finance due details fetched.',
+            'data' => [
+                'finance_id'   => $finance->id,
+                'customer_id'  => $finance->customer_id,
+                'next_due_amt' => $finance->next_due_amt,
+                'next_due_date'     => $finance->next_due_date,
+                // 'term_selection' => $finance->term_selection,
+                // 'usedCreditAmount' => $finance->usedCreditAmount,
+                // 'availableCreditAmount' => $finance->availableCreditAmount,
+            ]
+        ], 200);
+    }else{
+
+   return response()->json([
+            'success' => false,
+            'message' => 'Finance no due amount.',
+             
+        ], 200);
+    }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/finance/pay",
+     *     summary="Pay finance amount",
+     *     tags={"Finance"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"finance_id", "customer_id", "pay_amount"},
+     *             @OA\Property(property="finance_id", type="integer"),
+     *             @OA\Property(property="customer_id", type="integer"),
+     *             @OA\Property(property="pay_amount", type="number", format="float")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="finance_id", type="integer"),
+     *                 @OA\Property(property="customer_id", type="integer"),
+     *                 @OA\Property(property="paid_amount", type="number", format="float"),
+     *                 @OA\Property(property="remaining_due", type="number", format="float"),
+     *                 @OA\Property(property="status", type="string")
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function payAmount(Request $request)
+    {
+        $request->validate([
+            'finance_id'  => 'required|exists:finances,id',
+            'customer_id' => 'required|exists:customers,id',
+            'pay_amount'  => 'required|numeric|min:1',
+        ]);
+
+        $finance = Finance::find($request->finance_id);
+        if (!$finance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance record not found.'
+            ], 404);
+        }
+  
+
+        if ($finance->next_due_amt < $request->pay_amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pay amount cannot be greater than due amount.',
+            ], 201);
+        }
+
+       
+        if(!empty($finance->next_due_amt) ){
+            $data = [
+                    'finances_id'  => $request->finance_id,
+                    'customer_id' => trim($request->customer_id),          
+                    'due_amount'      => $finance->next_due_amt,
+                    'due_date'      => $finance->next_due_date,
+                    'paid_amount'      => $request->pay_amount,           
+                    'paid_on_date'   => now(),
+                    'balance'      => $finance->next_due_amt - $request->pay_amount,
+                    'creditTerms'      => $finance->term_selection,
+                    'payment_mode'      => $request->payment_mode,
+                    'paid_by'      => Auth::id(),
+            ];
+ 
+        // Save payment in finance_payments table
+            $payment = FinancesPayment::create($data);
+
+            // Update due amount
+            $finance->next_due_amt = max(0, $finance->next_due_amt - $request->pay_amount);
+            // Update status
+            $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+            $finance->paidAmount = $finance->paidAmount + $request->pay_amount;           
+            $finance->save();
+        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment processed successfully.',
+            'data' => [
+                'finance_id'     => $finance->id,
+                'customer_id'    => $request->customer_id,
+                'paid_amount'    => $request->pay_amount,
+                'next_due_amt'  => $finance->next_due_amt,
+                'status'         => $finance->status
+            ]
+        ]);
+
+    
+    }
+
+
 }

@@ -461,6 +461,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('finances/{id}', [FinanceController::class, 'update']);
 	Route::post('/finances/{id}/status', [FinanceController::class, 'updateStatus']);
 
+	Route::get('/finance/{id}/due', [FinanceController::class, 'getDueDetails']);
+	Route::post('/finance/pay', [FinanceController::class, 'payAmount']);
+
 	
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
