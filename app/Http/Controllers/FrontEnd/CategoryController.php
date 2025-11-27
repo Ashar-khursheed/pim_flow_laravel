@@ -3610,7 +3610,7 @@ class CategoryController extends Controller
 
             // Only categories that are directly assigned to products having sale price
             ->whereHas('products', function ($query) {
-                $query->whereHas('supplier', function ($q) {
+                $query->whereHas('productSuppliers', function ($q) {
                     $q->whereNotNull('sale_price')
                     ->where('sale_price', '>', 0);
                 });

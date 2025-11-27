@@ -2654,7 +2654,7 @@ class ProductController extends Controller
 		// Base Query
 		$query = $category->products()
 			->where('status', 'published')
-			->whereHas('supplier', function ($q) {
+			->whereHas('productSuppliers', function ($q) {
 				$q->whereNotNull('sale_price')
 				->where('sale_price', '>', 0);
 			})
@@ -2669,12 +2669,12 @@ class ProductController extends Controller
 
 		/** Price range filter (based on sale price) */
 		if ($minPrice) {
-			$query->whereHas('supplier', function ($q) use ($minPrice) {
+			$query->whereHas('productSuppliers', function ($q) use ($minPrice) {
 				$q->where('sale_price', '>=', $minPrice);
 			});
 		}
 		if ($maxPrice) {
-			$query->whereHas('supplier', function ($q) use ($maxPrice) {
+			$query->whereHas('productSuppliers', function ($q) use ($maxPrice) {
 				$q->where('sale_price', '<=', $maxPrice);
 			});
 		}
@@ -2688,7 +2688,7 @@ class ProductController extends Controller
 
 		/** In-stock filter */
 		if ($onlyInStock == 1) {
-			$query->whereHas('supplier', function ($q) {
+			$query->whereHas('productSuppliers', function ($q) {
 				$q->where('inventory', '>', 0)
 				->where('in_stock', 1);
 			});
