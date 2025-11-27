@@ -11325,10 +11325,14 @@
                                         "type": "number",
                                         "example": 5000
                                     },
+                                    "approvedAmount": {
+                                        "type": "number",
+                                        "example": 5000
+                                    },
                                     "status": {
                                         "type": "string",
                                         "enum": [
-                                            "Active",
+                                            "Paid",
                                             "Overdue",
                                             "Pending"
                                         ],
@@ -11340,7 +11344,8 @@
                                         "enum": [
                                             "Pending",
                                             "Approved",
-                                            "Reject"
+                                            "Rejected",
+                                            "Hold"
                                         ],
                                         "example": "Pending"
                                     }
@@ -11500,19 +11505,20 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "status",
+                                    "accountsStatus",
                                     "approvedAmount"
                                 ],
                                 "properties": {
-                                    "status": {
+                                    "accountsStatus": {
                                         "description": "Finance account status",
                                         "type": "string",
                                         "enum": [
-                                            "Active",
+                                            "Approved",
                                             "Pending",
-                                            "Overdue"
+                                            "Rejected",
+                                            "Hold"
                                         ],
-                                        "example": "Active"
+                                        "example": "Approved"
                                     },
                                     "approvedAmount": {
                                         "description": "Approved amount",
