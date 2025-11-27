@@ -2569,7 +2569,7 @@ class ProductController extends Controller
 	 *     path="/api/frontend/sale-categories/{id}",
 	 *     summary="Get all sale products under a specific category",
 	 *     description="Returns all published products in a category with sale_price > 0. Supports filters like price, rating, stock, and sorting.",
-	 *     tags={"Products"},
+	 *     tags={"Frontend Products"},
 	 *
 	 *     @OA\Parameter(
 	 *         name="id",
