@@ -88,10 +88,11 @@ use App\Http\Controllers\MadeToOrderController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\GetInTouchController;
 use App\Http\Controllers\TrainingDataController;
+use App\Http\Controllers\ProductAttributeController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
- 
+
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
 use App\Http\Controllers\FrontEnd\UserReviewController as F_UserReviewController;
 use App\Http\Controllers\FrontEnd\SeoManagementController as F_SeoManagementController;
@@ -399,9 +400,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::apiResource('users', UserController::class);
 
+	Route::post('/attributes/import', [ProductAttributeController::class, 'import']);
+	Route::post('/attributes/export', [ProductAttributeController::class, 'export']);
+	Route::get('products/{id}/product-category-attribute-groups', [ProductAttributeController::class, 'productCategoryAttributeGroups']
+
 	Route::post('/attributes/generate-translation', [AttributeController::class, 'generateTranslation']);
-	Route::post('/attributes/import', [AttributeController::class, 'import']);
-	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
 	Route::delete('attribute-groups/{id}/remove-attribute/{attribute_id}', [AttributeGroupController::class, 'removeAttribute']);
 	Route::resource('attribute-groups', AttributeGroupController::class);
@@ -461,15 +464,14 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('finances/{id}', [FinanceController::class, 'update']);
 	Route::post('/finances/{id}/status', [FinanceController::class, 'updateStatus']);
 
-	
+
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
 	Route::post('/products/export', [ProductExportController::class, 'export']);
 	Route::post('products/import', [ProductController::class, 'import']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
 	Route::get('products/category/{category_id}', [ProductController::class, 'getProductsByCategory']);
-	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
-	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
+	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']););
 	Route::post('/product/full-url', [ProductController::class, 'getStoreUrl']);
 	Route::resource('products', ProductController::class);
 	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
