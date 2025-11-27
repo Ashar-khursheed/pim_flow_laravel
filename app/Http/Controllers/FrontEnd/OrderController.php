@@ -573,7 +573,7 @@ class OrderController extends BaseController
 
 		$orderAmount = $orderAmount;
 		$customerId = auth()->id();
-		$finance = Finance::where('customer_id', $customerId)->where('status', 'Active')->orderBy('id', 'desc')->first();
+		$finance = Finance::where('customer_id', $customerId)->where('accountsStatus', 'Approved')->orderBy('id', 'desc')->first();
 		if(!$finance){
 			return response()->json([
 			'success' => false,
@@ -582,7 +582,7 @@ class OrderController extends BaseController
 		}
 		$orderCredit = $orderAmount + $finance->usedCreditAmount;
 
-		if ($orderCredit > $finance->approvedAmount) {
+		if ($orderAmount > $finance->approvedAmount) {
 
 			if ($finance->availableCreditAmount> 0){
 
@@ -601,21 +601,21 @@ class OrderController extends BaseController
 
 			return response()->json([
 				'success' => false,
-				'message' => "The order amount (" . number_format($orderCredit, 2) . ") is less than the approved amount (" . number_format($finance->approvedAmount, 2) . ").",
+				'message' => "The order amount (" . number_format($orderAmount, 2) . ") is less than the approved amount (" . number_format($finance->approvedAmount, 2) . ").",
 			], 422);
 		}
 
-		if ($finance->approvedAmount == $orderCredit) {
+		if ($finance->approvedAmount == $orderAmount) {
 
-			$finance->usedCreditAmount = $finance->usedCreditAmount +  $orderCredit;
-			$finance->dueCreditAmount = $finance->dueCreditAmount +  $orderCredit;
+			$finance->usedCreditAmount = $finance->usedCreditAmount +  $orderAmount;
+			$finance->dueCreditAmount = $finance->dueCreditAmount +  $orderAmount;
+			$finance->status = "Pending";
 		}
 
-		if ($finance->approvedAmount > $orderCredit) {
-
-			$finance->dueCreditAmount = $finance->approvedAmount - $orderCredit;
-			$finance->usedCreditAmount = $orderCredit;
-			$finance->availableCreditAmount = $finance->approvedAmount - $orderCredit;
+		if ($finance->approvedAmount > $orderAmount) {
+			$finance->dueCreditAmount = $orderAmount;
+			$finance->usedCreditAmount = $orderAmount;
+			$finance->availableCreditAmount = $finance->approvedAmount - $orderAmount;
 			$nextPaymentDue = "";
 			if ($finance->term_selection == 'Net 30 Days') {
 				$nextPaymentDue = "+30 Days";
@@ -628,14 +628,14 @@ class OrderController extends BaseController
 				$finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
 				$finance->payment_due = date('Y-m-d', strtotime($nextPaymentDue));
 			}
-			// FinancesPayment::create([
-			// 	'finances_id'=>$finance->id,
-			// 	'limitAmount'=>$finance->approvedAmount,
-			// 	'usedAmount'=>$orderCredit,
-			// 	'availableAmount'=>$finance->approvedAmount - $orderCredit,
-			// 	'dueAmount'=>$orderCredit,
-			// 	'creditTerms'=>$finance->term_selection,
-			// ]);
+			FinancesPayment::create([
+				'finances_id'=>$finance->id,
+				'limitAmount'=>$finance->approvedAmount,
+				'usedAmount'=>$orderAmount,
+				'availableAmount'=>$finance->approvedAmount - $orderAmount,
+				'dueAmount'=>$orderAmount,
+				'creditTerms'=>$finance->term_selection,
+			]);
 		}
 	}
 	/**
