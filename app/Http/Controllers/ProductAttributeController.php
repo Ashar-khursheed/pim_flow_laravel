@@ -22,7 +22,7 @@ class ProductAttributeController extends BaseController
 	 * @OA\Post(
 	 *     path="/api/attributes/export",
 	 *     summary="Export product attribute data to Excel",
-	 *     tags={"Attributes"},
+	 *     tags={"Product Attributes"},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
@@ -203,7 +203,7 @@ class ProductAttributeController extends BaseController
 	 * @OA\Post(
 	 *     path="/api/attributes/import",
 	 *     summary="Import product attributes from an Excel file",
-	 *     tags={"Attributes"},
+	 *     tags={"Product Attributes"},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\MediaType(
@@ -262,12 +262,13 @@ class ProductAttributeController extends BaseController
 			]);
 		}
 	}
+
 	/**
 	 * @OA\Get(
 	 *     path="/api/products/{productId}/product-category-attribute-groups",
 	 *     summary="Get product category attribute groups list",
 	 *     description="Retrieve attribute groups of the latest category for a given product.",
-	 *     tags={"Products"},
+	 *     tags={"Product Attributes"},
 	 *     @OA\Parameter(
 	 *         name="productId",
 	 *         in="path",

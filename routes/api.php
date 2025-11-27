@@ -402,7 +402,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/attributes/import', [ProductAttributeController::class, 'import']);
 	Route::post('/attributes/export', [ProductAttributeController::class, 'export']);
-	Route::get('products/{id}/product-category-attribute-groups', [ProductAttributeController::class, 'productCategoryAttributeGroups']
+	Route::get('products/{id}/product-category-attribute-groups', [ProductAttributeController::class, 'productCategoryAttributeGroups']);
 
 	Route::post('/attributes/generate-translation', [AttributeController::class, 'generateTranslation']);
 	Route::resource('attributes', AttributeController::class);
@@ -471,7 +471,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('products/import', [ProductController::class, 'import']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
 	Route::get('products/category/{category_id}', [ProductController::class, 'getProductsByCategory']);
-	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']););
+	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
 	Route::post('/product/full-url', [ProductController::class, 'getStoreUrl']);
 	Route::resource('products', ProductController::class);
 	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
