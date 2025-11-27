@@ -14298,6 +14298,77 @@
                 }
             }
         },
+        "/api/frontend/categories/sale": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get all last-child categories with sale products",
+                "description": "Returns all categories that are directly assigned to products having a sale price. Only last-child categories (categories with no children) are returned. Slug is excluded.",
+                "operationId": "f82af05c36a8b9f7ecd113eb54c03c98",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 12
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Kids Shoes"
+                                                    },
+                                                    "parent_id": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "kids-shoes.png"
+                                                    },
+                                                    "order": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "published"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "example": "2024-02-10 12:00:00"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "example": "2024-02-12 09:22:00"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/api/frontend/category-with-slug/{slug}": {
             "get": {
                 "tags": [
@@ -21735,6 +21806,107 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Product not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sale-categories": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get all last-child categories that have products on sale",
+                "description": "Returns all categories (only last-child categories) which have at least one product containing a sale_price > 0. Supports optional filters such as price range and category name.",
+                "operationId": "df7d2b44952b6c09bc38e04b7fcf4cf6",
+                "parameters": [
+                    {
+                        "name": "min_price",
+                        "in": "query",
+                        "description": "Minimum sale price filter",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "max_price",
+                        "in": "query",
+                        "description": "Maximum sale price filter",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "example": 200
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search category by name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Limit number of categories returned",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sale categories fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Sale categories found"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 12
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Laptops"
+                                                    },
+                                                    "parent_id": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "category.jpg"
+                                                    },
+                                                    "order": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"
