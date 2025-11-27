@@ -165,9 +165,9 @@ class FinanceController extends Controller
                 'accountsStatus' => $finance->accountsStatus, // <-- Added here
                 'usedCreditAmount' => $finance->usedCreditAmount,
                 'availableCreditAmount' => $finance->availableCreditAmount,
-                'purchaseAmount' => $finance->purchaseAmount,
-                'dueCreditAmount' => $finance->dueCreditAmount,
-
+              
+                'next_due_amt' => $finance->next_due_amt,
+                'paidAmount' => $finance->paidAmount,
                 'status' => $finance->status,
                 'business_name' => $finance->business_name,
 
@@ -181,8 +181,8 @@ class FinanceController extends Controller
                 'years_in_business' => $finance->years_in_business,
 
                 'documents' => $finance->documents,
-                'duns_number' => $finance->duns_number,
-                'payment_due' => $finance->payment_due ? date('d-m-Y', strtotime($finance->payment_due)) : null,
+                'duns_number' => $finance->duns_number,             
+                'next_due_date' => $finance->next_due_date ? date('d-m-Y', strtotime($finance->next_due_date)) : null,
                 'address' =>  $address ? [
                     'address' => $address->address,
                     'city' => $address->city,
@@ -402,8 +402,8 @@ class FinanceController extends Controller
             'accountsStatus' => $finance->accountsStatus,
             'usedCreditAmount' => $finance->usedCreditAmount,
             'availableCreditAmount' => $finance->availableCreditAmount,
-            'purchaseAmount' => $finance->purchaseAmount,
-            'dueCreditAmount' => $finance->dueCreditAmount,
+            'next_due_amt' => $finance->next_due_amt,
+            'paidAmount' => $finance->paidAmount,
 
             'status' => $finance->status,
             'business_name' => $finance->business_name,
@@ -419,7 +419,7 @@ class FinanceController extends Controller
 
             'documents' => $finance->documents,
             'duns_number' => $finance->duns_number,
-            'payment_due' => $finance->payment_due ? date('d-m-Y', strtotime($finance->payment_due)) : null,
+            'next_due_date' => $finance->next_due_date ? date('d-m-Y', strtotime($finance->next_due_date)) : null,
             'address' =>  $address ? [
                 'address' => $address->address,
                 'city' => $address->city,
