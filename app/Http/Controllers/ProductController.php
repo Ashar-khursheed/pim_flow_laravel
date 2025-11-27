@@ -136,19 +136,19 @@ class ProductController extends BaseController
 			]);
 		}
 
-		 if ($request->filled('updated_from_date') && $request->filled('updated_to_date')) {
+		if ($request->filled('updated_from_date') && $request->filled('updated_to_date')) {
 			$from = $request->updated_from_date . ' 00:00:00';
 			$to = $request->updated_to_date . ' 23:59:59';
 
 			// Get products updated within range OR whose suppliers were updated in range
 			$records = Product::where('status', 'published')
-				->where(function ($query) use ($from, $to) {
-					$query->whereBetween('updated_at', [$from, $to])
-						->orWhereHas('productSuppliers', function ($supplierQuery) use ($from, $to) {
-							$supplierQuery->whereBetween('updated_at', [$from, $to]);
-						});
-				})
-				->pluck('id');
+			->where(function ($query) use ($from, $to) {
+				$query->whereBetween('updated_at', [$from, $to])
+				->orWhereHas('productSuppliers', function ($supplierQuery) use ($from, $to) {
+					$supplierQuery->whereBetween('updated_at', [$from, $to]);
+				});
+			})
+			->pluck('id');
 
 			return response()->json([
 				'success' => true,
@@ -1069,8 +1069,8 @@ class ProductController extends BaseController
 
 				/* Find existing product attribute */
 				$productAttribute = $product->productAttributes()
-					->where('attribute_id', $attributeId)
-					->first();
+				->where('attribute_id', $attributeId)
+				->first();
 
 				/* Create new product attribute if not found */
 				if (!$productAttribute) {
@@ -1091,29 +1091,33 @@ class ProductController extends BaseController
 
 				/* Update translation for current locale */
 				if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-					$productAttribute->translateOrNew($locale)->attribute_value_tr = $value;
+					$productAttribute->translateOrNew('en')->attribute_value_tr = $value;
 				}
 
 				$productAttribute->save();
 				$updatedAttributeIds[] = $productAttribute->attribute_id;
 
-				/* Handle select type - auto-create new attribute values */
-				if ($existingAttribute->type === 'select' && $locale === 'en') {
-					if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
-						$existingAttribute->attributeValues()->create([
-							'attribute_value' => $value
-						]);
+				/* Handle select type - auto-create new attribute values with translations */
+				if ($existingAttribute->type === 'select') {
+					$attributeValue = $existingAttribute->attributeValues()->firstOrCreate([
+						'attribute_value' => $value
+					]);
+
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$attributeValue->translateOrNew('en')->attribute_value_tr = $value;
+						$attributeValue->save();
 					}
 				}
 			}
 
 			/* Delete any existing product attributes not in updatedAttributeIds */
 			$product->productAttributes()
-				->whereNotIn('attribute_id', $updatedAttributeIds)
-				->get()
-				->each(function ($productAttribute) {
-					$productAttribute->delete();
-				});
+			->whereNotIn('attribute_id', $updatedAttributeIds)
+			->get()
+			->each(function ($productAttribute) {
+				$productAttribute->translations()->delete();
+				$productAttribute->delete();
+			});
 		}
 
 		if ($canModifyContent) {
@@ -2692,20 +2696,20 @@ class ProductController extends BaseController
  *  security={{"bearerAuth":{}}}
  * )
  */
-public function getStoreUrl(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'product_id' => 'required|integer|exists:ec_products,id',
-    ]);
+  public function getStoreUrl(Request $request)
+  {
+  	$validator = Validator::make($request->all(), [
+  		'product_id' => 'required|integer|exists:ec_products,id',
+  	]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $validator->errors()->first(),
-        ], 400);
-    }
+  	if ($validator->fails()) {
+  		return response()->json([
+  			'status' => 'error',
+  			'message' => $validator->errors()->first(),
+  		], 400);
+  	}
 
-    // Load only your required relations
+	// Load only your required relations
 		$product = Product::find($request->product_id); // no with()
 
 		if (!$product) {
@@ -2721,36 +2725,36 @@ public function getStoreUrl(Request $request)
 		$productSlug    = ltrim(optional($product->seoProductUrl)->url ?? '', '/');
 
 
-    if (!$product) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Product not found',
-        ], 404);
-    }
+		if (!$product) {
+			return response()->json([
+				'status' => 'error',
+				'message' => 'Product not found',
+			], 404);
+		}
 
-    // Determine base domain from .env
-    $appWebsite = env('APP_WEBSITE');
-    $baseDomain = str_contains(strtoupper($appWebsite), 'UAE')
-        ? 'https://www.horecastore.ae'
-        : 'https://www.thehorecastore.com';
+	// Determine base domain from .env
+		$appWebsite = env('APP_WEBSITE');
+		$baseDomain = str_contains(strtoupper($appWebsite), 'UAE')
+		? 'https://www.horecastore.ae'
+		: 'https://www.thehorecastore.com';
 
-    // Get each part of the URL
-    $parentCategory = ltrim($product->parent_category_url() ?? '', '/');
-    $childCategory  = ltrim($product->category_url() ?? '', '/');
-    $productSlug    = ltrim(optional($product->seoProductUrl)->url ?? '', '/');
+	// Get each part of the URL
+		$parentCategory = ltrim($product->parent_category_url() ?? '', '/');
+		$childCategory  = ltrim($product->category_url() ?? '', '/');
+		$productSlug    = ltrim(optional($product->seoProductUrl)->url ?? '', '/');
 
-    // Build the full path
-    $pathParts = array_filter([$parentCategory, $childCategory, $productSlug]);
-    $fullPath = implode('/', $pathParts);
+	// Build the full path
+		$pathParts = array_filter([$parentCategory, $childCategory, $productSlug]);
+		$fullPath = implode('/', $pathParts);
 
-    $fullUrl = rtrim($baseDomain, '/') . '/' . $fullPath;
+		$fullUrl = rtrim($baseDomain, '/') . '/' . $fullPath;
 
-    return response()->json([
-        'status' => 'success',
-        'product_id' => $product->id,
-        'store_url' => $fullUrl,
-    ]);
-}
+		return response()->json([
+			'status' => 'success',
+			'product_id' => $product->id,
+			'store_url' => $fullUrl,
+		]);
+	}
 
 
 
