@@ -3565,4 +3565,73 @@ class CategoryController extends Controller
     }
 
 
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/categories/sale",
+     *     summary="Get all last-child categories with sale products",
+     *     description="Returns all categories that are directly assigned to products having a sale price. Only last-child categories (categories with no children) are returned. Slug is excluded.",
+     *     tags={"Categories"},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=12),
+     *                     @OA\Property(property="name", type="string", example="Kids Shoes"),
+     *                     @OA\Property(property="parent_id", type="integer", example=3),
+     *                     @OA\Property(property="image", type="string", example="kids-shoes.png"),
+     *                     @OA\Property(property="order", type="integer", example=1),
+     *                     @OA\Property(property="status", type="string", example="published"),
+     *                     @OA\Property(property="created_at", type="string", example="2024-02-10 12:00:00"),
+     *                     @OA\Property(property="updated_at", type="string", example="2024-02-12 09:22:00")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal Server Error"
+     *     )
+     * )
+     */
+
+    public function saleCategories(Request $request)
+    {
+        // Fetch all last-child categories that have sale products
+        $categories = Category::query()
+
+            // Only categories that are directly assigned to products having sale price
+            ->whereHas('products', function ($query) {
+                $query->whereHas('productSuppliers', function ($q) {
+                    $q->whereNotNull('sale_price')
+                    ->where('sale_price', '>', 0);
+                });
+            })
+
+            // Ensure category is LAST CHILD (has no children)
+            ->whereDoesntHave('children')
+
+            ->select('*') // return everything
+            ->distinct()
+            ->get();
+
+        // Remove slug from response
+        $categories->makeHidden(['slug']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $categories
+        ]);
+    }
+
+
+
 }
