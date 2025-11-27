@@ -21816,14 +21816,14 @@
                 }
             }
         },
-        "/api/sale-categories": {
+        "/api/frontend/sale-categories": {
             "get": {
                 "tags": [
                     "Categories"
                 ],
                 "summary": "Get all last-child categories that have products on sale",
                 "description": "Returns all categories (only last-child categories) which have at least one product containing a sale_price > 0. Supports optional filters such as price range and category name.",
-                "operationId": "df7d2b44952b6c09bc38e04b7fcf4cf6",
+                "operationId": "41def63d79876d42dd300ba7dc8ba5a5",
                 "parameters": [
                     {
                         "name": "min_price",
