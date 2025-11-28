@@ -23,7 +23,7 @@ class MeasurementController extends BaseController
 	 */
 	public function getMeasurementTypes(Request $request)
 	{
-		$records = MeasurementType::orderBy('name', 'asc')->get([
+		$records = MeasurementType::orderBy('id', 'asc')->get([
 			'id', 'name'
 		]);
 		return response()->json([

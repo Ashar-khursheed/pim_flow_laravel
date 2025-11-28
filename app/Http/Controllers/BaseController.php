@@ -48,6 +48,11 @@ use App\Http\Controllers\Controller;
  *     description="API Endpoints for Product Management"
  * )
  *
+ * @OA\Tag(
+ *     name="Product Attributes",
+ *     description="API Endpoints for Product Attributes Management"
+ * )
+ *
  *  @OA\Tag(
  *     name="Products Report",
  *     description="API Endpoints for Product Report Management"
@@ -79,7 +84,7 @@ use App\Http\Controllers\Controller;
  * @OA\Tag(
  *     name="Finance",
  *     description="API Endpoints for Finance Management"
- * )  
+ * )
  * @OA\Tag(
  *     name="Categories",
  *     description="API Endpoints for Category Management"

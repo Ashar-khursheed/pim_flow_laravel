@@ -1859,112 +1859,6 @@
                 ]
             }
         },
-        "/api/attributes/export": {
-            "post": {
-                "tags": [
-                    "Attributes"
-                ],
-                "summary": "Export product attribute data to Excel",
-                "operationId": "2dbb4b40158242a96fa2dcd1efb85f74",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "parent_category_id",
-                                    "range_from",
-                                    "range_to"
-                                ],
-                                "properties": {
-                                    "status": {
-                                        "description": "Status (e.g., draft, published)",
-                                        "type": "string",
-                                        "example": "all"
-                                    },
-                                    "parent_category_id": {
-                                        "description": "Parent category ID",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "brand_id": {
-                                        "description": "Brand ID",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "range_from": {
-                                        "description": "Starting range (must be >=1)",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "range_to": {
-                                        "description": "Ending range (must be >= range_from and max 2000 more)",
-                                        "type": "integer",
-                                        "example": 50
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/attributes/import": {
-            "post": {
-                "tags": [
-                    "Attributes"
-                ],
-                "summary": "Import product attributes from an Excel file",
-                "operationId": "5c44003aff53ab53cae2bb072afe4b77",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "upload_file"
-                                ],
-                                "properties": {
-                                    "upload_file": {
-                                        "description": "xlsx file (.xlsx) max 2MB",
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Imported successfully",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/api/attributes/generate-translation": {
             "post": {
                 "tags": [
@@ -34292,6 +34186,182 @@
                 ]
             }
         },
+        "/api/attributes/export": {
+            "post": {
+                "tags": [
+                    "Product Attributes"
+                ],
+                "summary": "Export product attribute data to Excel",
+                "operationId": "a2e00f8d6bc19fce921a9391af70bb46",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "parent_category_id",
+                                    "range_from",
+                                    "range_to"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "description": "Status (e.g., draft, published)",
+                                        "type": "string",
+                                        "example": "all"
+                                    },
+                                    "parent_category_id": {
+                                        "description": "Parent category ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "brand_id": {
+                                        "description": "Brand ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_from": {
+                                        "description": "Starting range (must be >=1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and max 2000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attributes/import": {
+            "post": {
+                "tags": [
+                    "Product Attributes"
+                ],
+                "summary": "Import product attributes from an Excel file",
+                "operationId": "23a60493f0374a2eb2289b682c5bc2a6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "upload_file": {
+                                        "description": "xlsx file (.xlsx) max 2MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Imported successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/products/{productId}/product-category-attribute-groups": {
+            "get": {
+                "tags": [
+                    "Product Attributes"
+                ],
+                "summary": "Get product category attribute groups list",
+                "description": "Retrieve attribute groups of the latest category for a given product.",
+                "operationId": "21fe4f7c9d08a1dcfb589389d40f323e",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/products-attributes/{productId}": {
+            "get": {
+                "tags": [
+                    "Product Attributes"
+                ],
+                "summary": "Get product's category attribute groups with current values",
+                "description": "Retrieves all attribute groups from the product's category along with the product's current attribute values",
+                "operationId": "7c6b6b33ea6fa5cc44e24eb2a82aad74",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products/{id}/categories": {
             "get": {
                 "tags": [
@@ -35288,41 +35358,6 @@
                                     "type": "object"
                                 }
                             }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/products/{productId}/product-category-attribute-groups": {
-            "get": {
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Get product category attribute groups list",
-                "description": "Retrieve attribute groups of the latest category for a given product.",
-                "operationId": "8c18881149633e237e5c8e4ea0004715",
-                "parameters": [
-                    {
-                        "name": "productId",
-                        "in": "path",
-                        "description": "Product ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
                         }
                     }
                 },
@@ -46774,6 +46809,10 @@
         {
             "name": "Products",
             "description": "API Endpoints for Product Management"
+        },
+        {
+            "name": "Product Attributes",
+            "description": "API Endpoints for Product Attributes Management"
         },
         {
             "name": "Products Report",
