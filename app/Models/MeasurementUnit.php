@@ -24,6 +24,6 @@ class MeasurementUnit extends Model implements TranslatableContract
 
 	public function productAttributes()
 	{
-		return $this->hasMany(ProductAttributes::class, 'measurement_unit_id');
+		return $this->hasMany(ProductAttribute::class, 'measurement_unit_id');
 	}
 }

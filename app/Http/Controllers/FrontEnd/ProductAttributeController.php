@@ -3,13 +3,13 @@ namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\FrontEnd\ProductAttributes;
+use App\Models\ProductAttribute;
 use App\Models\Product;
 use OpenApi\Annotations as OA;
 
 class ProductAttributeController extends Controller
 {
-   
+
     /**
      * @OA\Get(
      *     path="/api/frontend/product/{id}/nutrition-facts1",
@@ -42,7 +42,7 @@ class ProductAttributeController extends Controller
     public function getNutritionFactsByProduct1($productId)
     {
         // Fetch attributes only under the "Nutrition Facts Per Serving Group"
-        $productAttributes = ProductAttributes::with(['attribute' => function ($query) {
+        $productAttributes = ProductAttribute::with(['attributeDetails' => function ($query) {
             $query->whereHas('attributeGroup', function ($q) {
                 $q->where('name', 'Nutrition Facts Per Serving Group');
             });
@@ -52,7 +52,7 @@ class ProductAttributeController extends Controller
 
         // Filter to only include those with valid attribute relation
         $nutritionFacts = $productAttributes->filter(function ($item) {
-            return $item->attribute !== null;
+            return $item->attributeDetails !== null;
         })->values();
 
         if ($nutritionFacts->isEmpty()) {
@@ -135,9 +135,9 @@ class ProductAttributeController extends Controller
     //          'salt',
     //          'caffeination'
     //      ];
-     
+
     //      // Fetch product attributes in the group
-    //      $productAttributes = ProductAttributes::with([
+    //      $productAttributes = ProductAttribute::with([
     //          'attribute' => function ($query) {
     //              $query->whereHas('attributeGroup', function ($q) {
     //                  $q->where('name', 'Nutrition Facts Per Serving Group');
@@ -147,50 +147,50 @@ class ProductAttributeController extends Controller
     //      ])
     //      ->where('product_id', $productId)
     //      ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
-     
+
     //      // Filter out null attributes
     //      $nutritionFacts = $productAttributes->filter(function ($item) {
     //          return $item->attribute !== null;
     //      });
-     
+
     //      if ($nutritionFacts->isEmpty()) {
     //          return response()->json([
     //              'message' => 'Nutrition Facts Per Serving Group not found for this product.'
     //          ], 200);
     //      }
-     
+
     //      // Sort dynamically based on partial keyword match
     //      $sortedFacts = $nutritionFacts->sortBy(function ($item) use ($sortKeywords) {
     //          $name = strtolower($item->attribute->name);
-     
+
     //          foreach ($sortKeywords as $index => $keyword) {
     //              $keywordParts = explode(' ', strtolower($keyword));
-     
+
     //              foreach ($keywordParts as $part) {
     //                  if (strpos($name, $part) !== false) {
     //                      return $index;
     //                  }
     //              }
     //          }
-     
+
     //          return count($sortKeywords) + 1; // Unknowns go to the end
     //      })->values();
-     
+
     //      // Build flat response array
     //      $response = [];
-     
+
     //      foreach ($sortedFacts as $item) {
     //          $name = $item->attribute->name;
     //          $value = trim($item->attribute_value . ' ' . ($item->measurementUnit->symbol ?? ''));
-     
+
     //          // Add dash for sub-values (e.g., "Saturated Fat" under "Fat")
     //          $formattedName = preg_match('/^(saturated|trans|polyunsaturated|monounsaturated|sugar|fibre|fiber|added)/i', $name)
     //              ? "- $name"
     //              : $name;
-     
+
     //          $response[] = "{$formattedName} {$value}";
     //      }
-     
+
     //      // Optionally bring "Serving Size" to the top if it exists
     //      foreach ($response as $index => $line) {
     //          if (stripos($line, 'Serving Size') === 0) {
@@ -200,7 +200,7 @@ class ProductAttributeController extends Controller
     //              break;
     //          }
     //      }
-     
+
     //      return response()->json(array_values($response));
     //  }
     public function getNutritionFactsByProduct($productId)
@@ -211,14 +211,14 @@ class ProductAttributeController extends Controller
             'caffeination', 'vitamin a', 'vitamin c', 'vitamin d', 'calcium', 'iron', 'potassium', 'magnesium', 'chloride',
             'fluoride', 'nitrate', 'bicarbonate', 'carbonate', 'sulfate', 'ph', 'tds'
         ];
-    
+
         $groups = [
             'Fat' => ['Saturated Fat', 'Trans Fat', 'Polyunsaturated Fat', 'Monounsaturated Fat'],
             'Carbohydrates' => ['Sugar', 'Fibre', 'Fiber', 'Added Sugar'],
         ];
-    
-        $productAttributes = ProductAttributes::with([
-            'attribute' => function ($query) {
+
+        $productAttributes = ProductAttribute::with([
+            'attributeDetails' => function ($query) {
                 $query->whereHas('attributeGroup', function ($q) {
                     $q->where('name', 'Nutrition Facts Per Serving Group');
                 })->with('attributeGroup');
@@ -227,24 +227,24 @@ class ProductAttributeController extends Controller
         ])
         ->where('product_id', $productId)
         ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
-    
+
         $nutritionFacts = $productAttributes->filter(function ($item) {
-            return $item->attribute !== null;
+            return $item->attributeDetails !== null;
         });
-    
+
         if ($nutritionFacts->isEmpty()) {
             return response()->json([
                 'message' => 'Nutrition Facts Per Serving Group not found for this product.'
             ], 200);
         }
-    
+
         $items = [];
         $grouped = [];
-    
+
         foreach ($nutritionFacts as $item) {
             $name = trim($item->attribute->name);
             $value = trim($item->attribute_value . ' ' . ($item->measurementUnit->symbol ?? ''));
-    
+
             $isChild = false;
             foreach ($groups as $parent => $children) {
                 foreach ($children as $child) {
@@ -258,42 +258,42 @@ class ProductAttributeController extends Controller
                     }
                 }
             }
-    
+
             if (!$isChild) {
                 $grouped[$name]['value'] = $value;
             }
         }
-    
+
         // Transform grouped data into array format
         foreach ($grouped as $key => $entry) {
             $data = [
                 'name' => $key,
                 'value' => $entry['value'] ?? ''
             ];
-    
+
             if (isset($entry['children'])) {
                 $data['children'] = $entry['children'];
             }
-    
+
             $items[] = $data;
         }
-    
+
         // Sort based on sortKeywords order
         usort($items, function ($a, $b) use ($sortKeywords) {
             $aIndex = array_search(strtolower($a['name']), $sortKeywords);
             $bIndex = array_search(strtolower($b['name']), $sortKeywords);
-    
+
             $aIndex = $aIndex === false ? 999 : $aIndex;
             $bIndex = $bIndex === false ? 999 : $bIndex;
-    
+
             return $aIndex <=> $bIndex;
         });
-    
+
         return response()->json($items);
     }
-    
 
-     
+
+
     // public function getNutritionFactsByProduct($productId)
     // {
     //     // Keyword-based sort order (lowercase)
@@ -322,7 +322,7 @@ class ProductAttributeController extends Controller
     //     ];
 
     //     // Fetch product attributes in the group
-    //     $productAttributes = ProductAttributes::with([
+    //     $productAttributes = ProductAttribute::with([
     //         'attribute' => function ($query) {
     //             $query->whereHas('attributeGroup', function ($q) {
     //                 $q->where('name', 'Nutrition Facts Per Serving Group');
@@ -376,7 +376,7 @@ class ProductAttributeController extends Controller
     //     return response()->json($response);
     // }
 
- 
+
 
     /**
      * @OA\Get(
@@ -419,7 +419,7 @@ class ProductAttributeController extends Controller
 
     // public function getAttributesByProduct($productId)
     // {
-    //     $productAttributes = ProductAttributes::with(['attribute' => function ($query) {
+    //     $productAttributes = ProductAttribute::with(['attribute' => function ($query) {
     //         $query->whereHas('attributeGroup', function ($q) {
     //             $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
     //         });
@@ -511,7 +511,7 @@ class ProductAttributeController extends Controller
     // public function getAttributesByProduct($productId)
     // {
     //     // Fetch product attributes with their attribute and measurement unit
-    //     $productAttributes = ProductAttributes::with([
+    //     $productAttributes = ProductAttribute::with([
     //         'attribute' => function ($query) {
     //             $query->whereHas('attributeGroup', function ($q) {
     //                 $q->whereNotIn('name', ['Nutrition Facts Per Serving Group', 'Ingredients']);
@@ -577,7 +577,7 @@ class ProductAttributeController extends Controller
     //         'Inside Carton',
     //         'Selling Unit',
     //         'Units per Case',
-    //         'Type', 
+    //         'Type',
     //         'Warranty',
     //         'Certification',
     //         'Features'
@@ -646,7 +646,7 @@ class ProductAttributeController extends Controller
 
     //     // if ($unitsPerCase && $packType && $unitQty && $unitMeasurement) {
     //     //     $insideCartonValue = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . $unitMeasurement->attribute_value;
-        
+
     //     //     // Insert at second position (index 1)
     //     //     array_splice($right, 1, 0, [[
     //     //         'attribute_name' => 'Inside Carton',
@@ -658,32 +658,32 @@ class ProductAttributeController extends Controller
     //     $packType        = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Pack Type');
     //     $unitQty         = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
     //     $unitMeasurement = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit of Measurement');
-        
+
     //     $rawSelling = $sellingUnit?->attribute_value;
-        
+
     //     $hasAllValues =
     //         $sellingUnit && !empty($rawSelling) &&
     //         $unitsPerCase && !empty($unitsPerCase->attribute_value) &&
     //         $packType && !empty($packType->attribute_value) &&
     //         $unitQty && !empty($unitQty->attribute_value) &&
     //         $unitMeasurement && !empty($unitMeasurement->attribute_value);
-        
+
     //     // First, always remove original Selling Unit if it exists
     //     $right = collect($right)->filter(fn($item) =>
     //         strtolower($item['attribute_name']) !== 'selling unit'
     //     )->values()->toArray();
-        
+
     //     // If all required values are present, show the custom format
     //     if ($hasAllValues) {
     //         $parsedSelling = preg_replace('#/#', ' ', $rawSelling);
-        
+
     //         $insideCarton = $unitsPerCase->attribute_value . ' ' .
     //                         $packType->attribute_value . ' x ' .
     //                         $unitQty->attribute_value . ' ' .
     //                         $unitMeasurement->attribute_value . ' Each';
-        
+
     //         $fullValue = $parsedSelling . ' (' . $insideCarton . ')';
-        
+
     //         array_splice($right, 0, 0, [[
     //             'attribute_name'  => 'Selling Unit',
     //             'attribute_value' => $fullValue,
@@ -696,9 +696,9 @@ class ProductAttributeController extends Controller
     //             'attribute_value' => $rawSelling,
     //         ]]);
     //     }
-        
 
-        
+
+
 
     //     return response()->json([
     //         'left' => $left,
@@ -726,8 +726,8 @@ class ProductAttributeController extends Controller
     }
 
     // Fetch product attributes with their attribute and measurement unit
-    $productAttributes = ProductAttributes::with([
-        'attribute' => function ($query) {
+    $productAttributes = ProductAttribute::with([
+        'attributeDetails' => function ($query) {
             $query->whereHas('attributeGroup', function ($q) {
                 $q->whereNotIn('name', ['Nutrition Facts Per Serving Group', 'Ingredients']);
             });
@@ -739,7 +739,7 @@ class ProductAttributeController extends Controller
 
     // Filter out attributes where attribute relation is null
     $filteredAttributes = $productAttributes->filter(function ($item) {
-        return $item->attribute !== null;
+        return $item->attributeDetails !== null;
     })->values();
 
     // Clone before hiding for use in Inside Carton logic
@@ -883,31 +883,31 @@ class ProductAttributeController extends Controller
 
     // public function getAttributesByProduct($productId)
     // {
-    //     // $productAttributes = ProductAttributes::with(['attribute' => function ($query) {
+    //     // $productAttributes = ProductAttribute::with(['attribute' => function ($query) {
     //     //     $query->whereHas('attributeGroup', function ($q) {
     //     //         $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
     //     //     });
     //     // }])
     //     // ->where('product_id', $productId)
     //     // ->get(['attribute_value', 'attribute_id']);
-    
-    //     $productAttributes = ProductAttributes::with([
+
+    //     $productAttributes = ProductAttribute::with([
     //         'attribute' => function ($query) {
     //             $query->whereHas('attributeGroup', function ($q) {
     //                 $q->whereNotIn('name', ['Nutrition Facts Per Serving Group', 'Ingredients']);
     //             });
-                
+
     //         },
     //         'measurementUnit'
     //     ])
     //     ->where('product_id', $productId)
     //     ->get(['attribute_value', 'attribute_id', 'measurement_unit_id' ]);
-    
+
     //     // Filter out null attributes
     //     $filteredAttributes = $productAttributes->filter(function ($item) {
     //         return $item->attribute !== null;
     //     })->values();
-    
+
     //     // Define fixed order
     //     $leftOrder = [
     //         'Sku / Item Code',
@@ -920,7 +920,7 @@ class ProductAttributeController extends Controller
     //         'Depth',
     //         'Height'
     //     ];
-    
+
     //     $rightOrder = [
     //         'Type',
     //         'Pack Type',
@@ -929,11 +929,11 @@ class ProductAttributeController extends Controller
     //         'Certification',
     //         'Features'
     //     ];
-    
+
     //     $left = [];
     //     $right = [];
     //     $usedNames = [];
-    
+
     //     // Helper: format item
     //     // $formatAttr = function ($item) {
     //     //     return [
@@ -941,20 +941,20 @@ class ProductAttributeController extends Controller
     //     //         'attribute_value' => $item->attribute_value,
     //     //     ];
     //     // };
-    
+
     //     $formatAttr = function ($item) {
     //         $value = $item->attribute_value;
     //         if ($item->measurementUnit && $item->measurement_unit_id) {
     //             $value .= ' ' . $item->measurementUnit->symbol;
     //         }
-        
+
     //         return [
     //             'attribute_name' => $item->attribute->name,
     //             'attribute_value' => $value,
     //         ];
     //     };
-        
-    
+
+
     //     // Add left ordered attributes
     //     foreach ($leftOrder as $name) {
     //         $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
@@ -963,7 +963,7 @@ class ProductAttributeController extends Controller
     //             $usedNames[] = $name;
     //         }
     //     }
-    
+
     //     // Add right ordered attributes
     //     foreach ($rightOrder as $name) {
     //         $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
@@ -972,16 +972,16 @@ class ProductAttributeController extends Controller
     //             $usedNames[] = $name;
     //         }
     //     }
-    
+
     //     // Get remaining attributes
     //     $remaining = $filteredAttributes->filter(function ($item) use ($usedNames) {
     //         return !in_array($item->attribute->name, $usedNames);
     //     })->map($formatAttr)->values();
-    
+
     //     // Balance total count between left and right
     //     $totalLeft = count($left);
     //     $totalRight = count($right);
-    
+
     //     foreach ($remaining as $item) {
     //         if ($totalLeft <= $totalRight) {
     //             $left[] = $item;
@@ -1008,7 +1008,7 @@ class ProductAttributeController extends Controller
     //     }
 
 
-            
+
     //     return response()->json([
     //         'left' => $left,
     //         'right' => $right
@@ -1053,7 +1053,7 @@ class ProductAttributeController extends Controller
      public function getAttributesByProductWithGroup($productId)
     {
         // Get product attributes with related attribute and attribute group
-        $productAttributes = ProductAttributes::with(['attribute.attributeGroup'])
+        $productAttributes = ProductAttribute::with(['attributeDetails.attributeGroup'])
             ->where('product_id', $productId)
             ->get();
 
@@ -1061,7 +1061,7 @@ class ProductAttributeController extends Controller
         $groupedAttributes = [];
 
         foreach ($productAttributes as $productAttribute) {
-            $attribute = $productAttribute->attribute;
+            $attribute = $productAttribute->attributeDetails;
             if (!$attribute) continue;
 
             $groupName = $attribute->attributeGroup->name ?? 'Other';
@@ -1084,7 +1084,7 @@ class ProductAttributeController extends Controller
         return response()->json($formatted);
     }
 
-   
+
 
 
 
