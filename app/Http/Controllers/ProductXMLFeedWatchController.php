@@ -58,10 +58,11 @@ class ProductXMLFeedWatchController extends Controller
     //     return $data;
     // }
 
-   public function generateProductFeed()
+   public function generateProductFeed(Request $request)
 {
-    // Get all published products
-    $products = Product::with([
+    $perPage = $request->input('per_page'); // optional
+
+    $query = Product::with([
         'brand:id,name,logo',
         'categories:id,name,parent_id',
         'categories.parent:id,name',
@@ -74,83 +75,69 @@ class ProductXMLFeedWatchController extends Controller
         'gen_type', 'approved', 'description', 'quote_available', 'stock_status'
     ])
     ->where('status', 'published')
-    ->orderBy('id', 'desc')
-    ->get();
+    ->orderBy('id', 'desc');
 
-    $formattedProducts = $products->map(function ($product) {
-        $firstSupplier = $product->productSuppliers->first();
-        $price = $firstSupplier->price ?? 0;
-        $salePrice = $firstSupplier->sale_price ?? 0;
+    $xml = '<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
 
-        $descriptionText = '';
-        if (is_string($product->description)) {
-            $decoded = json_decode($product->description, true);
-            $descriptionText = (json_last_error() === JSON_ERROR_NONE && is_array($decoded))
-                ? implode(' ', array_filter($decoded))
-                : $product->description;
+    if ($perPage) {
+        $products = $query->paginate($perPage, ['*'], 'page', 1);
+        $batches = [$products]; // only one batch
+    } else {
+        $batches = $query->chunk(500); // process 500 at a time
+    }
+
+    foreach ($batches as $products) {
+        foreach ($products as $product) {
+            $firstSupplier = $product->productSuppliers->first();
+            $price = $firstSupplier->price ?? 0;
+            $salePrice = $firstSupplier->sale_price ?? 0;
+
+            $descriptionText = '';
+            if (is_string($product->description)) {
+                $decoded = json_decode($product->description, true);
+                $descriptionText = (json_last_error() === JSON_ERROR_NONE && is_array($decoded))
+                    ? implode(' ', array_filter($decoded))
+                    : $product->description;
+            }
+            $descriptionText = preg_replace('/\s+/', ' ', trim(strip_tags(html_entity_decode($descriptionText))));
+
+            $seoData = SeoManagement::where('relational_id', $product->id)
+                ->select('meta_title', 'meta_description')
+                ->first();
+
+            $image = ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null;
+
+            $currentCategory = $product->categories->first();
+            $parentCategory = $currentCategory?->parent;
+
+            $fullSlug = $product->parent_category_url() . '/' . $product->category_url() . '/' . ($product->seoProductUrl->url ?? "");
+
+            $product_type = $parentCategory && $currentCategory ? $parentCategory->name . ' > ' . $currentCategory->name : $currentCategory?->name;
+            $google_product_category = $product_type;
+
+            $website = config('app.url', 'https://www.thehorecastore.com');
+
+            $xml .= '<channel>';
+            $xml .= '<title>' . $seoData?->meta_title . '</title>';
+            $xml .= '<link>' . $website . '</link>';
+            $xml .= '<description>' . htmlspecialchars($seoData?->meta_description) . '</description>';
+            $xml .= '<item>';
+            $xml .= '<g:id>' . $product->id . '</g:id>';
+            $xml .= '<g:title>' . $seoData?->meta_title . '</g:title>';
+            $xml .= '<g:link>' . $website . '/' . $fullSlug . '</g:link>';
+            $xml .= '<g:description>' . htmlspecialchars($descriptionText) . '</g:description>';
+            $xml .= '<g:price>' . number_format($price, 2) . '</g:price>';
+            $xml .= '<g:sale_price>' . number_format($salePrice, 2) . '</g:sale_price>';
+            $xml .= '<g:availability>' . $product->stock_status . '</g:availability>';
+            $xml .= '<g:brand>' . $product->brand?->name . '</g:brand>';
+            if ($image) $xml .= '<g:image_link>' . $image . '</g:image_link>';
+            $xml .= '<g:identifier_exists>no</g:identifier_exists>';
+            $xml .= '<g:condition>new</g:condition>';
+            $xml .= '<g:google_product_category>' . $google_product_category . '</g:google_product_category>';
+            $xml .= '<g:product_type>' . $product_type . '</g:product_type>';
+            $xml .= '</item>';
+            $xml .= '</channel>';
         }
-        $descriptionText = preg_replace('/\s+/', ' ', trim(strip_tags(html_entity_decode($descriptionText))));
-
-        $seoData = SeoManagement::where('relational_id', $product->id)
-            ->select('meta_title', 'meta_description')
-            ->first();
-
-        $image = ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null;
-
-        $currentCategory = $product->categories->first();
-        $parentCategory = $currentCategory?->parent;
-
-        $fullSlug = $product->parent_category_url() . '/' . $product->category_url() . '/' . ($product->seoProductUrl->url ?? "");
-
-        $product_type = $parentCategory && $currentCategory ? $parentCategory->name . ' > ' . $currentCategory->name : $currentCategory?->name;
-        $google_product_category = $product_type;
-
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'meta_title' => $seoData?->meta_title,
-            'meta_description' => $seoData?->meta_description,
-            'sku' => $product->sku,
-            'brand' => $product->brand?->name,
-            'slug' => $fullSlug,
-            'price' => $price,
-            'sale_price' => $salePrice,
-            'availability' => $product->stock_status,
-            'description' => $descriptionText,
-            'image' => $image,
-            'product_type' => $product_type,
-            'google_product_category' => $google_product_category,
-        ];
-    });
-
-    $website = config('app.url', 'https://www.thehorecastore.com');
-
-    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-    $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
-    
-    foreach ($formattedProducts as $product) {
-        $xml .= '<channel>';
-        $xml .= '<title>' . $product['meta_title'] . '</title>';
-        $xml .= '<link>' . $website . '</link>';
-        $xml .= '<description>' . htmlspecialchars($product['meta_description']) . '</description>';
-        $xml .= '<item>';
-        $xml .= '<g:id>' . $product['id'] . '</g:id>';
-        $xml .= '<g:title>' . $product['meta_title'] . '</g:title>';
-        $xml .= '<g:link>' . $website . '/' . $product['slug'] . '</g:link>';
-        $xml .= '<g:description>' . htmlspecialchars($product['description']) . '</g:description>';
-        $xml .= '<g:price>' . number_format($product['price'], 2) . '</g:price>';
-        $xml .= '<g:sale_price>' . number_format($product['sale_price'], 2) . '</g:sale_price>';
-        $xml .= '<g:availability>' . $product['availability'] . '</g:availability>';
-        $xml .= '<g:brand>' . $product['brand'] . '</g:brand>';
-        if ($product['image']) {
-            $xml .= '<g:image_link>' . $product['image'] . '</g:image_link>';
-        }
-        $xml .= '<g:identifier_exists>no</g:identifier_exists>';
-        $xml .= '<g:condition>new</g:condition>';
-        $xml .= '<g:google_product_category>' . $product['google_product_category'] . '</g:google_product_category>';
-        $xml .= '<g:product_type>' . $product['product_type'] . '</g:product_type>';
-        $xml .= '</item>';
-        $xml .= '</channel>';
     }
 
     $xml .= '</rss>';
