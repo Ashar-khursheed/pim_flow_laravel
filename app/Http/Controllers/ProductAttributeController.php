@@ -427,6 +427,7 @@ class ProductAttributeController extends BaseController
 						/* Optimized: Use collections instead of nested loops */
 						$translations = $attribute->attributeValues
 						->flatMap(fn($attrValue) => $attrValue->translations)
+						->whereIn('locale', ['ar'])
 						->groupBy('locale')
 						->map(fn($group) => $group->pluck('attribute_value_tr')->values()->all())
 						->all();

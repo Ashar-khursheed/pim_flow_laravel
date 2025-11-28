@@ -34327,14 +34327,14 @@
                 ]
             }
         },
-        "/api/products-attributes/{productId}": {
+        "/api/product-attributes/{productId}": {
             "get": {
                 "tags": [
                     "Product Attributes"
                 ],
                 "summary": "Get product's category attribute groups with current values",
                 "description": "Retrieves all attribute groups from the product's category along with the product's current attribute values",
-                "operationId": "7c6b6b33ea6fa5cc44e24eb2a82aad74",
+                "operationId": "16e925ef1e6dd15f9bbb544e73dc1699",
                 "parameters": [
                     {
                         "name": "productId",
@@ -34347,6 +34347,70 @@
                         }
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-attributes/save-translation": {
+            "post": {
+                "tags": [
+                    "Product Attributes"
+                ],
+                "summary": "Generate or update product attribute translation",
+                "description": "This endpoint save or updates translations for a product attribute and its values.",
+                "operationId": "454e5d1150aa9f7458d5460aac1c4a32",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "locale",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID of the attribute to translate",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "locale": {
+                                        "description": "Locale code for translation (e.g. ar)",
+                                        "type": "string",
+                                        "example": "ar"
+                                    },
+                                    "name": {
+                                        "description": "Translated name of the attribute",
+                                        "type": "string",
+                                        "example": "الحجم"
+                                    },
+                                    "product_attribute_values": {
+                                        "description": "Key-value pairs of product attribute value translations (key = product_attribute_value_id, value = translated text)",
+                                        "type": "object",
+                                        "example": {
+                                            "1": "صغير",
+                                            "2": "متوسط",
+                                            "3": "كبير"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Success",
