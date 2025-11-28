@@ -291,7 +291,7 @@ class FinanceController extends Controller
         $data = $validator->validated();
         $data['created_by'] = Auth::id() ?? 1;
         $data['updated_by'] = '0';
-        if ($request->status == 'Active') {
+        if ($request->accountsStatus == 'Approved') {
             $data['approvalBy'] = Auth::id();
         }
         if ($request->approvedAmount > $request->creditLimitAmount) {
@@ -399,7 +399,7 @@ class FinanceController extends Controller
             'approvalBy' => $finance->approvalUser?->username,
             'accountsPayableEmail' => $finance->accountsPayableEmail,
             'accountsPayablePhone' => $finance->accountsPayablePhone,
-             'accountsStatus' => $finance->accountsStatus, // <-- Added here
+            'accountsStatus' => $finance->accountsStatus,  
             'usedCreditAmount' => $finance->usedCreditAmount,
             'availableCreditAmount' => $finance->availableCreditAmount,
             'purchaseAmount' => $finance->purchaseAmount,
@@ -539,18 +539,23 @@ class FinanceController extends Controller
          *                     type="number",
          *                     example=5000
          *                 ),
+         *                 @OA\Property(
+         *                     property="approvedAmount",
+         *                     type="number",
+         *                     example=5000
+         *                 ),
          *
          *                 @OA\Property(
          *                     property="status",
          *                     type="string",
-         *                     enum={"Active", "Overdue", "Pending"},
+         *                     enum={"Paid", "Overdue", "Pending"},
          *                     example="Pending"
          *                 ),
          *
          *                 @OA\Property(
          *                     property="accountsStatus",
          *                     type="string",
-         *                     enum={"Pending", "Approved", "Reject"},
+         *                     enum={"Pending", "Approved", "Rejected","Hold"},
          *                     example="Pending",
          *                     description="Internal accounts payable approval status"
          *                 )
@@ -593,11 +598,12 @@ class FinanceController extends Controller
                 'annual_revenue' => 'nullable|string',
                 'years_in_business' => 'nullable|string',
                 'duns_number' => 'nullable|string',
-                'status' => 'nullable|string',
-                'creditLimitAmount' => 'nullable|string',
+                'status' => 'required|in:Paid,Overdue,Pending',
+                'creditLimitAmount' => 'required|integer',
 
-                // ⭐ NEW FIELD ADDED HERE
-                'accountsStatus' => 'nullable|string|in:Pending,Approved,Reject'
+                // ⭐ NEW FIELD ADDED HERE                
+                'accountsStatus'   => 'required|in:Pending,Approved,Rejected,Hold',                    
+                'approvedAmount'   => 'nullable|numeric|required_if:accountsStatus,Approved',
             ]);
 
             if ($validator->fails()) {
@@ -617,10 +623,18 @@ class FinanceController extends Controller
             }
 
             $data = $validator->validated();
-
-            if ($request->status == 'Active') {
+            if ($request->accountsStatus == 'Approved') {
                 $data['approvalBy'] = Auth::id();
             }
+
+
+            if ($request->accountsStatus == 'Approved' && !empty($request->approvedAmount)) {
+            $data['approvalBy'] = Auth::id();
+            $data['approvedAmount'] = $request->approvedAmount;
+            } else {
+            $data['approvedAmount'] = '0';
+            }
+            $data['accountsStatus'] = $request->accountsStatus;
 
             if ($request->approvedAmount > $request->creditLimitAmount) {
                 return response()->json([
@@ -724,14 +738,14 @@ class FinanceController extends Controller
  *         @OA\MediaType(
  *             mediaType="multipart/form-data",
  *             @OA\Schema(
- *                 required={"status", "approvedAmount"},
+ *                 required={"accountsStatus", "approvedAmount"},
  *
  *                 @OA\Property(
- *                     property="status",
+ *                     property="accountsStatus",
  *                     type="string",
  *                     description="Finance account status",
- *                     enum={"Active","Pending","Overdue"},
- *                     example="Active"
+ *                     enum={"Approved","Pending","Rejected","Hold"},
+ *                     example="Approved"
  *                 ),
  *
  *                 @OA\Property(
@@ -766,8 +780,9 @@ class FinanceController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|string|in:Active,Overdue,Pending',
-            'approvedAmount' => 'required|integer'
+             
+            'accountsStatus'   => 'required|in:Pending,Approved,Rejected,Hold',                    
+            'approvedAmount'   => 'required|numeric|required_if:accountsStatus,Approved'
         ]);
 
         $finance = Finance::find($id);
@@ -778,13 +793,19 @@ class FinanceController extends Controller
                 'message' => 'Finance record not found.'
             ], 404);
         }
-        if ($request->status == 'Active') {
+        if ($request->approvedAmount > $finance->creditLimitAmount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
+            ], 201);
+        }
+        if ($request->accountsStatus == 'Approved' && !empty($request->approvedAmount)) {
             $finance->approvalBy = Auth::id();
             $finance->approvedAmount = $request->approvedAmount;
         } else {
             $finance->approvedAmount = '0';
         }
-        $finance->status = $request->status;
+        $finance->accountsStatus = $request->accountsStatus;
         $finance->save();
 
         return response()->json([
