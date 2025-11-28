@@ -402,7 +402,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/attributes/import', [ProductAttributeController::class, 'import']);
 	Route::post('/attributes/export', [ProductAttributeController::class, 'export']);
-	Route::get('/product-attributes/save-translation', [ProductAttributeController::class, 'saveTranslation']);
+	Route::post('/product-attributes/save-translation', [ProductAttributeController::class, 'saveTranslation']);
 	Route::get('/product-attributes/{productId}', [ProductAttributeController::class, 'getProductCategoryAttributes']);
 	Route::get('products/{id}/product-category-attribute-groups', [ProductAttributeController::class, 'productCategoryAttributeGroups']);
 

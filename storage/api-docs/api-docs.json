@@ -34381,8 +34381,8 @@
                                     "name"
                                 ],
                                 "properties": {
-                                    "id": {
-                                        "description": "ID of the attribute to translate",
+                                    "product_id": {
+                                        "description": "ID of the product",
                                         "type": "integer",
                                         "example": 1
                                     },
@@ -34390,11 +34390,6 @@
                                         "description": "Locale code for translation (e.g. ar)",
                                         "type": "string",
                                         "example": "ar"
-                                    },
-                                    "name": {
-                                        "description": "Translated name of the attribute",
-                                        "type": "string",
-                                        "example": "الحجم"
                                     },
                                     "product_attribute_values": {
                                         "description": "Key-value pairs of product attribute value translations (key = product_attribute_value_id, value = translated text)",

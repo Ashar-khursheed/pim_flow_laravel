@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\Product;
 use App\Models\ProductAttribute;
@@ -414,10 +415,10 @@ class ProductAttributeController extends BaseController
 
 					$data = [
 						'id' => $productAttribute->id,
-						'type' => $attribute->type,
 						'attribute_translation' => $attribute->translations
 						->pluck('name_tr', 'locale')
 						->all(),
+						'type' => $attribute->type,
 						'currentValueTranslations' => $productAttribute->translations
 						->pluck('attribute_value_tr', 'locale')
 						->all(),
@@ -469,9 +470,8 @@ class ProductAttributeController extends BaseController
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             required={"id", "locale", "name"},
-	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the attribute to translate"),
+	 *             @OA\Property(property="product_id", type="integer", example=1, description="ID of the product"),
 	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
-	 *             @OA\Property(property="name", type="string", example="الحجم", description="Translated name of the attribute"),
 	 *             @OA\Property(
 	 *                 property="product_attribute_values",
 	 *                 type="object",
@@ -496,6 +496,7 @@ class ProductAttributeController extends BaseController
 
 		DB::beginTransaction();
 		try {
+			$locale = $validated['locale'];
 			/* Update attribute value translations */
 			foreach ($validated['product_attribute_values'] as $id => $translatedValue) {
 				$productAttribute = ProductAttribute::find($id);
