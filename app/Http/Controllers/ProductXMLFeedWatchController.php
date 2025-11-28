@@ -217,18 +217,18 @@ private function mapProductToXml($product)
     $xml .= '<title>'.$seoData?->meta_title.'</title>';
     $xml .= '<link>' . config('app.url') . '</link>';
     $xml .= '<description>' . htmlspecialchars($seoData?->meta_description) . '</description>';
-    $xml .= '<item>';
-    $xml .= '<g:id>' . $product->id . '</g:id>';
-    $xml .= '<g:title>' . $seoData?->meta_title . '</g:title>';
-    $xml .= '<g:link>' . config('app.url') . '/' . $fullSlug . '</g:link>';
-    $xml .= '<g:description>' . htmlspecialchars($descriptionText) . '</g:description>';
-    $xml .= '<g:price>' . number_format($price, 2) . '</g:price>';
-    $xml .= '<g:sale_price>' . number_format($salePrice, 2) . '</g:sale_price>';
-    $xml .= '<g:availability>' . $product->stock_status . '</g:availability>';
-    $xml .= '<g:brand>' . $product->brand?->name. '</g:brand>';
+    $xml = '<item>';
+    $xml .= '<g:id>' . $this->xmlEscape($product->id) . '</g:id>';
+    $xml .= '<g:title>' . $this->xmlEscape($seoData?->meta_title) . '</g:title>';
+    $xml .= '<g:link>' . $this->xmlEscape(config('app.url') . '/' . $fullSlug) . '</g:link>';
+    $xml .= '<g:description>' . $this->xmlEscape($descriptionText) . '</g:description>';
+    $xml .= '<g:price>' . $this->xmlEscape(number_format($price, 2)) . '</g:price>';
+    $xml .= '<g:sale_price>' . $this->xmlEscape(number_format($salePrice, 2)) . '</g:sale_price>';
+    $xml .= '<g:availability>' . $this->xmlEscape($product->stock_status) . '</g:availability>';
+    $xml .= '<g:brand>' . $this->xmlEscape($product->brand?->name) . '</g:brand>';
 
     if ($image) {
-        $xml .= '<g:image_link>' . $image . '</g:image_link>';
+        $xml .= '<g:image_link>' . $this->xmlEscape($image) . '</g:image_link>';
     }
 
     // Attributes
@@ -258,6 +258,12 @@ private function mapProductToXml($product)
 
     return $xml;
 }
+
+private function xmlEscape($value)
+{
+    return htmlspecialchars($value, ENT_QUOTES | ENT_XML1);
+}
+
 
     /**
      * Get XML product.
