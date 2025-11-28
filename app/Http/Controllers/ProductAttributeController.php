@@ -359,6 +359,7 @@ class ProductAttributeController extends BaseController
 	 */
 	public function getProductCategoryAttributes($productId)
 	{
+		/* Find product or fail */
 		$product = Product::find($productId);
 		if (!$product) {
 			return response()->json([
@@ -367,21 +368,28 @@ class ProductAttributeController extends BaseController
 			], 404);
 		}
 
+		/* Optimized: Eager load ALL translations to prevent N+1 queries */
 		$productAttributes = ProductAttribute::with([
 			'attributeDetails.attributeGroup',
-			'attributeDetails.attributeValues',
-			'attributeDetails.measurementUnits',
-			'measurementUnit'
+			'attributeDetails.translations',
+			'attributeDetails.attributeValues.translations',
+			'attributeDetails.measurementUnits.translations',
+			'translations',
+			'measurementUnit.translations'
 		])
 		->where('product_id', $productId)
 		->get();
 
 		/* Group by attribute group */
-		$groupedAttributes = $productAttributes->groupBy(function ($productAttribute) {
-			return $productAttribute->attributeDetails->attributeGroup->id ?? null;
-		})->filter(function ($group, $key) {
-			return !is_null($key); /* Remove attributes without groups */
-		})->map(function ($attributes, $groupId) {
+		$groupedAttributes = $productAttributes
+		->filter(function ($productAttribute) {
+			return $productAttribute->attributeDetails &&
+			$productAttribute->attributeDetails->attributeGroup;
+		})
+		->groupBy(function ($productAttribute) {
+			return $productAttribute->attributeDetails->attributeGroup->id;
+		})
+		->map(function ($attributes) {
 			$firstAttribute = $attributes->first();
 			$group = $firstAttribute->attributeDetails->attributeGroup;
 
@@ -393,30 +401,21 @@ class ProductAttributeController extends BaseController
 					$data = [
 						'id' => $attribute->id,
 						'type' => $attribute->type,
-						'attribute_translation' => $attribute->translations->mapWithKeys(function ($translation) {
-							return [$translation->locale => $translation->name_tr];
-						})->all(),
-						'currentValueTranslations' => $productAttribute->translations->mapWithKeys(function ($translation) {
-							return [$translation->locale => $translation->attribute_value_tr];
-						})->all(),
+						'attribute_translation' => $attribute->translations
+						->pluck('name_tr', 'locale')
+						->all(),
+						'currentValueTranslations' => $productAttribute->translations
+						->pluck('attribute_value_tr', 'locale')
+						->all(),
 					];
 
 					if ($attribute->type === 'select') {
-						/* Get all attribute values with their translations */
-						$allValues = $attribute->attributeValues;
-
-						/* Build translations structure grouped by locale */
-						$translations = [];
-
-						/* Add other locale translations */
-						foreach ($allValues as $attrValue) {
-							foreach ($attrValue->translations as $translation) {
-								if (!isset($translations[$translation->locale])) {
-									$translations[$translation->locale] = [];
-								}
-								$translations[$translation->locale][] = $translation->attribute_value_tr;
-							}
-						}
+						/* Optimized: Use collections instead of nested loops */
+						$translations = $attribute->attributeValues
+						->flatMap(fn($attrValue) => $attrValue->translations)
+						->groupBy('locale')
+						->map(fn($group) => $group->pluck('attribute_value_tr')->values()->all())
+						->all();
 
 						$data['attributeValues'] = [
 							'translations' => $translations
@@ -426,28 +425,21 @@ class ProductAttributeController extends BaseController
 					if ($attribute->type === 'measurement') {
 						$data['currentMeasurementId'] = $productAttribute->measurement_unit_id;
 
-						/* Find the current measurement unit */
+						/* Optimized: Direct access since measurementUnits are already loaded */
 						$currentMeasurement = $attribute->measurementUnits
 						->firstWhere('id', $productAttribute->measurement_unit_id);
 
-						if ($currentMeasurement) {
-							$translations = [];
-
-							/* Add other locale translations */
-							foreach ($currentMeasurement->translations as $translation) {
-								$translations[$translation->locale] = $translation->name_tr;
-							}
-
-							$data['currentMeasurementTranslation'] = $translations;
-						} else {
-							$data['currentMeasurementTranslation'] = [];
-						}
+						$data['currentMeasurementTranslation'] = $currentMeasurement
+						? $currentMeasurement->translations->pluck('name_tr', 'locale')->all()
+						: [];
 					}
 
 					return $data;
 				})->values()->all(),
 			];
-		})->values()->all();
+		})
+		->values()
+		->all();
 
 		return response()->json([
 			'success' => true,
