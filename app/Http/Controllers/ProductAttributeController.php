@@ -339,4 +339,120 @@ class ProductAttributeController extends BaseController
 			'data' => $attributeGroup
 		]);
 	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/products-attributes/{productId}",
+	 *     summary="Get product's category attribute groups with current values",
+	 *     description="Retrieves all attribute groups from the product's category along with the product's current attribute values",
+	 *     tags={"Product Attributes"},
+	 *     @OA\Parameter(
+	 *         name="productId",
+	 *         in="path",
+	 *         description="Product ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function getProductCategoryAttributes($productId)
+	{
+		$product = Product::find($productId);
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product does not exist.'
+			], 404);
+		}
+
+		$productAttributes = ProductAttribute::with([
+			'attributeDetails.attributeGroup',
+			'attributeDetails.attributeValues',
+			'attributeDetails.measurementUnits',
+			'measurementUnit'
+		])
+		->where('product_id', $productId)
+		->get();
+
+		/* Group by attribute group */
+		$groupedAttributes = $productAttributes->groupBy(function ($productAttribute) {
+			return $productAttribute->attributeDetails->attributeGroup->id ?? null;
+		})->filter(function ($group, $key) {
+			return !is_null($key); /* Remove attributes without groups */
+		})->map(function ($attributes, $groupId) {
+			$firstAttribute = $attributes->first();
+			$group = $firstAttribute->attributeDetails->attributeGroup;
+
+			return [
+				'group_name' => $group->name,
+				'attributes' => $attributes->map(function ($productAttribute) {
+					$attribute = $productAttribute->attributeDetails;
+
+					$data = [
+						'id' => $attribute->id,
+						'type' => $attribute->type,
+						'attribute_translation' => $attribute->translations->mapWithKeys(function ($translation) {
+							return [$translation->locale => $translation->name_tr];
+						})->all(),
+						'currentValueTranslations' => $productAttribute->translations->mapWithKeys(function ($translation) {
+							return [$translation->locale => $translation->attribute_value_tr];
+						})->all(),
+					];
+
+					if ($attribute->type === 'select') {
+						/* Get all attribute values with their translations */
+						$allValues = $attribute->attributeValues;
+
+						/* Build translations structure grouped by locale */
+						$translations = [];
+
+						/* Add other locale translations */
+						foreach ($allValues as $attrValue) {
+							foreach ($attrValue->translations as $translation) {
+								if (!isset($translations[$translation->locale])) {
+									$translations[$translation->locale] = [];
+								}
+								$translations[$translation->locale][] = $translation->attribute_value_tr;
+							}
+						}
+
+						$data['attributeValues'] = [
+							'translations' => $translations
+						];
+					}
+
+					if ($attribute->type === 'measurement') {
+						$data['currentMeasurementId'] = $productAttribute->measurement_unit_id;
+
+						/* Find the current measurement unit */
+						$currentMeasurement = $attribute->measurementUnits
+						->firstWhere('id', $productAttribute->measurement_unit_id);
+
+						if ($currentMeasurement) {
+							$translations = [];
+
+							/* Add other locale translations */
+							foreach ($currentMeasurement->translations as $translation) {
+								$translations[$translation->locale] = $translation->name_tr;
+							}
+
+							$data['currentMeasurementTranslation'] = $translations;
+						} else {
+							$data['currentMeasurementTranslation'] = [];
+						}
+					}
+
+					return $data;
+				})->values()->all(),
+			];
+		})->values()->all();
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Product attributes with translations',
+			'data' => $groupedAttributes
+		]);
+	}
 }

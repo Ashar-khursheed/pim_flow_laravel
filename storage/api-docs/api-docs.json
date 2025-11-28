@@ -33968,6 +33968,41 @@
                 ]
             }
         },
+        "/api/products-attributes/{productId}": {
+            "get": {
+                "tags": [
+                    "Product Attributes"
+                ],
+                "summary": "Get product's category attribute groups with current values",
+                "description": "Retrieves all attribute groups from the product's category along with the product's current attribute values",
+                "operationId": "7c6b6b33ea6fa5cc44e24eb2a82aad74",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products/{id}/categories": {
             "get": {
                 "tags": [
