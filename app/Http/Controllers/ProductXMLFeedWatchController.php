@@ -9,6 +9,8 @@ use App\Models\SeoManagement;
 use App\Models\Attribute;
 use App\Models\ProductAttribute;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+
 class ProductXMLFeedWatchController extends Controller
 {
 
