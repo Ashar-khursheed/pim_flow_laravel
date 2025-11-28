@@ -376,6 +376,7 @@ public function showSaveForLater(Request $request)
 		 // Optional: Check if the product exists in the products table
 		 if (!\DB::table('ec_products')->where('id', $product_id)->exists()) {
 			 return response()->json([
+                'success' => false,
 				 'message' => 'Product does not exist.'
 			 ], 404);
 		 }
@@ -390,6 +391,7 @@ public function showSaveForLater(Request $request)
 	 
 		 if (!$savedProduct) {
 			 return response()->json([
+                'success' => false,
 				 'message' => 'Product not found in Save for Later.'
 			 ], 404);
 		 }
@@ -398,6 +400,7 @@ public function showSaveForLater(Request $request)
 		 $savedProduct->delete();
 	 
 		 return response()->json([
+            'success' => true,
 			 'message' => 'Product has been removed from Save for Later.'
 		 ], 200);
 	 }

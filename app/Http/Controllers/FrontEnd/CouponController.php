@@ -1463,7 +1463,7 @@ class CouponController extends Controller
             }
              
         }
-       
+        
         if (!$coupon->isValid()) {
             $is_valid = false;
             $error_message = 'This coupon is not valid OR expired coupon.';

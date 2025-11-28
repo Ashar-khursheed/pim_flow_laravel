@@ -11458,13 +11458,13 @@
                 ]
             }
         },
-        "/api/finance/{id}/due": {
+        "/api/finances/{id}/due": {
             "get": {
                 "tags": [
                     "Finance"
                 ],
                 "summary": "Get finance due amount and due date",
-                "operationId": "d495fc9cc3df6a43f80b9cbf78490319",
+                "operationId": "5d1892c0c9195c908e5ca05c92b8ed8d",
                 "parameters": [
                     {
                         "name": "id",
@@ -11525,13 +11525,13 @@
                 ]
             }
         },
-        "/api/finance/pay": {
+        "/api/finances/pay": {
             "post": {
                 "tags": [
                     "Finance"
                 ],
                 "summary": "Pay finance amount",
-                "operationId": "310f27f06338a3339f505baf9e85b371",
+                "operationId": "c1c94d2d82a845965f44304c39dde027",
                 "requestBody": {
                     "required": true,
                     "content": {

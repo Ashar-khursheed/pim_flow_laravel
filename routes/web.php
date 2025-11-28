@@ -84,3 +84,13 @@ Route::get('/ccavenue-proxy', function (Request $request) {
 		return response('Proxy failed: ' . $e->getMessage(), 500);
 	}
 });
+
+Route::get('/frontend/data-feed.xml', function () {
+    $path = storage_path('app/public/data-feed.xml');
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path, [
+        'Content-Type' => 'application/xml',
+    ]);
+});
