@@ -814,7 +814,7 @@ class FinanceController extends Controller
     }
     /**
      * @OA\Get(
-     *     path="/api/finance/{id}/due",
+     *     path="/api/finances/{id}/due",
      *     summary="Get finance due amount and due date",
      *     tags={"Finance"},
      *     security={{"bearerAuth":{}}},
@@ -878,7 +878,7 @@ class FinanceController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/finance/pay",
+     *     path="/api/finances/pay",
      *     summary="Pay finance amount",
      *     tags={"Finance"},
      *     security={{"bearerAuth":{}}},
