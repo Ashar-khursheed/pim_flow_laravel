@@ -230,6 +230,9 @@ private function mapProductToXml($product)
     if ($image) {
         $xml .= '<g:image_link>' . $this->xmlEscape($image) . '</g:image_link>';
     }
+    if ($image) {
+        $xml .= '<g:image_link>' . $this->xmlEscape($image) . '</g:image_link>';
+    }
 
     // Attributes
     if (!empty($attributes)) {
