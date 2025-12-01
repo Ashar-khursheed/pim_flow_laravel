@@ -1283,7 +1283,7 @@ class CouponController extends Controller
      *         in="query",
      *         required=true,
      *         description="The orderValue to validate",
-     *         @OA\Schema(type="integer", example="500")
+     *         @OA\Schema(type="number", example="500")
      *     ),
      *     @OA\Response(
      *         response=200,

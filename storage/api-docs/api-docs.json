@@ -16711,7 +16711,7 @@
                         "description": "The orderValue to validate",
                         "required": true,
                         "schema": {
-                            "type": "integer",
+                            "type": "number",
                             "example": "500"
                         }
                     }
