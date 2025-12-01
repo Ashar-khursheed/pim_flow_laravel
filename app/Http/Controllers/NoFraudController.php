@@ -679,7 +679,7 @@ public function processNoFraud($orderId)
             'billing_phone' => $customer->phone ?? null,
             'billing_address' => $address->address ?? '',
             'billing_city' => $address->city ?? '',
-            'billing_state' => $address->state ?? '',
+            'billing_state' => $address->state ?? 'NA',
             'billing_zip' => $address->zip_code ?? '',
             'billing_country' => substr($address->country ?? 'US', 0, 2),
 
