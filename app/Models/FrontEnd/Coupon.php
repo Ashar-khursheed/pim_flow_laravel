@@ -109,7 +109,8 @@ class Coupon extends Model
     // Helper methods
     public function isValid(): bool
     { 
-        $today = now()->toDateString();         
+        $today = now()->toDateString();     
+            
         return
             $this->is_active == 1 &&
             strtolower($this->status) === 'approved' &&
