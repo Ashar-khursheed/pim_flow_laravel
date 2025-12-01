@@ -59,9 +59,10 @@ class AuthController extends BaseController
 			], 401);
 		}
 		//Coupon expire automatic is_active false
-		Coupon::where('expire_date', '<', now())
-			->where('is_active', '1')
-			->update(['is_active' => 0]);
+		$today = now()->toDateString();          
+        Coupon::whereDate('expire_date', '<', $today)
+        ->where('is_active', '1')           
+        ->update(['is_active' => 0]);
 
 		$token = $user->createToken('auth_token')->plainTextToken;
 
