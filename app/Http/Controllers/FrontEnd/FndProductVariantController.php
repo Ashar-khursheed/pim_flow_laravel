@@ -281,15 +281,25 @@ class FndProductVariantController extends Controller
                 }
             }
 
+            // $productIds = $productIds ? $productIds->values()->toArray() : [];
             $productIds = $productIds ? $productIds->values()->toArray() : [];
+
+            // Filter ONLY products that appear in product_variant table as parent_id
+            $validProductIds = \DB::table('product_variant')
+                ->whereIn('parent_id', $productIds)
+                ->pluck('parent_id')
+                ->unique()
+                ->toArray();
+
+            // Keep only valid products
+            $productIds = $validProductIds;
 
             if (empty($productIds)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No products found with all these attributes',
+                    'message' => 'No products found with variants',
                 ], 404);
             }
-
             
             $products = Product::whereIn('id', $productIds)
                 ->select('id', 'sku')
