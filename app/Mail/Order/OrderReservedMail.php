@@ -55,13 +55,13 @@ class OrderReservedMail extends Mailable
 				$product = new \stdClass();
 
 				$images = is_array($productDetail->images)
-					? $productDetail->images
-					: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
+				? $productDetail->images
+				: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
-				$product->expectedShippingDate = $productSupplierDetail
-					? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
-					: null;
+				$product->delivery_days = $productSupplierDetail
+				? $productSupplierDetail->delivery_days
+				: null;
 
 				/* Original Price (before discount) */
 				$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
@@ -85,8 +85,8 @@ class OrderReservedMail extends Mailable
 				$product->accessories = [];
 
 				$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)
-					->where('relation_id', $orderProduct->id)
-					->get();
+				->where('relation_id', $orderProduct->id)
+				->get();
 				if ($accessoryCharges->isNotEmpty()) {
 					$product->accessories = $accessoryCharges->map(function ($charge) {
 						return [
