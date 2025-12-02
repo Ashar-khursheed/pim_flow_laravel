@@ -495,8 +495,6 @@ class FndProductVariantController extends Controller
 
  
 
- 
-
     /**
      * @OA\Post(
      *     path="/api/frontend/product-variants-by-attribute",
