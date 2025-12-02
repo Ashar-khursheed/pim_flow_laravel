@@ -238,6 +238,8 @@ class QuoteController extends BaseController
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -245,12 +247,16 @@ class QuoteController extends BaseController
 				if (!$fetchedDetail) {
 					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
 				}
+
+				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+				$shipping = $request->boolean('pay_with_cheque', false) ? 0 : ($charge * $product['quantity']);
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => $shipping,
 				];
 			}
 
@@ -270,12 +276,15 @@ class QuoteController extends BaseController
 			$customer = auth()->user();
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
 
-			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$quoteShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$quoteShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
+			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+				$taxableAmount = $discountedAmount + $quoteShipping;
+				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+			} else {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
 			}
-
 			$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
 
 			/* Generate new quote number */
@@ -546,6 +555,8 @@ class QuoteController extends BaseController
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -553,12 +564,16 @@ class QuoteController extends BaseController
 				if (!$fetchedDetail) {
 					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
 				}
+
+				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+				$shipping = $request->boolean('pay_with_cheque', false) ? 0 : ($charge * $product['quantity']);
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => $shipping,
 				];
 			}
 
@@ -577,12 +592,15 @@ class QuoteController extends BaseController
 			$customer = auth()->user();
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
 
-			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$quoteShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$quoteShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
+			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+				$taxableAmount = $discountedAmount + $quoteShipping;
+				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+			} else {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
 			}
-
 			$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
 
 			$quote->update([

@@ -393,15 +393,13 @@ class OrderController extends BaseController
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
 				$orderShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
-				$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
 				$taxableAmount = $discountedAmount + $orderShipping;
 				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
-				$totalAmount = $discountedAmount + $orderShipping + $taxAmount;
 			} else {
 				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-				$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 			}
+			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();
