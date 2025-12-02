@@ -8,6 +8,7 @@ use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\AccessoryCharge;
 
 class OrderReservedMail extends Mailable
 {
@@ -53,8 +54,8 @@ class OrderReservedMail extends Mailable
 			if ($productDetail) {
 				$product = new \stdClass();
 
-				$images = is_array($productDetail->images) 
-					? $productDetail->images 
+				$images = is_array($productDetail->images)
+					? $productDetail->images
 					: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
