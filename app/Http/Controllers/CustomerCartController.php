@@ -300,6 +300,8 @@ class CustomerCartController extends Controller
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -307,15 +309,20 @@ class CustomerCartController extends Controller
 				if (!$fetchedDetail) {
 					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
 				}
+
+				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => $shipping,
 				];
 			}
 
+			$payWithCheque = $request->boolean('pay_with_cheque', false);
 			$totalProducts = 0;
 			$cartAmount = 0;
 			$cartShipping = 0;
@@ -336,12 +343,15 @@ class CustomerCartController extends Controller
 			$customer = Customer::find($request->customer_id);
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
 
-			$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
-
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+				$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
 				$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+				$taxableAmount = $cartAmount + $cartShipping;
+				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+			} else {
+				$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
 			}
-
 			$totalAmount = $cartAmount + $taxAmount + $cartShipping;
 
 			/* Get the latest cart by ID (most recent) */
@@ -365,18 +375,18 @@ class CustomerCartController extends Controller
 			}
 
 			/* Always update these fields */
-			$customerCart->customer_address_id    = $request->customer_address_id;
-			$customerCart->shipping_charge        = $cartShipping;
-			$customerCart->is_lift_gate           = $request->is_lift_gate;
+			$customerCart->customer_address_id = $request->customer_address_id;
+			$customerCart->shipping_charge = $cartShipping;
+			$customerCart->is_lift_gate = $request->is_lift_gate;
 			$customerCart->is_residential_address = $request->is_residential_address;
-			$customerCart->is_inside_delivery     = $request->is_inside_delivery;
-			$customerCart->pay_with_cheque        = $request->pay_with_cheque;
-			$customerCart->amount                 = $cartAmount;
-			$customerCart->tax_percentage         = $taxPercentage;
-			$customerCart->tax_amount             = $taxAmount;
-			$customerCart->total_amount           = $totalAmount;
-			$customerCart->total_products         = $totalProducts;
-			$customerCart->updated_by             = auth()->id();
+			$customerCart->is_inside_delivery = $request->is_inside_delivery;
+			$customerCart->pay_with_cheque = $payWithCheque;
+			$customerCart->amount = $cartAmount;
+			$customerCart->tax_percentage = $taxPercentage;
+			$customerCart->tax_amount = $taxAmount;
+			$customerCart->total_amount = $totalAmount;
+			$customerCart->total_products = $totalProducts;
+			$customerCart->updated_by = auth()->id();
 			$customerCart->additional_amount_name = $request->additional_amount_name ?? null;
 			$customerCart->additional_amount_price = $request->additional_amount_price ?? null;
 
@@ -598,7 +608,7 @@ class CustomerCartController extends Controller
 			'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 			'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 			'total_amount'           => number_format($totalAmount, 2, '.', ''),
-			'total_products'         => $totalProducts,			 			 
+			'total_products'         => $totalProducts,
 			'products'               => $cartProducts,
 			'creator'                => $record->creator,
 			'created_at'             => $record->created_at,
@@ -697,8 +707,8 @@ class CustomerCartController extends Controller
 			$unitPrice = 0;
 			$shippingCharge = 0;
 			if ($supplier) {
-				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) 
-					? $supplier['sale_price'] 
+				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price'])
+					? $supplier['sale_price']
 					: $supplier['price'];
 
 				$shippingCharge = $supplier['shipping_charge'] ?? 0;
@@ -784,7 +794,7 @@ class CustomerCartController extends Controller
 			'total_amount'           => number_format($totalAmount, 2, '.', ''),
 			'total_products'         => $totalProducts,
 			'additional_amount_name' => $customerCart->additional_amount_name,
-			'additional_amount_price' => $customerCart->additional_amount_price,	
+			'additional_amount_price' => $customerCart->additional_amount_price,
 			'products'               => $cartProducts,
 		];
 
