@@ -415,24 +415,28 @@ class FndProductVariantController extends Controller
             }
 
             // 🔥 NEW LOGIC: If product_id is sent, ensure it is part of final variants
+         // 🔥 NEW LOGIC: If product_id is sent, ensure it is part of final variants
             if ($requestedProductId) {
-
-                // Check if this product is child of any parent
+                // Check if this product_id exists as child of any parent in $productIds
                 $isChild = \DB::table('product_variants')
-                    ->whereIn('parent_id', $productIds)
-                    ->where('child_id', $requestedProductId)
+                    ->whereIn('parent_id', $productIds) // parent must be in matched parents
+                    ->where('child_id', $requestedProductId) // child must be requested product
                     ->exists();
 
                 if (!$isChild) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Requested product is not a valid variant for these attributes',
+                        'message' => 'Requested product is not a child of any matched parent',
                     ], 404);
                 }
 
-                // Replace productIds with ONLY this one product
+                // Keep ONLY this product
                 $productIds = [$requestedProductId];
+            } else {
+                // If no product_id sent, keep the original valid products
+                $productIds = $productIds;
             }
+
 
             // Fetch products
             $products = Product::whereIn('id', $productIds)
