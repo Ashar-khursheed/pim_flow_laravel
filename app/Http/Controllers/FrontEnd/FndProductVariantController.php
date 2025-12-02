@@ -285,7 +285,7 @@ class FndProductVariantController extends Controller
             $productIds = $productIds ? $productIds->values()->toArray() : [];
 
             // Filter ONLY products that appear in product_variant table as parent_id
-            $validProductIds = \DB::table('product_variant')
+            $validProductIds = \DB::table('product_variants')
                 ->whereIn('parent_id', $productIds)
                 ->pluck('parent_id')
                 ->unique()
