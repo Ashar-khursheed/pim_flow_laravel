@@ -2726,11 +2726,11 @@ class ProductController extends Controller
 		if ($sort) {
 			switch ($sort) {
 				case 'price_asc':
-					$query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = products.id LIMIT 1) ASC");
+					$query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) ASC");
 					break;
 
 				case 'price_desc':
-					$query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = products.id LIMIT 1) DESC");
+					$query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) DESC");
 					break;
 
 				case 'latest':
