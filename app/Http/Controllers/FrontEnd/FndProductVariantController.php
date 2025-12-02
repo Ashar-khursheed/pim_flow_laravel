@@ -416,26 +416,30 @@ class FndProductVariantController extends Controller
 
             // 🔥 NEW LOGIC: If product_id is sent, ensure it is part of final variants
          // 🔥 NEW LOGIC: If product_id is sent, ensure it is part of final variants
-            if ($requestedProductId) {
-                // Check if this product_id exists as child of any parent in $productIds
-                $isChild = \DB::table('product_variants')
-                    ->whereIn('parent_id', $productIds) // parent must be in matched parents
-                    ->where('child_id', $requestedProductId) // child must be requested product
-                    ->exists();
+          if ($requestedProductId) {
+                // Instead of checking 'child_id' column, check 'child_ids' array/JSON
+                // Filter parents whose child_ids include the requested product_id
+                $validParentIds = \DB::table('product_variants')
+                    ->whereIn('parent_id', $productIds) // parents matching attributes
+                    ->get()
+                    ->filter(function($item) use ($requestedProductId) {
+                        $childIds = is_array($item->child_ids) ? $item->child_ids : json_decode($item->child_ids, true);
+                        return in_array($requestedProductId, $childIds ?? []);
+                    })
+                    ->pluck('parent_id')
+                    ->toArray();
 
-                if (!$isChild) {
+                if (empty($validParentIds)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Requested product is not a child of any matched parent',
+                        'message' => 'Requested product is not a valid child of any matched parent',
                     ], 404);
                 }
 
-                // Keep ONLY this product
+                // Only keep the requested product in the response
                 $productIds = [$requestedProductId];
-            } else {
-                // If no product_id sent, keep the original valid products
-                $productIds = $productIds;
             }
+
 
 
             // Fetch products
