@@ -247,6 +247,7 @@ public function showSaveForLater(Request $request)
 
     if ($savedProducts->isEmpty()) {
         return response()->json([
+            'success' => false,
             'message' => 'No products saved for later.'
         ], 404);
     }
