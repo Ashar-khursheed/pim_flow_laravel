@@ -10,6 +10,7 @@ use App\Models\Attribute;
 use App\Models\Product;
 use App\Models\SeoManagement;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class FndProductVariantController extends Controller
 {
@@ -80,7 +81,7 @@ class FndProductVariantController extends Controller
                 ->toArray();
 
             // ✅ Remove dd() for production
-            // dd($currentProductAttributes);
+            //  dd($currentProductAttributes);
 
             $variant = ProductVariant::with([
                 'parentProduct:id,name,sku',
@@ -161,14 +162,14 @@ class FndProductVariantController extends Controller
                         && $currentProductAttributes[$attributeId] == $attrValue;
 
                     $result[] = [
-                        // 'product_id' => $child->id,
+                        'product_id' => $child->id,
                         'attribute_id' => $attributeId,
                         'attribute_value' => $attrValue,
                         'attribute_name' => $attributeName,
                         'type' => $v['type'] ?? 'dropdown',
                         'label' => $v['labels'] ?? $attributeName,
                         'selected' => $isSelected,
-                        // 'slug' => $slug,
+                         'slug' => $slug,
                     ];
                 }
             }
@@ -353,6 +354,7 @@ class FndProductVariantController extends Controller
     //     }
 
     // }
+   
      public function getAttributeByProduct(Request $request)
     {
         try {
@@ -492,9 +494,6 @@ class FndProductVariantController extends Controller
             ], 500);
         }
     }
-
- 
-
     /**
      * @OA\Post(
      *     path="/api/frontend/product-variants-by-attribute",
@@ -539,6 +538,7 @@ class FndProductVariantController extends Controller
      * )
      */
 
+     
     public function getAttributeByProductVariant(Request $request)
     {
         try {
