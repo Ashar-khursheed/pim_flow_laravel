@@ -2779,7 +2779,7 @@ class ProductController extends Controller
 				'alt_tags' => $altTags,
 				'video_path' => $videoPaths,
 				'sku' => $product->sku,
-
+				'url' => $product->seoUrl->url ?? null,
 				// Prices
 				'price' => (float)($firstSupplier->price ?? 0),
 				'sale_price' => (float)($firstSupplier->sale_price ?? 0),
