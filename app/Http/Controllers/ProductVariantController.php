@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 use Illuminate\Validation\Rule;
 use App\Models\Attribute;
+
 class ProductVariantController extends Controller
 {
 
@@ -287,7 +288,6 @@ class ProductVariantController extends Controller
                 'message' => 'Product Variant created successfully',
                 'data' => $createdRecord
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -295,7 +295,6 @@ class ProductVariantController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-
     }
 
 
@@ -440,7 +439,6 @@ class ProductVariantController extends Controller
                 'message' => 'Product Variant updated successfully',
                 'data' => $variant
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -505,10 +503,7 @@ class ProductVariantController extends Controller
     public function getProductAttibute(Request $request)
     {
         try {
-            
 
-                        
-                        
             $validator = Validator::make($request->all(), [
                 'product_ids' => 'required|array',
             ]);
@@ -549,27 +544,24 @@ class ProductVariantController extends Controller
             $attributeList = $attributes->map(function ($attr) {
                 return [
                     'attribute_id' => $attr->attribute_id,
-                    'attribute_name' => $attr->attribute_name,                    
-                    'attribute_value' => $attr->attribute_value,                    
+                    'attribute_name' => $attr->attribute_name,
+                    'attribute_value' => $attr->attribute_value,
                     'group_id' => $attr->product_ids,
                 ];
             });
 
-            if($attributeList->isEmpty())
-            {
-                    return response()->json([
-                            'success' => true,
-                            'message' => 'No attributes found with all these products',
-                            'data' => $attributeList
-                        ], 200);
-            }            
+            if ($attributeList->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No attributes found with all these products',
+                    'data' => $attributeList
+                ], 200);
+            }
             return response()->json([
                 'success' => true,
                 'message' => 'Attributes fetched successfully',
                 'data' => $attributeList
             ], 200);
-  
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -745,7 +737,6 @@ class ProductVariantController extends Controller
                 'message' => "Fetch Product variant",
                 'data' => $data
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -754,5 +745,4 @@ class ProductVariantController extends Controller
             ], 500);
         }
     }
-
 }

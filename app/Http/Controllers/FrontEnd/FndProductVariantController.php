@@ -169,7 +169,7 @@ class FndProductVariantController extends Controller
                         'type' => $v['type'] ?? 'dropdown',
                         'label' => $v['labels'] ?? $attributeName,
                         'selected' => $isSelected,
-                         'slug' => $slug,
+                        // 'slug' => $slug,
                     ];
                 }
             }
