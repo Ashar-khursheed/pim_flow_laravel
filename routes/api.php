@@ -86,6 +86,9 @@ use App\Http\Controllers\TranslationController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\MadeToOrderController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\TqlQuoteController;
+use App\Http\Controllers\TenderController;
+use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\GetInTouchController;
 use App\Http\Controllers\TrainingDataController;
 use App\Http\Controllers\ProductAttributeController;
@@ -468,6 +471,12 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/finances/{id}/due', [FinanceController::class, 'getDueDetails']);
 	Route::post('/finances/pay', [FinanceController::class, 'payAmount']);
+
+	Route::post('/ltl/quotes', [TqlQuoteController::class, 'create']);
+    Route::get('/ltl/quotes/{id}', [TqlQuoteController::class, 'get']);
+    Route::post('/ltl/quotes/tender', [TenderController::class, 'tender']);
+    Route::get('/tracking/{poNumber}', [TrackingController::class, 'track']);
+    Route::post('/ltl/loads/tender', [TenderController::class, 'tenderByScac']);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
