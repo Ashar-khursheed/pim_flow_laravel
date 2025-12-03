@@ -531,21 +531,19 @@ class ProductVariantController extends Controller
             $attributes = ProductAttribute::whereIn('product_id', $productIds)
                 ->join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
                 ->select(
-                    'product_attributes.attribute_id',
-                    'product_attributes.attribute_value', // ADDED THIS
+                    'product_attributes.attribute_id',                  
                     'attributes.name as attribute_name',
                     \DB::raw('GROUP_CONCAT(DISTINCT product_attributes.product_id ORDER BY product_attributes.product_id) as product_ids'),
                     \DB::raw('COUNT(DISTINCT product_attributes.product_id) as product_count')
                 )
-                ->groupBy('product_attributes.attribute_id', 'product_attributes.attribute_value', 'attributes.name')
+                ->groupBy('product_attributes.attribute_id','attributes.name')
                 ->having('product_count', '=', $countId)
                 ->get();
 
             $attributeList = $attributes->map(function ($attr) {
                 return [
                     'attribute_id' => $attr->attribute_id,
-                    'attribute_name' => $attr->attribute_name,
-                    'attribute_value' => $attr->attribute_value,
+                    'attribute_name' => $attr->attribute_name,                   
                     'group_id' => $attr->product_ids,
                 ];
             });
