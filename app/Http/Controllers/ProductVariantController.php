@@ -505,10 +505,12 @@ class ProductVariantController extends Controller
     public function getProductAttibute(Request $request)
     {
         try {
+            
 
+                        
+                        
             $validator = Validator::make($request->all(), [
                 'product_ids' => 'required|array',
-
             ]);
 
             if ($validator->fails()) {
@@ -518,7 +520,7 @@ class ProductVariantController extends Controller
                     'errors' => $validator->errors()
                 ], 422);
             }
-            // Ensure product_id is always an array
+
             $productIds = $request->product_ids;
 
             if (empty($productIds)) {
@@ -527,35 +529,46 @@ class ProductVariantController extends Controller
                     'message' => 'No product IDs provided'
                 ], 422);
             }
+
             $countId = count($productIds);
+
             // Fetch attributes
             $attributes = ProductAttribute::whereIn('product_id', $productIds)
                 ->join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
                 ->select(
                     'product_attributes.attribute_id',
+                    'product_attributes.attribute_value', // ADDED THIS
                     'attributes.name as attribute_name',
                     \DB::raw('GROUP_CONCAT(DISTINCT product_attributes.product_id ORDER BY product_attributes.product_id) as product_ids'),
                     \DB::raw('COUNT(DISTINCT product_attributes.product_id) as product_count')
                 )
-                ->groupBy('product_attributes.attribute_id', 'attributes.name')
+                ->groupBy('product_attributes.attribute_id', 'product_attributes.attribute_value', 'attributes.name')
                 ->having('product_count', '=', $countId)
                 ->get();
 
-
             $attributeList = $attributes->map(function ($attr) {
- 
                 return [
                     'attribute_id' => $attr->attribute_id,
                     'attribute_name' => $attr->attribute_name,                    
+                    'attribute_value' => $attr->attribute_value,                    
                     'group_id' => $attr->product_ids,
                 ];
             });
 
+            if($attributeList->isEmpty())
+            {
+                    return response()->json([
+                            'success' => true,
+                            'message' => 'No attributes found with all these products',
+                            'data' => $attributeList
+                        ], 200);
+            }            
             return response()->json([
                 'success' => true,
                 'message' => 'Attributes fetched successfully',
                 'data' => $attributeList
             ], 200);
+  
 
         } catch (\Exception $e) {
             return response()->json([
