@@ -140,7 +140,7 @@ class ImportProductAttributeJob implements ShouldQueue
 								]);
 
 								if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-									$attribute->translateOrNew('en')->attribute_value_tr = $value;
+									$attribute->translateOrNew('en')->attribute_value_tr = $attributeValue;
 									$attribute->save();
 								}
 							}
