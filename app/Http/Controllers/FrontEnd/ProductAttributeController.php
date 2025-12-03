@@ -242,7 +242,7 @@ class ProductAttributeController extends Controller
         $grouped = [];
 
         foreach ($nutritionFacts as $item) {
-            $name = trim($item->attribute->name);
+            $name = trim($item->attributeDetails->name);
             $value = trim($item->attribute_value . ' ' . ($item->measurementUnit->symbol ?? ''));
 
             $isChild = false;
@@ -760,7 +760,7 @@ class ProductAttributeController extends Controller
             $attributesToReject[] = 'Units per Case';
         }
 
-        return in_array($item->attribute->name, $attributesToReject);
+        return in_array($item->attributeDetails->name, $attributesToReject);
     })->values();
 
     $leftOrder = [
@@ -796,13 +796,13 @@ class ProductAttributeController extends Controller
         }
 
         return [
-            'attribute_name' => $item->attribute->name,
+            'attribute_name' => $item->attributeDetails->name,
             'attribute_value' => $value,
         ];
     };
 
     foreach ($leftOrder as $name) {
-        $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
+        $match = $filteredAttributes->firstWhere(fn($item) => $item->attributeDetails->name === $name);
         if ($match) {
             $left[] = $formatAttr($match);
             $usedNames[] = $name;
@@ -810,7 +810,7 @@ class ProductAttributeController extends Controller
     }
 
     foreach ($rightOrder as $name) {
-        $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
+        $match = $filteredAttributes->firstWhere(fn($item) => $item->attributeDetails->name === $name);
         if ($match) {
             $right[] = $formatAttr($match);
             $usedNames[] = $name;
@@ -818,7 +818,7 @@ class ProductAttributeController extends Controller
     }
 
     $remaining = $filteredAttributes->filter(function ($item) use ($usedNames) {
-        return !in_array($item->attribute->name, $usedNames);
+        return !in_array($item->attributeDetails->name, $usedNames);
     })->map($formatAttr)->values();
 
     $totalLeft = count($left);
@@ -834,11 +834,11 @@ class ProductAttributeController extends Controller
         }
     }
 
-    $sellingUnit     = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Selling Unit');
-    $unitsPerCase    = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case');
-    $packType        = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Pack Type');
-    $unitQty         = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
-    $unitMeasurement = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit of Measurement');
+    $sellingUnit     = $allAttributes->firstWhere(fn($item) => $item->attributeDetails->name === 'Selling Unit');
+    $unitsPerCase    = $allAttributes->firstWhere(fn($item) => $item->attributeDetails->name === 'Units per Case');
+    $packType        = $allAttributes->firstWhere(fn($item) => $item->attributeDetails->name === 'Pack Type');
+    $unitQty         = $allAttributes->firstWhere(fn($item) => $item->attributeDetails->name === 'Unit Qty');
+    $unitMeasurement = $allAttributes->firstWhere(fn($item) => $item->attributeDetails->name === 'Unit of Measurement');
 
     $rawSelling = $sellingUnit?->attribute_value;
 
