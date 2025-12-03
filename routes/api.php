@@ -161,6 +161,7 @@ use App\Http\Controllers\FrontEnd\FndProductVariantController;
 use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
 use App\Http\Controllers\FrontEnd\PaymobController as F_PaymobController;
 use App\Http\Controllers\FrontEnd\FinanceController as F_FinanceController;
+use App\Http\Controllers\FrontEnd\TqlRateController;
 
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
@@ -683,6 +684,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('frontend/finances', [F_FinanceController::class, 'store']);
 Route::get('frontend/finances/apply', [F_FinanceController::class, 'getFinance']);
 Route::get('frontend/finances/check', [F_FinanceController::class, 'financeCheck']);
+
+
+Route::post('frontend/tql-rate', [TqlRateController::class, 'tqlRates']);
 
 	Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
 	Route::apiResource('frontend/carts', F_CustomerCartController::class)->names('frontend.carts');;

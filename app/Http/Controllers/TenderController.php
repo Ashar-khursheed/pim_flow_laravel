@@ -11,8 +11,8 @@ class TenderController extends Controller
 {
     /**
      * @OA\Post(
-     *     path="/ltl/quotes/tender",
-     *     tags={"Tendering"},
+     *     path="/api/tqlquotes/tender",
+     *     tags={"TQL Quotes"},
      *     summary="Tender a shipment",
      *     operationId="tenderShipment",
      *     security={{ "bearerAuth": {} }},
@@ -28,11 +28,11 @@ class TenderController extends Controller
      *                 @OA\Property(property="stopName", type="string"),
      *                 @OA\Property(property="contactPhone", type="string"),
      *                 @OA\Property(property="hoursOpen", type="string"),
-     *                 @OA\Property(property="hoursClosed", type="string"),
-     *                 // etc
+     *                 @OA\Property(property="hoursClosed", type="string")
+     *                
      *             ),
      *             @OA\Property(property="deliveryDetails", type="object",
-     *                 // similar
+     *                
      *             )
      *         )
      *     ),
@@ -84,8 +84,8 @@ class TenderController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/ltl/loads/tender",
-     *     tags={"Tendering"},
+     *     path="/api/tql/tender",
+     *     tags={"TQL Quotes"},
      *     summary="Tender by SCAC",
      *     operationId="tenderByScac",
      *     security={{ "bearerAuth": {} }},
@@ -96,8 +96,8 @@ class TenderController extends Controller
      *             @OA\Property(property="customerEmailAddresses", type="array", @OA\Items(type="string")),
      *             @OA\Property(property="scac", type="string"),
      *             @OA\Property(property="serviceLevel", type="string"),
-     *             @OA\Property(property="shipmentDate", type="string", format="date-time"),
-     *             // Add other properties as per PDF: customerReference, poNumber, commodities, etc.
+     *             @OA\Property(property="shipmentDate", type="string", format="date-time")
+     *              
      *         )
      *     ),
      *     @OA\Response(response="201", description="Quote created and tendered")
