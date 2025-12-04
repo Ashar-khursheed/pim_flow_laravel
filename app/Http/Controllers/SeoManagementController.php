@@ -471,7 +471,7 @@ class SeoManagementController extends Controller
 
 		$relationalType = $request->query('relational_type');
 
-		$seoRecord = SeoManagement::with('secondaryKeywordDetails')
+		$seoRecord = SeoManagement::with('secondaryKeywordDetails', 'translations')
 		->where('relational_id', $relation_id)
 		->when($relationalType, function ($query, $relationalType) {
 			return $query->where('relational_type', $relationalType);
