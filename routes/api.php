@@ -831,7 +831,9 @@ Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 
 
 Route::get('/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProducts']);
 
-Route::get('/frontend/sale-categories/{id}', [F_ProductController::class, 'saleProductsByCategory']);
+// Route::get('/frontend/sale-categories/{id}', [F_ProductController::class, 'saleProductsByCategory']);
+Route::get('/frontend/sale-categories/{id?}', [F_ProductController::class, 'saleProductsByCategory']);
+
 
 
 Route::post('/frontend/guest/view-product', [F_RecentlyViewedProductController::class, 'saveGuestProductView']);

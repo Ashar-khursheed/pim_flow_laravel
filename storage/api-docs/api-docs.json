@@ -18073,13 +18073,24 @@
                             "schema": {
                                 "required": [
                                     "term_selection",
-                                    "requestedAmount"
+                                    "requested_amount",
+                                    "customer_address_id"
                                 ],
                                 "properties": {
                                     "payment_options": {
                                         "description": "Payment option netTerm",
                                         "type": "string",
                                         "example": "netTerm"
+                                    },
+                                    "customer_id": {
+                                        "description": "customer address id",
+                                        "type": "interger",
+                                        "example": "2487"
+                                    },
+                                    "customer_address_id": {
+                                        "description": "customer address id",
+                                        "type": "interger",
+                                        "example": "23"
                                     },
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
@@ -18091,8 +18102,18 @@
                                         ],
                                         "example": "Net 30 Days"
                                     },
-                                    "requestedAmount": {
-                                        "description": "Enter amount",
+                                    "legal_business_name": {
+                                        "description": "Enter ABC Company",
+                                        "type": "string",
+                                        "example": "ABC Company"
+                                    },
+                                    "doing_business": {
+                                        "description": "Enter ABC CO",
+                                        "type": "string",
+                                        "example": "ABC CO"
+                                    },
+                                    "requested_amount": {
+                                        "description": "HOW MUCH DO YOU EXPECT TO PURCHASE OVER 30 DAYS requested amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 5000.75
@@ -18105,30 +18126,85 @@
                                     "type_of_business": {
                                         "description": "Type of business (Advertising / E-commerce)",
                                         "type": "string",
+                                        "enum": [
+                                            "Corporation",
+                                            "LLC",
+                                            "Sole proprietor/ partnership",
+                                            "Non-profit",
+                                            "Government"
+                                        ],
                                         "example": "E-commerce"
                                     },
-                                    "accountsPayableEmail": {
-                                        "description": "accountsPayableEmail",
+                                    "accounts_payable_email": {
+                                        "description": "accounts payable email",
                                         "type": "string",
                                         "example": "pay@gmail.com"
                                     },
-                                    "accountsPayablePhone": {
+                                    "accounts_payable_phone": {
                                         "description": "Accounts Payable Phone",
                                         "type": "string",
                                         "example": "123456789"
                                     },
-                                    "customer_address_id": {
-                                        "description": "customer address id",
-                                        "type": "interger",
-                                        "example": "23"
-                                    },
                                     "annual_revenue": {
                                         "type": "string",
-                                        "example": "10M USD"
+                                        "enum": [
+                                            "Less then 1,000,000",
+                                            "1,000,000 to 2,000,000",
+                                            "2,000,000 to 5,000,000",
+                                            "5,000,000 to 25,000,000",
+                                            "More than 25,000,000"
+                                        ],
+                                        "example": "Less then 1,000,000"
                                     },
                                     "years_in_business": {
                                         "type": "string",
+                                        "enum": [
+                                            "Less than 2 years",
+                                            "2 - 5 years",
+                                            "5 - 10 years",
+                                            "More than 10 years"
+                                        ],
                                         "example": "5 – 10 years"
+                                    },
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "john@gmail.com"
+                                    },
+                                    "role_at_business": {
+                                        "type": "string",
+                                        "enum": [
+                                            "CEO",
+                                            "Accounts payable"
+                                        ],
+                                        "example": "Accounts payable"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "United States"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Address"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "City"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "State"
+                                    },
+                                    "zipcode": {
+                                        "type": "string",
+                                        "example": "zipcode"
                                     },
                                     "duns_number": {
                                         "type": "string",
@@ -18214,7 +18290,7 @@
                         }
                     },
                     {
-                        "name": "orderAmount",
+                        "name": "order_amount",
                         "in": "query",
                         "description": "Order Amount for validating finance",
                         "required": true,
@@ -21879,7 +21955,7 @@
                         "name": "id",
                         "in": "path",
                         "description": "Category ID",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -21967,23 +22043,43 @@
                                             "type": "string",
                                             "example": "Sale products fetched successfully"
                                         },
-                                        "current_page": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "last_page": {
-                                            "type": "integer",
-                                            "example": 5
-                                        },
-                                        "total": {
-                                            "type": "integer",
-                                            "example": 50
-                                        },
-                                        "per_page": {
-                                            "type": "integer",
-                                            "example": 10
-                                        },
-                                        "filters": {
+                                        "pagination": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "next_page_url": {
+                                                    "type": "string",
+                                                    "example": "https://.../sale-categories?page=2"
+                                                },
+                                                "prev_page_url": {
+                                                    "type": "string",
+                                                    "example": null
+                                                },
+                                                "has_more": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
                                             "type": "object"
                                         },
                                         "data": {
