@@ -27645,6 +27645,71 @@
                 }
             }
         },
+        "/api/frontend/tql-rate": {
+            "post": {
+                "tags": [
+                    "Frontend-TQL Rates Shipping"
+                ],
+                "summary": "Get TQL shipping rate (returns only the price amount)",
+                "operationId": "e8834d1cf4c5d7a693dbe6565ecd7059",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "origin_zip",
+                                    "dest_zip",
+                                    "weight"
+                                ],
+                                "properties": {
+                                    "origin_zip": {
+                                        "type": "string",
+                                        "example": "45202"
+                                    },
+                                    "dest_zip": {
+                                        "type": "string",
+                                        "example": "90210"
+                                    },
+                                    "dimensionLength": {
+                                        "type": "integer",
+                                        "example": 40
+                                    },
+                                    "dimensionWidth": {
+                                        "type": "integer",
+                                        "example": 45
+                                    },
+                                    "dimensionHeight": {
+                                        "type": "integer",
+                                        "example": 55
+                                    },
+                                    "freightClassCode": {
+                                        "type": "70",
+                                        "example": 1500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Plain text price only",
+                        "content": {
+                            "text/plain": {
+                                "example": "1247.50"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/llms.txt": {
             "get": {
                 "tags": [
@@ -43517,6 +43582,383 @@
                 ]
             }
         },
+        "/api/tqlquotes/tender": {
+            "post": {
+                "tags": [
+                    "TQL Quotes"
+                ],
+                "summary": "Tender a shipment",
+                "operationId": "tenderShipment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "carrierPriceId": {
+                                        "type": "integer"
+                                    },
+                                    "customerEmailAddresses": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "shipmentDate": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
+                                    },
+                                    "pickupDetails": {
+                                        "properties": {
+                                            "address1": {
+                                                "type": "string"
+                                            },
+                                            "stopName": {
+                                                "type": "string"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string"
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string"
+                                            },
+                                            "hoursClosed": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "deliveryDetails": {
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Shipment tendered"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/tql/tender": {
+            "post": {
+                "tags": [
+                    "TQL Quotes"
+                ],
+                "summary": "Tender by SCAC",
+                "operationId": "tenderByScac",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "customerEmailAddresses": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "scac": {
+                                        "type": "string"
+                                    },
+                                    "serviceLevel": {
+                                        "type": "string"
+                                    },
+                                    "shipmentDate": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Quote created and tendered"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/tql/tqlquotes": {
+            "post": {
+                "tags": [
+                    "TQL Quotes"
+                ],
+                "summary": "Create a quote",
+                "operationId": "createQuote",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "pickLocationType": {
+                                        "type": "string",
+                                        "example": "Commercial"
+                                    },
+                                    "dropLocationType": {
+                                        "type": "string",
+                                        "example": "Commercial"
+                                    },
+                                    "shipmentDate": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "origin": {
+                                        "properties": {
+                                            "postalCode": {
+                                                "type": "string"
+                                            },
+                                            "city": {
+                                                "type": "string"
+                                            },
+                                            "state": {
+                                                "type": "string"
+                                            },
+                                            "country": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "destination": {
+                                        "properties": {
+                                            "postalCode": {
+                                                "type": "string"
+                                            },
+                                            "city": {
+                                                "type": "string"
+                                            },
+                                            "state": {
+                                                "type": "string"
+                                            },
+                                            "country": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "pickupDetails": {
+                                        "properties": {
+                                            "address1": {
+                                                "type": "string"
+                                            },
+                                            "address2": {
+                                                "type": "string"
+                                            },
+                                            "stopName": {
+                                                "type": "string"
+                                            },
+                                            "contactName": {
+                                                "type": "string"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string"
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "valid times include “12:00 PM” and “1:00 AM”."
+                                            },
+                                            "hoursClosed": {
+                                                "type": "string",
+                                                "example": "valid times include “12:00 PM” and “1:00 AM”."
+                                            },
+                                            "puNumber": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "deliveryDetails": {
+                                        "properties": {
+                                            "address1": {
+                                                "type": "string"
+                                            },
+                                            "address2": {
+                                                "type": "string"
+                                            },
+                                            "stopName": {
+                                                "type": "string"
+                                            },
+                                            "contactName": {
+                                                "type": "string"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string"
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "valid times include “12:00 PM” and “1:00 AM”."
+                                            },
+                                            "hoursClosed": {
+                                                "type": "string",
+                                                "example": "valid times include “12:00 PM” and “1:00 AM”."
+                                            },
+                                            "deliveryPO": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "accessorials": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "INPU"
+                                            ],
+                                            "example": "INPU=>Pickup – Inside"
+                                        }
+                                    },
+                                    "quoteCommodities": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "freightClassCode": {
+                                                    "type": "string",
+                                                    "example": "'50', '55', '60', '65', '70', '77.5', '85', '92.5', '100', '110', '125', '150', '175', '200', '250', '300', '400', '500'"
+                                                },
+                                                "unitTypeCode": {
+                                                    "type": "string"
+                                                },
+                                                "description": {
+                                                    "type": "string"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer"
+                                                },
+                                                "weight": {
+                                                    "type": "number"
+                                                },
+                                                "dimensionLength": {
+                                                    "type": "integer"
+                                                },
+                                                "dimensionWidth": {
+                                                    "type": "integer"
+                                                },
+                                                "dimensionHeight": {
+                                                    "type": "integer"
+                                                },
+                                                "nmfc": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "pieceCaseCount": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                },
+                                                "isHazmat": {
+                                                    "type": "boolean",
+                                                    "nullable": true
+                                                },
+                                                "isStackable": {
+                                                    "type": "boolean",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Quote created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/tql/tqlquotes/{id}": {
+            "get": {
+                "tags": [
+                    "TQL Quotes"
+                ],
+                "summary": "Get a quote",
+                "operationId": "getQuote",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Quote retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/tracking/{poNumber}": {
+            "get": {
+                "tags": [
+                    "Tracking"
+                ],
+                "summary": "Track shipment",
+                "operationId": "trackShipment",
+                "parameters": [
+                    {
+                        "name": "poNumber",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tracking info"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/training-data": {
             "get": {
                 "tags": [
@@ -47546,6 +47988,10 @@
             "description": "Tax"
         },
         {
+            "name": "Frontend-TQL Rates Shipping",
+            "description": "Frontend-TQL Rates Shipping"
+        },
+        {
             "name": "Frontend TXT",
             "description": "Frontend TXT"
         },
@@ -47684,6 +48130,14 @@
         {
             "name": "Temp Categories",
             "description": "Temp Categories"
+        },
+        {
+            "name": "TQL Quotes",
+            "description": "TQL Quotes"
+        },
+        {
+            "name": "Tracking",
+            "description": "Tracking"
         },
         {
             "name": "AI Training Data",
