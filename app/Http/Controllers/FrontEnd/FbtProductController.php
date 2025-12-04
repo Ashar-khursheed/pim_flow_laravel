@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class FbtProductController extends Controller
 {
-  public function getFbtProducts(Request $request, $productId = null)
+ public function getFbtProducts(Request $request, $productId = null)
 {
     try {
         $productId = $productId ?? $request->input('product_id');
@@ -23,11 +23,14 @@ class FbtProductController extends Controller
             ], 400);
         }
 
-        // Check if productId is numeric (ID) or string (slug)
+        // Check if productId is numeric (ID) or string (URL/slug)
         if (is_numeric($productId)) {
             $product = Product::find($productId);
         } else {
-            $product = Product::where('slug', $productId)->first();
+            // Find product by URL using the relation
+            $product = Product::whereHas('seoUrl', function($query) use ($productId) {
+                $query->where('url', $productId);
+            })->first();
         }
 
         if (!$product) {
@@ -43,7 +46,6 @@ class FbtProductController extends Controller
         $userId = Auth::id();
         $isUserLoggedIn = $userId !== null;
 
-        Log::info('Fetching Fbt products for:', ['product_id' => $actualProductId, 'user_id' => $userId]);
 
         // Wishlist logic
         $wishlistProductIds = $isUserLoggedIn
