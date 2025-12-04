@@ -464,10 +464,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('made-to-orders', MadeToOrderController::class);
 	Route::apiResource('finances', FinanceController::class);
 	Route::post('finances/{id}', [FinanceController::class, 'update']);
-	Route::post('/finances/{id}/status', [FinanceController::class, 'updateStatus']);
+	Route::post('/finances/{id}/account-status', [FinanceController::class, 'updateStatus']);
 
 	Route::get('/finances/{id}/due', [FinanceController::class, 'getDueDetails']);
-	Route::post('/finances/pay', [FinanceController::class, 'payAmount']);
+	Route::post('/finances/pay/{id}', [FinanceController::class, 'payAmount']);
+	Route::get('/finances/{id}/payment-history', [FinanceController::class, 'getPaymentHistory']);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);

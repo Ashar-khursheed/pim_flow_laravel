@@ -4,6 +4,7 @@ namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\FrontEnd\Finance;
+use App\Models\User;
 class FinancesPayment extends Model
 {
     protected $fillable = [
@@ -25,5 +26,14 @@ class FinancesPayment extends Model
     public function finance()
     {
         return $this->belongsTo(Finance::class, 'finances_id');
+    }
+    public function paidByUser()
+    {
+        return $this->belongsTo(User::class, 'paid_by');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }
