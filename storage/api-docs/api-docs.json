@@ -10891,18 +10891,24 @@
                                 "required": [
                                     "customer_id",
                                     "term_selection",
-                                    "requestedAmount"
+                                    "requested_amount",
+                                    "customer_address_id"
                                 ],
                                 "properties": {
-                                    "customer_id": {
-                                        "description": "Select customer_id",
-                                        "type": "string",
-                                        "example": "19"
-                                    },
                                     "payment_options": {
-                                        "description": "Payment option description",
+                                        "description": "Payment option netTerm",
                                         "type": "string",
                                         "example": "netTerm"
+                                    },
+                                    "customer_id": {
+                                        "description": "customer address id",
+                                        "type": "interger",
+                                        "example": "2487"
+                                    },
+                                    "customer_address_id": {
+                                        "description": "customer address id",
+                                        "type": "interger",
+                                        "example": "23"
                                     },
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
@@ -10914,8 +10920,18 @@
                                         ],
                                         "example": "Net 30 Days"
                                     },
-                                    "requestedAmount": {
-                                        "description": "Enter amount",
+                                    "legal_business_name": {
+                                        "description": "Enter ABC Company",
+                                        "type": "string",
+                                        "example": "ABC Company"
+                                    },
+                                    "doing_business": {
+                                        "description": "Enter ABC CO",
+                                        "type": "string",
+                                        "example": "ABC CO"
+                                    },
+                                    "requested_amount": {
+                                        "description": "HOW MUCH DO YOU EXPECT TO PURCHASE OVER 30 DAYS requested amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 5000.75
@@ -10928,36 +10944,99 @@
                                     "type_of_business": {
                                         "description": "Type of business (Advertising / E-commerce)",
                                         "type": "string",
+                                        "enum": [
+                                            "Corporation",
+                                            "LLC",
+                                            "Sole proprietor/ partnership",
+                                            "Non-profit",
+                                            "Government"
+                                        ],
                                         "example": "E-commerce"
+                                    },
+                                    "accounts_payable_email": {
+                                        "description": "accounts payable email",
+                                        "type": "string",
+                                        "example": "pay@gmail.com"
+                                    },
+                                    "accounts_payable_phone": {
+                                        "description": "Accounts Payable Phone",
+                                        "type": "string",
+                                        "example": "123456789"
                                     },
                                     "annual_revenue": {
                                         "type": "string",
-                                        "example": "10M USD"
+                                        "enum": [
+                                            "Less then 1,000,000",
+                                            "1,000,000 to 2,000,000",
+                                            "2,000,000 to 5,000,000",
+                                            "5,000,000 to 25,000,000",
+                                            "More than 25,000,000"
+                                        ],
+                                        "example": "Less then 1,000,000"
                                     },
                                     "years_in_business": {
                                         "type": "string",
+                                        "enum": [
+                                            "Less than 2 years",
+                                            "2 - 5 years",
+                                            "5 - 10 years",
+                                            "More than 10 years"
+                                        ],
                                         "example": "5 – 10 years"
+                                    },
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "john@gmail.com"
+                                    },
+                                    "role_at_business": {
+                                        "type": "string",
+                                        "enum": [
+                                            "CEO",
+                                            "Accounts payable"
+                                        ],
+                                        "example": "Accounts payable"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "United States"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Address"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "City"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "State"
+                                    },
+                                    "zipcode": {
+                                        "type": "string",
+                                        "example": "zipcode"
+                                    },
+                                    "accounts_status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Approved",
+                                            "Pending",
+                                            "Hold",
+                                            "Rejected"
+                                        ],
+                                        "example": "Approved"
                                     },
                                     "duns_number": {
                                         "type": "string",
                                         "example": "123456789"
-                                    },
-                                    "creditLimitAmount": {
-                                        "type": "integer",
-                                        "example": "5000"
-                                    },
-                                    "approvedAmount": {
-                                        "type": "integer",
-                                        "example": "5000"
-                                    },
-                                    "status": {
-                                        "type": "integer",
-                                        "enum": [
-                                            "Active",
-                                            "Overdue",
-                                            "Pending"
-                                        ],
-                                        "example": "Pending"
                                     }
                                 },
                                 "type": "object"
@@ -11161,17 +11240,14 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "customer_id"
+                                    "accounts_payable_email",
+                                    "accounts_payable_phone",
+                                    "requested_amount",
+                                    "status",
+                                    "credit_limit_amount",
+                                    "accounts_status"
                                 ],
                                 "properties": {
-                                    "customer_id": {
-                                        "type": "integer",
-                                        "example": 10
-                                    },
-                                    "payment_options": {
-                                        "type": "string",
-                                        "example": "netTerm"
-                                    },
                                     "term_selection": {
                                         "type": "string",
                                         "enum": [
@@ -11181,7 +11257,7 @@
                                         ],
                                         "example": "Net 30 Days"
                                     },
-                                    "requestedAmount": {
+                                    "requested_amount": {
                                         "type": "number",
                                         "format": "float",
                                         "example": 5000.75
@@ -11193,33 +11269,57 @@
                                     },
                                     "type_of_business": {
                                         "type": "string",
-                                        "example": "E-commerce"
-                                    },
-                                    "accountsPayableEmail": {
-                                        "type": "string",
-                                        "example": "pay@gmail.com"
-                                    },
-                                    "accountsPayablePhone": {
-                                        "type": "string",
-                                        "example": "123456789"
+                                        "enum": [
+                                            "Corporation",
+                                            "LLC",
+                                            "Sole proprietor/ partnership",
+                                            "Non-profit",
+                                            "Government"
+                                        ],
+                                        "example": "Corporation"
                                     },
                                     "annual_revenue": {
                                         "type": "string",
-                                        "example": "10M USD"
+                                        "enum": [
+                                            "Less than 1,000,000",
+                                            "1,000,000 to 2,000,000",
+                                            "2,000,000 to 5,000,000",
+                                            "5,000,000 to 25,000,000",
+                                            "More than 25,000,000"
+                                        ],
+                                        "example": "Less than 1,000,000"
                                     },
                                     "years_in_business": {
                                         "type": "string",
-                                        "example": "5–10 years"
+                                        "enum": [
+                                            "Less than 2 years",
+                                            "2 - 5 years",
+                                            "5 - 10 years",
+                                            "More than 10 years"
+                                        ],
+                                        "example": "5 - 10 years"
+                                    },
+                                    "role_at_business": {
+                                        "type": "string",
+                                        "enum": [
+                                            "CEO",
+                                            "Accounts payable"
+                                        ],
+                                        "example": "Accounts payable"
+                                    },
+                                    "accounts_payable_email": {
+                                        "type": "string",
+                                        "example": "pay@gmail.com"
+                                    },
+                                    "accounts_payable_phone": {
+                                        "type": "string",
+                                        "example": "123456789"
                                     },
                                     "duns_number": {
                                         "type": "string",
                                         "example": "123456789"
                                     },
-                                    "creditLimitAmount": {
-                                        "type": "number",
-                                        "example": 5000
-                                    },
-                                    "approvedAmount": {
+                                    "credit_limit_amount": {
                                         "type": "number",
                                         "example": 5000
                                     },
@@ -11232,8 +11332,7 @@
                                         ],
                                         "example": "Pending"
                                     },
-                                    "accountsStatus": {
-                                        "description": "Internal accounts payable approval status",
+                                    "accounts_status": {
                                         "type": "string",
                                         "enum": [
                                             "Pending",
@@ -11242,6 +11341,16 @@
                                             "Hold"
                                         ],
                                         "example": "Pending"
+                                    },
+                                    "approved_amount": {
+                                        "description": "Required when accounts_status is Approved",
+                                        "type": "number",
+                                        "example": 5000
+                                    },
+                                    "rejection_reason": {
+                                        "description": "Descrive rejection reason",
+                                        "type": "string",
+                                        "example": "rejection reason"
                                     }
                                 },
                                 "type": "object"
@@ -11289,6 +11398,26 @@
                                         },
                                         "errors": {
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Record not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record not found"
                                         }
                                     },
                                     "type": "object"
@@ -11374,13 +11503,13 @@
                 ]
             }
         },
-        "/api/finances/{id}/status": {
+        "/api/finances/{id}/account-status": {
             "post": {
                 "tags": [
                     "Finance"
                 ],
                 "summary": "Update finance account status",
-                "operationId": "968bd4c7d2b21e5899f2d9f5bab8b315",
+                "operationId": "5430d5d2761ca6b523b0a4659a2644f8",
                 "parameters": [
                     {
                         "name": "id",
@@ -11399,11 +11528,11 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "accountsStatus",
-                                    "approvedAmount"
+                                    "accounts_status",
+                                    "approved_amount"
                                 ],
                                 "properties": {
-                                    "accountsStatus": {
+                                    "accounts_status": {
                                         "description": "Finance account status",
                                         "type": "string",
                                         "enum": [
@@ -11414,7 +11543,7 @@
                                         ],
                                         "example": "Approved"
                                     },
-                                    "approvedAmount": {
+                                    "approved_amount": {
                                         "description": "Approved amount",
                                         "type": "number",
                                         "format": "float",
@@ -11525,27 +11654,35 @@
                 ]
             }
         },
-        "/api/finances/pay": {
+        "/api/finances/pay/{id}": {
             "post": {
                 "tags": [
                     "Finance"
                 ],
                 "summary": "Pay finance amount",
-                "operationId": "c1c94d2d82a845965f44304c39dde027",
+                "operationId": "be00895d8e75ea7088fe09da0839ac60",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "finance_id",
                                     "customer_id",
                                     "pay_amount"
                                 ],
                                 "properties": {
-                                    "finance_id": {
-                                        "type": "integer"
-                                    },
                                     "customer_id": {
                                         "type": "integer"
                                     },
@@ -11599,6 +11736,73 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/finances/{id}/payment-history": {
+            "get": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Get payment history",
+                "operationId": "fbbd2a58f6e12a560f269ed64cbc7117",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Due details fetched",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "finance_id": {
+                                                    "type": "integer"
+                                                },
+                                                "customer_id": {
+                                                    "type": "integer"
+                                                },
+                                                "next_due_amt": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "due_date": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance not found"
                     }
                 },
                 "security": [
@@ -18073,13 +18277,24 @@
                             "schema": {
                                 "required": [
                                     "term_selection",
-                                    "requestedAmount"
+                                    "requested_amount",
+                                    "customer_address_id"
                                 ],
                                 "properties": {
                                     "payment_options": {
                                         "description": "Payment option netTerm",
                                         "type": "string",
                                         "example": "netTerm"
+                                    },
+                                    "customer_id": {
+                                        "description": "customer address id",
+                                        "type": "interger",
+                                        "example": "2487"
+                                    },
+                                    "customer_address_id": {
+                                        "description": "customer address id",
+                                        "type": "interger",
+                                        "example": "23"
                                     },
                                     "term_selection": {
                                         "description": "Net Pay in 30/45/60 Days",
@@ -18091,8 +18306,18 @@
                                         ],
                                         "example": "Net 30 Days"
                                     },
-                                    "requestedAmount": {
-                                        "description": "Enter amount",
+                                    "legal_business_name": {
+                                        "description": "Enter ABC Company",
+                                        "type": "string",
+                                        "example": "ABC Company"
+                                    },
+                                    "doing_business": {
+                                        "description": "Enter ABC CO",
+                                        "type": "string",
+                                        "example": "ABC CO"
+                                    },
+                                    "requested_amount": {
+                                        "description": "HOW MUCH DO YOU EXPECT TO PURCHASE OVER 30 DAYS requested amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 5000.75
@@ -18105,30 +18330,85 @@
                                     "type_of_business": {
                                         "description": "Type of business (Advertising / E-commerce)",
                                         "type": "string",
+                                        "enum": [
+                                            "Corporation",
+                                            "LLC",
+                                            "Sole proprietor/ partnership",
+                                            "Non-profit",
+                                            "Government"
+                                        ],
                                         "example": "E-commerce"
                                     },
-                                    "accountsPayableEmail": {
-                                        "description": "accountsPayableEmail",
+                                    "accounts_payable_email": {
+                                        "description": "accounts payable email",
                                         "type": "string",
                                         "example": "pay@gmail.com"
                                     },
-                                    "accountsPayablePhone": {
+                                    "accounts_payable_phone": {
                                         "description": "Accounts Payable Phone",
                                         "type": "string",
                                         "example": "123456789"
                                     },
-                                    "customer_address_id": {
-                                        "description": "customer address id",
-                                        "type": "interger",
-                                        "example": "23"
-                                    },
                                     "annual_revenue": {
                                         "type": "string",
-                                        "example": "10M USD"
+                                        "enum": [
+                                            "Less then 1,000,000",
+                                            "1,000,000 to 2,000,000",
+                                            "2,000,000 to 5,000,000",
+                                            "5,000,000 to 25,000,000",
+                                            "More than 25,000,000"
+                                        ],
+                                        "example": "Less then 1,000,000"
                                     },
                                     "years_in_business": {
                                         "type": "string",
+                                        "enum": [
+                                            "Less than 2 years",
+                                            "2 - 5 years",
+                                            "5 - 10 years",
+                                            "More than 10 years"
+                                        ],
                                         "example": "5 – 10 years"
+                                    },
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "john@gmail.com"
+                                    },
+                                    "role_at_business": {
+                                        "type": "string",
+                                        "enum": [
+                                            "CEO",
+                                            "Accounts payable"
+                                        ],
+                                        "example": "Accounts payable"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "United States"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Address"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "City"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "State"
+                                    },
+                                    "zipcode": {
+                                        "type": "string",
+                                        "example": "zipcode"
                                     },
                                     "duns_number": {
                                         "type": "string",
