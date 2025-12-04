@@ -2890,9 +2890,13 @@ class ProductController extends Controller
 
 		// ---------------- Filters -----------------
 
-		if ($search) {
-			$query->where('name', 'LIKE', "%$search%");
-		}
+				if ($search) {
+				$query->where(function($q) use ($search) {
+					$q->where('name', 'LIKE', "%$search%")
+					->orWhere('sku', 'LIKE', "%$search%"); // optional: search by SKU too
+				});
+			}
+
 
 		if ($minPrice) {
 			$query->whereHas('productSuppliers', function ($q) use ($minPrice) {
