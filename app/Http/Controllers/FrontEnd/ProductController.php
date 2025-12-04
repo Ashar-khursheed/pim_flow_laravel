@@ -2857,7 +2857,7 @@ class ProductController extends Controller
         ? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int)$id)->toArray()
         : session()->get('guest_wishlist', []);
 
-    // Base Query (No category filter by default)
+    // Base Query → No category filter by default
     $query = Product::query()
         ->where('status', 'published')
         ->whereHas('productSuppliers', function ($q) {
@@ -2865,7 +2865,7 @@ class ProductController extends Controller
         })
         ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl']);
 
-    // If category ID provided → filter by category
+    // If Category ID is provided, apply category filter
     if ($id) {
         $category = Category::find($id);
 
@@ -2876,12 +2876,13 @@ class ProductController extends Controller
             ], 404);
         }
 
+        // Filter by category
         $query->whereHas('categories', function ($q) use ($id) {
             $q->where('category_id', $id);
         });
     }
 
-    // --------------- Filters -----------------
+    // ---------------- Filters -----------------
 
     if ($search) {
         $query->where('name', 'LIKE', "%$search%");
@@ -2911,29 +2912,34 @@ class ProductController extends Controller
         });
     }
 
-    // --------------- Sorting -----------------
+    // ---------------- Sorting -----------------
 
     if ($sort) {
         switch ($sort) {
             case 'price_asc':
                 $query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) ASC");
                 break;
+
             case 'price_desc':
                 $query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) DESC");
                 break;
+
             case 'latest':
                 $query->orderBy('created_at', 'DESC');
                 break;
+
             case 'rating_desc':
                 $query->withAvg('reviews', 'star')->orderBy('reviews_avg_star', 'DESC');
                 break;
         }
     }
 
-    // Pagination
+    // ---------------- Pagination -----------------
+
     $products = $query->paginate($perPage);
 
-    // Transform Response (same as your existing transformation)
+    // ---------------- Transform Response -----------------
+
     $transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
 
         $imageUrls = is_string($product->images)
@@ -2974,22 +2980,15 @@ class ProductController extends Controller
 
     return response()->json([
         'success' => true,
-        'message' => 'Sale products fetched successfully',
+        'message' => $id ? 'Sale products filtered by category' : 'All sale products fetched successfully',
         'current_page' => $products->currentPage(),
         'last_page' => $products->lastPage(),
         'total' => $products->total(),
         'per_page' => $products->perPage(),
-        'filters' => [
-            'min_price' => $minPrice,
-            'max_price' => $maxPrice,
-            'search' => $search,
-            'min_rating' => $minRating,
-            'in_stock' => $onlyInStock,
-            'sort' => $sort,
-        ],
         'data' => $transformed,
     ]);
 }
+
 
 
 
