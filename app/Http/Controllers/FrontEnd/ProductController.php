@@ -2839,7 +2839,8 @@ class ProductController extends Controller
 	// 		'data' => $transformed,
 	// 	]);
 	// }
-	public function saleProductsByCategory($id = null, Request $request)
+public function saleProductsByCategory($id = null, Request $request)
+
 {
     $perPage = $request->get('per_page', 10);
 
