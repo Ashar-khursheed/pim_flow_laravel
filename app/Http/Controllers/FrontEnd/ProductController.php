@@ -2960,6 +2960,10 @@ class ProductController extends Controller
 
 			$totalReviews = $product->reviews->count();
 			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
+			
+			$quantity = $product->quantity ?? 0;
+			$unitsSold = $product->units_sold ?? 0;
+			$leftStock = $quantity - $unitsSold;
 
 			$firstSupplier = $product->productSuppliers->first();
 
