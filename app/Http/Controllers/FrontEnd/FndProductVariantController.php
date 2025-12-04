@@ -610,7 +610,9 @@ class FndProductVariantController extends Controller
             // Only get products that exist in ProductVariant with matching attribute IDs
             $validProductIds = ProductVariant::whereIn('parent_id', $productIds->toArray())
                 ->pluck('parent_id')
-                ->unique();
+                ->unique()
+                ->sort()   // <-- Sort IDs in ascending order
+                ->values(); // Re-index the collection
 
             if ($validProductIds->isEmpty()) {
                 return response()->json([
@@ -622,6 +624,7 @@ class FndProductVariantController extends Controller
             //Eager-load related data for optimization
             $products = Product::whereIn('id', $validProductIds)
                 ->select('id', 'sku')
+                ->orderBy('id', 'asc') 
                 ->get()
                 ->keyBy('id');
 
