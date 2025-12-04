@@ -94,3 +94,15 @@ Route::get('/frontend/data-feed.xml', function () {
         'Content-Type' => 'application/xml',
     ]);
 });
+
+Route::get('/frontend/llms.txt', function () {
+    $path = storage_path('app/public/llms.txt');
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'text/plain',
+    ]);
+});
