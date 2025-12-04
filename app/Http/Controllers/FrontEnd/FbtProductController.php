@@ -11,35 +11,52 @@ use Illuminate\Support\Facades\Auth;
 
 class FbtProductController extends Controller
 {
-    public function getFbtProducts(Request $request, $productId = null)
-    {
-        try {
-            $productId = $productId ?? $request->input('product_id');
-    
-            if (!$productId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Product ID is required',
-                ], 400);
-            }
-    
-            $userId = Auth::id();
-            $isUserLoggedIn = $userId !== null;
-    
-            Log::info('Fetching Fbt products for:', ['product_id' => $productId, 'user_id' => $userId]);
-    
-            // Wishlist logic
-            $wishlistProductIds = $isUserLoggedIn
-                ? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int) $id)->toArray()
-                : session()->get('guest_wishlist', []);
-    
-            // Step 1: Get all Fbt product IDs
-            $fbtProductIds = DB::table('fbt')
-                ->where('product_id', $productId)
-                ->orderBy('priority', 'asc')
-                ->orderByDesc('similarity')
-                ->pluck('fbt_id')
-                ->toArray();
+  public function getFbtProducts(Request $request, $productId = null)
+{
+    try {
+        $productId = $productId ?? $request->input('product_id');
+
+        if (!$productId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product ID is required',
+            ], 400);
+        }
+
+        // Check if productId is numeric (ID) or string (slug)
+        if (is_numeric($productId)) {
+            $product = Product::find($productId);
+        } else {
+            $product = Product::where('slug', $productId)->first();
+        }
+
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found',
+            ], 404);
+        }
+
+        // Use the actual product ID for the rest of the query
+        $actualProductId = $product->id;
+
+        $userId = Auth::id();
+        $isUserLoggedIn = $userId !== null;
+
+        Log::info('Fetching Fbt products for:', ['product_id' => $actualProductId, 'user_id' => $userId]);
+
+        // Wishlist logic
+        $wishlistProductIds = $isUserLoggedIn
+            ? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int) $id)->toArray()
+            : session()->get('guest_wishlist', []);
+
+        // Step 1: Get all Fbt product IDs
+        $fbtProductIds = DB::table('fbt')
+            ->where('product_id', $actualProductId)
+            ->orderBy('priority', 'asc')
+            ->orderByDesc('similarity')
+            ->pluck('fbt_id')
+            ->toArray();
     
             if (empty($fbtProductIds)) {
                 return response()->json([
