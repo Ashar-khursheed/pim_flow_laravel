@@ -2966,21 +2966,49 @@ class ProductController extends Controller
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
-				'images' => $imageUrls,
+				'category_url' => $product->category_url(),
+				'parent_category_url' => $product->parent_category_url(),
+				'images' => $imageUrls,          // ✅ Proper array of URLs
 				'alt_tags' => $altTags,
 				'video_path' => $videoPaths,
 				'sku' => $product->sku,
 				'url' => $product->seoUrl->url ?? null,
-
+				// Prices
 				'price' => (float)($firstSupplier->price ?? 0),
 				'sale_price' => (float)($firstSupplier->sale_price ?? 0),
+				'original_price' => (float)($firstSupplier->price ?? 0),
+				'front_sale_price' => (float)($firstSupplier->sale_price ?? 0),
+				'best_price' => (float)($firstSupplier->price ?? 0),
 
+				// Currency
 				'currency' => $product->currency?->symbol,
+				'currency_title' => $product->currency?->symbol ?? null,
 
+				// Reviews
 				'total_reviews' => $totalReviews,
 				'avg_rating' => $avgRating,
 
+				// Stock
+				'leftStock' => $leftStock,
+
+				// Wishlist
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
+
+				// Supplier details
+				'vendor_id' => $firstSupplier->vendor_id ?? null,
+				'map' => (float)($firstSupplier->map ?? 0),
+				'inventory' => $firstSupplier->inventory ?? null,
+				'in_stock' => $firstSupplier->in_stock ?? null,
+				'delivery_days' => $firstSupplier->delivery_days ?? null,
+				'return_policy' => $firstSupplier->return_policy ?? null,
+				'free_shipping' => $firstSupplier->free_shipping ?? null,
+				'warranty_information' => $firstSupplier->warranty_information ?? null,
+				'min_quantity' => $firstSupplier->min_quantity ?? 0,
+				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+
+				// Other info
+				'quote_available' => $product->quote_available ?? null,
+				'isRequired' => $product->isRequired,
 			];
 		});
 
