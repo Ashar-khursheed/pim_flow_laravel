@@ -86,6 +86,9 @@ use App\Http\Controllers\TranslationController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\MadeToOrderController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\TqlQuoteController;
+use App\Http\Controllers\TenderController;
+use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\GetInTouchController;
 use App\Http\Controllers\TrainingDataController;
 use App\Http\Controllers\ProductAttributeController;
@@ -158,6 +161,7 @@ use App\Http\Controllers\FrontEnd\FndProductVariantController;
 use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentController;
 use App\Http\Controllers\FrontEnd\PaymobController as F_PaymobController;
 use App\Http\Controllers\FrontEnd\FinanceController as F_FinanceController;
+use App\Http\Controllers\FrontEnd\TqlRateController;
 
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
@@ -464,10 +468,17 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('made-to-orders', MadeToOrderController::class);
 	Route::apiResource('finances', FinanceController::class);
 	Route::post('finances/{id}', [FinanceController::class, 'update']);
-	Route::post('/finances/{id}/status', [FinanceController::class, 'updateStatus']);
+	Route::post('/finances/{id}/account-status', [FinanceController::class, 'updateStatus']);
 
 	Route::get('/finances/{id}/due', [FinanceController::class, 'getDueDetails']);
-	Route::post('/finances/pay', [FinanceController::class, 'payAmount']);
+	Route::post('/finances/pay/{id}', [FinanceController::class, 'payAmount']);
+	Route::get('/finances/{id}/payment-history', [FinanceController::class, 'getPaymentHistory']);
+
+	Route::post('/ltl/quotes', [TqlQuoteController::class, 'create']);
+    Route::get('/ltl/quotes/{id}', [TqlQuoteController::class, 'get']);
+    Route::post('/ltl/quotes/tender', [TenderController::class, 'tender']);
+    Route::get('/tracking/{poNumber}', [TrackingController::class, 'track']);
+    Route::post('/ltl/loads/tender', [TenderController::class, 'tenderByScac']);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
@@ -674,6 +685,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('frontend/finances', [F_FinanceController::class, 'store']);
 Route::get('frontend/finances/apply', [F_FinanceController::class, 'getFinance']);
 Route::get('frontend/finances/check', [F_FinanceController::class, 'financeCheck']);
+
+
+Route::post('frontend/tql-rate', [TqlRateController::class, 'tqlRates']);
 
 	Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
 	Route::apiResource('frontend/carts', F_CustomerCartController::class)->names('frontend.carts');;
