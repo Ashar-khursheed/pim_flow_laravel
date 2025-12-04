@@ -2564,92 +2564,98 @@ class ProductController extends Controller
 
 
 
-	/**
-	 * @OA\Get(
-	 *     path="/api/frontend/sale-categories/{id}",
-	 *     summary="Get all sale products under a specific category",
-	 *     description="Returns all published products in a category with sale_price > 0. Supports filters like price, rating, stock, and sorting.",
-	 *     tags={"Frontend Products"},
-	 *
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         description="Category ID",
-	 *         required=true,
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="per_page",
-	 *         in="query",
-	 *         description="Items per page",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", default=10)
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="min_price",
-	 *         in="query",
-	 *         description="Minimum sale price",
-	 *         required=false,
-	 *         @OA\Schema(type="number", example=10)
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="max_price",
-	 *         in="query",
-	 *         description="Maximum sale price",
-	 *         required=false,
-	 *         @OA\Schema(type="number", example=200)
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="search",
-	 *         in="query",
-	 *         description="Search by product name",
-	 *         required=false,
-	 *         @OA\Schema(type="string")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="min_rating",
-	 *         in="query",
-	 *         description="Minimum average rating",
-	 *         required=false,
-	 *         @OA\Schema(type="number")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="in_stock",
-	 *         in="query",
-	 *         description="Filter only in-stock products (1=yes)",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="sort",
-	 *         in="query",
-	 *         description="Sorting: price_asc, price_desc, latest, rating_desc",
-	 *         required=false,
-	 *         @OA\Schema(type="string")
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Products fetched successfully",
-	 *         @OA\JsonContent(
-	 *             type="object",
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Sale products fetched successfully"),
-	 *             @OA\Property(property="current_page", type="integer", example=1),
-	 *             @OA\Property(property="last_page", type="integer", example=5),
-	 *             @OA\Property(property="total", type="integer", example=50),
-	 *             @OA\Property(property="per_page", type="integer", example=10),
-	 *             @OA\Property(property="filters", type="object"),
-	 *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="Category not found"
-	 *     )
-	 * )
-	 */
+/**
+ * @OA\Get(
+ *     path="/api/frontend/sale-categories/{id}",
+ *     summary="Get all sale products under a specific category",
+ *     description="Returns all published products in a category with sale_price > 0. Supports filters like price, rating, stock, and sorting.",
+ *     tags={"Frontend Products"},
+ *
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         description="Category ID",
+ *         required=false,
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\Parameter(
+ *         name="per_page",
+ *         in="query",
+ *         description="Items per page",
+ *         required=false,
+ *         @OA\Schema(type="integer", default=10)
+ *     ),
+ *     @OA\Parameter(
+ *         name="min_price",
+ *         in="query",
+ *         description="Minimum sale price",
+ *         required=false,
+ *         @OA\Schema(type="number", example=10)
+ *     ),
+ *     @OA\Parameter(
+ *         name="max_price",
+ *         in="query",
+ *         description="Maximum sale price",
+ *         required=false,
+ *         @OA\Schema(type="number", example=200)
+ *     ),
+ *     @OA\Parameter(
+ *         name="search",
+ *         in="query",
+ *         description="Search by product name",
+ *         required=false,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Parameter(
+ *         name="min_rating",
+ *         in="query",
+ *         description="Minimum average rating",
+ *         required=false,
+ *         @OA\Schema(type="number")
+ *     ),
+ *     @OA\Parameter(
+ *         name="in_stock",
+ *         in="query",
+ *         description="Filter only in-stock products (1=yes)",
+ *         required=false,
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort",
+ *         in="query",
+ *         description="Sorting: price_asc, price_desc, latest, rating_desc",
+ *         required=false,
+ *         @OA\Schema(type="string")
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Products fetched successfully",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Sale products fetched successfully"),
+ *             @OA\Property(property="pagination", type="object",
+ *                 @OA\Property(property="current_page", type="integer", example=1),
+ *                 @OA\Property(property="last_page", type="integer", example=5),
+ *                 @OA\Property(property="per_page", type="integer", example=10),
+ *                 @OA\Property(property="total", type="integer", example=50),
+ *                 @OA\Property(property="next_page_url", type="string", example="https://.../sale-categories?page=2"),
+ *                 @OA\Property(property="prev_page_url", type="string", example=null),
+ *                 @OA\Property(property="has_more", type="boolean", example=true),
+ *                 @OA\Property(property="links", type="array", @OA\Items(type="string"))
+ *             ),
+ *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=404,
+ *         description="Category not found"
+ *     )
+ * )
+ */
+
 
 
 	// public function saleProductsByCategory($id, Request $request)
@@ -2839,157 +2845,168 @@ class ProductController extends Controller
 	// 		'data' => $transformed,
 	// 	]);
 	// }
-public function saleProductsByCategory(Request $request, $id = null)
+	public function saleProductsByCategory(Request $request, $id = null)
+	{
+		$perPage = $request->get('per_page', 10);
 
+		// Filters
+		$minPrice = $request->get('min_price');
+		$maxPrice = $request->get('max_price');
+		$search = $request->get('search');
+		$minRating = $request->get('min_rating');
+		$onlyInStock = $request->get('in_stock');
+		$sort = $request->get('sort');
 
-{
-    $perPage = $request->get('per_page', 10);
+		// Wishlist logic
+		$userId = Auth::id();
+		$wishlistProductIds = $userId
+			? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int)$id)->toArray()
+			: session()->get('guest_wishlist', []);
 
-    // Filters
-    $minPrice = $request->get('min_price');
-    $maxPrice = $request->get('max_price');
-    $search = $request->get('search');
-    $minRating = $request->get('min_rating');
-    $onlyInStock = $request->get('in_stock');
-    $sort = $request->get('sort');
+		// Base Query → No category filter by default
+		$query = Product::query()
+			->where('status', 'published')
+			->whereHas('productSuppliers', function ($q) {
+				$q->whereNotNull('sale_price')->where('sale_price', '>', 0);
+			})
+			->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl']);
 
-    // Wishlist logic
-    $userId = Auth::id();
-    $wishlistProductIds = $userId
-        ? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int)$id)->toArray()
-        : session()->get('guest_wishlist', []);
+		// If Category ID is provided, apply category filter
+		if ($id) {
+			$category = Category::find($id);
 
-    // Base Query → No category filter by default
-    $query = Product::query()
-        ->where('status', 'published')
-        ->whereHas('productSuppliers', function ($q) {
-            $q->whereNotNull('sale_price')->where('sale_price', '>', 0);
-        })
-        ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl']);
+			if (!$category) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Category not found',
+				], 404);
+			}
 
-    // If Category ID is provided, apply category filter
-    if ($id) {
-        $category = Category::find($id);
+			// Filter by category
+			$query->whereHas('categories', function ($q) use ($id) {
+				$q->where('category_id', $id);
+			});
+		}
 
-        if (!$category) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Category not found',
-            ], 404);
-        }
+		// ---------------- Filters -----------------
 
-        // Filter by category
-        $query->whereHas('categories', function ($q) use ($id) {
-            $q->where('category_id', $id);
-        });
-    }
+		if ($search) {
+			$query->where('name', 'LIKE', "%$search%");
+		}
 
-    // ---------------- Filters -----------------
+		if ($minPrice) {
+			$query->whereHas('productSuppliers', function ($q) use ($minPrice) {
+				$q->where('sale_price', '>=', $minPrice);
+			});
+		}
 
-    if ($search) {
-        $query->where('name', 'LIKE', "%$search%");
-    }
+		if ($maxPrice) {
+			$query->whereHas('productSuppliers', function ($q) use ($maxPrice) {
+				$q->where('sale_price', '<=', $maxPrice);
+			});
+		}
 
-    if ($minPrice) {
-        $query->whereHas('productSuppliers', function ($q) use ($minPrice) {
-            $q->where('sale_price', '>=', $minPrice);
-        });
-    }
+		if ($minRating) {
+			$query->whereHas('reviews', function ($r) use ($minRating) {
+				$r->havingRaw('AVG(star) >= ?', [$minRating]);
+			});
+		}
 
-    if ($maxPrice) {
-        $query->whereHas('productSuppliers', function ($q) use ($maxPrice) {
-            $q->where('sale_price', '<=', $maxPrice);
-        });
-    }
+		if ($onlyInStock == 1) {
+			$query->whereHas('productSuppliers', function ($q) {
+				$q->where('inventory', '>', 0)->where('in_stock', 1);
+			});
+		}
 
-    if ($minRating) {
-        $query->whereHas('reviews', function ($r) use ($minRating) {
-            $r->havingRaw('AVG(star) >= ?', [$minRating]);
-        });
-    }
+		// ---------------- Sorting -----------------
 
-    if ($onlyInStock == 1) {
-        $query->whereHas('productSuppliers', function ($q) {
-            $q->where('inventory', '>', 0)->where('in_stock', 1);
-        });
-    }
+		if ($sort) {
+			switch ($sort) {
+				case 'price_asc':
+					$query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) ASC");
+					break;
 
-    // ---------------- Sorting -----------------
+				case 'price_desc':
+					$query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) DESC");
+					break;
 
-    if ($sort) {
-        switch ($sort) {
-            case 'price_asc':
-                $query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) ASC");
-                break;
+				case 'latest':
+					$query->orderBy('created_at', 'DESC');
+					break;
 
-            case 'price_desc':
-                $query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) DESC");
-                break;
+				case 'rating_desc':
+					$query->withAvg('reviews', 'star')->orderBy('reviews_avg_star', 'DESC');
+					break;
+			}
+		}
 
-            case 'latest':
-                $query->orderBy('created_at', 'DESC');
-                break;
+		// ---------------- Pagination -----------------
 
-            case 'rating_desc':
-                $query->withAvg('reviews', 'star')->orderBy('reviews_avg_star', 'DESC');
-                break;
-        }
-    }
+		$products = $query->paginate($perPage);
 
-    // ---------------- Pagination -----------------
+		// ---------------- Transform Response -----------------
 
-    $products = $query->paginate($perPage);
+		$transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
 
-    // ---------------- Transform Response -----------------
+			$imageUrls = is_string($product->images)
+				? json_decode($product->images, true)
+				: (array) $product->images;
 
-    $transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
+			$altTags = is_string($product->alt_tags)
+				? json_decode($product->alt_tags, true)
+				: (array) $product->alt_tags;
 
-        $imageUrls = is_string($product->images)
-            ? json_decode($product->images, true)
-            : (array) $product->images;
+			$videoPaths = collect(json_decode($product->video_path ?? '[]', true));
 
-        $altTags = is_string($product->alt_tags)
-            ? json_decode($product->alt_tags, true)
-            : (array) $product->alt_tags;
+			$totalReviews = $product->reviews->count();
+			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
 
-        $videoPaths = collect(json_decode($product->video_path ?? '[]', true));
+			$firstSupplier = $product->productSuppliers->first();
 
-        $totalReviews = $product->reviews->count();
-        $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
+			return [
+				'id' => $product->id,
+				'name' => $product->name,
+				'images' => $imageUrls,
+				'alt_tags' => $altTags,
+				'video_path' => $videoPaths,
+				'sku' => $product->sku,
+				'url' => $product->seoUrl->url ?? null,
 
-        $firstSupplier = $product->productSuppliers->first();
+				'price' => (float)($firstSupplier->price ?? 0),
+				'sale_price' => (float)($firstSupplier->sale_price ?? 0),
 
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'images' => $imageUrls,
-            'alt_tags' => $altTags,
-            'video_path' => $videoPaths,
-            'sku' => $product->sku,
-            'url' => $product->seoUrl->url ?? null,
+				'currency' => $product->currency?->symbol,
 
-            'price' => (float)($firstSupplier->price ?? 0),
-            'sale_price' => (float)($firstSupplier->sale_price ?? 0),
+				'total_reviews' => $totalReviews,
+				'avg_rating' => $avgRating,
 
-            'currency' => $product->currency?->symbol,
+				'in_wishlist' => in_array($product->id, $wishlistProductIds),
+			];
+		});
 
-            'total_reviews' => $totalReviews,
-            'avg_rating' => $avgRating,
+			return response()->json([
+			'success'    => true,
+			'message'    => $id 
+				? 'Sale products filtered by category' 
+				: 'All sale products fetched successfully',
 
-            'in_wishlist' => in_array($product->id, $wishlistProductIds),
-        ];
-    });
+			// Pagination Meta
+			'pagination' => [
+				'current_page'   => $products->currentPage(),
+				'last_page'      => $products->lastPage(),
+				'per_page'       => $products->perPage(),
+				'total'          => $products->total(),
+				'next_page_url'  => $products->nextPageUrl(),
+				'prev_page_url'  => $products->previousPageUrl(),
+				'has_more'       => $products->hasMorePages(),
+				'links'          => $products->linkCollection(), // Full Laravel links
+			],
 
-    return response()->json([
-        'success' => true,
-        'message' => $id ? 'Sale products filtered by category' : 'All sale products fetched successfully',
-        'current_page' => $products->currentPage(),
-        'last_page' => $products->lastPage(),
-        'total' => $products->total(),
-        'per_page' => $products->perPage(),
-        'data' => $transformed,
-    ]);
-}
+			// Actual Product Data
+			'data' => $transformed,
+		]);
+
+	}
 
 
 
