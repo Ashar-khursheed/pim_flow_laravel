@@ -832,6 +832,7 @@ Route::get('/category-random-products/{categoryId}', [F_ProductController::class
 Route::get('/frontend/sale-categories/{id?}', [F_ProductController::class, 'saleProductsByCategory']);
 
 
+
 Route::post('/frontend/guest/view-product', [F_RecentlyViewedProductController::class, 'saveGuestProductView']);
 Route::get('/frontend/guest/recent-products', [F_RecentlyViewedProductController::class, 'getGuestRecentProducts']);
 
