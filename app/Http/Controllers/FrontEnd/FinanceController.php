@@ -34,7 +34,6 @@ class FinanceController extends Controller
      *                 type="object",
      *                 required={"term_selection", "requested_amount","customer_address_id"},
      *                 @OA\Property(property="payment_options", type="string", example="netTerm", description="Payment option netTerm"),
-     *                 @OA\Property(property="customer_id", type="interger", example="2487", description="customer address id"),
      *                 @OA\Property(property="customer_address_id", type="interger", example="23", description="customer address id"),
      *                 @OA\Property(property="term_selection", type="string",enum={"Net 30 Days","Net 45 Days","Net 60 Days"}, example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
      *                 @OA\Property(property="legal_business_name", type="string", example="ABC Company", description="Enter ABC Company"),
@@ -100,7 +99,6 @@ class FinanceController extends Controller
             'years_in_business' => 'nullable|string',
             'duns_number' => 'nullable|string',
             'role_at_business' => 'nullable|string',
-            'customer_id' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {

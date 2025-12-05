@@ -18354,11 +18354,6 @@
                                         "type": "string",
                                         "example": "netTerm"
                                     },
-                                    "customer_id": {
-                                        "description": "customer address id",
-                                        "type": "interger",
-                                        "example": "2487"
-                                    },
                                     "customer_address_id": {
                                         "description": "customer address id",
                                         "type": "interger",
