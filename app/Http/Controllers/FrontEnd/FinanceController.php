@@ -12,6 +12,11 @@ use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\FinancesPayment;
 use App\Models\FrontEnd\Customer;
 
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Jobs\NetTermMailJob;
+
 class FinanceController extends Controller
 {
 
@@ -142,7 +147,11 @@ class FinanceController extends Controller
             $finance = Finance::create($data);
         }
 
-        //send mail net term
+        $batch = Bus::batch([])->name("Net Terms Application")->dispatch();
+        $batch->options['queue'] = config('app.website') . '_NET_TRM';
+        $batch->add(new NetTermMailJob([
+            'recordId' => $finance->id
+        ]));
 
         return response()->json([
             'success' => true,
@@ -914,7 +923,7 @@ public function index()
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"customer_id", "pay_amount"},     *              
+     *             required={"customer_id", "pay_amount"},     *
      *             @OA\Property(property="customer_id", type="integer"),
      *             @OA\Property(property="pay_amount", type="number", format="float")
      *         )
