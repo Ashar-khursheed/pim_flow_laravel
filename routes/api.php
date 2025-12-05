@@ -684,7 +684,12 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::post('frontend/finances', [F_FinanceController::class, 'store']);
 Route::get('frontend/finances/apply', [F_FinanceController::class, 'getFinance']);
+Route::post('frontend/finances/order', [F_FinanceController::class, 'financeOrder']);
 Route::get('frontend/finances/check', [F_FinanceController::class, 'financeCheck']);
+Route::get('frontend/finances/get-customer-details', [F_FinanceController::class, 'getCustomerDetails']);
+Route::get('frontend/finances/{id}/payment-history', [F_FinanceController::class, 'getPaymentHistory']);
+Route::get('frontend/finances/{id}/due', [F_FinanceController::class, 'getDueDetails']);
+Route::post('frontend/finances/pay/{id}', [F_FinanceController::class, 'payAmount']);
 
 
 Route::post('frontend/tql-rate', [TqlRateController::class, 'tqlRates']);

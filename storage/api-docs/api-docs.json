@@ -18266,7 +18266,7 @@
         "/api/frontend/finances": {
             "post": {
                 "tags": [
-                    "Frontend Finance"
+                    "Frontend-Finance"
                 ],
                 "summary": "Create a new finance record",
                 "operationId": "a7111acc3014a3bf0131545bfac5b662",
@@ -18478,7 +18478,7 @@
         "/api/frontend/finances/apply": {
             "get": {
                 "tags": [
-                    "Frontend Finance"
+                    "Frontend-Finance"
                 ],
                 "summary": "Check finance application by customer ID",
                 "operationId": "377cbf287d74fcf579c0a806203301c5",
@@ -18562,7 +18562,7 @@
         "/api/frontend/finances/check": {
             "get": {
                 "tags": [
-                    "Frontend Finance"
+                    "Frontend-Finance"
                 ],
                 "summary": "Check finance application by customer ID",
                 "operationId": "20790c6e488f9ac8b68c1a894aa6a84b",
@@ -18617,6 +18617,415 @@
                                             "example": "Validation failed"
                                         },
                                         "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/get-customer-details": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Check finance application by customer ID",
+                "operationId": "114793d33a63e35ae5e8b352bcdd7925",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "description": "Customer ID to fetch finance details",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 19
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Finance record retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record retrieved successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/order": {
+            "post": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Check finance application by customer ID",
+                "operationId": "f7955c36bfbe2b129ec86422fa32ae48",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "description": "Customer ID to fetch finance details",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 19
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_amount": {
+                                        "description": "Order amount for validating finance",
+                                        "type": "number",
+                                        "example": 300
+                                    },
+                                    "term_selection": {
+                                        "description": "Net Term selection",
+                                        "type": "string",
+                                        "enum": [
+                                            "Net 30 Days",
+                                            "Net 45 Days",
+                                            "Net 60 Days"
+                                        ],
+                                        "example": "Net 30 Days"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Finance record retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record retrieved successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/{id}/payment-history": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Get payment history",
+                "operationId": "f48ee947dfad4eb6fcd71f3de627e442",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Customer ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Due details fetched",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "finance_id": {
+                                                    "type": "integer"
+                                                },
+                                                "customer_id": {
+                                                    "type": "integer"
+                                                },
+                                                "next_due_amt": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "due_date": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/{id}/due": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Get finance due amount and due date",
+                "operationId": "9ba9f3c748ed116e48422fd12ae35990",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "description": "Customer ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Due details fetched",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "finance_id": {
+                                                    "type": "integer"
+                                                },
+                                                "customer_id": {
+                                                    "type": "integer"
+                                                },
+                                                "next_due_amt": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "due_date": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/pay/{id}": {
+            "post": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Pay finance amount",
+                "operationId": "112c829ce74c5fa0a0d6f33672cecb37",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "pay_amount"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer"
+                                    },
+                                    "pay_amount": {
+                                        "type": "number",
+                                        "format": "float"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "finance_id": {
+                                                    "type": "integer"
+                                                },
+                                                "customer_id": {
+                                                    "type": "integer"
+                                                },
+                                                "paid_amount": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "remaining_due": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -47851,8 +48260,8 @@
             "description": "Frontend - FAQs"
         },
         {
-            "name": "Frontend Finance",
-            "description": "Frontend Finance"
+            "name": "Frontend-Finance",
+            "description": "Frontend-Finance"
         },
         {
             "name": "Frontend Product Accessories",

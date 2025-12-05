@@ -150,6 +150,7 @@ class FinanceController extends Controller
 
             return [
                 'id' => $finance->id,
+                'customer_id' => $finance->customer_id,
                 'payment_selection' => $finance->payment_selection,
                 'payment_options' => $finance->payment_options,
                 'term_selection' => $finance->term_selection,
@@ -420,6 +421,7 @@ class FinanceController extends Controller
         $address = $finance->customerAddress;
         $financeData =  [
             'id' => $finance->id,
+            'customer_id' => $finance->customer_id,
             'payment_selection' => $finance->payment_selection,
             'payment_options' => $finance->payment_options,
             'term_selection' => $finance->term_selection,
@@ -974,6 +976,7 @@ public function update(Request $request, $id)
         ]);
 
         $finance = Finance::find($id);
+        
         if (!$finance) {
             return response()->json([
                 'success' => false,
@@ -1100,6 +1103,6 @@ public function update(Request $request, $id)
             'data' => $paymentData
         ], 200);
 
-            }
+    }
 
 }
