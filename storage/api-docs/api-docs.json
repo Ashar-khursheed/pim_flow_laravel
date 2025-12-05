@@ -19035,7 +19035,7 @@
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Finance ID",
+                        "description": "payment id",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -19053,9 +19053,6 @@
                                     "pay_amount"
                                 ],
                                 "properties": {
-                                    "customer_id": {
-                                        "type": "integer"
-                                    },
                                     "pay_amount": {
                                         "type": "number",
                                         "format": "float"

@@ -973,27 +973,22 @@ class FinanceController extends Controller
                 'message' => 'Pay amount cannot be greater than due amount.',
             ], 201);
         }
-
+        $paidAmount =$financesPayment->paid_amount + $request->pay_amount;
+        if ($financesPayment->due_amount < $paidAmount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pay amount cannot be greater than due amount.',
+            ], 201);
+        }
+        $finance = Finance::find($financesPayment->finances_id);
 
         if (!empty($financesPayment->due_amount)) {
-            $data = [
-                'paid_amount'      => $request->pay_amount,
-                'paid_on_date'   => now(),
-                'balance'      => $financesPayment->due_amount - $request->pay_amount,
-                'creditTerms'      => $finance->term_selection,
-                'payment_mode'      => $finance->payment_mode,
-                'paid_by'      => Auth::id(),
-            ];
-            $finance = FinancesPayment::updateOrCreate(
-                [
-                    'finances_id' => $request->id,
-                    'customer_id' => Auth::id(),
-                    'due_amount'      => $finance->due_amount,
-                    'due_date'      => $finance->due_date
-                ],
-                $data
-            );
 
+            $financesPayment->paid_amount =$financesPayment->paid_amount +  $request->pay_amount;
+            $financesPayment->paid_on_date = now();
+            $financesPayment->balance = $financesPayment->due_amount -( $financesPayment->paid_amount + $request->pay_amount);            
+            $financesPayment->paid_by = Auth::id();
+            $financesPayment->save();
             // Update due amount
             $finance->next_due_amt = max(0, $finance->next_due_amt - $request->pay_amount);
             // Update status
