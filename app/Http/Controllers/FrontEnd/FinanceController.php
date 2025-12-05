@@ -98,7 +98,7 @@ class FinanceController extends Controller
             'annual_revenue' => 'required|string',
             'years_in_business' => 'required|string',
             'duns_number' => 'nullable|string',
-            'role_at_business' => 'required|string'             
+            'role_at_business' => 'required|string'
         ]);
 
         if ($validator->fails()) {
@@ -109,18 +109,18 @@ class FinanceController extends Controller
             ], 422);
         }
         $customer_id = Auth::id();
-       
+
         // Check last finance
         $lastFinance = Finance::where('customer_id', $customer_id)
-        ->orderBy('id', 'desc')
-        ->first();
+            ->orderBy('id', 'desc')
+            ->first();
 
         // If previous finance is not Paid + Approved → stop
         if ($lastFinance && !($lastFinance->status === "Paid" && $lastFinance->accounts_status === "Approved")) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Finance cannot be created. Previous finance is Pending, Rejected, or Overdue.'
-        ], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance cannot be created. Previous finance is Pending, Rejected, or Overdue.'
+            ], 422);
         }
 
 
@@ -142,12 +142,15 @@ class FinanceController extends Controller
         }
 
         $finance = Finance::updateOrCreate(
-            ['customer_id' => $customer_id],  
-            $data                                
-            );
-         
-        //send mail net term
+            ['customer_id' => $customer_id],
+            $data
+        );
 
+        $batch = Bus::batch([])->name("Net Terms Application")->dispatch();
+        $batch->options['queue'] = config('app.website') . '_NET_TRM';
+        $batch->add(new NetTermMailJob([
+            'recordId' => $finance->id
+        ]));
         return response()->json([
             'success' => true,
             'message' => 'Application submitted successfully.',
@@ -156,38 +159,38 @@ class FinanceController extends Controller
     }
 
 
-  /**
- * @OA\Get(
- *     path="/api/frontend/finances",
- *     summary="Get all finance records of logged-in customer",
- *     tags={"Frontend-Finance"},
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Response(
- *         response=200,
- *         description="Finance records fetched successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Finance records loaded successfully."),
- *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
- *         )
- *     )
- * )
- */
-public function index()
-{
-    $customer_id = auth()->id(); // get logged-in customer
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/finances",
+     *     summary="Get all finance records of logged-in customer",
+     *     tags={"Frontend-Finance"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Finance records fetched successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Finance records loaded successfully."),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+     *         )
+     *     )
+     * )
+     */
+    public function index()
+    {
+        $customer_id = auth()->id(); // get logged-in customer
 
-    $finances = Finance::where('customer_id', $customer_id)
-        ->orderBy('id', 'desc')
-        ->get();
+        $finances = Finance::where('customer_id', $customer_id)
+            ->orderBy('id', 'desc')
+            ->get();
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Finance records loaded successfully.',
-        'data' => $finances
-    ], 200);
-}
+        return response()->json([
+            'success' => true,
+            'message' => 'Finance records loaded successfully.',
+            'data' => $finances
+        ], 200);
+    }
 
 
 
@@ -639,39 +642,37 @@ public function index()
                 'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the approved amount (" . number_format($finance->approved_amount, 2) . ").",
             ], 422);
         }
-        
 
-        if ($finance->used_credit_amount > 0){
-                if ($request->order_amount > $finance->available_credit_amount) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the available credit amount (" . number_format($finance->available_credit_amount, 2) . ").",
-                    ], 422);
-                }
+
+        if ($finance->used_credit_amount > 0) {
+            if ($request->order_amount > $finance->available_credit_amount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the available credit amount (" . number_format($finance->available_credit_amount, 2) . ").",
+                ], 422);
+            }
         }
         $used_credit_amount = $finance->used_credit_amount + $request->order_amount;
-        if ($used_credit_amount > $finance->approved_amount){
-            
+        if ($used_credit_amount > $finance->approved_amount) {
+
             return response()->json([
                 'success' => false,
                 'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the user credit amount (" . number_format($used_credit_amount, 2) . ").",
             ], 422);
-        
         }
 
         if ($finance->approved_amount == $request->order_amount) {
             if ($finance->used_credit_amount > 0 && $finance->available_credit_amount > 0) {
                 $finance->used_credit_amount = $finance->used_credit_amount +  $request->order_amount;
                 $finance->available_credit_amount = $finance->available_credit_amount -  $request->order_amount;
-                $finance->status = "Pending";                
+                $finance->status = "Pending";
                 $due = $this->getDueDays($finance->term_selection);
                 if ($due) {
                     $finance->next_due_date = date('Y-m-d', strtotime($due));
                     $finance->next_due_amt = $finance->next_due_amt + $request->order_amount;
-                    $this->payFinancesPayment($finance->id, $finance->customer_id,$request->order_amount, date('Y-m-d', strtotime($due)));
-                }                 
-
-            } else if($finance->used_credit_amount=='0.00'){
+                    $this->payFinancesPayment($finance->id, $finance->customer_id, $request->order_amount, date('Y-m-d', strtotime($due)));
+                }
+            } else if ($finance->used_credit_amount == '0.00') {
 
                 $finance->used_credit_amount = $finance->used_credit_amount +  $request->order_amount;
                 $finance->available_credit_amount = $finance->approved_amount -  $request->order_amount;
@@ -681,8 +682,8 @@ public function index()
                 if ($due) {
                     $finance->next_due_date = date('Y-m-d', strtotime($due));
                     $finance->next_due_amt = $finance->next_due_amt + $request->order_amount;
-                    $this->payFinancesPayment($finance->id, $finance->customer_id,$request->order_amount, date('Y-m-d', strtotime($due)));
-                } 
+                    $this->payFinancesPayment($finance->id, $finance->customer_id, $request->order_amount, date('Y-m-d', strtotime($due)));
+                }
             }
         }
 
@@ -694,15 +695,14 @@ public function index()
                 $finance->available_credit_amount = $finance->available_credit_amount -  $request->order_amount;
 
                 $finance->status = "Pending";
-               
+
                 $due = $this->getDueDays($finance->term_selection);
                 if ($due) {
                     $finance->next_due_date = date('Y-m-d', strtotime($due));
                     $finance->next_due_amt = $finance->next_due_amt + $request->order_amount;
-                    $this->payFinancesPayment($finance->id, $finance->customer_id,$request->order_amount, date('Y-m-d', strtotime($due)));
-                } 
-                
-            } else if($finance->used_credit_amount=='0.00'){
+                    $this->payFinancesPayment($finance->id, $finance->customer_id, $request->order_amount, date('Y-m-d', strtotime($due)));
+                }
+            } else if ($finance->used_credit_amount == '0.00') {
 
                 $finance->used_credit_amount = $finance->used_credit_amount +  $request->order_amount;
 
@@ -713,9 +713,8 @@ public function index()
                 if ($due) {
                     $finance->next_due_date = date('Y-m-d', strtotime($due));
                     $finance->next_due_amt = $finance->next_due_amt + $request->order_amount;
-                    $this->payFinancesPayment($finance->id, $finance->customer_id,$request->order_amount, date('Y-m-d', strtotime($due)));
-                } 
-                 
+                    $this->payFinancesPayment($finance->id, $finance->customer_id, $request->order_amount, date('Y-m-d', strtotime($due)));
+                }
             }
         }
 
@@ -736,22 +735,21 @@ public function index()
 
     private function getDueDays($term)
     {
-        return match($term) {
+        return match ($term) {
             'Net 30 Days' => '+30 Days',
             'Net 45 Days' => '+45 Days',
             'Net 60 Days' => '+60 Days'
-             
         };
     }
-    private function payFinancesPayment($finance_id,$customer_id,$order_amount,$due)
+    private function payFinancesPayment($finance_id, $customer_id, $order_amount, $due)
     {
-         $data = [
+        $data = [
             'finances_id'  => $finance_id,
             'customer_id' => trim($customer_id),
             'due_amount'      => $order_amount,
-            'due_date'      =>$due,                
-            ];
-            FinancesPayment::create($data);
+            'due_date'      => $due,
+        ];
+        FinancesPayment::create($data);
     }
 
     /**
@@ -955,7 +953,7 @@ public function index()
 
     public function payAmount(Request $request, $id)
     {
-        $request->validate([            
+        $request->validate([
             'pay_amount'  => 'required|numeric|min:1',
         ]);
 
@@ -978,7 +976,7 @@ public function index()
 
 
         if (!empty($financesPayment->due_amount)) {
-            $data = [              
+            $data = [
                 'paid_amount'      => $request->pay_amount,
                 'paid_on_date'   => now(),
                 'balance'      => $financesPayment->due_amount - $request->pay_amount,
@@ -987,11 +985,14 @@ public function index()
                 'paid_by'      => Auth::id(),
             ];
             $finance = FinancesPayment::updateOrCreate(
-            ['finances_id' => $request->id,'customer_id' => Auth::id(),
-            'due_amount'      => $finance->due_amount,
-            'due_date'      => $finance->due_date],  
-            $data                                
-            );         
+                [
+                    'finances_id' => $request->id,
+                    'customer_id' => Auth::id(),
+                    'due_amount'      => $finance->due_amount,
+                    'due_date'      => $finance->due_date
+                ],
+                $data
+            );
 
             // Update due amount
             $finance->next_due_amt = max(0, $finance->next_due_amt - $request->pay_amount);
