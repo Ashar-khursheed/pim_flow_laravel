@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\FinancesPayment;
+use App\Models\FrontEnd\Customer;
 
 class FinanceController extends Controller
 {
@@ -18,7 +19,7 @@ class FinanceController extends Controller
      * @OA\Post(
      *     path="/api/frontend/finances",
      *     summary="Create a new finance record",
-     *     tags={"Frontend Finance"},
+     *     tags={"Frontend-Finance"},
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
@@ -77,7 +78,7 @@ class FinanceController extends Controller
      * )
      */
     public function store(Request $request)
-    { //dd($request->all());
+    {
         $validator = Validator::make($request->all(), [
 
             'payment_options' => 'nullable|string',
@@ -145,7 +146,7 @@ class FinanceController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Finance record created successfully.',
+            'message' => 'Net Term finance record created successfully.',
             'data' => $finance
         ], 201);
     }
@@ -156,7 +157,7 @@ class FinanceController extends Controller
      * @OA\Get(
      *     path="/api/frontend/finances/apply",
      *     summary="Check finance application by customer ID",
-     *     tags={"Frontend Finance"},
+     *     tags={"Frontend-Finance"},
      *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(
@@ -222,26 +223,41 @@ class FinanceController extends Controller
         if (!$finance) {
             return response()->json([
                 'success' => false,
-                'message' => 'Net Term finance is either not approved or not active'
+                'message' => 'Net Term finance is either not approved or is currently inactive'
+            ], 422);
+        }
+        if (!$finance->approved_amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your request amount has not been approved.'
             ], 422);
         }
 
-        $orderCredit = $orderAmount + $finance->used_credit_amount;
-
         if ($request->order_amount > $finance->approved_amount) {
-
             return response()->json([
                 'success' => false,
                 'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the approved amount (" . number_format($finance->approved_amount, 2) . ").",
             ], 422);
         }
+        if ($request->order_amount > !empty($finance->available_credit_amount)) {
+
+            return response()->json([
+                'success' => false,
+                'message' => "Offer Split Payment Option Or Force Card Payment Only",
+            ], 422);
+        }
+
+
         $data = array(
             'approved_amount' => $finance->approved_amount,
             'credit_limit_amount' => $finance->credit_limit_amount,
+            'requested_amount' => $finance->requested_amount,
+            'used_credit_amount' => $finance->used_credit_amount,
+            'available_credit_amount' => $finance->available_credit_amount,
         );
         return response()->json([
             'success' => true,
-            'message' => 'Finance record retrieved successfully.',
+            'message' => 'Net Term record retrieved successfully.',
             'data' => $data
         ], 200);
     }
@@ -251,7 +267,7 @@ class FinanceController extends Controller
      * @OA\Get(
      *     path="/api/frontend/finances/check",
      *     summary="Check finance application by customer ID",
-     *     tags={"Frontend Finance"},
+     *     tags={"Frontend-Finance"},
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="customer_id",
@@ -298,28 +314,598 @@ class FinanceController extends Controller
         }
 
         $customerId = $request->customer_id;
+        $customer_id = Auth::id();
 
+        if ($customer_id != $customerId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer verification failed: customer ID does not match the finance record'
+            ], 422);
+        }
         $finance = Finance::where('customer_id', $customerId)
             ->orderBy('id', 'desc')
             ->first();
         if (!$finance) {
             return response()->json([
                 'success' => false,
-                'message' => 'Net Term finance is either not approved or not active'
+                'message' => 'Net Term finance is either not approved or is currently inactive'
             ], 422);
         }
+
+
         if ($finance) {
             return response()->json([
                 'success' => true,
-                'message' => 'Finance status successfully.',
+                'message' => 'Net Term status fetch successfully..',
                 'accouts_status' => $finance->accounts_status
             ], 200);
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Finance not found.',
+                'message' => 'Net term record not found.',
                 'accoutsStatus' => null
             ], 200);
         }
+    }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/finances/get-customer-details",
+     *     summary="Check finance application by customer ID",
+     *     tags={"Frontend-Finance"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="customer_id",
+     *         in="query",
+     *         required=true,
+     *         description="Customer ID to fetch finance details",
+     *         @OA\Schema(type="integer", example=19)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Finance record retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Finance record retrieved successfully."),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
+
+
+    public function getCustomerDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'customer_id' => 'required|exists:customers,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        $customerId = $request->customer_id;
+
+        // Logged-in user id
+        $loggedInCustomerId = Auth::id();
+
+        // Check if same customer
+        if ($loggedInCustomerId != $customerId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer verification failed: customer ID does not match'
+            ], 422);
+        }
+
+        // Correct way to load relation
+        $customer = Customer::with('customerAddress')->find($customerId);
+
+        if (!$customer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Net Term status fetched successfully.',
+            'data'    => $customer
+        ], 200);
+    }
+
+
+
+
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/finances/order",
+     *     summary="Check finance application by customer ID",
+     *     tags={"Frontend-Finance"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="customer_id",
+     *         in="query",
+     *         required=true,
+     *         description="Customer ID to fetch finance details",
+     *         @OA\Schema(type="integer", example=19)
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="order_amount",
+     *                 type="number",
+     *                 example=300,
+     *                 description="Order amount for validating finance"
+     *             ),
+     *             @OA\Property(
+     *                 property="term_selection",
+     *                 type="string",
+     *                 enum={"Net 30 Days","Net 45 Days","Net 60 Days"},
+     *                 example="Net 30 Days",
+     *                 description="Net Term selection"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Finance record retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Finance record retrieved successfully."),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
+
+    public function financeOrder(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'customer_id' => 'required|exists:customers,id',
+            'order_amount' => 'required|numeric',
+            'term_selection' => 'required|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $customerId = $request->customer_id;
+        $orderAmount = $request->order_amount;
+        $finance = Finance::where('customer_id', $customerId)
+            ->where('accounts_status', 'Approved')
+            ->orderBy('id', 'desc')
+            ->first();
+        if (!$finance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Net Term finance is either not approved or is currently inactive'
+            ], 422);
+        }
+
+        if (!$finance->approved_amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your request amount is not approved.'
+            ], 422);
+        }
+        if (!$finance->credit_limit_amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your credit limit amount has not been approved.'
+            ], 422);
+        }
+
+
+        if (auth()->id() != $customerId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer verification failed: customer ID does not match the finance record'
+            ], 422);
+        }
+
+
+        if ($request->order_amount > $finance->approved_amount) {
+            return response()->json([
+                'success' => false,
+                'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the approved amount (" . number_format($finance->approved_amount, 2) . ").",
+            ], 422);
+        }
+
+        if ($request->order_amount > $finance->approved_amount) {
+            return response()->json([
+                'success' => false,
+                'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the approved amount (" . number_format($finance->approved_amount, 2) . ").",
+            ], 422);
+        }
+        if ($finance->approved_amount == $request->order_amount) {
+            if ($finance->used_credit_amount > 0) {
+                $finance->used_credit_amount = $finance->used_credit_amount +  $request->order_amount;
+                $finance->available_credit_amount = $finance->available_credit_amount -  $request->order_amount;
+                $finance->status = "Pending";
+                $nextPaymentDue = "";
+                if ($finance->term_selection == 'Net 30 Days') {
+                    $nextPaymentDue = "+30 Days";
+                } elseif ($finance->term_selection == 'Net 45 Days') {
+                    $nextPaymentDue = "+45 Days";
+                } else if ($finance->term_selection == 'Net 60 Days') {
+                    $nextPaymentDue = "+60 Days";
+                }
+                if (!empty($nextPaymentDue)) {
+                    $finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
+                    $finance->next_due_amt = $request->order_amount;
+                }
+            } else {
+
+                $finance->used_credit_amount = $finance->used_credit_amount +  $request->order_amount;
+                $finance->available_credit_amount = $finance->approved_amount -  $request->order_amount;
+                $finance->status = "Pending";
+                $nextPaymentDue = "";
+                if ($finance->term_selection == 'Net 30 Days') {
+                    $nextPaymentDue = "+30 Days";
+                } elseif ($finance->term_selection == 'Net 45 Days') {
+                    $nextPaymentDue = "+45 Days";
+                } else if ($finance->term_selection == 'Net 60 Days') {
+                    $nextPaymentDue = "+60 Days";
+                }
+                if (!empty($nextPaymentDue)) {
+                    $finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
+                    $finance->next_due_amt = $finance->next_due_amt + $request->order_amount;
+                }
+            }
+        }
+
+        if ($finance->approved_amount > $request->order_amount) {
+
+            if ($finance->used_credit_amount > 0 && $finance->available_credit_amount >= $request->order_amount) {
+                $finance->used_credit_amount = $finance->used_credit_amount +  $request->order_amount;
+
+                $finance->available_credit_amount = $finance->available_credit_amount -  $request->order_amount;
+
+                $finance->status = "Pending";
+                $nextPaymentDue = "";
+                if ($finance->term_selection == 'Net 30 Days') {
+                    $nextPaymentDue = "+30 Days";
+                } elseif ($finance->term_selection == 'Net 45 Days') {
+                    $nextPaymentDue = "+45 Days";
+                } else if ($finance->term_selection == 'Net 60 Days') {
+                    $nextPaymentDue = "+60 Days";
+                }
+                if (!empty($nextPaymentDue)) {
+                    $finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
+                    $finance->next_due_amt = $request->order_amount;
+                }
+            } else {
+
+                $finance->used_credit_amount = $finance->used_credit_amount +  $request->order_amount;
+
+                $finance->available_credit_amount = $finance->approved_amount -  $request->order_amount;
+                $finance->status = "Pending";
+                $nextPaymentDue = "";
+                if ($finance->term_selection == 'Net 30 Days') {
+                    $nextPaymentDue = "+30 Days";
+                } elseif ($finance->term_selection == 'Net 45 Days') {
+                    $nextPaymentDue = "+45 Days";
+                } else if ($finance->term_selection == 'Net 60 Days') {
+                    $nextPaymentDue = "+60 Days";
+                }
+                if (!empty($nextPaymentDue)) {
+                    $finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
+                    $finance->next_due_amt = $finance->next_due_amt + $request->order_amount;
+                }
+            }
+        }
+
+        if ($finance->save()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Your order has been successfully placed.',
+
+            ], 200);
+        } else {
+            return response()->json([
+                'success' => true,
+                'message' => 'Your order has not been successfully placed.',
+
+            ], 200);
+        }
+    }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/finances/{id}/payment-history",
+     *     summary="Get payment history",
+     *     tags={"Frontend-Finance"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Customer ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Due details fetched",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="finance_id", type="integer"),
+     *                 @OA\Property(property="customer_id", type="integer"),
+     *                 @OA\Property(property="next_due_amt", type="number", format="float"),
+     *                 @OA\Property(property="due_date", type="string", format="date")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Finance not found")
+     * )
+     */
+    public function getPaymentHistory($id)
+    {
+        $paymentHistory = FinancesPayment::where('customer_id', $id)
+            ->with(['paidByUser', 'updatedBy'])
+            ->orderBy('id', 'desc')
+            ->get();
+
+        if ($paymentHistory->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No payment history found.'
+            ], 404);
+        }
+
+        $paymentData = $paymentHistory->map(function ($finance) {
+            return [
+                'id' => $finance->id,
+                'finances_id' => $finance->finances_id,
+                'customer_id' => $finance->customer_id,
+                'due_date' => $finance->due_date,
+                'due_amount' => $finance->due_amount,
+                'paid_on_date' =>  $finance->paid_on_date,
+                'paid_amount' => $finance->paid_amount,
+                'balance' => $finance->balance,
+                'creditTerms' => $finance->creditTerms,
+                'payment_mode' => $finance->payment_mode,
+
+                // RELATION DATA
+                'paid_by' => $finance->paidByUser?->username,
+                'updated_by' => $finance->updatedBy?->username,
+
+                'created_at' => $finance->created_at->format('d-m-Y H:i:s'),
+                'updated_at' => $finance->updated_at->format('d-m-Y H:i:s'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Finance Payment History fetched.',
+            'data' => $paymentData
+        ], 200);
+    }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/finances/{id}/due",
+     *     summary="Get finance due amount and due date",
+     *     tags={"Frontend-Finance"},
+     *     security={{"bearerAuth":{}}},
+
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Finance ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+
+     *     @OA\Parameter(
+     *         name="customer_id",
+     *         in="query",
+     *         description="Customer ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+
+     *     @OA\Response(
+     *         response=200,
+     *         description="Due details fetched",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="finance_id", type="integer"),
+     *                 @OA\Property(property="customer_id", type="integer"),
+     *                 @OA\Property(property="next_due_amt", type="number", format="float"),
+     *                 @OA\Property(property="due_date", type="string", format="date")
+     *             )
+     *         )
+     *     ),
+
+     *     @OA\Response(response=404, description="Finance not found")
+     * )
+     */
+
+    public function getDueDetails(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'customer_id' => 'required|exists:customers,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+        $finance = Finance::where('id', $id)->where('customer_id', $request->customer_id)->orderBy('id', 'desc')->first();
+
+        if (!$finance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance record not found.'
+            ], 404);
+        }
+        if (!empty($finance->next_due_amt)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Finance due details fetched.',
+                'data' => [
+                    'finance_id'   => $finance->id,
+                    'customer_id'  => $finance->customer_id,
+                    'next_due_amt' => $finance->next_due_amt,
+                    'next_due_date'     => $finance->next_due_date,
+                    // 'term_selection' => $finance->term_selection,
+                    // 'used_credit_amount' => $finance->used_credit_amount,
+                    // 'available_credit_amount' => $finance->available_credit_amount,
+                ]
+            ], 200);
+        } else {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance no due amount.',
+
+            ], 200);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/finances/pay/{id}",
+     *     summary="Pay finance amount",
+     *     tags={"Frontend-Finance"},
+     *     security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Finance ID",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"customer_id", "pay_amount"},     *              
+     *             @OA\Property(property="customer_id", type="integer"),
+     *             @OA\Property(property="pay_amount", type="number", format="float")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="finance_id", type="integer"),
+     *                 @OA\Property(property="customer_id", type="integer"),
+     *                 @OA\Property(property="paid_amount", type="number", format="float"),
+     *                 @OA\Property(property="remaining_due", type="number", format="float"),
+     *                 @OA\Property(property="status", type="string")
+     *             )
+     *         )
+     *     )
+     * )
+     */
+
+    public function payAmount(Request $request, $id)
+    {
+        $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'pay_amount'  => 'required|numeric|min:1',
+        ]);
+
+        $finance = Finance::find($id);
+
+        if (!$finance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance record not found.'
+            ], 404);
+        }
+
+
+        if ($finance->next_due_amt < $request->pay_amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pay amount cannot be greater than due amount.',
+            ], 201);
+        }
+
+
+        if (!empty($finance->next_due_amt)) {
+            $data = [
+                'finances_id'  => $request->id,
+                'customer_id' => trim($request->customer_id),
+                'due_amount'      => $finance->next_due_amt,
+                'due_date'      => $finance->next_due_date,
+                'paid_amount'      => $request->pay_amount,
+                'paid_on_date'   => now(),
+                'balance'      => $finance->next_due_amt - $request->pay_amount,
+                'creditTerms'      => $finance->term_selection,
+                'payment_mode'      => $request->payment_mode,
+                'paid_by'      => Auth::id(),
+            ];
+
+
+            $payment = FinancesPayment::create($data);
+
+            // Update due amount
+            $finance->next_due_amt = max(0, $finance->next_due_amt - $request->pay_amount);
+            // Update status
+            $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+            $finance->paid_amount = $finance->paid_amount + $request->pay_amount;
+            $finance->save();
+        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment processed successfully.',
+            'data' => [
+                'finance_id'     => $finance->id,
+                'customer_id'    => $request->customer_id,
+                'paid_amount'    => $request->pay_amount,
+                'next_due_amt'  => $finance->next_due_amt,
+                'status'         => $finance->status
+            ]
+        ]);
     }
 }
