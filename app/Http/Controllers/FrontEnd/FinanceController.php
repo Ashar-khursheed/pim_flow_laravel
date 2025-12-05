@@ -12,6 +12,11 @@ use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\FinancesPayment;
 use App\Models\FrontEnd\Customer;
 
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Jobs\NetTermMailJob;
+
 class FinanceController extends Controller
 {
 
@@ -29,7 +34,6 @@ class FinanceController extends Controller
      *                 type="object",
      *                 required={"term_selection", "requested_amount","customer_address_id","type_of_business","accounts_payable_email","accounts_payable_phone","annual_revenue","legal_business_name","years_in_business"},
      *                 @OA\Property(property="payment_options", type="string", example="netTerm", description="Payment option netTerm"),
-     *                 @OA\Property(property="customer_id", type="interger", example="2487", description="customer address id"),
      *                 @OA\Property(property="customer_address_id", type="interger", example="23", description="customer address id"),
      *                 @OA\Property(property="term_selection", type="string",enum={"Net 30 Days","Net 45 Days","Net 60 Days"}, example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
      *                 @OA\Property(property="legal_business_name", type="string", example="ABC Company", description="Enter ABC Company"),
