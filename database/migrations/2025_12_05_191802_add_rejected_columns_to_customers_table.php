@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('customers', function (Blueprint $table) {
-             $table->unsignedBigInteger('rejectedBy')->nullable()->after('updated_at'); // FK to users/admins who rejected
+            $table->unsignedBigInteger('rejectedBy')->nullable()->after('updated_at'); // FK to users/admins who rejected
             $table->timestamp('rejected_date')->nullable()->after('rejectedBy');
         });
     }
@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('customers', function (Blueprint $table) {
-             $table->dropForeign(['rejectedBy']);
+            $table->dropForeign(['rejectedBy']);
             $table->dropColumn(['rejectedBy', 'rejected_date']);
         });
     }

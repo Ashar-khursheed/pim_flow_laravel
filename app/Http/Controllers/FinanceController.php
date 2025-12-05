@@ -682,7 +682,6 @@ public function update(Request $request, $id)
     $data = $validator->validated();
     $data['updated_by'] = Auth::id() ?? 1;
     
-
     // Handle approval logic
     if ($request->accounts_status == 'Approved') {
         $data['approvalBy'] = Auth::id();

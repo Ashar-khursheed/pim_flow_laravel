@@ -384,7 +384,6 @@ class FinanceController extends Controller
      * )
      */
 
-
     public function getCustomerDetails(Request $request)
     {
         $validator = Validator::make($request->all(), [
