@@ -638,15 +638,15 @@ class FinanceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'payment_options' => 'nullable|string',
-            'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
+            'term_selection' => 'required|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
             'requested_amount' => 'required|numeric',
             'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
-            'type_of_business' => 'nullable|string|max:255',
-            'role_at_business' => 'nullable|string|max:255',
+            'type_of_business' => 'required|string|max:255',
+            'role_at_business' => 'required|string|max:255',
             'accounts_payable_email' => 'required|email|string|max:255',
             'accounts_payable_phone' => 'required|string|max:255',
-            'annual_revenue' => 'nullable|string',
-            'years_in_business' => 'nullable|string',
+            'annual_revenue' => 'required|string',
+            'years_in_business' => 'required|string',
             'duns_number' => 'nullable|string',
             'status' => 'required|in:Paid,Overdue,Pending',
             'credit_limit_amount' => 'required|numeric',                          
@@ -687,7 +687,13 @@ class FinanceController extends Controller
             $data['approvalBy'] = Auth::id();
             $data['approved_amount'] = $request->approved_amount;
             $data['approval_date'] = now();
-        } else {
+            //send mail approvel
+        } else if($request->accounts_status == 'Rejected'){
+            $data['rejectedBy'] = Auth::id();
+            $data['rejection_reason'] = $request->rejection_reason;
+            $data['rejected_date'] = now();
+            //send mail Rejected
+        }else{
             $data['approved_amount'] = 0;  
             $data['approvalBy'] = null; 
             $data['approval_date'] = null; 
@@ -704,9 +710,9 @@ class FinanceController extends Controller
 
         // --- AUTOMATIC CALCULATION ---
         // Assuming used_credit_amount is the sum of approved amounts or some business logic
-        $usedCredit = $data['approved_amount']; // You can customize logic if multiple finance records exist
-        $data['used_credit_amount'] = $usedCredit;
-        $data['available_credit_amount'] = $data['credit_limit_amount'] - $usedCredit;
+        // $usedCredit = $data['approved_amount']; // You can customize logic if multiple finance records exist
+        // $data['used_credit_amount'] = $usedCredit;
+        // $data['available_credit_amount'] = $data['credit_limit_amount'] - $usedCredit;
         // --------------------------------
 
         $finance->update($data);
@@ -806,10 +812,15 @@ class FinanceController extends Controller
      *
      *                 @OA\Property(
      *                     property="approved_amount",
-     *                     type="number",
-     *                     format="float",
+     *                     type="number",                  
      *                     description="Approved amount",
      *                     example=300.00
+     *                 ),
+     *                 @OA\Property(
+     *                     property="credit_limit_amount",
+     *                     type="number",                  
+     *                     description="credit limit amount amount",
+     *                     example=10000.00
      *                 )
      *             )
      *         )
@@ -837,7 +848,9 @@ class FinanceController extends Controller
     {
         $request->validate([
             'accounts_status'   => 'required|in:Pending,Approved,Rejected,Hold',
-            'approved_amount'   => 'required|numeric|required_if:accounts_status,Approved'
+            'approved_amount'   => 'required|numeric|required_if:accounts_status,Approved',
+            'credit_limit_amount'   => 'required|numeric',
+            'rejection_reason'   => 'required|string'
         ]);
 
         $finance = Finance::find($id);
@@ -848,7 +861,7 @@ class FinanceController extends Controller
                 'message' => 'Finance record not found.'
             ], 404);
         }
-        if ($request->approved_amount > $finance->credit_limit_amount) {
+        if ($request->approved_amount > $request->credit_limit_amount) {
             return response()->json([
                 'success' => false,
                 'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
@@ -857,12 +870,19 @@ class FinanceController extends Controller
         if ($request->accounts_status == 'Approved' && !empty($request->approved_amount)) {
             $finance->approvalBy = Auth::id();
             $finance->approved_amount = $request->approved_amount;
+            $finance->credit_limit_amount = $request->credit_limit_amount;
             $finance->approval_date = now();
-            //send mail
-        } else {
+            //send mail Approved
+        } else if($request->accounts_status == 'Rejected'){
+            $data['rejectedBy'] = Auth::id();
+            $data['rejection_reason'] = $request->rejection_reason;
+            $data['rejected_date'] = now();
+            //send mail Rejected
+        }else{
             $finance->approved_amount = '0';
              $finance->approvalBy = null;
              $finance->approval_date = null;
+             $finance->credit_limit_amount = '0';
         }
         $finance->accounts_status = $request->accounts_status;
         $finance->save();
@@ -932,7 +952,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance no due amount.',
-
+                'data'=>null
             ], 200);
         }
     }
