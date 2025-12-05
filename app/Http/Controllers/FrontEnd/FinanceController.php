@@ -142,7 +142,7 @@ class FinanceController extends Controller
             $finance = Finance::create($data);
         }
 
-
+        //send mail net term
 
         return response()->json([
             'success' => true,
@@ -419,7 +419,6 @@ public function index()
      * )
      */
 
-
     public function getCustomerDetails(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -446,21 +445,77 @@ public function index()
                 'message' => 'Customer verification failed: customer ID does not match'
             ], 422);
         }
+        $finance = Finance::with([
+            'customer',
+            'createdBy',
+            'updatedBy',
+            'customerAddress',
+            'approvalUser'
+        ])->where('customer_id', $customerId)->orderBy('id', 'desc')->first();
 
-        // Correct way to load relation
-        $customer = Customer::with('customerAddress')->find($customerId);
-
-        if (!$customer) {
+        if (!$finance) {
             return response()->json([
                 'success' => false,
-                'message' => 'Customer not found'
+                'message' => 'Finance record not found.'
             ], 404);
         }
+        $address = $finance->customerAddress;
+        $financeData =  [
+            'id' => $finance->id,
+            'customer_id' => $finance->customer_id,
+            'payment_selection' => $finance->payment_selection,
+            'payment_options' => $finance->payment_options,
+            'term_selection' => $finance->term_selection,
+            'type_of_business' => $finance->type_of_business,
+            'legal_business_name' => $finance->legal_business_name,
+            'doing_business' => $finance->doing_business,
+            'business_address' => $finance->business_address,
+            'requested_amount' => number_format($finance->requested_amount, 2),
+            'credit_limit_amount' => number_format($finance->credit_limit_amount, 2),
+            'approved_amount' => number_format($finance->approved_amount, 2),
+            'approval_date' => date('d-m-Y', strtotime($finance->approval_date)),
+            'approvalBy' => $finance->approvalUser?->username,
+            'accounts_payable_email' => $finance->accounts_payable_email,
+            'accounts_payable_phone' => $finance->accounts_payable_phone,
+
+            'used_credit_amount' => $finance->used_credit_amount,
+            'available_credit_amount' => $finance->available_credit_amount,
+            'next_due_amt' => $finance->next_due_amt,
+            'paid_amount' => $finance->paid_amount,
+            'status' => $finance->status,
+            'accounts_status' => $finance->accounts_status,
+
+            // CUSTOMER FIELDS
+            'customer_name' => $finance->customer?->name,
+            'business_name' => $finance->customer?->business_name,
+            'customer_email' => $finance->customer?->email,
+            'customer_mobile' => $finance->customer?->mobile_number,
+
+            'annual_revenue' => $finance->annual_revenue,
+            'years_in_business' => $finance->years_in_business,
+
+            'documents' => $finance->documents,
+            'duns_number' => $finance->duns_number,
+            'next_due_date' => $finance->next_due_date ? date('d-m-Y', strtotime($finance->next_due_date)) : null,
+            'address' =>  $address ? [
+                'address' => $address->address,
+                'city' => $address->city,
+                'state' => $address->state,
+                'zip_code' => $address->zip_code,
+            ] : null,
+            // CREATED BY / UPDATED BY
+            'created_by' => $finance->createdBy?->username,
+            'updated_by' => $finance->updatedBy?->username,
+
+            'created_at' => date('d-m-Y H:i:s', strtotime($finance->created_at)),
+            'updated_at' => date('d-m-Y H:i:s', strtotime($finance->updated_at)),
+        ];
+
 
         return response()->json([
             'success' => true,
-            'message' => 'Net Term status fetched successfully.',
-            'data'    => $customer
+            'message' => 'Finance record retrieved successfully.',
+            'data' => $financeData
         ], 200);
     }
 
