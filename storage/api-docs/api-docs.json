@@ -11546,8 +11546,12 @@
                                     "approved_amount": {
                                         "description": "Approved amount",
                                         "type": "number",
-                                        "format": "float",
                                         "example": 300
+                                    },
+                                    "credit_limit_amount": {
+                                        "description": "credit limit amount amount",
+                                        "type": "number",
+                                        "example": 10000
                                     }
                                 },
                                 "type": "object"
@@ -18346,7 +18350,13 @@
                                 "required": [
                                     "term_selection",
                                     "requested_amount",
-                                    "customer_address_id"
+                                    "customer_address_id",
+                                    "type_of_business",
+                                    "accounts_payable_email",
+                                    "accounts_payable_phone",
+                                    "annual_revenue",
+                                    "legal_business_name",
+                                    "years_in_business"
                                 ],
                                 "properties": {
                                     "payment_options": {
