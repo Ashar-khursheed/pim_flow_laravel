@@ -681,13 +681,19 @@ class FinanceController extends Controller
 
     $data = $validator->validated();
     $data['updated_by'] = Auth::id() ?? 1;
-
+    
     // Handle approval logic
     if ($request->accounts_status == 'Approved') {
         $data['approvalBy'] = Auth::id();
         $data['approved_amount'] = $request->approved_amount;
         $data['approval_date'] = now();
-    } else {
+        //send mail approvel 
+    } else if($request->accounts_status == 'Rejected') {
+        $data['rejectedBy'] = Auth::id();
+        $data['rejection_reason'] = $request->rejection_reason;
+        $data['rejected_date'] = now();
+        //send mail rejected 
+    }else{
         $data['approved_amount'] = 0;  
         $data['approvalBy'] = null; 
         $data['approval_date'] = null; 
@@ -857,6 +863,7 @@ class FinanceController extends Controller
             $finance->approvalBy = Auth::id();
             $finance->approved_amount = $request->approved_amount;
             $finance->approval_date = now();
+            //send mail
         } else {
             $finance->approved_amount = '0';
              $finance->approvalBy = null;
