@@ -41,11 +41,11 @@ class NetTermMailJob implements ShouldQueue
 
 		if (!empty($finance)) {
 			$fromEmail = match (config('app.website')) {
-				'US'  => 'sales@thehorecastore.com',
-				'UAE'  => 'hello@horecastore.ae',
-				'US_T' => 'test_us@thehorecastore.co',
-				'UAE_T' => 'test_uae@thehorecastore.co',
-				default => 'test@thehorecastore.co',
+				'US'  => 'support@thehorecastore.com',
+				'UAE'  => 'support@horecastore.ae',
+				'US_T' => 'test_us_support@thehorecastore.co',
+				'UAE_T' => 'test_uae_support@thehorecastore.co',
+				default => 'test_support@thehorecastore.co',
 			};
 
 			$fromName = 'HorecaStore Support';

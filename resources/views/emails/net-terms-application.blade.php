@@ -30,12 +30,14 @@
 		<tr>
 			<td align="center">
 				<table class="container" width="650" cellspacing="0" cellpadding="10" border="0" style="background:#ffffff; border:1px solid #eaeaea; font-family: 'Noto Sans', sans-serif;">
+					<!-- Logo Section -->
 					<tr>
 						<td align="left">
 							<img src="{{ $logoUrl }}" alt="Logo" width="120">
 						</td>
 					</tr>
 
+					<!-- Greeting Section -->
 					<tr>
 						<td>
 							<p style="font-size:16px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
@@ -55,6 +57,7 @@
 						</td>
 					</tr>
 
+					<!-- Peace of Mind Section -->
 					<tr>
 						<td style="background:#DEF9EC; padding: 20px; border-radius: 8px;">
 							<p style="font-size:15px; line-height:22px; font-weight: 600; font-family: 'Noto Sans', sans-serif; margin: 0 0 10px 0; color: #26683A;">
@@ -85,6 +88,7 @@
 						</td>
 					</tr>
 
+					<!-- Goal Statement -->
 					<tr>
 						<td style="padding-top: 15px;">
 							<p style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif; padding: 0; margin: 5px 0;">
@@ -96,6 +100,7 @@
 						</td>
 					</tr>
 
+					<!-- What Happens Next Section -->
 					<tr>
 						<td style="padding-top: 20px;">
 							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A; border-bottom: 2px solid #26683A; padding-bottom: 8px;">
@@ -136,6 +141,7 @@
 						</td>
 					</tr>
 
+					<!-- Why Choose HorecaStore Section -->
 					<tr>
 						<td style="padding-top: 25px;">
 							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A; border-bottom: 2px solid #26683A; padding-bottom: 8px;">
@@ -190,6 +196,7 @@
 						</td>
 					</tr>
 
+					<!-- Contact Section -->
 					<tr>
 						<td style="border-top: 3px solid #E2E8F0; padding-top: 25px;">
 							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A;">
@@ -227,6 +234,7 @@
 						</td>
 					</tr>
 
+					<!-- Closing Section -->
 					<tr>
 						<td style="padding-top: 20px;">
 							<p style="font-size:14px; line-height:22px; font-weight: 600; font-family: 'Noto Sans', sans-serif; margin: 10px 0 5px 0;">
@@ -239,6 +247,7 @@
 					</tr>
 				</table>
 
+				<!-- Footer Section -->
 				<table width="650" cellspacing="0" cellpadding="0" border="0" style="padding:10px; border-top:3px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-size:11px; color:#3F3F3F;">
 					<tr>
 						<td>

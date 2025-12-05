@@ -31,6 +31,15 @@ class NetTermMail extends Mailable
 		$logoUrl = $backendURL . '/logo.png';
 		$name = $finance->customer->name ?? 'User';
 
+		$siteEmail = match (config('app.website')) {
+			'US'  => 'support@thehorecastore.com',
+			'UAE'  => 'support@horecastore.ae',
+			'US_T' => 'test_us@thehorecastore.co',
+			'UAE_T' => 'test_uae@thehorecastore.co',
+			default => 'test@thehorecastore.co',
+		};
+
+		$phoneNumber = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '+1 (866) 446-7322' : '+1 (866) 446-7322';
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -39,19 +48,12 @@ class NetTermMail extends Mailable
 			default => 'Thehorecastore.com',
 		};
 
-		$siteEmail = match (config('app.website')) {
-			'US'  => 'sales@thehorecastore.com',
-			'UAE'  => 'hello@horecastore.ae',
-			'US_T' => 'test_us@thehorecastore.co',
-			'UAE_T' => 'test_uae@thehorecastore.co',
-			default => 'test@thehorecastore.co',
-		};
-
 		$params = [
 			'logoUrl' => $logoUrl,
-			'name' => $name,
-			'siteUrl' => $siteUrl,
+			'customerName' => $name,
 			'siteEmail' => $siteEmail,
+			'phoneNumber' => $phoneNumber,
+			'siteUrl' => $siteUrl,
 		];
 
 		return $this->subject("Your Net Terms Application Has Been Submitted")
