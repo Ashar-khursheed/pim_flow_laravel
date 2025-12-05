@@ -26,7 +26,7 @@ class FndProductVariantController extends Controller
      *         description="Filter by product ID",
      *         @OA\Schema(type="integer")
      *     ),
-     *      
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -239,14 +239,17 @@ class FndProductVariantController extends Controller
      * )
      */
 
-    // public function getAttributeByProduct(Request $request)
+
+    //  public function getAttributeByProduct(Request $request)
     // {
     //     try {
-    //         // ✅ Validate incoming data
+
+    //         // Validate input including optional product_id
     //         $validator = Validator::make($request->all(), [
     //             'attribute' => 'required|array',
     //             'attribute.*.attribute_id' => 'required|integer',
     //             'attribute.*.attribute_value' => 'required|string',
+    //             'product_id' => 'nullable|integer' // 🔥 NEW
     //         ]);
 
     //         if ($validator->fails()) {
@@ -258,8 +261,8 @@ class FndProductVariantController extends Controller
     //         }
 
     //         $attributes = $request->input('attribute', []);
+    //         $requestedProductId = $request->product_id; // 🔥 NEW
 
-             
     //         $productIds = null;
 
     //         // For each attribute, intersect with products that have it
@@ -268,21 +271,17 @@ class FndProductVariantController extends Controller
     //                 ->where('attribute_value', $attr['attribute_value'])
     //                 ->pluck('product_id');
 
-    //             // If first iteration, initialize productIds
     //             if ($index === 0) {
     //                 $productIds = $matchingIds;
     //             } else {
-    //                 // Keep only products that exist in both sets (intersection)
     //                 $productIds = $productIds->intersect($matchingIds);
     //             }
 
-    //             // Early exit if no products remain
     //             if ($productIds->isEmpty()) {
     //                 break;
     //             }
     //         }
 
-    //         // $productIds = $productIds ? $productIds->values()->toArray() : [];
     //         $productIds = $productIds ? $productIds->values()->toArray() : [];
 
     //         // Filter ONLY products that appear in product_variant table as parent_id
@@ -301,7 +300,36 @@ class FndProductVariantController extends Controller
     //                 'message' => 'No products found with variants',
     //             ], 404);
     //         }
-            
+
+    //         // 🔥 NEW LOGIC: If product_id is sent, ensure it is part of final variants
+    //      // 🔥 NEW LOGIC: If product_id is sent, ensure it is part of final variants
+    //       if ($requestedProductId) {
+    //             // Instead of checking 'child_id' column, check 'child_ids' array/JSON
+    //             // Filter parents whose child_ids include the requested product_id
+    //             $validParentIds = \DB::table('product_variants')
+    //                 ->whereIn('parent_id', $productIds) // parents matching attributes
+    //                 ->get()
+    //                 ->filter(function($item) use ($requestedProductId) {
+    //                     $childIds = is_array($item->child_ids) ? $item->child_ids : json_decode($item->child_ids, true);
+    //                     return in_array($requestedProductId, $childIds ?? []);
+    //                 })
+    //                 ->pluck('parent_id')
+    //                 ->toArray();
+
+    //             if (empty($validParentIds)) {
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => 'Requested product is not a valid child of any matched parent',
+    //                 ], 404);
+    //             }
+
+    //             // Only keep the requested product in the response
+    //             $productIds = [$requestedProductId];
+    //         }
+
+
+
+    //         // Fetch products
     //         $products = Product::whereIn('id', $productIds)
     //             ->select('id', 'sku')
     //             ->get()
@@ -314,12 +342,10 @@ class FndProductVariantController extends Controller
 
     //         foreach ($productIds as $productId) {
     //             $product = $products->get($productId);
-    //             if (!$product)
-    //                 continue;
+    //             if (!$product) continue;
 
     //             $slug = $seoUrls[$product->id] ?? null;
 
-    //             // Build complete SEO slug
     //             $parentSlug = $product->parent_category_url() ?? '';
     //             $categorySlug = $product->category_url() ?? '';
     //             $productSlug = $product->seoProductUrl->url ?? '';
@@ -352,20 +378,19 @@ class FndProductVariantController extends Controller
     //             'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
     //         ], 500);
     //     }
-
     // }
-   
-     public function getAttributeByProduct(Request $request)
+
+    public function getAttributeByProduct(Request $request)
     {
         try {
-
-            // Validate input including optional product_id
+            // Validate input including optional parent_id
             $validator = Validator::make($request->all(), [
                 'attribute' => 'required|array',
                 'attribute.*.attribute_id' => 'required|integer',
                 'attribute.*.attribute_value' => 'required|string',
-                'product_id' => 'nullable|integer' // 🔥 NEW
+                'parent_id' => 'nullable|integer', // 🔥 Changed from product_id to parent_id
             ]);
+
 
             if ($validator->fails()) {
                 return response()->json([
@@ -376,7 +401,7 @@ class FndProductVariantController extends Controller
             }
 
             $attributes = $request->input('attribute', []);
-            $requestedProductId = $request->product_id; // 🔥 NEW
+            $requestedParentId = $request->parent_id; // 🔥 Changed variable name
 
             $productIds = null;
 
@@ -416,33 +441,29 @@ class FndProductVariantController extends Controller
                 ], 404);
             }
 
-            // 🔥 NEW LOGIC: If product_id is sent, ensure it is part of final variants
-         // 🔥 NEW LOGIC: If product_id is sent, ensure it is part of final variants
-          if ($requestedProductId) {
-                // Instead of checking 'child_id' column, check 'child_ids' array/JSON
-                // Filter parents whose child_ids include the requested product_id
-                $validParentIds = \DB::table('product_variants')
-                    ->whereIn('parent_id', $productIds) // parents matching attributes
+            // 🔥 NEW LOGIC: If parent_id is sent, find which product is parent of this child
+            if ($requestedParentId) {
+                // Find which parent has this child in child_ids
+                $actualParentId = \DB::table('product_variants')
+                    ->whereIn('parent_id', $productIds)
                     ->get()
-                    ->filter(function($item) use ($requestedProductId) {
+                    ->filter(function($item) use ($requestedParentId) {
                         $childIds = is_array($item->child_ids) ? $item->child_ids : json_decode($item->child_ids, true);
-                        return in_array($requestedProductId, $childIds ?? []);
+                        return in_array($requestedParentId, $childIds ?? []);
                     })
                     ->pluck('parent_id')
-                    ->toArray();
+                    ->first();
 
-                if (empty($validParentIds)) {
+                if (!$actualParentId) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Requested product is not a valid child of any matched parent',
+                        'message' => 'Requested parent_id is not a child of any matched product',
                     ], 404);
                 }
 
-                // Only keep the requested product in the response
-                $productIds = [$requestedProductId];
+                // Only show the actual parent product
+                $productIds = [$actualParentId];
             }
-
-
 
             // Fetch products
             $products = Product::whereIn('id', $productIds)
@@ -494,7 +515,8 @@ class FndProductVariantController extends Controller
             ], 500);
         }
     }
-    /**
+
+     /**
      * @OA\Post(
      *     path="/api/frontend/product-variants-by-attribute",
      *     summary="Get list of Frontend Attribute all Product Variants",
@@ -538,7 +560,7 @@ class FndProductVariantController extends Controller
      * )
      */
 
-     
+
     public function getAttributeByProductVariant(Request $request)
     {
         try {
@@ -590,7 +612,9 @@ class FndProductVariantController extends Controller
             // Only get products that exist in ProductVariant with matching attribute IDs
             $validProductIds = ProductVariant::whereIn('parent_id', $productIds->toArray())
                 ->pluck('parent_id')
-                ->unique();
+                ->unique()
+                ->sort()   // <-- Sort IDs in ascending order
+                ->values(); // Re-index the collection
 
             if ($validProductIds->isEmpty()) {
                 return response()->json([
@@ -602,6 +626,7 @@ class FndProductVariantController extends Controller
             //Eager-load related data for optimization
             $products = Product::whereIn('id', $validProductIds)
                 ->select('id', 'sku')
+                ->orderBy('id', 'asc')
                 ->get()
                 ->keyBy('id');
 

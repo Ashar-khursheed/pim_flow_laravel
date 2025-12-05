@@ -18494,7 +18494,7 @@
                         }
                     },
                     {
-                        "name": "orderAmount",
+                        "name": "order_amount",
                         "in": "query",
                         "description": "Order Amount for validating finance",
                         "required": true,
@@ -20163,11 +20163,6 @@
                                     },
                                     "pay_with_cheque": {
                                         "description": "Pay with cheque",
-                                        "type": "boolean",
-                                        "example": false
-                                    },
-                                    "pay_with_netTerm": {
-                                        "description": "pay with netTerm",
                                         "type": "boolean",
                                         "example": false
                                     },

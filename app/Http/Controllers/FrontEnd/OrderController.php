@@ -201,8 +201,7 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="ship_all_at_once", type="boolean", example=true, description="Ship all items together"),
 	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
 	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
-	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
-	 *                 @OA\Property(property="pay_with_netTerm", type="boolean", example=false, description="pay with netTerm"),
+	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),                  
 	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
@@ -280,8 +279,7 @@ class OrderController extends BaseController
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
 			'is_cod' => 'nullable|boolean',
-
-			'pay_with_netTerm' => 'nullable|boolean',
+			 
 			'pay_with_cheque' => 'nullable|boolean',
 			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
 			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
@@ -379,10 +377,7 @@ class OrderController extends BaseController
 				$chequeDiscount = 0;
 			}
 
-			$paynetTerm = $request->boolean('pay_with_netTerm', false);
-			if (!empty($paynetTerm)) {
-				$this->byNetTermpayment($orderAmount);
-			}
+			 
 			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
@@ -566,76 +561,7 @@ class OrderController extends BaseController
 			], 500);
 		}
 	}
-
-	public function byNetTermpayment($orderAmount){
-
-		$orderAmount = $orderAmount;
-		$customerId = auth()->id();
-		$finance = Finance::where('customer_id', $customerId)->where('accountsStatus', 'Approved')->orderBy('id', 'desc')->first();
-		if(!$finance){
-			return response()->json([
-			'success' => false,
-			'message' => 'Net Term finance is either not approved or not active'
-			], 422);
-		}
-		$orderCredit = $orderAmount + $finance->usedCreditAmount;
-
-		if ($orderAmount > $finance->approvedAmount) {
-
-			if ($finance->availableCreditAmount> 0){
-
-				return response()->json([
-				'success' => false,
-				'message' => "Offer Split Payment Option",
-				], 422);
-			}else{
-
-			return response()->json([
-			'success' => false,
-			'message' => "Force Card Payment Only",
-			], 422);
-
-			}
-
-			return response()->json([
-				'success' => false,
-				'message' => "The order amount (" . number_format($orderAmount, 2) . ") is less than the approved amount (" . number_format($finance->approvedAmount, 2) . ").",
-			], 422);
-		}
-
-		if ($finance->approvedAmount == $orderAmount) {
-
-			$finance->usedCreditAmount = $finance->usedCreditAmount +  $orderAmount;
-			$finance->dueCreditAmount = $finance->dueCreditAmount +  $orderAmount;
-			$finance->status = "Pending";
-		}
-
-		if ($finance->approvedAmount > $orderAmount) {
-			$finance->dueCreditAmount = $orderAmount;
-			$finance->usedCreditAmount = $orderAmount;
-			$finance->availableCreditAmount = $finance->approvedAmount - $orderAmount;
-			$nextPaymentDue = "";
-			if ($finance->term_selection == 'Net 30 Days') {
-				$nextPaymentDue = "+30 Days";
-			} elseif ($finance->term_selection == 'Net 45 Days') {
-				$nextPaymentDue = "+45 Days";
-			} else if ($finance->term_selection == 'Net 60 Days') {
-				$nextPaymentDue = "+60 Days";
-			}
-			if (!empty($nextPaymentDue)) {
-				$finance->next_due_date = date('Y-m-d', strtotime($nextPaymentDue));
-				$finance->payment_due = date('Y-m-d', strtotime($nextPaymentDue));
-			}
-			// FinancesPayment::create([
-			// 	'finances_id'=>$finance->id,
-			// 	'limitAmount'=>$finance->approvedAmount,
-			// 	'usedAmount'=>$orderAmount,
-			// 	'availableAmount'=>$finance->approvedAmount - $orderAmount,
-			// 	'dueAmount'=>$orderAmount,
-			// 	'creditTerms'=>$finance->term_selection,
-			// ]);
-		}
-	}
+		 
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/orders/{id}",

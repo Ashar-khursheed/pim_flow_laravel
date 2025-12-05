@@ -679,15 +679,17 @@ public function update(Request $request, $id)
 
     $data = $validator->validated();
     $data['updated_by'] = Auth::id() ?? 1;
-    $data['updated_by'] = Auth::id() ?? 1;
+    
 
     // Handle approval logic
     if ($request->accounts_status == 'Approved') {
         $data['approvalBy'] = Auth::id();
         $data['approved_amount'] = $request->approved_amount;
+        $data['approval_date'] = now();
     } else {
-        $data['approved_amount'] = 0; // Use integer 0 instead of string '0'
-        $data['approvalBy'] = null; // Clear approvalBy if not approved
+        $data['approved_amount'] = 0;  
+        $data['approvalBy'] = null; 
+        $data['approval_date'] = null; 
     }
 
     // Handle document upload
@@ -826,7 +828,6 @@ public function update(Request $request, $id)
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-
             'accounts_status'   => 'required|in:Pending,Approved,Rejected,Hold',
             'approved_amount'   => 'required|numeric|required_if:accounts_status,Approved'
         ]);
@@ -848,8 +849,11 @@ public function update(Request $request, $id)
         if ($request->accounts_status == 'Approved' && !empty($request->approved_amount)) {
             $finance->approvalBy = Auth::id();
             $finance->approved_amount = $request->approved_amount;
+            $finance->approval_date = now();
         } else {
             $finance->approved_amount = '0';
+             $finance->approvalBy = null;
+             $finance->approval_date = null;
         }
         $finance->accounts_status = $request->accounts_status;
         $finance->save();
@@ -1057,45 +1061,45 @@ public function update(Request $request, $id)
     public function getPaymentHistory($id)
     {
          $paymentHistory = FinancesPayment::where('finances_id', $id)
-    ->with(['paidByUser', 'updatedBy']) // load user relations
-    ->orderBy('id', 'desc')
-    ->get();
+            ->with(['paidByUser', 'updatedBy']) // load user relations
+            ->orderBy('id', 'desc')
+            ->get();
 
-if ($paymentHistory->isEmpty()) {
-    return response()->json([
-        'success' => false,
-        'message' => 'No payment history found.'
-    ], 404);
-}
+        if ($paymentHistory->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No payment history found.'
+            ], 404);
+        }
 
-$paymentData = $paymentHistory->map(function ($finance) {
-    return [
-        'id' => $finance->id,
-        'finances_id' => $finance->finances_id,
-        'customer_id' => $finance->customer_id,
-        'due_date' => $finance->due_date,
-        'due_amount' => $finance->due_amount,
-        'paid_on_date' =>  $finance->paid_on_date,
-        'paid_amount' => $finance->paid_amount,
-        'balance' => $finance->balance,
-        'creditTerms' => $finance->creditTerms,
-        'payment_mode' => $finance->payment_mode,
+        $paymentData = $paymentHistory->map(function ($finance) {
+            return [
+                'id' => $finance->id,
+                'finances_id' => $finance->finances_id,
+                'customer_id' => $finance->customer_id,
+                'due_date' => $finance->due_date,
+                'due_amount' => $finance->due_amount,
+                'paid_on_date' =>  $finance->paid_on_date,
+                'paid_amount' => $finance->paid_amount,
+                'balance' => $finance->balance,
+                'creditTerms' => $finance->creditTerms,
+                'payment_mode' => $finance->payment_mode,
 
-        // RELATION DATA
-        'paid_by' => $finance->paidByUser?->username,
-        'updated_by' => $finance->updatedBy?->username,
+                // RELATION DATA
+                'paid_by' => $finance->paidByUser?->username,
+                'updated_by' => $finance->updatedBy?->username,
 
-        'created_at' => $finance->created_at->format('d-m-Y H:i:s'),
-        'updated_at' => $finance->updated_at->format('d-m-Y H:i:s'),
-    ];
-});
+                'created_at' => $finance->created_at->format('d-m-Y H:i:s'),
+                'updated_at' => $finance->updated_at->format('d-m-Y H:i:s'),
+            ];
+        });
 
-return response()->json([
-    'success' => true,
-    'message' => 'Finance Payment History fetched.',
-    'data' => $paymentData
-], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Finance Payment History fetched.',
+            'data' => $paymentData
+        ], 200);
 
-    }
+            }
 
 }

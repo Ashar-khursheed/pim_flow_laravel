@@ -26,32 +26,32 @@ class FinanceController extends Controller
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 type="object",
-     *                 required={"term_selection", "requested_amount","customer_address_id"},  
-     *                 @OA\Property(property="payment_options", type="string", example="netTerm", description="Payment option netTerm"),    
-     *                 @OA\Property(property="customer_id", type="interger", example="2487", description="customer address id"),             
-     *                 @OA\Property(property="customer_address_id", type="interger", example="23", description="customer address id"),             
+     *                 required={"term_selection", "requested_amount","customer_address_id"},
+     *                 @OA\Property(property="payment_options", type="string", example="netTerm", description="Payment option netTerm"),
+     *                 @OA\Property(property="customer_id", type="interger", example="2487", description="customer address id"),
+     *                 @OA\Property(property="customer_address_id", type="interger", example="23", description="customer address id"),
      *                 @OA\Property(property="term_selection", type="string",enum={"Net 30 Days","Net 45 Days","Net 60 Days"}, example="Net 30 Days", description="Net Pay in 30/45/60 Days"),
      *                 @OA\Property(property="legal_business_name", type="string", example="ABC Company", description="Enter ABC Company"),
      *                 @OA\Property(property="doing_business", type="string", example="ABC CO", description="Enter ABC CO"),
      *                 @OA\Property(property="requested_amount", type="number", format="float", example=5000.75, description="HOW MUCH DO YOU EXPECT TO PURCHASE OVER 30 DAYS requested amount"),
      *                 @OA\Property(property="documents", type="string", format="binary", description="Upload supporting document file"),
-     *                 
-     *                 @OA\Property(property="type_of_business", type="string", enum={"Corporation","LLC","Sole proprietor/ partnership","Non-profit","Government"}, example="E-commerce", description="Type of business (Advertising / E-commerce)"),                
-     *                 @OA\Property(property="accounts_payable_email", type="string", example="pay@gmail.com", description="accounts payable email"),                
-     *                 @OA\Property(property="accounts_payable_phone", type="string", example="123456789", description="Accounts Payable Phone"),                
-     *                               
+     *
+     *                 @OA\Property(property="type_of_business", type="string", enum={"Corporation","LLC","Sole proprietor/ partnership","Non-profit","Government"}, example="E-commerce", description="Type of business (Advertising / E-commerce)"),
+     *                 @OA\Property(property="accounts_payable_email", type="string", example="pay@gmail.com", description="accounts payable email"),
+     *                 @OA\Property(property="accounts_payable_phone", type="string", example="123456789", description="Accounts Payable Phone"),
+     *
      *                 @OA\Property(property="annual_revenue", type="string", enum={"Less then 1,000,000","1,000,000 to 2,000,000","2,000,000 to 5,000,000","5,000,000 to 25,000,000","More than 25,000,000",}, example="Less then 1,000,000"),
-     *                 @OA\Property(property="years_in_business", type="string", enum={"Less than 2 years","2 - 5 years","5 - 10 years","More than 10 years"}, example="5 – 10 years"),   
-     *                 @OA\Property(property="first_name", type="string", example="John"),   
-     *                 @OA\Property(property="last_name", type="string", example="Doe"),   
-     *                 @OA\Property(property="email", type="string", example="john@gmail.com"),   
-     *                 @OA\Property(property="role_at_business", type="string", enum={"CEO","Accounts payable"}, example="Accounts payable"),   
-     *             
-     *                 @OA\Property(property="country", type="string", example="United States"),   
-     *                 @OA\Property(property="address", type="string", example="Address"),   
-     *                 @OA\Property(property="city", type="string", example="City"),   
-     *                 @OA\Property(property="state", type="string", example="State"),   
-     *                 @OA\Property(property="zipcode", type="string", example="zipcode"),              
+     *                 @OA\Property(property="years_in_business", type="string", enum={"Less than 2 years","2 - 5 years","5 - 10 years","More than 10 years"}, example="5 – 10 years"),
+     *                 @OA\Property(property="first_name", type="string", example="John"),
+     *                 @OA\Property(property="last_name", type="string", example="Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@gmail.com"),
+     *                 @OA\Property(property="role_at_business", type="string", enum={"CEO","Accounts payable"}, example="Accounts payable"),
+     *
+     *                 @OA\Property(property="country", type="string", example="United States"),
+     *                 @OA\Property(property="address", type="string", example="Address"),
+     *                 @OA\Property(property="city", type="string", example="City"),
+     *                 @OA\Property(property="state", type="string", example="State"),
+     *                 @OA\Property(property="zipcode", type="string", example="zipcode"),
      *                 @OA\Property(property="duns_number", type="string", example="123456789")
      *             )
      *         )
@@ -84,7 +84,7 @@ class FinanceController extends Controller
             'term_selection' => 'required|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
             'requested_amount' => 'required|numeric',
             'legal_business_name' => 'nullable|string',
-            'doing_business' => 'nullable|string',            
+            'doing_business' => 'nullable|string',
             'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
             'type_of_business' => 'nullable|string|max:255',
             'accounts_payable_email' => 'required|email|string|max:255',
@@ -168,7 +168,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Parameter(
-     *         name="orderAmount",
+     *         name="order_amount",
      *         in="query",
      *         required=true,
      *         description="Order Amount for validating finance",
@@ -202,7 +202,7 @@ class FinanceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'customer_id' => 'required|exists:customers,id',
-            'orderAmount' => 'required|integer',
+            'order_amount' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -214,9 +214,9 @@ class FinanceController extends Controller
         }
 
         $customerId = $request->customer_id;
-        $orderAmount = $request->orderAmount;
+        $orderAmount = $request->order_amount;
         $finance = Finance::where('customer_id', $customerId)
-            ->where('accountsStatus', 'Approved')
+            ->where('accounts_status', 'Approved')
             ->orderBy('id', 'desc')
             ->first();
         if (!$finance) {
@@ -228,15 +228,16 @@ class FinanceController extends Controller
 
         $orderCredit = $orderAmount + $finance->used_credit_amount;
 
-        if ($orderCredit > $finance->approved_amount) {
+        if ($request->order_amount > $finance->approved_amount) {
 
             return response()->json([
                 'success' => false,
-                'message' => "The order amount (" . number_format($orderCredit, 2) . ") is less than the approved amount (" . number_format($finance->approved_amount, 2) . ").",
+                'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the approved amount (" . number_format($finance->approved_amount, 2) . ").",
             ], 422);
         }
         $data = array(
-            'credit_limit_amount' => $finance->approved_amount,
+            'approved_amount' => $finance->approved_amount,
+            'credit_limit_amount' => $finance->credit_limit_amount,
         );
         return response()->json([
             'success' => true,
@@ -311,7 +312,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Finance status successfully.',
-                'accoutsStatus' => $finance->accountsStatus
+                'accouts_status' => $finance->accounts_status
             ], 200);
         } else {
             return response()->json([
