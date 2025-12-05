@@ -152,6 +152,65 @@ class FinanceController extends Controller
     }
 
 
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/finances/{id}",
+     *     summary="Get finance details by ID (Customer Only)",
+     *     tags={"Frontend-Finance"},
+     *     security={{"bearerAuth":{}}},
+
+    *     @OA\Parameter(
+    *         name="id",
+    *         in="path",
+    *         required=true,
+    *         description="Finance ID",
+    *         @OA\Schema(type="integer", example=12)
+    *     ),
+
+    *     @OA\Response(
+    *         response=200,
+    *         description="Finance record fetched successfully",
+    *         @OA\JsonContent(
+    *             @OA\Property(property="success", type="boolean", example=true),
+    *             @OA\Property(property="message", type="string", example="Finance record retrieved successfully."),
+    *             @OA\Property(property="data", type="object")
+    *         )
+    *     ),
+
+    *     @OA\Response(
+    *         response=404,
+    *         description="Finance record not found",
+    *         @OA\JsonContent(
+    *             @OA\Property(property="success", type="boolean", example=false),
+    *             @OA\Property(property="message", type="string", example="Finance record not found.")
+    *         )
+    *     )
+    * )
+    */
+    public function show($id)
+    {
+        $customer_id = Auth::id();
+
+        $finance = Finance::where('id', $id)
+            ->where('customer_id', $customer_id)
+            ->first();
+
+        if (!$finance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance record not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Finance record retrieved successfully.',
+            'data' => $finance
+        ], 200);
+    }
+
+
+
 
     /**
      * @OA\Get(
