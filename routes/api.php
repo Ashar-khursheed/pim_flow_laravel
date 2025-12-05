@@ -683,7 +683,7 @@ Route::Post('frontend/product-variants-by-attribute', [FndProductVariantControll
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::post('frontend/finances', [F_FinanceController::class, 'store']);
-	Route::post('/frontend/finances/{id}', [F_FinanceController::class, 'show']);
+	Route::get('/frontend/finances/{id}', [F_FinanceController::class, 'show']);
 Route::get('frontend/finances/apply', [F_FinanceController::class, 'getFinance']);
 Route::post('frontend/finances/order', [F_FinanceController::class, 'financeOrder']);
 Route::get('frontend/finances/check', [F_FinanceController::class, 'financeCheck']);
