@@ -34,9 +34,9 @@ class NetTermMail extends Mailable
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'support@thehorecastore.com',
 			'UAE'  => 'support@horecastore.ae',
-			'US_T' => 'test_us@thehorecastore.co',
-			'UAE_T' => 'test_uae@thehorecastore.co',
-			default => 'test@thehorecastore.co',
+			'US_T' => 'test_us_support@thehorecastore.co',
+			'UAE_T' => 'test_uae_support@thehorecastore.co',
+			default => 'test_support@thehorecastore.co',
 		};
 
 		$phoneNumber = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '+1 (866) 446-7322' : '+1 (866) 446-7322';
