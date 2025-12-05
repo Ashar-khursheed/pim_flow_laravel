@@ -232,8 +232,8 @@ class FinanceController extends Controller
                 'message' => 'Your request amount has not been approved.'
             ], 422);
         }
-        
-        if ($request->order_amount > $finance->approved_amount) {           
+
+        if ($request->order_amount > $finance->approved_amount) {
             return response()->json([
                 'success' => false,
                 'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the approved amount (" . number_format($finance->approved_amount, 2) . ").",
@@ -241,11 +241,11 @@ class FinanceController extends Controller
         }
         if ($request->order_amount > !empty($finance->available_credit_amount)) {
 
-                return response()->json([
-                    'success' => false,
-                    'message' => "Offer Split Payment Option Or Force Card Payment Only",
-                ], 422);
-        }  
+            return response()->json([
+                'success' => false,
+                'message' => "Offer Split Payment Option Or Force Card Payment Only",
+            ], 422);
+        }
 
 
         $data = array(
@@ -388,15 +388,15 @@ class FinanceController extends Controller
     public function getCustomerDetails(Request $request)
     {
         $validator = Validator::make($request->all(), [
-        'customer_id' => 'required|exists:customers,id'
+            'customer_id' => 'required|exists:customers,id'
         ]);
 
         if ($validator->fails()) {
-        return response()->json([
-        'success' => false,
-        'message' => 'Validation failed',
-        'errors'  => $validator->errors()
-        ], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors()
+            ], 422);
         }
 
         $customerId = $request->customer_id;
@@ -406,28 +406,27 @@ class FinanceController extends Controller
 
         // Check if same customer
         if ($loggedInCustomerId != $customerId) {
-        return response()->json([
-        'success' => false,
-        'message' => 'Customer verification failed: customer ID does not match'
-        ], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer verification failed: customer ID does not match'
+            ], 422);
         }
 
         // Correct way to load relation
         $customer = Customer::with('customerAddress')->find($customerId);
 
         if (!$customer) {
-        return response()->json([
-        'success' => false,
-        'message' => 'Customer not found'
-        ], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer not found'
+            ], 404);
         }
 
         return response()->json([
-        'success' => true,
-        'message' => 'Net Term status fetched successfully.',
-        'data'    => $customer
+            'success' => true,
+            'message' => 'Net Term status fetched successfully.',
+            'data'    => $customer
         ], 200);
-
     }
 
 
@@ -525,13 +524,13 @@ class FinanceController extends Controller
                 'message' => 'Your request amount is not approved.'
             ], 422);
         }
-         if (!$finance->credit_limit_amount) {
+        if (!$finance->credit_limit_amount) {
             return response()->json([
                 'success' => false,
                 'message' => 'Your credit limit amount has not been approved.'
             ], 422);
         }
-        
+
 
         if (auth()->id() != $customerId) {
             return response()->json([
@@ -540,7 +539,7 @@ class FinanceController extends Controller
             ], 422);
         }
 
-        
+
         if ($request->order_amount > $finance->approved_amount) {
             return response()->json([
                 'success' => false,
@@ -592,12 +591,12 @@ class FinanceController extends Controller
         }
 
         if ($finance->approved_amount > $request->order_amount) {
-             
-             if ($finance->used_credit_amount > 0 && $finance->available_credit_amount >= $request->order_amount) {
+
+            if ($finance->used_credit_amount > 0 && $finance->available_credit_amount >= $request->order_amount) {
                 $finance->used_credit_amount = $finance->used_credit_amount +  $request->order_amount;
-                
+
                 $finance->available_credit_amount = $finance->available_credit_amount -  $request->order_amount;
-             
+
                 $finance->status = "Pending";
                 $nextPaymentDue = "";
                 if ($finance->term_selection == 'Net 30 Days') {
@@ -636,13 +635,13 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Your order has been successfully placed.',
-                 
+
             ], 200);
         } else {
             return response()->json([
                 'success' => true,
                 'message' => 'Your order has not been successfully placed.',
-                 
+
             ], 200);
         }
     }
