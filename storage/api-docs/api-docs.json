@@ -14667,6 +14667,34 @@
                 }
             }
         },
+        "/api/frontend/menu-categories": {
+            "get": {
+                "tags": [
+                    "Frontend-Menu Categories"
+                ],
+                "summary": "Get menu categories with children",
+                "operationId": "33ec2b6bbeba9dabdbd1eaaacabca2da",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Filter categories by parent or category ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of categories in hierarchical structure",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/categories-with-children": {
             "get": {
                 "tags": [

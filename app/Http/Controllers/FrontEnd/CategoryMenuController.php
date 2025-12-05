@@ -110,7 +110,7 @@ class CategoryMenuController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/frontend/menu-categories,
+     *     path="/api/frontend/menu-categories",
      *     summary="Get menu categories with children",
      *     tags={"Frontend-Menu Categories"},
      *     @OA\Parameter(
