@@ -634,95 +634,90 @@ class FinanceController extends Controller
      *     )
      * )
      */
-   public function update(Request $request, $id)
-{
-    $validator = Validator::make($request->all(), [
-        'payment_options' => 'nullable|string',
-        'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
-        'requested_amount' => 'required|numeric',
-        'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
-        'type_of_business' => 'nullable|string|max:255',
-        'role_at_business' => 'nullable|string|max:255',
-        'accounts_payable_email' => 'required|email|string|max:255',
-        'accounts_payable_phone' => 'required|string|max:255',
-        'annual_revenue' => 'nullable|string',
-        'years_in_business' => 'nullable|string',
-        'duns_number' => 'nullable|string',
-        'status' => 'required|in:Paid,Overdue,Pending',
-        'credit_limit_amount' => 'required|numeric',                          
-        'accounts_status' => 'required|in:Pending,Approved,Rejected,Hold',
-        'approved_amount' => 'nullable|numeric|required_if:accounts_status,Approved',
-        'rejection_reason' => 'nullable|string',
-    ]);
+    public function update(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_options' => 'nullable|string',
+            'term_selection' => 'nullable|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
+            'requested_amount' => 'required|numeric',
+            'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
+            'type_of_business' => 'nullable|string|max:255',
+            'role_at_business' => 'nullable|string|max:255',
+            'accounts_payable_email' => 'required|email|string|max:255',
+            'accounts_payable_phone' => 'required|string|max:255',
+            'annual_revenue' => 'nullable|string',
+            'years_in_business' => 'nullable|string',
+            'duns_number' => 'nullable|string',
+            'status' => 'required|in:Paid,Overdue,Pending',
+            'credit_limit_amount' => 'required|numeric',                          
+            'accounts_status' => 'required|in:Pending,Approved,Rejected,Hold',
+            'approved_amount' => 'nullable|numeric|required_if:accounts_status,Approved',
+            'rejection_reason' => 'nullable|string',
+        ]);
 
-    if ($validator->fails()) {
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $finance = Finance::find($id);
+        if (!$finance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Record not found'
+            ], 404);
+        }
+
+        // Check approved amount vs credit limit
+        if ($request->accounts_status == 'Approved' && $request->approved_amount > $request->credit_limit_amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
+            ], 422);
+        }
+
+        $data = $validator->validated();
+        $data['updated_by'] = Auth::id() ?? 1;
+
+        // Handle approval logic
+        if ($request->accounts_status == 'Approved') {
+            $data['approvalBy'] = Auth::id();
+            $data['approved_amount'] = $request->approved_amount;
+            $data['approval_date'] = now();
+        } else {
+            $data['approved_amount'] = 0;  
+            $data['approvalBy'] = null; 
+            $data['approval_date'] = null; 
+        }
+
+        // Handle document upload
+        if ($request->hasFile('documents')) {
+            $data['documents'] = uploadImageToWebpS3FromFile(
+                $request,
+                'documents',
+                env('STORAGE_ENV') . '/documents'
+            );
+        }
+
+        // --- AUTOMATIC CALCULATION ---
+        // Assuming used_credit_amount is the sum of approved amounts or some business logic
+        $usedCredit = $data['approved_amount']; // You can customize logic if multiple finance records exist
+        $data['used_credit_amount'] = $usedCredit;
+        $data['available_credit_amount'] = $data['credit_limit_amount'] - $usedCredit;
+        // --------------------------------
+
+        $finance->update($data);
+
         return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors' => $validator->errors()
-        ], 422);
+            'success' => true,
+            'message' => 'Finance record updated successfully.',
+            'data' => $finance->fresh()
+        ], 200);
     }
 
-    $finance = Finance::find($id);
-    if (!$finance) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Record not found'
-        ], 404);
-    }
-
-    // Check approved amount vs credit limit
-    if ($request->accounts_status == 'Approved' && $request->approved_amount > $request->credit_limit_amount) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
-        ], 422);
-    }
-
-    $data = $validator->validated();
-    $data['updated_by'] = Auth::id() ?? 1;
-    
-    // Handle approval logic
-    if ($request->accounts_status == 'Approved') {
-        $data['approvalBy'] = Auth::id();
-        $data['approved_amount'] = $request->approved_amount;
-        $data['approval_date'] = now();
-        //send mail approvel 
-    } else if($request->accounts_status == 'Rejected') {
-        $data['rejectedBy'] = Auth::id();
-        $data['rejection_reason'] = $request->rejection_reason;
-        $data['rejected_date'] = now();
-        //send mail rejected 
-    }else{
-        $data['approved_amount'] = 0;  
-        $data['approvalBy'] = null; 
-        $data['approval_date'] = null; 
-    }
-
-    // Handle document upload
-    if ($request->hasFile('documents')) {
-        $data['documents'] = uploadImageToWebpS3FromFile(
-            $request,
-            'documents',
-            env('STORAGE_ENV') . '/documents'
-        );
-    }
-
-    // --- AUTOMATIC CALCULATION ---
-    // Assuming used_credit_amount is the sum of approved amounts or some business logic
-    $usedCredit = $data['approved_amount']; // You can customize logic if multiple finance records exist
-    $data['used_credit_amount'] = $usedCredit;
-    $data['available_credit_amount'] = $data['credit_limit_amount'] - $usedCredit;
-    // --------------------------------
-
-    $finance->update($data);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Finance record updated successfully.',
-        'data' => $finance->fresh()
-    ], 200);
-}
 
 
 
