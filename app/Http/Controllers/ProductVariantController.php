@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 use Illuminate\Validation\Rule;
 use App\Models\Attribute;
+
 class ProductVariantController extends Controller
 {
 
@@ -287,7 +288,6 @@ class ProductVariantController extends Controller
                 'message' => 'Product Variant created successfully',
                 'data' => $createdRecord
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -295,7 +295,6 @@ class ProductVariantController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-
     }
 
 
@@ -440,7 +439,6 @@ class ProductVariantController extends Controller
                 'message' => 'Product Variant updated successfully',
                 'data' => $variant
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -508,7 +506,6 @@ class ProductVariantController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'product_ids' => 'required|array',
-
             ]);
 
             if ($validator->fails()) {
@@ -518,7 +515,7 @@ class ProductVariantController extends Controller
                     'errors' => $validator->errors()
                 ], 422);
             }
-            // Ensure product_id is always an array
+
             $productIds = $request->product_ids;
 
             if (empty($productIds)) {
@@ -527,36 +524,42 @@ class ProductVariantController extends Controller
                     'message' => 'No product IDs provided'
                 ], 422);
             }
+
             $countId = count($productIds);
+
             // Fetch attributes
             $attributes = ProductAttribute::whereIn('product_id', $productIds)
                 ->join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
                 ->select(
-                    'product_attributes.attribute_id',
+                    'product_attributes.attribute_id',                  
                     'attributes.name as attribute_name',
                     \DB::raw('GROUP_CONCAT(DISTINCT product_attributes.product_id ORDER BY product_attributes.product_id) as product_ids'),
                     \DB::raw('COUNT(DISTINCT product_attributes.product_id) as product_count')
                 )
-                ->groupBy('product_attributes.attribute_id', 'attributes.name')
+                ->groupBy('product_attributes.attribute_id','attributes.name')
                 ->having('product_count', '=', $countId)
                 ->get();
 
-
             $attributeList = $attributes->map(function ($attr) {
- 
                 return [
                     'attribute_id' => $attr->attribute_id,
-                    'attribute_name' => $attr->attribute_name,                    
+                    'attribute_name' => $attr->attribute_name,                   
                     'group_id' => $attr->product_ids,
                 ];
             });
 
+            if ($attributeList->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No attributes found with all these products',
+                    'data' => $attributeList
+                ], 200);
+            }
             return response()->json([
                 'success' => true,
                 'message' => 'Attributes fetched successfully',
                 'data' => $attributeList
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -732,7 +735,6 @@ class ProductVariantController extends Controller
                 'message' => "Fetch Product variant",
                 'data' => $data
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -741,5 +743,4 @@ class ProductVariantController extends Controller
             ], 500);
         }
     }
-
 }

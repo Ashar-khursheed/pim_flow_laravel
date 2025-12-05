@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\Product;
 use App\Models\ProductAttribute;
@@ -342,7 +343,7 @@ class ProductAttributeController extends BaseController
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/products-attributes/{productId}",
+	 *     path="/api/product-attributes/{productId}",
 	 *     summary="Get product's category attribute groups with current values",
 	 *     description="Retrieves all attribute groups from the product's category along with the product's current attribute values",
 	 *     tags={"Product Attributes"},
@@ -368,6 +369,20 @@ class ProductAttributeController extends BaseController
 			], 404);
 		}
 
+		$data = [
+			'productId' => $productId,
+			'productAttributes' => $this->getProductAttributes($productId)
+		];
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Product attributes with translations',
+			'data' => $data
+		]);
+	}
+
+	public function getProductAttributes($productId)
+	{
 		/* Optimized: Eager load ALL translations to prevent N+1 queries */
 		$productAttributes = ProductAttribute::with([
 			'attributeDetails.attributeGroup',
@@ -399,11 +414,11 @@ class ProductAttributeController extends BaseController
 					$attribute = $productAttribute->attributeDetails;
 
 					$data = [
-						'id' => $attribute->id,
-						'type' => $attribute->type,
+						'id' => $productAttribute->id,
 						'attribute_translation' => $attribute->translations
 						->pluck('name_tr', 'locale')
 						->all(),
+						'type' => $attribute->type,
 						'currentValueTranslations' => $productAttribute->translations
 						->pluck('attribute_value_tr', 'locale')
 						->all(),
@@ -413,6 +428,7 @@ class ProductAttributeController extends BaseController
 						/* Optimized: Use collections instead of nested loops */
 						$translations = $attribute->attributeValues
 						->flatMap(fn($attrValue) => $attrValue->translations)
+						->whereIn('locale', ['ar'])
 						->groupBy('locale')
 						->map(fn($group) => $group->pluck('attribute_value_tr')->values()->all())
 						->all();
@@ -441,10 +457,70 @@ class ProductAttributeController extends BaseController
 		->values()
 		->all();
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Product attributes with translations',
-			'data' => $groupedAttributes
+		return $groupedAttributes;
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/product-attributes/save-translation",
+	 *     summary="Generate or update product attribute translation",
+	 *     description="This endpoint save or updates translations for a product attribute and its values.",
+	 *     tags={"Product Attributes"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"id", "locale", "name"},
+	 *             @OA\Property(property="product_id", type="integer", example=1, description="ID of the product"),
+	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
+	 *             @OA\Property(
+	 *                 property="product_attribute_values",
+	 *                 type="object",
+	 *                 example={"1": "صغير", "2": "متوسط", "3": "كبير"},
+	 *                 description="Key-value pairs of product attribute value translations (key = product_attribute_value_id, value = translated text)"
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function saveTranslation(Request $request)
+	{
+		/* Validate request data */
+		$validated = $request->validate([
+			'product_id' => 'required|exists:ec_products,id',
+			'locale' => 'required|string|in:ar',
+			'product_attribute_values' => 'nullable|array',
+			'product_attribute_values.*' => 'string|nullable',
 		]);
+
+		DB::beginTransaction();
+		try {
+			$locale = $validated['locale'];
+			/* Update attribute value translations */
+			foreach ($validated['product_attribute_values'] as $id => $translatedValue) {
+				$productAttribute = ProductAttribute::find($id);
+				if ($productAttribute) {
+					$productAttribute->translateOrNew($locale)->attribute_value_tr = $translatedValue;
+					$productAttribute->save();
+				}
+			}
+
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => __("Translations updated successfully."),
+				'data' => $this->getProductAttributes($request->product_id),
+			]);
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => __("err_update"),
+				'error' => $e->getMessage(),
+			], 500);
+		}
 	}
 }

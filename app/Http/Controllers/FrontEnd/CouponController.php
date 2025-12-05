@@ -55,6 +55,12 @@ class CouponController extends Controller
     {
         $query = Coupon::with(['creator', 'approver', 'customers', 'categories', 'products']);
 
+        //Coupon expire automatic is_active false
+        $today = now()->toDateString();        
+        Coupon::whereDate('expire_date', '<', $today)
+        ->where('is_active', '1')           
+        ->update(['is_active' => 0]);
+
         // Global Search Implementation
         if ($request->filled('global')) {
             $searchTerm = $request->input('global');
@@ -148,11 +154,7 @@ class CouponController extends Controller
             ->offset(($page - 1) * $perPage)
             ->limit($perPage)
             ->get();
-
-            //Coupon expire automatic is_active false
-             Coupon::where('expire_date', '<', now())
-            ->where('is_active', '1')           
-             ->update(['is_active' => 0]);
+           
 
 
         return response()->json([
@@ -1283,7 +1285,7 @@ class CouponController extends Controller
      *         in="query",
      *         required=true,
      *         description="The orderValue to validate",
-     *         @OA\Schema(type="integer", example="500")
+     *         @OA\Schema(type="number", example="500")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -1337,6 +1339,12 @@ class CouponController extends Controller
             ], 401);
         }
  
+        //Coupon expire automatic is_active false
+        $today = now()->toDateString();        
+        Coupon::whereDate('expire_date', '<', $today)
+        ->where('is_active', '1')           
+        ->update(['is_active' => 0]);
+
         $couponCode = $request->query('coupon_code');
         $orderValue = $request->query('orderValue');
         $coupon = Coupon::where('code', $couponCode)->first();
@@ -1463,7 +1471,7 @@ class CouponController extends Controller
             }
              
         }
-       
+        
         if (!$coupon->isValid()) {
             $is_valid = false;
             $error_message = 'This coupon is not valid OR expired coupon.';

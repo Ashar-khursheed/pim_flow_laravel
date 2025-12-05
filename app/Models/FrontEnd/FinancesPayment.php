@@ -4,22 +4,36 @@ namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\FrontEnd\Finance;
+use App\Models\User;
 class FinancesPayment extends Model
 {
     protected $fillable = [
         'finances_id',
-        'limitAmount',
-        'usedAmount',
-        'availableAmount',
-        'purchaseAmount',
-        'dueAmount',
+        'customer_id',
+        'due_amount',
+        'due_date',
+        'paid_amount',
+        'paid_on_date',
+        'balance',
         'creditTerms',
-        'nextPaymentDue',
-        'payment_mode'
+        'payment_mode',
+        'paid_by',
+        'updated_by',
+        'created_at',
+        'updated_at',
     ];
 
     public function finance()
     {
         return $this->belongsTo(Finance::class, 'finances_id');
+    }
+    public function paidByUser()
+    {
+        return $this->belongsTo(User::class, 'paid_by');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }
