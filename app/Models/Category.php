@@ -10,7 +10,8 @@ class Category extends Model implements TranslatableContract
 {
 	use Translatable;
 
-	public $translatedAttributes = ['name_tr'];
+	// public $translatedAttributes = ['name_tr'];
+	public $translatedAttributes = [];
 	protected $table = 'categories';
 
 	protected $fillable = [
@@ -53,6 +54,24 @@ class Category extends Model implements TranslatableContract
 	public function childrenRecursive()
 	{
 		return $this->hasMany(Category::class, 'parent_id')->with('childrenRecursive')->select(['id', 'name', 'slug', 'parent_id']);
+	}
+
+	public function publishedChildren()
+	{
+		return $this->hasMany(Category::class, 'parent_id')
+		->select(['id', 'name', 'slug', 'parent_id', 'image', 'order', 'last_child'])
+		->with(['translations', 'publishedChildren'])
+		->withCount('products')
+		->where('status', 'published')
+		;
+
+
+    return $this->hasMany(Category::class, 'parent_id')
+        ->select(['id', 'name', 'slug', 'parent_id', 'image', 'order', 'last_child'])
+		->with(['translations', 'publishedChildren'])
+        ->withCount('products')
+        ->where('status', 'published')
+        ->orderBy('order');
 	}
 
 	public function slug()

@@ -868,6 +868,7 @@ Route::post('/frontend/products/filters', [FilterController::class, 'index']);
 
 
 Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
+Route::get('/frontend/menu-categories', [F_CategoryMenuController::class, 'menuCategories']);
 Route::get('/frontend/categories-with-children', [F_CategoryMenuController::class, 'getCategoriesWithChildren']);
 
 Route::get('/frontend/cart/total-products-guest', [F_CartController::class, 'totalProductsInCartGuest']);
