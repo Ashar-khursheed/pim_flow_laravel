@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Mail;
+namespace App\Mail\NetTerm;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
