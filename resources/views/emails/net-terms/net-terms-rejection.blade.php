@@ -45,7 +45,7 @@
 					<tr>
 						<td style="padding: 0px 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
 							<p style="margin: 0; padding: 5px 0; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-								Thank you for your interest in <strong>Net Payment Terms</strong> with The Horeca Store.
+								Thank you for your interest in <strong>Net Payment Terms</strong> with The HorecaStore.
 							</p>
 							<p style="margin: 0; padding: 5px 0; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
 								After carefully reviewing your application, we weren't able to approve it at this time based on the current information provided.

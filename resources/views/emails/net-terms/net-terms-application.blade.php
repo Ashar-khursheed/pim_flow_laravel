@@ -18,7 +18,7 @@
 
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: #232425;">
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-		Thank you for applying for Net Terms with The Horeca Store. We've received your request and our team has started reviewing it.
+		Thank you for applying for Net Terms with The HorecaStore. We've received your request and our team has started reviewing it.
 	</span>
 
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff; font-family: 'Noto Sans', sans-serif;">

@@ -45,7 +45,7 @@
 					<tr>
 						<td style="padding: 0px 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
 							<p style="margin: 0; padding: 5px 0; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-								We're excited to let you know that your application for <strong>Net Payment Terms</strong> with The Horeca Store has been <strong>approved</strong>!
+								We're excited to let you know that your application for <strong>Net Payment Terms</strong> with The HorecaStore has been <strong>approved</strong>!
 							</p>
 						</td>
 					</tr>
@@ -61,7 +61,7 @@
 									<td valign="top" style="color:#26683A; padding-bottom: 8px; font-family: 'Noto Sans', sans-serif;">
 										<span style="color: #26683A; font-size: 16px; vertical-align: middle;">✓</span>
 										<span style="color:#232425; margin-left: 5px; font-family: 'Noto Sans', sans-serif; font-size: 14px;">
-											<strong>Approved Credit Limit:</strong>{{ $currency }} {{ number_format($approvedAmount, 2, '.', ',') }}
+											<strong>Approved Credit Limit:</strong> {{ $currency }}{{ number_format($approvedAmount, 2, '.', ',') }}
 										</span>
 									</td>
 								</tr>
