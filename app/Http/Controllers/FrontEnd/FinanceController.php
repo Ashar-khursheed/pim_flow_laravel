@@ -12,7 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PaymentManagement;
 use App\Models\FrontEnd\FinancesPayment;
 use App\Models\FrontEnd\Customer;
-
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
@@ -956,69 +956,91 @@ class FinanceController extends Controller
 
     public function payAmount(Request $request, $id)
     {
-        $request->validate([
-            'pay_amount'  => 'required|numeric|min:1',
-        ]);
+       $request->validate([
+        'pay_amount' => 'required|numeric|min:0.01',
+    ]);
 
-        $financesPayment = FinancesPayment::find($id);
+    $pay_amount = (float) $request->pay_amount;  
+
+    return DB::transaction(function () use ($id, $pay_amount) {
+
+       
+        $financesPayment = FinancesPayment::where('id', $id)
+            ->where('customer_id', Auth::id())
+            ->lockForUpdate()   
+            ->first();
 
         if (!$financesPayment) {
             return response()->json([
                 'success' => false,
-                'message' => 'Finance record not found.'
+                'message' => 'Finance payment record not found or access denied.'
             ], 404);
         }
 
+        // Recalculate current remaining balance
+        $current_paid = $financesPayment->paid_amount ?? 0;
+        $due_amount   = $financesPayment->due_amount ?? 0;
+        $remaining    = $due_amount - $current_paid;
 
-        if ($financesPayment->due_amount < $request->pay_amount) {
+        if ($remaining <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pay amount cannot be greater than due amount.',
-            ], 201);
+                'message' => 'This invoice is already fully paid.'
+            ], 400);
         }
-        $paidAmount =$financesPayment->paid_amount + $request->pay_amount;
-        if ($financesPayment->due_amount < $paidAmount) {
+
+        if ($pay_amount > $remaining) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pay amount cannot be greater than due amount.',
-            ], 201);
+                'message' => 'Payment amount cannot exceed remaining due: ' . number_format($remaining, 2)
+            ], 400);
         }
-        $finance = Finance::find($financesPayment->finances_id);
 
-        if (!empty($request->pay_amount)) {
+        // Load related finance with lock
+        $finance = Finance::where('id', $financesPayment->finances_id)
+            ->lockForUpdate()
+            ->firstOrFail();
 
-            $financesPayment->paid_amount =$financesPayment->paid_amount +  $request->pay_amount;
-            $financesPayment->paid_on_date = now();
-            $financesPayment->balance = $financesPayment->due_amount - $financesPayment->paid_amount;            
-            $financesPayment->paid_by = Auth::id();
-            $financesPayment->save();
-            // Update due amount
-            $finance->next_due_amt = max(0, $finance->next_due_amt - $request->pay_amount);
-            // Update status
-            $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
-            $finance->paid_amount = $finance->paid_amount + $request->pay_amount;
-            $finance->save();
+        // === Update FinancesPayment ===
+        $financesPayment->paid_amount    += $pay_amount;
+        $financesPayment->balance         = $financesPayment->due_amount - $financesPayment->paid_amount;
+        $financesPayment->paid_on_date    = now();
+        $financesPayment->paid_by         = Auth::id();
+        $financesPayment->save();
 
-            $validated['payment_method'] = "netTerm";
-            $validated['amount'] =  $request->pay_amount;
-            $validated['order_id'] =  Auth::id();
-            $validated['status'] =  "Success";
-            $validated['payment_date'] =  now();
-            $validated['payment_mode'] = "NetTerm";
-            $validated['created_by'] =  Auth::id();
-            PaymentManagement::create($validated);
-        }
+        // === Update Main Finance Record ===
+        $finance->paid_amount   += $pay_amount;
+        $finance->next_due_amt   = max(0, $finance->next_due_amt - $pay_amount);
+        $finance->status         = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
         
+        $finance->save();
+
+     
+        PaymentManagement::create([
+            'payment_method'   => 'netTerm',
+            'payment_mode'     => 'NetTerm',
+            'amount'           => $pay_amount,
+            'order_id'         => $finance->id,            
+            'customer_id'      => Auth::id(),          
+            'status'           => 'Success',
+            'payment_date'     => now(),
+            'created_by'       => Auth::id(),
+             
+        ]);
+
+        // All good!
         return response()->json([
             'success' => true,
             'message' => 'Payment processed successfully.',
             'data' => [
-                'finance_id'     => $finance->id,
-                'customer_id'    => $request->customer_id,
-                'paid_amount'    => $request->pay_amount,
-                'next_due_amt'  => $finance->next_due_amt,
-                'status'         => $finance->status
+                'finance_id'      => $finance->id,
+                'paid_amount'     => $pay_amount,
+                'total_paid'      => $financesPayment->paid_amount,
+                'remaining_due'   => $finance->next_due_amt,
+                'balance'         => $financesPayment->balance,
+                'status'          => $finance->status,
             ]
         ]);
+    });
     }
 }

@@ -11546,12 +11546,19 @@
                                     "approved_amount": {
                                         "description": "Approved amount",
                                         "type": "number",
+                                        "format": "float",
                                         "example": 300
                                     },
                                     "credit_limit_amount": {
-                                        "description": "credit limit amount amount",
+                                        "description": "Credit limit amount",
                                         "type": "number",
+                                        "format": "float",
                                         "example": 10000
+                                    },
+                                    "rejection_reason": {
+                                        "description": "Reason for rejection",
+                                        "type": "string",
+                                        "example": "Insufficient credit history"
                                     }
                                 },
                                 "type": "object"
