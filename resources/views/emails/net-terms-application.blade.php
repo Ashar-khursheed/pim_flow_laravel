@@ -133,7 +133,7 @@
 									</td>
 									<td style="padding: 5px 0;">
 										<span style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif;">
-											A smooth approval process designed specifically for restaurant owners
+											As soon as your credit is approved, you can proceed with checkout without making any upfront payment.
 										</span>
 									</td>
 								</tr>
