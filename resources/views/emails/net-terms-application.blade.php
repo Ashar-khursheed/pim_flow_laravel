@@ -48,7 +48,7 @@
 							</p>
 
 							<p style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif; padding: 0; margin: 15px 0 5px 0;">
-								Thank you for applying for <strong>Net Terms with The Horeca Store</strong>.
+								Thank you for applying for <strong>Net Terms with The HorecaStore</strong>.
 							</p>
 
 							<p style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif; padding: 0; margin: 5px 0;">
