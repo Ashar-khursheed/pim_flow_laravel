@@ -120,7 +120,7 @@ class FinanceController extends Controller
         if ($lastFinance && !($lastFinance->status === "Paid" && $lastFinance->accounts_status === "Approved")) {
             return response()->json([
                 'success' => false,
-                'message' => 'Finance cannot be created. Previous finance is Pending, Rejected, or Overdue.'
+                'message' => 'Finance cannot be created. Previous net term is Pending, Rejected, or Overdue.'
             ], 422);
         }
 

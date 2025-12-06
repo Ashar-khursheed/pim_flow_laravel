@@ -341,7 +341,7 @@ class FinanceController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Finance cannot be created. Previous finance is already Pending or Overdue.'
+                    'message' => 'Finance cannot be created. Previous net term is already Pending or Overdue.'
                 ], 422);
             }
         } else if (empty($finance)) {
