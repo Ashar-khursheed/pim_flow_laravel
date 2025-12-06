@@ -103,35 +103,35 @@
 					<!-- What Happens Next Section -->
 					<tr>
 						<td style="padding-top: 20px;">
-							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A; border-bottom: 2px solid #26683A; padding-bottom: 8px;">
+							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A; border-bottom: 2px solid #26683A; padding-bottom: 5px;">
 								What Happens Next
 							</h3>
 							<table cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
 								<tr>
-									<td style="vertical-align: top; padding: 8px 0;">
-										<span style="color: #26683A; font-size: 18px; margin-right: 10px;">•</span>
+									<td style="vertical-align: top; padding: 5px 0;">
+										<span style="color: #26683A; font-size: 16px; margin-right: 10px;">✓</span>
 									</td>
-									<td style="padding: 8px 0;">
+									<td style="padding: 5px 0;">
 										<span style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif;">
 											A response within <strong>1–2 business days</strong>
 										</span>
 									</td>
 								</tr>
 								<tr>
-									<td style="vertical-align: top; padding: 8px 0;">
-										<span style="color: #26683A; font-size: 18px; margin-right: 10px;">•</span>
+									<td style="vertical-align: top; padding: 5px 0;">
+										<span style="color: #26683A; font-size: 16px; margin-right: 10px;">✓</span>
 									</td>
-									<td style="padding: 8px 0;">
+									<td style="padding: 5px 0;">
 										<span style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif;">
 											A quick follow-up call or email if any additional details are needed
 										</span>
 									</td>
 								</tr>
 								<tr>
-									<td style="vertical-align: top; padding: 8px 0;">
-										<span style="color: #26683A; font-size: 18px; margin-right: 10px;">•</span>
+									<td style="vertical-align: top; padding: 5px 0;">
+										<span style="color: #26683A; font-size: 16px; margin-right: 10px;">✓</span>
 									</td>
-									<td style="padding: 8px 0;">
+									<td style="padding: 5px 0;">
 										<span style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif;">
 											A smooth approval process designed specifically for restaurant owners
 										</span>
@@ -144,45 +144,45 @@
 					<!-- Why Choose HorecaStore Section -->
 					<tr>
 						<td style="padding-top: 25px;">
-							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A; border-bottom: 2px solid #26683A; padding-bottom: 8px;">
+							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A; border-bottom: 2px solid #26683A; padding-bottom: 5px;">
 								Why Thousands of Restaurants Choose HorecaStore
 							</h3>
 							<table cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
 								<tr>
-									<td style="vertical-align: top; padding: 8px 0;">
-										<span style="color: #26683A; font-size: 18px; margin-right: 10px;">•</span>
+									<td style="vertical-align: top; padding: 5px 0;">
+										<span style="color: #26683A; font-size: 16px; margin-right: 10px;">✓</span>
 									</td>
-									<td style="padding: 8px 0;">
+									<td style="padding: 5px 0;">
 										<span style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif;">
 											<strong>0% interest Net 60</strong> on almost everything from our website or store
 										</span>
 									</td>
 								</tr>
 								<tr>
-									<td style="vertical-align: top; padding: 8px 0;">
-										<span style="color: #26683A; font-size: 18px; margin-right: 10px;">•</span>
+									<td style="vertical-align: top; padding: 5px 0;">
+										<span style="color: #26683A; font-size: 16px; margin-right: 10px;">✓</span>
 									</td>
-									<td style="padding: 8px 0;">
+									<td style="padding: 5px 0;">
 										<span style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif;">
 											<strong>Fast nationwide shipping</strong> from multiple warehouses
 										</span>
 									</td>
 								</tr>
 								<tr>
-									<td style="vertical-align: top; padding: 8px 0;">
-										<span style="color: #26683A; font-size: 18px; margin-right: 10px;">•</span>
+									<td style="vertical-align: top; padding: 5px 0;">
+										<span style="color: #26683A; font-size: 16px; margin-right: 10px;">✓</span>
 									</td>
-									<td style="padding: 8px 0;">
+									<td style="padding: 5px 0;">
 										<span style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif;">
 											<strong>Transparent pricing</strong> with absolutely no hidden fees
 										</span>
 									</td>
 								</tr>
 								<tr>
-									<td style="vertical-align: top; padding: 8px 0;">
-										<span style="color: #26683A; font-size: 18px; margin-right: 10px;">•</span>
+									<td style="vertical-align: top; padding: 5px 0;">
+										<span style="color: #26683A; font-size: 16px; margin-right: 10px;">✓</span>
 									</td>
-									<td style="padding: 8px 0;">
+									<td style="padding: 5px 0;">
 										<span style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif;">
 											<strong>Real human support</strong> – no bots, no waiting, no nonsense
 										</span>
