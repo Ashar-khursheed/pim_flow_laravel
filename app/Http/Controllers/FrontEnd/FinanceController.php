@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
-use App\Jobs\NetTermMailJob;
+use App\Jobs\NetTerm\NetTermMailJob;
 
 class FinanceController extends Controller
 {
@@ -152,6 +152,7 @@ class FinanceController extends Controller
         $batch->add(new NetTermMailJob([
             'recordId' => $finance->id
         ]));
+
         return response()->json([
             'success' => true,
             'message' => 'Application submitted successfully.',
@@ -1139,7 +1140,7 @@ class FinanceController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"customer_id", "pay_amount"},             
+     *             required={"customer_id", "pay_amount"},
      *             @OA\Property(property="pay_amount", type="number", format="float")
      *         )
      *     ),

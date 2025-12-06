@@ -12,7 +12,7 @@ use Illuminate\Queue\Middleware\RateLimited;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\FrontEnd\Finance;
-use App\Mail\NetTermMail;
+use App\Mail\NetTerm\NetTermMail;
 
 class NetTermMailJob implements ShouldQueue
 {

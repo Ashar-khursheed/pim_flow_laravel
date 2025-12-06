@@ -50,14 +50,14 @@ class NetTermMail extends Mailable
 
 		$params = [
 			'logoUrl' => $logoUrl,
-			'customerName' => $name,
+			'name' => $name,
 			'siteEmail' => $siteEmail,
 			'phoneNumber' => $phoneNumber,
 			'siteUrl' => $siteUrl,
 		];
 
 		return $this->subject("Your Net Terms Application Has Been Submitted")
-		->markdown('emails.net-terms-application')
+		->markdown('emails.net-terms.net-terms-application')
 		->with($params);
 	}
 }

@@ -11,6 +11,12 @@ use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\DB;
 
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Jobs\NetTerm\NetTermApprovedMailJob;
+use App\Jobs\NetTerm\NetTermRejectedMailJob;
+
 class FinanceController extends Controller
 {
 
@@ -19,7 +25,7 @@ class FinanceController extends Controller
      * @OA\Get(
      *     path="/api/finances",
      *     summary="Get all finance records",
-     *     tags={"Finance"},      
+     *     tags={"Finance"},
      *     @OA\Parameter(
      *         name="status",
      *         in="query",
@@ -167,15 +173,15 @@ class FinanceController extends Controller
                 'approvalBy' => $finance->approvalUser?->username,
                 'accounts_payable_email' => $finance->accounts_payable_email,
                 'accounts_payable_phone' => $finance->accounts_payable_phone,
-                 
+
                 'used_credit_amount' => $finance->used_credit_amount,
-                'available_credit_amount' => $finance->available_credit_amount, 
-                'paid_amount' => $finance->paid_amount,             
-                'next_due_amt' => $finance->next_due_amt,  
-                'next_due_date' => $finance->next_due_date ? date('d-m-Y', strtotime($finance->next_due_date)) : null,             
+                'available_credit_amount' => $finance->available_credit_amount,
+                'paid_amount' => $finance->paid_amount,
+                'next_due_amt' => $finance->next_due_amt,
+                'next_due_date' => $finance->next_due_date ? date('d-m-Y', strtotime($finance->next_due_date)) : null,
                 'status' => $finance->status,
-                'accounts_status' => $finance->accounts_status, 
-                               
+                'accounts_status' => $finance->accounts_status,
+
                 'customer_name' => $finance->customer?->name,
                 'business_name' => $finance->customer?->business_name,
                 'customer_email' => $finance->customer?->email,
@@ -183,8 +189,8 @@ class FinanceController extends Controller
                 'annual_revenue' => $finance->annual_revenue,
                 'years_in_business' => $finance->years_in_business,
                 'documents' => $finance->documents,
-                'duns_number' => $finance->duns_number,                          
-               
+                'duns_number' => $finance->duns_number,
+
                 'address' =>  $address ? [
                     'address' => $address->address,
                     'city' => $address->city,
@@ -234,7 +240,7 @@ class FinanceController extends Controller
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="payment_selection", type="string", example="Credit"),
      *                 @OA\Property(property="amount", type="number", format="float", example=5000.75),
-     *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd"),     *                  
+     *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd"),     *
      *                 @OA\Property(property="documents", type="string", example="https://s3.amazonaws.com/path/to/document.pdf"),
      *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-01T10:00:00Z"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-01-02T15:30:00Z")
@@ -292,13 +298,13 @@ class FinanceController extends Controller
             'approvalBy' => $finance->approvalUser?->username,
             'accounts_payable_email' => $finance->accounts_payable_email,
             'accounts_payable_phone' => $finance->accounts_payable_phone,
-           
+
             'used_credit_amount' => $finance->used_credit_amount,
-            'available_credit_amount' => $finance->available_credit_amount,            
+            'available_credit_amount' => $finance->available_credit_amount,
             'next_due_amt' => $finance->next_due_amt,
             'paid_amount' => $finance->paid_amount,
             'status' => $finance->status,
-            'accounts_status' => $finance->accounts_status,           
+            'accounts_status' => $finance->accounts_status,
 
             // CUSTOMER FIELDS
             'customer_name' => $finance->customer?->name,
@@ -505,7 +511,7 @@ class FinanceController extends Controller
             'years_in_business' => 'required|string',
             'duns_number' => 'nullable|string',
             'status' => 'required|in:Paid,Overdue,Pending',
-            'credit_limit_amount' => 'required|numeric',                          
+            'credit_limit_amount' => 'required|numeric',
             'accounts_status' => 'required|in:Pending,Approved,Rejected,Hold',
             'approved_amount' => 'nullable|numeric|required_if:accounts_status,Approved',
             'rejection_reason' => 'nullable|string',
@@ -550,9 +556,9 @@ class FinanceController extends Controller
             $data['rejected_date'] = now();
             //send mail Rejected
         }else{
-            $data['approved_amount'] = 0;  
-            $data['approvalBy'] = null; 
-            $data['approval_date'] = null; 
+            $data['approved_amount'] = 0;
+            $data['approvalBy'] = null;
+            $data['approval_date'] = null;
         }
 
         // Handle document upload
@@ -598,7 +604,7 @@ class FinanceController extends Controller
      *         description="Finance record ID",
      *         @OA\Schema(type="integer", example=1)
      *     ),
-     *      
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Finance record deleted successfully",
@@ -736,12 +742,24 @@ class FinanceController extends Controller
             $finance->approved_amount = $request->approved_amount;
             $finance->credit_limit_amount = $request->credit_limit_amount;
             $finance->approval_date = now();
-            //send mail Approved
+
+            $batch = Bus::batch([])->name("Net Terms Approved by backend")->dispatch();
+            $batch->options['queue'] = config('app.website') . '_NET_TRM';
+            $batch->add(new NetTermApprovedMailJob([
+                'recordId' => $finance->id
+            ]));
+
         } else if($request->accounts_status == 'Rejected'){
             $data['rejectedBy'] = Auth::id();
             $data['rejection_reason'] = $request->rejection_reason;
             $data['rejected_date'] = now();
-            //send mail Rejected
+
+            $batch = Bus::batch([])->name("Net Terms Rejected by backend")->dispatch();
+            $batch->options['queue'] = config('app.website') . '_NET_TRM';
+            $batch->add(new NetTermRejectedMailJob([
+                'recordId' => $finance->id
+            ]));
+
         }else{
             $finance->approved_amount = '0';
              $finance->approvalBy = null;
@@ -837,7 +855,7 @@ class FinanceController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"customer_id", "pay_amount"},     *              
+     *             required={"customer_id", "pay_amount"},     *
      *             @OA\Property(property="customer_id", type="integer"),
      *             @OA\Property(property="pay_amount", type="number", format="float")
      *         )
@@ -860,12 +878,12 @@ class FinanceController extends Controller
      * )
      */
     public function payAmount(Request $request,$id)
-    {  
-        $request->validate([             
+    {
+        $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'pay_amount'  => 'required|numeric|min:1',
         ]);
-                
+
         $pay_amount = (float) $request->pay_amount; // Laravel auto-casts safely
 
         return DB::transaction(function () use ($id, $pay_amount,$request) {
@@ -873,7 +891,7 @@ class FinanceController extends Controller
             // Lock the row to prevent race conditions
             $financesPayment = FinancesPayment::where('id', $id)
                 ->where('customer_id', $request->customer_id)
-                ->lockForUpdate()   
+                ->lockForUpdate()
                 ->first();
 
             if (!$financesPayment) {
@@ -918,20 +936,20 @@ class FinanceController extends Controller
             $finance->paid_amount   += $pay_amount;
             $finance->next_due_amt   = max(0, $finance->next_due_amt - $pay_amount);
             $finance->status         = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
-            
+
             $finance->save();
 
-        
+
             PaymentManagement::create([
                 'payment_method'   => 'netTerm',
                 'payment_mode'     => 'NetTerm',
                 'amount'           => $pay_amount,
-                'order_id'         => $finance->id,            
-                'customer_id'      => Auth::id(),          
+                'order_id'         => $finance->id,
+                'customer_id'      => Auth::id(),
                 'status'           => 'Success',
                 'payment_date'     => now(),
                 'created_by'       => Auth::id(),
-                
+
             ]);
 
             // All good!
