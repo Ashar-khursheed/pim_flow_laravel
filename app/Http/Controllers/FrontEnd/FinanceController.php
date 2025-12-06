@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 use App\Http\Controllers\Controller;
+use App\Models\PaymentManagement;
 use App\Models\FrontEnd\FinancesPayment;
 use App\Models\FrontEnd\Customer;
 
@@ -718,6 +719,8 @@ class FinanceController extends Controller
             }
         }
 
+
+
         if ($finance->save()) {
             return response()->json([
                 'success' => true,
@@ -982,11 +985,11 @@ class FinanceController extends Controller
         }
         $finance = Finance::find($financesPayment->finances_id);
 
-        if (!empty($financesPayment->due_amount)) {
+        if (!empty($request->pay_amount)) {
 
             $financesPayment->paid_amount =$financesPayment->paid_amount +  $request->pay_amount;
             $financesPayment->paid_on_date = now();
-            $financesPayment->balance = $financesPayment->due_amount -( $financesPayment->paid_amount + $request->pay_amount);            
+            $financesPayment->balance = $financesPayment->due_amount - $financesPayment->paid_amount;            
             $financesPayment->paid_by = Auth::id();
             $financesPayment->save();
             // Update due amount
@@ -995,7 +998,17 @@ class FinanceController extends Controller
             $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
             $finance->paid_amount = $finance->paid_amount + $request->pay_amount;
             $finance->save();
+
+            $validated['payment_method'] = "netTerm";
+            $validated['amount'] =  $request->pay_amount;
+            $validated['order_id'] =  Auth::id();
+            $validated['status'] =  "Success";
+            $validated['payment_date'] =  now();
+            $validated['payment_mode'] = "NetTerm";
+            $validated['created_by'] =  Auth::id();
+            PaymentManagement::create($validated);
         }
+        
         return response()->json([
             'success' => true,
             'message' => 'Payment processed successfully.',
