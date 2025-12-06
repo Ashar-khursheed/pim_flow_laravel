@@ -10876,227 +10876,6 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "post": {
-                "tags": [
-                    "Finance"
-                ],
-                "summary": "Create a new finance record",
-                "operationId": "7e61ac9781248944f1952c93b6424563",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "customer_id",
-                                    "term_selection",
-                                    "requested_amount",
-                                    "customer_address_id"
-                                ],
-                                "properties": {
-                                    "payment_options": {
-                                        "description": "Payment option netTerm",
-                                        "type": "string",
-                                        "example": "netTerm"
-                                    },
-                                    "customer_id": {
-                                        "description": "customer address id",
-                                        "type": "interger",
-                                        "example": "2487"
-                                    },
-                                    "customer_address_id": {
-                                        "description": "customer address id",
-                                        "type": "interger",
-                                        "example": "23"
-                                    },
-                                    "term_selection": {
-                                        "description": "Net Pay in 30/45/60 Days",
-                                        "type": "string",
-                                        "enum": [
-                                            "Net 30 Days",
-                                            "Net 45 Days",
-                                            "Net 60 Days"
-                                        ],
-                                        "example": "Net 30 Days"
-                                    },
-                                    "legal_business_name": {
-                                        "description": "Enter ABC Company",
-                                        "type": "string",
-                                        "example": "ABC Company"
-                                    },
-                                    "doing_business": {
-                                        "description": "Enter ABC CO",
-                                        "type": "string",
-                                        "example": "ABC CO"
-                                    },
-                                    "requested_amount": {
-                                        "description": "HOW MUCH DO YOU EXPECT TO PURCHASE OVER 30 DAYS requested amount",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 5000.75
-                                    },
-                                    "documents": {
-                                        "description": "Upload supporting document file",
-                                        "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "type_of_business": {
-                                        "description": "Type of business (Advertising / E-commerce)",
-                                        "type": "string",
-                                        "enum": [
-                                            "Corporation",
-                                            "LLC",
-                                            "Sole proprietor/ partnership",
-                                            "Non-profit",
-                                            "Government"
-                                        ],
-                                        "example": "E-commerce"
-                                    },
-                                    "accounts_payable_email": {
-                                        "description": "accounts payable email",
-                                        "type": "string",
-                                        "example": "pay@gmail.com"
-                                    },
-                                    "accounts_payable_phone": {
-                                        "description": "Accounts Payable Phone",
-                                        "type": "string",
-                                        "example": "123456789"
-                                    },
-                                    "annual_revenue": {
-                                        "type": "string",
-                                        "enum": [
-                                            "Less then 1,000,000",
-                                            "1,000,000 to 2,000,000",
-                                            "2,000,000 to 5,000,000",
-                                            "5,000,000 to 25,000,000",
-                                            "More than 25,000,000"
-                                        ],
-                                        "example": "Less then 1,000,000"
-                                    },
-                                    "years_in_business": {
-                                        "type": "string",
-                                        "enum": [
-                                            "Less than 2 years",
-                                            "2 - 5 years",
-                                            "5 - 10 years",
-                                            "More than 10 years"
-                                        ],
-                                        "example": "5 – 10 years"
-                                    },
-                                    "first_name": {
-                                        "type": "string",
-                                        "example": "John"
-                                    },
-                                    "last_name": {
-                                        "type": "string",
-                                        "example": "Doe"
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "example": "john@gmail.com"
-                                    },
-                                    "role_at_business": {
-                                        "type": "string",
-                                        "enum": [
-                                            "CEO",
-                                            "Accounts payable"
-                                        ],
-                                        "example": "Accounts payable"
-                                    },
-                                    "country": {
-                                        "type": "string",
-                                        "example": "United States"
-                                    },
-                                    "address": {
-                                        "type": "string",
-                                        "example": "Address"
-                                    },
-                                    "city": {
-                                        "type": "string",
-                                        "example": "City"
-                                    },
-                                    "state": {
-                                        "type": "string",
-                                        "example": "State"
-                                    },
-                                    "zipcode": {
-                                        "type": "string",
-                                        "example": "zipcode"
-                                    },
-                                    "accounts_status": {
-                                        "type": "string",
-                                        "enum": [
-                                            "Approved",
-                                            "Pending",
-                                            "Hold",
-                                            "Rejected"
-                                        ],
-                                        "example": "Approved"
-                                    },
-                                    "duns_number": {
-                                        "type": "string",
-                                        "example": "123456789"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Finance record created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Finance record created successfully."
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Validation failed"
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
             }
         },
         "/api/finances/{id}": {
@@ -11546,12 +11325,19 @@
                                     "approved_amount": {
                                         "description": "Approved amount",
                                         "type": "number",
+                                        "format": "float",
                                         "example": 300
                                     },
                                     "credit_limit_amount": {
-                                        "description": "credit limit amount amount",
+                                        "description": "Credit limit amount",
                                         "type": "number",
+                                        "format": "float",
                                         "example": 10000
+                                    },
+                                    "rejection_reason": {
+                                        "description": "Reason for rejection",
+                                        "type": "string",
+                                        "example": "Insufficient credit history"
                                     }
                                 },
                                 "type": "object"
@@ -18632,6 +18418,106 @@
                 ]
             }
         },
+        "/api/frontend/finances/{id}/updateCreditAmount": {
+            "put": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Update finance credit amounts",
+                "operationId": "31029e9f34f1e341df13ebf3cd0b2dd3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "used_credit_amount",
+                                    "available_credit_amount"
+                                ],
+                                "properties": {
+                                    "used_credit_amount": {
+                                        "description": "Used credit amount",
+                                        "type": "number",
+                                        "example": 300
+                                    },
+                                    "available_credit_amount": {
+                                        "description": "Available credit amount",
+                                        "type": "number",
+                                        "example": 500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Credit amounts updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Credit amounts updated successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/finances/check": {
             "get": {
                 "tags": [
@@ -18787,18 +18673,6 @@
                 ],
                 "summary": "Check finance application by customer ID",
                 "operationId": "f7955c36bfbe2b129ec86422fa32ae48",
-                "parameters": [
-                    {
-                        "name": "customer_id",
-                        "in": "query",
-                        "description": "Customer ID to fetch finance details",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 19
-                        }
-                    }
-                ],
                 "requestBody": {
                     "required": true,
                     "content": {
