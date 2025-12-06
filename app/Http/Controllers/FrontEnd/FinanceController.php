@@ -124,12 +124,20 @@ class FinanceController extends Controller
                 'message' => 'Finance cannot be created. Previous net term is Pending, Rejected, or Overdue.'
             ], 422);
         }
-
-
         $data = $validator->validated();
         $data['customer_id'] = Auth::id();
         $data['created_by'] = '0';
         $data['updated_by'] = '0';
+        $data['credit_limit_amount'] = null;
+        $data['used_credit_amount'] = null;
+        $data['available_credit_amount'] = null;
+        $data['accounts_status'] = 'Pending';
+        $data['status'] = 'Pending';
+        $data['next_due_date'] = null;
+        $data['next_due_amt'] = null;
+        $data['paid_amount'] = null;
+        $data['approved_amount'] = null;
+        $data['approval_date'] = null;
         $data['business_address'] = $request->address;
           
         if ($request->hasFile('documents')) {
@@ -143,8 +151,6 @@ class FinanceController extends Controller
         } else {
             $data['documents'] = null;
         }
-
-
         $finance = Finance::updateOrCreate(
             ['customer_id' => $customer_id],
             $data
