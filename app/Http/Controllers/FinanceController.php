@@ -551,12 +551,22 @@ class FinanceController extends Controller
             $data['approvalBy'] = Auth::id();
             $data['approved_amount'] = $request->approved_amount;
             $data['approval_date'] = now();
-            //send mail approvel
+
+            $batch = Bus::batch([])->name("Net Terms Approved by backend")->dispatch();
+            $batch->options['queue'] = config('app.website') . '_NET_TRM';
+            $batch->add(new NetTermApprovedMailJob([
+                'recordId' => $finance->id
+            ]));
         } else if ($request->accounts_status == 'Rejected') {
             $data['rejectedBy'] = Auth::id();
             $data['rejection_reason'] = $request->rejection_reason;
             $data['rejected_date'] = now();
-            //send mail Rejected
+
+            $batch = Bus::batch([])->name("Net Terms Rejected by backend")->dispatch();
+            $batch->options['queue'] = config('app.website') . '_NET_TRM';
+            $batch->add(new NetTermRejectedMailJob([
+                'recordId' => $finance->id
+            ]));
         } else {
             $data['approved_amount'] = 0;
             $data['approvalBy'] = null;
