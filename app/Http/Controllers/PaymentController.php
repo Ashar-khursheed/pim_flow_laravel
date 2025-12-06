@@ -68,7 +68,7 @@ class PaymentController extends Controller
 	 *                 type="string",
 	 *                 description="Method of payment",
 	 *                 example="Credit Card",
-	 *                 enum={"Credit Card", "Debit Card", "PayPal", "Bank Transfer", "Cash", "Stripe", "Razorpay","Paymob","Stax","Square","CC Avenue"}
+	 *                 enum={"Credit Card", "Debit Card", "PayPal", "Bank Transfer", "Cash", "Stripe", "Razorpay","Paymob","Stax","Square","CC Avenue","NetTerm"}
 	 *             ),
 	 *             @OA\Property(
 	 *                 property="amount",
