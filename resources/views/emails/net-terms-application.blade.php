@@ -77,10 +77,10 @@
 					<!-- Goal Statement -->
 					<tr>
 						<td style="padding: 10px 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif;">
+							<p style="margin: 0; padding: 5px 0; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
 								Whether you're stocking disposables, upgrading equipment, or preparing for a busy season, our goal is simple:
 							</p>
-							<p style="margin: 0; padding: 5px 0; font-weight: 600; font-family: 'Noto Sans', sans-serif; color: #26683A;">
+							<p style="margin: 0; padding: 5px 0; font-weight: 600; font-size: 14px; font-family: 'Noto Sans', sans-serif; color: #26683A;">
 								Make it easier, faster, and stress-free so you can focus on running your restaurant.
 							</p>
 						</td>
