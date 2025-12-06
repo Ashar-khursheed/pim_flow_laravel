@@ -789,7 +789,7 @@ class FinanceController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="Finance ID",
+     *         description="payment ID",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
@@ -812,7 +812,7 @@ class FinanceController extends Controller
      */
     public function getDueDetails($id)
     {
-        $finance = Finance::find($id);
+        $finance = FinancesPayment::find($id);
 
         if (!$finance) {
             return response()->json([
@@ -820,18 +820,16 @@ class FinanceController extends Controller
                 'message' => 'Finance record not found.'
             ], 404);
         }
-        if (!empty($finance->next_due_amt)) {
+        if (!empty($finance->balance)) {
             return response()->json([
                 'success' => true,
                 'message' => 'Finance due details fetched.',
                 'data' => [
                     'finance_id'   => $finance->id,
                     'customer_id'  => $finance->customer_id,
-                    'next_due_amt' => $finance->next_due_amt,
-                    'next_due_date'     => $finance->next_due_date,
-                    // 'term_selection' => $finance->term_selection,
-                    // 'used_credit_amount' => $finance->used_credit_amount,
-                    // 'available_credit_amount' => $finance->available_credit_amount,
+                    'due_date'     => $finance->due_date ? date('d-m-Y', strtotime($finance->due_date)) : null,
+                    'balance'     => $finance->balance,
+                    
                 ]
             ], 200);
         } else {
