@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\DB;
+use App\Models\PaymentManagement;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
@@ -169,8 +170,8 @@ class FinanceController extends Controller
                 'requested_amount' => number_format($finance->requested_amount, 2),
                 'credit_limit_amount' => number_format($finance->credit_limit_amount, 2),
                 'approved_amount' => number_format($finance->approved_amount, 2),
-                'approval_date' => date('d-m-Y', strtotime($finance->approval_date)),
-                'approvalBy' => $finance->approvalUser?->username,
+                'approval_date' => $finance->approval_date ? date('d-m-Y', strtotime($finance->approval_date)) : null,
+                'approvalBy' => $finance->approvalUser?->username ?? null,
                 'accounts_payable_email' => $finance->accounts_payable_email,
                 'accounts_payable_phone' => $finance->accounts_payable_phone,
 
@@ -294,7 +295,8 @@ class FinanceController extends Controller
             'requested_amount' => number_format($finance->requested_amount, 2),
             'credit_limit_amount' => number_format($finance->credit_limit_amount, 2),
             'approved_amount' => number_format($finance->approved_amount, 2),
-            'approval_date' => date('d-m-Y', strtotime($finance->approval_date)),
+
+            'approval_date' => $finance->approval_date ? date('d-m-Y', strtotime($finance->approval_date)) : null,
             'approvalBy' => $finance->approvalUser?->username,
             'accounts_payable_email' => $finance->accounts_payable_email,
             'accounts_payable_phone' => $finance->accounts_payable_phone,
@@ -340,7 +342,7 @@ class FinanceController extends Controller
         ], 200);
     }
 
-     /**
+    /**
      * @OA\Post(
      *     path="/api/finances/{id}",
      *     summary="Update an existing finance record",
@@ -502,7 +504,7 @@ class FinanceController extends Controller
             'payment_options' => 'nullable|string',
             'term_selection' => 'required|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
             'requested_amount' => 'required|numeric',
-            'documents' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,svg|max:10240',
+            'documents' => 'nullable|file|mimes:pdf|max:10240',
             'type_of_business' => 'nullable|string|max:255',
             'role_at_business' => 'nullable|string|max:255',
             'accounts_payable_email' => 'required|email|string|max:255',
@@ -550,32 +552,28 @@ class FinanceController extends Controller
             $data['approved_amount'] = $request->approved_amount;
             $data['approval_date'] = now();
             //send mail approvel
-        } else if($request->accounts_status == 'Rejected'){
+        } else if ($request->accounts_status == 'Rejected') {
             $data['rejectedBy'] = Auth::id();
             $data['rejection_reason'] = $request->rejection_reason;
             $data['rejected_date'] = now();
             //send mail Rejected
-        }else{
+        } else {
             $data['approved_amount'] = 0;
             $data['approvalBy'] = null;
             $data['approval_date'] = null;
         }
 
         // Handle document upload
-        if ($request->hasFile('documents')) {
-            $data['documents'] = uploadImageToWebpS3FromFile(
+         if ($request->hasFile('documents')) {
+            $data['documents'] = uploadPdfToS3FromFile(
                 $request,
                 'documents',
-                env('STORAGE_ENV') . '/documents'
+                env('STORAGE_ENV') . '/customer/payment'
             );
-        }
 
-        // --- AUTOMATIC CALCULATION ---
-        // Assuming used_credit_amount is the sum of approved amounts or some business logic
-        // $usedCredit = $data['approved_amount']; // You can customize logic if multiple finance records exist
-        // $data['used_credit_amount'] = $usedCredit;
-        // $data['available_credit_amount'] = $data['credit_limit_amount'] - $usedCredit;
-        // --------------------------------
+        } else {
+            $data['documents'] = null;
+        }
 
         $finance->update($data);
 
@@ -631,88 +629,113 @@ class FinanceController extends Controller
     public function destroy($id)
     {
         $finance = Finance::find($id);
+
         if (!$finance) {
-            return response()->json(['message' => 'Record not found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance record not found.'
+            ], 404);
         }
-        $finance->delete();
-        return response()->json([
-            'success' => true,
-            'message' => 'Finances deleted successfully'
-        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Delete related payments
+            FinancesPayment::where('finances_id', $finance->id)->delete();
+
+            // Delete the finance record
+            $finance->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Finance and related payment records deleted successfully.'
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete record.',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 
 
+
     /**
- * @OA\Post(
- *     path="/api/finances/{id}/account-status",
- *     summary="Update finance account status",
- *     tags={"Finance"},
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="Finance ID",
- *         @OA\Schema(type="integer", example=10)
- *     ),
- *
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\MediaType(
- *             mediaType="multipart/form-data",
- *             @OA\Schema(
- *                 required={"accounts_status", "approved_amount"},
- *
- *                 @OA\Property(
- *                     property="accounts_status",
- *                     type="string",
- *                     description="Finance account status",
- *                     enum={"Approved","Pending","Rejected","Hold"},
- *                     example="Approved"
- *                 ),
- *
- *                 @OA\Property(
- *                     property="approved_amount",
- *                     type="number",
- *                     format="float",
- *                     description="Approved amount",
- *                     example=300.00
- *                 ),
- *
- *                 @OA\Property(
- *                     property="credit_limit_amount",
- *                     type="number",
- *                     format="float",
- *                     description="Credit limit amount",
- *                     example=10000.00
- *                 ),
- *
- *                 @OA\Property(
- *                     property="rejection_reason",
- *                     type="string",
- *                     description="Reason for rejection",
- *                     example="Insufficient credit history"
- *                 )
- *             )
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="Status updated successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Status updated successfully.")
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=404,
- *         description="Finance record not found"
- *     )
- * )
- */
+     * @OA\Post(
+     *     path="/api/finances/{id}/account-status",
+     *     summary="Update finance account status",
+     *     tags={"Finance"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Finance ID",
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"accounts_status", "approved_amount"},
+     *
+     *                 @OA\Property(
+     *                     property="accounts_status",
+     *                     type="string",
+     *                     description="Finance account status",
+     *                     enum={"Approved","Pending","Rejected","Hold"},
+     *                     example="Approved"
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="approved_amount",
+     *                     type="number",
+     *                     format="float",
+     *                     description="Approved amount",
+     *                     example=300.00
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="credit_limit_amount",
+     *                     type="number",
+     *                     format="float",
+     *                     description="Credit limit amount",
+     *                     example=10000.00
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="rejection_reason",
+     *                     type="string",
+     *                     description="Reason for rejection",
+     *                     example="Insufficient credit history"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Status updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Status updated successfully.")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Finance record not found"
+     *     )
+     * )
+     */
 
     public function updateStatus(Request $request, $id)
     {
@@ -760,11 +783,11 @@ class FinanceController extends Controller
                 'recordId' => $finance->id
             ]));
 
-        }else{
+        } else {
             $finance->approved_amount = '0';
-             $finance->approvalBy = null;
-             $finance->approval_date = null;
-             $finance->credit_limit_amount = '0';
+            $finance->approvalBy = null;
+            $finance->approval_date = null;
+            $finance->credit_limit_amount = '0';
         }
         $finance->accounts_status = $request->accounts_status;
         $finance->save();
@@ -784,7 +807,7 @@ class FinanceController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="Finance ID",
+     *         description="payment ID",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
@@ -807,7 +830,7 @@ class FinanceController extends Controller
      */
     public function getDueDetails($id)
     {
-        $finance = Finance::find($id);
+        $finance = FinancesPayment::find($id);
 
         if (!$finance) {
             return response()->json([
@@ -815,18 +838,16 @@ class FinanceController extends Controller
                 'message' => 'Finance record not found.'
             ], 404);
         }
-        if (!empty($finance->next_due_amt)) {
+        if (!empty($finance->balance)) {
             return response()->json([
                 'success' => true,
                 'message' => 'Finance due details fetched.',
                 'data' => [
                     'finance_id'   => $finance->id,
                     'customer_id'  => $finance->customer_id,
-                    'next_due_amt' => $finance->next_due_amt,
-                    'next_due_date'     => $finance->next_due_date,
-                    // 'term_selection' => $finance->term_selection,
-                    // 'used_credit_amount' => $finance->used_credit_amount,
-                    // 'available_credit_amount' => $finance->available_credit_amount,
+                    'due_date'     => $finance->due_date ? date('d-m-Y', strtotime($finance->due_date)) : null,
+                    'balance'     => $finance->balance,
+
                 ]
             ], 200);
         } else {
@@ -834,7 +855,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance no due amount.',
-                'data'=>null
+                'data' => null
             ], 200);
         }
     }
@@ -877,7 +898,7 @@ class FinanceController extends Controller
      *     )
      * )
      */
-    public function payAmount(Request $request,$id)
+    public function payAmount(Request $request, $id)
     {
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
@@ -886,7 +907,7 @@ class FinanceController extends Controller
 
         $pay_amount = (float) $request->pay_amount; // Laravel auto-casts safely
 
-        return DB::transaction(function () use ($id, $pay_amount,$request) {
+        return DB::transaction(function () use ($id, $pay_amount, $request) {
 
             // Lock the row to prevent race conditions
             $financesPayment = FinancesPayment::where('id', $id)
@@ -966,11 +987,10 @@ class FinanceController extends Controller
                 ]
             ]);
         });
-
     }
 
 
-     /**
+    /**
      * @OA\Get(
      *     path="/api/finances/{id}/payment-history",
      *     summary="Get payment history",
@@ -1002,7 +1022,7 @@ class FinanceController extends Controller
      */
     public function getPaymentHistory($id)
     {
-         $paymentHistory = FinancesPayment::where('finances_id', $id)
+        $paymentHistory = FinancesPayment::where('finances_id', $id)
             ->with(['paidByUser', 'updatedBy']) // load user relations
             ->orderBy('id', 'desc')
             ->get();
@@ -1041,7 +1061,5 @@ class FinanceController extends Controller
             'message' => 'Finance Payment History fetched.',
             'data' => $paymentData
         ], 200);
-
     }
-
 }

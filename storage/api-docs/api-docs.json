@@ -11388,7 +11388,7 @@
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Finance ID",
+                        "description": "payment ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -18343,16 +18343,6 @@
                 "operationId": "377cbf287d74fcf579c0a806203301c5",
                 "parameters": [
                     {
-                        "name": "customer_id",
-                        "in": "query",
-                        "description": "Customer ID to fetch finance details",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 19
-                        }
-                    },
-                    {
                         "name": "order_amount",
                         "in": "query",
                         "description": "Order Amount for validating finance",
@@ -18525,18 +18515,6 @@
                 ],
                 "summary": "Check finance application by customer ID",
                 "operationId": "20790c6e488f9ac8b68c1a894aa6a84b",
-                "parameters": [
-                    {
-                        "name": "customer_id",
-                        "in": "query",
-                        "description": "Customer ID to fetch finance details",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 19
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Finance record retrieved successfully",
@@ -18599,18 +18577,6 @@
                 ],
                 "summary": "Check finance application by customer ID",
                 "operationId": "114793d33a63e35ae5e8b352bcdd7925",
-                "parameters": [
-                    {
-                        "name": "customer_id",
-                        "in": "query",
-                        "description": "Customer ID to fetch finance details",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 19
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Finance record retrieved successfully",
@@ -18755,24 +18721,13 @@
                 ]
             }
         },
-        "/api/frontend/finances/{id}/payment-history": {
+        "/api/frontend/finances/payment-history": {
             "get": {
                 "tags": [
                     "Frontend-Finance"
                 ],
                 "summary": "Get payment history",
-                "operationId": "f48ee947dfad4eb6fcd71f3de627e442",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Customer ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "operationId": "fe37eb197012ac274ab2a4f1645eec1d",
                 "responses": {
                     "200": {
                         "description": "Due details fetched",
@@ -18833,16 +18788,7 @@
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Finance ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "customer_id",
-                        "in": "query",
-                        "description": "Customer ID",
+                        "description": "Payment ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -18865,9 +18811,6 @@
                                         "data": {
                                             "properties": {
                                                 "finance_id": {
-                                                    "type": "integer"
-                                                },
-                                                "customer_id": {
                                                     "type": "integer"
                                                 },
                                                 "next_due_amt": {
@@ -18923,7 +18866,6 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "customer_id",
                                     "pay_amount"
                                 ],
                                 "properties": {
@@ -18953,9 +18895,6 @@
                                         "data": {
                                             "properties": {
                                                 "finance_id": {
-                                                    "type": "integer"
-                                                },
-                                                "customer_id": {
                                                     "type": "integer"
                                                 },
                                                 "paid_amount": {
