@@ -18794,18 +18794,6 @@
                 ],
                 "summary": "Check finance application by customer ID",
                 "operationId": "f7955c36bfbe2b129ec86422fa32ae48",
-                "parameters": [
-                    {
-                        "name": "customer_id",
-                        "in": "query",
-                        "description": "Customer ID to fetch finance details",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 19
-                        }
-                    }
-                ],
                 "requestBody": {
                     "required": true,
                     "content": {
