@@ -90,7 +90,7 @@
 
 					<!-- Goal Statement -->
 					<tr>
-						<td style="padding-top: 15px;">
+						<td style="padding-top: 10px;">
 							<p style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif; padding: 0; margin: 5px 0;">
 								Whether you're stocking disposables, upgrading equipment, or preparing for a busy season, our goal is simple:
 							</p>
@@ -102,8 +102,8 @@
 
 					<!-- What Happens Next Section -->
 					<tr>
-						<td style="padding-top: 20px;">
-							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A; border-bottom: 2px solid #26683A; padding-bottom: 5px;">
+						<td>
+							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A; border-bottom: 2px solid #26683A;">
 								What Happens Next
 							</h3>
 							<table cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
@@ -143,8 +143,8 @@
 
 					<!-- Why Choose HorecaStore Section -->
 					<tr>
-						<td style="padding-top: 25px;">
-							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A; border-bottom: 2px solid #26683A; padding-bottom: 5px;">
+						<td>
+							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A; border-bottom: 2px solid #26683A;">
 								Why Thousands of Restaurants Choose HorecaStore
 							</h3>
 							<table cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
@@ -190,7 +190,7 @@
 								</tr>
 							</table>
 
-							<p style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif; padding: 0; margin: 20px 0 10px 0;">
+							<p style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif; padding: 0; margin: 10px 0 5px 0;">
 								We're here to support your growth, keep your kitchen running smoothly, and ensure cash flow never slows you down.
 							</p>
 						</td>
@@ -198,8 +198,8 @@
 
 					<!-- Contact Section -->
 					<tr>
-						<td style="border-top: 3px solid #E2E8F0; padding-top: 25px;">
-							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 15px; color: #26683A;">
+						<td>
+							<h3 style="font-family: 'Noto Sans', sans-serif; font-size:18px; line-height:25px; font-weight: 600; margin:0 0 5px; color: #26683A;">
 								Have Questions or Need Support?
 							</h3>
 
@@ -236,7 +236,7 @@
 
 					<!-- Closing Section -->
 					<tr>
-						<td style="padding-top: 20px;">
+						<td>
 							<p style="font-size:14px; line-height:22px; font-weight: 600; font-family: 'Noto Sans', sans-serif; margin: 10px 0 5px 0;">
 								Thank you for choosing HorecaStore — where your business gets the best, for less.
 							</p>
