@@ -173,7 +173,7 @@
 							<p style="font-weight: bold; font-size: 14px; padding: 5px 0; margin: 0; font-family: 'Noto Sans', sans-serif;">
 								Need help or have questions?
 							</p>
-							<table cellspacing="0" cellpadding="0" border="0" style="width: 100%; font-family: 'Noto Sans', sans-serif;">
+							<table cellspacing="0" cellpadding="5" border="0" style="width: 100%;"">
 								<tr>
 									<td style="vertical-align: middle; width: 30px;">
 										<span style="font-size: 20px;">✉️</span>
