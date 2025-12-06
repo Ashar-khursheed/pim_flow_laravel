@@ -18978,25 +18978,13 @@
                 ]
             }
         },
-        "/api/frontend/finances/full-pay/{id}": {
+        "/api/frontend/finances/full-pay": {
             "post": {
                 "tags": [
                     "Frontend-Finance"
                 ],
                 "summary": "Full Net Term Pay amount",
-                "operationId": "77dadf0775b8884528b189bf892dff3c",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "finance id",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 10
-                        }
-                    }
-                ],
+                "operationId": "6de4314e196f21a84745cc7a1970b56d",
                 "requestBody": {
                     "required": true,
                     "content": {

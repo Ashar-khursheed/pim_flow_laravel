@@ -1106,8 +1106,6 @@ class FinanceController extends Controller
                     'message' => 'Finance payment record not found or access denied.'
                 ], 404);
             }
-
-
             // Recalculate current remaining balance
             $current_paid = $financesPayment->paid_amount ?? 0;
             $due_amount   = $financesPayment->due_amount ?? 0;
