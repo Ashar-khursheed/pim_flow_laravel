@@ -129,7 +129,7 @@
 									<td valign="top" style="padding: 5px 0; font-family: 'Noto Sans', sans-serif;">
 										<span style="color: #26683A; font-size: 16px; vertical-align: middle;">✓</span>
 										<span style="color:#232425; margin-left: 8px; font-family: 'Noto Sans', sans-serif; font-size: 14px;">
-											Timeline for reapplication with updated information
+											Timeline for re-application with updated information
 										</span>
 									</td>
 								</tr>
@@ -141,7 +141,7 @@
 					<tr>
 						<td style="padding: 10px 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
 							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif;">
-								<strong style="color:#26683A;">Important:</strong> Reapplying with the same business information will likely result in the same outcome. Please contact us first so we can guide you properly.
+								<strong style="color:#26683A;">Important:</strong> Re-applying with the same business information will likely result in the same outcome. Please contact us first so we can guide you properly.
 							</p>
 						</td>
 					</tr>
