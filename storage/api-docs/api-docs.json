@@ -18925,6 +18925,131 @@
                 ]
             }
         },
+        "/api/frontend/finances/{id}/get-full-due": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Get full net term due due amount and due date",
+                "operationId": "87aec0214244d64af176af8bec4b2072",
+                "responses": {
+                    "200": {
+                        "description": "Due details fetched",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "finance_id": {
+                                                    "type": "integer"
+                                                },
+                                                "next_due_amt": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "due_date": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/full-pay": {
+            "post": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Full Net Term Pay amount",
+                "operationId": "6de4314e196f21a84745cc7a1970b56d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pay_amount"
+                                ],
+                                "properties": {
+                                    "pay_amount": {
+                                        "type": "number",
+                                        "format": "float"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "finance_id": {
+                                                    "type": "integer"
+                                                },
+                                                "paid_amount": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "remaining_due": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/product-accessories": {
             "get": {
                 "tags": [

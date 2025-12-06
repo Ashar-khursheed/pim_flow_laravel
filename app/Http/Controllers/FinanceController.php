@@ -783,9 +783,10 @@ class FinanceController extends Controller
             ]));
 
         } else if($request->accounts_status == 'Rejected'){
-            $data['rejectedBy'] = Auth::id();
-            $data['rejection_reason'] = $request->rejection_reason;
-            $data['rejected_date'] = now();
+            
+            $finance->rejectedBy = Auth::id();
+            $finance->rejection_reason = $request->rejection_reason;             
+            $finance->rejected_date = now();
 
             $batch = Bus::batch([])->name("Net Terms Rejected by backend")->dispatch();
             $batch->options['queue'] = config('app.website') . '_NET_TRM';
