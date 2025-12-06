@@ -760,10 +760,10 @@ class FinanceController extends Controller
             $finance->credit_limit_amount = $request->credit_limit_amount;
             $finance->approval_date = now();
             //send mail Approved
-        } else if ($request->accounts_status == 'Rejected') {
-            $data['rejectedBy'] = Auth::id();
-            $data['rejection_reason'] = $request->rejection_reason;
-            $data['rejected_date'] = now();
+        } else if ($request->accounts_status == 'Rejected') {             
+            $finance->rejected_date = now();
+            $finance->rejection_reason = $request->rejection_reason;
+            $finance->rejectedBy = Auth::id();
             //send mail Rejected
         } else {
             $finance->approved_amount = '0';
