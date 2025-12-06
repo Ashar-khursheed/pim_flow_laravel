@@ -283,7 +283,9 @@ class OrderController extends BaseController
 			'pay_with_cheque' => 'nullable|boolean',
 			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
 			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
-
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
+			'additional_discount' => 'nullable|numeric|min:0',
 
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
@@ -382,7 +384,22 @@ class OrderController extends BaseController
 			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
 			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
 
+			/* -----------------------------------------
+			ADDITIONAL AMOUNT & ADDITIONAL DISCOUNT
+			----------------------------------------- */
+			$additionalAmount = $request->additional_amount_price ?? 0;
+			$discountedAmount += $additionalAmount;
+
+			$extraDiscount = $request->additional_discount ?? 0;
+			$discountedAmount -= $extraDiscount;
+
+			if ($discountedAmount < 0) {
+				$discountedAmount = 0;
+			}
+			/* ----------------------------------------- */
+
 			$customer = auth()->user();
+
 			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
@@ -414,6 +431,9 @@ class OrderController extends BaseController
 				'is_residential_address' => $request->is_residential_address,
 				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
+				'additional_amount_name' => $request->additional_amount_name,
+				'additional_amount_price' => $additionalAmount,
+				'additional_discount' => $extraDiscount,
 
 				'pay_with_cheque' => $payWithCheque,
 				'cheque_discount_percentage' => $chequeDiscountPercentage,
@@ -561,7 +581,6 @@ class OrderController extends BaseController
 			], 500);
 		}
 	}
-		 
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/orders/{id}",
