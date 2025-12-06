@@ -12,6 +12,12 @@ use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\DB;
 use App\Models\PaymentManagement;
 
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Jobs\NetTerm\NetTermApprovedMailJob;
+use App\Jobs\NetTerm\NetTermRejectedMailJob;
+
 class FinanceController extends Controller
 {
 
@@ -20,7 +26,7 @@ class FinanceController extends Controller
      * @OA\Get(
      *     path="/api/finances",
      *     summary="Get all finance records",
-     *     tags={"Finance"},      
+     *     tags={"Finance"},
      *     @OA\Parameter(
      *         name="status",
      *         in="query",
@@ -235,7 +241,7 @@ class FinanceController extends Controller
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="payment_selection", type="string", example="Credit"),
      *                 @OA\Property(property="amount", type="number", format="float", example=5000.75),
-     *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd"),     *                  
+     *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd"),     *
      *                 @OA\Property(property="documents", type="string", example="https://s3.amazonaws.com/path/to/document.pdf"),
      *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-01T10:00:00Z"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-01-02T15:30:00Z")
@@ -545,12 +551,22 @@ class FinanceController extends Controller
             $data['approvalBy'] = Auth::id();
             $data['approved_amount'] = $request->approved_amount;
             $data['approval_date'] = now();
-            //send mail approvel
+
+            $batch = Bus::batch([])->name("Net Terms Approved by backend")->dispatch();
+            $batch->options['queue'] = config('app.website') . '_NET_TRM';
+            $batch->add(new NetTermApprovedMailJob([
+                'recordId' => $finance->id
+            ]));
         } else if ($request->accounts_status == 'Rejected') {
             $data['rejectedBy'] = Auth::id();
             $data['rejection_reason'] = $request->rejection_reason;
             $data['rejected_date'] = now();
-            //send mail Rejected
+
+            $batch = Bus::batch([])->name("Net Terms Rejected by backend")->dispatch();
+            $batch->options['queue'] = config('app.website') . '_NET_TRM';
+            $batch->add(new NetTermRejectedMailJob([
+                'recordId' => $finance->id
+            ]));
         } else {
             $data['approved_amount'] = 0;
             $data['approvalBy'] = null;
@@ -568,7 +584,7 @@ class FinanceController extends Controller
         } else {
             $data['documents'] = null;
         }
- 
+
         $finance->update($data);
 
         return response()->json([
@@ -596,7 +612,7 @@ class FinanceController extends Controller
      *         description="Finance record ID",
      *         @OA\Schema(type="integer", example=1)
      *     ),
-     *      
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Finance record deleted successfully",
@@ -759,12 +775,25 @@ class FinanceController extends Controller
             $finance->approved_amount = $request->approved_amount;
             $finance->credit_limit_amount = $request->credit_limit_amount;
             $finance->approval_date = now();
-            //send mail Approved
-        } else if ($request->accounts_status == 'Rejected') {             
-            $finance->rejected_date = now();
-            $finance->rejection_reason = $request->rejection_reason;
+
+            $batch = Bus::batch([])->name("Net Terms Approved by backend")->dispatch();
+            $batch->options['queue'] = config('app.website') . '_NET_TRM';
+            $batch->add(new NetTermApprovedMailJob([
+                'recordId' => $finance->id
+            ]));
+
+        } else if($request->accounts_status == 'Rejected'){
+            
             $finance->rejectedBy = Auth::id();
-            //send mail Rejected
+            $finance->rejection_reason = $request->rejection_reason;             
+            $finance->rejected_date = now();
+
+            $batch = Bus::batch([])->name("Net Terms Rejected by backend")->dispatch();
+            $batch->options['queue'] = config('app.website') . '_NET_TRM';
+            $batch->add(new NetTermRejectedMailJob([
+                'recordId' => $finance->id
+            ]));
+
         } else {
             $finance->approved_amount = '0';
             $finance->approvalBy = null;
@@ -829,7 +858,7 @@ class FinanceController extends Controller
                     'customer_id'  => $finance->customer_id,
                     'due_date'     => $finance->due_date ? date('d-m-Y', strtotime($finance->due_date)) : null,
                     'balance'     => $finance->balance,
-                    
+
                 ]
             ], 200);
         } else {
@@ -858,7 +887,7 @@ class FinanceController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"customer_id", "pay_amount"},     *              
+     *             required={"customer_id", "pay_amount"},     *
      *             @OA\Property(property="customer_id", type="integer"),
      *             @OA\Property(property="pay_amount", type="number", format="float")
      *         )

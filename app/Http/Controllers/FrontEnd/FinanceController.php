@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
-use App\Jobs\NetTermMailJob;
+use App\Jobs\NetTerm\NetTermMailJob;
 
 class FinanceController extends Controller
 {
@@ -110,7 +110,7 @@ class FinanceController extends Controller
             ], 422);
         }
         $customer_id = Auth::id();
-       
+
 
         // Check last finance
         $lastFinance = Finance::where('customer_id', $customer_id)
@@ -139,7 +139,7 @@ class FinanceController extends Controller
         $data['approved_amount'] = null;
         $data['approval_date'] = null;
         $data['business_address'] = $request->address;
-          
+
         if ($request->hasFile('documents')) {
 
             $data['documents'] = uploadPdfToS3FromFile(
@@ -161,6 +161,7 @@ class FinanceController extends Controller
         $batch->add(new NetTermMailJob([
             'recordId' => $finance->id
         ]));
+
         return response()->json([
             'success' => true,
             'message' => 'Application submitted successfully.',
@@ -288,7 +289,7 @@ class FinanceController extends Controller
                 'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the approved amount (" . number_format($finance->approved_amount, 2) . ").",
             ], 422);
         }
-        
+
 
 
         $data = array(
@@ -418,7 +419,7 @@ class FinanceController extends Controller
      *     summary="Check finance application by customer ID",
      *     tags={"Frontend-Finance"},
      *     security={{"bearerAuth":{}}},
-     *      
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Finance record retrieved successfully",
@@ -478,7 +479,7 @@ class FinanceController extends Controller
      *     summary="Check finance application by customer ID",
      *     tags={"Frontend-Finance"},
      *     security={{"bearerAuth":{}}},
-     *      
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Finance record retrieved successfully",
@@ -630,7 +631,7 @@ class FinanceController extends Controller
      */
     public function financeOrder(Request $request)
     {
-        $validator = Validator::make($request->all(), [             
+        $validator = Validator::make($request->all(), [
             'order_amount'   => 'required|numeric|min:0.01',
             'term_selection' => 'required|in:Net 30 Days,Net 45 Days,Net 60 Days',
         ]);
@@ -645,7 +646,7 @@ class FinanceController extends Controller
 
         $customerId     = auth()->id();
         $orderAmount    = (float) $request->order_amount;
-        $termSelection  = $request->term_selection;       
+        $termSelection  = $request->term_selection;
 
         return DB::transaction(function () use ($customerId, $orderAmount, $termSelection) {
 
@@ -687,11 +688,11 @@ class FinanceController extends Controller
             $days = match ($termSelection) {
                 'Net 30 Days' => 30,
                 'Net 45 Days' => 45,
-                'Net 60 Days' => 60                
+                'Net 60 Days' => 60
             };
 
             $dueDate = now()->addDays($days)->format('Y-m-d');
- 
+
             // Update Finance Record
             $finance->used_credit_amount        += $orderAmount;
             $finance->available_credit_amount    = $finance->approved_amount - $finance->used_credit_amount;
@@ -715,7 +716,7 @@ class FinanceController extends Controller
                 'due_amount'    => $orderAmount,
                 'paid_amount'   => 0,
                 'balance'       => $orderAmount,
-                'due_date'      => $dueDate,                
+                'due_date'      => $dueDate,
                 'created_by'    => auth()->id(),
             ]);
 
@@ -733,13 +734,13 @@ class FinanceController extends Controller
             ], 200);
         });
     }
- 
+
     /**
      * @OA\Get(
      *     path="/api/frontend/finances/payment-history",
      *     summary="Get payment history",
      *     tags={"Frontend-Finance"},
-     *     security={{"bearerAuth":{}}},      
+     *     security={{"bearerAuth":{}}},
      *     @OA\Response(
      *         response=200,
      *         description="Due details fetched",
@@ -824,7 +825,7 @@ class FinanceController extends Controller
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="finance_id", type="integer"),
-     *                 
+     *
      *                 @OA\Property(property="next_due_amt", type="number", format="float"),
      *                 @OA\Property(property="due_date", type="string", format="date")
      *             )
@@ -851,11 +852,11 @@ class FinanceController extends Controller
                 'success' => true,
                 'message' => 'Finance due details fetched.',
                 'data' => [
-                    'id'   => $finance->id,                  
+                    'id'   => $finance->id,
                     'customer_id'  => $finance->customer_id,
                     'balance' => $finance->balance,
                     'due_date'     => $finance->due_date ? date('d-m-Y', strtotime($finance->due_date)) : null,
-                     
+
                 ]
             ], 200);
         } else {
@@ -882,7 +883,7 @@ class FinanceController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"pay_amount"},             
+     *             required={"pay_amount"},
      *             @OA\Property(property="pay_amount", type="number", format="float")
      *         )
      *     ),
@@ -893,7 +894,7 @@ class FinanceController extends Controller
      *             @OA\Property(property="success", type="boolean"),
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="finance_id", type="integer"),                  
+     *                 @OA\Property(property="finance_id", type="integer"),
      *                 @OA\Property(property="paid_amount", type="number", format="float"),
      *                 @OA\Property(property="remaining_due", type="number", format="float"),
      *                 @OA\Property(property="status", type="string")

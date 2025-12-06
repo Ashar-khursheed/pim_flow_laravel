@@ -18,7 +18,7 @@
 
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: #232425;">
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-		Thank you for applying for Net Terms with The Horeca Store. We've received your request and our team has started reviewing it.
+		Thank you for applying for Net Terms with The HorecaStore. We've received your request and our team has started reviewing it.
 	</span>
 
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff; font-family: 'Noto Sans', sans-serif;">
@@ -36,7 +36,7 @@
 					<tr>
 						<td style="padding: 0 20px; font-size: 16px; font-family: 'Noto Sans', sans-serif;">
 							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif;">
-								Hi <strong style="color:#26683A; font-family: 'Noto Sans', sans-serif;">{{ $customerName }}</strong>!
+								Hi <strong style="color:#26683A; font-family: 'Noto Sans', sans-serif;">{{ $name }}</strong>!
 							</p>
 							<p style="margin: 0; padding: 5px 0; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
 								Thank you for applying for <strong>Net Terms with The HorecaStore</strong>.
@@ -170,24 +170,34 @@
 					<!-- Contact Section -->
 					<tr>
 						<td style="padding: 10px 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-							<p style="font-weight: 500; font-size: 14px; padding: 5px 0; margin: 0; font-family: 'Noto Sans', sans-serif;">
-								Need support? Real people. Real help. Just a call away.
+							<p style="font-weight: bold; font-size: 14px; padding: 5px 0; margin: 0; font-family: 'Noto Sans', sans-serif;">
+								Need help or have questions?
 							</p>
-							<table cellspacing="0" cellpadding="0" border="0" style="width: 100%; font-family: 'Noto Sans', sans-serif;">
+							<table cellspacing="0" cellpadding="5" border="0" style="width: 100%;"">
 								<tr>
-									<td style="color: #26683A; font-weight: 500; padding-bottom: 8px; font-family: 'Noto Sans', sans-serif; font-size: 14px;">
-										📞 <span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">Email:</span>
-										<a href="mailto:{{ $siteEmail }}" style="color:#26683A; text-decoration: none; font-weight: 600; font-family: 'Noto Sans', sans-serif;">
-											{{ $siteEmail }}
-										</a>
+									<td style="vertical-align: middle; width: 30px;">
+										<span style="font-size: 20px;">✉️</span>
+									</td>
+									<td style="padding: 5px 0;">
+										<span style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif;">
+											<strong>Email us at:</strong>
+											<a href="mailto:{{ $siteEmail }}" style="color:#26683A; text-decoration: none; font-weight: 600;">
+												{{ $siteEmail }}
+											</a>
+										</span>
 									</td>
 								</tr>
 								<tr>
-									<td style="color: #26683A; font-weight: 500; font-family: 'Noto Sans', sans-serif; font-size: 14px;">
-										🌐 <span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">Phone:</span>
-										<a href="tel:{{ $phoneNumber }}" style="color:#26683A; text-decoration: none; font-weight: 600; font-family: 'Noto Sans', sans-serif;">
-											{{ $phoneNumber }}
-										</a>
+									<td style="vertical-align: middle; width: 30px;">
+										<span style="font-size: 20px;">📞</span>
+									</td>
+									<td style="padding: 5px 0;">
+										<span style="font-size:14px; line-height:22px; font-family: 'Noto Sans', sans-serif;">
+											<strong>Or call us anytime at</strong>
+											<a href="tel:{{ $phoneNumber }}" style="color:#26683A; text-decoration: none; font-weight: 600;">
+												{{ $phoneNumber }}
+											</a>
+										</span>
 									</td>
 								</tr>
 							</table>

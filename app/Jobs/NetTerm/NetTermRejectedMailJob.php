@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs\NetTerm;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -12,9 +12,9 @@ use Illuminate\Queue\Middleware\RateLimited;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\FrontEnd\Finance;
-use App\Mail\NetTermMail;
+use App\Mail\NetTerm\NetTermRejectedMail;
 
-class NetTermMailJob implements ShouldQueue
+class NetTermRejectedMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
@@ -54,7 +54,7 @@ class NetTermMailJob implements ShouldQueue
 			$to = $finance->customer->email;
 			Mail::to($to)->send(
 				(
-					new NetTermMail($finance)
+					new NetTermRejectedMail($finance)
 				)
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)
@@ -66,7 +66,7 @@ class NetTermMailJob implements ShouldQueue
 				$cc = $recipients;
 				Mail::to($to)->cc($cc)->send(
 					(
-						new NetTermMail($finance)
+						new NetTermRejectedMail($finance)
 					)
 					->from($fromEmail, $fromName)
 					->replyTo($replyToEmail)

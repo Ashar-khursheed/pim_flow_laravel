@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Mail;
+namespace App\Mail\NetTerm;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -9,7 +9,7 @@ use Carbon\Carbon;
 
 use App\Models\FrontEnd\Finance;
 
-class NetTermMail extends Mailable
+class NetTermRejectedMail extends Mailable
 {
 	use Queueable, SerializesModels;
 
@@ -50,14 +50,14 @@ class NetTermMail extends Mailable
 
 		$params = [
 			'logoUrl' => $logoUrl,
-			'customerName' => $name,
+			'name' => $name,
 			'siteEmail' => $siteEmail,
 			'phoneNumber' => $phoneNumber,
 			'siteUrl' => $siteUrl,
 		];
 
-		return $this->subject("Your Net Terms Application Has Been Submitted")
-		->markdown('emails.net-terms-application')
+		return $this->subject("Update on Your Net Payment Terms Application")
+		->markdown('emails.net-terms.net-terms-rejection')
 		->with($params);
 	}
 }
