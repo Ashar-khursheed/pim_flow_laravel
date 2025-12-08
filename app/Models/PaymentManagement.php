@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\Invoice;
 
 class PaymentManagement extends Model
 {
@@ -41,4 +42,10 @@ class PaymentManagement extends Model
     {
     return $this->belongsTo(User::class, 'created_by'); // adjust foreign key if needed
     }
+
+    public function invoice()
+	{
+		return $this->hasOne(Invoice::class, 'order_id', 'id');
+	}
+     
 }
