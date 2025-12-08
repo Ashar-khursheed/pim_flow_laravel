@@ -11388,7 +11388,7 @@
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "payment ID",
+                        "description": "Payment ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -11455,7 +11455,7 @@
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Finance ID",
+                        "description": "Payment ID",
                         "required": true,
                         "schema": {
                             "type": "integer",

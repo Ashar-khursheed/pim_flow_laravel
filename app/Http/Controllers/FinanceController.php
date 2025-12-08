@@ -815,7 +815,7 @@ class FinanceController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="payment ID",
+     *         description="Payment ID",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
@@ -877,7 +877,7 @@ class FinanceController extends Controller
      * @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="Finance ID",
+     *         description="Payment ID",
      *         required=true,
      *         @OA\Schema(type="integer", example=10)
      *     ),
