@@ -38315,6 +38315,11 @@
                                     "type": {
                                         "description": "Type should be either 'Brand' or 'Category'",
                                         "type": "string",
+                                        "enum": [
+                                            "Brand",
+                                            "Vendor",
+                                            "Category"
+                                        ],
                                         "example": "Category"
                                     },
                                     "relational_id": {

@@ -493,7 +493,7 @@ class ProductSupplierController extends BaseController
 	 *         @OA\JsonContent(
 	 *             required={"type", "relational_id", "range_from", "range_to"},
 	 *             @OA\Property(property="status", type="string", example="all", description="Status"),
-	 *             @OA\Property(property="type", type="string", example="Category", description="Type should be either 'Brand' or 'Category'"),
+	 *             @OA\Property(property="type", type="string", enum={"Brand","Vendor","Category"}, example="Category", description="Type should be either 'Brand' or 'Category'"),
 	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >= 1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)")
