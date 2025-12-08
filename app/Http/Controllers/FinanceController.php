@@ -266,7 +266,7 @@ class FinanceController extends Controller
      * )
      */
     public function show($id)
-    {
+    {  
         $finance = Finance::with([
             'customer',
             'createdBy',
@@ -499,7 +499,7 @@ class FinanceController extends Controller
      * )
      */
     public function update(Request $request, $id)
-    {
+    {     
         $validator = Validator::make($request->all(), [
             'payment_options' => 'nullable|string',
             'term_selection' => 'required|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
@@ -574,13 +574,12 @@ class FinanceController extends Controller
         }
 
         // Handle document upload
-         if ($request->hasFile('documents')) {
+        if ($request->hasFile('documents')) {
             $data['documents'] = uploadPdfToS3FromFile(
                 $request,
                 'documents',
                 env('STORAGE_ENV') . '/customer/payment'
             );
-
         } else {
             $data['documents'] = null;
         }
@@ -637,7 +636,7 @@ class FinanceController extends Controller
      */
 
     public function destroy($id)
-    {
+    {  
         $finance = Finance::find($id);
 
         if (!$finance) {
@@ -781,11 +780,10 @@ class FinanceController extends Controller
             $batch->add(new NetTermApprovedMailJob([
                 'recordId' => $finance->id
             ]));
+        } else if ($request->accounts_status == 'Rejected') {
 
-        } else if($request->accounts_status == 'Rejected'){
-            
             $finance->rejectedBy = Auth::id();
-            $finance->rejection_reason = $request->rejection_reason;             
+            $finance->rejection_reason = $request->rejection_reason;
             $finance->rejected_date = now();
 
             $batch = Bus::batch([])->name("Net Terms Rejected by backend")->dispatch();
@@ -793,7 +791,6 @@ class FinanceController extends Controller
             $batch->add(new NetTermRejectedMailJob([
                 'recordId' => $finance->id
             ]));
-
         } else {
             $finance->approved_amount = '0';
             $finance->approvalBy = null;
@@ -991,8 +988,7 @@ class FinanceController extends Controller
                 'data' => [
                     'finance_id'      => $finance->id,
                     'paid_amount'     => $pay_amount,
-                    'total_paid'      => $financesPayment->paid_amount,
-                    'remaining_due'   => $finance->next_due_amt,
+                    'total_paid'      => $financesPayment->paid_amount,                    
                     'balance'         => $financesPayment->balance,
                     'status'          => $finance->status,
                 ]
@@ -1032,7 +1028,7 @@ class FinanceController extends Controller
      * )
      */
     public function getPaymentHistory($id)
-    {
+    { 
         $paymentHistory = FinancesPayment::where('finances_id', $id)
             ->with(['paidByUser', 'updatedBy']) // load user relations
             ->orderBy('id', 'desc')
@@ -1072,5 +1068,266 @@ class FinanceController extends Controller
             'message' => 'Finance Payment History fetched.',
             'data' => $paymentData
         ], 200);
+    }
+    /**
+     * @OA\Get(
+     *     path="/api/finances/get-full-due/{id}/{customer_id}",
+     *     summary="Get full net term due amount and due date",
+     *     tags={"Finance"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Finance ID",
+     *         @OA\Schema(type="integer", example=12)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="customer_id",
+     *         in="path",
+     *         required=true,
+     *         description="Customer ID",
+     *         @OA\Schema(type="integer", example=101)
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Due details fetched",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Finance due details fetched."),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=12),
+     *                 @OA\Property(property="customer_id", type="integer", example=101),
+     *                 @OA\Property(property="due_amount", type="number", example=250.00),
+     *                 @OA\Property(property="due_date", type="string", example="15-12-2025")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=404, description="Finance not found")
+     * )
+     */
+
+    public function getFullNetTermDue(Request $request, $id, $customer_id)
+    {   
+        // Validate route parameters
+        $validator = Validator::make(
+            ['id' => $id, 'customer_id' => $customer_id],
+            [
+                'id' => 'required|exists:finances,id',
+                'customer_id' => 'required|exists:customers,id'
+            ]
+        );
+
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Fetch finance
+        $finance = Finance::where('id', $id)
+            ->where('customer_id', $customer_id)
+            ->first();
+
+        if (!$finance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance record not found'
+            ], 404);
+        }
+
+        // If due exists
+        if (!empty($finance->next_due_amt)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Finance due details fetched.',
+                'data' => [
+                    'id'          => $finance->id,
+                    'customer_id' => $finance->customer_id,
+                    'due_amount'  => $finance->next_due_amt,
+                    'due_date'    => $finance->next_due_date
+                        ? date('d-m-Y', strtotime($finance->next_due_date))
+                        : null,
+                ]
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Finance has no due amount.',
+        ], 200);
+    }
+
+
+    /**
+     * @OA\Post(
+     *     path="/api/finances/pay-full-payment/{id}",
+     *     summary="Pay full Net Term outstanding amount",
+     *     tags={"Finance"},
+     *     security={{"bearerAuth":{}}},
+     *  @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Finance ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"id", "customer_id", "pay_amount"},
+     *             @OA\Property(
+     *                 property="customer_id",
+     *                 type="integer",
+     *                 example=101,
+     *                 description="Customer ID"
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="pay_amount",
+     *                 type="number",
+     *                 format="float",
+     *                 example=250.00,
+     *                 description="Full payment amount"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Full payment completed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Full payment processed successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="finance_id", type="integer", example=12),
+     *                 @OA\Property(property="paid_amount", type="number", format="float", example=500.00),
+     *                 @OA\Property(property="remaining_due", type="number", format="float", example=0.00),
+     *                 @OA\Property(property="status", type="string", example="Paid")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Finance not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Finance record not found")
+     *         )
+     *     )
+     * )
+     */
+
+    public function payfullNetTerm(Request $request,$id)
+    {   
+        $request->validate([
+            'pay_amount' => 'required|numeric|min:0.01',
+            'customer_id' => 'required|exists:customers,id'
+             
+        ]);
+
+        $pay_amount = (float) $request->pay_amount;
+        return DB::transaction(function () use ($pay_amount, $request) {
+
+            // Lock the main finance record
+            $finance = Finance::where('id', $request->id)->where('customer_id', $request->customer_id)
+                ->lockForUpdate()
+                ->orderByDesc('id')
+                ->firstOrFail();
+
+            // Get all UNPAID or PARTIALLY PAID invoices (oldest first = FIFO)
+            $pendingPayments = FinancesPayment::where('finances_id', $finance->id)
+                ->where('finances_id', $request->id)
+                ->where('customer_id', $request->customer_id)
+                ->whereRaw('due_amount > paid_amount') // Only unpaid/partially paid
+                ->orderBy('due_date', 'asc') // Oldest first
+                ->lockForUpdate() // CRITICAL: prevent race conditions
+                ->get();
+            if ($pendingPayments->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No outstanding balance to pay.'
+                ], 400);
+            }
+
+            $remainingPayment = $pay_amount;
+            $totalPaidBefore = $finance->paid_amount ?? 0;
+            $invoicesPaid = [];
+
+            foreach ($pendingPayments as $payment) {
+                if ($remainingPayment <= 0) break;
+
+                $remainingBalance = $payment->due_amount - $payment->paid_amount;
+
+                // How much to apply to this invoice
+                $applyAmount = min($remainingPayment, $remainingBalance);
+
+                // Update this invoice
+                $payment->paid_amount    += $applyAmount;
+                $payment->balance         = $payment->due_amount - $payment->paid_amount;
+                $payment->paid_on_date    = now();
+                $payment->paid_by         = Auth::id();
+                // $payment->status          = $payment->balance <= 0 ? 'Paid' : 'Pending';
+                $payment->save();
+
+                $remainingPayment -= $applyAmount;
+            }
+
+            // Update main finance record
+            $finance->paid_amount   += ($pay_amount - $remainingPayment); // Only what was actually used
+            $finance->next_due_amt    = max(0, $finance->next_due_amt - ($pay_amount - $remainingPayment));
+            $finance->status          = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+
+            $finance->save();
+
+            // Record in payment history
+            PaymentManagement::create([
+                'payment_method' => 'netTerm',
+                'payment_mode'   => 'NetTerm',
+                'amount'         => $pay_amount,
+                'order_id'       => $finance->id,
+                'customer_id'    => $request->customer_id,
+                'status'         => 'Success',
+                'payment_date'   => now(),
+                'created_by'     => Auth::id(),
+                'note'           => $remainingPayment > 0 ? 'Partial payment applied (overpaid: ' . $remainingPayment . ')' : 'Full allocation',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment processed successfully.',
+                'data' => [
+                    'finance_id'        => $finance->id,
+                    'amount_paid'       => $pay_amount,
+                    'amount_applied'    => $pay_amount - $remainingPayment,
+                    'overpaid_amount'   => $remainingPayment > 0 ? $remainingPayment : 0,
+                    'remaining_due'     => $finance->next_due_amt,
+                    'status'            => $finance->status,
+                    'invoices_updated'  => $invoicesPaid,
+                ]
+            ]);
+        });
     }
 }

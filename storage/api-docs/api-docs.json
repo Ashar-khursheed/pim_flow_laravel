@@ -11602,6 +11602,229 @@
                 ]
             }
         },
+        "/api/finances/get-full-due/{id}/{customer_id}": {
+            "get": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Get full net term due amount and due date",
+                "operationId": "8bc82e6f1a5787c6e42ea80a7d3851c9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 12
+                        }
+                    },
+                    {
+                        "name": "customer_id",
+                        "in": "path",
+                        "description": "Customer ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 101
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Due details fetched",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance due details fetched."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "customer_id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "due_amount": {
+                                                    "type": "number",
+                                                    "example": 250
+                                                },
+                                                "due_date": {
+                                                    "type": "string",
+                                                    "example": "15-12-2025"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/finances/pay-full-payment/{id}": {
+            "post": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Pay full Net Term outstanding amount",
+                "operationId": "dc2f089d3456d4c5e5a0ebaaa3bf1b5a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "customer_id",
+                                    "pay_amount"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "description": "Customer ID",
+                                        "type": "integer",
+                                        "example": 101
+                                    },
+                                    "pay_amount": {
+                                        "description": "Full payment amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 250
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Full payment completed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Full payment processed successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "finance_id": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "paid_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 500
+                                                },
+                                                "remaining_due": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "Paid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/flash-sales": {
             "get": {
                 "tags": [
@@ -18860,131 +19083,6 @@
                         }
                     }
                 ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "pay_amount"
-                                ],
-                                "properties": {
-                                    "pay_amount": {
-                                        "type": "number",
-                                        "format": "float"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Payment successful",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "finance_id": {
-                                                    "type": "integer"
-                                                },
-                                                "paid_amount": {
-                                                    "type": "number",
-                                                    "format": "float"
-                                                },
-                                                "remaining_due": {
-                                                    "type": "number",
-                                                    "format": "float"
-                                                },
-                                                "status": {
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/finances/{id}/get-full-due": {
-            "get": {
-                "tags": [
-                    "Frontend-Finance"
-                ],
-                "summary": "Get full net term due due amount and due date",
-                "operationId": "87aec0214244d64af176af8bec4b2072",
-                "responses": {
-                    "200": {
-                        "description": "Due details fetched",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "finance_id": {
-                                                    "type": "integer"
-                                                },
-                                                "next_due_amt": {
-                                                    "type": "number",
-                                                    "format": "float"
-                                                },
-                                                "due_date": {
-                                                    "type": "string",
-                                                    "format": "date"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Finance not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/finances/full-pay": {
-            "post": {
-                "tags": [
-                    "Frontend-Finance"
-                ],
-                "summary": "Full Net Term Pay amount",
-                "operationId": "6de4314e196f21a84745cc7a1970b56d",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -32831,7 +32929,8 @@
                                             "Paymob",
                                             "Stax",
                                             "Square",
-                                            "CC Avenue"
+                                            "CC Avenue",
+                                            "NetTerm"
                                         ],
                                         "example": "Credit Card"
                                     },
@@ -33290,7 +33389,8 @@
                                             "COD",
                                             "PayPal",
                                             "Stax",
-                                            "Square"
+                                            "Square",
+                                            "NetTerm"
                                         ],
                                         "example": "Cash on Delivery"
                                     },
@@ -38215,6 +38315,11 @@
                                     "type": {
                                         "description": "Type should be either 'Brand' or 'Category'",
                                         "type": "string",
+                                        "enum": [
+                                            "Brand",
+                                            "Vendor",
+                                            "Category"
+                                        ],
                                         "example": "Category"
                                     },
                                     "relational_id": {
