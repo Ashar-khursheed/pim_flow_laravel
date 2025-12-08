@@ -1053,7 +1053,7 @@ class FinanceController extends Controller
                 'balance' => $finance->balance,
                 'creditTerms' => $finance->creditTerms,
                 'payment_mode' => $finance->payment_mode,
-
+                'status' =>$finance->balance <= 0 ? 'Paid' : 'Un-Paid',
                 // RELATION DATA
                 'paid_by' => $finance->paidByUser?->username,
                 'updated_by' => $finance->updatedBy?->username,
@@ -1069,6 +1069,7 @@ class FinanceController extends Controller
             'data' => $paymentData
         ], 200);
     }
+   
     /**
      * @OA\Get(
      *     path="/api/finances/get-full-due/{id}/{customer_id}",

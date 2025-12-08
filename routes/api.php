@@ -698,8 +698,8 @@ Route::get('frontend/finances/get-customer-details', [F_FinanceController::class
 Route::get('frontend/finances/payment-history', [F_FinanceController::class, 'getPaymentHistory']);
 Route::get('frontend/finances/{id}/due', [F_FinanceController::class, 'getDueDetails']);
 Route::post('frontend/finances/pay/{id}', [F_FinanceController::class, 'payAmount']);
-Route::get('frontend/finances/{id}/get-full-due', [F_FinanceController::class, 'getFullNetTermDue']);
-Route::post('frontend/finances/pay-full-payment', [F_FinanceController::class, 'fullNetTermPay']);
+Route::get('frontend/finances/get-full-due/{id}', [F_FinanceController::class, 'getFullNetTermDue']);
+Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::class, 'payfullNetTerm']);
 
 
 Route::post('frontend/tql-rate', [TqlRateController::class, 'tqlRates']);
