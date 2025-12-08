@@ -19012,6 +19012,74 @@
                 ]
             }
         },
+        "/api/frontend/finances/payment-paid-invoice": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Get payment history",
+                "operationId": "60d646d5d5e814024a7ccd210eb226b8",
+                "responses": {
+                    "200": {
+                        "description": "Payment history fetched",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "invoice_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "order_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "due_date": {
+                                                        "type": "string"
+                                                    },
+                                                    "due_amount": {
+                                                        "type": "number",
+                                                        "format": "float"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "Paid/Un-Paid"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total_pages": {
+                                            "type": "integer"
+                                        },
+                                        "total_records": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No payment history found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/finances/payment-history": {
             "get": {
                 "tags": [
