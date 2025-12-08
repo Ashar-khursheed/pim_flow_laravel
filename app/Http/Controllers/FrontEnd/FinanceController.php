@@ -604,7 +604,13 @@ class FinanceController extends Controller
      *                 enum={"Net 30 Days","Net 45 Days","Net 60 Days"},
      *                 example="Net 30 Days",
      *                 description="Net Term selection"
-     *             )
+     *             ),
+     *             @OA\Property(
+     *                 property="order_number",
+     *                 type="string",                
+     *                 example="575",
+     *                 description="order number"
+     *             ),
      *         )
      *     ),
      *
@@ -634,6 +640,8 @@ class FinanceController extends Controller
         $validator = Validator::make($request->all(), [
             'order_amount'   => 'required|numeric|min:0.01',
             'term_selection' => 'required|in:Net 30 Days,Net 45 Days,Net 60 Days',
+            'order_number' => 'nullable|string',
+
         ]);
 
         if ($validator->fails()) {
@@ -648,7 +656,7 @@ class FinanceController extends Controller
         $orderAmount    = (float) $request->order_amount;
         $termSelection  = $request->term_selection;
 
-        return DB::transaction(function () use ($customerId, $orderAmount, $termSelection) {
+        return DB::transaction(function () use ($customerId, $orderAmount, $termSelection,$request) {
 
             // Lock the finance record to prevent race conditions
             $finance = Finance::where('customer_id', Auth::id())
@@ -715,6 +723,7 @@ class FinanceController extends Controller
 
             // Create invoice record (FinancesPayment)
             FinancesPayment::create([
+                'order_number'   => $request->order_number,
                 'finances_id'   => $finance->id,
                 'customer_id'   => $customerId,
                 'due_amount'    => $orderAmount,
@@ -1350,7 +1359,7 @@ class FinanceController extends Controller
                 ->orderBy('due_date', 'asc') // Oldest first
                 ->lockForUpdate() // CRITICAL: prevent race conditions
                 ->get();
-            dd($pendingPayments);
+            
             if ($pendingPayments->isEmpty()) {
                 return response()->json([
                     'success' => false,
@@ -1365,14 +1374,14 @@ class FinanceController extends Controller
             foreach ($pendingPayments as $payment) {
                 if ($remainingPayment <= 0) break;
 
-                $remainingBalance = $payment->balance - $payment->paid_amount;
+                $remainingBalance = $payment->due_amount - $payment->paid_amount;
 
                 // How much to apply to this invoice
                 $applyAmount = min($remainingPayment, $remainingBalance);
 
                 // Update this invoice
                 $payment->paid_amount    += $applyAmount;
-                $payment->balance         = $payment->balance - $payment->paid_amount;
+                $payment->balance         = $payment->due_amount - $payment->paid_amount;
                 $payment->paid_on_date    = now();
                 $payment->paid_by         = Auth::id();
                 $payment->status          = $payment->balance <= 0 ? 'Paid' : 'Un-Paid';

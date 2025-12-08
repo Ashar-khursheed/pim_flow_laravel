@@ -18882,6 +18882,11 @@
                                             "Net 60 Days"
                                         ],
                                         "example": "Net 30 Days"
+                                    },
+                                    "order_number": {
+                                        "description": "order number",
+                                        "type": "string",
+                                        "example": "575"
                                     }
                                 },
                                 "type": "object"
