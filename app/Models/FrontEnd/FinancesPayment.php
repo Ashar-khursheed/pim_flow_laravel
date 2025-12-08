@@ -37,4 +37,16 @@ class FinancesPayment extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
+ 
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_number', 'id');
+    }
+
+    public function invoice()
+    {
+    return $this->belongsTo(Invoice::class, 'invoice_id', 'id');
+    }
+
+        
 }
