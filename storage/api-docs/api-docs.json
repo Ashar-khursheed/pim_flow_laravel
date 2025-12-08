@@ -18953,7 +18953,7 @@
                 "operationId": "54ce3bfbd2f2afee0cffb9186efc7ee2",
                 "responses": {
                     "200": {
-                        "description": "Due details fetched",
+                        "description": "Payment history fetched",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -18965,23 +18965,35 @@
                                             "type": "string"
                                         },
                                         "data": {
-                                            "properties": {
-                                                "finance_id": {
-                                                    "type": "integer"
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "invoice_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "order_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "due_date": {
+                                                        "type": "string"
+                                                    },
+                                                    "due_amount": {
+                                                        "type": "number",
+                                                        "format": "float"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "Paid/Un-Paid"
+                                                    }
                                                 },
-                                                "customer_id": {
-                                                    "type": "integer"
-                                                },
-                                                "next_due_amt": {
-                                                    "type": "number",
-                                                    "format": "float"
-                                                },
-                                                "due_date": {
-                                                    "type": "string",
-                                                    "format": "date"
-                                                }
-                                            },
-                                            "type": "object"
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total_pages": {
+                                            "type": "integer"
+                                        },
+                                        "total_records": {
+                                            "type": "integer"
                                         }
                                     },
                                     "type": "object"
@@ -18990,7 +19002,7 @@
                         }
                     },
                     "404": {
-                        "description": "Finance not found"
+                        "description": "No payment history found"
                     }
                 },
                 "security": [
