@@ -18824,7 +18824,7 @@
                             }
                         }
                     },
-                    "422": {
+                    "404": {
                         "description": "Validation error",
                         "content": {
                             "application/json": {

@@ -21,6 +21,7 @@ class FinancesPayment extends Model
         'updated_by',
         'created_at',
         'updated_at',
+        'order_number',
     ];
 
     public function finance()

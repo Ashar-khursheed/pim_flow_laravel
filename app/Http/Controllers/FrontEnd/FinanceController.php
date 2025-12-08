@@ -491,7 +491,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Response(
-     *         response=422,
+     *         response=404,
      *         description="Validation error",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
