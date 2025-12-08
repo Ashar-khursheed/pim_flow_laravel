@@ -1070,6 +1070,7 @@ class FinanceController extends Controller
             return [
                 'id' => $finance->id,
                 'finances_id' => $finance->finances_id,
+                'order_number' => $finance->order_number,
                 'customer_id' => $finance->customer_id,
                 'due_date' => $finance->due_date,
                 'due_amount' => $finance->due_amount,
