@@ -773,6 +773,8 @@ class FinanceController extends Controller
             $finance->approvalBy = Auth::id();
             $finance->approved_amount = $request->approved_amount;
             $finance->credit_limit_amount = $request->credit_limit_amount;
+            $finance->used_credit_amount = null;
+            $finance->available_credit_amount = null;
             $finance->approval_date = now();
 
             $batch = Bus::batch([])->name("Net Terms Approved by backend")->dispatch();
