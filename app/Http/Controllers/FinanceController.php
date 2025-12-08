@@ -548,10 +548,20 @@ class FinanceController extends Controller
 
         // Handle approval logic
         if ($request->accounts_status == 'Approved') {
+             if (!empty($finance->next_due_amt)) {
+                return response()->json([
+                'success' => false,
+                'message' => 'Cannot approve the request as there is pending due amount.',
+                ], 201);
+            }
             $data['approvalBy'] = Auth::id();
             $data['approved_amount'] = $request->approved_amount;
             $data['approval_date'] = now();
-
+            $data['used_credit_amount'] = null;
+            $data['available_credit_amount'] = null;
+            $daa['next_due_date'] = null;
+            $data['next_due_amt'] = null;
+            $data['paid_amount'] = null;
             $batch = Bus::batch([])->name("Net Terms Approved by backend")->dispatch();
             $batch->options['queue'] = config('app.website') . '_NET_TRM';
             $batch->add(new NetTermApprovedMailJob([
@@ -769,12 +779,25 @@ class FinanceController extends Controller
                 'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
             ], 201);
         }
+         
+
         if ($request->accounts_status == 'Approved' && !empty($request->approved_amount)) {
+
+            if (!empty($finance->next_due_amt)) {
+                return response()->json([
+                'success' => false,
+                'message' => 'Cannot approve the request as there is pending due amount.',
+                ], 201);
+            }
+
             $finance->approvalBy = Auth::id();
             $finance->approved_amount = $request->approved_amount;
             $finance->credit_limit_amount = $request->credit_limit_amount;
             $finance->used_credit_amount = null;
             $finance->available_credit_amount = null;
+            $finance->next_due_date = null;
+            $finance->next_due_amt = null;
+            $finance->paid_amount = null;
             $finance->approval_date = now();
 
             $batch = Bus::batch([])->name("Net Terms Approved by backend")->dispatch();
