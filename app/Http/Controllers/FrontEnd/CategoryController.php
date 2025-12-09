@@ -1488,15 +1488,15 @@ class CategoryController extends Controller
 		])->header('Cache-Control', 'public, max-age=86400');
 	}
 
-    /**
-     * @OA\Get(
-     *     path="/api/frontend/home-categories",
-     *     tags={"Frontend-Categories"},
-     *     summary="Fetch a limited set of parent and child categories",
-     *     description="Returns up to 14 categories including parent and child, with product count and image URL.",
-     *     @OA\Response(response=200, description="Categories fetched successfully", @OA\MediaType(mediaType="application/json")),
-     * )
-     */
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/home-categories",
+	 *     tags={"Frontend-Categories"},
+	 *     summary="Fetch a limited set of parent and child categories",
+	 *     description="Returns up to 14 categories including parent and child, with product count and image URL.",
+	 *     @OA\Response(response=200, description="Categories fetched successfully", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
 	public function fetchCategories(Request $request)
 	{
 		$limit = 15;
@@ -2132,16 +2132,16 @@ private function addImageUrlsRecursively($category)
 			// Ensure category is LAST CHILD (has no children)
 		->whereDoesntHave('children')
 
-			->select('*') // return everything
-			->distinct()
-			->get();
+		->select('*')
+		->distinct()
+		->get();
 
 		// Remove slug from response
-			$categories->makeHidden(['slug']);
+		$categories->makeHidden(['slug']);
 
-			return response()->json([
-				'success' => true,
-				'data' => $categories
-			]);
-		}
+		return response()->json([
+			'success' => true,
+			'data' => $categories
+		]);
 	}
+}
