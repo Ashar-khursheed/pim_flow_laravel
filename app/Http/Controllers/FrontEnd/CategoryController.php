@@ -1505,7 +1505,7 @@ class CategoryController extends Controller
 		$website = env('APP_WEBSITE', 'US'); // default US if not set
 
 		$allowedNames = match ($website) {
-			'US' => [
+			'US', 'US_T' => [
 				"Reach In Refrigerator",
 				"Pizza Prep Table",
 				"Worktop Refrigerator",
@@ -1521,45 +1521,8 @@ class CategoryController extends Controller
 				"Milk Cooler",
 				"Commercial Food Processors",
 				"Planetary Mixer",
-
 			],
-			'US_T' => [
-				"Reach In Refrigerator",
-				"Pizza Prep Table",
-				"Worktop Refrigerator",
-				"Chef Base Refrigerator",
-				"Undercounter Refrigerator",
-				"Beer Dispenser",
-				"Back Bar Cooler",
-				"Glass Chillers and Frosters",
-				"Commercial Grill & Griddle",
-				"Commercial Gas Fryer",
-				"Deck Oven",
-				"Commercial Espresso Machine",
-				"Milk Cooler",
-				"Commercial Food Processors",
-				"Planetary Mixer",
-
-			],
-			'UAE' => [
-				"Work Top Refrigerators",
-				"Commercial Fryers",
-				"Combi Ovens",
-				"Commercial Blenders",
-				"Commercial Gas And Electric Cookers",
-				"Upright Freezers",
-				"Espresso Machines",
-				"Commercial Grills And Griddles",
-				"Commercial Toasters",
-				"Upright Chillers",
-				"White Dinnerware",
-				"Cheese",
-				"Food Processors",
-				"Salamanders",
-				"Salad Chillers"
-
-			],
-			'UAE_T' => [
+			'UAE', 'UAE_T' => [
 				"Work Top Refrigerators",
 				"Commercial Fryers",
 				"Combi Ovens",
