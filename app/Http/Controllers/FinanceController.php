@@ -156,6 +156,12 @@ class FinanceController extends Controller
         $formattedFinance = $financeManagement->map(function ($finance) {
             $address = $finance->customerAddress;
 
+            $today = now()->toDateString();  
+            Finance::where('customer_id', $finance->customer_id)
+            ->where('status', 'Pending')              
+            ->whereDate('next_due_date', '<', $today)
+            ->update(['status' => 'Overdue']);
+
             return [
                 'id' => $finance->id,
                 'customer_id' => $finance->customer_id,
@@ -510,10 +516,8 @@ class FinanceController extends Controller
             'accounts_payable_email' => 'required|email|string|max:255',
             'accounts_payable_phone' => 'required|string|max:255',
             'annual_revenue' => 'required|string',
-            'years_in_business' => 'required|string',
-            'duns_number' => 'nullable|string',
-            'status' => 'required|in:Paid,Overdue,Pending',
-            'credit_limit_amount' => 'required|numeric',
+            'years_in_business' => 'required|string',           
+            'credit_limit_amount' => 'nullable|numeric',
             'accounts_status' => 'required|in:Pending,Approved,Rejected,Hold',
             'approved_amount' => 'nullable|numeric|required_if:accounts_status,Approved',
             'rejection_reason' => 'nullable|string',

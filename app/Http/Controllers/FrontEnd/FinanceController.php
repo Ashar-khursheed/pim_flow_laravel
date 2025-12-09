@@ -655,6 +655,13 @@ class FinanceController extends Controller
         $customerId     = auth()->id();
         $orderAmount    = (float) $request->order_amount;
         $termSelection  = $request->term_selection;
+        
+        $today = now()->toDateString();  
+        Finance::where('customer_id', Auth::id())
+                ->where('status', 'Pending')              
+                ->whereDate('next_due_date', '<', $today)
+                ->update(['status' => 'Overdue']);
+                
 
         return DB::transaction(function () use ($customerId, $orderAmount, $termSelection, $request) {
 
