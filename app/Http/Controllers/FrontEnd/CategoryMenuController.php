@@ -148,13 +148,13 @@ class CategoryMenuController extends Controller
 
         $records = $records->orderBy('order');
 
-        $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
+        $cacheKey = $filterId ? "categories_menu_$filterId" : "categories_menu__all";
 
-        $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($records) {
+        $categoriesMenus = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($records) {
             return $records->get();
         });
 
-        return response()->json($categoriesTree)->header('Cache-Control', 'public, max-age=86400');
+        return response()->json($categoriesMenus)->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
