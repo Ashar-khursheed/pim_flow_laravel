@@ -13,7 +13,6 @@ use App\Models\FrontEnd\FinancesPayment;
 
 class FinanceController extends Controller
 {
-
     /**
      * @OA\Post(
      *     path="/api/frontend/finances",

@@ -8,6 +8,12 @@ use App\Models\MadeToOrder;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Jobs\Quote\RequestQuoteMailJob;
+
 class MadeToOrderController extends Controller
 {
     /**
@@ -16,7 +22,7 @@ class MadeToOrderController extends Controller
      *     summary="Create a new made-to-order request",
      *     description="This API allows users to create a new made-to-order request with customer and product details.",
      *     tags={"Frontend Made to Orders"},
-     *      
+     *
      *     @OA\RequestBody(
      *         required=true,
      *         description="Made to Order form data",
@@ -24,7 +30,7 @@ class MadeToOrderController extends Controller
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 required={"product_id", "quantity", "name", "email","phone_number","notes"},
-     *                 
+     *
      *                 @OA\Property(property="product_id", type="integer", example=1808, description="ID of the product to order"),
      *                 @OA\Property(property="quantity", type="integer", example=2, description="Quantity of the product"),
      *                 @OA\Property(property="name", type="string", example="John Doe", description="Customer full name"),
@@ -35,8 +41,8 @@ class MadeToOrderController extends Controller
      *                 @OA\Property(property="country", type="string", example="India", description="Country name"),
      *                 @OA\Property(property="zipcode", type="string", example="110001", description="Postal or ZIP code"),
      *                 @OA\Property(property="phone_number", type="string", example="9876543210", description="Customer contact number"),
-     *                 @OA\Property(property="notes", type="string", example="Need delivery before 25th December", description="Optional order notes"),               
-     *                  
+     *                 @OA\Property(property="notes", type="string", example="Need delivery before 25th December", description="Optional order notes"),
+     *
      *             )
      *         )
      *     ),
@@ -81,11 +87,17 @@ class MadeToOrderController extends Controller
             }
 
             $data = $validator->validated();
-            $order = MadeToOrder::create($data);
-        
-            if ($order) {
+            $orderQuote = MadeToOrder::create($data);
+
+            $batch = Bus::batch([])->name("Order Request Quote - #{$orderQuote->id}")->dispatch();
+            $batch->options['queue'] = config('app.website') . '_REQ_QOT';
+            $batch->add(new RequestQuoteMailJob([
+                'recordId' => $orderQuote->id
+            ]));
+
+            if ($orderQuote) {
                 $originalValues = [];
-                $newValues = $order->getAttributes();
+                $newValues = $orderQuote->getAttributes();
                 $changes = [];
                 foreach ($newValues as $field => $newValue) {
                     $changes[$field] = [
@@ -94,7 +106,7 @@ class MadeToOrderController extends Controller
                     ];
                 }
                 $versionData = [
-                    'version_id' => $order->id,
+                    'version_id' => $orderQuote->id,
                     'created_by' => Auth::id() ?? 1,
                     'module' => 'MadeToOrder',
                     'action' => 'Create',
@@ -109,7 +121,7 @@ class MadeToOrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Made to Order successfully.',
-                'data' => $order
+                'data' => $orderQuote
             ], 201);
 
         } catch (ValidationException $e) {
@@ -126,5 +138,5 @@ class MadeToOrderController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-    } 
+    }
  }
