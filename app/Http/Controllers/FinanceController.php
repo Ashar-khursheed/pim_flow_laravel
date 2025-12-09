@@ -1327,7 +1327,6 @@ class FinanceController extends Controller
             $finance->next_due_amt    = max(0, $finance->next_due_amt - ($pay_amount - $remainingPayment));
             $finance->status          = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
             $finance->next_due_date = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
-
             //  if($finance->next_due_amt <= 0){            
             //     $finance->used_credit_amount = null;
             //     $finance->available_credit_amount = null;
