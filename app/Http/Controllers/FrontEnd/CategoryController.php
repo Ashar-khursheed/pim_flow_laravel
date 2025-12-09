@@ -1869,14 +1869,14 @@ class CategoryController extends Controller
 						'isRequired' => $details->is_required,
 					];
 				})->filter()->values(), // Remove null values and reset array keys
-];
-});
+			];//
+		});
 
-return response()->json([
-	'success' => true,
-	'data' => $categories,
-])->header('Cache-Control', 'public, max-age=86400');
-}
+		return response()->json([//
+			'success' => true,
+			'data' => $categories,
+		])->header('Cache-Control', 'public, max-age=86400');
+	}
 
 	/**
 	 * @OA\Get(
@@ -2026,21 +2026,21 @@ return response()->json([
 						'isRequired' => $details->is_required,
 					];
 				})->filter()->values(), // Remove null values and reset array keys
-];
-});
+			];//
+		});
 
-return response()->json([
-	'success' => true,
-	'data' => $categories,
-])->header('Cache-Control', 'public, max-age=86400');
-}
+		return response()->json([//
+			'success' => true,
+			'data' => $categories,
+		])->header('Cache-Control', 'public, max-age=86400');
+	}
 
 	// Recursive function to modify images for children and all sub-level categories
-private function addImageUrlsRecursively($category)
-{
+	private function addImageUrlsRecursively($category)
+	{
 		// If the category has children, modify their images as well
-	if (isset($category->children) && !empty($category->children)) {
-		foreach ($category->children as $childCategory) {
+		if (isset($category->children) && !empty($category->children)) {
+			foreach ($category->children as $childCategory) {
 				$childCategory->image; // Modify image for child category
 				// Recursively handle children of children (grandchildren, etc.)
 				$this->addImageUrlsRecursively($childCategory);
