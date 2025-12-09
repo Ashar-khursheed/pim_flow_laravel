@@ -701,7 +701,7 @@ class FinanceController extends Controller
                     'success' => false,
                     'message' => 'Insufficient credit limit. '
                         . 'Requested: ' . $orderAmount
-                        . ', Available: ' . number_format($availableCredit, 2)
+                        . ', Available: ' . $availableCredit
                 ], 422);
             }
 
