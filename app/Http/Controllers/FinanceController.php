@@ -996,17 +996,17 @@ class FinanceController extends Controller
             $finance->save();
 
 
-            PaymentManagement::create([
-                'payment_method'   => 'netTerm',
-                'payment_mode'     => 'NetTerm',
-                'amount'           => $pay_amount,
-                'order_id'         => $finance->id,
-                'customer_id'      => Auth::id(),
-                'status'           => 'Success',
-                'payment_date'     => now(),
-                'created_by'       => Auth::id(),
+            // PaymentManagement::create([
+            //     'payment_method'   => 'netTerm',
+            //     'payment_mode'     => 'NetTerm',
+            //     'amount'           => $pay_amount,
+            //     'order_id'         => $finance->id,
+            //     'customer_id'      => Auth::id(),
+            //     'status'           => 'Success',
+            //     'payment_date'     => now(),
+            //     'created_by'       => Auth::id(),
 
-            ]);
+            // ]);
 
             // All good!
             return response()->json([
@@ -1345,17 +1345,17 @@ class FinanceController extends Controller
             $finance->save();
 
             // Record in payment history
-            PaymentManagement::create([
-                'payment_method' => 'netTerm',
-                'payment_mode'   => 'NetTerm',
-                'amount'         => $pay_amount,
-                'order_id'       => $finance->id,
-                'customer_id'    => $request->customer_id,
-                'status'         => 'Success',
-                'payment_date'   => now(),
-                'created_by'     => Auth::id(),
-                'note'           => $remainingPayment > 0 ? 'Partial payment applied (overpaid: ' . $remainingPayment . ')' : 'Full allocation',
-            ]);
+            // PaymentManagement::create([
+            //     'payment_method' => 'netTerm',
+            //     'payment_mode'   => 'NetTerm',
+            //     'amount'         => $pay_amount,
+            //     'order_id'       => $finance->id,
+            //     'customer_id'    => $request->customer_id,
+            //     'status'         => 'Success',
+            //     'payment_date'   => now(),
+            //     'created_by'     => Auth::id(),
+            //     'note'           => $remainingPayment > 0 ? 'Partial payment applied (overpaid: ' . $remainingPayment . ')' : 'Full allocation',
+            // ]);
 
             return response()->json([
                 'success' => true,
