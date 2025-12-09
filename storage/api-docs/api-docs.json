@@ -14488,24 +14488,6 @@
                 }
             }
         },
-        "/api/frontend/home-categories": {
-            "get": {
-                "tags": [
-                    "Frontend-Categories"
-                ],
-                "summary": "Fetch a limited set of parent and child categories",
-                "description": "Returns up to 14 categories including parent and child, with product count and image URL.",
-                "operationId": "481a9763f7e53d755913e267a684eed7",
-                "responses": {
-                    "200": {
-                        "description": "Categories fetched successfully",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                }
-            }
-        },
         "/api/frontend/all-categories": {
             "get": {
                 "tags": [

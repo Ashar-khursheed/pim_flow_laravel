@@ -552,7 +552,7 @@ class FinanceController extends Controller
 
         // Handle approval logic
         if ($request->accounts_status == 'Approved') {
-             if (!empty($finance->next_due_amt)) {
+             if (!empty($finance->next_due_amt) && $finance->next_due_amt > 0 ) {
                 return response()->json([
                 'success' => false,
                 'message' => 'Cannot approve the request as there is pending due amount.',
