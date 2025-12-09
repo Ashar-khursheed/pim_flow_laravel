@@ -99,41 +99,10 @@ class FinanceController extends Controller
             'customer_address_id' => 'required|numeric',
              'duns_number' => 'nullable|string',
             'role_at_business' => 'required|string',
-            'type_of_business' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::in([
-                    'Corporation',
-                    'LLC',
-                    'Sole proprietor/ partnership',
-                    'Non-profit',
-                    'Government',
-                ]),
-            ],
-            'years_in_business' => [
-            'required',
-            'string',
-            Rule::in([
-            'Less than 2 years',
-            '2 - 5 years',
-            '5 - 10 years',
-            'More than 10 years',
-            ]),
-            ],
-
-
-            'annual_revenue' => [
-            'required',
-            'string',
-            Rule::in([
-            'Less then 1,000,000',
-            '1,000,000 to 2,000,000',
-            '2,000,000 to 5,000,000',
-            '5,000,000 to 25,000,000',
-            'More than 25,000,000',
-            ]),
-            ],
+            'type_of_business' => 'nullable|string',
+            'years_in_business' => 'nullable|string',
+            'annual_revenue' => 'nullable|string'
+ 
         ]);
 
         if ($validator->fails()) {
