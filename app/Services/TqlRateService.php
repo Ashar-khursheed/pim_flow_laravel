@@ -16,7 +16,7 @@ class TqlRateService
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
         ])->post(config('services.tql.base_url') . '/rates', $shipmentData);
-
+ 
         if ($response->successful()) {
             return $response->json()['rates'] ?? [];  // Assume response has 'rates' array
         }

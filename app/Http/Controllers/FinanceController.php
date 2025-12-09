@@ -990,7 +990,7 @@ class FinanceController extends Controller
             $finance->paid_amount   += $pay_amount;
             $finance->next_due_amt   = max(0, $finance->next_due_amt - $pay_amount);
             $finance->status         = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
-
+           
             $finance->save();
 
 
@@ -1326,7 +1326,17 @@ class FinanceController extends Controller
             $finance->paid_amount   += ($pay_amount - $remainingPayment); // Only what was actually used
             $finance->next_due_amt    = max(0, $finance->next_due_amt - ($pay_amount - $remainingPayment));
             $finance->status          = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
-
+            $finance->next_due_date = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
+            //  if($finance->next_due_amt <= 0){            
+            //     $finance->used_credit_amount = null;
+            //     $finance->available_credit_amount = null;
+            //     $finance->next_due_date = null;
+            //     $finance->next_due_amt = null;
+            //     $finance->paid_amount = null;
+            //     $finance->approved_amount = null;
+            //     $finance->approval_date = null;
+            //     $finance->approvalBy = null;
+            // }
             $finance->save();
 
             // Record in payment history
