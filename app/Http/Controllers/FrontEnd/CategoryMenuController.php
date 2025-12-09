@@ -137,8 +137,8 @@ class CategoryMenuController extends Controller
         'publishedChildren'
         ])
         ->withCount('products')
-        ->where('status', 'published');
-
+        ->where('status', 'published')
+        ->where('parent_id', 0);
 
         if ($filterId) {
             $records->where(function ($q) use ($filterId) {
