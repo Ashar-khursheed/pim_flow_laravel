@@ -687,7 +687,7 @@ class FinanceController extends Controller
 
 
             $availableCredit = $approvedAmount - $usedCredit;
-
+ 
             if ($orderAmount > $availableCredit) {
                 return response()->json([
                     'success' => false,
@@ -777,19 +777,18 @@ class FinanceController extends Controller
      */
     public function getPaymentOrderHistory(Request $request)
     {
-        $customer_id = Auth::id();
+         $customer_id = Auth::id();
 
         // Pagination
-        $page = (int) $request->input('page', 1);
+        $page  = (int) $request->input('page', 1);
         $limit = (int) $request->input('limit', 10);
 
-        $paymentQuery = Order::with('invoice')
-            ->where('customer_id', $customer_id)
-            ->where('pending_amount', '>', 0)
+        $paymentQuery = FinancesPayment::where('customer_id', $customer_id)
+         ->where('balance', '>', 0)
             ->orderBy('id', 'desc');
 
         $totalRecords = $paymentQuery->count();
-        $totalPages = ceil($totalRecords / $limit);
+        $totalPages   = ceil($totalRecords / $limit);
 
         $paymentHistory = $paymentQuery
             ->skip(($page - 1) * $limit)
@@ -799,25 +798,45 @@ class FinanceController extends Controller
         if ($paymentHistory->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'No payment history found.'
+                'message' => 'No payment history found.',
+                'data' => [],
+                'total_pages' => 0,
+                'total_records' => 0
             ], 404);
         }
 
-        $paymentData = $paymentHistory->map(function ($order) {
+        $paymentData = $paymentHistory->map(function ($payment) {
 
-            $invoice = $order->invoice;
+            // Initialize to prevent undefined variable error
+            $order   = null;
+            $invoice = null;
+
+            if ($payment->order_number) {
+                $order = Order::where('order_number', $payment->order_number)->first();
+
+                if ($order) {
+                    $invoice = Invoice::where('order_id', $order->id)->first();
+                }
+            }
+
             return [
-                'invoice_id' => $invoice->id ?? null,
-                'invoice_number' => $invoice->invoice_number ?? null,
-             
+                'finance_id'      => $payment->finances_id ?? null,
+                'invoice_id'      => $invoice->id ?? null,
+                'invoice_number'  => $invoice->invoice_number ?? null,
                 'order_id'        => $order->id ?? null,
                 'order_number'    => $order->order_number ?? null,
-                'due_date'   => $invoice && $invoice->due_date
-                    ? date('d-m-Y', strtotime($invoice->due_date))
+                'due_date'        => $payment->due_date
+                    ? date('d-m-Y', strtotime($payment->due_date))
                     : null,
-                'due_amount' => (float) ($order->pending_amount ?? 0),
-                'status'     => $order->pending_amount <= 0 ? 'Paid' : 'Un-Paid',
-                'payment_method'     => $order->invoice->payment_method,
+               
+                'status'          => ($payment->balance <= 0) ? 'Paid' : 'Un-Paid',
+                'payment_method'  => ($payment->balance <= 0) ? 'NetTerm' : '',
+                 'due_amount'      => (float) ($payment->balance ?? 0),
+                 'paid_amount'      => (float) ($payment->paid_amount ?? 0),
+                 'balance'      => (float) ($payment->balance ?? 0),
+                'paid_on_date'        => $payment->paid_on_date
+                    ? date('d-m-Y', strtotime($payment->paid_on_date))
+                    : null,
             ];
         });
 
@@ -829,6 +848,60 @@ class FinanceController extends Controller
             'total_records' => $totalRecords,
         ]);
     }
+    // public function getPaymentOrderHistory(Request $request)
+    // {
+    //     $customer_id = Auth::id();
+
+    //     // Pagination
+    //     $page = (int) $request->input('page', 1);
+    //     $limit = (int) $request->input('limit', 10);
+
+    //     $paymentQuery = Order::with('invoice')
+    //         ->where('customer_id', $customer_id)
+    //         ->where('pending_amount', '>', 0)
+    //         ->orderBy('id', 'desc');
+
+    //     $totalRecords = $paymentQuery->count();
+    //     $totalPages = ceil($totalRecords / $limit);
+
+    //     $paymentHistory = $paymentQuery
+    //         ->skip(($page - 1) * $limit)
+    //         ->take($limit)
+    //         ->get();
+
+    //     if ($paymentHistory->isEmpty()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'No payment history found.'
+    //         ], 404);
+    //     }
+
+    //     $paymentData = $paymentHistory->map(function ($order) {
+
+    //         $invoice = $order->invoice;
+    //         return [
+    //             'invoice_id' => $invoice->id ?? null,
+    //             'invoice_number' => $invoice->invoice_number ?? null,
+             
+    //             'order_id'        => $order->id ?? null,
+    //             'order_number'    => $order->order_number ?? null,
+    //             'due_date'   => $invoice && $invoice->due_date
+    //                 ? date('d-m-Y', strtotime($invoice->due_date))
+    //                 : null,
+    //             'due_amount' => (float) ($order->pending_amount ?? 0),
+    //             'status'     => $order->pending_amount <= 0 ? 'Paid' : 'Un-Paid',
+    //             'payment_method'     => $order->invoice->payment_method,
+    //         ];
+    //     });
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => __('msg_rec_list'),
+    //         'data' => $paymentData,
+    //         'total_pages' => $totalPages,
+    //         'total_records' => $totalRecords,
+    //     ]);
+    // }
 
     /**
      * @OA\Get(
@@ -856,21 +929,74 @@ class FinanceController extends Controller
      *     @OA\Response(response=404, description="No payment history found")
      * )
      */
+    // public function getPaymentPaidInvoice(Request $request)
+    // {
+    //     $customer_id = Auth::id();
+
+    //     // Pagination
+    //     $page = (int) $request->input('page', 1);
+    //     $limit = (int) $request->input('limit', 10);
+
+    //     $paymentQuery = Order::with('invoice', 'customer')
+    //         ->where('customer_id', $customer_id)
+    //         ->where('pending_amount', '<=', 0)
+    //         ->orderBy('id', 'desc');
+
+    //     $totalRecords = $paymentQuery->count();
+    //     $totalPages = ceil($totalRecords / $limit);
+
+    //     $paymentHistory = $paymentQuery
+    //         ->skip(($page - 1) * $limit)
+    //         ->take($limit)
+    //         ->get();
+
+    //     if ($paymentHistory->isEmpty()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'No payment history found.'
+    //         ], 404);
+    //     }
+
+    //     $paymentData = $paymentHistory->map(function ($order) {
+
+    //         $invoice = $order->invoice;
+    //         return [
+    //             'invoice_id' => $invoice->id ?? null,
+    //             'invoice_number' => $invoice->invoice_number ?? null,
+               
+    //             'order_id'        => $order->id ?? null,
+    //             'order_number'    => $order->order_number ?? null,
+    //             'due_date'   => $invoice && $invoice->due_date
+    //                 ? date('d-m-Y', strtotime($invoice->due_date))
+    //                 : null,
+    //             'due_amount' => (float) ($order->pending_amount ?? 0),
+    //             'status'     => $order->pending_amount <= 0 ? 'Paid' : 'Un-Paid',
+    //             'payment_method'     => $order->invoice->payment_method,
+    //         ];
+    //     });
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => __('msg_rec_list'),
+    //         'data' => $paymentData,
+    //         'total_pages' => $totalPages,
+    //         'total_records' => $totalRecords,
+    //     ]);
+    // }
     public function getPaymentPaidInvoice(Request $request)
     {
         $customer_id = Auth::id();
 
         // Pagination
-        $page = (int) $request->input('page', 1);
+        $page  = (int) $request->input('page', 1);
         $limit = (int) $request->input('limit', 10);
 
-        $paymentQuery = Order::with('invoice', 'customer')
-            ->where('customer_id', $customer_id)
-            ->where('pending_amount', '<=', 0)
+        $paymentQuery = FinancesPayment::where('customer_id', $customer_id)
+         ->where('balance', '<=', 0)
             ->orderBy('id', 'desc');
 
         $totalRecords = $paymentQuery->count();
-        $totalPages = ceil($totalRecords / $limit);
+        $totalPages   = ceil($totalRecords / $limit);
 
         $paymentHistory = $paymentQuery
             ->skip(($page - 1) * $limit)
@@ -880,25 +1006,44 @@ class FinanceController extends Controller
         if ($paymentHistory->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'No payment history found.'
+                'message' => 'No payment history found.',
+                'data' => [],
+                'total_pages' => 0,
+                'total_records' => 0
             ], 404);
         }
 
-        $paymentData = $paymentHistory->map(function ($order) {
+        $paymentData = $paymentHistory->map(function ($payment) {
 
-            $invoice = $order->invoice;
+            // Initialize to prevent undefined variable error
+            $order   = null;
+            $invoice = null;
+
+            if ($payment->order_number) {
+                $order = Order::where('order_number', $payment->order_number)->first();
+
+                if ($order) {
+                    $invoice = Invoice::where('order_id', $order->id)->first();
+                }
+            }
+
             return [
-                'invoice_id' => $invoice->id ?? null,
-                'invoice_number' => $invoice->invoice_number ?? null,
-               
+                'invoice_id'      => $invoice->id ?? null,
+                'invoice_number'  => $invoice->invoice_number ?? null,
                 'order_id'        => $order->id ?? null,
                 'order_number'    => $order->order_number ?? null,
-                'due_date'   => $invoice && $invoice->due_date
-                    ? date('d-m-Y', strtotime($invoice->due_date))
+                'due_date'        => $payment->due_date
+                    ? date('d-m-Y', strtotime($payment->due_date))
                     : null,
-                'due_amount' => (float) ($order->pending_amount ?? 0),
-                'status'     => $order->pending_amount <= 0 ? 'Paid' : 'Un-Paid',
-                'payment_method'     => $order->invoice->payment_method,
+               
+                'status'          => ($payment->balance <= 0) ? 'Paid' : 'Un-Paid',
+                'payment_method'  => ($payment->balance <= 0) ? 'NetTerm' : '',
+                 'due_amount'      => (float) ($payment->balance ?? 0),
+                 'paid_amount'      => (float) ($payment->paid_amount ?? 0),
+                 'balance'      => (float) ($payment->balance ?? 0),
+                'paid_on_date'        => $payment->paid_on_date
+                    ? date('d-m-Y', strtotime($payment->paid_on_date))
+                    : null,
             ];
         });
 
@@ -985,9 +1130,15 @@ class FinanceController extends Controller
                 'due_date'        => $payment->due_date
                     ? date('d-m-Y', strtotime($payment->due_date))
                     : null,
-                'due_amount'      => (float) ($payment->balance ?? 0),
+               
                 'status'          => ($payment->balance <= 0) ? 'Paid' : 'Un-Paid',
-                'payment_method'  => "NetTerm",
+                'payment_method'  => ($payment->balance <= 0) ? 'NetTerm' : '',
+                 'due_amount'      => (float) ($payment->balance ?? 0),
+                 'paid_amount'      => (float) ($payment->paid_amount ?? 0),
+                 'balance'      => (float) ($payment->balance ?? 0),
+                'paid_on_date'        => $payment->paid_on_date
+                    ? date('d-m-Y', strtotime($payment->paid_on_date))
+                    : null,
             ];
         });
 
@@ -1154,13 +1305,14 @@ class FinanceController extends Controller
             $financesPayment->balance         = $financesPayment->due_amount - $financesPayment->paid_amount;
             $financesPayment->paid_on_date    = now();
             $financesPayment->paid_by         = Auth::id();
+           
             $financesPayment->save();
 
             // === Update Main Finance Record ===
             $finance->paid_amount   += $pay_amount;
             $finance->next_due_amt   = max(0, $finance->next_due_amt - $pay_amount);
             $finance->status         = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
-
+            $finance->next_due_date   = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
             $finance->save();
 
 
@@ -1410,6 +1562,7 @@ class FinanceController extends Controller
             $finance->paid_amount   += ($pay_amount - $remainingPayment); // Only what was actually used
             $finance->next_due_amt    = max(0, $finance->next_due_amt - ($pay_amount - $remainingPayment));
             $finance->status          = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+            $finance->next_due_date   = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
 
             $finance->save();
 
