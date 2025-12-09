@@ -37819,27 +37819,32 @@
                                 ],
                                 "properties": {
                                     "status": {
-                                        "description": "Status",
+                                        "description": "Filter by status (e.g., all, active, inactive)",
                                         "type": "string",
                                         "example": "all"
                                     },
                                     "type": {
-                                        "description": "Type should be either 'Brand' or 'Category'",
+                                        "description": "Type must be one of: Category, Brand, Vendor",
                                         "type": "string",
+                                        "enum": [
+                                            "Category",
+                                            "Brand",
+                                            "Vendor"
+                                        ],
                                         "example": "Category"
                                     },
                                     "relational_id": {
-                                        "description": "Relational ID",
+                                        "description": "Relational ID based on type",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "range_from": {
-                                        "description": "Starting range (must be >= 1)",
+                                        "description": "Starting range (≥ 1)",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "range_to": {
-                                        "description": "Ending range (must be >= range_from and max 2000 more)",
+                                        "description": "Ending range (must be ≥ range_from, max +2000 allowed)",
                                         "type": "integer",
                                         "example": 50
                                     }
@@ -37851,7 +37856,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Successfully exported product supplier data",
                         "content": {
                             "application/json": {}
                         }
