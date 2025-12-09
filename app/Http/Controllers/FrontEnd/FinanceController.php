@@ -695,12 +695,12 @@ class FinanceController extends Controller
 
 
             $availableCredit = $approvedAmount - $usedCredit;
-
-            if ($orderAmount > $availableCredit) {
+ 
+            if (number_format($orderAmount,2) > number_format($availableCredit,2)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Insufficient credit limit. '
-                        . 'Requested: ' . number_format($orderAmount, 2)
+                        . 'Requested: ' . $orderAmount
                         . ', Available: ' . number_format($availableCredit, 2)
                 ], 422);
             }
