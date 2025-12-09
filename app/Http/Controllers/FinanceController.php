@@ -567,6 +567,7 @@ class FinanceController extends Controller
             $daa['next_due_date'] = null;
             $data['next_due_amt'] = null;
             $data['paid_amount'] = null;
+            $data['status'] = "Pending";
             $batch = Bus::batch([])->name("Net Terms Approved by backend")->dispatch();
             $batch->options['queue'] = config('app.website') . '_NET_TRM';
             $batch->add(new NetTermApprovedMailJob([
@@ -582,11 +583,7 @@ class FinanceController extends Controller
             $batch->add(new NetTermRejectedMailJob([
                 'recordId' => $finance->id
             ]));
-        } else {
-            $data['approved_amount'] = 0;
-            $data['approvalBy'] = null;
-            $data['approval_date'] = null;
-        }
+        }  
 
         // Handle document upload
         if ($request->hasFile('documents')) {
