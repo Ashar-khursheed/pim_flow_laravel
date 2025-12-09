@@ -787,8 +787,8 @@ class FinanceController extends Controller
          
 
         if ($request->accounts_status == 'Approved' && !empty($request->approved_amount)) {
-
-            if (!empty($finance->next_due_amt)) {
+            $next_due_amt = (float) $finance->next_due_amt;
+            if (!empty($next_due_amt) && $next_due_amt>0) {
                 return response()->json([
                 'success' => false,
                 'message' => 'Cannot approve the request as there is pending due amount.',
@@ -1178,7 +1178,9 @@ class FinanceController extends Controller
         }
 
         // If due exists
-        if (!empty($finance->next_due_amt)) {
+        $next_due_amt = (float) $finance->next_due_amt;
+        if (!empty($next_due_amt) && $next_due_amt>0) {
+        
             return response()->json([
                 'success' => true,
                 'message' => 'Finance due details fetched.',
@@ -1196,6 +1198,7 @@ class FinanceController extends Controller
         return response()->json([
             'success' => false,
             'message' => 'Finance has no due amount.',
+            'data'=>null
         ], 200);
     }
 
