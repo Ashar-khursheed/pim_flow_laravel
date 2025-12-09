@@ -1417,80 +1417,89 @@ class CategoryController extends Controller
 			];
 		});
 
-$paginatedProducts->setCollection($modifiedProducts);
-return $paginatedProducts;
-}
-
-private function roundByMeasurementType($measurementType, $value)
-{
-	switch (strtolower($measurementType)) {
-		case 'length':
-		case 'mass':
-		case 'weight':
-		case 'volume':
-		return $value < 10 ? round($value, 2) : round($value);
-		case 'voltage':
-		case 'current':
-		case 'power':
-		case 'frequency':
-		return $value < 100 ? round($value, 1) : round($value);
-		case 'temperature':
-		return round($value, 1);
-		case 'pressure':
-		case 'speed':
-		case 'velocity':
-		return round($value);
-		default:
-		return round($value, 2);
+		$paginatedProducts->setCollection($modifiedProducts);//
+		return $paginatedProducts;
 	}
-}
+
+	private function roundByMeasurementType($measurementType, $value)
+	{
+		switch (strtolower($measurementType)) {
+			case 'length':
+			case 'mass':
+			case 'weight':
+			case 'volume':
+			return $value < 10 ? round($value, 2) : round($value);
+			case 'voltage':
+			case 'current':
+			case 'power':
+			case 'frequency':
+			return $value < 100 ? round($value, 1) : round($value);
+			case 'temperature':
+			return round($value, 1);
+			case 'pressure':
+			case 'speed':
+			case 'velocity':
+			return round($value);
+			default:
+			return round($value, 2);
+		}
+	}
 
 	// Helper method to get all child category IDs recursively - CACHED
-private function getAllChildCategoryIds($categoryId)
-{
-	static $cache = [];
+	private function getAllChildCategoryIds($categoryId)
+	{
+		static $cache = [];
 
-	if (isset($cache[$categoryId])) {
+		if (isset($cache[$categoryId])) {
+			return $cache[$categoryId];
+		}
+
+		$childIds = DB::table('categories')
+		->where('parent_id', $categoryId)
+		->pluck('id')
+		->toArray();
+
+		$allChildIds = $childIds;
+
+		foreach ($childIds as $childId) {
+			$grandChildIds = $this->getAllChildCategoryIds($childId);
+			$allChildIds = array_merge($allChildIds, $grandChildIds);
+		}
+
+		$cache[$categoryId] = array_unique($allChildIds);
 		return $cache[$categoryId];
 	}
 
-	$childIds = DB::table('categories')
-	->where('parent_id', $categoryId)
-	->pluck('id')
-	->toArray();
-
-	$allChildIds = $childIds;
-
-	foreach ($childIds as $childId) {
-		$grandChildIds = $this->getAllChildCategoryIds($childId);
-		$allChildIds = array_merge($allChildIds, $grandChildIds);
+	// Helper method for empty response
+	private function getEmptyResponse()
+	{
+		return response()->json([
+			'success' => true,
+			'filters' => [],
+			'products' => [],
+			'brands' => [],
+			'price_min' => 0,
+			'price_max' => 0,
+			'rating_filter' => [
+				'filter_name' => 'Rating',
+				'filter_type' => 'rating',
+				'filter_values' => [5, 4, 3, 2, 1],
+			]
+		])->header('Cache-Control', 'public, max-age=86400');
 	}
 
-	$cache[$categoryId] = array_unique($allChildIds);
-	return $cache[$categoryId];
-}
-
-	// Helper method for empty response
-private function getEmptyResponse()
-{
-	return response()->json([
-		'success' => true,
-		'filters' => [],
-		'products' => [],
-		'brands' => [],
-		'price_min' => 0,
-		'price_max' => 0,
-		'rating_filter' => [
-			'filter_name' => 'Rating',
-			'filter_type' => 'rating',
-			'filter_values' => [5, 4, 3, 2, 1],
-		]
-	])->header('Cache-Control', 'public, max-age=86400');
-}
-
-public function fetchCategories(Request $request)
-{
-	$limit = 15;
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/home-categories",
+     *     tags={"Frontend-Categories"},
+     *     summary="Fetch a limited set of parent and child categories",
+     *     description="Returns up to 14 categories including parent and child, with product count and image URL.",
+     *     @OA\Response(response=200, description="Categories fetched successfully", @OA\MediaType(mediaType="application/json")),
+     * )
+     */
+	public function fetchCategories(Request $request)
+	{
+		$limit = 15;
 
 		// Load allowed names based on environment variable
 		$website = env('APP_WEBSITE', 'US'); // default US if not set
