@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Bus;
 use App\Models\FrontEnd\Order;
 use App\Models\FrontEnd\Invoice;
 use Illuminate\Bus\Batch;
+use Illuminate\Validation\Rule;
 
 use App\Jobs\NetTerm\NetTermMailJob;
 
@@ -47,7 +48,7 @@ class FinanceController extends Controller
      *                 @OA\Property(property="accounts_payable_email", type="string", example="pay@gmail.com", description="accounts payable email"),
      *                 @OA\Property(property="accounts_payable_phone", type="string", example="123456789", description="Accounts Payable Phone"),
      *
-     *                 @OA\Property(property="annual_revenue", type="string", enum={"Less then 1,000,000","1,000,000 to 2,000,000","2,000,000 to 5,000,000","5,000,000 to 25,000,000","More than 25,000,000",}, example="Less then 1,000,000"),
+     *                 @OA\Property(property="annual_revenue", type="string", enum={"Less then 1,000,000","1,000,000 to 2,000,000","2,000,000 to 5,000,000","5,000,000 to 25,000,000","More than 25,000,000"}, example="Less then 1,000,000"),
      *                 @OA\Property(property="years_in_business", type="string", enum={"Less than 2 years","2 - 5 years","5 - 10 years","More than 10 years"}, example="5 – 10 years"),
      *                 @OA\Property(property="first_name", type="string", example="John"),
      *                 @OA\Property(property="last_name", type="string", example="Doe"),
@@ -84,7 +85,7 @@ class FinanceController extends Controller
      * )
      */
     public function store(Request $request)
-    {
+    {  
         $validator = Validator::make($request->all(), [
 
             'payment_options' => 'nullable|string',
@@ -92,15 +93,47 @@ class FinanceController extends Controller
             'requested_amount' => 'required|numeric',
             'legal_business_name' => 'required|string',
             'doing_business' => 'nullable|string',
-            'documents' => 'nullable|file|mimes:pdf|max:10240',
-            'type_of_business' => 'required|string|max:255',
-            'accounts_payable_email' => 'required|email|string|max:255',
+            'documents' => 'nullable|file|mimes:pdf|max:10240',            
+             'accounts_payable_email' => 'required|email|string|max:255',
             'accounts_payable_phone' => 'required|string|max:255',
             'customer_address_id' => 'required|numeric',
-            'annual_revenue' => 'required|string',
-            'years_in_business' => 'required|string',
-            'duns_number' => 'nullable|string',
-            'role_at_business' => 'required|string'
+             'duns_number' => 'nullable|string',
+            'role_at_business' => 'required|string',
+            'type_of_business' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::in([
+                    'Corporation',
+                    'LLC',
+                    'Sole proprietor/ partnership',
+                    'Non-profit',
+                    'Government',
+                ]),
+            ],
+            'years_in_business' => [
+            'required',
+            'string',
+            Rule::in([
+            'Less than 2 years',
+            '2 - 5 years',
+            '5 - 10 years',
+            'More than 10 years',
+            ]),
+            ],
+
+
+            'annual_revenue' => [
+            'required',
+            'string',
+            Rule::in([
+            'Less then 1,000,000',
+            '1,000,000 to 2,000,000',
+            '2,000,000 to 5,000,000',
+            '5,000,000 to 25,000,000',
+            'More than 25,000,000',
+            ]),
+            ],
         ]);
 
         if ($validator->fails()) {
