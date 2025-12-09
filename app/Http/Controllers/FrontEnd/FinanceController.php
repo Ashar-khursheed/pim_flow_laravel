@@ -153,10 +153,7 @@ class FinanceController extends Controller
         } else {
             $data['documents'] = null;
         }
-        $finance = Finance::updateOrCreate(
-            ['customer_id' => $customer_id],
-            $data
-        );
+        $finance = Finance::create($data);
 
         $batch = Bus::batch([])->name("Net Terms Application")->dispatch();
         $batch->options['queue'] = config('app.website') . '_NET_TRM';
