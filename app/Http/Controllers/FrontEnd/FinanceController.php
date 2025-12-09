@@ -22,7 +22,6 @@ use App\Jobs\NetTerm\NetTermMailJob;
 
 class FinanceController extends Controller
 {
-
     /**
      * @OA\Post(
      *     path="/api/frontend/finances",
