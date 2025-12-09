@@ -704,7 +704,6 @@ Route::get('frontend/finances/payment-paid-invoice', [F_FinanceController::class
 Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::class, 'payfullNetTerm']);
 
 
-Route::post('frontend/tql-rate', [TqlRateController::class, 'tqlRates']);
 
 	Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
 	Route::apiResource('frontend/carts', F_CustomerCartController::class)->names('frontend.carts');;
@@ -1000,6 +999,9 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/failed', [F_CCavenueController::class, 'failed']);
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
+
+
+Route::post('frontend/tql-rate', [TqlRateController::class, 'tqlRates']);
 
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);

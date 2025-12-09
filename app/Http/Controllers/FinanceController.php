@@ -508,8 +508,8 @@ class FinanceController extends Controller
     {     
         $validator = Validator::make($request->all(), [
             'payment_options' => 'nullable|string',
-            'term_selection' => 'required|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
-            'requested_amount' => 'required|numeric',
+            'term_selection' => 'required|string|in:Net 30 Days,Net 45 Days,Net 60 Days',            
+            'requested_amount' => 'required|numeric|min:0.01|max:999999999999',
             'documents' => 'nullable|file|mimes:pdf|max:10240',
             'type_of_business' => 'nullable|string|max:255',
             'role_at_business' => 'nullable|string|max:255',

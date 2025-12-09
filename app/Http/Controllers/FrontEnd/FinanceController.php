@@ -90,7 +90,7 @@ class FinanceController extends Controller
 
             'payment_options' => 'nullable|string',
             'term_selection' => 'required|string|in:Net 30 Days,Net 45 Days,Net 60 Days',
-            'requested_amount' => 'required|numeric',
+            'requested_amount' => 'required|numeric|min:0.01|max:999999999999',
             'legal_business_name' => 'required|string',
             'doing_business' => 'nullable|string',
             'documents' => 'nullable|file|mimes:pdf|max:10240',            

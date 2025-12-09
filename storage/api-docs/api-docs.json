@@ -28180,35 +28180,253 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "origin_zip",
-                                    "dest_zip",
-                                    "weight"
-                                ],
                                 "properties": {
-                                    "origin_zip": {
+                                    "carrierPriceId": {
                                         "type": "string",
-                                        "example": "45202"
+                                        "example": "7654433"
                                     },
-                                    "dest_zip": {
+                                    "customerEmailAddresses": {
                                         "type": "string",
-                                        "example": "90210"
+                                        "example": "name@gmail.com"
                                     },
-                                    "dimensionLength": {
-                                        "type": "integer",
-                                        "example": 40
+                                    "pickLocationType": {
+                                        "type": "string",
+                                        "example": "Commercial"
                                     },
-                                    "dimensionWidth": {
-                                        "type": "integer",
-                                        "example": 45
+                                    "dropLocationType": {
+                                        "type": "string",
+                                        "example": "Commercial"
                                     },
-                                    "dimensionHeight": {
-                                        "type": "integer",
-                                        "example": 55
+                                    "shipmentDate": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-12-09T17:11:52.705Z"
                                     },
-                                    "freightClassCode": {
-                                        "type": "70",
-                                        "example": 1500
+                                    "origin": {
+                                        "properties": {
+                                            "postalCode": {
+                                                "type": "string",
+                                                "example": "33131"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Miami"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "FL"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "US"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "destination": {
+                                        "properties": {
+                                            "postalCode": {
+                                                "type": "string",
+                                                "example": "90013"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Los Angeles"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "CA"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "US"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "pickupDetails": {
+                                        "properties": {
+                                            "address1": {
+                                                "type": "string",
+                                                "example": "1234 SW 8th St"
+                                            },
+                                            "address2": {
+                                                "type": "string",
+                                                "example": "Suite 500"
+                                            },
+                                            "stopName": {
+                                                "type": "string",
+                                                "example": "ABC Manufacturing"
+                                            },
+                                            "contactName": {
+                                                "type": "string",
+                                                "example": "John Smith"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string",
+                                                "example": "305-555-0198"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string",
+                                                "example": "123"
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "8:00 AM"
+                                            },
+                                            "hoursClosed": {
+                                                "type": "string",
+                                                "example": "5:00 PM"
+                                            },
+                                            "puNumber": {
+                                                "type": "string",
+                                                "example": "PU20251209-001"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "deliveryDetails": {
+                                        "properties": {
+                                            "address1": {
+                                                "type": "string",
+                                                "example": "5678 E Olympic Blvd"
+                                            },
+                                            "address2": {
+                                                "type": "string",
+                                                "example": "Dock 12"
+                                            },
+                                            "stopName": {
+                                                "type": "string",
+                                                "example": "XYZ Distribution Center"
+                                            },
+                                            "contactName": {
+                                                "type": "string",
+                                                "example": "Maria Garcia"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string",
+                                                "example": "213-555-0234"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "7:00 AM"
+                                            },
+                                            "hoursClosed": {
+                                                "type": "string",
+                                                "example": "4:00 PM"
+                                            },
+                                            "deliveryPO": {
+                                                "type": "string",
+                                                "example": "PO-987654"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "accessorials": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "INPU=>Pickup – Inside"
+                                        },
+                                        "example": [
+                                            "INPU=>Pickup – Inside",
+                                            "LIFT=>Liftgate at Pickup",
+                                            "NOTIFY=>Notify Before Delivery"
+                                        ]
+                                    },
+                                    "quoteCommodities": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "freightClassCode": {
+                                                    "type": "string",
+                                                    "example": "85"
+                                                },
+                                                "unitTypeCode": {
+                                                    "type": "string",
+                                                    "example": "PLT"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Electronics - Flat Screen TVs"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 6
+                                                },
+                                                "weight": {
+                                                    "type": "number",
+                                                    "example": 2400
+                                                },
+                                                "dimensionLength": {
+                                                    "type": "integer",
+                                                    "example": 48
+                                                },
+                                                "dimensionWidth": {
+                                                    "type": "integer",
+                                                    "example": 40
+                                                },
+                                                "dimensionHeight": {
+                                                    "type": "integer",
+                                                    "example": 72
+                                                },
+                                                "nmfc": {
+                                                    "type": "string",
+                                                    "example": "109980-02",
+                                                    "nullable": true
+                                                },
+                                                "pieceCaseCount": {
+                                                    "type": "integer",
+                                                    "example": 6,
+                                                    "nullable": true
+                                                },
+                                                "isHazmat": {
+                                                    "type": "boolean",
+                                                    "example": false,
+                                                    "nullable": true
+                                                },
+                                                "isStackable": {
+                                                    "type": "boolean",
+                                                    "example": false,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "freightClassCode": "85",
+                                                "unitTypeCode": "PLT",
+                                                "description": "Electronics - Flat Screen TVs",
+                                                "quantity": 6,
+                                                "weight": 2400,
+                                                "dimensionLength": 48,
+                                                "dimensionWidth": 40,
+                                                "dimensionHeight": 72,
+                                                "nmfc": "109980-02",
+                                                "pieceCaseCount": 6,
+                                                "isHazmat": false,
+                                                "isStackable": false
+                                            },
+                                            {
+                                                "freightClassCode": "125",
+                                                "unitTypeCode": "CTN",
+                                                "description": "Clothing on hangers",
+                                                "quantity": 10,
+                                                "weight": 800,
+                                                "dimensionLength": 60,
+                                                "dimensionWidth": 48,
+                                                "dimensionHeight": 60,
+                                                "nmfc": "039760",
+                                                "pieceCaseCount": 10,
+                                                "isHazmat": false,
+                                                "isStackable": true
+                                            }
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -28217,20 +28435,16 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Plain text price only",
-                        "content": {
-                            "text/plain": {
-                                "example": "1247.50"
-                            }
-                        }
+                    "201": {
+                        "description": "Quote created"
+                    },
+                    "400": {
+                        "description": "Invalid input"
+                    },
+                    "500": {
+                        "description": "Server error"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/frontend/llms.txt": {
