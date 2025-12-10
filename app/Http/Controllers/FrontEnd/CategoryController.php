@@ -4,33 +4,12 @@ namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use App\Models\Category;
-use App\Models\Product;
-use App\Models\Brand;
-use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Validator;
-use App\Models\AttributeValue;
-use App\Models\Attribute;
-use App\Models\AttributeGroup;
-use App\Models\ProductAttribute;
+
+use App\Models\Category;
+use App\Models\Product;
 use App\Models\SeoManagement;
-use Illuminate\Support\Facades\Auth;
-// Add these imports at the top of your controller file
-use PhpUnitsOfMeasure\PhysicalQuantity\Length;
-use PhpUnitsOfMeasure\PhysicalQuantity\Mass;
-use PhpUnitsOfMeasure\PhysicalQuantity\Volume;
-use PhpUnitsOfMeasure\PhysicalQuantity\Temperature;
-use PhpUnitsOfMeasure\PhysicalQuantity\Time;
-use PhpUnitsOfMeasure\PhysicalQuantity\Speed;
-use PhpUnitsOfMeasure\PhysicalQuantity\Area;
-use PhpUnitsOfMeasure\PhysicalQuantity\Energy;
-use PhpUnitsOfMeasure\PhysicalQuantity\Pressure;
-use PhpUnitsOfMeasure\PhysicalQuantity\Force;
-use Illuminate\Support\Facades\Schema;
 
 class CategoryController extends Controller
 {
@@ -59,77 +38,40 @@ class CategoryController extends Controller
 	 */
 	public function index(Request $request)
 	{
-		$filterId = $request->get('id'); // Optional ID filter
+		$filterId = $request->get('id');
 		$limit = $request->get('limit', 12); // Default limit to 12
-
+		$categories = Category::with(['translation', 'seoUrl'])->where('status', 'published');
 		if ($filterId) {
-			// Fetch specific category and its children with seoUrl eager loaded
-			$categories = Category::with('seoUrl')
-			->where('status', 'published')
-			->where(function ($query) use ($filterId) {
+			$categories = $categories->where(function ($query) use ($filterId) {
 				$query->where('id', $filterId)
 				->orWhere('parent_id', $filterId);
-			})
-			->get();
-			$categories->map(function ($record) {
-
-				$lastChildIds = !empty($record->last_child)
-				? array_map('intval', explode(',', $record->last_child))
-				: [];
-
-				if (!empty($lastChildIds)) {
-					$record->last_children = Category::with('seoUrl')
-					->whereIn('id', $lastChildIds)
-					->get(['id', 'name', 'slug', 'parent_id', 'image', 'order'])
-					->map(function ($child) {
-						return [
-							'id' => $child->id,
-							'name' => $child->name,
-							'slug' => $child->seoUrl?->url ?? $child->slug ?? null,
-							'parent_id' => $child->parent_id,
-							'image' => $child->image,
-							'order' => $child->order,
-						];
-					});
-				} else {
-					$record->last_children = collect();
-				}
-				return $record;
 			});
-
-		} else {
-			// Fetch all categories with seoUrl eager loaded
-			$categories = Category::with('seoUrl')->get();
-			$categories->map(function ($record) {
-
-				$lastChildIds = !empty($record->last_child)
-				? array_map('intval', explode(',', $record->last_child))
-				: [];
-
-				if (!empty($lastChildIds)) {
-					$record->last_children = Category::with('seoUrl')
-					->whereIn('id', $lastChildIds)
-					->get(['id', 'name', 'slug', 'parent_id', 'image', 'order'])
-					->map(function ($child) {
-						return [
-							'id' => $child->id,
-							'name' => $child->name,
-							'slug' => $child->seoUrl?->url ?? $child->slug ?? null,
-							'parent_id' => $child->parent_id,
-							'image' => $child->image,
-							'order' => $child->order,
-						];
-					});
-				} else {
-					$record->last_children = collect();
-				}
-
-				return $record;
-			});
-
 		}
+		$categories = $categories->get();
 
-		// Replace slug with seoUrl->url
+		$categories->map(function ($record) {
+			$lastChildIds = !empty($record->last_child) ? array_map('intval', explode(',', $record->last_child)) : [];
+			if (!empty($lastChildIds)) {
+				$record->last_children = Category::with(['translation', 'seoUrl'])
+				->whereIn('id', $lastChildIds)
+				->get(['id', 'name', 'slug', 'parent_id', 'image', 'order'])
+				->map(function ($child) {
+					return [
+						'id' => $child->id,
+						'name' => $child->name,
+						'slug' => $child->seoUrl?->url ?? $child->slug ?? null,
+						'parent_id' => $child->parent_id,
+						'image' => $child->image,
+						'order' => $child->order,
+					];
+				});
+			} else {
+				$record->last_children = collect();
+			}
+
+			return $record;
+		});
+
 		foreach ($categories as $category) {
 			$category->slug = $category->seoUrl ? $category->seoUrl->url : null;
 			unset($category->seoUrl); // remove relation from JSON
@@ -161,14 +103,7 @@ class CategoryController extends Controller
 	 *         description="Limit the number of child categories returned per parent (default is 12)",
 	 *         @OA\Schema(type="integer", example=10)
 	 *     ),
-	 *     @OA\Response(response=200, description="Categories tree fetched successfully", @OA\MediaType(mediaType="application/json")),
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="Category not found",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="message", type="string", example="Category not found")
-	 *         )
-	 *     )
+	 *     @OA\Response(response=200, description="Categories tree fetched successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
 	public function categoryslug(Request $request, $slug)
@@ -234,49 +169,42 @@ class CategoryController extends Controller
 		return response()->json($categoriesTree);
 	}
 
-	/**
-	 * @OA\Get(
-	 *     path="/api/frontend/categories/{id}",
-	 *     tags={"Frontend-Categories"},
-	 *     summary="Get a category by ID",
-	 *     description="Retrieve the details of a single category using its ID.",
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="The ID of the category to retrieve",
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
-	 *     @OA\Response(response=200, description="Category details retrieved successfully", @OA\MediaType(mediaType="application/json")),
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="Category not found",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="message", type="string", example="Category not found")
-	 *         )
-	 *     )
-	 * )
-	 */
-	public function show($id)
-	{
-		// Validate that the ID is numeric
-		if (!is_numeric($id)) {
-			return response()->json([
-				'message' => "Invalid category ID format."
-			], 400);
-		}
+	// /**
+	//  * @OA\Get(
+	//  *     path="/api/frontend/categories/{ashar}",
+	//  *     tags={"Frontend-Categories"},
+	//  *     summary="Get a category by ID",
+	//  *     description="Retrieve the details of a single category using its ID.",
+	//  *     @OA\Parameter(
+	//  *         name="id",
+	//  *         in="path",
+	//  *         required=true,
+	//  *         description="The ID of the category to retrieve",
+	//  *         @OA\Schema(type="integer", example=1)
+	//  *     ),
+	//  *     @OA\Response(response=200, description="Category details retrieved successfully", @OA\MediaType(mediaType="application/json"))
+	//  * )
+	//  */
+	// public function show($id)
+	// {
+	// 	// Validate that the ID is numeric
+	// 	if (!is_numeric($id)) {
+	// 		return response()->json([
+	// 			'message' => "Invalid category ID format."
+	// 		], 400);
+	// 	}
 
-		$category = Category::find($id);
+	// 	$category = Category::with('translation')->find($id);
 
-		if (!$category) {
-			return response()->json([
-				'message' => "Category with ID $id not found."
-			], 404);
-		}
-		return response()->json([
-			'category' => $category,
-		])->header('Cache-Control', 'public, max-age=86400');
-	}
+	// 	if (!$category) {
+	// 		return response()->json([
+	// 			'message' => "Category with ID $id not found."
+	// 		], 404);
+	// 	}
+	// 	return response()->json([
+	// 		'category' => $category,
+	// 	])->header('Cache-Control', 'public, max-age=86400');
+	// }
 
 	/**
 	 * @OA\Get(
@@ -298,16 +226,10 @@ class CategoryController extends Controller
 	 *         description="Number of products per page (pagination)",
 	 *         @OA\Schema(type="integer", example=10)
 	 *     ),
-	 *     @OA\Response(response=200, description="List of products for the category", @OA\MediaType(mediaType="application/json")),
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="Category not found",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="message", type="string", example="Category not found")
-	 *         )
-	 *     )
+	 *     @OA\Response(response=200, description="List of products for the category", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
+	//product name categories name brand name translation
 	public function getProductsByCategory($categoryId)
 	{
 		$category = Category::find($categoryId);
@@ -464,6 +386,8 @@ class CategoryController extends Controller
 	 *     @OA\Response(response=200, description="All categories fetched successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
+
+	//categories name translation
 	public function fetchAllCategories(Request $request)
 	{
 		// Fetch published parent categories with SEO URL
@@ -529,9 +453,10 @@ class CategoryController extends Controller
 	 *     @OA\Response(response=200, description="Featured products grouped by category fetched successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
+	//product name categories name translation
 	public function getAllFeaturedProductsByCategory(Request $request)
 	{
-		$userId = Auth::id();
+		$userId = auth()->id();
 		$isUserLoggedIn = $userId !== null;
 
 		// Fetch wishlist product IDs for logged-in users or guests
@@ -711,6 +636,7 @@ class CategoryController extends Controller
 	 *     @OA\Response(response=200, description="Featured products grouped by category fetched successfully for guests", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
+	//product name categories name translation
 	public function getAllGuestFeaturedProductsByCategory(Request $request)
 	{
 		$categories = Category::whereHas('products', function ($query) {
@@ -872,6 +798,7 @@ class CategoryController extends Controller
 		}
 	}
 
+	//category name
 	private function buildTree($categories, $parentId = 0, $limit = 12)
 	{
 		$branch = [];
@@ -940,6 +867,7 @@ class CategoryController extends Controller
 	 *     )
 	 * )
 	 */
+	//product name categories name translation
 	public function saleCategories(Request $request)
 	{
 		// Fetch all last-child categories that have sale products
