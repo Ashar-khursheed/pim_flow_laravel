@@ -188,7 +188,7 @@ class StripeController extends Controller
         // Validate input
         $request->validate([
             'amount' => 'required|numeric|min:1',
-            'payment_method_id' => 'required|string',
+            // 'payment_method_id' => 'required|string',
             'currency' => 'sometimes|string|in:aed,usd',
             'customer_info' => 'sometimes|array'
         ]);
@@ -222,7 +222,7 @@ class StripeController extends Controller
             $paymentIntent = PaymentIntent::create([
                 'amount' => (int) round($request->amount * 100),
                 'currency' => $request->currency ?? 'aed',
-                'payment_method' => $request->payment_method_id,
+                'automatic_payment_methods' => ['enabled' => true],
                 'customer' => $customer->id,
                 'confirmation_method' => 'manual',
                 'confirm' => true,
@@ -234,6 +234,7 @@ class StripeController extends Controller
                     'order_timestamp' => now()->toISOString()
                 ]
             ]);
+         
 
             // STEP 5: Handle PaymentIntent Status
             $status = $paymentIntent->status;
