@@ -48,6 +48,7 @@ class CategoryController extends Controller
 			});
 		}
 		$categories = $categories->get();
+
 		$categories->map(function ($record) {
 			$lastChildIds = !empty($record->last_child) ? array_map('intval', explode(',', $record->last_child)) : [];
 			if (!empty($lastChildIds)) {
@@ -168,43 +169,42 @@ class CategoryController extends Controller
 		return response()->json($categoriesTree);
 	}
 
-	/**
-	 * @OA\Get(
-	 *     path="/api/frontend/categories/{id}",
-	 *     tags={"Frontend-Categories"},
-	 *     summary="Get a category by ID",
-	 *     description="Retrieve the details of a single category using its ID.",
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="The ID of the category to retrieve",
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
-	 *     @OA\Response(response=200, description="Category details retrieved successfully", @OA\MediaType(mediaType="application/json"))
-	 * )
-	 */
-	//category translation
-	public function show($id)
-	{
-		// Validate that the ID is numeric
-		if (!is_numeric($id)) {
-			return response()->json([
-				'message' => "Invalid category ID format."
-			], 400);
-		}
+	// /**
+	//  * @OA\Get(
+	//  *     path="/api/frontend/categories/{ashar}",
+	//  *     tags={"Frontend-Categories"},
+	//  *     summary="Get a category by ID",
+	//  *     description="Retrieve the details of a single category using its ID.",
+	//  *     @OA\Parameter(
+	//  *         name="id",
+	//  *         in="path",
+	//  *         required=true,
+	//  *         description="The ID of the category to retrieve",
+	//  *         @OA\Schema(type="integer", example=1)
+	//  *     ),
+	//  *     @OA\Response(response=200, description="Category details retrieved successfully", @OA\MediaType(mediaType="application/json"))
+	//  * )
+	//  */
+	// public function show($id)
+	// {
+	// 	// Validate that the ID is numeric
+	// 	if (!is_numeric($id)) {
+	// 		return response()->json([
+	// 			'message' => "Invalid category ID format."
+	// 		], 400);
+	// 	}
 
-		$category = Category::find($id);
+	// 	$category = Category::with('translation')->find($id);
 
-		if (!$category) {
-			return response()->json([
-				'message' => "Category with ID $id not found."
-			], 404);
-		}
-		return response()->json([
-			'category' => $category,
-		])->header('Cache-Control', 'public, max-age=86400');
-	}
+	// 	if (!$category) {
+	// 		return response()->json([
+	// 			'message' => "Category with ID $id not found."
+	// 		], 404);
+	// 	}
+	// 	return response()->json([
+	// 		'category' => $category,
+	// 	])->header('Cache-Control', 'public, max-age=86400');
+	// }
 
 	/**
 	 * @OA\Get(
@@ -867,7 +867,6 @@ class CategoryController extends Controller
 	 *     )
 	 * )
 	 */
-
 	//product name categories name translation
 	public function saleCategories(Request $request)
 	{
