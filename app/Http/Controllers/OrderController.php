@@ -598,7 +598,24 @@ class OrderController extends Controller
 					}
 				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
 					$paymentLink = null;
-					if ($request->boolean('is_squarePayment')) {
+						if ($request->boolean('is_payment')) {
+						try {
+							$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)->generatePaymentLink($order);
+							if ($paymentLink) {
+								$order = Order::find($order->id);
+								$order->payment_link = $paymentLink;
+								$order->save();
+							}
+						} catch (\Exception $e) {
+							\Log::error('Stripe Payment Link generation failed', [
+								'order_id' => $order->id,
+								'error' => $e->getMessage(),
+								'trace' => $e->getTraceAsString()
+							]);
+						}
+
+					}
+					else if ($request->boolean('is_squarePayment')) {
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
 							->createPaymentLink($order);

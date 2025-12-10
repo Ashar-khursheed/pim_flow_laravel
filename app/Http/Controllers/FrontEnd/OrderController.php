@@ -581,7 +581,6 @@ class OrderController extends BaseController
 			], 500);
 		}
 	}
-		 
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/orders/{id}",

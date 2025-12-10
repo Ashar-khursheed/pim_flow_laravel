@@ -58,7 +58,7 @@ class ProductSupplierController extends BaseController
 		->select(
 			'product_suppliers.*',
 			'ec_products.name as product_name',
-			 'ec_products.sku as product_sku', 
+			 'ec_products.sku as product_sku',
 			'vendors.name as vendor_name'
 		);
 
@@ -73,7 +73,7 @@ class ProductSupplierController extends BaseController
 			$recordsQuery->where(function ($q) use ($search) {
 				$q->orWhere('product_suppliers.id', 'like', "%$search%")
 				->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
-				  ->orWhere('ec_products.sku', 'like', "%$search%") 
+				  ->orWhere('ec_products.sku', 'like', "%$search%")
 				->orWhere('ec_products.name', 'like', "%$search%")
 				->orWhere('vendors.name', 'like', "%$search%");
 			});
@@ -84,10 +84,10 @@ class ProductSupplierController extends BaseController
 			$recordsQuery->orderBy('ec_products.name', $sortDir);
 		} elseif ($sortBy === 'vendor_name') {
 			$recordsQuery->orderBy('vendors.name', $sortDir);
-		} 
+		}
 		elseif ($sortBy === 'product_sku') {
         $recordsQuery->orderBy('ec_products.sku', $sortDir);
-		} 
+		}
 		else {
 				$recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
 			}
@@ -484,63 +484,25 @@ class ProductSupplierController extends BaseController
 	}
 
 	/**
- * @OA\Post(
- *     path="/api/product-suppliers/export",
- *     summary="Export product supplier data to Excel",
- *     tags={"Product Suppliers"},
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"type", "relational_id", "range_from", "range_to"},
- *
- *             @OA\Property(
- *                 property="status",
- *                 type="string",
- *                 example="all",
- *                 description="Filter by status (e.g., all, active, inactive)"
- *             ),
- *
- *             @OA\Property(
- *                 property="type",
- *                 type="string",
- *                 enum={"Category","Brand","Vendor"},
- *                 example="Category",
- *                 description="Type must be one of: Category, Brand, Vendor"
- *             ),
- *
- *             @OA\Property(
- *                 property="relational_id",
- *                 type="integer",
- *                 example=1,
- *                 description="Relational ID based on type"
- *             ),
- *
- *             @OA\Property(
- *                 property="range_from",
- *                 type="integer",
- *                 example=1,
- *                 description="Starting range (≥ 1)"
- *             ),
- *
- *             @OA\Property(
- *                 property="range_to",
- *                 type="integer",
- *                 example=50,
- *                 description="Ending range (must be ≥ range_from, max +2000 allowed)"
- *             )
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="Successfully exported product supplier data",
- *         @OA\MediaType(mediaType="application/json")
- *     )
- * )
- */
-
+	 * @OA\Post(
+	 *     path="/api/product-suppliers/export",
+	 *     summary="Export product supplier data to Excel",
+	 *     tags={"Product Suppliers"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"type", "relational_id", "range_from", "range_to"},
+	 *             @OA\Property(property="status", type="string", example="all", description="Status"),
+	 *             @OA\Property(property="type", type="string", enum={"Brand","Vendor","Category"}, example="Category", description="Type should be either 'Brand' or 'Category'"),
+	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
+	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >= 1)"),
+	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
 	public function export(Request $request, ExcelRepository $excelRepo)
 	{
 		if (!auth()->user()->can('export product suppliers')) {

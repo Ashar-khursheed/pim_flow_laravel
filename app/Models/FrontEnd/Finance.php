@@ -34,6 +34,8 @@ class Finance extends Model
         'doing_business',
         'business_address',
         'rejection_reason',
+        'rejectedBy',
+        'rejected_date',
         'role_at_business',
         'payment_mode',
         'next_due_date',
