@@ -11023,7 +11023,6 @@
                                     "accounts_payable_phone",
                                     "requested_amount",
                                     "status",
-                                    "credit_limit_amount",
                                     "accounts_status"
                                 ],
                                 "properties": {
@@ -11097,10 +11096,6 @@
                                     "duns_number": {
                                         "type": "string",
                                         "example": "123456789"
-                                    },
-                                    "credit_limit_amount": {
-                                        "type": "number",
-                                        "example": 5000
                                     },
                                     "status": {
                                         "type": "string",
@@ -11327,12 +11322,6 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 300
-                                    },
-                                    "credit_limit_amount": {
-                                        "description": "Credit limit amount",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 10000
                                     },
                                     "rejection_reason": {
                                         "description": "Reason for rejection",

@@ -369,7 +369,7 @@ class FinanceController extends Controller
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 type="object",
-     *                 required={"accounts_payable_email", "accounts_payable_phone", "requested_amount", "status", "credit_limit_amount", "accounts_status"},
+     *                 required={"accounts_payable_email", "accounts_payable_phone", "requested_amount", "status", "accounts_status"},
      *
      *                 @OA\Property(
      *                     property="term_selection",
@@ -436,12 +436,6 @@ class FinanceController extends Controller
      *                     property="duns_number",
      *                     type="string",
      *                     example="123456789"
-     *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="credit_limit_amount",
-     *                     type="number",
-     *                     example=5000
      *                 ),
      *
      *                 @OA\Property(
@@ -516,8 +510,7 @@ class FinanceController extends Controller
             'accounts_payable_email' => 'required|email|string|max:255',
             'accounts_payable_phone' => 'required|string|max:255',
             'annual_revenue' => 'required|string',
-            'years_in_business' => 'required|string',           
-            'credit_limit_amount' => 'nullable|numeric',
+            'years_in_business' => 'required|string',          
             'accounts_status' => 'required|in:Pending,Approved,Rejected,Hold',
             'approved_amount' => 'nullable|numeric|required_if:accounts_status,Approved',
             'rejection_reason' => 'nullable|string',
@@ -538,18 +531,14 @@ class FinanceController extends Controller
                 'message' => 'Record not found'
             ], 404);
         }
-
-        // Check approved amount vs credit limit
-        if ($request->accounts_status == 'Approved' && $request->approved_amount > $request->credit_limit_amount) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
-            ], 422);
-        }
-
         $data = $validator->validated();
         $data['updated_by'] = Auth::id() ?? 1;
-
+        if ($finance->status == 'Paid' ) {
+                return response()->json([
+                'success' => false,
+                'message' => 'Cannot update because a NetTerm payment has already been paid.',
+                ], 201);
+        }
         // Handle approval logic
         if ($request->accounts_status == 'Approved') {
             $next_due_amt = (float) $finance->next_due_amt;
@@ -561,13 +550,7 @@ class FinanceController extends Controller
             }
             $data['approvalBy'] = Auth::id();
             $data['approved_amount'] = $request->approved_amount;
-            $data['approval_date'] = now();
-            $data['used_credit_amount'] = null;
-            $data['available_credit_amount'] = null;
-            $daa['next_due_date'] = null;
-            $data['next_due_amt'] = null;
-            $data['paid_amount'] = null;
-            $data['status'] = "Pending";
+            $data['approval_date'] = now();           
             $batch = Bus::batch([])->name("Net Terms Approved by backend")->dispatch();
             $batch->options['queue'] = config('app.website') . '_NET_TRM';
             $batch->add(new NetTermApprovedMailJob([
@@ -723,15 +706,6 @@ class FinanceController extends Controller
      *                     description="Approved amount",
      *                     example=300.00
      *                 ),
-     *
-     *                 @OA\Property(
-     *                     property="credit_limit_amount",
-     *                     type="number",
-     *                     format="float",
-     *                     description="Credit limit amount",
-     *                     example=10000.00
-     *                 ),
-     *
      *                 @OA\Property(
      *                     property="rejection_reason",
      *                     type="string",
@@ -762,8 +736,7 @@ class FinanceController extends Controller
     {
         $request->validate([
             'accounts_status'   => 'required|in:Pending,Approved,Rejected,Hold',
-            'approved_amount'   => 'required|numeric|required_if:accounts_status,Approved',
-            'credit_limit_amount'   => 'required|numeric',
+            'approved_amount'   => 'required|numeric|required_if:accounts_status,Approved',           
             'rejection_reason'   => 'nullable|string'
         ]);
 
@@ -775,14 +748,12 @@ class FinanceController extends Controller
                 'message' => 'Finance record not found.'
             ], 404);
         }
-        if ($request->approved_amount > $request->credit_limit_amount) {
-            return response()->json([
+        if ($finance->status == 'Paid' ) {
+                return response()->json([
                 'success' => false,
-                'message' => 'Approved Amount cannot be greater than Credit Limit Amount.',
-            ], 201);
+                'message' => 'Cannot update because a NetTerm payment has already been paid.',
+                ], 201);
         }
-         
-
         if ($request->accounts_status == 'Approved' && !empty($request->approved_amount)) {
             $next_due_amt = (float) $finance->next_due_amt;
             if (!empty($next_due_amt) && $next_due_amt>0) {
@@ -793,13 +764,7 @@ class FinanceController extends Controller
             }
 
             $finance->approvalBy = Auth::id();
-            $finance->approved_amount = $request->approved_amount;
-            $finance->credit_limit_amount = $request->credit_limit_amount;
-            $finance->used_credit_amount = null;
-            $finance->available_credit_amount = null;
-            $finance->next_due_date = null;
-            $finance->next_due_amt = null;
-            $finance->paid_amount = null;
+            $finance->approved_amount = $request->approved_amount;             
             $finance->approval_date = now();
 
             $batch = Bus::batch([])->name("Net Terms Approved by backend")->dispatch();
@@ -818,11 +783,6 @@ class FinanceController extends Controller
             $batch->add(new NetTermRejectedMailJob([
                 'recordId' => $finance->id
             ]));
-        } else {
-            $finance->approved_amount = '0';
-            $finance->approvalBy = null;
-            $finance->approval_date = null;
-            $finance->credit_limit_amount = '0';
         }
         $finance->accounts_status = $request->accounts_status;
         $finance->save();
@@ -1332,30 +1292,8 @@ class FinanceController extends Controller
             $finance->next_due_amt    = max(0, $finance->next_due_amt - ($pay_amount - $remainingPayment));
             $finance->status          = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
             $finance->next_due_date = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
-            //  if($finance->next_due_amt <= 0){            
-            //     $finance->used_credit_amount = null;
-            //     $finance->available_credit_amount = null;
-            //     $finance->next_due_date = null;
-            //     $finance->next_due_amt = null;
-            //     $finance->paid_amount = null;
-            //     $finance->approved_amount = null;
-            //     $finance->approval_date = null;
-            //     $finance->approvalBy = null;
-            // }
-            $finance->save();
-
-            // Record in payment history
-            // PaymentManagement::create([
-            //     'payment_method' => 'netTerm',
-            //     'payment_mode'   => 'NetTerm',
-            //     'amount'         => $pay_amount,
-            //     'order_id'       => $finance->id,
-            //     'customer_id'    => $request->customer_id,
-            //     'status'         => 'Success',
-            //     'payment_date'   => now(),
-            //     'created_by'     => Auth::id(),
-            //     'note'           => $remainingPayment > 0 ? 'Partial payment applied (overpaid: ' . $remainingPayment . ')' : 'Full allocation',
-            // ]);
+           
+            $finance->save();          
 
             return response()->json([
                 'success' => true,
