@@ -1020,7 +1020,6 @@ class FinanceController extends Controller
                 'due_date'        => $payment->due_date
                     ? date('d-m-Y', strtotime($payment->due_date))
                     : null,
-
                 'status'          => ($payment->balance <= 0) ? 'Paid' : 'Un-Paid',
                 'payment_method'  => ($payment->balance <= 0) ? 'NetTerm' : '',
                 'due_amount'      => (float) ($payment->due_amount ?? 0),
