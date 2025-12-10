@@ -27968,7 +27968,7 @@
                     "Frontend-TQL Rates Shipping"
                 ],
                 "summary": "Get TQL shipping rate (returns only the price amount)",
-                "operationId": "e8834d1cf4c5d7a693dbe6565ecd7059",
+                "operationId": "dd37ebac3b800b9bd697a929481eea7b",
                 "requestBody": {
                     "required": true,
                     "content": {

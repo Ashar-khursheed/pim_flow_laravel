@@ -1001,7 +1001,7 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 });
 
 
-Route::post('frontend/tql-rate', [TqlRateController::class, 'tqlRates']);
+Route::post('frontend/tql-rate', [TqlRateController::class, 'createLtlQuote']);
 
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);

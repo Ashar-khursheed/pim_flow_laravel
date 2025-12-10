@@ -947,7 +947,7 @@ class FinanceController extends Controller
 
                 'status'          => ($payment->balance <= 0) ? 'Paid' : 'Un-Paid',
                 'payment_method'  => ($payment->balance <= 0) ? 'NetTerm' : '',
-                'due_amount'      => (float) ($payment->balance ?? 0),
+                'due_amount'      => (float) ($payment->due_amount ?? 0),
                 'paid_amount'      => (float) ($payment->paid_amount ?? 0),
                 'balance'      => (float) ($payment->balance ?? 0),
                 'paid_on_date'        => $payment->paid_on_date
@@ -1154,7 +1154,7 @@ class FinanceController extends Controller
 
                 'status'          => ($payment->balance <= 0) ? 'Paid' : 'Un-Paid',
                 'payment_method'  => ($payment->balance <= 0) ? 'NetTerm' : '',
-                'due_amount'      => (float) ($payment->balance ?? 0),
+                'due_amount'      => (float) ($payment->due_amount ?? 0),
                 'paid_amount'      => (float) ($payment->paid_amount ?? 0),
                 'balance'      => (float) ($payment->balance ?? 0),
                 'paid_on_date'        => $payment->paid_on_date
@@ -1249,7 +1249,7 @@ class FinanceController extends Controller
 
                 'status'          => ($payment->balance <= 0) ? 'Paid' : 'Un-Paid',
                 'payment_method'  => ($payment->balance <= 0) ? 'NetTerm' : '',
-                'due_amount'      => (float) ($payment->balance ?? 0),
+                'due_amount'      => (float) ($payment->due_amount ?? 0),
                 'paid_amount'      => (float) ($payment->paid_amount ?? 0),
                 'balance'      => (float) ($payment->balance ?? 0),
                 'paid_on_date'        => $payment->paid_on_date
