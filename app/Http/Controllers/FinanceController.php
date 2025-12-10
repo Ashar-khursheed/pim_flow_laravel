@@ -536,7 +536,7 @@ class FinanceController extends Controller
         if ($finance->status == 'Paid' ) {
                 return response()->json([
                 'success' => false,
-                'message' => 'Cannot update because a NetTerm payment has already been paid.',
+                'message' => 'Cannot update because a NetTerm payment has already been made.',
                 ], 201);
         }
         // Handle approval logic
