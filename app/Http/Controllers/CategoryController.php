@@ -412,7 +412,7 @@ class CategoryController extends BaseController
 			}
 			return response()->json([
 				'success' => true,
-				'category' => $category
+				'category' => $category->load('translations')
 			]);
 
 		} catch (\Exception $e) {

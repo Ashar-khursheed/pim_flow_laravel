@@ -10876,227 +10876,6 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "post": {
-                "tags": [
-                    "Finance"
-                ],
-                "summary": "Create a new finance record",
-                "operationId": "7e61ac9781248944f1952c93b6424563",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "customer_id",
-                                    "term_selection",
-                                    "requested_amount",
-                                    "customer_address_id"
-                                ],
-                                "properties": {
-                                    "payment_options": {
-                                        "description": "Payment option netTerm",
-                                        "type": "string",
-                                        "example": "netTerm"
-                                    },
-                                    "customer_id": {
-                                        "description": "customer address id",
-                                        "type": "interger",
-                                        "example": "2487"
-                                    },
-                                    "customer_address_id": {
-                                        "description": "customer address id",
-                                        "type": "interger",
-                                        "example": "23"
-                                    },
-                                    "term_selection": {
-                                        "description": "Net Pay in 30/45/60 Days",
-                                        "type": "string",
-                                        "enum": [
-                                            "Net 30 Days",
-                                            "Net 45 Days",
-                                            "Net 60 Days"
-                                        ],
-                                        "example": "Net 30 Days"
-                                    },
-                                    "legal_business_name": {
-                                        "description": "Enter ABC Company",
-                                        "type": "string",
-                                        "example": "ABC Company"
-                                    },
-                                    "doing_business": {
-                                        "description": "Enter ABC CO",
-                                        "type": "string",
-                                        "example": "ABC CO"
-                                    },
-                                    "requested_amount": {
-                                        "description": "HOW MUCH DO YOU EXPECT TO PURCHASE OVER 30 DAYS requested amount",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 5000.75
-                                    },
-                                    "documents": {
-                                        "description": "Upload supporting document file",
-                                        "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "type_of_business": {
-                                        "description": "Type of business (Advertising / E-commerce)",
-                                        "type": "string",
-                                        "enum": [
-                                            "Corporation",
-                                            "LLC",
-                                            "Sole proprietor/ partnership",
-                                            "Non-profit",
-                                            "Government"
-                                        ],
-                                        "example": "E-commerce"
-                                    },
-                                    "accounts_payable_email": {
-                                        "description": "accounts payable email",
-                                        "type": "string",
-                                        "example": "pay@gmail.com"
-                                    },
-                                    "accounts_payable_phone": {
-                                        "description": "Accounts Payable Phone",
-                                        "type": "string",
-                                        "example": "123456789"
-                                    },
-                                    "annual_revenue": {
-                                        "type": "string",
-                                        "enum": [
-                                            "Less then 1,000,000",
-                                            "1,000,000 to 2,000,000",
-                                            "2,000,000 to 5,000,000",
-                                            "5,000,000 to 25,000,000",
-                                            "More than 25,000,000"
-                                        ],
-                                        "example": "Less then 1,000,000"
-                                    },
-                                    "years_in_business": {
-                                        "type": "string",
-                                        "enum": [
-                                            "Less than 2 years",
-                                            "2 - 5 years",
-                                            "5 - 10 years",
-                                            "More than 10 years"
-                                        ],
-                                        "example": "5 – 10 years"
-                                    },
-                                    "first_name": {
-                                        "type": "string",
-                                        "example": "John"
-                                    },
-                                    "last_name": {
-                                        "type": "string",
-                                        "example": "Doe"
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "example": "john@gmail.com"
-                                    },
-                                    "role_at_business": {
-                                        "type": "string",
-                                        "enum": [
-                                            "CEO",
-                                            "Accounts payable"
-                                        ],
-                                        "example": "Accounts payable"
-                                    },
-                                    "country": {
-                                        "type": "string",
-                                        "example": "United States"
-                                    },
-                                    "address": {
-                                        "type": "string",
-                                        "example": "Address"
-                                    },
-                                    "city": {
-                                        "type": "string",
-                                        "example": "City"
-                                    },
-                                    "state": {
-                                        "type": "string",
-                                        "example": "State"
-                                    },
-                                    "zipcode": {
-                                        "type": "string",
-                                        "example": "zipcode"
-                                    },
-                                    "accounts_status": {
-                                        "type": "string",
-                                        "enum": [
-                                            "Approved",
-                                            "Pending",
-                                            "Hold",
-                                            "Rejected"
-                                        ],
-                                        "example": "Approved"
-                                    },
-                                    "duns_number": {
-                                        "type": "string",
-                                        "example": "123456789"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Finance record created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Finance record created successfully."
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Validation failed"
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
             }
         },
         "/api/finances/{id}": {
@@ -11244,7 +11023,6 @@
                                     "accounts_payable_phone",
                                     "requested_amount",
                                     "status",
-                                    "credit_limit_amount",
                                     "accounts_status"
                                 ],
                                 "properties": {
@@ -11318,10 +11096,6 @@
                                     "duns_number": {
                                         "type": "string",
                                         "example": "123456789"
-                                    },
-                                    "credit_limit_amount": {
-                                        "type": "number",
-                                        "example": 5000
                                     },
                                     "status": {
                                         "type": "string",
@@ -11548,6 +11322,11 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 300
+                                    },
+                                    "rejection_reason": {
+                                        "description": "Reason for rejection",
+                                        "type": "string",
+                                        "example": "Insufficient credit history"
                                     }
                                 },
                                 "type": "object"
@@ -11598,7 +11377,7 @@
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Finance ID",
+                        "description": "Payment ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -11665,7 +11444,7 @@
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Finance ID",
+                        "description": "Payment ID",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -11803,6 +11582,229 @@
                     },
                     "404": {
                         "description": "Finance not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/finances/get-full-due/{id}/{customer_id}": {
+            "get": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Get full net term due amount and due date",
+                "operationId": "8bc82e6f1a5787c6e42ea80a7d3851c9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 12
+                        }
+                    },
+                    {
+                        "name": "customer_id",
+                        "in": "path",
+                        "description": "Customer ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 101
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Due details fetched",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance due details fetched."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "customer_id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "due_amount": {
+                                                    "type": "number",
+                                                    "example": 250
+                                                },
+                                                "due_date": {
+                                                    "type": "string",
+                                                    "example": "15-12-2025"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/finances/pay-full-payment/{id}": {
+            "post": {
+                "tags": [
+                    "Finance"
+                ],
+                "summary": "Pay full Net Term outstanding amount",
+                "operationId": "dc2f089d3456d4c5e5a0ebaaa3bf1b5a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "customer_id",
+                                    "pay_amount"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "description": "Customer ID",
+                                        "type": "integer",
+                                        "example": 101
+                                    },
+                                    "pay_amount": {
+                                        "description": "Full payment amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 250
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Full payment completed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Full payment processed successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "finance_id": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "paid_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 500
+                                                },
+                                                "remaining_due": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "Paid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -14206,68 +14208,6 @@
                         "content": {
                             "application/json": {}
                         }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Category not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/frontend/categories/{id}": {
-            "get": {
-                "tags": [
-                    "Frontend-Categories"
-                ],
-                "summary": "Get a category by ID",
-                "description": "Retrieve the details of a single category using its ID.",
-                "operationId": "9ac1833d6c897ba5eab9041468a19c9f",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "The ID of the category to retrieve",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Category details retrieved successfully",
-                        "content": {
-                            "application/json": {}
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Category not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -14307,169 +14247,6 @@
                         "description": "List of products for the category",
                         "content": {
                             "application/json": {}
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Category not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/frontend/products/specification-filters": {
-            "get": {
-                "tags": [
-                    "Frontend-Categories"
-                ],
-                "summary": "Fetch products with dynamic specification filters",
-                "description": "Retrieve filtered products based on category, specifications, price, brand, and rating. Also returns filter options.",
-                "operationId": "getSpecificationFilters",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "category_id"
-                                ],
-                                "properties": {
-                                    "category_id": {
-                                        "description": "ID of the product category",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "filters": {
-                                        "type": "array",
-                                        "items": {
-                                            "properties": {
-                                                "specification_name": {
-                                                    "type": "string",
-                                                    "example": "Color"
-                                                },
-                                                "specification_value": {
-                                                    "oneOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "example": "Red"
-                                                        },
-                                                        {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "type": "string",
-                                                                "example": "Red"
-                                                            }
-                                                        },
-                                                        {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "properties": {
-                                                                    "min": {
-                                                                        "type": "number",
-                                                                        "example": 10
-                                                                    },
-                                                                    "max": {
-                                                                        "type": "number",
-                                                                        "example": 100
-                                                                    }
-                                                                },
-                                                                "type": "object"
-                                                            }
-                                                        }
-                                                    ]
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "price_min": {
-                                        "description": "Minimum price",
-                                        "type": "number",
-                                        "example": 100
-                                    },
-                                    "price_max": {
-                                        "description": "Maximum price",
-                                        "type": "number",
-                                        "example": 1000
-                                    },
-                                    "price_order": {
-                                        "type": "string",
-                                        "enum": [
-                                            "high_to_low",
-                                            "low_to_high"
-                                        ],
-                                        "example": "low_to_high"
-                                    },
-                                    "brand_id": {
-                                        "description": "Filter by brand IDs",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 2
-                                        }
-                                    },
-                                    "rating": {
-                                        "description": "Minimum average rating",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 4
-                                    },
-                                    "per_page": {
-                                        "description": "Pagination count per page",
-                                        "type": "integer",
-                                        "example": 10
-                                    },
-                                    "sort_by": {
-                                        "description": "Sort field (price or created_at)",
-                                        "type": "string",
-                                        "example": "price"
-                                    },
-                                    "sort_by_type": {
-                                        "description": "Sort direction (asc or desc)",
-                                        "type": "string",
-                                        "example": "asc"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "List of filtered products and available filters",
-                        "content": {
-                            "application/json": {}
-                        }
-                    },
-                    "400": {
-                        "description": "Validation error or category not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
                         }
                     }
                 }
@@ -14662,6 +14439,34 @@
                                     "type": "object"
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/menu-categories": {
+            "get": {
+                "tags": [
+                    "Frontend-Menu Categories"
+                ],
+                "summary": "Get menu categories with children",
+                "operationId": "33ec2b6bbeba9dabdbd1eaaacabca2da",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Filter categories by parent or category ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of categories in hierarchical structure",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 }
@@ -18264,9 +18069,49 @@
             }
         },
         "/api/frontend/finances": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Get all finance records of logged-in customer",
+                "operationId": "c871affb9f970b32d2589ae0abec08f9",
+                "responses": {
+                    "200": {
+                        "description": "Finance records fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance records loaded successfully."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
-                    "Frontend Finance"
+                    "Frontend-Finance"
                 ],
                 "summary": "Create a new finance record",
                 "operationId": "a7111acc3014a3bf0131545bfac5b662",
@@ -18278,18 +18123,19 @@
                                 "required": [
                                     "term_selection",
                                     "requested_amount",
-                                    "customer_address_id"
+                                    "customer_address_id",
+                                    "type_of_business",
+                                    "accounts_payable_email",
+                                    "accounts_payable_phone",
+                                    "annual_revenue",
+                                    "legal_business_name",
+                                    "years_in_business"
                                 ],
                                 "properties": {
                                     "payment_options": {
                                         "description": "Payment option netTerm",
                                         "type": "string",
                                         "example": "netTerm"
-                                    },
-                                    "customer_id": {
-                                        "description": "customer address id",
-                                        "type": "interger",
-                                        "example": "2487"
                                     },
                                     "customer_address_id": {
                                         "description": "customer address id",
@@ -18478,21 +18324,11 @@
         "/api/frontend/finances/apply": {
             "get": {
                 "tags": [
-                    "Frontend Finance"
+                    "Frontend-Finance"
                 ],
                 "summary": "Check finance application by customer ID",
                 "operationId": "377cbf287d74fcf579c0a806203301c5",
                 "parameters": [
-                    {
-                        "name": "customer_id",
-                        "in": "query",
-                        "description": "Customer ID to fetch finance details",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 19
-                        }
-                    },
                     {
                         "name": "order_amount",
                         "in": "query",
@@ -18559,25 +18395,113 @@
                 ]
             }
         },
-        "/api/frontend/finances/check": {
-            "get": {
+        "/api/frontend/finances/{id}/updateCreditAmount": {
+            "put": {
                 "tags": [
-                    "Frontend Finance"
+                    "Frontend-Finance"
                 ],
-                "summary": "Check finance application by customer ID",
-                "operationId": "20790c6e488f9ac8b68c1a894aa6a84b",
+                "summary": "Update finance credit amounts",
+                "operationId": "31029e9f34f1e341df13ebf3cd0b2dd3",
                 "parameters": [
                     {
-                        "name": "customer_id",
-                        "in": "query",
-                        "description": "Customer ID to fetch finance details",
+                        "name": "id",
+                        "in": "path",
+                        "description": "Finance ID",
                         "required": true,
                         "schema": {
                             "type": "integer",
-                            "example": 19
+                            "example": 2
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "used_credit_amount",
+                                    "available_credit_amount"
+                                ],
+                                "properties": {
+                                    "used_credit_amount": {
+                                        "description": "Used credit amount",
+                                        "type": "number",
+                                        "example": 300
+                                    },
+                                    "available_credit_amount": {
+                                        "description": "Available credit amount",
+                                        "type": "number",
+                                        "example": 500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Credit amounts updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Credit amounts updated successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/check": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Check finance application by customer ID",
+                "operationId": "20790c6e488f9ac8b68c1a894aa6a84b",
                 "responses": {
                     "200": {
                         "description": "Finance record retrieved successfully",
@@ -18624,6 +18548,354 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/get-customer-details": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Check finance application by customer ID",
+                "operationId": "114793d33a63e35ae5e8b352bcdd7925",
+                "responses": {
+                    "200": {
+                        "description": "Finance record retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record retrieved successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/order": {
+            "post": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Check finance application by customer ID",
+                "operationId": "f7955c36bfbe2b129ec86422fa32ae48",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_amount": {
+                                        "description": "Order amount for validating finance",
+                                        "type": "number",
+                                        "example": 300
+                                    },
+                                    "term_selection": {
+                                        "description": "Net Term selection",
+                                        "type": "string",
+                                        "enum": [
+                                            "Net 30 Days",
+                                            "Net 45 Days",
+                                            "Net 60 Days"
+                                        ],
+                                        "example": "Net 30 Days"
+                                    },
+                                    "order_number": {
+                                        "description": "order number",
+                                        "type": "string",
+                                        "example": "575"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Finance record retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Finance record retrieved successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/payment-order-history": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Get payment history",
+                "operationId": "54ce3bfbd2f2afee0cffb9186efc7ee2",
+                "responses": {
+                    "200": {
+                        "description": "Payment history fetched",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "invoice_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "order_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "due_date": {
+                                                        "type": "string"
+                                                    },
+                                                    "due_amount": {
+                                                        "type": "number",
+                                                        "format": "float"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "Paid/Un-Paid"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total_pages": {
+                                            "type": "integer"
+                                        },
+                                        "total_records": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No payment history found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/payment-paid-invoice": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Get payment history",
+                "operationId": "60d646d5d5e814024a7ccd210eb226b8",
+                "responses": {
+                    "200": {
+                        "description": "Payment history fetched",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "invoice_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "order_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "due_date": {
+                                                        "type": "string"
+                                                    },
+                                                    "due_amount": {
+                                                        "type": "number",
+                                                        "format": "float"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "Paid/Un-Paid"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total_pages": {
+                                            "type": "integer"
+                                        },
+                                        "total_records": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No payment history found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/finances/payment-history": {
+            "get": {
+                "tags": [
+                    "Frontend-Finance"
+                ],
+                "summary": "Get payment history",
+                "operationId": "fe37eb197012ac274ab2a4f1645eec1d",
+                "responses": {
+                    "200": {
+                        "description": "Due details fetched",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "finance_id": {
+                                                    "type": "integer"
+                                                },
+                                                "customer_id": {
+                                                    "type": "integer"
+                                                },
+                                                "next_due_amt": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "due_date": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Finance not found"
                     }
                 },
                 "security": [
@@ -27666,41 +27938,259 @@
                     "Frontend-TQL Rates Shipping"
                 ],
                 "summary": "Get TQL shipping rate (returns only the price amount)",
-                "operationId": "e8834d1cf4c5d7a693dbe6565ecd7059",
+                "operationId": "dd37ebac3b800b9bd697a929481eea7b",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "origin_zip",
-                                    "dest_zip",
-                                    "weight"
-                                ],
                                 "properties": {
-                                    "origin_zip": {
+                                    "carrierPriceId": {
                                         "type": "string",
-                                        "example": "45202"
+                                        "example": "7654433"
                                     },
-                                    "dest_zip": {
+                                    "customerEmailAddresses": {
                                         "type": "string",
-                                        "example": "90210"
+                                        "example": "name@gmail.com"
                                     },
-                                    "dimensionLength": {
-                                        "type": "integer",
-                                        "example": 40
+                                    "pickLocationType": {
+                                        "type": "string",
+                                        "example": "Commercial"
                                     },
-                                    "dimensionWidth": {
-                                        "type": "integer",
-                                        "example": 45
+                                    "dropLocationType": {
+                                        "type": "string",
+                                        "example": "Commercial"
                                     },
-                                    "dimensionHeight": {
-                                        "type": "integer",
-                                        "example": 55
+                                    "shipmentDate": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-12-09T17:11:52.705Z"
                                     },
-                                    "freightClassCode": {
-                                        "type": "70",
-                                        "example": 1500
+                                    "origin": {
+                                        "properties": {
+                                            "postalCode": {
+                                                "type": "string",
+                                                "example": "33131"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Miami"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "FL"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "US"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "destination": {
+                                        "properties": {
+                                            "postalCode": {
+                                                "type": "string",
+                                                "example": "90013"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Los Angeles"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "CA"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "US"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "pickupDetails": {
+                                        "properties": {
+                                            "address1": {
+                                                "type": "string",
+                                                "example": "1234 SW 8th St"
+                                            },
+                                            "address2": {
+                                                "type": "string",
+                                                "example": "Suite 500"
+                                            },
+                                            "stopName": {
+                                                "type": "string",
+                                                "example": "ABC Manufacturing"
+                                            },
+                                            "contactName": {
+                                                "type": "string",
+                                                "example": "John Smith"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string",
+                                                "example": "305-555-0198"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string",
+                                                "example": "123"
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "8:00 AM"
+                                            },
+                                            "hoursClosed": {
+                                                "type": "string",
+                                                "example": "5:00 PM"
+                                            },
+                                            "puNumber": {
+                                                "type": "string",
+                                                "example": "PU20251209-001"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "deliveryDetails": {
+                                        "properties": {
+                                            "address1": {
+                                                "type": "string",
+                                                "example": "5678 E Olympic Blvd"
+                                            },
+                                            "address2": {
+                                                "type": "string",
+                                                "example": "Dock 12"
+                                            },
+                                            "stopName": {
+                                                "type": "string",
+                                                "example": "XYZ Distribution Center"
+                                            },
+                                            "contactName": {
+                                                "type": "string",
+                                                "example": "Maria Garcia"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string",
+                                                "example": "213-555-0234"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "7:00 AM"
+                                            },
+                                            "hoursClosed": {
+                                                "type": "string",
+                                                "example": "4:00 PM"
+                                            },
+                                            "deliveryPO": {
+                                                "type": "string",
+                                                "example": "PO-987654"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "accessorials": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "INPU=>Pickup – Inside"
+                                        },
+                                        "example": [
+                                            "INPU=>Pickup – Inside",
+                                            "LIFT=>Liftgate at Pickup",
+                                            "NOTIFY=>Notify Before Delivery"
+                                        ]
+                                    },
+                                    "quoteCommodities": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "freightClassCode": {
+                                                    "type": "string",
+                                                    "example": "85"
+                                                },
+                                                "unitTypeCode": {
+                                                    "type": "string",
+                                                    "example": "PLT"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Electronics - Flat Screen TVs"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 6
+                                                },
+                                                "weight": {
+                                                    "type": "number",
+                                                    "example": 2400
+                                                },
+                                                "dimensionLength": {
+                                                    "type": "integer",
+                                                    "example": 48
+                                                },
+                                                "dimensionWidth": {
+                                                    "type": "integer",
+                                                    "example": 40
+                                                },
+                                                "dimensionHeight": {
+                                                    "type": "integer",
+                                                    "example": 72
+                                                },
+                                                "nmfc": {
+                                                    "type": "string",
+                                                    "example": "109980-02",
+                                                    "nullable": true
+                                                },
+                                                "pieceCaseCount": {
+                                                    "type": "integer",
+                                                    "example": 6,
+                                                    "nullable": true
+                                                },
+                                                "isHazmat": {
+                                                    "type": "boolean",
+                                                    "example": false,
+                                                    "nullable": true
+                                                },
+                                                "isStackable": {
+                                                    "type": "boolean",
+                                                    "example": false,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "freightClassCode": "85",
+                                                "unitTypeCode": "PLT",
+                                                "description": "Electronics - Flat Screen TVs",
+                                                "quantity": 6,
+                                                "weight": 2400,
+                                                "dimensionLength": 48,
+                                                "dimensionWidth": 40,
+                                                "dimensionHeight": 72,
+                                                "nmfc": "109980-02",
+                                                "pieceCaseCount": 6,
+                                                "isHazmat": false,
+                                                "isStackable": false
+                                            },
+                                            {
+                                                "freightClassCode": "125",
+                                                "unitTypeCode": "CTN",
+                                                "description": "Clothing on hangers",
+                                                "quantity": 10,
+                                                "weight": 800,
+                                                "dimensionLength": 60,
+                                                "dimensionWidth": 48,
+                                                "dimensionHeight": 60,
+                                                "nmfc": "039760",
+                                                "pieceCaseCount": 10,
+                                                "isHazmat": false,
+                                                "isStackable": true
+                                            }
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -27709,20 +28199,16 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Plain text price only",
-                        "content": {
-                            "text/plain": {
-                                "example": "1247.50"
-                            }
-                        }
+                    "201": {
+                        "description": "Quote created"
+                    },
+                    "400": {
+                        "description": "Invalid input"
+                    },
+                    "500": {
+                        "description": "Server error"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/frontend/llms.txt": {
@@ -32414,7 +32900,8 @@
                                             "Paymob",
                                             "Stax",
                                             "Square",
-                                            "CC Avenue"
+                                            "CC Avenue",
+                                            "NetTerm"
                                         ],
                                         "example": "Credit Card"
                                     },
@@ -32873,7 +33360,8 @@
                                             "COD",
                                             "PayPal",
                                             "Stax",
-                                            "Square"
+                                            "Square",
+                                            "NetTerm"
                                         ],
                                         "example": "Cash on Delivery"
                                     },
@@ -37798,6 +38286,11 @@
                                     "type": {
                                         "description": "Type should be either 'Brand' or 'Category'",
                                         "type": "string",
+                                        "enum": [
+                                            "Brand",
+                                            "Vendor",
+                                            "Category"
+                                        ],
                                         "example": "Category"
                                     },
                                     "relational_id": {
@@ -47851,8 +48344,8 @@
             "description": "Frontend - FAQs"
         },
         {
-            "name": "Frontend Finance",
-            "description": "Frontend Finance"
+            "name": "Frontend-Finance",
+            "description": "Frontend-Finance"
         },
         {
             "name": "Frontend Product Accessories",

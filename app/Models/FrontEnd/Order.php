@@ -137,5 +137,9 @@ class Order extends Model
 		return $this->hasOne(\App\Models\Utm::class, 'id', 'utm_id');
 	}
 
+	 public function invoice()
+	{
+		return $this->hasOne(Invoice::class, 'order_id', 'id');
+	}
 
 }

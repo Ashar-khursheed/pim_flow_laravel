@@ -13,8 +13,6 @@ use App\Models\SeoManagement;
 
 class CategoryMenuController extends Controller
 {
-
-
     /**
      * @OA\Get(
      *     path="/api/frontend/category-with-slug/{slug}",
@@ -38,7 +36,6 @@ class CategoryMenuController extends Controller
      *     )
      * )
      */
-
     public function showCategoryBySlug($seoUrl)
     {
         // Find the SEO record by URL
@@ -71,45 +68,6 @@ class CategoryMenuController extends Controller
      * @param  \Botble\Ecommerce\Models\ProductCategory  $category
      * @return array
      */
-
-    //     private function getCategoryWithChildren($category)
-// {
-//     // Get the children of the category
-//     $children = Category::where('parent_id', $category->id)
-//         ->where('status', 'published')
-//           ->with('seoUrl')
-//         ->get();
-
-    //     // Iterate through each child and fetch its children recursively
-//     foreach ($children as $child) {
-//         // Recursively get children for the child category
-//         $child->setRelation('children', $this->getCategoryWithChildren($child));
-
-    //         // Attach SEO URL instead of slug
-//         $seo = $child->seoUrl; // Assumes you have the seoUrl() relationship
-//         $child->seo_slug = $seo?->url ?? null;
-//     }
-
-    //     // Add image URL for the current category
-//     $category->image = $category->image;
-
-    //     // Add the children to the current category
-//     $category->children = $children;
-
-    //     // Attach SEO URL instead of slug for the current category
-//     $seo = $category->seoUrl; // Assumes you have the seoUrl() relationship
-//     $category->seo_slug = $seo?->url ?? null;
-
-    //     // Return the modified structure
-//     return [
-//         'id' => $category->id,
-//         'name' => $category->name,
-//         'slug' => $category->seo_slug, // Replace original slug with SEO URL
-//         'parent_id' => $category->parent_id,
-//         'image' => $category->image,
-//         'children' => $category->children,
-//     ];
-// }
     private function getCategoryWithChildren($category)
     {
         // Ensure SEO is loaded for the current category
@@ -150,49 +108,54 @@ class CategoryMenuController extends Controller
         ];
     }
 
-    //    private function getCategoryWithChildren1($category)
-// {
-//     // Eager load SEO
-//     $category->loadMissing('seoUrl');
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/menu-categories",
+     *     summary="Get menu categories with children",
+     *     tags={"Frontend-Menu Categories"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="query",
+     *         description="Filter categories by parent or category ID",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response=200, description="List of categories in hierarchical structure", @OA\MediaType(mediaType="application/json")),
+     * )
+     */
+    public function menuCategories(Request $request)
+    {
+        $filterId = $request->get('id');
 
-    //     // Get SEO slug for current category
-//     $seo = $category->seoUrl;
-//     $seoSlug = $seo?->url ?? $category->slug;
+        $records = Category::select([
+            'id', 'name', 'slug', 'parent_id',
+            'image', 'order', 'last_child'
+        ])
+        ->with([
+        'translations',
+        'seoUrl:id,relational_id,relational_type,url',
+        'publishedChildren'
+        ])
+        ->withCount('products')
+        ->where('status', 'published')
+        ->where('parent_id', 0);
 
-    //     // Get children with SEO eager loaded
-//     $children = Category::where('parent_id', $category->id)
-//         ->where('status', 'published')
-//         ->with('seoUrl')
-//         ->get();
+        if ($filterId) {
+            $records->where(function ($q) use ($filterId) {
+                $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+            });
+        }
 
-    //     // Transform children recursively
-//     $childrenArray = [];
-//     foreach ($children as $child) {
-//         $childSeo = $child->seoUrl;
-//         $childSeoSlug = $childSeo?->url ?? $child->slug;
+        $records = $records->orderBy('order');
 
-    //         $childrenArray[] = [
-//             'id' => $child->id,
-//             'name' => $child->name,
-//             'slug' => $childSeoSlug,
-//             'parent_id' => $child->parent_id,
-//             'image' => $child->image,
-//             'children' => $this->getCategoryWithChildren($child), // recursive call
-//         ];
-//     }
+        $cacheKey = $filterId ? "categories_menu_$filterId" : "categories_menu__all";
 
-    //     return [
-//         'id' => $category->id,
-//         'name' => $category->name,
-//         'slug' => $seoSlug,
-//         'parent_id' => $category->parent_id,
-//         'image' => $category->image,
-//         'children' => $childrenArray,
-//     ];
-// }
+        $categoriesMenus = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($records) {
+            return $records->get();
+        });
 
-
-
+        return response()->json($categoriesMenus)->header('Cache-Control', 'public, max-age=86400');
+    }
 
     /**
      * @OA\Get(
@@ -209,33 +172,6 @@ class CategoryMenuController extends Controller
      *     @OA\Response(response=200, description="List of categories in hierarchical structure", @OA\MediaType(mediaType="application/json")),
      * )
      */
-
-    // public function getCategoriesWithChildren(Request $request)
-// {
-//     $filterId = $request->get('id');
-
-    //     $query = Category::select(['id', 'name', 'parent_id', 'image'])
-//         ->withCount('products')
-//         ->with(['seoUrl'])
-//         ->where('status', 'published');
-
-    //     if ($filterId) {
-//         $query->where(function ($q) use ($filterId) {
-//             $q->where('id', $filterId)->orWhere('parent_id', $filterId);
-//         });
-//     }
-
-    //     $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
-
-    //     $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
-//         $categories = $query->get();
-//         return $this->buildCategoryTree($categories);
-//     });
-
-    //     return response()->json($categoriesTree)
-//         ->header('Cache-Control', 'public, max-age=86400');
-// }
-
     public function getCategoriesWithChildren(Request $request)
     {
         $filterId = $request->get('id');
@@ -324,55 +260,4 @@ class CategoryMenuController extends Controller
 
         return $buildTree(0);
     }
-
-
-
-    // private function buildCategoryTree($categories)
-// {
-//     // Map categories by parent_id
-//     $categoriesByParent = $categories->groupBy('parent_id');
-
-    //     // Recursive function to build tree
-//     $buildTree = function($parentId) use (&$buildTree, $categoriesByParent) {
-//         $tree = [];
-//         if (isset($categoriesByParent[$parentId])) {
-//             foreach ($categoriesByParent[$parentId] as $category) {
-//                 $seoSlug = $category->seoUrl?->url ?? null;
-//                 $tree[] = [
-//                     'id' => $category->id,
-//                     'name' => $category->name,
-//                     'slug' => $seoSlug,
-//                     'parent_id' => $category->parent_id,
-//                     'productCount' => $category->products_count,
-//                     'image' => $category->image,
-//                     'children' => $buildTree($category->id),
-//                 ];
-//             }
-//         }
-//         return $tree;
-//     };
-
-    //     // Only start from top-level categories (parent_id = 0)
-//     return $buildTree(0);
-// }
-
-
-    /**
-     * @OA\Schema(
-     *     schema="Category",
-     *     type="object",
-     *     @OA\Property(property="id", type="integer"),
-     *     @OA\Property(property="name", type="string"),
-     *     @OA\Property(property="slug", type="string"),
-     *     @OA\Property(property="parent_id", type="integer", nullable=true),
-     *     @OA\Property(property="productCount", type="integer"),
-     *     @OA\Property(property="image", type="string", format="url"),
-     *     @OA\Property(
-     *         property="children",
-     *         type="array",
-     *         @OA\Items(ref="#/components/schemas/Category")
-     *     )
-     * )
-     */
-
 }

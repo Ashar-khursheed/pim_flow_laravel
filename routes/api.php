@@ -466,13 +466,18 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('product-variants/getProductAttibute', [ProductVariantController::class,'getProductAttibute']);
 	Route::post('product-variants/show', [ProductVariantController::class, 'show']);
 	Route::apiResource('made-to-orders', MadeToOrderController::class);
-	Route::apiResource('finances', FinanceController::class);
-	Route::post('finances/{id}', [FinanceController::class, 'update']);
-	Route::post('/finances/{id}/account-status', [FinanceController::class, 'updateStatus']);
 
-	Route::get('/finances/{id}/due', [FinanceController::class, 'getDueDetails']);
-	Route::post('/finances/pay/{id}', [FinanceController::class, 'payAmount']);
-	Route::get('/finances/{id}/payment-history', [FinanceController::class, 'getPaymentHistory']);
+	Route::apiResource('finances', FinanceController::class);
+	// Route::get('finances/{id}', [FinanceController::class, 'show']);
+	 Route::post('finances/{id}', [FinanceController::class, 'update']);
+
+	Route::post('finances/{id}/account-status', [FinanceController::class, 'updateStatus']);
+
+	Route::get('finances/{id}/due', [FinanceController::class, 'getDueDetails']);
+	Route::post('finances/pay/{id}', [FinanceController::class, 'payAmount']);
+	Route::get('finances/{id}/payment-history', [FinanceController::class, 'getPaymentHistory']);
+	Route::get('finances/get-full-due/{id}/{customer_id}', [FinanceController::class, 'getFullNetTermDue']);
+	Route::post('finances/pay-full-payment/{id}', [FinanceController::class, 'payfullNetTerm']);
 
 	Route::post('/ltl/quotes', [TqlQuoteController::class, 'create']);
     Route::get('/ltl/quotes/{id}', [TqlQuoteController::class, 'get']);
@@ -682,12 +687,23 @@ Route::Post('frontend/product-variants-by-attribute', [FndProductVariantControll
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
-	Route::post('frontend/finances', [F_FinanceController::class, 'store']);
+Route::post('frontend/finances', [F_FinanceController::class, 'store']);
+Route::get('/frontend/finances', [F_FinanceController::class, 'index']);
+Route::put('/frontend/finances/{id}/updateCreditAmount', [F_FinanceController::class, 'updateCreditAmount']);
+
 Route::get('frontend/finances/apply', [F_FinanceController::class, 'getFinance']);
+Route::post('frontend/finances/order', [F_FinanceController::class, 'financeOrder']);
 Route::get('frontend/finances/check', [F_FinanceController::class, 'financeCheck']);
+Route::get('frontend/finances/get-customer-details', [F_FinanceController::class, 'getCustomerDetails']);
+Route::get('frontend/finances/payment-history', [F_FinanceController::class, 'getPaymentHistory']);
+Route::get('frontend/finances/{id}/due', [F_FinanceController::class, 'getDueDetails']);
+Route::post('frontend/finances/pay/{id}', [F_FinanceController::class, 'payAmount']);
+Route::get('frontend/finances/get-full-due/{id}', [F_FinanceController::class, 'getFullNetTermDue']);
+Route::get('frontend/finances/payment-order-history', [F_FinanceController::class, 'getPaymentOrderHistory']);
+Route::get('frontend/finances/payment-paid-invoice', [F_FinanceController::class, 'getPaymentPaidInvoice']);
+Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::class, 'payfullNetTerm']);
 
 
-Route::post('frontend/tql-rate', [TqlRateController::class, 'tqlRates']);
 
 	Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
 	Route::apiResource('frontend/carts', F_CustomerCartController::class)->names('frontend.carts');;
@@ -868,6 +884,7 @@ Route::post('/frontend/products/filters', [FilterController::class, 'index']);
 
 
 Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
+Route::get('/frontend/menu-categories', [F_CategoryMenuController::class, 'menuCategories']);
 Route::get('/frontend/categories-with-children', [F_CategoryMenuController::class, 'getCategoriesWithChildren']);
 
 Route::get('/frontend/cart/total-products-guest', [F_CartController::class, 'totalProductsInCartGuest']);
@@ -982,6 +999,9 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/failed', [F_CCavenueController::class, 'failed']);
 	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
+
+
+Route::post('frontend/tql-rate', [TqlRateController::class, 'createLtlQuote']);
 
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
