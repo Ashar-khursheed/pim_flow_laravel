@@ -89,33 +89,13 @@ class FinanceController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-
-            $query->where(function ($q) use ($search) {
-                $q->where('business_name', 'like', "%{$search}%")
-                    ->orWhere('requested_amount', 'like', "%{$search}%")
-                    ->orWhere('term_selection', 'like', "%{$search}%")
-                    ->orWhereHas('customer', function ($c) use ($search) {
-                        $c->where('name', 'like', "%{$search}%")
-                            ->orWhere('mobile_number', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('customerAddress', function ($a) use ($search) {
-                        $a->where('address', 'like', "%{$search}%")
-                            ->orWhere('city', 'like', "%{$search}%")
-                            ->orWhere('state', 'like', "%{$search}%")
-                            ->orWhere('pincode', 'like', "%{$search}%");
-                    });
-            });
-        }
-
+         
         if ($request->filled('search')) {
             $search = $request->input('search');
 
             $query->where(function ($q) use ($search) {
 
-                $q->where('business_name', 'like', "%{$search}%")
+                $q->where('legal_business_name', 'like', "%{$search}%")
                     ->orWhere('requested_amount', 'like', "%{$search}%")
                     ->orWhere('term_selection', 'like', "%{$search}%")
                     ->orWhereHas('customer', function ($c) use ($search) {
