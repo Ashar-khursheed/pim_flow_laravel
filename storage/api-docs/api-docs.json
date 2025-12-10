@@ -10776,10 +10776,9 @@
                             "type": "string",
                             "enum": [
                                 "Pending",
-                                "Completed",
-                                "Failed",
-                                "Cancelled",
-                                "Refunded",
+                                "Approved",
+                                "Rejected",
+                                "Hold",
                                 "all"
                             ],
                             "example": "all"

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\FrontEnd\Finance;
+use App\Models\FrontEnd\FinanceHistory;
 
 use App\Models\FrontEnd\FinancesPayment;
 use Illuminate\Support\Facades\Validator;
@@ -32,7 +33,7 @@ class FinanceController extends Controller
      *         in="query",
      *         required=false,
      *         description="Filter by status",
-     *         @OA\Schema(type="string", enum={"Pending","Completed","Failed","Cancelled","Refunded","all"}, example="all")
+     *         @OA\Schema(type="string", enum={"Pending","Approved","Rejected","Hold","all"}, example="all")
      *     ),
      *     @OA\Parameter(
      *         name="search",
@@ -86,7 +87,7 @@ class FinanceController extends Controller
 
         $query = Finance::with(['createdBy', 'updatedBy', 'customer', 'customerAddress', 'approvalUser']);
         if ($request->filled('status') && $request->input('status') !== "all") {
-            $query->where('status', $request->input('status'));
+            $query->where('accounts_status', $request->input('status'));
         }
 
          
@@ -938,19 +939,19 @@ class FinanceController extends Controller
             $finance->status         = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
            
             $finance->save();
-
-
-            // PaymentManagement::create([
-            //     'payment_method'   => 'netTerm',
-            //     'payment_mode'     => 'NetTerm',
-            //     'amount'           => $pay_amount,
-            //     'order_id'         => $finance->id,
-            //     'customer_id'      => Auth::id(),
-            //     'status'           => 'Success',
-            //     'payment_date'     => now(),
-            //     'created_by'       => Auth::id(),
-
-            // ]);
+             FinanceHistory::create([
+                'order_number'  => $financesPayment->order_number,
+                'finances_id'   => $finance->id,
+                'payment_id'   => $financesPayment->id,
+                'customer_id'   => $finance->customer_id,
+                'due_amount'    => $financesPayment->due_amount,
+                'paid_amount'   => $pay_amount,
+                'balance'       => $financesPayment->due_amount - $financesPayment->paid_amount,
+                'due_date'      => $financesPayment->due_date,
+                'paid_on_date'    => now(),
+                'status'    => $financesPayment->balance <= 0 ? 'Paid' : 'Pending',
+                'paid_by'    => Auth::id(),
+                ]);           
 
             // All good!
             return response()->json([
@@ -1216,81 +1217,204 @@ class FinanceController extends Controller
      * )
      */
 
-    public function payfullNetTerm(Request $request,$id)
-    {   
-        $request->validate([
-            'pay_amount' => 'required|numeric|min:0.01',
-            'customer_id' => 'required|exists:customers,id'
-             
-        ]);
+    public function payfullNetTerm(Request $request, $id)
+{
+    $request->validate([
+        'pay_amount'   => 'required|numeric|min:0.01',
+        'customer_id'  => 'required|exists:customers,id'
+    ]);
 
-        $pay_amount = (float) $request->pay_amount;
-        return DB::transaction(function () use ($pay_amount, $request) {
+    $pay_amount = (float) $request->pay_amount;
+    $customer_id = $request->customer_id;
 
-            // Lock the main finance record
-            $finance = Finance::where('id', $request->id)->where('customer_id', $request->customer_id)
-                ->lockForUpdate()
-                ->orderByDesc('id')
-                ->firstOrFail();
+    return DB::transaction(function () use ($pay_amount, $customer_id, $id) {
 
-            // Get all UNPAID or PARTIALLY PAID invoices (oldest first = FIFO)
-            $pendingPayments = FinancesPayment::where('finances_id', $finance->id)                
-                ->where('customer_id', $request->customer_id)
-                ->whereRaw('due_amount > paid_amount') // Only unpaid/partially paid
-                ->orderBy('due_date', 'asc') // Oldest first
-                ->lockForUpdate() // CRITICAL: prevent race conditions
-                ->get();
-            if ($pendingPayments->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No outstanding balance to pay.'
-                ], 400);
-            }
+        // Lock the main finance record using route $id
+        $finance = Finance::where('id', $id)
+            ->where('customer_id', $customer_id)
+            ->lockForUpdate()
+            ->firstOrFail();
 
-            $remainingPayment = $pay_amount;
-            $totalPaidBefore = $finance->paid_amount ?? 0;
-            $invoicesPaid = [];
+        // Get unpaid/partially paid invoices: oldest first (FIFO)
+        $pendingPayments = FinancesPayment::where('finances_id', $finance->id)
+            ->where('customer_id', $customer_id)
+            ->whereRaw('due_amount > paid_amount')
+            ->orderBy('due_date', 'asc')
+            ->lockForUpdate()
+            ->get();
 
-            foreach ($pendingPayments as $payment) {
-                if ($remainingPayment <= 0) break;
-
-                $remainingBalance = $payment->due_amount - $payment->paid_amount;
-
-                // How much to apply to this invoice
-                $applyAmount = min($remainingPayment, $remainingBalance);
-
-                // Update this invoice
-                $payment->paid_amount    += $applyAmount;
-                $payment->balance         = $payment->due_amount - $payment->paid_amount;
-                $payment->paid_on_date    = now();
-                $payment->paid_by         = Auth::id();
-                // $payment->status          = $payment->balance <= 0 ? 'Paid' : 'Pending';
-                $payment->save();
-
-                $remainingPayment -= $applyAmount;
-            }
-
-            // Update main finance record
-            $finance->paid_amount   += ($pay_amount - $remainingPayment); // Only what was actually used
-            $finance->next_due_amt    = max(0, $finance->next_due_amt - ($pay_amount - $remainingPayment));
-            $finance->status          = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
-            $finance->next_due_date = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
-           
-            $finance->save();          
-
+            
+        if ($pendingPayments->isEmpty()) {
             return response()->json([
-                'success' => true,
-                'message' => 'Payment processed successfully.',
-                'data' => [
-                    'finance_id'        => $finance->id,
-                    'amount_paid'       => $pay_amount,
-                    'amount_applied'    => $pay_amount - $remainingPayment,
-                    'overpaid_amount'   => $remainingPayment > 0 ? $remainingPayment : 0,
-                    'remaining_due'     => $finance->next_due_amt,
-                    'status'            => $finance->status,
-                    'invoices_updated'  => $invoicesPaid,
-                ]
+                'success' => false,
+                'message' => 'No outstanding balance to pay.'
+            ], 400);
+        }
+
+        $remainingPayment = $pay_amount;
+        $totalApplied = 0;
+        $invoicesUpdated = [];
+
+        foreach ($pendingPayments as $payment) {
+            if ($remainingPayment <= 0) break;
+
+            $owing = $payment->due_amount - $payment->paid_amount;
+            if ($owing <= 0) continue;
+
+            $applyAmount = min($remainingPayment, $owing);
+
+            // Update individual invoice payment record
+            $payment->paid_amount += $applyAmount;
+            $payment->balance = $payment->due_amount - $payment->paid_amount;
+            $payment->paid_on_date = now();
+            $payment->status = $payment->due_amount - $payment->paid_amount <= 0 ? 'Paid' : 'Pending';
+            $payment->paid_by = Auth::id();
+            $payment->save();
+
+            // Correctly log ONLY the amount applied to THIS invoice
+            FinanceHistory::create([
+                'order_number'  => $payment->order_number,
+                'finances_id'   => $finance->id,
+                'payment_id'    => $payment->id,
+                'customer_id'   => $customer_id,
+                'due_amount'    => $owing,
+                'paid_amount'   => $applyAmount,                    // Fixed: only this portion
+                'balance'       => $owing - $applyAmount,
+                'due_date'      => $payment->due_date,
+                'paid_on_date'  => now(),
+                'status'        => $payment->balance <= 0 ? 'Paid' : 'Pending',
+                'paid_by'      => Auth::id(),
+                'note'          => 'Payment applied via full/net term payment'
             ]);
-        });
-    }
+
+            $totalApplied += $applyAmount;
+            $remainingPayment -= $applyAmount;
+
+            // Track which invoices were affected
+            $invoicesUpdated[] = [
+                'payment_id'    => $payment->id,
+                'order_number'  => $payment->order_number,
+                'applied'       => $applyAmount,
+                'new_balance'   => $payment->balance,
+                'status'        => $payment->balance <= 0 ? 'Paid' : 'Partially Paid'
+            ];
+        }
+
+        // Update main finance summary
+        $previouslyPaid = $finance->paid_amount ?? 0;
+        $finance->paid_amount = $previouslyPaid + $totalApplied;
+        $finance->next_due_amt = max(0, ($finance->next_due_amt ?? 0) - $totalApplied);
+
+        $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+        $finance->next_due_date = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
+        $finance->save();
+
+        // Optional: Store overpayment as credit (recommended)
+        $overpaidAmount = $remainingPayment; // what's left after applying to all invoices
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment processed successfully.',
+            'data' => [
+                'finance_id'       => $finance->id,
+                'amount_received'  => $pay_amount,
+                'amount_applied'   => $totalApplied,
+                'overpaid_amount'  => $overpaidAmount,
+                'remaining_due'    => $finance->next_due_amt,
+                'status'           => $finance->status,
+                'invoices_updated' => $invoicesUpdated,
+            ]
+        ]);
+    });
+}
+    // public function payfullNetTerm(Request $request,$id)
+    // {   
+    //     $request->validate([
+    //         'pay_amount' => 'required|numeric|min:0.01',
+    //         'customer_id' => 'required|exists:customers,id'             
+    //     ]);
+
+    //     $pay_amount = (float) $request->pay_amount;
+    //     return DB::transaction(function () use ($pay_amount, $request) {
+
+    //         // Lock the main finance record
+    //         $finance = Finance::where('id', $request->id)->where('customer_id', $request->customer_id)
+    //             ->lockForUpdate()
+    //             ->orderByDesc('id')
+    //             ->firstOrFail();
+
+    //         // Get all UNPAID or PARTIALLY PAID invoices (oldest first = FIFO)
+    //         $pendingPayments = FinancesPayment::where('finances_id', $finance->id)                
+    //             ->where('customer_id', $request->customer_id)
+    //             ->whereRaw('due_amount > paid_amount') // Only unpaid/partially paid
+    //             ->orderBy('due_date', 'asc') // Oldest first
+    //             ->lockForUpdate() // CRITICAL: prevent race conditions
+    //             ->get();
+    //         if ($pendingPayments->isEmpty()) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'No outstanding balance to pay.'
+    //             ], 400);
+    //         }
+
+    //         $remainingPayment = $pay_amount;
+    //         $totalPaidBefore = $finance->paid_amount ?? 0;
+    //         $invoicesPaid = [];
+
+    //         foreach ($pendingPayments as $payment) {
+    //             if ($remainingPayment <= 0) break;
+
+    //             $remainingBalance = $payment->due_amount - $payment->paid_amount;
+
+    //             // How much to apply to this invoice
+    //             $applyAmount = min($remainingPayment, $remainingBalance);
+
+    //             // Update this invoice
+    //             $payment->paid_amount    += $applyAmount;
+    //             $payment->balance         = $payment->due_amount - $payment->paid_amount;
+    //             $payment->paid_on_date    = now();
+    //             $payment->paid_by         = Auth::id();
+                
+    //             $payment->save();
+
+    //             $remainingPayment -= $applyAmount;
+
+    //             FinanceHistory::create([
+    //             'order_number'  => $payment->order_number,
+    //             'finances_id'   => $finance->id,
+    //             'payment_id'   => $payment->id,
+    //             'customer_id'   => $finance->customer_id,
+    //             'due_amount'    => $payment->due_amount,
+    //             'paid_amount'   => $pay_amount,
+    //             'balance'       => $payment->due_amount - $payment->paid_amount,
+    //             'due_date'      => $payment->due_date,
+    //             'paid_on_date'    => now(),
+    //             'status'    => $payment->balance <= 0 ? 'Paid' : 'Pending',
+    //             'paid_by'    => Auth::id(),
+    //             ]);
+
+    //         }
+
+    //         // Update main finance record
+    //         $finance->paid_amount   += ($pay_amount - $remainingPayment); // Only what was actually used
+    //         $finance->next_due_amt    = max(0, $finance->next_due_amt - ($pay_amount - $remainingPayment));
+    //         $finance->status          = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+    //         $finance->next_due_date = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
+           
+    //         $finance->save();         
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Payment processed successfully.',
+    //             'data' => [
+    //                 'finance_id'        => $finance->id,
+    //                 'amount_paid'       => $pay_amount,
+    //                 'amount_applied'    => $pay_amount - $remainingPayment,
+    //                 'overpaid_amount'   => $remainingPayment > 0 ? $remainingPayment : 0,
+    //                 'remaining_due'     => $finance->next_due_amt,
+    //                 'status'            => $finance->status,
+    //                 'invoices_updated'  => $invoicesPaid,
+    //             ]
+    //         ]);
+    //     });
+    // }
 }
