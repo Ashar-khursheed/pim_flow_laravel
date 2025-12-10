@@ -1547,7 +1547,7 @@ class CategoryController extends Controller
 		$leafCategories = Category::where('status', 'published')
 		->whereDoesntHave('children')
 		->whereIn('name', $allowedNames)
-		->with(['seoUrl:id,relational_id,url'])
+		->with(['translations', 'seoUrl:id,relational_id,url'])
 		->get(['id', 'name', 'parent_id', 'image']);
 
 		// Sort categories in the same order as in $allowedNames
