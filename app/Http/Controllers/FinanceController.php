@@ -1234,8 +1234,7 @@ class FinanceController extends Controller
                 ->firstOrFail();
 
             // Get all UNPAID or PARTIALLY PAID invoices (oldest first = FIFO)
-            $pendingPayments = FinancesPayment::where('finances_id', $finance->id)
-                ->where('finances_id', $request->id)
+            $pendingPayments = FinancesPayment::where('finances_id', $finance->id)                
                 ->where('customer_id', $request->customer_id)
                 ->whereRaw('due_amount > paid_amount') // Only unpaid/partially paid
                 ->orderBy('due_date', 'asc') // Oldest first
