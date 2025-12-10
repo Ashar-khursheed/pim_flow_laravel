@@ -98,6 +98,10 @@ class FinanceController extends Controller
                 $q->where('legal_business_name', 'like', "%{$search}%")
                     ->orWhere('requested_amount', 'like', "%{$search}%")
                     ->orWhere('term_selection', 'like', "%{$search}%")
+                    ->orWhere('accounts_payable_email', 'like', "%{$search}%")
+                    ->orWhere('accounts_payable_phone', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('accounts_status', 'like', "%{$search}%")
                     ->orWhereHas('customer', function ($c) use ($search) {
                         $c->where('name', 'like', "%{$search}%")
                             ->orWhere('mobile_number', 'like', "%{$search}%")
