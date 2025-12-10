@@ -45,7 +45,7 @@ class CategoryController extends Controller
 			$categories = $categories->where(function ($query) use ($filterId) {
 				$query->where('id', $filterId)
 				->orWhere('parent_id', $filterId);
-			})
+			});
 		}
 		$categories = $categories->get();
 		$categories->map(function ($record) {
