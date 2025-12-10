@@ -5,6 +5,7 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\TqlRateService;
+use Illuminate\Support\Facades\Http;
  
 use Illuminate\Support\Facades\Validator;
 
@@ -132,16 +133,15 @@ class TqlRateController extends Controller
  *     @OA\Response(response=500, description="Server error")
  * )
  */
-
-   public function tqlRates(Request $request, TqlRateService $service)
-{
-    // Full validation matching your Swagger schema
+public function createLtlQuote(Request $request)
+{ //dd($request->all());
+    // 1. VALIDATION
     $validator = Validator::make($request->all(), [
         'carrierPriceId' => 'required|string',
         'customerEmailAddresses' => 'required|email',
         'pickLocationType' => 'required|string|in:Commercial,Residential',
         'dropLocationType' => 'required|string|in:Commercial,Residential',
-        'shipmentDate' => 'required|date_format:Y-m-d\TH:i:s.v\Z', // Matches 2025-12-09T17:11:52.705Z
+        'shipmentDate' => 'required|date_format:Y-m-d\TH:i:s.v\Z',
 
         'origin.postalCode' => 'required|string',
         'origin.city' => 'required|string',
@@ -154,30 +154,24 @@ class TqlRateController extends Controller
         'destination.country' => 'required|string|size:2',
 
         'pickupDetails.address1' => 'required|string',
-        'pickupDetails.address2' => 'nullable|string',
         'pickupDetails.stopName' => 'required|string',
         'pickupDetails.contactName' => 'required|string',
         'pickupDetails.contactPhone' => 'required|string',
-        'pickupDetails.contactExtension' => 'nullable|string',
         'pickupDetails.hoursOpen' => 'required|string',
         'pickupDetails.hoursClosed' => 'required|string',
-        'pickupDetails.puNumber' => 'nullable|string',
 
         'deliveryDetails.address1' => 'required|string',
-        'deliveryDetails.address2' => 'nullable|string',
         'deliveryDetails.stopName' => 'required|string',
         'deliveryDetails.contactName' => 'required|string',
         'deliveryDetails.contactPhone' => 'required|string',
-        'deliveryDetails.contactExtension' => 'nullable|string',
         'deliveryDetails.hoursOpen' => 'required|string',
         'deliveryDetails.hoursClosed' => 'required|string',
-        'deliveryDetails.deliveryPO' => 'nullable|string',
 
         'accessorials' => 'nullable|array',
         'accessorials.*' => 'string',
 
         'quoteCommodities' => 'required|array|min:1',
-        'quoteCommodities.*.freightClassCode' => 'required|string|in:50,55,60,65,70,77.5,85,92.5,100,110,125,150,175,200,250,300,400,500',
+        'quoteCommodities.*.freightClassCode' => 'required|string',
         'quoteCommodities.*.unitTypeCode' => 'required|string',
         'quoteCommodities.*.description' => 'required|string',
         'quoteCommodities.*.quantity' => 'required|integer|min:1',
@@ -185,47 +179,167 @@ class TqlRateController extends Controller
         'quoteCommodities.*.dimensionLength' => 'required|numeric|min:1',
         'quoteCommodities.*.dimensionWidth' => 'required|numeric|min:1',
         'quoteCommodities.*.dimensionHeight' => 'required|numeric|min:1',
-        'quoteCommodities.*.nmfc' => 'nullable|string',
-        'quoteCommodities.*.pieceCaseCount' => 'nullable|integer',
-        'quoteCommodities.*.isHazmat' => 'nullable|boolean',
-        'quoteCommodities.*.isStackable' => 'nullable|boolean',
     ]);
 
     if ($validator->fails()) {
         return response()->json([
             'success' => false,
-            'message' => 'Validation failed',
-            'errors' => $validator->errors()
+            'errors' => $validator->errors(),
         ], 422);
     }
 
-    // Pass the fully validated data directly to your service
-    $shipmentData = $request->all();
+    // 2. GET TOKEN
+//     $token = $this->getTqlToken();
+// dd($token);
+//     if (!$token) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Unable to generate token from TQL.',
+//         ], 500);
+//     }
 
-    try {
-        $rates = $service->getRates($shipmentData);
 
-        if (!$rates || empty($rates)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No rates found or service unavailable.',
-                'shipment-rates' => null
-            ], 404);
-        }
+// $response = Http::withHeaders([
+//             'Content-Type' => 'application/json',
+//             'Accept' => 'application/json',
+//             'Authorization' => 'Bearer ' . config('services.tql.api_key'), // Uncomment if needed
+//             'Ocp-Apim-Subscription-Key' => config('services.tql.api_key'),
+//         ])->post('https://public.api.tql.com/ftl/quotes/create', $request->all());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Rates retrieved successfully.',
-            'shipment-rates' => $rates
-        ], 200);
+$token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6Ik42MHR3U0FEMVR5bjJXRG00WG5EbUNaN2ZXNU13ZWtlRC1FMHNIZllNVUkiLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJlMzIwMjJiYy02MDg1LTQzOTEtODA0My02NDU1NDNhY2FlNzAiLCJpc3MiOiJodHRwczovL3RxbGlkZW50aXR5LmIyY2xvZ2luLmNvbS9iMDFhN2Q0ZC00MThiLTQ0OGYtYTFjMy00NjYxNjM3MmMzN2MvdjIuMC8iLCJleHAiOjE3NjUzNzI2NjcsIm5iZiI6MTc2NTM2NTQ2Nywic3ViIjoiOTkyM2U2NTMtZjRmMS00ODc1LTkyNWYtMjE2ZDM0ODU0OTIwIiwiZ2l2ZW5fbmFtZSI6Ik1pa2UiLCJmYW1pbHlfbmFtZSI6IkZlcmd1c29uIiwibmFtZSI6Ik1pa2UgRmVyZ3Vzb24iLCJlbWFpbCI6Im9mc0B0aGVob3JlY2FzdG9yZS5jb20iLCJwaG9uZSI6IjU1MTI4ODY4NTEiLCJwaG9uZUNvdW50cnkiOiJVUyIsImNvbS50cWwuY2FycmllciI6W10sImNvbS50cWwuY3VzdG9tZXIiOlsiMjkyMTQxOSJdLCJjb20udHFsLmZhY3RvcmluZyI6W10sImNvbS50cWwuZGlzdHJpYnV0b3IiOltdLCJjb20udHFsLmNvbGxlY3RvciI6W10sImNvbS50cWwuaWQiOiI1NWU3NjJlMC02YjlhLTQ1MzMtZGU0Ni0wOGRlMDQ3NzA4NDQiLCJ0aWQiOiJiMDFhN2Q0ZC00MThiLTQ0OGYtYTFjMy00NjYxNjM3MmMzN2MiLCJzY3AiOiJUcmF4V2ViQXBwbGljYXRpb25MYXllci5EZWZhdWx0VXNlclBlcm1pc3Npb24gQ29udHJhY3RzLkRlZmF1bHRVc2VyUGVybWlzc2lvbiBMb2Fkc1YxLkRlZmF1bHRVc2VyUGVybWlzc2lvbiBDYXJyaWVycy5EZWZhdWx0VXNlclBlcm1pc3Npb24gQ3VzdG9tZXJzLkRlZmF1bHRVc2VyUGVybWlzc2lvbiBVc2Vycy5EZWZhdWx0VXNlclBlcm1pc3Npb24gRGlzdHJpYnV0b3JzLkRlZmF1bHRVc2VyUGVybWlzc2lvbiBFbWFpbC5EZWZhdWx0VXNlclBlcm1pc3Npb24gTG9hZFBvc3RpbmdzLkRlZmF1bHRVc2VyUGVybWlzc2lvbiBDYXJyaWVyRmluYW5jaWFscy5EZWZhdWx0VXNlclBlcm1pc3Npb24gQ2hlY2tsaXN0cy5EZWZhdWx0VXNlclBlcm1pc3Npb24iLCJhenAiOiJlY2ExMTk3ZS0wMGQ0LTRiYzAtYTU3Ny1mZDA3N2JkZDQwZGUiLCJ2ZXIiOiIxLjAiLCJpYXQiOjE3NjUzNjU0Njd9.bGIQbNoK88KtSxFaeT9j9HhYVE_xnoEL5TmptX5TuYkDR_EQWkC_LtMnq9141DAINPkGt--juo5KquYT_mWEmzNVfXw0EYvU45kCOgIgBf1sWGT05SX9tS9pBirdM4-3Wl80dHWVAFu1yUINJCQhghjXnZxsP2QohUYJ5Jp1kLWoupIEfsR_Of_eZ5j6UAv8yJAie2biTpqW--rqDvJpZjE_DYOM_f_nRkmjrA9OsBAK-QYZJw4jLCOCur18bb3VqihiuPQ9HtPi_YaoTrl2L2KGXyesE_seqQ6oxM4NCXbnzPtxtVCY5qXwwQid6lz3yDTYBa7iZU643Y06MPQ2FA';
 
-    } catch (\Exception $e) {
+    // 3. SEND POST REQUEST TO TQL QUOTES
+    $response = Http::withHeaders([
+        'Authorization' => "Bearer $token",
+        'Ocp-Apim-Subscription-Key' => config('services.tql.api_key'),
+        'Content-Type' => 'application/json',
+    ])->post('https://public.api.tql.com/ftl/quotes/create', $request->all());
+dd($response);
+    // 4. HANDLE TQL RESPONSE
+    if (!$response->successful()) {
         return response()->json([
             'success' => false,
-            'message' => 'An error occurred while fetching rates.',
-            'error' => $e->getMessage()
-        ], 500);
+            'message' => 'TQL API error.',
+            'response' => $response->json(),
+        ], $response->status());
     }
+
+    return response()->json([
+        'success' => true,
+        'data' => $response->json(),
+    ], 200);
+}
+
+//    public function tqlRates(Request $request, TqlRateService $service)
+// {
+//     // Full validation matching your Swagger schema
+//     $validator = Validator::make($request->all(), [
+//         'carrierPriceId' => 'required|string',
+//         'customerEmailAddresses' => 'required|email',
+//         'pickLocationType' => 'required|string|in:Commercial,Residential',
+//         'dropLocationType' => 'required|string|in:Commercial,Residential',
+//         'shipmentDate' => 'required|date_format:Y-m-d\TH:i:s.v\Z', // Matches 2025-12-09T17:11:52.705Z
+
+//         'origin.postalCode' => 'required|string',
+//         'origin.city' => 'required|string',
+//         'origin.state' => 'required|string|size:2',
+//         'origin.country' => 'required|string|size:2',
+
+//         'destination.postalCode' => 'required|string',
+//         'destination.city' => 'required|string',
+//         'destination.state' => 'required|string|size:2',
+//         'destination.country' => 'required|string|size:2',
+
+//         'pickupDetails.address1' => 'required|string',
+//         'pickupDetails.address2' => 'nullable|string',
+//         'pickupDetails.stopName' => 'required|string',
+//         'pickupDetails.contactName' => 'required|string',
+//         'pickupDetails.contactPhone' => 'required|string',
+//         'pickupDetails.contactExtension' => 'nullable|string',
+//         'pickupDetails.hoursOpen' => 'required|string',
+//         'pickupDetails.hoursClosed' => 'required|string',
+//         'pickupDetails.puNumber' => 'nullable|string',
+
+//         'deliveryDetails.address1' => 'required|string',
+//         'deliveryDetails.address2' => 'nullable|string',
+//         'deliveryDetails.stopName' => 'required|string',
+//         'deliveryDetails.contactName' => 'required|string',
+//         'deliveryDetails.contactPhone' => 'required|string',
+//         'deliveryDetails.contactExtension' => 'nullable|string',
+//         'deliveryDetails.hoursOpen' => 'required|string',
+//         'deliveryDetails.hoursClosed' => 'required|string',
+//         'deliveryDetails.deliveryPO' => 'nullable|string',
+
+//         'accessorials' => 'nullable|array',
+//         'accessorials.*' => 'string',
+
+//         'quoteCommodities' => 'required|array|min:1',
+//         'quoteCommodities.*.freightClassCode' => 'required|string|in:50,55,60,65,70,77.5,85,92.5,100,110,125,150,175,200,250,300,400,500',
+//         'quoteCommodities.*.unitTypeCode' => 'required|string',
+//         'quoteCommodities.*.description' => 'required|string',
+//         'quoteCommodities.*.quantity' => 'required|integer|min:1',
+//         'quoteCommodities.*.weight' => 'required|numeric|min:1',
+//         'quoteCommodities.*.dimensionLength' => 'required|numeric|min:1',
+//         'quoteCommodities.*.dimensionWidth' => 'required|numeric|min:1',
+//         'quoteCommodities.*.dimensionHeight' => 'required|numeric|min:1',
+//         'quoteCommodities.*.nmfc' => 'nullable|string',
+//         'quoteCommodities.*.pieceCaseCount' => 'nullable|integer',
+//         'quoteCommodities.*.isHazmat' => 'nullable|boolean',
+//         'quoteCommodities.*.isStackable' => 'nullable|boolean',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Validation failed',
+//             'errors' => $validator->errors()
+//         ], 422);
+//     }
+
+//     // Pass the fully validated data directly to your service
+//     $shipmentData = $request->all();
+
+//     try {
+//         $rates = $service->getRates($shipmentData);
+
+//         if (!$rates || empty($rates)) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'No rates found or service unavailable.',
+//                 'shipment-rates' => null
+//             ], 404);
+//         }
+
+//         return response()->json([
+//             'success' => true,
+//             'message' => 'Rates retrieved successfully.',
+//             'shipment-rates' => $rates
+//         ], 200);
+
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'An error occurred while fetching rates.',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+public function getTqlToken()
+{
+    $response = Http::asForm()->withHeaders([
+        'Ocp-Apim-Subscription-Key' => config('services.tql.api_key'),
+    ])->post(config('services.tql.token_url'), [
+        'client_id'     => config('services.tql.client_id'),
+        'client_secret' => config('services.tql.client_secret'),
+        'grant_type'    => 'client_credentials',
+    ]);
+dd($response);
+    if (!$response->successful()) {
+        return null;
+    }
+
+    return $response->json()['access_token'];
 }
 
 }

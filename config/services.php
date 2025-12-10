@@ -111,7 +111,9 @@ return [
     'tql' => [
     'base_url'       => env('TQL_BASE_URL', 'https://api.tql.com/v1'),
     'api_key'        => env('TQL_API_KEY'),
-    'client_id'        => env('TQL_CLIENT_ID')       
+    'client_id'        => env('TQL_CLIENT_ID'),
+    'client_secret'        => env('TQL_CLIENT_SECRET'),
+
 ],
 
 
