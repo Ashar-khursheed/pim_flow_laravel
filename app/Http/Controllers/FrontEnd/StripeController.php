@@ -188,7 +188,7 @@ class StripeController extends Controller
         // Validate input
         $request->validate([
             'amount' => 'required|numeric|min:1',
-            'payment_method_id' => 'required|string',
+            'payment_method_id' => 'null|string',
             'currency' => 'sometimes|string|in:aed,usd',
             'customer_info' => 'sometimes|array'
         ]);
@@ -219,20 +219,31 @@ class StripeController extends Controller
             );
 
             // STEP 4: Create PaymentIntent
-            $paymentIntent = PaymentIntent::create([
+            // $paymentIntent = PaymentIntent::create([
+            //     'amount' => (int) round($request->amount * 100),
+            //     'currency' => $request->currency ?? 'aed',
+            //     'payment_method' => $request->payment_method_id,
+            //     'customer' => $customer->id,
+            //     'confirmation_method' => 'manual',
+            //     'confirm' => true,
+            //     'return_url' => config('app.url') . '/payment/return',
+            //     'description' => 'Order Payment - ' . now()->format('Y-m-d H:i:s'),
+            //     'metadata' => [
+            //         'customer_name' => $request->customer_info['name'] ?? '',
+            //         'customer_email' => $request->customer_info['email'] ?? '',
+            //         'order_timestamp' => now()->toISOString()
+            //     ]
+            // ]);
+                 $paymentIntent = PaymentIntent::create([
                 'amount' => (int) round($request->amount * 100),
-                'currency' => $request->currency ?? 'aed',
-                'payment_method' => $request->payment_method_id,
-                'customer' => $customer->id,
-                'confirmation_method' => 'manual',
-                'confirm' => true,
-                'return_url' => config('app.url') . '/payment/return',
+                'currency' => $request->currency ?? 'usd',
+                'customer' => $customer->id, // optional
+                'automatic_payment_methods' => ['enabled' => true], // ✅ enables cards + Apple/Google Pay
                 'description' => 'Order Payment - ' . now()->format('Y-m-d H:i:s'),
                 'metadata' => [
                     'customer_name' => $request->customer_info['name'] ?? '',
                     'customer_email' => $request->customer_info['email'] ?? '',
-                    'order_timestamp' => now()->toISOString()
-                ]
+                ],
             ]);
 
             // STEP 5: Handle PaymentIntent Status
