@@ -218,15 +218,11 @@ class StripeController extends Controller
                 ]
             );
 
-            // STEP 4: Create PaymentIntent
-            $paymentIntent = PaymentIntent::create([
+          $paymentIntent = PaymentIntent::create([
                 'amount' => (int) round($request->amount * 100),
                 'currency' => $request->currency ?? 'aed',
                 'automatic_payment_methods' => ['enabled' => true],
-                'customer' => $customer->id,
-                'confirmation_method' => 'manual',
-                'confirm' => true,
-                'return_url' => config('app.url') . '/payment/return',
+                'customer' => $customer->id,        // optional
                 'description' => 'Order Payment - ' . now()->format('Y-m-d H:i:s'),
                 'metadata' => [
                     'customer_name' => $request->customer_info['name'] ?? '',
@@ -234,7 +230,7 @@ class StripeController extends Controller
                     'order_timestamp' => now()->toISOString()
                 ]
             ]);
-         
+
 
             // STEP 5: Handle PaymentIntent Status
             $status = $paymentIntent->status;
