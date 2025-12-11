@@ -1111,107 +1111,130 @@ public function getAllProducts(Request $request)
 	}
 
 	// ✅ Helper method to get product variants
-	private function getProductVariants($product)
-	{
-		try {
-			// Get current product's attribute values for comparison
-			$currentProductAttributes = $product->productAttributes
-				->pluck('attribute_value', 'attribute_id')
-				->toArray();
+private function getProductVariants($product)
+{
+    try {
+        // Get current product's attribute values for comparison
+        $currentProductAttributes = $product->productAttributes
+            ->pluck('attribute_value', 'attribute_id')
+            ->toArray();
 
-			$variant = $product->productVariants->first();
+        $variant = $product->productVariants->first();
 
-			if (!$variant) {
-				return [];
-			}
+        if (!$variant) {
+            return [];
+        }
 
-			$childIds = json_decode($variant->child_ids, true) ?? [];
-			$variants = json_decode($variant->variants, true) ?? [];
-			$childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
+        $childIds = json_decode($variant->child_ids, true) ?? [];
+        $variants = json_decode($variant->variants, true) ?? [];
+        $childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
 
-			if (empty($childIds) || empty($variants)) {
-				return [];
-			}
+        if (empty($childIds) || empty($variants)) {
+            return [];
+        }
 
-			// Fetch all child products at once
-			$children = Product::whereIn('id', $childIds)
-				->with('productSuppliers')
-				->select('id', 'sku', 'images')
-				->get();
+        // Fetch all child products at once with seoProductUrl relationship
+        $children = Product::whereIn('id', $childIds)
+            ->with(['productSuppliers', 'seoProductUrl'])
+            ->select('id', 'sku', 'images')
+            ->get();
 
-			// Fetch all attribute names at once
-			$attributeIds = array_column($variants, 'attribute_id');
-			$attributes = Attribute::whereIn('id', $attributeIds)
-				->pluck('name', 'id');
+        // Fetch all attribute names at once
+        $attributeIds = array_column($variants, 'attribute_id');
+        $attributes = Attribute::whereIn('id', $attributeIds)
+            ->pluck('name', 'id');
 
-			// Fetch all product attributes at once
-			$productAttributes = ProductAttribute::whereIn('product_id', $childIds)
-				->whereIn('attribute_id', $attributeIds)
-				->get()
-				->groupBy('product_id');
+        // Fetch all product attributes at once
+        $productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+            ->whereIn('attribute_id', $attributeIds)
+            ->get()
+            ->groupBy('product_id');
 
-			// Fetch all SEO URLs at once
-			$seoUrls = SeoManagement::whereIn('relational_id', $childIds)
-				->pluck('url', 'relational_id');
+        // Fetch all SEO URLs at once
+        $seoUrls = SeoManagement::whereIn('relational_id', $childIds)
+            ->pluck('url', 'relational_id');
 
-			$result = [];
+        $result = [];
 
-			foreach ($variants as $v) {
-				$attributeId = $v['attribute_id'];
-				$attributeName = $attributes[$attributeId] ?? null;
+        foreach ($variants as $v) {
+            $attributeId = $v['attribute_id'];
+            $attributeName = $attributes[$attributeId] ?? null;
 
-				if (!$attributeName) {
-					continue;
-				}
+            if (!$attributeName) {
+                continue;
+            }
 
-				$seenAttributeValues = [];
+            $seenAttributeValues = [];
 
-				foreach ($children as $child) {
-					$attrValue = $productAttributes->get($child->id)?->firstWhere('attribute_id', $attributeId)?->attribute_value ?? null;
+            foreach ($children as $child) {
+                $attrValue = $productAttributes->get($child->id)?->firstWhere('attribute_id', $attributeId)?->attribute_value ?? null;
 
-					if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
-						continue;
-					}
+                if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+                    continue;
+                }
 
-					$seenAttributeValues[$attrValue] = true;
+                $seenAttributeValues[$attrValue] = true;
 
-					$slug = $seoUrls[$child->id] ?? null;
-					$isSelected = isset($currentProductAttributes[$attributeId])
-						&& $currentProductAttributes[$attributeId] == $attrValue;
+                $slug = $seoUrls[$child->id] ?? null;
+                $isSelected = isset($currentProductAttributes[$attributeId])
+                    && $currentProductAttributes[$attributeId] == $attrValue;
 
-					// Get supplier data for price
-					$firstSupplier = $child->productSuppliers->first();
-					$price = $firstSupplier ? (float) $firstSupplier->price : 0;
-					$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
+                // Get supplier data for price
+                $firstSupplier = $child->productSuppliers->first();
+                $price = $firstSupplier ? (float) $firstSupplier->price : 0;
+                $salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
 
-					// Transform images
-					$imagesArray = json_decode($child->images, true) ?? [];
-					$childImages = collect($imagesArray)->map(function ($image) {
-						return ['url' => $image];
-					})->values()->toArray();
+                // Transform images
+                $imagesArray = json_decode($child->images, true) ?? [];
+                $childImages = collect($imagesArray)->map(function ($image) {
+                    return ['url' => $image];
+                })->values()->toArray();
 
-					$result[] = [
-						'product_id' => $child->id,
-						'attribute_id' => $attributeId,
-						'attribute_value' => $attrValue,
-						'attribute_name' => $attributeName,
-						'type' => $v['type'] ?? 'dropdown',
-						'label' => $v['labels'] ?? $attributeName,
-						'selected' => $isSelected,
-						'price' => $price,
-						'sale_price' => $salePrice,
-						'images' => $childImages,
-					];
-				}
-			}
+                // ✅ Get full URL structure (parent_category/category/product-slug)
+                $parentSlug = '';
+                $categorySlug = '';
+                $productSlug = '';
 
-			return $result;
+                try {
+                    if (method_exists($child, 'parent_category_url')) {
+                        $parentSlug = $child->parent_category_url() ?? '';
+                    }
+                    if (method_exists($child, 'category_url')) {
+                        $categorySlug = $child->category_url() ?? '';
+                    }
+                    $productSlug = $child->seoProductUrl->url ?? '';
+                } catch (\Exception $e) {
+                    \Log::warning('Error getting URLs for product ' . $child->id . ': ' . $e->getMessage());
+                }
 
-		} catch (\Exception $e) {
-			\Log::error('Product variant error for product ID ' . $product->id . ': ' . $e->getMessage());
-			return [];
-		}
-	}
+                $fullSlug = trim($parentSlug . '/' . $categorySlug . '/' . $productSlug, '/');
+
+                $result[] = [
+                    'product_id' => $child->id,
+                    'attribute_id' => $attributeId,
+                    'attribute_value' => $attrValue,
+                    'attribute_name' => $attributeName,
+                    'type' => $v['type'] ?? 'dropdown',
+                    'label' => $v['labels'] ?? $attributeName,
+                    'selected' => $isSelected,
+                    'price' => $price,
+                    'sale_price' => $salePrice,
+                    'images' => $childImages,
+                    'slug' => $slug, // SEO URL from seo_management table
+                    'parent_slug' => $parentSlug,
+                    'category_slug' => $categorySlug, // Changed from child_slug
+                    'full_slug' => $fullSlug,
+                ];
+            }
+        }
+
+        return $result;
+
+    } catch (\Exception $e) {
+        \Log::error('Product variant error for product ID ' . $product->id . ': ' . $e->getMessage());
+        return [];
+    }
+}
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/products-guest",
