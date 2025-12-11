@@ -61,7 +61,6 @@ class ProductXMLFeedWatchController extends Controller
     public function generateProductFeed(Request $request)
     {
         $perPage = $request->input('per_page');
-
         $query = Product::with([
             'brand:id,name,logo',
             'categories:id,name,parent_id',
@@ -84,7 +83,9 @@ class ProductXMLFeedWatchController extends Controller
                 'approved',
                 'description',
                 'quote_available',
-                'stock_status'
+                'stock_status',
+                'barcode',
+
             ])
             ->where('status', 'published')
             ->orderBy('id', 'desc');
@@ -220,7 +221,7 @@ class ProductXMLFeedWatchController extends Controller
 
             return $result;
         })->flatten(1)->values();
-
+ 
         // Start XML for this product
         $xml = '<item>';
         $xml .= '<g:id>' . $product->id . '</g:id>';
@@ -231,28 +232,42 @@ class ProductXMLFeedWatchController extends Controller
         $xml .= '<g:sale_price>' . number_format($salePrice, 2) . '</g:sale_price>';
         $xml .= '<g:availability>' . $product->stock_status . '</g:availability>';
         $xml .= '<g:brand>' . htmlspecialchars($product->brand?->name ?? '') . '</g:brand>';
-
+        $xml .= '<g:gtin> '.htmlspecialchars($product->barcode ?? '').'</g:gtin>';
+        $xml .= '<g:mpn>' . $product['sku'] . '</g:mpn>';
+        $xml .= '<g:sku>' . $product['sku'] . '</g:sku>';
+        $xml .= '<g:material>'.htmlspecialchars($parentCategory->name).'</g:material>';
         if ($image) {
             $xml .= '<g:image_link>' . htmlspecialchars($image) . '</g:image_link>';
         }
 
         // Product attributes
         foreach ($attributes as $attr) {
+           
             $xml .= '<g:product_detail>';
-            $xml .= '<g:section_name>Key Specification</g:section_name>';
+            $xml .= '<g:section_name> Key Specification </g:section_name>';
             $xml .= '<g:attribute_name>' . htmlspecialchars($attr['attribute_name']) . '</g:attribute_name>';
             $xml .= '<g:attribute_value>' . htmlspecialchars($attr['attribute_value']) . '</g:attribute_value>';
+            
             $xml .= '</g:product_detail>';
+            
         }
 
         // Product variants
         foreach ($productVariants as $highlight) {
-            $xml .= '<g:product_highlight>' . htmlspecialchars($highlight['attribute_name'] . ': ' . $highlight['attrValue']) . '</g:product_highlight>';
+            
+            $xml .= '<g:product_highlight>' . htmlspecialchars($highlight['label']) . '</g:product_highlight>';
+           
+            $xml .= '<g:attribute_name>' . htmlspecialchars($highlight['attribute_name']) . '</g:attribute_name>';
+            $xml .= '<g:attribute_value>' . htmlspecialchars($highlight['attrValue']) . '</g:attribute_value>';
+            
         }
-
+       
+        $xml .= '<g:store_code></g:store_code>';      
         $xml .= '<g:identifier_exists>no</g:identifier_exists>';
         $xml .= '<g:condition>new</g:condition>';
+       
         $xml .= '<g:google_product_category>' . htmlspecialchars($google_product_category) . '</g:google_product_category>';
+        $xml .= '<g:sale_price_effective_date></g:sale_price_effective_date>';
         $xml .= '<g:product_type>' . htmlspecialchars($product_type) . '</g:product_type>';
         $xml .= '</item>';
 
@@ -609,6 +624,7 @@ class ProductXMLFeedWatchController extends Controller
             $xml .= '<g:sale_price>' . number_format($product['sale_price'], 2) . '</g:sale_price>';
             $xml .= '<g:availability>' . $product['availability'] . '</g:availability>';
             $xml .= '<g:brand>' . $product['brand'] . '</g:brand>';
+            $xml .= '<g:sku>' . $product['sku'] . '</g:sku>';
 
             if ($product['image']) {
                 $xml .= '<g:image_link>' . $product['image'] . '</g:image_link>';
@@ -634,6 +650,8 @@ class ProductXMLFeedWatchController extends Controller
             }
 
             $xml .= '<g:identifier_exists>no</g:identifier_exists>';
+            $xml .= '<g:material>Stainless Steel</g:material>';
+            $xml .= '<g:store_code></g:store_code>';
             $xml .= '<g:condition>new</g:condition>';
             $xml .= '<g:google_product_category>' . $product['google_product_category'] . '</g:google_product_category>';
             $xml .= '<g:product_type>' . $product['product_type'] . '</g:product_type>';
