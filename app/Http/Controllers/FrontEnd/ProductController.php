@@ -1101,6 +1101,7 @@ class ProductController extends Controller
 			// ✅ CORRECT PRODUCT VARIANTS - Show ALL child products for EACH attribute WITH SELECTED
 // ✅ CORRECT PRODUCT VARIANTS - Unique attribute values with selected flag
 		// ✅ CORRECT PRODUCT VARIANTS - Same logic as index function
+// ✅ CORRECT PRODUCT VARIANTS - Same logic as index function WITH PROPER LOADING
 $product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
     $childIds = json_decode($variant->child_ids, true) ?? [];
     $variants = json_decode($variant->variants, true) ?? [];
@@ -1113,10 +1114,19 @@ $product->productVariants = $product->productVariants->map(function ($variant) u
         return [];
     }
 
-    // ✅ Get CURRENT product's attributes for comparison (NOT parent_id)
-    $currentProductAttributes = $product->productAttributes
+    // ✅ LOAD current product's attributes if not already loaded
+    if (!$product->relationLoaded('productAttributes')) {
+        $product->load('productAttributes');
+    }
+
+    // ✅ Get CURRENT product's attributes for comparison
+    $currentProductAttributes = ProductAttribute::where('product_id', $product->id)
         ->pluck('attribute_value', 'attribute_id')
         ->toArray();
+
+    // 🔍 DEBUG - Log to see what we got
+    \Log::info('Current Product ID: ' . $product->id);
+    \Log::info('Current Product Attributes:', $currentProductAttributes);
 
     // Fetch all child products at once
     $children = Product::whereIn('id', $childIds)
@@ -1148,7 +1158,7 @@ $product->productVariants = $product->productVariants->map(function ($variant) u
         $attributeName = $attributes[$attributeId] ?? null;
 
         if (!$attributeName) {
-            continue; // Skip if attribute not found
+            continue;
         }
 
         // Track unique attribute values for this specific attribute
@@ -1168,7 +1178,7 @@ $product->productVariants = $product->productVariants->map(function ($variant) u
             // Mark this attribute value as seen
             $seenAttributeValues[$attrValue] = true;
 
-            // ✅ Check if matches CURRENT product's attribute (SAME AS INDEX)
+            // ✅ Check if matches CURRENT product's attribute
             $isSelected = isset($currentProductAttributes[$attributeId])
                 && $currentProductAttributes[$attributeId] == $attrValue;
 
@@ -1212,7 +1222,7 @@ $product->productVariants = $product->productVariants->map(function ($variant) u
                 'attribute_name' => $attributeName,
                 'type' => $v['type'] ?? 'dropdown',
                 'label' => $v['labels'] ?? $attributeName,
-                'selected' => $isSelected, // ✅ Matches CURRENT product
+                'selected' => $isSelected,
                 'price' => $price,
                 'sale_price' => $salePrice,
                 'images' => $images,
@@ -2190,6 +2200,7 @@ if ($product->productVariants->isEmpty()) {
 		// ✅ CORRECT PRODUCT VARIANTS - Show ALL child products for EACH attribute WITH SELECTED
 // ✅ CORRECT PRODUCT VARIANTS - Unique attribute values with selected flag
 // ✅ CORRECT PRODUCT VARIANTS - Same logic as index function
+// ✅ CORRECT PRODUCT VARIANTS - Same logic as index function WITH PROPER LOADING
 $product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
     $childIds = json_decode($variant->child_ids, true) ?? [];
     $variants = json_decode($variant->variants, true) ?? [];
@@ -2202,10 +2213,19 @@ $product->productVariants = $product->productVariants->map(function ($variant) u
         return [];
     }
 
-    // ✅ Get CURRENT product's attributes for comparison (NOT parent_id)
-    $currentProductAttributes = $product->productAttributes
+    // ✅ LOAD current product's attributes if not already loaded
+    if (!$product->relationLoaded('productAttributes')) {
+        $product->load('productAttributes');
+    }
+
+    // ✅ Get CURRENT product's attributes for comparison
+    $currentProductAttributes = ProductAttribute::where('product_id', $product->id)
         ->pluck('attribute_value', 'attribute_id')
         ->toArray();
+
+    // 🔍 DEBUG - Log to see what we got
+    \Log::info('Current Product ID: ' . $product->id);
+    \Log::info('Current Product Attributes:', $currentProductAttributes);
 
     // Fetch all child products at once
     $children = Product::whereIn('id', $childIds)
@@ -2237,7 +2257,7 @@ $product->productVariants = $product->productVariants->map(function ($variant) u
         $attributeName = $attributes[$attributeId] ?? null;
 
         if (!$attributeName) {
-            continue; // Skip if attribute not found
+            continue;
         }
 
         // Track unique attribute values for this specific attribute
@@ -2257,9 +2277,11 @@ $product->productVariants = $product->productVariants->map(function ($variant) u
             // Mark this attribute value as seen
             $seenAttributeValues[$attrValue] = true;
 
-            // ✅ Check if matches CURRENT product's attribute (SAME AS INDEX)
+            // ✅ Check if matches CURRENT product's attribute
             $isSelected = isset($currentProductAttributes[$attributeId])
                 && $currentProductAttributes[$attributeId] == $attrValue;
+
+            // 🔍 DEBUG - Log selection check
 
             // Get pricing from first supplier
             $firstSupplier = $child->productSuppliers->first();
@@ -2301,7 +2323,7 @@ $product->productVariants = $product->productVariants->map(function ($variant) u
                 'attribute_name' => $attributeName,
                 'type' => $v['type'] ?? 'dropdown',
                 'label' => $v['labels'] ?? $attributeName,
-                'selected' => $isSelected, // ✅ Matches CURRENT product
+                'selected' => $isSelected,
                 'price' => $price,
                 'sale_price' => $salePrice,
                 'images' => $images,
