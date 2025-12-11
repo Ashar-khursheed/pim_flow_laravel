@@ -60,7 +60,7 @@ class ProductXMLFeedWatchController extends Controller
 
    public function generateProductFeed(Request $request)
     {
-        $perPage = $request->input('per_page', 500);
+         $perPage = $request->input('per_page');
 
         $query = Product::with([
             'brand:id,name,logo',
@@ -98,11 +98,11 @@ class ProductXMLFeedWatchController extends Controller
             }
         } else {
             // Use chunking for huge datasets
-            $query->chunk(500, function ($products) use (&$xml) {
+             $query->chunk(500, function ($products) use (&$xml) {
                 foreach ($products as $product) {
                     $xml .= $this->mapProductToXml($product);
                 }
-            });
+             });
         }
 
         // Close channel and rss
