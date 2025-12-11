@@ -672,7 +672,7 @@ class ProductController extends Controller
 			}
 
 			return $result;
-		})->flatten(1)->values();
+			})->flatten(1)->values();
 
 			if ($product->productVariants->isEmpty()) {
 				$product->productVariants = [];
@@ -694,6 +694,7 @@ class ProductController extends Controller
 				$product->category_url = null;
 				$product->parent_category_url = null;
 			}
+		unset($product->productVariants);
 
 			return $product;
 		});
