@@ -58,14 +58,14 @@ class GenerateProductFeed extends Command
         // Bulk fetch SEO data ONCE (huge performance boost)
         $this->info('📦 Fetching SEO data...');
         $seoDataMap = SeoManagement::whereIn('relational_id', function($query) {
-            $query->select('id')->from('products')->where('status', 'published');
+            $query->select('id')->from('ec_products')->where('status', 'published');
         })->get()->keyBy('relational_id');
 
         // Bulk fetch attributes ONCE (huge performance boost)
         $this->info('📦 Fetching attributes...');
         $attributesMap = ProductAttribute::join('attributes', 'attributes.id', '=', 'product_attributes.attribute_id')
             ->whereIn('product_id', function($query) {
-                $query->select('id')->from('products')->where('status', 'published');
+                $query->select('id')->from('ec_products')->where('status', 'published');
             })
             ->select('product_id', 'attributes.name as attribute_name', 'product_attributes.attribute_value')
             ->get()
