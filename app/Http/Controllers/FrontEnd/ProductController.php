@@ -1221,7 +1221,6 @@ class ProductController extends Controller
             $product->category_url = null;
             $product->parent_category_url = null;
         }
-			unset($product->productVariants);
 
         return $product;
     });
