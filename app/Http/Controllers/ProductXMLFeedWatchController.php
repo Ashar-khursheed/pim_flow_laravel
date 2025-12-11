@@ -58,9 +58,9 @@ class ProductXMLFeedWatchController extends Controller
     //     return $data;
     // }
 
-   public function generateProductFeed(Request $request)
+    public function generateProductFeed(Request $request)
     {
-        $perPage = $request->input('per_page', 500);
+        $perPage = $request->input('per_page');
 
         $query = Product::with([
             'brand:id,name,logo',
@@ -73,12 +73,21 @@ class ProductXMLFeedWatchController extends Controller
             'seoProductUrl',
             'productVariants'
         ])
-        ->select([
-            'id', 'name', 'sku', 'images', 'brand_id', 'status', 
-            'gen_type', 'approved', 'description', 'quote_available', 'stock_status'
-        ])
-        ->where('status', 'published')
-        ->orderBy('id', 'desc');
+            ->select([
+                'id',
+                'name',
+                'sku',
+                'images',
+                'brand_id',
+                'status',
+                'gen_type',
+                'approved',
+                'description',
+                'quote_available',
+                'stock_status'
+            ])
+            ->where('status', 'published')
+            ->orderBy('id', 'desc');
 
         $website = config('app.url', 'https://www.thehorecastore.com');
 
@@ -91,13 +100,12 @@ class ProductXMLFeedWatchController extends Controller
         $xml .= '<description>DataFeedWatch Product Feed</description>';
 
         if (!empty($perPage)) {
-            // Use pagination if per_page is set
             $products = $query->paginate($perPage, ['*'], 'page', 1);
-            foreach ($products as $product) {
-                $xml .= $this->mapProductToXml($product);
-            }
         } else {
-            // Use chunking for huge datasets
+            $products = $query->get();
+        }
+        
+        if (!empty($products)) {
             $query->chunk(500, function ($products) use (&$xml) {
                 foreach ($products as $product) {
                     $xml .= $this->mapProductToXml($product);
@@ -284,10 +292,11 @@ class ProductXMLFeedWatchController extends Controller
      *     )
      * )
      */
-    public function getProductFeed1() { 
-        
+    public function getProductFeed1()
+    {
+
         return $this->productFeed(0, 1000);
-     }
+    }
     /**
      * Get XML product.
      *
@@ -314,10 +323,11 @@ class ProductXMLFeedWatchController extends Controller
      *     )
      * )
      */
-    public function getProductFeed2() { 
-        
+    public function getProductFeed2()
+    {
+
         return $this->productFeed(1000, 1000);
-     }
+    }
     /**
      * Get XML product.
      *
@@ -344,10 +354,11 @@ class ProductXMLFeedWatchController extends Controller
      *     )
      * )
      */
-    public function getProductFeed3() { 
-        
+    public function getProductFeed3()
+    {
+
         return $this->productFeed(2000, 1000);
-     }
+    }
 
     /**
      * Get XML product.
@@ -375,10 +386,11 @@ class ProductXMLFeedWatchController extends Controller
      *     )
      * )
      */
-    public function getProductFeed4() { 
-        
+    public function getProductFeed4()
+    {
+
         return $this->productFeed(3000, 1000);
-     }
+    }
 
     /**
      * Get XML product.
@@ -406,17 +418,18 @@ class ProductXMLFeedWatchController extends Controller
      *     )
      * )
      */
-    public function getProductFeed5() { 
-        
+    public function getProductFeed5()
+    {
+
         return $this->productFeed(4000, 1000);
-     }
+    }
 
 
 
 
     public function productFeed($offset, $limit)
     {
-        
+
         $allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'status', 'gen_type', 'approved'];
 
         $products = Product::with([
@@ -435,8 +448,8 @@ class ProductXMLFeedWatchController extends Controller
             ->offset($offset)
             ->limit($limit)
             ->orderBy('id', 'asc')->get();
-        
- 
+
+
         $formattedProducts = $products->map(function ($product) {
             $firstSupplier = $product->productSuppliers->first();
             $price = $firstSupplier->price ?? 0;
@@ -481,8 +494,8 @@ class ProductXMLFeedWatchController extends Controller
             }
 
             $fullSlug =  $product->parent_category_url() . '/' .
-                     $product->category_url() . '/' .
-                     ($product->seoProductUrl->url ?? "");
+                $product->category_url() . '/' .
+                ($product->seoProductUrl->url ?? "");
 
             // Build product type and google category
             $product_type = '';
@@ -561,6 +574,7 @@ class ProductXMLFeedWatchController extends Controller
                 'og_image_alt_text' => $seoData?->og_image_alt_text,
                 'og_image_name' => $seoData?->og_image_name,
                 'sku' => $product->sku,
+                'barcode' => $product->barcode,
                 'brand' => $product->brand?->name,
                 'slug' => $fullSlug,
                 'price' => $price,
@@ -579,23 +593,25 @@ class ProductXMLFeedWatchController extends Controller
 
         $website = config('app.url', 'https://www.thehorecastore.com');
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>';           
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
         $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
 
         foreach ($formattedProducts as $product) {
             $xml .= '<channel>';
-            $xml .= '<title>'.$product['meta_title'].'</title>';
+            $xml .= '<title>' . $product['meta_title'] . '</title>';
             $xml .= '<link>' . $website . '</link>';
             $xml .= '<description>' . htmlspecialchars($product['meta_description']) . '</description>';
             $xml .= '<item>';
             $xml .= '<g:id>' . $product['id'] . '</g:id>';
+            $xml .= '<g:sku>' . $product['sku'] . '</g:sku>';
+            $xml .= '<g:barcode>' . $product['barcode'] . '</g:barcode>';
             $xml .= '<g:title>' . $product['meta_title'] . '</g:title>';
             $xml .= '<g:link>' . $website . '/' . $product['slug'] . '</g:link>';
             $xml .= '<g:description>' . htmlspecialchars($product['description']) . '</g:description>';
             $xml .= '<g:price>' . number_format($product['price'], 2) . '</g:price>';
             $xml .= '<g:sale_price>' . number_format($product['sale_price'], 2) . '</g:sale_price>';
             $xml .= '<g:availability>' . $product['availability'] . '</g:availability>';
-            $xml .= '<g:brand>' . $product['brand']. '</g:brand>';
+            $xml .= '<g:brand>' . $product['brand'] . '</g:brand>';
 
             if ($product['image']) {
                 $xml .= '<g:image_link>' . $product['image'] . '</g:image_link>';
@@ -622,7 +638,7 @@ class ProductXMLFeedWatchController extends Controller
 
             $xml .= '<g:identifier_exists>no</g:identifier_exists>';
             $xml .= '<g:condition>new</g:condition>';
-            $xml .= '<g:google_product_category>'.$product['google_product_category'].'</g:google_product_category>';
+            $xml .= '<g:google_product_category>' . $product['google_product_category'] . '</g:google_product_category>';
             $xml .= '<g:product_type>' . $product['product_type'] . '</g:product_type>';
             $xml .= '</item>';
             $xml .= '</channel>';
@@ -632,6 +648,4 @@ class ProductXMLFeedWatchController extends Controller
 
         return response($xml, 200)->header('Content-Type', 'application/xml');
     }
-
-
 }
