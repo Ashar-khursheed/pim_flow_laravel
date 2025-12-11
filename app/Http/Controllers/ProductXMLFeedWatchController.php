@@ -102,7 +102,7 @@ class ProductXMLFeedWatchController extends Controller
         if (!empty($perPage)) {
             $products = $query->paginate($perPage, ['*'], 'page', 1);
         } else {
-            $products = $query->limit('10')->get();
+            $products = $query->get();
         }
         
         if (!empty($products)) {
