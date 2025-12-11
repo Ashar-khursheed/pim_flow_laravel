@@ -589,6 +589,7 @@ class ProductXMLFeedWatchController extends Controller
                 'og_image_alt_text' => $seoData?->og_image_alt_text,
                 'og_image_name' => $seoData?->og_image_name,
                 'sku' => $product->sku,
+                'barcode' => $product->barcode,
                 'brand' => $product->brand?->name,
                 'slug' => $fullSlug,
                 'price' => $price,
@@ -617,6 +618,8 @@ class ProductXMLFeedWatchController extends Controller
             $xml .= '<description>' . htmlspecialchars($product['meta_description']) . '</description>';
             $xml .= '<item>';
             $xml .= '<g:id>' . $product['id'] . '</g:id>';
+            $xml .= '<g:sku>' . $product['sku'] . '</g:sku>';
+            $xml .= '<g:barcode>' . $product['barcode'] . '</g:barcode>';
             $xml .= '<g:title>' . $product['meta_title'] . '</g:title>';
             $xml .= '<g:link>' . $website . '/' . $product['slug'] . '</g:link>';
             $xml .= '<g:description>' . htmlspecialchars($product['description']) . '</g:description>';
