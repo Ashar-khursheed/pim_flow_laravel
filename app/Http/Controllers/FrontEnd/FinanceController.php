@@ -5,6 +5,7 @@ namespace App\Http\Controllers\FrontEnd;
 use Illuminate\Http\Request;
 
 use App\Models\FrontEnd\Finance;
+use App\Models\FrontEnd\FinanceHistory;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
@@ -85,7 +86,7 @@ class FinanceController extends Controller
      * )
      */
     public function store(Request $request)
-    {  
+    {
         $validator = Validator::make($request->all(), [
 
             'payment_options' => 'nullable|string',
@@ -93,16 +94,16 @@ class FinanceController extends Controller
             'requested_amount' => 'required|numeric|min:0.01|max:999999999999',
             'legal_business_name' => 'required|string',
             'doing_business' => 'nullable|string',
-            'documents' => 'nullable|file|mimes:pdf|max:10240',            
-             'accounts_payable_email' => 'required|email|string|max:255',
+            'documents' => 'nullable|file|mimes:pdf|max:10240',
+            'accounts_payable_email' => 'required|email|string|max:255',
             'accounts_payable_phone' => 'required|string|max:255',
             'customer_address_id' => 'required|numeric',
-             'duns_number' => 'nullable|string',
+            'duns_number' => 'nullable|string',
             'role_at_business' => 'required|string',
             'type_of_business' => 'nullable|string',
             'years_in_business' => 'nullable|string',
             'annual_revenue' => 'nullable|string'
- 
+
         ]);
 
         if ($validator->fails()) {
@@ -130,10 +131,10 @@ class FinanceController extends Controller
         $data = $validator->validated();
         $data['customer_id'] = Auth::id();
         $data['created_by'] = '0';
-        $data['updated_by'] = '0';       
+        $data['updated_by'] = '0';
         $data['accounts_status'] = 'Pending';
         $data['status'] = 'Pending';
-       
+
         $data['business_address'] = $request->address;
 
         if ($request->hasFile('documents')) {
@@ -571,9 +572,6 @@ class FinanceController extends Controller
         ], 200);
     }
 
-
-
-
     /**
      * @OA\Post(
      *     path="/api/frontend/finances/order",
@@ -627,242 +625,124 @@ class FinanceController extends Controller
      *     )
      * )
      */
-    // public function financeOrder(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [
-    //         'order_amount'   => 'required|numeric|min:0.01',
-    //         'term_selection' => 'required|in:Net 30 Days,Net 45 Days,Net 60 Days',
-    //         'order_number' => 'nullable|string',
-
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Validation failed',
-    //             'errors'  => $validator->errors()
-    //         ], 422);
-    //     }
-
-    //     $customerId     = auth()->id();
-    //     $orderAmount    = (float) $request->order_amount;
-    //     $termSelection  = $request->term_selection;
-
-    //     $today = now()->toDateString();
-    //     Finance::where('customer_id', Auth::id())
-    //         ->where('status', 'Pending')
-    //         ->whereDate('next_due_date', '<', $today)
-    //         ->update(['status' => 'Overdue']);
-
-
-    //     return DB::transaction(function () use ($customerId, $orderAmount, $termSelection, $request) {
-
-    //         // Lock the finance record to prevent race conditions
-    //         $finance = Finance::where('customer_id', Auth::id())
-    //             ->where('accounts_status', 'Approved')
-    //             ->lockForUpdate()
-    //             ->orderByDesc('id')
-    //             ->first();
-
-    //         if (!$finance) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Net Term credit is not active or approved.'
-    //             ], 422);
-    //         }
-
-    //         if (!$finance->approved_amount || $finance->approved_amount <= 0) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Approved credit limit is missing or zero.'
-    //             ], 422);
-    //         }
-
-    //         // Calculate current credit usage
-
-    //         $usedCredit      = (float)($finance->used_credit_amount ?? 0);
-    //         $approvedAmount  = (float)($finance->approved_amount ?? 0);
-
-
-    //         $availableCredit = $approvedAmount - $usedCredit;
- 
-    //         if (number_format($orderAmount,2) > number_format($availableCredit,2)) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Insufficient credit limit. '
-    //                     . 'Requested: ' . $orderAmount
-    //                     . ', Available: ' . $availableCredit
-    //             ], 422);
-    //         }
-
-    //         // Calculate due date from TODAY
-    //         $days = match ($termSelection) {
-    //             'Net 30 Days' => 30,
-    //             'Net 45 Days' => 45,
-    //             'Net 60 Days' => 60
-    //         };
-
-    //         $dueDate = now()->addDays($days)->format('Y-m-d');
-
-    //         // Update Finance Record
-    //         $finance->used_credit_amount        += $orderAmount;
-    //         $finance->available_credit_amount    = $finance->approved_amount - $finance->used_credit_amount;
-    //         $finance->status                     = 'Pending';
-    //         $finance->term_selection             = $termSelection;
-
-    //         // Update next due amount & date
-    //         $finance->next_due_amt              += $orderAmount;
-
-    //         // Keep the EARLIEST due date (important for multiple orders)
-    //         if (!$finance->next_due_date || $finance->next_due_date > $dueDate) {
-    //             $finance->next_due_date = $dueDate;
-    //         }
-
-    //         $finance->save();
-
-    //         // Create invoice record (FinancesPayment)
-    //         FinancesPayment::create([
-    //             'order_number'   => $request->order_number,
-    //             'finances_id'   => $finance->id,
-    //             'customer_id'   => $customerId,
-    //             'due_amount'    => $orderAmount,
-    //             'paid_amount'   => 0,
-    //             'balance'       => $orderAmount,
-    //             'due_date'      => $dueDate,
-    //             'created_by'    => auth()->id(),
-    //         ]);
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Order placed successfully on Net Terms!',
-    //             'data'    => [
-    //                 'order_amount'        => $orderAmount,
-    //                 'credit_used'         => $finance->used_credit_amount,
-    //                 'available_credit'    => $finance->available_credit_amount,
-    //                 'next_due_date'       => $finance->next_due_date,
-    //                 'next_due_amount'     => $finance->next_due_amt,
-    //                 'term'                => $termSelection,
-    //             ]
-    //         ], 200);
-    //     });
-    // }
-      public function financeOrder(Request $request)
-{
-    // Step 1: Validate request
-    $validator = Validator::make($request->all(), [
-        'order_amount'   => 'required|numeric|min:0.01',
-        'term_selection' => 'required|in:Net 30 Days,Net 45 Days,Net 60 Days',
-        'order_number'   => 'nullable|string',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors'  => $validator->errors()
-        ], 422);
-    }
-
-    $customerId    = auth()->id();
-    $orderAmount   = (float) $request->order_amount;
-    $termSelection = $request->term_selection;
-
-    // Step 2: Mark overdue finance records
-    $today = now()->toDateString();
-    Finance::where('customer_id', $customerId)
-        ->where('status', 'Pending')
-        ->whereDate('next_due_date', '<', $today)
-        ->update(['status' => 'Overdue']);
-
-    // Step 3: Transaction to prevent double writes
-    return DB::transaction(function () use ($customerId, $orderAmount, $termSelection, $request) {
-
-        // Lock the finance record
-        $finance = Finance::where('customer_id', $customerId)
-            ->where('accounts_status', 'Approved')
-            ->lockForUpdate()
-            ->orderByDesc('id')
-            ->first();
-
-        if (!$finance) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Net Term credit is not active or approved.'
-            ], 422);
-        }
-
-        if (!$finance->approved_amount || $finance->approved_amount <= 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Approved credit limit is missing or zero.'
-            ], 422);
-        }
-
-        // Step 4: Check available credit
-        $usedCredit      = (float)($finance->used_credit_amount ?? 0);
-        $approvedAmount  = (float)($finance->approved_amount ?? 0);
-        $availableCredit = $approvedAmount - $usedCredit;
-
-        // Proper numeric comparison
-        if ($orderAmount > $availableCredit) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Insufficient credit limit. '
-                    . 'Requested: ' . $orderAmount
-                    . ', Available: ' . $availableCredit
-            ], 422);
-        }
-
-        // Step 5: Calculate due date based on term
-        $days = match ($termSelection) {
-            'Net 30 Days' => 30,
-            'Net 45 Days' => 45,
-            'Net 60 Days' => 60
-        };
-
-        $dueDate = now()->addDays($days)->format('Y-m-d');
-
-        // Step 6: Update finance record
-        $finance->used_credit_amount       += $orderAmount;
-        $finance->available_credit_amount   = $finance->approved_amount - $finance->used_credit_amount;
-        $finance->status                    = 'Pending';
-        $finance->term_selection            = $termSelection;
-        $finance->next_due_amt              += $orderAmount;
-
-        // Keep earliest due date for multiple orders
-        if (!$finance->next_due_date || $finance->next_due_date > $dueDate) {
-            $finance->next_due_date = $dueDate;
-        }
-
-        $finance->save();
-
-        // Step 7: Create a FinancesPayment record
-        FinancesPayment::create([
-            'order_number'  => $request->order_number,
-            'finances_id'   => $finance->id,
-            'customer_id'   => $customerId,
-            'due_amount'    => $orderAmount,
-            'paid_amount'   => 0,
-            'balance'       => $orderAmount,
-            'due_date'      => $dueDate,
-            'created_by'    => $customerId,
+     
+    public function financeOrder(Request $request)
+    {
+        // Step 1: Validate request
+        $validator = Validator::make($request->all(), [
+            'order_amount'   => 'required|numeric|min:0.01',
+            'term_selection' => 'required|in:Net 30 Days,Net 45 Days,Net 60 Days',
+            'order_number'   => 'nullable|string',
         ]);
 
-        // Step 8: Return response
-        return response()->json([
-            'success' => true,
-            'message' => 'Order placed successfully on Net Terms!',
-            'data'    => [
-                'order_amount'       => $orderAmount,
-                'credit_used'        => $finance->used_credit_amount,
-                'available_credit'   => $finance->available_credit_amount,
-                'next_due_date'      => $finance->next_due_date,
-                'next_due_amount'    => $finance->next_due_amt,
-                'term'               => $termSelection,
-            ]
-        ], 200);
-    });
-}
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        $customerId    = auth()->id();
+        $orderAmount   = (float) $request->order_amount;
+        $termSelection = $request->term_selection;
+
+        // Step 2: Mark overdue finance records
+        $today = now()->toDateString();
+        Finance::where('customer_id', $customerId)
+            ->where('status', 'Pending')
+            ->whereDate('next_due_date', '<', $today)
+            ->update(['status' => 'Overdue']);
+
+        // Step 3: Transaction to prevent double writes
+        return DB::transaction(function () use ($customerId, $orderAmount, $termSelection, $request) {
+
+            // Lock the finance record
+            $finance = Finance::where('customer_id', $customerId)
+                ->where('accounts_status', 'Approved')
+                ->lockForUpdate()
+                ->orderByDesc('id')
+                ->first();
+
+            if (!$finance) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Net Term credit is not active or approved.'
+                ], 422);
+            }
+
+            if (!$finance->approved_amount || $finance->approved_amount <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Approved credit limit is missing or zero.'
+                ], 422);
+            }
+
+         
+            $usedCredit      = (float)($finance->used_credit_amount ?? 0);
+            $approvedAmount  = (float)($finance->approved_amount ?? 0);
+            $availableCredit = $approvedAmount - $usedCredit;
+
+            // Proper numeric comparison
+            if ($orderAmount > $availableCredit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Insufficient credit limit. '
+                        . 'Requested: ' . $orderAmount
+                        . ', Available: ' . $availableCredit
+                ], 422);
+            }
+
+           
+            $days = match ($termSelection) {
+                'Net 30 Days' => 30,
+                'Net 45 Days' => 45,
+                'Net 60 Days' => 60
+            };
+
+            $dueDate = now()->addDays($days)->format('Y-m-d');
+
+          
+            $finance->used_credit_amount       += $orderAmount;
+            $finance->available_credit_amount   = $finance->approved_amount - $finance->used_credit_amount;
+            $finance->status                    = 'Pending';
+            $finance->term_selection            = $termSelection;           
+            $finance->next_due_amt              += $orderAmount;
+
+            // Keep earliest due date for multiple orders
+            if (!$finance->next_due_date || $finance->next_due_date > $dueDate) {
+                $finance->next_due_date = $dueDate;
+            }
+
+            $finance->save();
+
+            
+            FinancesPayment::create([
+                'order_number'  => $request->order_number,
+                'finances_id'   => $finance->id,
+                'customer_id'   => $customerId,
+                'due_amount'    => $orderAmount,
+                'paid_amount'   => 0,
+                'balance'       => $orderAmount,
+                'due_date'      => $dueDate,
+                'created_by'    => $customerId,
+            ]);
+
+           
+            return response()->json([
+                'success' => true,
+                'message' => 'Order placed successfully on Net Terms!',
+                'data'    => [
+                    'order_amount'       => $orderAmount,
+                    'credit_used'        => $finance->used_credit_amount,
+                    'available_credit'   => $finance->available_credit_amount,
+                    'next_due_date'      => $finance->next_due_date,
+                    'next_due_amount'    => $finance->next_due_amt,
+                    'term'               => $termSelection,
+                ]
+            ], 200);
+        });
+    }
 
 
     /**
@@ -964,61 +844,7 @@ class FinanceController extends Controller
             'total_records' => $totalRecords,
         ]);
     }
-    // public function getPaymentOrderHistory(Request $request)
-    // {
-    //     $customer_id = Auth::id();
-
-    //     // Pagination
-    //     $page = (int) $request->input('page', 1);
-    //     $limit = (int) $request->input('limit', 10);
-
-    //     $paymentQuery = Order::with('invoice')
-    //         ->where('customer_id', $customer_id)
-    //         ->where('pending_amount', '>', 0)
-    //         ->orderBy('id', 'desc');
-
-    //     $totalRecords = $paymentQuery->count();
-    //     $totalPages = ceil($totalRecords / $limit);
-
-    //     $paymentHistory = $paymentQuery
-    //         ->skip(($page - 1) * $limit)
-    //         ->take($limit)
-    //         ->get();
-
-    //     if ($paymentHistory->isEmpty()) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'No payment history found.'
-    //         ], 404);
-    //     }
-
-    //     $paymentData = $paymentHistory->map(function ($order) {
-
-    //         $invoice = $order->invoice;
-    //         return [
-    //             'invoice_id' => $invoice->id ?? null,
-    //             'invoice_number' => $invoice->invoice_number ?? null,
-             
-    //             'order_id'        => $order->id ?? null,
-    //             'order_number'    => $order->order_number ?? null,
-    //             'due_date'   => $invoice && $invoice->due_date
-    //                 ? date('d-m-Y', strtotime($invoice->due_date))
-    //                 : null,
-    //             'due_amount' => (float) ($order->pending_amount ?? 0),
-    //             'status'     => $order->pending_amount <= 0 ? 'Paid' : 'Un-Paid',
-    //             'payment_method'     => $order->invoice->payment_method,
-    //         ];
-    //     });
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => __('msg_rec_list'),
-    //         'data' => $paymentData,
-    //         'total_pages' => $totalPages,
-    //         'total_records' => $totalRecords,
-    //     ]);
-    // }
-
+     
     /**
      * @OA\Get(
      *     path="/api/frontend/finances/payment-paid-invoice",
@@ -1045,60 +871,7 @@ class FinanceController extends Controller
      *     @OA\Response(response=404, description="No payment history found")
      * )
      */
-    // public function getPaymentPaidInvoice(Request $request)
-    // {
-    //     $customer_id = Auth::id();
-
-    //     // Pagination
-    //     $page = (int) $request->input('page', 1);
-    //     $limit = (int) $request->input('limit', 10);
-
-    //     $paymentQuery = Order::with('invoice', 'customer')
-    //         ->where('customer_id', $customer_id)
-    //         ->where('pending_amount', '<=', 0)
-    //         ->orderBy('id', 'desc');
-
-    //     $totalRecords = $paymentQuery->count();
-    //     $totalPages = ceil($totalRecords / $limit);
-
-    //     $paymentHistory = $paymentQuery
-    //         ->skip(($page - 1) * $limit)
-    //         ->take($limit)
-    //         ->get();
-
-    //     if ($paymentHistory->isEmpty()) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'No payment history found.'
-    //         ], 404);
-    //     }
-
-    //     $paymentData = $paymentHistory->map(function ($order) {
-
-    //         $invoice = $order->invoice;
-    //         return [
-    //             'invoice_id' => $invoice->id ?? null,
-    //             'invoice_number' => $invoice->invoice_number ?? null,
-
-    //             'order_id'        => $order->id ?? null,
-    //             'order_number'    => $order->order_number ?? null,
-    //             'due_date'   => $invoice && $invoice->due_date
-    //                 ? date('d-m-Y', strtotime($invoice->due_date))
-    //                 : null,
-    //             'due_amount' => (float) ($order->pending_amount ?? 0),
-    //             'status'     => $order->pending_amount <= 0 ? 'Paid' : 'Un-Paid',
-    //             'payment_method'     => $order->invoice->payment_method,
-    //         ];
-    //     });
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => __('msg_rec_list'),
-    //         'data' => $paymentData,
-    //         'total_pages' => $totalPages,
-    //         'total_records' => $totalRecords,
-    //     ]);
-    // }
+    
     public function getPaymentPaidInvoice(Request $request)
     {
         $customer_id = Auth::id();
@@ -1203,7 +976,7 @@ class FinanceController extends Controller
         $page  = (int) $request->input('page', 1);
         $limit = (int) $request->input('limit', 10);
 
-        $paymentQuery = FinancesPayment::where('customer_id', $customer_id)
+        $paymentQuery = FinanceHistory::where('customer_id', $customer_id)
             ->orderBy('id', 'desc');
 
         $totalRecords = $paymentQuery->count();
@@ -1239,6 +1012,7 @@ class FinanceController extends Controller
             }
 
             return [
+                'payment_id'      => $payment->payment_id ?? null,
                 'invoice_id'      => $invoice->id ?? null,
                 'invoice_number'  => $invoice->invoice_number ?? null,
                 'order_id'        => $order->id ?? null,
@@ -1246,7 +1020,6 @@ class FinanceController extends Controller
                 'due_date'        => $payment->due_date
                     ? date('d-m-Y', strtotime($payment->due_date))
                     : null,
-
                 'status'          => ($payment->balance <= 0) ? 'Paid' : 'Un-Paid',
                 'payment_method'  => ($payment->balance <= 0) ? 'NetTerm' : '',
                 'due_amount'      => (float) ($payment->due_amount ?? 0),
@@ -1266,5 +1039,4 @@ class FinanceController extends Controller
             'total_records' => $totalRecords,
         ]);
     }
- 
 }
