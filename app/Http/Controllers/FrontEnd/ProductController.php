@@ -707,7 +707,7 @@ class ProductController extends Controller
 
 	// 	])->header('Cache-Control', 'public, max-age=86400');
 	// }
-	public function getAllProducts(Request $request)
+public function getAllProducts(Request $request)
 {
     // Keep existing user and wishlist logic
     $userId = Auth::id();
@@ -1096,17 +1096,20 @@ class ProductController extends Controller
             $product->accessories = [];
         }
 
-        // ✅ OPTIMIZED PRODUCT VARIANTS
-        $product->productVariants = $product->productVariants->map(function ($variant) {
+        // ✅ CORRECTED PRODUCT VARIANTS - Multiple products per variant with full details
+        $product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
             $childIds = json_decode($variant->child_ids, true) ?? [];
             $variants = json_decode($variant->variants, true) ?? [];
+            
+            // Merge current product ID with child IDs
+            $childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
 
             // Early return if no children or variants
             if (empty($childIds) || empty($variants)) {
                 return [];
             }
 
-            // Fetch all child products with necessary relationships at once
+            // Fetch all child products with suppliers at once
             $children = Product::whereIn('id', $childIds)
                 ->with(['productSuppliers' => function($q) {
                     $q->select('product_id', 'price', 'sale_price');
@@ -1122,7 +1125,6 @@ class ProductController extends Controller
             // Fetch all product attributes at once
             $productAttributes = ProductAttribute::whereIn('product_id', $childIds)
                 ->whereIn('attribute_id', $attributeIds)
-                ->select('product_id', 'attribute_id', 'attribute_value')
                 ->get()
                 ->groupBy('product_id');
 
@@ -1137,22 +1139,22 @@ class ProductController extends Controller
                 $attributeName = $attributes[$attributeId] ?? null;
 
                 if (!$attributeName) {
-                    continue;
+                    continue; // Skip if attribute not found
                 }
 
-                // Track unique attribute values
+                // Track unique attribute values for this specific attribute
                 $seenAttributeValues = [];
-                $variantData = [];
 
                 foreach ($children as $child) {
-                    // Get attribute value
+                    // Get attribute value for this child and attribute
                     $attrValue = $productAttributes->get($child->id)?->firstWhere('attribute_id', $attributeId)?->attribute_value ?? null;
 
-                    // Skip if no attribute value or duplicate
+                    // Skip if no attribute value or if we've already seen this value
                     if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
                         continue;
                     }
 
+                    // Mark this attribute value as seen
                     $seenAttributeValues[$attrValue] = true;
 
                     // Get pricing from first supplier
@@ -1163,35 +1165,46 @@ class ProductController extends Controller
                     // Decode images
                     $images = json_decode($child->images, true) ?? [];
 
+                    // Get slug
                     $slug = $seoUrls[$child->id] ?? null;
-                    $full_slug = $child->parent_category_url() . '/' .
-                                $child->category_url() . '/' .
-                                ($child->seoProductUrl->url ?? "");
 
-                    $variantData[] = [
-                        'id' => $child->id,
+                    // Build full slug - optimized without additional queries
+                    $childProduct = $children->firstWhere('id', $child->id);
+                    $parentCategoryUrl = '';
+                    $categoryUrl = '';
+                    
+                    try {
+                        $tempProduct = Product::find($child->id);
+                        if ($tempProduct) {
+                            $parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
+                                ? $tempProduct->parent_category_url() 
+                                : '';
+                            $categoryUrl = method_exists($tempProduct, 'category_url') 
+                                ? $tempProduct->category_url() 
+                                : '';
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
+                    }
+                    
+                    $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
+                    $full_slug = trim($full_slug, '/'); // Remove leading/trailing slashes
+
+                    $result[] = [
+                        'product_id' => $child->id,
                         'sku' => $child->sku,
+                        'attribute_id' => $attributeId,
                         'attribute_value' => $attrValue,
+                        'attribute_name' => $attributeName,
+                        'type' => $v['type'] ?? 'dropdown',
+                        'label' => $v['labels'] ?? $attributeName,
                         'price' => $price,
                         'sale_price' => $salePrice,
                         'images' => $images,
                         'slug' => $slug,
-                        'parent_slug' => $child->parent_category_url(),
-                        'child_slug' => $child->category_url(),
+                        'parent_slug' => $parentCategoryUrl,
+                        'child_slug' => $categoryUrl,
                         'full_slug' => $full_slug,
-                        'parent_id' => $variant->parent_id,
-                        'variant_id' => $variant->id,
-                    ];
-                }
-
-                if (!empty($variantData)) {
-                    $result[] = [
-                        'attribute_id' => $attributeId,
-                        'attribute_name' => $attributeName,
-                        'label' => $v['labels'] ?? $attributeName,
-                        'type' => $v['type'] ?? 'dropdown',
-                        'variants' => $variantData,
-                        'variant_id' => $variant->id,
                     ];
                 }
             }
