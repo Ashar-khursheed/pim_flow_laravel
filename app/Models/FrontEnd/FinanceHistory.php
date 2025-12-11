@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\FrontEnd\Finances;
 class FinanceHistory extends Model
 {
+    protected $table = 'finances_histories';
     protected $fillable = [
         'payment_id',
         'finances_id',
