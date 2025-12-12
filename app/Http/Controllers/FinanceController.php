@@ -637,6 +637,15 @@ class FinanceController extends Controller
         try {
             DB::beginTransaction();
 
+            
+        if (!empty($finance->available_credit_amount) && $finance->available_credit_amount >0 ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Finance record cannot be deleted due to remaining available credit amount.'
+            ], 404);
+        }
+
+
             // Delete related payments
             FinancesPayment::where('finances_id', $finance->id)->delete();
 
@@ -966,7 +975,7 @@ class FinanceController extends Controller
             // === Update Main Finance Record ===
             $finance->paid_amount   += $pay_amount;
             $finance->next_due_amt   = max(0, $finance->next_due_amt - $pay_amount);
-            $finance->status         = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+            $finance->status         = $finance->available_credit_amount <= 0 ? 'Paid' : 'Pending';
 
             $finance->save();
 
@@ -1343,7 +1352,7 @@ class FinanceController extends Controller
             $finance->paid_amount = $previouslyPaid + $totalApplied;
             $finance->next_due_amt = max(0, ($finance->next_due_amt ?? 0) - $totalApplied);
 
-            $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+            $finance->status = $finance->available_credit_amount <= 0 ? 'Paid' : 'Pending';
             $finance->next_due_date = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
             $finance->save();
 
