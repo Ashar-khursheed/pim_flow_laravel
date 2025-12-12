@@ -30,6 +30,29 @@ class FCategoryController extends Controller
 	{
 		$parentID = $request->get('parent_id');
 		$limit = $request->get('limit');
+		$withParent = $request->boolean('with_parent');
+		$slug = $request->get('slug');
+
+		if ($slug) {
+			$seoRecord = SeoManagement::where('url', $slug)->where('relational_type', 'Category')->first(['relational_id']);
+			if (!$seoRecord) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Category slug not found'
+				]);
+			}
+
+			/* Check if category exists and is published in one query */
+			$categoryExists = Category::where('id', $seoRecord->relational_id)->where('status', 'published')->exists();
+			if (!$categoryExists) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Category not found or not published'
+				]);
+			}
+
+			$parentID = $seoRecord->relational_id;
+		}
 
 		$records = Category::select([
 			'id', 'name', 'slug', 'parent_id',
@@ -48,17 +71,23 @@ class FCategoryController extends Controller
 		->where('status', 'published');
 
 		if ($parentID) {
-
-			$records->where(function ($query) use ($filterId) {
-				if with_parent true $query->where('id', $filterId)
-				for all condition->orWhere('parent_id', $filterId);
+			$records->where(function ($query) use ($parentID, $withParent) {
+				$query->where('parent_id', $parentID);
+				if ($withParent) {
+					$query->orWhere('id', $parentID);
+				}
 			});
 		} else {
 			$records->where('parent_id', 0);
 		}
 
-		$records = $records->orderBy('order');
-		$records = $records->get();
+		$records = $records->orderBy('order')->get();
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Categories retrieved successfully.',
+			'data' => $records
+		]);
 
 		// $cacheKey = $parentID ? "categories_index_$parentID" : "categories_index_all";
 
@@ -66,6 +95,6 @@ class FCategoryController extends Controller
 		// 	return $records->get();
 		// });
 
-		return response()->json($records)->header('Cache-Control', 'public, max-age=86400');
+		// return response()->json($records)->header('Cache-Control', 'public, max-age=86400');
 	}
 }

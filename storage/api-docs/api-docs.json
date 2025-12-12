@@ -17857,34 +17857,52 @@
                 "tags": [
                     "Frontend-Category"
                 ],
-                "summary": "Get all product categories (with optional filter)",
-                "description": "Returns a parent-child tree of product categories. You can optionally filter by parent category ID and limit the number of child categories.",
+                "summary": "Get product categories with hierarchical structure",
+                "description": "Retrieves published product categories in a parent-child hierarchical structure. Supports filtering by parent category (via ID or slug), limiting child categories per parent, and optionally including the parent category itself in the response. Categories are returned with translations, SEO URLs, and product counts.",
                 "operationId": "cd8ab896efeba097448fc7438dbad623",
                 "parameters": [
                     {
                         "name": "parent_id",
                         "in": "query",
-                        "description": "Parent category ID to filter by",
-                        "required": false,
+                        "description": "Filter categories by parent ID.",
                         "schema": {
                             "type": "integer",
-                            "example": 1
-                        }
+                            "minimum": 1
+                        },
+                        "example": 1
                     },
                     {
                         "name": "limit",
                         "in": "query",
-                        "description": "Limit the number of child categories returned per parent (default is 12)",
-                        "required": false,
+                        "description": "Maximum number of child categories to load per parent category.",
                         "schema": {
                             "type": "integer",
-                            "example": 5
+                            "minimum": 1
+                        },
+                        "example": 5
+                    },
+                    {
+                        "name": "slug",
+                        "in": "query",
+                        "description": "Filter by parent category slug instead of ID.",
+                        "schema": {
+                            "type": "string",
+                            "example": "kitchen-equipment"
+                        }
+                    },
+                    {
+                        "name": "with_parent",
+                        "in": "query",
+                        "description": "Whether to include the parent category details in the response along with its children",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Categories tree fetched successfully",
+                        "description": "Categories retrieved successfully.",
                         "content": {
                             "application/json": {}
                         }
