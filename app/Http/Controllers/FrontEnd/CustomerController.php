@@ -9,7 +9,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Google_Client;
-
+use App\Models\Discount;
+use Illuminate\Support\Carbon;
+use Firebase\JWT\JWK;
+use Firebase\JWT\JWT;
+use Illuminate\Support\Facades\DB;
+use App\Models\FrontEnd\Coupon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
@@ -154,6 +160,7 @@ class CustomerController extends BaseController
 			], 500);
 		}
 	}
+
 
 	private function sendToOdoo($customer)
 	{
@@ -684,4 +691,154 @@ class CustomerController extends BaseController
 			'message' => 'Password changed successfully',
 		]);
 	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/coupon-register",
+	 *     summary="Coupon Register a new customer",
+	 *     tags={"FrontEnd-Customer"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"name", "email"},	 *                 
+	 *                 @OA\Property(property="name", type="string", example="John Doe"),
+	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),                
+	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000")
+	 *                 
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="Customer registered successfully", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
+	public function couponRegister(Request $request)
+	{		 
+			$validated = $request->validate([
+				'name' => 'required|string|max:255',
+				'email' => 'required|string|email|max:255',
+				'mobile_number' => 'required|string|max:255',
+			]);
+
+			$existingCustomer = Customer::where('email', $validated['email'])->first();
+			if ($existingCustomer) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You are already registered. Please login to continue.',
+				], 409);
+			}
+
+			$randomPassword = Str::random(8);
+			$hashedPassword = Hash::make($randomPassword);
+
+			$guestCustomer = new Customer([
+				'name' => $validated['name'],
+				'email' => $validated['email'],
+				'password' => $hashedPassword,
+				'type' => 'Private',				  
+				'mobile_number' => $request->input('mobile_number'),				 
+			]);
+			$guestCustomer->save();
+
+			$validated = $request->validate([
+			'code' => 'string|max:255|unique:coupons,code',
+			'name' => 'string|max:255',
+			'description' => 'nullable|string',
+			'type' => 'in:fixed,percentage',      
+			'value' => 'sometimes|required|numeric|min:0|lte:min_order_value',             
+			'basis' => 'required|in:customer,category,product,promotional',
+			'min_order_value' => 'nullable|numeric|min:0',
+			'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
+			'usage_type' => 'required|in:once,multiple,unlimited',
+			'usage_limit' => 'nullable|integer|min:1',
+			'usage_limit_per_customer' => 'nullable|integer|min:1',
+
+			// More lenient date validation
+			// 'start_date' => [
+			//      'required',
+			//      'date',
+			//      function ($attribute, $value, $fail) {
+			//          $startDate = \Carbon\Carbon::parse($value)->format('Y-m-d');
+			//          $today = \Carbon\Carbon::today()->format('Y-m-d');
+
+			//          if ($startDate < $today) {
+			//              $fail('The start date cannot be in the past.');
+			//          }
+			//      }
+			//  ],
+			'start_date' => [
+			'required',
+			'date',
+			],
+			'expire_date' => [
+			'required',
+			'date',
+			function ($attribute, $value, $fail) use ($request) {
+			$expireDate = \Carbon\Carbon::parse($value)->startOfDay();
+			$startDate = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+
+			if ($expireDate->lt($startDate)) {
+			$fail('The expire date must be after the start date.');
+			}
+			}
+			],
+
+			'is_active' => 'boolean',
+
+			// Conditional validation
+			'customer_ids' => 'required_if:basis,customer|array',
+			'customer_ids.*' => 'required_if:basis,customer|exists:customers,id',
+
+			'category_ids' => 'required_if:basis,category|array',
+			'category_ids.*' => 'required_if:basis,category|exists:categories,id',
+
+			'product_ids' => 'required_if:basis,product|array',
+			'product_ids.*' => 'required_if:basis,product|exists:ec_products,id',
+			]);
+
+			$validated['created_by'] = auth()->id();
+
+			$coupon = Coupon::create($validated);
+
+			// Attach relationships based on basis
+			if ($validated['basis'] === 'customer' && !empty($validated['customer_ids'])) {
+			$coupon->customers()->attach($validated['customer_ids']);
+			}
+
+			if ($validated['basis'] === 'category' && !empty($validated['category_ids'])) {
+			$coupon->categories()->attach($validated['category_ids']);
+			}
+
+			if ($validated['basis'] === 'product' && !empty($validated['product_ids'])) {
+			$coupon->products()->attach($validated['product_ids']);
+			}
+
+			$coupon->load(['creator', 'customers', 'categories', 'products']);
+			 
+
+
+
+
+			$batch = Bus::batch([])->name('Welcome mail on guest')->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_GUST_WLCM';
+			$batch->add(new GuestWelcomeMailJob([
+				'recordId' => $guestCustomer->id,
+				'randomPassword' => $randomPassword,
+			]));
+
+			$this->sendToOdoo($guestCustomer);
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Guest account created successfully.',
+				'user' => $guestCustomer,
+				'plain_password' => $randomPassword
+			], 201);
+		
+
+		 
+	}
+
 }
