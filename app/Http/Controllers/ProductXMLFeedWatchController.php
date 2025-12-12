@@ -62,6 +62,9 @@ class ProductXMLFeedWatchController extends Controller
 
     public function generateProductFeed(Request $request)
     {
+
+            ini_set('memory_limit', '512M'); // or '1G'
+    set_time_limit(300); // 5 minutes
         $perPage = $request->input('per_page');
         $query = Product::with([
             'brand:id,name,logo',
