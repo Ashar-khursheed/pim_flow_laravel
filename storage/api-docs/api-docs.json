@@ -17867,9 +17867,8 @@
                         "description": "Filter categories by parent ID.",
                         "schema": {
                             "type": "integer",
-                            "minimum": 1
-                        },
-                        "example": 1
+                            "example": 1
+                        }
                     },
                     {
                         "name": "limit",
@@ -17877,9 +17876,8 @@
                         "description": "Maximum number of child categories to load per parent category.",
                         "schema": {
                             "type": "integer",
-                            "minimum": 1
-                        },
-                        "example": 5
+                            "example": 5
+                        }
                     },
                     {
                         "name": "slug",
