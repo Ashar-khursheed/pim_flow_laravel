@@ -1096,359 +1096,150 @@ class ProductController extends Controller
 				$product->accessories = [];
 			}
 
-		// $product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
-		// 	$childIds = json_decode($variant->child_ids, true) ?? [];
-		// 	$variants = json_decode($variant->variants, true) ?? [];
+			// ✅ CORRECTED PRODUCT VARIANTS - Multiple products per variant with full details
+			// ✅ CORRECTED PRODUCT VARIANTS - Same logic as index function
+			// ✅ CORRECT PRODUCT VARIANTS - Show ALL child products for EACH attribute WITH SELECTED
+		// ✅ CORRECT PRODUCT VARIANTS - Unique attribute values with selected flag
+				// ✅ CORRECT PRODUCT VARIANTS - Same logic as index function
+		// ✅ CORRECT PRODUCT VARIANTS - Same logic as index function WITH PROPER LOADING
+		$product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
+			$childIds = json_decode($variant->child_ids, true) ?? [];
+			$variants = json_decode($variant->variants, true) ?? [];
 			
-		// 	// ✅ Merge current product ID with child IDs (SAME AS INDEX)
-		// 	$childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
+			// ✅ Merge current product ID with child IDs (SAME AS INDEX)
+			$childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
 
-		// 	// Early return if no children or variants
-		// 	if (empty($childIds) || empty($variants)) {
-		// 		return [];
-		// 	}
-
-		// 	// ✅ LOAD current product's attributes if not already loaded
-		// 	if (!$product->relationLoaded('productAttributes')) {
-		// 		$product->load('productAttributes');
-		// 	}
-
-		// 	// ✅ Get CURRENT product's attributes for comparison
-		// 	$currentProductAttributes = ProductAttribute::where('product_id', $product->id)
-		// 		->pluck('attribute_value', 'attribute_id')
-		// 		->toArray();
-
-		// 	// 🔍 DEBUG - Log to see what we got
-		// 	\Log::info('Current Product ID: ' . $product->id);
-		// 	\Log::info('Current Product Attributes:', $currentProductAttributes);
-
-		// 	// Fetch all child products at once
-		// 	$children = Product::whereIn('id', $childIds)
-		// 		->with(['productSuppliers' => function($q) {
-		// 			$q->select('product_id', 'price', 'sale_price');
-		// 		}])
-		// 		->select('id', 'sku', 'images')
-		// 		->get();
-
-		// 	// Fetch all attribute names at once
-		// 	$attributeIds = array_column($variants, 'attribute_id');
-		// 	$attributes = Attribute::whereIn('id', $attributeIds)
-		// 		->pluck('name', 'id');
-
-		// 	// Fetch all product attributes at once
-		// 	$productAttributes = ProductAttribute::whereIn('product_id', $childIds)
-		// 		->whereIn('attribute_id', $attributeIds)
-		// 		->get()
-		// 		->groupBy('product_id');
-
-		// 	// Fetch all SEO URLs at once
-		// 	$seoUrls = SeoManagement::whereIn('relational_id', $childIds)
-		// 		->pluck('url', 'relational_id');
-
-		// 	$result = [];
-
-		// 	foreach ($variants as $v) {
-		// 		$attributeId = $v['attribute_id'];
-		// 		$attributeName = $attributes[$attributeId] ?? null;
-
-		// 		if (!$attributeName) {
-		// 			continue;
-		// 		}
-
-		// 		// Track unique attribute values for this specific attribute
-		// 		$seenAttributeValues = [];
-
-		// 		foreach ($children as $child) {
-		// 			// Get attribute value for this child and attribute
-		// 			$attrValue = $productAttributes->get($child->id)
-		// 				?->firstWhere('attribute_id', $attributeId)
-		// 				?->attribute_value ?? null;
-
-		// 			// Skip if no attribute value or if we've already seen this value
-		// 			if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
-		// 				continue;
-		// 			}
-
-		// 			// Mark this attribute value as seen
-		// 			$seenAttributeValues[$attrValue] = true;
-
-		// 			// ✅ Check if matches CURRENT product's attribute
-		// 			$isSelected = isset($currentProductAttributes[$attributeId])
-		// 				&& $currentProductAttributes[$attributeId] == $attrValue;
-
-		// 			// Get pricing from first supplier
-		// 			$firstSupplier = $child->productSuppliers->first();
-		// 			$price = $firstSupplier ? (float) $firstSupplier->price : 0;
-		// 			$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
-
-		// 			// Decode images
-		// 			$images = json_decode($child->images, true) ?? [];
-
-		// 			// Get slug
-		// 			$slug = $seoUrls[$child->id] ?? null;
-
-		// 			// Build full slug
-		// 			$parentCategoryUrl = '';
-		// 			$categoryUrl = '';
-					
-		// 			try {
-		// 				$tempProduct = Product::find($child->id);
-		// 				if ($tempProduct) {
-		// 					$parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
-		// 						? $tempProduct->parent_category_url() 
-		// 						: '';
-		// 					$categoryUrl = method_exists($tempProduct, 'category_url') 
-		// 						? $tempProduct->category_url() 
-        //                 : '';
-        //         }
-        //     } catch (\Exception $e) {
-        //         \Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
-        //     }
-            
-        //     $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
-        //     $full_slug = trim($full_slug, '/');
-
-        //     $result[] = [
-        //         'product_id' => $child->id,
-        //         'sku' => $child->sku,
-        //         'attribute_id' => $attributeId,
-        //         'attribute_value' => $attrValue,
-        //         'attribute_name' => $attributeName,
-        //         'type' => $v['type'] ?? 'dropdown',
-        //         'label' => $v['labels'] ?? $attributeName,
-        //         'selected' => $isSelected,
-        //         'price' => $price,
-        //         'sale_price' => $salePrice,
-        //         'images' => $images,
-        //         'slug' => $slug,
-        //         'parent_slug' => $parentCategoryUrl,
-        //         'child_slug' => $categoryUrl,
-        //         'full_slug' => $full_slug,
-        //     ];
-		// 		}
-		// 	}
-
-		// 		return $result;
-		// 	})->flatten(1)->values();
-
-		// 	if ($product->productVariants->isEmpty()) {
-		// 		$product->productVariants = [];
-		// }
-		// ✅ CORRECT PRODUCT VARIANTS - With measurement units support and error handling
-			$product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
-				try {
-					$childIds = json_decode($variant->child_ids, true) ?? [];
-					$variants = json_decode($variant->variants, true) ?? [];
-					
-					// ✅ Merge current product ID with child IDs
-					$childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
-
-					// Early return if no children or variants
-					if (empty($childIds) || empty($variants)) {
-						return [];
-					}
-
-					// ✅ LOAD current product's attributes if not already loaded
-					if (!$product->relationLoaded('productAttributes')) {
-						$product->load('productAttributes');
-					}
-
-					// ✅ Get CURRENT product's attributes for comparison
-					$currentProductAttributes = ProductAttribute::where('product_id', $product->id)
-						->pluck('attribute_value', 'attribute_id')
-						->toArray();
-
-					// Fetch all child products at once
-					$children = Product::whereIn('id', $childIds)
-						->with(['productSuppliers' => function($q) {
-							$q->select('product_id', 'price', 'sale_price');
-						}])
-						->select('id', 'sku', 'images')
-						->get();
-
-					// Fetch all attribute names at once
-					$attributeIds = array_column($variants, 'attribute_id');
-					$attributes = Attribute::whereIn('id', $attributeIds)
-						->pluck('name', 'id')
-						->toArray();
-
-					// ✅ NEW: Fetch measurement units for attributes with error handling
-					$measurementInfo = [];
-					try {
-						// Check if attribute_measurements table exists
-						if (Schema::hasTable('attribute_measurements')) {
-							$attributeMeasurements = DB::table('attribute_measurements')
-								->whereIn('attribute_id', $attributeIds)
-								->get()
-								->keyBy('attribute_id');
-
-							// Get measurement unit IDs
-							$measurementIds = $attributeMeasurements->pluck('measurement_id')->unique()->filter();
-
-							if ($measurementIds->isNotEmpty()) {
-								// Check if measurement_units table exists
-								if (Schema::hasTable('measurement_units')) {
-									$measurementUnits = DB::table('measurement_units')
-										->whereIn('id', $measurementIds->toArray())
-										->get()
-										->keyBy('id');
-
-									// Get measurement type IDs
-									$measurementTypeIds = $measurementUnits->pluck('measurement_type_id')->unique()->filter();
-
-									// Fetch measurement types if table exists
-									$measurementTypes = [];
-									if ($measurementTypeIds->isNotEmpty() && Schema::hasTable('measurement_types')) {
-										$measurementTypes = DB::table('measurement_types')
-											->whereIn('id', $measurementTypeIds->toArray())
-											->pluck('name', 'id')
-											->toArray();
-									}
-
-									// Build measurement info array
-									foreach ($attributeMeasurements as $attrId => $attrMeasurement) {
-										$measurementId = $attrMeasurement->measurement_id;
-										
-										if (isset($measurementUnits[$measurementId])) {
-											$measurementUnit = $measurementUnits[$measurementId];
-											$measurementTypeName = $measurementTypes[$measurementUnit->measurement_type_id] ?? null;
-											
-											$measurementInfo[$attrId] = [
-												'symbol' => $measurementUnit->symbol ?? '',
-												'type' => $measurementTypeName,
-												'type_id' => $measurementUnit->measurement_type_id ?? null,
-											];
-										}
-									}
-								}
-							}
-						}
-					} catch (\Exception $e) {
-						\Log::warning('Error fetching measurement data for variants: ' . $e->getMessage());
-						// Continue without measurement info
-					}
-
-					// Fetch all product attributes at once
-					$productAttributes = ProductAttribute::whereIn('product_id', $childIds)
-						->whereIn('attribute_id', $attributeIds)
-						->get()
-						->groupBy('product_id');
-
-					// Fetch all SEO URLs at once
-					$seoUrls = SeoManagement::whereIn('relational_id', $childIds)
-						->pluck('url', 'relational_id')
-						->toArray();
-
-					$result = [];
-
-					foreach ($variants as $v) {
-						$attributeId = $v['attribute_id'] ?? null;
-						
-						if (!$attributeId) {
-							continue;
-						}
-						
-						$attributeName = $attributes[$attributeId] ?? null;
-
-						if (!$attributeName) {
-							continue;
-						}
-
-						// Track unique attribute values for this specific attribute
-						$seenAttributeValues = [];
-
-						foreach ($children as $child) {
-							// Get attribute value for this child and attribute
-							$attrValue = $productAttributes->get($child->id)
-								?->firstWhere('attribute_id', $attributeId)
-								?->attribute_value ?? null;
-
-							// Skip if no attribute value or if we've already seen this value
-							if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
-								continue;
-							}
-
-							// Mark this attribute value as seen
-							$seenAttributeValues[$attrValue] = true;
-
-							// ✅ Check if matches CURRENT product's attribute
-							$isSelected = isset($currentProductAttributes[$attributeId])
-								&& $currentProductAttributes[$attributeId] == $attrValue;
-
-							// Get pricing from first supplier
-							$firstSupplier = $child->productSuppliers->first();
-							$price = $firstSupplier ? (float) $firstSupplier->price : 0;
-							$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
-
-							// Decode images
-							$images = json_decode($child->images, true) ?? [];
-
-							// Get slug
-							$slug = $seoUrls[$child->id] ?? null;
-
-							// Build full slug
-							$parentCategoryUrl = '';
-							$categoryUrl = '';
-							
-							try {
-								$tempProduct = Product::find($child->id);
-								if ($tempProduct) {
-									$parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
-										? $tempProduct->parent_category_url() 
-										: '';
-									$categoryUrl = method_exists($tempProduct, 'category_url') 
-										? $tempProduct->category_url() 
-										: '';
-								}
-							} catch (\Exception $e) {
-								\Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
-							}
-							
-							$full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
-							$full_slug = trim($full_slug, '/');
-
-							// ✅ Build variant item
-							$variantItem = [
-								'product_id' => $child->id,
-								'sku' => $child->sku,
-								'attribute_id' => $attributeId,
-								'attribute_value' => $attrValue,
-								'attribute_name' => $attributeName,
-								'type' => $v['type'] ?? 'dropdown',
-								'label' => $v['labels'] ?? $attributeName,
-								'selected' => $isSelected,
-								'price' => $price,
-								'sale_price' => $salePrice,
-								'images' => $images,
-								'slug' => $slug,
-								'parent_slug' => $parentCategoryUrl,
-								'child_slug' => $categoryUrl,
-								'full_slug' => $full_slug,
-							];
-
-							// ✅ Add measurement info if available
-							if (isset($measurementInfo[$attributeId])) {
-								$variantItem['measurement'] = $measurementInfo[$attributeId];
-								// ✅ Format the value with unit if symbol exists
-								if (!empty($measurementInfo[$attributeId]['symbol'])) {
-									$variantItem['formatted_value'] = $attrValue . ' ' . $measurementInfo[$attributeId]['symbol'];
-								}
-							}
-
-							$result[] = $variantItem;
-						}
-					}
-
-					return $result;
-				} catch (\Exception $e) {
-					\Log::error('Error processing product variants for product ' . $product->id . ': ' . $e->getMessage());
-					return [];
-				}
-			})->flatten(1)->values();
-
-			if ($product->productVariants->isEmpty()) {
-				$product->productVariants = [];
+			// Early return if no children or variants
+			if (empty($childIds) || empty($variants)) {
+				return [];
 			}
+
+			// ✅ LOAD current product's attributes if not already loaded
+			if (!$product->relationLoaded('productAttributes')) {
+				$product->load('productAttributes');
+			}
+
+			// ✅ Get CURRENT product's attributes for comparison
+			$currentProductAttributes = ProductAttribute::where('product_id', $product->id)
+				->pluck('attribute_value', 'attribute_id')
+				->toArray();
+
+			// 🔍 DEBUG - Log to see what we got
+			\Log::info('Current Product ID: ' . $product->id);
+			\Log::info('Current Product Attributes:', $currentProductAttributes);
+
+			// Fetch all child products at once
+			$children = Product::whereIn('id', $childIds)
+				->with(['productSuppliers' => function($q) {
+					$q->select('product_id', 'price', 'sale_price');
+				}])
+				->select('id', 'sku', 'images')
+				->get();
+
+			// Fetch all attribute names at once
+			$attributeIds = array_column($variants, 'attribute_id');
+			$attributes = Attribute::whereIn('id', $attributeIds)
+				->pluck('name', 'id');
+
+			// Fetch all product attributes at once
+			$productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+				->whereIn('attribute_id', $attributeIds)
+				->get()
+				->groupBy('product_id');
+
+			// Fetch all SEO URLs at once
+			$seoUrls = SeoManagement::whereIn('relational_id', $childIds)
+				->pluck('url', 'relational_id');
+
+			$result = [];
+
+			foreach ($variants as $v) {
+				$attributeId = $v['attribute_id'];
+				$attributeName = $attributes[$attributeId] ?? null;
+
+				if (!$attributeName) {
+					continue;
+				}
+
+				// Track unique attribute values for this specific attribute
+				$seenAttributeValues = [];
+
+				foreach ($children as $child) {
+					// Get attribute value for this child and attribute
+					$attrValue = $productAttributes->get($child->id)
+						?->firstWhere('attribute_id', $attributeId)
+						?->attribute_value ?? null;
+
+					// Skip if no attribute value or if we've already seen this value
+					if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+						continue;
+					}
+
+					// Mark this attribute value as seen
+					$seenAttributeValues[$attrValue] = true;
+
+					// ✅ Check if matches CURRENT product's attribute
+					$isSelected = isset($currentProductAttributes[$attributeId])
+						&& $currentProductAttributes[$attributeId] == $attrValue;
+
+					// Get pricing from first supplier
+					$firstSupplier = $child->productSuppliers->first();
+					$price = $firstSupplier ? (float) $firstSupplier->price : 0;
+					$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
+
+					// Decode images
+					$images = json_decode($child->images, true) ?? [];
+
+					// Get slug
+					$slug = $seoUrls[$child->id] ?? null;
+
+					// Build full slug
+					$parentCategoryUrl = '';
+					$categoryUrl = '';
+					
+					try {
+						$tempProduct = Product::find($child->id);
+						if ($tempProduct) {
+							$parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
+								? $tempProduct->parent_category_url() 
+								: '';
+							$categoryUrl = method_exists($tempProduct, 'category_url') 
+								? $tempProduct->category_url() 
+                        : '';
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
+            }
+            
+            $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
+            $full_slug = trim($full_slug, '/');
+
+            $result[] = [
+                'product_id' => $child->id,
+                'sku' => $child->sku,
+                'attribute_id' => $attributeId,
+                'attribute_value' => $attrValue,
+                'attribute_name' => $attributeName,
+                'type' => $v['type'] ?? 'dropdown',
+                'label' => $v['labels'] ?? $attributeName,
+                'selected' => $isSelected,
+                'price' => $price,
+                'sale_price' => $salePrice,
+                'images' => $images,
+                'slug' => $slug,
+                'parent_slug' => $parentCategoryUrl,
+                'child_slug' => $categoryUrl,
+                'full_slug' => $full_slug,
+            ];
+        }
+    	}
+
+			return $result;
+		})->flatten(1)->values();
+
+		if ($product->productVariants->isEmpty()) {
+			$product->productVariants = [];
+		}
 
 				// Get category URLs
 			try {
@@ -2404,221 +2195,152 @@ class ProductController extends Controller
 				$product->accessories = [];
 			}
 
-					$product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
-				try {
-					$childIds = json_decode($variant->child_ids, true) ?? [];
-					$variants = json_decode($variant->variants, true) ?? [];
-					
-					// ✅ Merge current product ID with child IDs
-					$childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
+			// ✅ OPTIMIZED PRODUCT VARIANTS
+		// ✅ CORRECTED PRODUCT VARIANTS - Same logic as index function
+		// ✅ CORRECT PRODUCT VARIANTS - Show ALL child products for EACH attribute WITH SELECTED
+// ✅ CORRECT PRODUCT VARIANTS - Unique attribute values with selected flag
+// ✅ CORRECT PRODUCT VARIANTS - Same logic as index function
+// ✅ CORRECT PRODUCT VARIANTS - Same logic as index function WITH PROPER LOADING
+$product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
+    $childIds = json_decode($variant->child_ids, true) ?? [];
+    $variants = json_decode($variant->variants, true) ?? [];
+    
+    // ✅ Merge current product ID with child IDs (SAME AS INDEX)
+    $childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
 
-					// Early return if no children or variants
-					if (empty($childIds) || empty($variants)) {
-						return [];
-					}
+    // Early return if no children or variants
+    if (empty($childIds) || empty($variants)) {
+        return [];
+    }
 
-					// ✅ LOAD current product's attributes if not already loaded
-					if (!$product->relationLoaded('productAttributes')) {
-						$product->load('productAttributes');
-					}
+    // ✅ LOAD current product's attributes if not already loaded
+    if (!$product->relationLoaded('productAttributes')) {
+        $product->load('productAttributes');
+    }
 
-					// ✅ Get CURRENT product's attributes for comparison
-					$currentProductAttributes = ProductAttribute::where('product_id', $product->id)
-						->pluck('attribute_value', 'attribute_id')
-						->toArray();
+    // ✅ Get CURRENT product's attributes for comparison
+    $currentProductAttributes = ProductAttribute::where('product_id', $product->id)
+        ->pluck('attribute_value', 'attribute_id')
+        ->toArray();
 
-					// Fetch all child products at once
-					$children = Product::whereIn('id', $childIds)
-						->with(['productSuppliers' => function($q) {
-							$q->select('product_id', 'price', 'sale_price');
-						}])
-						->select('id', 'sku', 'images')
-						->get();
+    // 🔍 DEBUG - Log to see what we got
+    \Log::info('Current Product ID: ' . $product->id);
+    \Log::info('Current Product Attributes:', $currentProductAttributes);
 
-					// Fetch all attribute names at once
-					$attributeIds = array_column($variants, 'attribute_id');
-					$attributes = Attribute::whereIn('id', $attributeIds)
-						->pluck('name', 'id')
-						->toArray();
+    // Fetch all child products at once
+    $children = Product::whereIn('id', $childIds)
+        ->with(['productSuppliers' => function($q) {
+            $q->select('product_id', 'price', 'sale_price');
+        }])
+        ->select('id', 'sku', 'images')
+        ->get();
 
-					// ✅ NEW: Fetch measurement units for attributes with error handling
-					$measurementInfo = [];
-					try {
-						// Check if attribute_measurements table exists
-						if (Schema::hasTable('attribute_measurements')) {
-							$attributeMeasurements = DB::table('attribute_measurements')
-								->whereIn('attribute_id', $attributeIds)
-								->get()
-								->keyBy('attribute_id');
+    // Fetch all attribute names at once
+    $attributeIds = array_column($variants, 'attribute_id');
+    $attributes = Attribute::whereIn('id', $attributeIds)
+        ->pluck('name', 'id');
 
-							// Get measurement unit IDs
-							$measurementIds = $attributeMeasurements->pluck('measurement_id')->unique()->filter();
+    // Fetch all product attributes at once
+    $productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+        ->whereIn('attribute_id', $attributeIds)
+        ->get()
+        ->groupBy('product_id');
 
-							if ($measurementIds->isNotEmpty()) {
-								// Check if measurement_units table exists
-								if (Schema::hasTable('measurement_units')) {
-									$measurementUnits = DB::table('measurement_units')
-										->whereIn('id', $measurementIds->toArray())
-										->get()
-										->keyBy('id');
+    // Fetch all SEO URLs at once
+    $seoUrls = SeoManagement::whereIn('relational_id', $childIds)
+        ->pluck('url', 'relational_id');
 
-									// Get measurement type IDs
-									$measurementTypeIds = $measurementUnits->pluck('measurement_type_id')->unique()->filter();
+    $result = [];
 
-									// Fetch measurement types if table exists
-									$measurementTypes = [];
-									if ($measurementTypeIds->isNotEmpty() && Schema::hasTable('measurement_types')) {
-										$measurementTypes = DB::table('measurement_types')
-											->whereIn('id', $measurementTypeIds->toArray())
-											->pluck('name', 'id')
-											->toArray();
-									}
+    foreach ($variants as $v) {
+        $attributeId = $v['attribute_id'];
+        $attributeName = $attributes[$attributeId] ?? null;
 
-									// Build measurement info array
-									foreach ($attributeMeasurements as $attrId => $attrMeasurement) {
-										$measurementId = $attrMeasurement->measurement_id;
-										
-										if (isset($measurementUnits[$measurementId])) {
-											$measurementUnit = $measurementUnits[$measurementId];
-											$measurementTypeName = $measurementTypes[$measurementUnit->measurement_type_id] ?? null;
-											
-											$measurementInfo[$attrId] = [
-												'symbol' => $measurementUnit->symbol ?? '',
-												'type' => $measurementTypeName,
-												'type_id' => $measurementUnit->measurement_type_id ?? null,
-											];
-										}
-									}
-								}
-							}
-						}
-					} catch (\Exception $e) {
-						\Log::warning('Error fetching measurement data for variants: ' . $e->getMessage());
-						// Continue without measurement info
-					}
+        if (!$attributeName) {
+            continue;
+        }
 
-					// Fetch all product attributes at once
-					$productAttributes = ProductAttribute::whereIn('product_id', $childIds)
-						->whereIn('attribute_id', $attributeIds)
-						->get()
-						->groupBy('product_id');
+        // Track unique attribute values for this specific attribute
+        $seenAttributeValues = [];
 
-					// Fetch all SEO URLs at once
-					$seoUrls = SeoManagement::whereIn('relational_id', $childIds)
-						->pluck('url', 'relational_id')
-						->toArray();
+        foreach ($children as $child) {
+            // Get attribute value for this child and attribute
+            $attrValue = $productAttributes->get($child->id)
+                ?->firstWhere('attribute_id', $attributeId)
+                ?->attribute_value ?? null;
 
-					$result = [];
+            // Skip if no attribute value or if we've already seen this value
+            if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+                continue;
+            }
 
-					foreach ($variants as $v) {
-						$attributeId = $v['attribute_id'] ?? null;
-						
-						if (!$attributeId) {
-							continue;
-						}
-						
-						$attributeName = $attributes[$attributeId] ?? null;
+            // Mark this attribute value as seen
+            $seenAttributeValues[$attrValue] = true;
 
-						if (!$attributeName) {
-							continue;
-						}
+            // ✅ Check if matches CURRENT product's attribute
+            $isSelected = isset($currentProductAttributes[$attributeId])
+                && $currentProductAttributes[$attributeId] == $attrValue;
 
-						// Track unique attribute values for this specific attribute
-						$seenAttributeValues = [];
+            // 🔍 DEBUG - Log selection check
 
-						foreach ($children as $child) {
-							// Get attribute value for this child and attribute
-							$attrValue = $productAttributes->get($child->id)
-								?->firstWhere('attribute_id', $attributeId)
-								?->attribute_value ?? null;
+            // Get pricing from first supplier
+            $firstSupplier = $child->productSuppliers->first();
+            $price = $firstSupplier ? (float) $firstSupplier->price : 0;
+            $salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
 
-							// Skip if no attribute value or if we've already seen this value
-							if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
-								continue;
-							}
+            // Decode images
+            $images = json_decode($child->images, true) ?? [];
 
-							// Mark this attribute value as seen
-							$seenAttributeValues[$attrValue] = true;
+            // Get slug
+            $slug = $seoUrls[$child->id] ?? null;
 
-							// ✅ Check if matches CURRENT product's attribute
-							$isSelected = isset($currentProductAttributes[$attributeId])
-								&& $currentProductAttributes[$attributeId] == $attrValue;
+            // Build full slug
+            $parentCategoryUrl = '';
+            $categoryUrl = '';
+            
+            try {
+                $tempProduct = Product::find($child->id);
+                if ($tempProduct) {
+                    $parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
+                        ? $tempProduct->parent_category_url() 
+                        : '';
+                    $categoryUrl = method_exists($tempProduct, 'category_url') 
+                        ? $tempProduct->category_url() 
+                        : '';
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
+            }
+            
+            $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
+            $full_slug = trim($full_slug, '/');
 
-							// Get pricing from first supplier
-							$firstSupplier = $child->productSuppliers->first();
-							$price = $firstSupplier ? (float) $firstSupplier->price : 0;
-							$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
+            $result[] = [
+                'product_id' => $child->id,
+                'sku' => $child->sku,
+                'attribute_id' => $attributeId,
+                'attribute_value' => $attrValue,
+                'attribute_name' => $attributeName,
+                'type' => $v['type'] ?? 'dropdown',
+                'label' => $v['labels'] ?? $attributeName,
+                'selected' => $isSelected,
+                'price' => $price,
+                'sale_price' => $salePrice,
+                'images' => $images,
+                'slug' => $slug,
+                'parent_slug' => $parentCategoryUrl,
+                'child_slug' => $categoryUrl,
+                'full_slug' => $full_slug,
+            ];
+        }
+    }
 
-							// Decode images
-							$images = json_decode($child->images, true) ?? [];
+    return $result;
+})->flatten(1)->values();
 
-							// Get slug
-							$slug = $seoUrls[$child->id] ?? null;
-
-							// Build full slug
-							$parentCategoryUrl = '';
-							$categoryUrl = '';
-							
-							try {
-								$tempProduct = Product::find($child->id);
-								if ($tempProduct) {
-									$parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
-										? $tempProduct->parent_category_url() 
-										: '';
-									$categoryUrl = method_exists($tempProduct, 'category_url') 
-										? $tempProduct->category_url() 
-										: '';
-								}
-							} catch (\Exception $e) {
-								\Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
-							}
-							
-							$full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
-							$full_slug = trim($full_slug, '/');
-
-							// ✅ Build variant item
-							$variantItem = [
-								'product_id' => $child->id,
-								'sku' => $child->sku,
-								'attribute_id' => $attributeId,
-								'attribute_value' => $attrValue,
-								'attribute_name' => $attributeName,
-								'type' => $v['type'] ?? 'dropdown',
-								'label' => $v['labels'] ?? $attributeName,
-								'selected' => $isSelected,
-								'price' => $price,
-								'sale_price' => $salePrice,
-								'images' => $images,
-								'slug' => $slug,
-								'parent_slug' => $parentCategoryUrl,
-								'child_slug' => $categoryUrl,
-								'full_slug' => $full_slug,
-							];
-
-							// ✅ Add measurement info if available
-							if (isset($measurementInfo[$attributeId])) {
-								$variantItem['measurement'] = $measurementInfo[$attributeId];
-								// ✅ Format the value with unit if symbol exists
-								if (!empty($measurementInfo[$attributeId]['symbol'])) {
-									$variantItem['formatted_value'] = $attrValue . ' ' . $measurementInfo[$attributeId]['symbol'];
-								}
-							}
-
-							$result[] = $variantItem;
-						}
-					}
-
-					return $result;
-				} catch (\Exception $e) {
-					\Log::error('Error processing product variants for product ' . $product->id . ': ' . $e->getMessage());
-					return [];
-				}
-			})->flatten(1)->values();
-
-			if ($product->productVariants->isEmpty()) {
-				$product->productVariants = [];
-			}
-
+if ($product->productVariants->isEmpty()) {
+    $product->productVariants = [];
+}
 			// Get category URLs
 			try {
 				if (method_exists($product, 'category_url')) {
