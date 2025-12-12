@@ -788,7 +788,7 @@ class ProductController extends Controller
     $allCategories = Category::whereIn('id', $categoryIds)
         ->orWhereIn('id', function($query) use ($categoryIds) {
             $query->select('parent_id')
-                ->from('ec_product_categories')
+                ->from('product_categories')
                 ->whereIn('id', $categoryIds)
                 ->whereNotNull('parent_id');
         })
