@@ -17852,6 +17852,46 @@
                 ]
             }
         },
+        "/api/frontend-categories": {
+            "get": {
+                "tags": [
+                    "Frontend-Category"
+                ],
+                "summary": "Get all product categories (with optional filter)",
+                "description": "Returns a parent-child tree of product categories. You can optionally filter by parent category ID and limit the number of child categories.",
+                "operationId": "cd8ab896efeba097448fc7438dbad623",
+                "parameters": [
+                    {
+                        "name": "parent_id",
+                        "in": "query",
+                        "description": "Parent category ID to filter by",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Limit the number of child categories returned per parent (default is 12)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categories tree fetched successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/faqs/product/{product_id}": {
             "get": {
                 "tags": [
@@ -48338,6 +48378,10 @@
         {
             "name": "Frontend-Discounts",
             "description": "Frontend-Discounts"
+        },
+        {
+            "name": "Frontend-Category",
+            "description": "Frontend-Category"
         },
         {
             "name": "Frontend - FAQs",
