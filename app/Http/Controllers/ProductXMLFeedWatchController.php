@@ -60,11 +60,8 @@ class ProductXMLFeedWatchController extends Controller
 
  
 
-    public function generateProductFeed(Request $request)
+   public function generateProductFeed(Request $request)
     {
-
-            ini_set('memory_limit', '512M'); // or '1G'
-    set_time_limit(300); // 5 minutes
         $perPage = $request->input('per_page');
         $query = Product::with([
             'brand:id,name,logo',
@@ -78,55 +75,43 @@ class ProductXMLFeedWatchController extends Controller
             'productVariants'
         ])
         ->select([
-            'id',
-            'name',
-            'sku',
-            'images',
-            'brand_id',
-            'status',
-            'gen_type',
-            'approved',
-            'description',
-            'quote_available',
-            'stock_status',
-            'barcode',
+            'id', 'name', 'sku', 'images', 'brand_id', 'status',
+            'gen_type', 'approved', 'description', 'quote_available',
+            'stock_status', 'barcode',
         ])
         ->where('status', 'published')
         ->orderBy('id', 'desc');
 
         $website = config('app.url', 'https://www.thehorecastore.com');
 
-        // Start XML
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-        $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
-        $xml .= '<channel>';
-        $xml .= '<title>Product Feed</title>';
-        $xml .= '<link>' . $website . '</link>';
-        $xml .= '<description>DataFeedWatch Product Feed</description>';
+        // Stream the response instead of building string in memory
+        return response()->stream(function () use ($query, $website, $perPage, $request) {
+            echo '<?xml version="1.0" encoding="UTF-8"?>';
+            echo '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
+            echo '<channel>';
+            echo '<title>Product Feed</title>';
+            echo '<link>' . htmlspecialchars($website) . '</link>';
+            echo '<description>DataFeedWatch Product Feed</description>';
 
-        // Process products
-        if (!empty($perPage)) {
-            // For paginated requests, get only the requested page
-            $products = $query->paginate($perPage, ['*'], 'page', $request->input('page', 1));
-            
-            foreach ($products as $product) {
-                $xml .= $this->mapProductToXml($product);
-            }
-        } else {
-            // For full feed, use chunk to avoid memory issues
-            $query->chunk(500, function ($products) use (&$xml) {
+            if (!empty($perPage)) {
+                $products = $query->paginate($perPage, ['*'], 'page', $request->input('page', 1));
                 foreach ($products as $product) {
-                    $xml .= $this->mapProductToXml($product);
+                    echo $this->mapProductToXml($product);
                 }
-            });
-        }
+            } else {
+                // Stream each chunk directly - no memory buildup
+                $query->chunk(500, function ($products) {
+                    foreach ($products as $product) {
+                        echo $this->mapProductToXml($product);
+                    }
+                });
+            }
 
-        // Close channel and rss
-        $xml .= '</channel>';
-        $xml .= '</rss>';
-
-        return response($xml, 200)
-            ->header('Content-Type', 'application/xml');
+            echo '</channel>';
+            echo '</rss>';
+        }, 200, [
+            'Content-Type' => 'application/xml; charset=UTF-8',
+        ]);
     }
 
     /**
