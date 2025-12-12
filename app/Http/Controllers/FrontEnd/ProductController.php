@@ -1748,11 +1748,27 @@ class ProductController extends Controller
         $product->parent_category_url = null;
     }
 
-    // ✅ Return single product, not paginated
+    // ✅ Wrap product in collection to match original structure
+    $productCollection = collect([$product]);
+
+    // ✅ Return data wrapped in the same structure as original with pagination-like format
     return response()->json([
         'success' => true,
-        'data' => $product
-    ])->header('Cache-Control', 'public, max-age=3600'); // 1 hour cache for single product
+        'data' => [
+            'current_page' => 1,
+            'data' => $productCollection, // Product inside data array
+            'first_page_url' => url()->current() . '?page=1',
+            'from' => 1,
+            'last_page' => 1,
+            'last_page_url' => url()->current() . '?page=1',
+            'next_page_url' => null,
+            'path' => url()->current(),
+            'per_page' => 1,
+            'prev_page_url' => null,
+            'to' => 1,
+            'total' => 1,
+        ]
+    ])->header('Cache-Control', 'public, max-age=3600');
 }
 	/**
 	 * @OA\Get(
