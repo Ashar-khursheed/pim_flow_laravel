@@ -225,6 +225,9 @@ class ProductXMLFeedWatchController extends Controller
         // Start XML for this product
         $xml = '<item>';
         $xml .= '<g:id>' . $product->id . '</g:id>';
+        $xml .= '<g:sku>' . htmlspecialchars($product->sku ?? '') . '</g:sku>';
+        $xml .= '<g:barcode>' . htmlspecialchars($product->barcode ?? '') . '</g:barcode>';
+        $xml .= '<g:title>' . htmlspecialchars($seoData?->meta_title ?? $product->name) . '</g:title>';
         $xml .= '<g:title>' . htmlspecialchars($seoData?->meta_title ?? $product->name) . '</g:title>';
         $xml .= '<g:link>' . config('app.url') . '/' . $fullSlug . '</g:link>';
         $xml .= '<g:description>' . htmlspecialchars($descriptionText) . '</g:description>';
