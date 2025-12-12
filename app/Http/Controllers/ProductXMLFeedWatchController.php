@@ -58,7 +58,9 @@ class ProductXMLFeedWatchController extends Controller
     //     return $data;
     // }
 
-    public function generateProductFeed(Request $request)
+ 
+
+   public function generateProductFeed(Request $request)
     {
         $perPage = $request->input('per_page');
         $query = Product::with([
@@ -72,62 +74,50 @@ class ProductXMLFeedWatchController extends Controller
             'seoProductUrl',
             'productVariants'
         ])
-            ->select([
-                'id',
-                'name',
-                'sku',
-                'images',
-                'brand_id',
-                'status',
-                'gen_type',
-                'approved',
-                'description',
-                'quote_available',
-                'stock_status',
-                'barcode',
-
-            ])
-            ->where('status', 'published')
-            ->orderBy('id', 'desc');
+        ->select([
+            'id', 'name', 'sku', 'images', 'brand_id', 'status',
+            'gen_type', 'approved', 'description', 'quote_available',
+            'stock_status', 'barcode',
+        ])
+        ->where('status', 'published')
+        ->orderBy('id', 'desc');
 
         $website = config('app.url', 'https://www.thehorecastore.com');
 
-        // Start XML
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-        $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
-        $xml .= '<channel>';
-        $xml .= '<title>Product Feed</title>';
-        $xml .= '<link>' . $website . '</link>';
-        $xml .= '<description>DataFeedWatch Product Feed</description>';
+        // Stream the response instead of building string in memory
+        return response()->stream(function () use ($query, $website, $perPage, $request) {
+            echo '<?xml version="1.0" encoding="UTF-8"?>';
+            echo '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
+            echo '<channel>';
+            echo '<title>Product Feed</title>';
+            echo '<link>' . htmlspecialchars($website) . '</link>';
+            echo '<description>DataFeedWatch Product Feed</description>';
 
-        if (!empty($perPage)) {
-            $products = $query->paginate($perPage, ['*'], 'page', 1);
-        } else {
-            $products = $query->get();
-        }
-        
-        if (!empty($products)) {
-            $query->chunk(500, function ($products) use (&$xml) {
+            if (!empty($perPage)) {
+                $products = $query->paginate($perPage, ['*'], 'page', $request->input('page', 1));
                 foreach ($products as $product) {
-                    $xml .= $this->mapProductToXml($product);
+                    echo $this->mapProductToXml($product);
                 }
-            });
-        }
+            } else {
+                // Stream each chunk directly - no memory buildup
+                $query->chunk(500, function ($products) {
+                    foreach ($products as $product) {
+                        echo $this->mapProductToXml($product);
+                    }
+                });
+            }
 
-        // Close channel and rss
-        $xml .= '</channel>';
-        $xml .= '</rss>';
-
-        return response($xml, 200)
-            ->header('Content-Type', 'application/xml');
+            echo '</channel>';
+            echo '</rss>';
+        }, 200, [
+            'Content-Type' => 'application/xml; charset=UTF-8',
+        ]);
     }
-
-
 
     /**
      * Helper function to map a single product to XML
      */
-    private function mapProductToXml($product)
+public function mapProductToXml($product)
     {
         // Get the first supplier for price info
         $firstSupplier = $product->productSuppliers->first();
@@ -237,7 +227,8 @@ class ProductXMLFeedWatchController extends Controller
         $xml .= '<g:gtin> '.htmlspecialchars($product->barcode ?? '').'</g:gtin>';
         $xml .= '<g:mpn>' . $product->sku . '</g:mpn>';
        
-        $xml .= '<g:material>'.htmlspecialchars($parentCategory->name).'</g:material>';
+        $xml .= '<g:material>'.htmlspecialchars($parentCategory->name ?? '').'</g:material>';
+
         if ($image) {
             $xml .= '<g:image_link>' . htmlspecialchars($image) . '</g:image_link>';
         }
