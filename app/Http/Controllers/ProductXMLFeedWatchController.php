@@ -61,58 +61,58 @@ class ProductXMLFeedWatchController extends Controller
  
 
    public function generateProductFeed(Request $request)
-{
-    $perPage = $request->input('per_page');
-    $query = Product::with([
-        'brand:id,name,logo',
-        'categories:id,name,parent_id',
-        'categories.parent:id,name',
-        'slug:id,key,reference_id',
-        'productSuppliers.vendor:id,name',
-        'vendors:id,name',
-        'seoUrl',
-        'seoProductUrl',
-        'productVariants'
-    ])
-    ->select([
-        'id', 'name', 'sku', 'images', 'brand_id', 'status',
-        'gen_type', 'approved', 'description', 'quote_available',
-        'stock_status', 'barcode',
-    ])
-    ->where('status', 'published')
-    ->orderBy('id', 'desc');
+    {
+        $perPage = $request->input('per_page');
+        $query = Product::with([
+            'brand:id,name,logo',
+            'categories:id,name,parent_id',
+            'categories.parent:id,name',
+            'slug:id,key,reference_id',
+            'productSuppliers.vendor:id,name',
+            'vendors:id,name',
+            'seoUrl',
+            'seoProductUrl',
+            'productVariants'
+        ])
+        ->select([
+            'id', 'name', 'sku', 'images', 'brand_id', 'status',
+            'gen_type', 'approved', 'description', 'quote_available',
+            'stock_status', 'barcode',
+        ])
+        ->where('status', 'published')
+        ->orderBy('id', 'desc');
 
-    $website = config('app.url', 'https://www.thehorecastore.com');
+        $website = config('app.url', 'https://www.thehorecastore.com');
 
-    // Stream the response instead of building string in memory
-    return response()->stream(function () use ($query, $website, $perPage, $request) {
-        echo '<?xml version="1.0" encoding="UTF-8"?>';
-        echo '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
-        echo '<channel>';
-        echo '<title>Product Feed</title>';
-        echo '<link>' . htmlspecialchars($website) . '</link>';
-        echo '<description>DataFeedWatch Product Feed</description>';
+        // Stream the response instead of building string in memory
+        return response()->stream(function () use ($query, $website, $perPage, $request) {
+            echo '<?xml version="1.0" encoding="UTF-8"?>';
+            echo '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
+            echo '<channel>';
+            echo '<title>Product Feed</title>';
+            echo '<link>' . htmlspecialchars($website) . '</link>';
+            echo '<description>DataFeedWatch Product Feed</description>';
 
-        if (!empty($perPage)) {
-            $products = $query->paginate($perPage, ['*'], 'page', $request->input('page', 1));
-            foreach ($products as $product) {
-                echo $this->mapProductToXml($product);
-            }
-        } else {
-            // Stream each chunk directly - no memory buildup
-            $query->chunk(500, function ($products) {
+            if (!empty($perPage)) {
+                $products = $query->paginate($perPage, ['*'], 'page', $request->input('page', 1));
                 foreach ($products as $product) {
                     echo $this->mapProductToXml($product);
                 }
-            });
-        }
+            } else {
+                // Stream each chunk directly - no memory buildup
+                $query->chunk(500, function ($products) {
+                    foreach ($products as $product) {
+                        echo $this->mapProductToXml($product);
+                    }
+                });
+            }
 
-        echo '</channel>';
-        echo '</rss>';
-    }, 200, [
-        'Content-Type' => 'application/xml; charset=UTF-8',
-    ]);
-}
+            echo '</channel>';
+            echo '</rss>';
+        }, 200, [
+            'Content-Type' => 'application/xml; charset=UTF-8',
+        ]);
+    }
 
     /**
      * Helper function to map a single product to XML
@@ -227,7 +227,8 @@ public function mapProductToXml($product)
         $xml .= '<g:gtin> '.htmlspecialchars($product->barcode ?? '').'</g:gtin>';
         $xml .= '<g:mpn>' . $product->sku . '</g:mpn>';
        
-        $xml .= '<g:material>'.htmlspecialchars($parentCategory->name).'</g:material>';
+        $xml .= '<g:material>'.htmlspecialchars($parentCategory->name ?? '').'</g:material>';
+
         if ($image) {
             $xml .= '<g:image_link>' . htmlspecialchars($image) . '</g:image_link>';
         }
