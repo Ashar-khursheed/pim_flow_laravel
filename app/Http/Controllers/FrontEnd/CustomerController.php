@@ -151,7 +151,6 @@ class CustomerController extends BaseController
 				'message' => 'Customer registered successfully.',
 				'user' => $customer
 			], 201);
-
 		} catch (\Exception $e) {
 			\Log::error('Error registering customer: ' . $e->getMessage());
 			return response()->json([
@@ -234,24 +233,24 @@ class CustomerController extends BaseController
 		$allCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
 			$query->where('customer_id', $userId);
 		})
-		->get()
-		->map(function ($discount) {
-			return [
-				'id' => $discount->id,
-				'code' => $discount->code,
-				'value' => $discount->value,
-				'type' => $discount->type,
-				'min_order_price' => $discount->min_order_price,
-				'start_date' => $discount->start_date,
-				'end_date' => $discount->end_date,
-			];
-		});
+			->get()
+			->map(function ($discount) {
+				return [
+					'id' => $discount->id,
+					'code' => $discount->code,
+					'value' => $discount->value,
+					'type' => $discount->type,
+					'min_order_price' => $discount->min_order_price,
+					'start_date' => $discount->start_date,
+					'end_date' => $discount->end_date,
+				];
+			});
 
 		// Get used coupons from ec_customer_used_coupons table
 		$usedCoupons = DB::table('ec_customer_used_coupons')
-		->join('ec_discounts', 'ec_customer_used_coupons.discount_id', '=', 'ec_discounts.id')
-		->where('ec_customer_used_coupons.customer_id', $userId)
-		->get(['ec_discounts.id', 'ec_discounts.code', 'ec_discounts.value', 'ec_discounts.type', 'ec_discounts.min_order_price', 'ec_discounts.start_date', 'ec_discounts.end_date']);
+			->join('ec_discounts', 'ec_customer_used_coupons.discount_id', '=', 'ec_discounts.id')
+			->where('ec_customer_used_coupons.customer_id', $userId)
+			->get(['ec_discounts.id', 'ec_discounts.code', 'ec_discounts.value', 'ec_discounts.type', 'ec_discounts.min_order_price', 'ec_discounts.start_date', 'ec_discounts.end_date']);
 
 		// Get expired coupons (past end_date)
 		$expiredCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
@@ -272,12 +271,12 @@ class CustomerController extends BaseController
 			});
 
 		// Get available (valid) coupons
-			$availableCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
-				$query->where('customer_id', $userId);
-			})
+		$availableCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
+			$query->where('customer_id', $userId);
+		})
 			->where(function ($query) {
 				$query->where('end_date', '>=', Carbon::now())
-				->orWhereNull('end_date');
+					->orWhereNull('end_date');
 			})
 			->get()
 			->map(function ($discount) {
@@ -292,13 +291,13 @@ class CustomerController extends BaseController
 				];
 			});
 
-			return response()->json([
+		return response()->json([
 			'all_coupons' => $allCoupons, // This includes all coupons linked to the customer
 			'available_coupons' => $availableCoupons,
 			'used_coupons' => $usedCoupons,
 			'expired_coupons' => $expiredCoupons
 		]);
-		}
+	}
 
 
 	/**
@@ -336,16 +335,16 @@ class CustomerController extends BaseController
 		$discounts = Discount::whereHas('customers', function ($query) use ($userId) {
 			$query->where('customer_id', $userId);
 		})
-		->where(function ($query) use ($searchTerm) {
-			$query->where('code', 'LIKE', "%{$searchTerm}%")
-			->orWhere('type', 'LIKE', "%{$searchTerm}%")
-			->orWhere('value', 'LIKE', "%{$searchTerm}%");
-		})
-		->where(function ($query) {
-			$query->where('end_date', '>=', Carbon::now())
-			->orWhereNull('end_date');
-		})
-		->get();
+			->where(function ($query) use ($searchTerm) {
+				$query->where('code', 'LIKE', "%{$searchTerm}%")
+					->orWhere('type', 'LIKE', "%{$searchTerm}%")
+					->orWhere('value', 'LIKE', "%{$searchTerm}%");
+			})
+			->where(function ($query) {
+				$query->where('end_date', '>=', Carbon::now())
+					->orWhereNull('end_date');
+			})
+			->get();
 
 		if ($discounts->isEmpty()) {
 			return response()->json([
@@ -495,7 +494,6 @@ class CustomerController extends BaseController
 				$batch->add(new WelcomeMailJob([
 					'recordId' => $customer->id,
 				]));
-
 			} catch (\Exception $e) {
 				\Log::error('Google Login Registration Failed: ' . $e->getMessage());
 
@@ -520,8 +518,8 @@ class CustomerController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => $customer->wasRecentlyCreated
-			? 'User registered successfully using Google.'
-			: 'User logged in successfully with Google.',
+				? 'User registered successfully using Google.'
+				: 'User logged in successfully with Google.',
 			'token' => $token,
 			'user' => $customer,
 		]);
@@ -714,131 +712,79 @@ class CustomerController extends BaseController
 	 * )
 	 */
 	public function couponRegister(Request $request)
-	{		 
-			$validated = $request->validate([
-				'name' => 'required|string|max:255',
-				'email' => 'required|string|email|max:255',
-				'mobile_number' => 'required|string|max:255',
-			]);
+	{
+		$validated = $request->validate([
+			'name' => 'required|string|max:255',
+			'email' => 'required|string|email|max:255',
+			'mobile_number' => 'required|string|max:255',
+		]);
 
-			$existingCustomer = Customer::where('email', $validated['email'])->first();
-			if ($existingCustomer) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You are already registered. Please login to continue.',
-				], 409);
-			}
-
-			$randomPassword = Str::random(8);
-			$hashedPassword = Hash::make($randomPassword);
-
-			$guestCustomer = new Customer([
-				'name' => $validated['name'],
-				'email' => $validated['email'],
-				'password' => $hashedPassword,
-				'type' => 'Private',				  
-				'mobile_number' => $request->input('mobile_number'),				 
-			]);
-			$guestCustomer->save();
-
-			$validated = $request->validate([
-			'code' => 'string|max:255|unique:coupons,code',
-			'name' => 'string|max:255',
-			'description' => 'nullable|string',
-			'type' => 'in:fixed,percentage',      
-			'value' => 'sometimes|required|numeric|min:0|lte:min_order_value',             
-			'basis' => 'required|in:customer,category,product,promotional',
-			'min_order_value' => 'nullable|numeric|min:0',
-			'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
-			'usage_type' => 'required|in:once,multiple,unlimited',
-			'usage_limit' => 'nullable|integer|min:1',
-			'usage_limit_per_customer' => 'nullable|integer|min:1',
-
-			// More lenient date validation
-			// 'start_date' => [
-			//      'required',
-			//      'date',
-			//      function ($attribute, $value, $fail) {
-			//          $startDate = \Carbon\Carbon::parse($value)->format('Y-m-d');
-			//          $today = \Carbon\Carbon::today()->format('Y-m-d');
-
-			//          if ($startDate < $today) {
-			//              $fail('The start date cannot be in the past.');
-			//          }
-			//      }
-			//  ],
-			'start_date' => [
-			'required',
-			'date',
-			],
-			'expire_date' => [
-			'required',
-			'date',
-			function ($attribute, $value, $fail) use ($request) {
-			$expireDate = \Carbon\Carbon::parse($value)->startOfDay();
-			$startDate = \Carbon\Carbon::parse($request->start_date)->startOfDay();
-
-			if ($expireDate->lt($startDate)) {
-			$fail('The expire date must be after the start date.');
-			}
-			}
-			],
-
-			'is_active' => 'boolean',
-
-			// Conditional validation
-			'customer_ids' => 'required_if:basis,customer|array',
-			'customer_ids.*' => 'required_if:basis,customer|exists:customers,id',
-
-			'category_ids' => 'required_if:basis,category|array',
-			'category_ids.*' => 'required_if:basis,category|exists:categories,id',
-
-			'product_ids' => 'required_if:basis,product|array',
-			'product_ids.*' => 'required_if:basis,product|exists:ec_products,id',
-			]);
-
-			$validated['created_by'] = auth()->id();
-
-			$coupon = Coupon::create($validated);
-
-			// Attach relationships based on basis
-			if ($validated['basis'] === 'customer' && !empty($validated['customer_ids'])) {
-			$coupon->customers()->attach($validated['customer_ids']);
-			}
-
-			if ($validated['basis'] === 'category' && !empty($validated['category_ids'])) {
-			$coupon->categories()->attach($validated['category_ids']);
-			}
-
-			if ($validated['basis'] === 'product' && !empty($validated['product_ids'])) {
-			$coupon->products()->attach($validated['product_ids']);
-			}
-
-			$coupon->load(['creator', 'customers', 'categories', 'products']);
-			 
-
-
-
-
-			$batch = Bus::batch([])->name('Welcome mail on guest')->dispatch();
-
-			$batch->options['queue'] = config('app.website') . '_GUST_WLCM';
-			$batch->add(new GuestWelcomeMailJob([
-				'recordId' => $guestCustomer->id,
-				'randomPassword' => $randomPassword,
-			]));
-
-			$this->sendToOdoo($guestCustomer);
-
+		$existingCustomer = Customer::where('email', $validated['email'])->first();
+		if ($existingCustomer) {
 			return response()->json([
-				'success' => true,
-				'message' => 'Guest account created successfully.',
-				'user' => $guestCustomer,
-				'plain_password' => $randomPassword
-			], 201);
+				'success' => false,
+				'message' => 'You are already registered. Please login to continue.',
+			], 409);
+		}
+
+		$randomPassword = Str::random(8);
+		$hashedPassword = Hash::make($randomPassword);
+
+		$guestCustomer = new Customer([
+			'name' => $validated['name'],
+			'email' => $validated['email'],
+			'password' => $hashedPassword,
+			'type' => 'Private',
+			'mobile_number' => $request->input('mobile_number'),
+		]);
+		$guestCustomer->save();
 		
+		$data['customer_ids'] = $guestCustomer->id;
+		$data['code'] = 'WELCOME50';
+		$data['name'] = 'welcome50';
+		$data['description'] = 'string';
+		$data['type'] = 'fixed';
+		$data['value'] = 50; //AED 
+		$data['basis'] = 'customer';
+		$data['min_order_value'] = 550;
+		$data['max_order_value'] = 999999;
+		$data['usage_type'] = 'once';
+		$data['usage_limit'] = 10000;
+		$data['usage_limit_per_customer'] = 1;
+		$data['start_date'] = now();
+		$data['expire_date'] = now()->addDays(365);
+		$data['is_active'] = '1';
+		$data['status'] = 'approved';
+		$data['created_by'] = 1;
+		$data['approved_by'] = 1;
+		$data['approved_at'] = now();	
+		$coupon = Coupon::where('code','WELCOME50')->first();
+		if (!$coupon) {					
+			$coupon = Coupon::create($data);
+		}
 
-		 
+		// Attach relationships based on basis
+		if ($data['basis'] === 'customer' && !empty($data['customer_ids'])) {
+			$coupon->customers()->attach($data['customer_ids']);
+		}
+
+		$coupon->load(['customers']);
+
+		$batch = Bus::batch([])->name('Welcome mail on guest')->dispatch();
+
+		$batch->options['queue'] = config('app.website') . '_GUST_WLCM';
+		$batch->add(new GuestWelcomeMailJob([
+			'recordId' => $guestCustomer->id,
+			'randomPassword' => $randomPassword,
+		]));
+
+		$this->sendToOdoo($guestCustomer);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Guest account created successfully.',
+			'user' => $guestCustomer,
+			'plain_password' => $randomPassword
+		], 201);
 	}
-
 }

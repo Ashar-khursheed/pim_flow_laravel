@@ -1408,7 +1408,7 @@ class CouponController extends Controller
                 case 'customer':
                       $isAssigned = $coupon->customers()
                     ->where('customer_id', $customerId)
-                    ->exists();    
+                    ->exists();                   
                     if (!$isAssigned) {
                         $is_valid = false;
                         $error_message = "This coupon is not valid for your account.";
