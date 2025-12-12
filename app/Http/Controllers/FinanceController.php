@@ -1343,7 +1343,7 @@ class FinanceController extends Controller
             $finance->paid_amount = $previouslyPaid + $totalApplied;
             $finance->next_due_amt = max(0, ($finance->next_due_amt ?? 0) - $totalApplied);
 
-            $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+            $finance->status = $finance->available_credit_amount <= 0 ? 'Paid' : 'Pending';
             $finance->next_due_date = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
             $finance->save();
 
