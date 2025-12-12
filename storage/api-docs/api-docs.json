@@ -39636,6 +39636,42 @@
                 }
             }
         },
+        "/api/feed/one-products.xml": {
+            "get": {
+                "tags": [
+                    "Product Feed XML"
+                ],
+                "summary": "Get product feed for DataFeedWatch",
+                "description": "Returns dynamic XML feed with all products for DataFeedWatch integration",
+                "operationId": "c3d8b36c83a00e3b76aed55f99c3b248",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Number of items per page (default: 1818)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1818
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {}
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid parameters"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
         "/api/feed/products-1.xml": {
             "get": {
                 "tags": [
