@@ -1272,7 +1272,7 @@ class FinanceController extends Controller
             $totalOutstanding = $pendingPayments->sum(function ($p) {
                 return $p->due_amount - $p->paid_amount;
             });
-
+            $totalOutstanding = (float) $totalOutstanding;
             // Check if pay amount is greater than outstanding dues
             if ($pay_amount > $totalOutstanding) {
                 return response()->json([
