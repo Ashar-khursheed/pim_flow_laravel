@@ -117,7 +117,7 @@ class ProductXMLFeedWatchController extends Controller
     /**
      * Helper function to map a single product to XML
      */
-    private function mapProductToXml($product)
+public function mapProductToXml($product)
     {
         // Get the first supplier for price info
         $firstSupplier = $product->productSuppliers->first();
