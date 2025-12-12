@@ -60,71 +60,71 @@ class ProductXMLFeedWatchController extends Controller
 
  
 
-public function generateProductFeed(Request $request)
-{
-    $perPage = $request->input('per_page');
-    $query = Product::with([
-        'brand:id,name,logo',
-        'categories:id,name,parent_id',
-        'categories.parent:id,name',
-        'slug:id,key,reference_id',
-        'productSuppliers.vendor:id,name',
-        'vendors:id,name',
-        'seoUrl',
-        'seoProductUrl',
-        'productVariants'
-    ])
-    ->select([
-        'id',
-        'name',
-        'sku',
-        'images',
-        'brand_id',
-        'status',
-        'gen_type',
-        'approved',
-        'description',
-        'quote_available',
-        'stock_status',
-        'barcode',
-    ])
-    ->where('status', 'published')
-    ->orderBy('id', 'desc');
+    public function generateProductFeed(Request $request)
+    {
+        $perPage = $request->input('per_page');
+        $query = Product::with([
+            'brand:id,name,logo',
+            'categories:id,name,parent_id',
+            'categories.parent:id,name',
+            'slug:id,key,reference_id',
+            'productSuppliers.vendor:id,name',
+            'vendors:id,name',
+            'seoUrl',
+            'seoProductUrl',
+            'productVariants'
+        ])
+        ->select([
+            'id',
+            'name',
+            'sku',
+            'images',
+            'brand_id',
+            'status',
+            'gen_type',
+            'approved',
+            'description',
+            'quote_available',
+            'stock_status',
+            'barcode',
+        ])
+        ->where('status', 'published')
+        ->orderBy('id', 'desc');
 
-    $website = config('app.url', 'https://www.thehorecastore.com');
+        $website = config('app.url', 'https://www.thehorecastore.com');
 
-    // Start XML
-    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-    $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
-    $xml .= '<channel>';
-    $xml .= '<title>Product Feed</title>';
-    $xml .= '<link>' . $website . '</link>';
-    $xml .= '<description>DataFeedWatch Product Feed</description>';
+        // Start XML
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
+        $xml .= '<channel>';
+        $xml .= '<title>Product Feed</title>';
+        $xml .= '<link>' . $website . '</link>';
+        $xml .= '<description>DataFeedWatch Product Feed</description>';
 
-    // Process products
-    if (!empty($perPage)) {
-        // For paginated requests, get only the requested page
-        $products = $query->paginate($perPage, ['*'], 'page', $request->input('page', 1));
-        
-        foreach ($products as $product) {
-            $xml .= $this->mapProductToXml($product);
-        }
-    } else {
-        // For full feed, use chunk to avoid memory issues
-        $query->chunk(500, function ($products) use (&$xml) {
+        // Process products
+        if (!empty($perPage)) {
+            // For paginated requests, get only the requested page
+            $products = $query->paginate($perPage, ['*'], 'page', $request->input('page', 1));
+            
             foreach ($products as $product) {
                 $xml .= $this->mapProductToXml($product);
             }
-        });
+        } else {
+            // For full feed, use chunk to avoid memory issues
+            $query->chunk(500, function ($products) use (&$xml) {
+                foreach ($products as $product) {
+                    $xml .= $this->mapProductToXml($product);
+                }
+            });
+        }
+
+        // Close channel and rss
+        $xml .= '</channel>';
+        $xml .= '</rss>';
+
+        return response($xml, 200)
+            ->header('Content-Type', 'application/xml');
     }
-
-    // Close channel and rss
-    $xml .= '</channel>';
-    $xml .= '</rss>';
-
-    return response($xml, 200)
-        ->header('Content-Type', 'application/xml');
-}
 
     /**
      * Helper function to map a single product to XML
