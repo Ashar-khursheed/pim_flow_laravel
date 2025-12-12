@@ -775,7 +775,7 @@ class ProductController extends Controller
 
     // ✅ OPTIMIZATION 2: Pre-fetch all ancestor categories for hierarchy
     $allCategoryIds = $products->pluck('categories')->flatten()->pluck('id')->unique()->toArray();
-    $allParentIds = DB::table('product_categories')
+    $allParentIds = DB::table('categories')
         ->whereIn('id', $allCategoryIds)
         ->whereNotNull('parent_id')
         ->pluck('parent_id')
@@ -785,7 +785,7 @@ class ProductController extends Controller
     $ancestorIds = $allParentIds;
     $tempIds = $allParentIds;
     while (!empty($tempIds)) {
-        $tempIds = DB::table('product_categories')
+        $tempIds = DB::table('categories')
             ->whereIn('id', $tempIds)
             ->whereNotNull('parent_id')
             ->pluck('parent_id')
