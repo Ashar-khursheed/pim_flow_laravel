@@ -107,7 +107,7 @@ class ShippingReportController extends Controller
                 });
             }
 
-            $products = $query->limit(5)->orderBy('id', 'asc')->get();
+            $products = $query->orderBy('id', 'asc')->get();
 
             if (!$products->count()) {
                 return response()->json([
