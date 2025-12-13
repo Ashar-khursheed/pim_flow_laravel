@@ -248,7 +248,8 @@ public function showSaveForLater(Request $request)
     if ($savedProducts->isEmpty()) {
         return response()->json([
             'success' => false,
-            'message' => 'No products saved for later.'
+            'message' => 'No products saved for later.',
+            'data' => []
         ], 404);
     }
 
@@ -378,7 +379,8 @@ public function showSaveForLater(Request $request)
 		 if (!\DB::table('ec_products')->where('id', $product_id)->exists()) {
 			 return response()->json([
                 'success' => false,
-				 'message' => 'Product does not exist.'
+				 'message' => 'Product does not exist.',
+                 'data' => []
 			 ], 404);
 		 }
 	 
@@ -393,7 +395,8 @@ public function showSaveForLater(Request $request)
 		 if (!$savedProduct) {
 			 return response()->json([
                 'success' => false,
-				 'message' => 'Product not found in Save for Later.'
+				 'message' => 'Product not found in Save for Later.',
+                 'data' => [],
 			 ], 404);
 		 }
 	 
@@ -402,7 +405,8 @@ public function showSaveForLater(Request $request)
 	 
 		 return response()->json([
             'success' => true,
-			 'message' => 'Product has been removed from Save for Later.'
+			 'message' => 'Product has been removed from Save for Later.',
+             'data' => []
 		 ], 200);
 	 }
 	 
