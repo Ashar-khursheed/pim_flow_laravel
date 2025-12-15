@@ -673,6 +673,7 @@ Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
 
 
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
+Route::post('frontend/coupon-register', [F_CustomerController::class, 'couponRegister']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']);

@@ -638,10 +638,10 @@ class FinanceController extends Controller
             DB::beginTransaction();
 
             
-        if (!empty($finance->available_credit_amount) && $finance->available_credit_amount >0 ) {
+        if (!empty($finance->available_credit_amount) ||  $finance->next_due_amt >0 ) {
             return response()->json([
                 'success' => false,
-                'message' => 'Finance record cannot be deleted due to remaining available credit amount.'
+                'message' => 'Finance record cannot be deleted due to remaining amount.'
             ], 404);
         }
 
