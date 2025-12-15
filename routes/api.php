@@ -749,6 +749,7 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 	Route::get('/frontend/customer-documents', [F_CustomerDocumentController::class, 'index']);
 	Route::post('/frontend/customer-documents', [F_CustomerDocumentController::class, 'store']);
+	Route::post('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'update']);
 	Route::delete('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'destroy']);
 	Route::get('/frontend/customer-documents/{customer_id}', [F_CustomerDocumentController::class, 'customerDocuments']);
 
