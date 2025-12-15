@@ -34,7 +34,7 @@ class CustomerDocumentController extends Controller
      * )
      */
    public function store(Request $request)
-    {
+    {  
         $request->validate([
             'name' => 'required|string|max:255',
             'document' => 'required|file|max:10240', // 10MB
@@ -68,6 +68,88 @@ class CustomerDocumentController extends Controller
             'data' => $document,
         ], 201);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/customer-documents/{id}",
+     *     tags={"Frontend CustomerDocuments"},
+     *     summary="Update customer document",
+     *     security={{"bearerAuth":{}}}, *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Customer document ID",
+     *         @OA\Schema(type="integer")
+     *     ), *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"name"},
+     *                 @OA\Property(property="name", type="string", example="Trade License"),
+     *                 @OA\Property(property="document", type="file"),
+     *                 @OA\Property(property="status", type="string", enum={"active","inactive"})
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Document updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Document not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation failed"
+     *     )
+     * )
+     */
+
+    public function update(Request $request, $id)
+    { 
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'document' => 'nullable|file|max:10240', // 10MB
+            'status' => 'nullable|in:active,inactive'
+        ]);
+
+        $userId = Auth::id();
+
+        // ✅ Check document exists
+        $document = CustomerDocument::find($id);
+        if (!$document) {
+            return response()->json([
+                'message' => 'Document not found'
+            ], 404);
+        }
+
+        // ✅ If new file uploaded
+        if ($request->hasFile('document')) {
+            $path = $request->file('document')->store(
+                'customers/directory/documents',
+                Storage::getDefaultDriver()
+            );
+
+            $document->document_path = asset(Storage::url($path));
+        }
+
+        // ✅ Update fields
+        $document->customer_id = $userId;
+        $document->name = $request->name;
+        $document->status = $request->status ?? 'active';
+        $document->save();
+
+        return response()->json([
+            'message' => 'Document updated successfully',
+            'data' => $document
+        ], 200);
+    }
+
 
 
     /**
