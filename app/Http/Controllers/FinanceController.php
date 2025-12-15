@@ -146,6 +146,11 @@ class FinanceController extends Controller
                 ->where('status', 'Pending')
                 ->whereDate('next_due_date', '<', $today)
                 ->update(['status' => 'Overdue']);
+        FinancesPayment::where('customer_id', $finance->customer_id)
+            ->where('status', 'Pending')
+            ->whereDate('due_date', '<', $today)
+            ->update(['status' => 'Overdue']);
+
 
             return [
                 'id' => $finance->id,
@@ -1331,7 +1336,7 @@ class FinanceController extends Controller
                     'due_date'      => $payment->due_date,
                     'paid_on_date'  => now(),                  
                     'paid_by'      => Auth::id(),
-                    'note'          => 'Payment applied via full/net term payment'
+                     
                 ]);
 
                 $totalApplied += $applyAmount;

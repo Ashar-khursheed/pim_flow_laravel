@@ -653,6 +653,11 @@ class FinanceController extends Controller
             ->where('status', 'Pending')
             ->whereDate('next_due_date', '<', $today)
             ->update(['status' => 'Overdue']);
+            
+        FinancesPayment::where('customer_id', $customerId)
+            ->where('status', 'Pending')
+            ->whereDate('due_date', '<', $today)
+            ->update(['status' => 'Overdue']);
 
         // Step 3: Transaction to prevent double writes
         return DB::transaction(function () use ($customerId, $orderAmount, $termSelection, $request) {
@@ -725,6 +730,7 @@ class FinanceController extends Controller
                 'paid_amount'   => 0,
                 'balance'       => $orderAmount,
                 'due_date'      => $dueDate,
+                'status'      => 'Pending',
                 'created_by'    => $customerId,
             ]);
 
@@ -833,6 +839,9 @@ class FinanceController extends Controller
                 'paid_on_date'        => $payment->paid_on_date
                     ? date('d-m-Y', strtotime($payment->paid_on_date))
                     : null,
+                'created_at'        => $payment->created_at
+                    ? date('d-m-Y', strtotime($payment->created_at))
+                    : null,
             ];
         });
 
@@ -933,6 +942,9 @@ class FinanceController extends Controller
                 'paid_on_date'        => $payment->paid_on_date
                     ? date('d-m-Y', strtotime($payment->paid_on_date))
                     : null,
+                'created_at'        => $payment->created_at
+                    ? date('d-m-Y', strtotime($payment->created_at))
+                    : null,
             ];
         });
 
@@ -1027,6 +1039,9 @@ class FinanceController extends Controller
                 'balance'      => (float) ($payment->balance ?? 0),
                 'paid_on_date'        => $payment->paid_on_date
                     ? date('d-m-Y', strtotime($payment->paid_on_date))
+                    : null,
+                'created_at'        => $payment->created_at
+                    ? date('d-m-Y', strtotime($payment->created_at))
                     : null,
             ];
         });
