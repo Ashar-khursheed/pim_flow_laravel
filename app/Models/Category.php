@@ -34,6 +34,13 @@ class Category extends Model implements TranslatableContract
 		return $this->belongsTo(Category::class, 'parent_id');
 	}
 
+	public function parentRecursive()
+	{
+		return $this->belongsTo(Category::class, 'parent_id')
+		->select(['id', 'name', 'parent_id'])
+		->with(['translations','seoUrl:id,relational_id,relational_type,url', 'parentRecursive']);
+	}
+
 	public function scopeLastChildCategories($query, $parentId)
 	{
 		return $query->where('parent_id', '!=', 0)
