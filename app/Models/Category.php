@@ -64,15 +64,7 @@ class Category extends Model implements TranslatableContract
 		->with(['translations', 'publishedChildren'])
 		->withCount('products')
 		->where('status', 'published')
-		;
-
-
-    return $this->hasMany(Category::class, 'parent_id')
-        ->select(['id', 'name', 'slug', 'parent_id', 'image', 'order', 'last_child'])
-		->with(['translations', 'publishedChildren'])
-        ->withCount('products')
-        ->where('status', 'published')
-        ->orderBy('order');
+		->orderBy('order');
 	}
 
 	public function slug()

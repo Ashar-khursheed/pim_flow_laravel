@@ -110,6 +110,7 @@ use App\Http\Controllers\FrontEnd\BrandController as F_BrandController;
 use App\Http\Controllers\FrontEnd\CartController as F_CartController;
 use App\Http\Controllers\FrontEnd\CustomerAddressController as F_CustomerAddressController;
 use App\Http\Controllers\FrontEnd\CategoryController as F_CategoryController;
+use App\Http\Controllers\FrontEnd\FCategoryController;
 use App\Http\Controllers\FrontEnd\CountryController as F_CountryController;
 use App\Http\Controllers\FrontEnd\CouponController as F_CouponController;
 use App\Http\Controllers\FrontEnd\OrderController as F_OrderController;
@@ -868,6 +869,9 @@ Route::get('/frontend/sale-categories/{id?}', [F_ProductController::class, 'sale
 
 Route::post('/frontend/guest/view-product', [F_RecentlyViewedProductController::class, 'saveGuestProductView']);
 Route::get('/frontend/guest/recent-products', [F_RecentlyViewedProductController::class, 'getGuestRecentProducts']);
+
+Route::get('/frontend-categories', [FCategoryController::class, 'index']);
+
 
 Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);
 Route::get('/frontend/categories/sale', [F_CategoryController::class, 'saleCategories']);
