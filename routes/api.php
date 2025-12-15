@@ -998,6 +998,7 @@ Route::get('/feed/products-2.xml', [ProductXMLFeedWatchController::class, 'getPr
 Route::get('/feed/products-3.xml', [ProductXMLFeedWatchController::class, 'getProductFeed3']);
 Route::get('/feed/products-4.xml', [ProductXMLFeedWatchController::class, 'getProductFeed4']);
 Route::get('/feed/products-5.xml', [ProductXMLFeedWatchController::class, 'getProductFeed5']);
+Route::get('/feed/one-products.xml', [ProductXMLFeedWatchController::class, 'generateOneProductFeed']);
 Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);

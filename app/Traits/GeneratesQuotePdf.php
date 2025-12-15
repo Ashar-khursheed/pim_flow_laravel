@@ -39,7 +39,7 @@ trait GeneratesQuotePdf
 		$companyName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'HORECA TRADING CO LLC.' : 'THE HORECA STORE INC';
 		$companyStreet = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'Showroom 01 - Building No 9 19th Street' : '8800 Bissonnet Street, Ste A,';
 		$companyCity = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'Dubai - United Arab Emirates' : 'Houston, Texas 77074';
-		$companyPhone = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '(866) 446-7322' : '1 (866) 446-7322';
+		$companyPhone = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '800-467-322' : '1 (866) 446-7322';
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
