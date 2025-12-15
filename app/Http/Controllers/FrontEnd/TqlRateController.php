@@ -452,19 +452,24 @@ public function createLtlQuote(Request $request)
 
 public function getTqlToken()
 {
+     
+     $scope = 'https://tqlidentitydev.onmicrosoft.com/services_combined/LTLQuotes.Tender';
+
     $response = Http::withHeaders([
         'Ocp-Apim-Subscription-Key' => config('services.tql.subscription_key'),
         'Content-Type' => 'application/x-www-form-urlencoded',
     ])
     ->asForm()  
-    ->post(config('services.tql.token_url'), [
+    ->post(config('services.tql.token_url'), [      
         'client_id'     => config('services.tql.client_id'),
-        'client_secret' => config('services.tql.client_secret'),
-        'grant_type'    => 'password',
+        'client_secret' => config('services.tql.client_secret'),         
+        'scope'         => $scope,
+        'grant_type' => 'password',            
         'username'      => config('services.tql.username'),
-        'password'      => config('services.tql.password'),
+        'password'      => config('services.tql.password')
+           
     ]);
-
+ 
     // Debug response if needed
     if (!$response->successful()) {
         dd(
