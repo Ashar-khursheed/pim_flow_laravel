@@ -57,8 +57,7 @@ class FCategoryController extends Controller
 		}
 
 		$records = Category::select([
-			'id', 'name', 'slug', 'parent_id',
-			'image', 'order', 'last_child'
+			'id', 'name', 'parent_id', 'image', 'order', 'last_child'
 		])
 		->with([
 			'translations',
@@ -89,35 +88,8 @@ class FCategoryController extends Controller
 
 		$records = $records->get();
 
-		/* Process each record to load last_children */
-		$records->each(function ($record) {
-			if (!empty($record->last_child)) {
-				/* Convert comma-separated IDs to array */
-				$lastChildIds = array_map('intval', explode(',', $record->last_child));
-
-				/* Fetch the last children categories */
-				$lastChildren = Category::whereIn('id', $lastChildIds)
-				->with(['seoUrl:id,relational_id,relational_type,url'])
-				->where('status', 'published')
-				->select(['id', 'name', 'slug', 'parent_id', 'image', 'order'])
-				->get()
-				->map(function ($child) {
-					return [
-						'id' => $child->id,
-						'name' => $child->name,
-						'slug' => $child->seoUrl?->url ?? $child->slug ?? null,
-						'parent_id' => $child->parent_id,
-						'image' => $child->image,
-						'order' => $child->order,
-					];
-				});
-				$record->last_children = $lastChildren;
-			} else {
-				$record->last_children = [];
-			}
-
-			/* Remove the raw last_child field if not needed */
-			unset($record->last_child);
+		$records->transform(function ($category) {
+			return $this->transformCategoryRecursive($category);
 		});
 
 		return response()->json([
@@ -133,6 +105,74 @@ class FCategoryController extends Controller
 		// });
 
 		// return response()->json($records)->header('Cache-Control', 'public, max-age=86400');
+	}
+
+	/* Recursively transform category structure */
+	private function transformCategoryRecursive($category)
+	{
+		/* Transform name to locale object */
+		$categoryLocaleNames = [];
+		if ($category->translations) {
+			foreach ($category->translations as $translation) {
+				$categoryLocaleNames[$translation->locale] = $translation->name_tr;
+			}
+		}
+		$category->name = $categoryLocaleNames;
+
+		/* Add slug from seoUrl */
+		$category->slug = optional($category->seoUrl)->url ?? null;
+
+		/* Transform last_children if exists */
+		if (!empty($category->last_child)) {
+			/* Convert comma-separated IDs to array */
+			$lastChildIds = array_map('intval', explode(',', $category->last_child));
+
+			/* Fetch the last children categories */
+			$lastChildren = Category::whereIn('id', $lastChildIds)
+			->with(['seoUrl:id,relational_id,relational_type,url', 'translations'])
+			->where('status', 'published')
+			->select(['id', 'name', 'parent_id', 'image', 'order'])
+			->get()
+			->map(function ($child) {
+				/* Build locale names for child */
+				$childLocaleNames = [];
+				if ($child->translations) {
+					foreach ($child->translations as $translation) {
+						$childLocaleNames[$translation->locale] = $translation->name_tr;
+					}
+				}
+
+				return [
+					'id' => $child->id,
+					'name' => $childLocaleNames,
+					'slug' => $child->seoUrl?->url ?? null,
+					'parent_id' => $child->parent_id,
+					'image' => $child->image,
+					'order' => $child->order,
+				];
+			});
+
+			$category->last_children = $lastChildren;
+		} else {
+			$category->last_children = [];
+		}
+
+		/* Transform children recursively */
+		if ($category->publishedChildren && count($category->publishedChildren) > 0) {
+			$category->children = $category->publishedChildren->map(function ($child) {
+				return $this->transformCategoryRecursive($child);
+			});
+		} else {
+			$category->children = [];
+		}
+
+		/* Remove unwanted attributes */
+		unset($category->translations);
+		unset($category->seoUrl);
+		unset($category->last_child);
+		unset($category->publishedChildren);
+
+		return $category;
 	}
 
 	/**
@@ -189,7 +229,7 @@ class FCategoryController extends Controller
 				$parents[] = [
 					'id' => $current->id,
 					'name' => $localeNames,
-					'slug' => optional($current->seoUrl)->url ?? $current->slug ?? null,
+					'slug' => optional($current->seoUrl)->url ?? null,
 				];
 				$current = $current->parentRecursive ?? null;
 			}
@@ -216,5 +256,152 @@ class FCategoryController extends Controller
 			'message' => 'Categories retrieved successfully.',
 			'data' => $categories
 		]);
+	}
+
+	public function getAllGuestFeaturedProductsByCategory(Request $request)
+	{
+		$categories = Category::whereHas('products', function ($query) {
+			$query->where('is_featured', 1)->where('status', 'published');
+		}, '>=', 5)
+			->whereDoesntHave('children')
+			->with([
+				'products' => function ($query) {
+					$query->where('is_featured', 1)
+					->where('status', 'published')
+						->select('id', 'name', 'sku', 'currency_id', 'units_sold'); // Select only necessary fields
+					}
+				])
+			->take(5)
+			->get();
+
+		// Subquery for best price and delivery days
+			$subQuery = Product::select('sku')
+			->groupBy('sku');
+
+		// Process categories and products
+			$categories = $categories->map(function ($category) use ($subQuery) {
+				$featuredProducts = $category->products->take(10);
+
+			// Fetch all product details in one query
+				$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
+					$join->on('ec_products.sku', '=', 'best_products.sku');
+				})
+				->whereIn('ec_products.id', $featuredProducts->pluck('id'))
+				->with([
+					'reviews',
+					'currency',
+					'productSuppliers',
+					'vendors',
+					'seoUrl',
+					'productAttributes' => function ($query) {
+						$query->whereHas('attributeDetails', function ($q) {
+							$q->whereIn('name', ['Units per Case', 'Pack Type']);
+						});
+					},
+				]) // Eager load relationships
+				->get()
+				->keyBy('id'); // Use keyBy to quickly fetch by ID later
+				return [
+					'category_name' => $category->name,
+					'featured_products' => $featuredProducts->map(function ($product) use ($productDetails) {
+						$details = $productDetails[$product->id] ?? null;
+						if (!$details)
+						return null; // Skip if no details found
+
+					$totalReviews = $details->reviews->count();
+					$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
+					$currencyTitle = $details->currency->symbol;
+
+					// Process images efficiently
+					$imageUrls = is_string($details->images)
+					? json_decode($details->images, true)
+					: (array) $details->images;
+					$cleanedAlt = is_string($details->alt_tags)
+					? json_decode($details->alt_tags, true)
+					: (array) $details->alt_tags;
+
+					$sellingType = null;
+
+					if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
+						$fullValue = $details->sellingUnitAttribute->attribute_value;
+
+						$attributeUnit = strpos($fullValue, '/') !== false
+						? trim(explode('/', $fullValue)[1])
+						: $fullValue;
+
+						$sellingType = [
+							'attribute_value' => $details->sellingUnitAttribute->attribute_value,
+							'attribute_value_unit' => $attributeUnit,
+						];
+					}
+					$firstSupplier = $details->productSuppliers->first();
+					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
+
+					// Calculate per unit price
+					$unitsPerCase = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+					$packType = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+
+					$basePrice = null;
+					if ($firstSupplier) {
+						$basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
+					}
+
+					// $basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
+					$perUnitPrice = null;
+
+					if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+						$unitValue = (float) $unitsPerCase->attribute_value;
+						if ($unitValue > 0) {
+							$calculated = round($basePrice / $unitValue, 2);
+							$perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
+						}
+					}
+
+					$details->per_unit_price = $perUnitPrice;
+
+
+
+					return [
+						'id' => $details->id,
+						'name' => $details->name,
+						'sku' => $details->sku,
+						'category_url' => $details->category_url(),
+						'parent_category_url' => $details->parent_category_url(),
+						'url' => $details->seoUrl->url ?? null,
+						'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+						'price' => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
+						"sale_price" => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : null,
+						'total_reviews' => $totalReviews,
+						'avg_rating' => $avgRating,
+						'left_stock' => $leftStock,
+						'currency' => $currencyTitle,
+						'images' => $imageUrls,
+						'alt_tags' => $cleanedAlt,
+						"original_price" => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
+						'front_sale_price' => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : (float) $details->price,
+						"best_price" => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
+						"selling_type" => $sellingType,
+						"per_unit_price" => $details->per_unit_price,
+						'vendor_id' => $firstSupplier->vendor_id ?? null,
+						'map' => $firstSupplier ? (float) $firstSupplier->map : null,
+						'inventory' => $firstSupplier->inventory ?? null,
+						'in_stock' => $firstSupplier->in_stock ?? null,
+						'delivery_days' => $firstSupplier->delivery_days ?? null,
+						'return_policy' => $firstSupplier->return_policy ?? null,
+						'free_shipping' => $firstSupplier->free_shipping ?? null,
+						'warranty_information' => $firstSupplier->warranty_information ?? null,
+						'min_quantity' => $firstSupplier->min_quantity ?? 0,
+						'is_fixed' => $firstSupplier->is_fixed ?? 0,
+						'quote_available' => $details->quote_available ?? null,
+						'isRequired' => $details->is_required,
+					];
+				})->filter()->values(), // Remove null values and reset array keys
+			];//
+		});
+
+		return response()->json([//
+			'success' => true,
+			'data' => $categories,
+		])->header('Cache-Control', 'public, max-age=86400');
 	}
 }

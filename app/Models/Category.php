@@ -61,14 +61,14 @@ class Category extends Model implements TranslatableContract
 
 	public function childrenRecursive()
 	{
-		return $this->hasMany(Category::class, 'parent_id')->with('childrenRecursive')->select(['id', 'name', 'slug', 'parent_id']);
+		return $this->hasMany(Category::class, 'parent_id')->with('childrenRecursive')->select(['id', 'name', 'parent_id']);
 	}
 
 	public function publishedChildren()
 	{
 		return $this->hasMany(Category::class, 'parent_id')
-		->select(['id', 'name', 'slug', 'parent_id', 'image', 'order', 'last_child'])
-		->with(['translations', 'publishedChildren'])
+		->select(['id', 'name', 'parent_id', 'image', 'order', 'last_child'])
+		->with(['translations', 'seoUrl:id,relational_id,relational_type,url', 'publishedChildren'])
 		->withCount('products')
 		->where('status', 'published')
 		->orderBy('order');
@@ -133,6 +133,16 @@ class Category extends Model implements TranslatableContract
 			'category_id',
 			'product_id'
 		);
+	}
+
+	public function featuredProducts()
+	{
+		return $this->belongsToMany(
+			Product::class,
+			'product_categories',
+			'category_id',
+			'product_id'
+		)->where('products.is_featured', 1)->where('products.status', 'published');
 	}
 
 	public function productIdsFromLeafCategories()
