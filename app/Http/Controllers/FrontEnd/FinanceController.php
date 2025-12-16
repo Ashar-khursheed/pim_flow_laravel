@@ -625,7 +625,7 @@ class FinanceController extends Controller
      *     )
      * )
      */
-     
+
     public function financeOrder(Request $request)
     {
         // Step 1: Validate request
@@ -644,7 +644,7 @@ class FinanceController extends Controller
         }
 
         $customerId    = auth()->id();
-        $orderAmount   = (float) trim($request->order_amount);
+        $orderAmount = bcdiv($request->order_amount, '1', 2);
         $termSelection = $request->term_selection;
 
         // Step 2: Mark overdue finance records
@@ -653,7 +653,7 @@ class FinanceController extends Controller
             ->where('status', 'Pending')
             ->whereDate('next_due_date', '<', $today)
             ->update(['status' => 'Overdue']);
-            
+
         FinancesPayment::where('customer_id', $customerId)
             ->where('status', 'Pending')
             ->whereDate('due_date', '<', $today)
@@ -683,13 +683,11 @@ class FinanceController extends Controller
                 ], 422);
             }
 
-         
-            $usedCredit      = (float)($finance->used_credit_amount ?? 0);
-            $approvedAmount  = (float)($finance->approved_amount ?? 0);
-            $availableCredit = (float)($approvedAmount - $usedCredit);
-           
-            // Proper numeric comparison
-            if ($orderAmount > $availableCredit) {
+            $usedCredit = bcdiv($finance->used_credit_amount ?? '0', '1', 2);
+            $approvedAmount = bcdiv($finance->approved_amount ?? '0', '1', 2);
+            $availableCredit = bcsub($approvedAmount, $usedCredit, 2);
+            $compare = bccomp($orderAmount, $availableCredit, 2);
+            if ($compare === 1) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Insufficient credit limit. '
@@ -698,7 +696,7 @@ class FinanceController extends Controller
                 ], 422);
             }
 
-           
+
             $days = match ($termSelection) {
                 'Net 30 Days' => 30,
                 'Net 45 Days' => 45,
@@ -707,11 +705,11 @@ class FinanceController extends Controller
 
             $dueDate = now()->addDays($days)->format('Y-m-d');
 
-          
+
             $finance->used_credit_amount       += $orderAmount;
             $finance->available_credit_amount   = $finance->approved_amount - $finance->used_credit_amount;
             $finance->status                    = 'Pending';
-            $finance->term_selection            = $termSelection;           
+            $finance->term_selection            = $termSelection;
             $finance->next_due_amt              += $orderAmount;
 
             // Keep earliest due date for multiple orders
@@ -721,7 +719,7 @@ class FinanceController extends Controller
 
             $finance->save();
 
-            
+
             FinancesPayment::create([
                 'order_number'  => $request->order_number,
                 'finances_id'   => $finance->id,
@@ -734,7 +732,7 @@ class FinanceController extends Controller
                 'created_by'    => $customerId,
             ]);
 
-           
+
             return response()->json([
                 'success' => true,
                 'message' => 'Order placed successfully on Net Terms!',
@@ -853,7 +851,7 @@ class FinanceController extends Controller
             'total_records' => $totalRecords,
         ]);
     }
-     
+
     /**
      * @OA\Get(
      *     path="/api/frontend/finances/payment-paid-invoice",
@@ -880,7 +878,7 @@ class FinanceController extends Controller
      *     @OA\Response(response=404, description="No payment history found")
      * )
      */
-    
+
     public function getPaymentPaidInvoice(Request $request)
     {
         $customer_id = Auth::id();
