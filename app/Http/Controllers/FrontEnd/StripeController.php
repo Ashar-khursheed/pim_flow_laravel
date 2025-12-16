@@ -452,46 +452,48 @@ class StripeController extends Controller
 
     }
 
-    public function generatePaymentLink($order)
-    {
-        $totalAmount = (int) round($order->pending_amount * 100);
+   public function generatePaymentLink($order)
+{
+    $totalAmount = (int) round($order->pending_amount * 100);
 
-        // Handle both real orders and test objects
-        if (is_object($order) && isset($order->orderProducts)) {
-            $product = $order->orderProducts->first();
-            $itemName = $order->orderProducts->count() > 1
-                ? "Order #" . $order->order_number . " (" . $order->orderProducts->count() . " items)"
-                : ($product->product->name ?? "Order #" . $order->order_number);
-        } else {
-            $itemName = "Order #" . $order->order_number;
-        }
-             
-        $stripeSecret = config('services.stripe.secret');
-        $currency = "AED";        
-        $success_url = config('app.url').'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = config('app.url').'/failed'.'?session_id={CHECKOUT_SESSION_ID}';        
-        $res = Http::withOptions(['verify' => false])
-            ->withToken($stripeSecret)
-            ->asForm()
-            ->post('https://api.stripe.com/v1/checkout/sessions', [
-                'payment_method_types[]' => 'card',
-                'line_items[0][price_data][currency]' => $currency,
-                'line_items[0][price_data][unit_amount]' => $totalAmount,
-                'line_items[0][price_data][product_data][name]' => $itemName,
-                'line_items[0][quantity]' => 1,
-                'mode' => 'payment',
-                'success_url' => $success_url,
-                'cancel_url' => $cancel_url,
-                'metadata[order_id]' => $order->id,
-            ]);
+    // Handle both real orders and test objects
+    if (is_object($order) && isset($order->orderProducts)) {
+        $product = $order->orderProducts->first();
+        $itemName = $order->orderProducts->count() > 1
+            ? "Order #" . $order->order_number . " (" . $order->orderProducts->count() . " items)"
+            : ($product->product->name ?? "Order #" . $order->order_number);
+    } else {
+        $itemName = "Order #" . $order->order_number;
+    }
 
-        $body = $res->json();
+    $stripeSecret = config('services.stripe.secret');
 
-        if (!isset($body['url'])) {
-            return;
-        } else {
-            return $body['url'];
-        }
+    // ✅ Currency based on APP_WEBSITE
+    $appWebsite = env('APP_WEBSITE', 'UAE');
+    $currency = $appWebsite === 'US' ? 'USD' : 'AED';
+
+    $success_url = config('app.url') . '/thanks?session_id={CHECKOUT_SESSION_ID}';
+    $cancel_url  = config('app.url') . '/failed?session_id={CHECKOUT_SESSION_ID}';
+
+    $res = Http::withOptions(['verify' => false])
+        ->withToken($stripeSecret)
+        ->asForm()
+        ->post('https://api.stripe.com/v1/checkout/sessions', [
+            'payment_method_types[]' => 'card',
+            'line_items[0][price_data][currency]' => strtolower($currency),
+            'line_items[0][price_data][unit_amount]' => $totalAmount,
+            'line_items[0][price_data][product_data][name]' => $itemName,
+            'line_items[0][quantity]' => 1,
+            'mode' => 'payment',
+            'success_url' => $success_url,
+            'cancel_url' => $cancel_url,
+            'metadata[order_id]' => $order->id,
+        ]);
+
+    $body = $res->json();
+
+    return $body['url'] ?? null;
+}
 
     }
 
