@@ -870,6 +870,7 @@ Route::get('/frontend/sale-categories/{id?}', [F_ProductController::class, 'sale
 Route::post('/frontend/guest/view-product', [F_RecentlyViewedProductController::class, 'saveGuestProductView']);
 Route::get('/frontend/guest/recent-products', [F_RecentlyViewedProductController::class, 'getGuestRecentProducts']);
 
+Route::get('/frontend-categories/featured-products', [FCategoryController::class, 'getFeaturedCategoryProducts']);
 Route::get('/frontend-categories/with-parents', [FCategoryController::class, 'fetchCategoriesWithParents']);
 Route::get('/frontend-categories', [FCategoryController::class, 'index']);
 

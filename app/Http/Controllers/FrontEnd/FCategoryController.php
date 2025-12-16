@@ -258,48 +258,52 @@ class FCategoryController extends Controller
 		]);
 	}
 
-	public function getAllGuestFeaturedProductsByCategory(Request $request)
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend-categories/featured-products",
+	 *     tags={"Frontend-Category"},
+	 *     summary="Get categories with featured products",
+	 *     description="Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
+	 *     @OA\Response(response=200, description="Featured categories retrieved successfully", @OA\MediaType(mediaType="application/json"))
+	 * )
+	 */
+	public function getFeaturedCategoryProducts(Request $request)
 	{
-		$categories = Category::whereHas('products', function ($query) {
-			$query->where('is_featured', 1)->where('status', 'published');
-		}, '>=', 5)
-			->whereDoesntHave('children')
-			->with([
-				'products' => function ($query) {
-					$query->where('is_featured', 1)
-					->where('status', 'published')
-						->select('id', 'name', 'sku', 'currency_id', 'units_sold'); // Select only necessary fields
-					}
-				])
-			->take(5)
-			->get();
+		$featuredCategories = Category::with([
+			'featuredProducts:id,name,sku,currency_id,units_sold'
+		])
+		->whereDoesntHave('children')
+		->has('featuredProducts', '>=', 5)
+		->take(5)
+		->get();
+		dd($featuredCategories->toArray());
 
 		// Subquery for best price and delivery days
-			$subQuery = Product::select('sku')
-			->groupBy('sku');
+		$subQuery = Product::select('sku')
+		->groupBy('sku');
 
 		// Process categories and products
-			$categories = $categories->map(function ($category) use ($subQuery) {
-				$featuredProducts = $category->products->take(10);
+		$categories = $categories->map(function ($category) use ($subQuery) {
+			$featuredProducts = $category->products->take(10);
 
 			// Fetch all product details in one query
-				$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-					$join->on('ec_products.sku', '=', 'best_products.sku');
-				})
-				->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-				->with([
-					'reviews',
-					'currency',
-					'productSuppliers',
-					'vendors',
-					'seoUrl',
-					'productAttributes' => function ($query) {
-						$query->whereHas('attributeDetails', function ($q) {
-							$q->whereIn('name', ['Units per Case', 'Pack Type']);
-						});
-					},
+			$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
+				$join->on('ec_products.sku', '=', 'best_products.sku');
+			})
+			->whereIn('ec_products.id', $featuredProducts->pluck('id'))
+			->with([
+				'reviews',
+				'currency',
+				'productSuppliers',
+				'vendors',
+				'seoUrl',
+				'productAttributes' => function ($query) {
+					$query->whereHas('attributeDetails', function ($q) {
+						$q->whereIn('name', ['Units per Case', 'Pack Type']);
+					});
+				},
 				]) // Eager load relationships
-				->get()
+			->get()
 				->keyBy('id'); // Use keyBy to quickly fetch by ID later
 				return [
 					'category_name' => $category->name,

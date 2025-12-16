@@ -17957,6 +17957,24 @@
                 }
             }
         },
+        "/api/frontend-categories/featured-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Category"
+                ],
+                "summary": "Get categories with featured products",
+                "description": "Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
+                "operationId": "309903020df05a6fa6ecedd9ddf61259",
+                "responses": {
+                    "200": {
+                        "description": "Featured categories retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/faqs/product/{product_id}": {
             "get": {
                 "tags": [
