@@ -529,7 +529,7 @@ class FinanceController extends Controller
                 'message' => 'Cannot update because a NetTerm payment has already been made.',
             ], 201);
         }
-        
+
         if ($request->approved_amount > $finance->requested_amount) {
             return response()->json([
                 'success' => false,
@@ -642,7 +642,7 @@ class FinanceController extends Controller
         try {
             DB::beginTransaction();
 
-            
+
         if (!empty($finance->available_credit_amount) ||  $finance->next_due_amt >0 ) {
             return response()->json([
                 'success' => false,
@@ -959,7 +959,7 @@ class FinanceController extends Controller
             $financesPayment->balance         = $financesPayment->due_amount - $financesPayment->paid_amount;
             $financesPayment->paid_on_date    = now();
             $financesPayment->paid_by         = Auth::id();
-            $financesPayment->status         = $financesPayment->balance <= 0 ? 'Paid' : 'Pending';            
+            $financesPayment->status         = $financesPayment->balance <= 0 ? 'Paid' : 'Pending';
             $financesPayment->save();
 
             FinanceHistory::create([
@@ -972,7 +972,7 @@ class FinanceController extends Controller
                 'balance'       => $finance->next_due_amt - $pay_amount,
                 'due_date'      => $financesPayment->due_date,
                 'paid_on_date'    => now(),
-                
+
                 'paid_by'    => Auth::id(),
             ]);
 
@@ -980,7 +980,9 @@ class FinanceController extends Controller
             // === Update Main Finance Record ===
             $finance->paid_amount   += $pay_amount;
             $finance->next_due_amt   = max(0, $finance->next_due_amt - $pay_amount);
-            $finance->status         = $finance->available_credit_amount <= 0 ? 'Paid' : 'Pending';
+            if ($finance->available_credit_amount <= 0 && $finance->next_due_amt<=0) {
+                $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+            }
 
             $finance->save();
 
@@ -1334,9 +1336,9 @@ class FinanceController extends Controller
                     'paid_amount'   => $applyAmount,                    // Fixed: only this portion
                     'balance'       => $owing - $applyAmount,
                     'due_date'      => $payment->due_date,
-                    'paid_on_date'  => now(),                  
+                    'paid_on_date'  => now(),
                     'paid_by'      => Auth::id(),
-                     
+
                 ]);
 
                 $totalApplied += $applyAmount;
@@ -1356,8 +1358,10 @@ class FinanceController extends Controller
             $previouslyPaid = $finance->paid_amount ?? 0;
             $finance->paid_amount = $previouslyPaid + $totalApplied;
             $finance->next_due_amt = max(0, ($finance->next_due_amt ?? 0) - $totalApplied);
+            if ($finance->available_credit_amount <= 0 && $finance->next_due_amt<=0) {
+                $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
+            }
 
-            $finance->status = $finance->available_credit_amount <= 0 ? 'Paid' : 'Pending';
             $finance->next_due_date = $finance->next_due_amt <= 0 ? null : $finance->next_due_date;
             $finance->save();
 
