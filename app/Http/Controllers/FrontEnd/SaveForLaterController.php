@@ -250,7 +250,7 @@ public function showSaveForLater(Request $request)
             'success' => false,
             'message' => 'No products saved for later.',
             'data' => []
-        ], 404);
+        ], 200);
     }
 
     $productsData = $savedProducts->map(function ($item) use ($wishlistProductIds) {
