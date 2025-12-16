@@ -644,7 +644,7 @@ class FinanceController extends Controller
         }
 
         $customerId    = auth()->id();
-        $orderAmount   = (float) $request->order_amount;
+        $orderAmount   = (float) trim($request->order_amount);
         $termSelection = $request->term_selection;
 
         // Step 2: Mark overdue finance records
@@ -686,8 +686,8 @@ class FinanceController extends Controller
          
             $usedCredit      = (float)($finance->used_credit_amount ?? 0);
             $approvedAmount  = (float)($finance->approved_amount ?? 0);
-            $availableCredit = $approvedAmount - $usedCredit;
-
+            $availableCredit = (float)($approvedAmount - $usedCredit);
+           
             // Proper numeric comparison
             if ($orderAmount > $availableCredit) {
                 return response()->json([
