@@ -495,7 +495,7 @@ class StripeController extends Controller
     return $body['url'] ?? null;
 }
 
-    }
+    
 
     public function handleWebhook(Request $request)
     {
