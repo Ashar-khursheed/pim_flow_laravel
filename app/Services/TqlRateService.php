@@ -19,11 +19,12 @@ class TqlRateService
     
     ->post('https://public.api.tql.com/ltl/quotes', $shipmentData);
  
-            return ([
-            'status' => $response->status(),
-            'body'   => $response->json(),
-            'raw'    => $response->body()
-            ]);
+      return $response;
+          // return ([
+            // 'status' => $response->status(),
+            // 'body'   => $response->json(),
+            // 'raw'    => $response->body()
+            // ]);
          
         
         

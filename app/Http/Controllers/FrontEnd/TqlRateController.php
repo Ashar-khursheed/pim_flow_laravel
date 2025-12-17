@@ -183,14 +183,55 @@ class TqlRateController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'No rates found or service unavailable.',
-                    'shipment-rates' => null
+                    'data' => null
                 ], 404);
             }
+
+
+
+            $carrierPrices = collect($rates->json()['content']['carrierPrices']);
+
+            if ($carrierPrices->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No carrier prices available.',
+                ], 404);
+            }
+
+            $cheapest = $carrierPrices->sortBy('customerRate')->first();
+            $fastest = $carrierPrices
+                ->reject(fn($c) => $c['carrierQuoteId'] === $cheapest['carrierQuoteId'])
+                ->sortBy('transitDays')
+                ->first();
+            $bestValue = $carrierPrices
+                ->reject(
+                    fn($c) =>
+                    in_array($c['carrierQuoteId'], [
+                        $cheapest['carrierQuoteId'],
+                        optional($fastest)['carrierQuoteId']
+                    ])
+                )
+                ->map(function ($item) {
+                    $item['score'] = ($item['customerRate'] * 0.7)
+                        + ($item['transitDays'] * 0.3);
+                    return $item;
+                })
+                ->sortBy('score')
+                ->first();
+            $finalCarriers = collect([
+                'Cheapest'   => $cheapest,
+                'Fastest'    => $fastest,
+                'Best Value' => $bestValue
+            ])->filter()->map(function ($carrier, $label) {
+                $carrier['label'] = $label;
+                return $carrier;
+            })->values();
+
 
             return response()->json([
                 'success' => true,
                 'message' => 'Rates retrieved successfully.',
-                'data' => $rates
+                'data' => $finalCarriers
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -352,127 +393,127 @@ class TqlRateController extends Controller
     }
 
     /**
- * @OA\Post(
- *     path="/api/frontend/tql-tenderShipment",
- *     summary="Create TQL Tender Shipment",
- *     tags={"Frontend-TQL"},
- *
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             type="object",
- *             required={
- *                 "carrierPriceId",
- *                 "customerEmailAddresses",
- *                 "shipmentDate"
- *             },
- *
- *             @OA\Property(
- *                 property="carrierPriceId",
- *                 type="string",
- *                 example="000000"
- *             ),
- *
- *             @OA\Property(
- *                 property="customerEmailAddresses",
- *                 type="array",
- *                 minItems=1,
- *                 @OA\Items(
- *                     type="string",
- *                     format="email",
- *                     example="abc1234@email.com"
- *                 )
- *             ),
- *
- *             @OA\Property(
- *                 property="shipmentDate",
- *                 type="string",
- *                 format="date-time",
- *                 example="2025-12-22T17:11:52Z"
- *             ),
- *
- *             @OA\Property(
- *                 property="pickupDetails",
- *                 type="object",
- *                 @OA\Property(property="puNumber", type="string", example=""),
- *                 @OA\Property(property="stopName", type="string", example="Test"),
- *                 @OA\Property(property="contactName", type="string", example="Test Test"),
- *                 @OA\Property(property="contactPhone", type="string", example="5555555555"),
- *                 @OA\Property(property="contactExtension", type="string", example="12345"),
- *                 @OA\Property(property="address1", type="string", example="123 Test Street"),
- *                 @OA\Property(property="address2", type="string", nullable=true),
- *                 @OA\Property(property="hoursOpen", type="string", example="9:00 AM"),
- *                 @OA\Property(property="hoursClose", type="string", example="5:00 PM")
- *             ),
- *
- *             @OA\Property(
- *                 property="deliveryDetails",
- *                 type="object",
- *                 @OA\Property(property="deliveryPO", type="string", example=""),
- *                 @OA\Property(property="stopName", type="string", example="TestPlace"),
- *                 @OA\Property(property="contactName", type="string", example="Test people"),
- *                 @OA\Property(property="contactPhone", type="string", example="5555555555"),
- *                 @OA\Property(property="contactExtension", type="string", nullable=true),
- *                 @OA\Property(property="address1", type="string", example="1234 Test Street"),
- *                 @OA\Property(property="address2", type="string", nullable=true),
- *                 @OA\Property(property="hoursOpen", type="string", example="9:00 AM"),
- *                 @OA\Property(property="hoursClose", type="string", example="5:00 PM")
- *             )
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="Tender shipment created successfully"
- *     ),
- *     @OA\Response(
- *         response=422,
- *         description="Validation error"
- *     ),
- *     @OA\Response(
- *         response=500,
- *         description="Server error"
- *     )
- * )
- */
+     * @OA\Post(
+     *     path="/api/frontend/tql-tenderShipment",
+     *     summary="Create TQL Tender Shipment",
+     *     tags={"Frontend-TQL"},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={
+     *                 "carrierPriceId",
+     *                 "customerEmailAddresses",
+     *                 "shipmentDate"
+     *             },
+     *
+     *             @OA\Property(
+     *                 property="carrierPriceId",
+     *                 type="string",
+     *                 example="000000"
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="customerEmailAddresses",
+     *                 type="array",
+     *                 minItems=1,
+     *                 @OA\Items(
+     *                     type="string",
+     *                     format="email",
+     *                     example="abc1234@email.com"
+     *                 )
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="shipmentDate",
+     *                 type="string",
+     *                 format="date-time",
+     *                 example="2025-12-22T17:11:52Z"
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="pickupDetails",
+     *                 type="object",
+     *                 @OA\Property(property="puNumber", type="string", example=""),
+     *                 @OA\Property(property="stopName", type="string", example="Test"),
+     *                 @OA\Property(property="contactName", type="string", example="Test Test"),
+     *                 @OA\Property(property="contactPhone", type="string", example="5555555555"),
+     *                 @OA\Property(property="contactExtension", type="string", example="12345"),
+     *                 @OA\Property(property="address1", type="string", example="123 Test Street"),
+     *                 @OA\Property(property="address2", type="string", nullable=true),
+     *                 @OA\Property(property="hoursOpen", type="string", example="9:00 AM"),
+     *                 @OA\Property(property="hoursClose", type="string", example="5:00 PM")
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="deliveryDetails",
+     *                 type="object",
+     *                 @OA\Property(property="deliveryPO", type="string", example=""),
+     *                 @OA\Property(property="stopName", type="string", example="TestPlace"),
+     *                 @OA\Property(property="contactName", type="string", example="Test people"),
+     *                 @OA\Property(property="contactPhone", type="string", example="5555555555"),
+     *                 @OA\Property(property="contactExtension", type="string", nullable=true),
+     *                 @OA\Property(property="address1", type="string", example="1234 Test Street"),
+     *                 @OA\Property(property="address2", type="string", nullable=true),
+     *                 @OA\Property(property="hoursOpen", type="string", example="9:00 AM"),
+     *                 @OA\Property(property="hoursClose", type="string", example="5:00 PM")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Tender shipment created successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
+     */
 
 
     public function tenderShipment(Request $request)
     {
-          $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
 
-        // Required top-level fields
-        'carrierPriceId' => 'required|string',
+            // Required top-level fields
+            'carrierPriceId' => 'required|string',
 
-        'customerEmailAddresses' => 'required|array|min:1',
-        'customerEmailAddresses.*' => 'required|email',
+            'customerEmailAddresses' => 'required|array|min:1',
+            'customerEmailAddresses.*' => 'required|email',
 
-        'shipmentDate' => 'required|date',
+            'shipmentDate' => 'required|date',
 
-        // Pickup Details
-        'pickupDetails' => 'nullable|array',
-        'pickupDetails.puNumber' => 'nullable|string',
-        'pickupDetails.stopName' => 'nullable|string',
-        'pickupDetails.contactName' => 'nullable|string',
-        'pickupDetails.contactPhone' => 'nullable|string',
-        'pickupDetails.contactExtension' => 'nullable|string',
-        'pickupDetails.address1' => 'nullable|string',
-        'pickupDetails.address2' => 'nullable|string',
-        'pickupDetails.hoursOpen' => 'nullable|string',
-        'pickupDetails.hoursClose' => 'nullable|string',
+            // Pickup Details
+            'pickupDetails' => 'nullable|array',
+            'pickupDetails.puNumber' => 'nullable|string',
+            'pickupDetails.stopName' => 'nullable|string',
+            'pickupDetails.contactName' => 'nullable|string',
+            'pickupDetails.contactPhone' => 'nullable|string',
+            'pickupDetails.contactExtension' => 'nullable|string',
+            'pickupDetails.address1' => 'nullable|string',
+            'pickupDetails.address2' => 'nullable|string',
+            'pickupDetails.hoursOpen' => 'nullable|string',
+            'pickupDetails.hoursClose' => 'nullable|string',
 
-        // Delivery Details
-        'deliveryDetails' => 'nullable|array',
-        'deliveryDetails.deliveryPO' => 'nullable|string',
-        'deliveryDetails.stopName' => 'nullable|string',
-        'deliveryDetails.contactName' => 'nullable|string',
-        'deliveryDetails.contactPhone' => 'nullable|string',
-        'deliveryDetails.contactExtension' => 'nullable|string',
-        'deliveryDetails.address1' => 'nullable|string',
-        'deliveryDetails.address2' => 'nullable|string',
-        'deliveryDetails.hoursOpen' => 'nullable|string',
-        'deliveryDetails.hoursClose' => 'nullable|string',
-    ]);
+            // Delivery Details
+            'deliveryDetails' => 'nullable|array',
+            'deliveryDetails.deliveryPO' => 'nullable|string',
+            'deliveryDetails.stopName' => 'nullable|string',
+            'deliveryDetails.contactName' => 'nullable|string',
+            'deliveryDetails.contactPhone' => 'nullable|string',
+            'deliveryDetails.contactExtension' => 'nullable|string',
+            'deliveryDetails.address1' => 'nullable|string',
+            'deliveryDetails.address2' => 'nullable|string',
+            'deliveryDetails.hoursOpen' => 'nullable|string',
+            'deliveryDetails.hoursClose' => 'nullable|string',
+        ]);
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -587,6 +628,82 @@ class TqlRateController extends Controller
      * )
      */
 
+    // public function getQuote(Request $request, $quoteId)
+    // {
+    //     $scope = 'https://tqlidentity.onmicrosoft.com/services_combined/LTLQuotes.Write';
+
+    //     $token = $this->getTqlToken($scope);
+    //     if (!$token) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Unable to generate token from TQL.',
+    //         ], 500);
+    //     }
+
+    //     $response = Http::withHeaders([
+    //         'Authorization' => 'Bearer ' . $token,
+    //         'Ocp-Apim-Subscription-Key' => config('services.tql.subscription_key'),
+    //         'Accept' => 'application/json',
+    //     ])->get(config('services.tql.base_url') . '/quotes/' . $quoteId);
+
+    //     if (!$response->successful()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'No rates found or service unavailable.',
+    //         ], 404);
+    //     }
+
+    //     $carrierPrices = collect($response->json()['content']['carrierPrices']);
+
+    //     if ($carrierPrices->isEmpty()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'No carrier prices available.',
+    //         ], 404);
+    //     }
+
+    //     $cheapest = $carrierPrices->sortBy('customerRate')->first();
+
+    //     // $fastest  = $carrierPrices->sortBy('transitDays')->first();
+
+    //     $fastest = $carrierPrices
+    //         ->reject(fn($c) => $c['carrierQuoteId'] === $cheapest['carrierQuoteId'])
+    //         ->sortBy('transitDays')
+    //         ->first();
+
+
+    //     $bestValue = $carrierPrices
+    //         ->reject(
+    //             fn($c) =>
+    //             in_array($c['carrierQuoteId'], [
+    //                 $cheapest['carrierQuoteId'],
+    //                 optional($fastest)['carrierQuoteId']
+    //             ])
+    //         )
+    //         ->map(function ($item) {
+    //             $item['score'] = ($item['customerRate'] * 0.7)
+    //                 + ($item['transitDays'] * 0.3);
+    //             return $item;
+    //         })
+    //         ->sortBy('score')
+    //         ->first();
+    //     $finalCarriers = collect([
+    //         'Cheapest'   => $cheapest,
+    //         'Fastest'    => $fastest,
+    //         'Best Value' => $bestValue
+    //     ])->filter()->map(function ($carrier, $label) {
+    //         $carrier['label'] = $label;
+    //         return $carrier;
+    //     })->values();
+
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Top carrier options retrieved.',
+    //         'data' => $finalCarriers
+    //     ], 200);
+    // }
+
     public function getQuote(Request $request, $quoteId)
     {
         $scope =  'https://tqlidentity.onmicrosoft.com/services_combined/LTLQuotes.Write';
@@ -619,6 +736,8 @@ class TqlRateController extends Controller
                 'data' => null
             ], 404);
         }
+
+
 
         return response()->json([
             'success' => true,
