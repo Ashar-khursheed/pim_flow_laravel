@@ -264,7 +264,10 @@ class FCategoryController extends Controller
 	 *     tags={"Frontend-Category"},
 	 *     summary="Get categories with featured products",
 	 *     description="Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
-	 *     @OA\Response(response=200, description="Featured categories retrieved successfully", @OA\MediaType(mediaType="application/json"))
+	 *     @OA\Parameter(name="products_limit", in="query", description="Maximum number of products to return per category", @OA\Schema(type="integer", example=10)),
+	 *     @OA\Parameter(name="categories_limit", in="query", description="Maximum number of categories to return", @OA\Schema(type="integer", example=5)),
+	 *     @OA\Parameter(name="min_products", in="query", description="Minimum number of featured products required per category", @OA\Schema(type="integer", example=5)),
+	 *     @OA\Response(response=200, description="Featured categories retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
 	public function getFeaturedCategoryProducts(Request $request)
