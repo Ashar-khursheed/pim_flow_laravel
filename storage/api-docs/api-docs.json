@@ -18004,11 +18004,78 @@
                             "type": "boolean",
                             "example": true
                         }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "order"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Categories retrieved successfully.",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend-categories/with-parents": {
+            "get": {
+                "tags": [
+                    "Frontend-Category"
+                ],
+                "summary": "Fetch all categories with parents",
+                "operationId": "4ea4f01449d8b15709e37453598d2e5a",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Filter categories by category ID.",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "category_type",
+                        "in": "query",
+                        "description": "Filter by category type.",
+                        "schema": {
+                            "type": "string",
+                            "example": "home"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All categories fetched successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend-categories/featured-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Category"
+                ],
+                "summary": "Get categories with featured products",
+                "description": "Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
+                "operationId": "309903020df05a6fa6ecedd9ddf61259",
+                "responses": {
+                    "200": {
+                        "description": "Featured categories retrieved successfully",
                         "content": {
                             "application/json": {}
                         }

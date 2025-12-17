@@ -51,12 +51,14 @@ class Product extends Model implements TranslatableContract
 {
 	use Translatable;
 
-	public $translatedAttributes = [
-		'name_tr',
-		'description_tr',
-		'benefits_features_tr',
-		'images_tr',
-	];
+	// public $translatedAttributes = [
+	// 	'name_tr',
+	// 	'description_tr',
+	// 	'benefits_features_tr',
+	// 	'images_tr',
+	// ];
+
+	public $translatedAttributes = [];
 
 	public static $observerUserId = null;
 	protected $table = 'ec_products';
