@@ -285,7 +285,7 @@ class FCategoryController extends Controller
 				->with([
 					'translations',
 					'seoUrl:id,relational_id,relational_type,url',
-					'productSuppliers:id,product_id,vendor_id,vendor_sku,cost_per_item,map,sale_price,price,inventory,in_stock,min_quantity,is_fixed,delivery_days,return_policy,free_shipping,shipping_charge,warranty_information',
+					'productSuppliers:id,product_id,vendor_id,vendor_sku,cost_per_item,sale_price,price,inventory,in_stock,min_quantity,is_fixed,delivery_days,return_policy,free_shipping,shipping_charge,warranty_information',
 					'reviews:id,product_id,star',
 					'currency:id,title,symbol',
 					'sellingUnitAttribute'
@@ -298,7 +298,6 @@ class FCategoryController extends Controller
 		])
 		->has('featuredProducts', '>=', $minProducts)
 		->take($categoriesLimit)
-		->orderBy()
 		->get();
 
 		/* Transform categories */
@@ -334,6 +333,7 @@ class FCategoryController extends Controller
 				$product->parent_category_url = $categoryMostParentURL;
 				$product->category_url = $categoryURL;
 				$product->url = optional($product->seoUrl)->url ?? null;
+				$product->quote_available = $product->quote_available ?? 0;
 
 				/* Currency data */
 				$product->currency_name = optional($product->currency)->title ?? null;
@@ -355,7 +355,7 @@ class FCategoryController extends Controller
 					$product->selling_type_value = null;
 					$product->selling_type_unit = null;
 				}
-
+				$product->is_required = $product->is_required;
 				/* Transform product suppliers */
 				if ($product->productSuppliers) {
 					$product->productSuppliers->each(function ($productSupplier) {
