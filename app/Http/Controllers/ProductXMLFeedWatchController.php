@@ -131,8 +131,6 @@ class ProductXMLFeedWatchController extends Controller
      */
     private function mapProductToXml($product)
     {
-
-
         // Get the first supplier for price info
         $firstSupplier = $product->productSuppliers->first();
         $price = $firstSupplier->price ?? 0;
@@ -354,7 +352,7 @@ class ProductXMLFeedWatchController extends Controller
             ])
             ->where('status', 'published')
             ->orderBy('id', 'desc');
-        // dd($query);
+       
         $website = config('app.url', 'https://www.thehorecastore.com');
 
         // Start XML
