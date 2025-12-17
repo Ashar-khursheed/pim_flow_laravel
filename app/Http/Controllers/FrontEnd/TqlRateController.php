@@ -374,14 +374,14 @@ class TqlRateController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'No rates found or service unavailable.',
-                    'shipment-rates' => null
+                    'data' => null
                 ], 404);
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Rates retrieved successfully.',
-                'data' => $rates
+                'data' => $rates->json()
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
