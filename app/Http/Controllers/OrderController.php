@@ -447,7 +447,7 @@ class OrderController extends Controller
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-				$orderShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
+				// $orderShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
 			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
 				$taxableAmount = $discountedAmount + $orderShipping;
 				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
@@ -1147,7 +1147,7 @@ class OrderController extends Controller
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
+				// $orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
 			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
 				$taxableAmount = $discountedAmount + $orderShipping;
 				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
