@@ -1008,8 +1008,12 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 });
 
 
-Route::post('frontend/tql-token', [TqlRateController::class, 'createLtlQuote']);
+Route::post('frontend/tql-token', [TqlRateController::class, 'tqltoken']);
 Route::post('frontend/tql-rate', [TqlRateController::class, 'tqlRates']);
+Route::post('frontend/tql-createQuote', [TqlRateController::class, 'createQuote']);
+Route::post('frontend/tql-tenderShipment', [TqlRateController::class, 'tenderShipment']);
+Route::get('frontend/tql-getQuote/{quoteId}', [TqlRateController::class, 'getQuote']);
+Route::get('frontend/tql-tracking/{poNumber}', [TqlRateController::class, 'getTracking']);
 
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
