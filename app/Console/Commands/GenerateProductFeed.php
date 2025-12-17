@@ -216,9 +216,9 @@ class GenerateProductFeed extends Command
         }
 
         // Product variants
-        foreach ($productVariants as $highlight) {
-            $xml .= '<g:product_highlight>' . htmlspecialchars($highlight['attribute_name']) . ' : ' . htmlspecialchars($highlight['attrValue']) . '</g:product_highlight>';
-        }
+        // foreach ($productVariants as $highlight) {
+        //     $xml .= '<g:product_highlight>' . htmlspecialchars($highlight['attribute_name']) . ' : ' . htmlspecialchars($highlight['attrValue']) . '</g:product_highlight>';
+        // }
 
         if ($product->benefits_features) {
             $benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true) ?? [];
