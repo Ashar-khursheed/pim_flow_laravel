@@ -104,6 +104,9 @@ class FinanceController extends Controller
             'years_in_business' => 'nullable|string',
             'annual_revenue' => 'nullable|string'
 
+        ],
+        [
+            'requested_amount.max' => 'The requested amount field must not be greater than 999999999999',
         ]);
 
         if ($validator->fails()) {
