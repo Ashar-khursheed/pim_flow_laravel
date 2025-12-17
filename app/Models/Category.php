@@ -142,7 +142,7 @@ class Category extends Model implements TranslatableContract
 			'product_categories',
 			'category_id',
 			'product_id'
-		)->where('products.is_featured', 1)->where('products.status', 'published');
+		)->where('is_featured', 1)->where('status', 'published');
 	}
 
 	public function productIdsFromLeafCategories()

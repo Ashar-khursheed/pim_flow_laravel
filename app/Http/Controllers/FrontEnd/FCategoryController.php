@@ -269,143 +269,126 @@ class FCategoryController extends Controller
 	 */
 	public function getFeaturedCategoryProducts(Request $request)
 	{
-		$featuredCategories = Category::with([
-			'featuredProducts:id,name,sku,currency_id,units_sold'
-		])
+		$productsPerCategory = $request->get('products_limit', 10);
+		$categoriesLimit = $request->get('categories_limit', 5);
+		$minProducts = $request->get('min_products', 5);
+
+		$featuredCategories = Category::select(['id', 'parent_id', 'name'])
+		->where('status', 'published')
+		->where('is_featured', 1)
 		->whereDoesntHave('children')
-		->has('featuredProducts', '>=', 5)
-		->take(5)
+		->with([
+			'translations',
+			'seoUrl:id,relational_id,relational_type,url',
+			'featuredProducts' => function($query) use ($productsPerCategory) {
+				$query->select(['id', 'name', 'sku', 'currency_id', 'units_sold', 'alt_tags', 'quote_available'])
+				->with([
+					'translations',
+					'seoUrl:id,relational_id,relational_type,url',
+					'productSuppliers:id,product_id,vendor_id,vendor_sku,cost_per_item,map,sale_price,price,inventory,in_stock,min_quantity,is_fixed,delivery_days,return_policy,free_shipping,shipping_charge,warranty_information',
+					'reviews:id,product_id,star',
+					'currency:id,title,symbol',
+					'sellingUnitAttribute'
+				])
+				->withCount('reviews')
+				->withAvg('reviews', 'star')
+				->orderByDesc('units_sold')
+				->limit($productsPerCategory);
+			}
+		])
+		->has('featuredProducts', '>=', $minProducts)
+		->take($categoriesLimit)
+		->orderBy()
 		->get();
-		dd($featuredCategories->toArray());
 
-		// Subquery for best price and delivery days
-		$subQuery = Product::select('sku')
-		->groupBy('sku');
+		/* Transform categories */
+		$featuredCategories->transform(function ($category) {
+			/* Transform category name to locale object */
+			$categoryLocaleNames = [];
+			if ($category->translations) {
+				foreach ($category->translations as $translation) {
+					$categoryLocaleNames[$translation->locale] = $translation->name_tr;
+				}
+			}
+			$category->name = $categoryLocaleNames;
 
-		// Process categories and products
-		$categories = $categories->map(function ($category) use ($subQuery) {
-			$featuredProducts = $category->products->take(10);
+			/* Get category URLs */
+			$categoryMostParentURL = optional($category->mostParent)->seoUrl->url ?? null;
+			$categoryURL = optional($category->seoUrl)->url ?? null;
 
-			// Fetch all product details in one query
-			$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-				$join->on('ec_products.sku', '=', 'best_products.sku');
-			})
-			->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-			->with([
-				'reviews',
-				'currency',
-				'productSuppliers',
-				'vendors',
-				'seoUrl',
-				'productAttributes' => function ($query) {
-					$query->whereHas('attributeDetails', function ($q) {
-						$q->whereIn('name', ['Units per Case', 'Pack Type']);
+			/* Transform featured products */
+			$category->featuredProducts->each(function ($product) use ($categoryMostParentURL, $categoryURL) {
+				/* Transform product name and images to locale objects */
+				$productLocaleNames = [];
+				$productLocaleImages = [];
+
+				if ($product->translations) {
+					foreach ($product->translations as $translation) {
+						$productLocaleNames[$translation->locale] = $translation->name_tr;
+						$productLocaleImages[$translation->locale] = is_array($translation->images_tr) ? $translation->images_tr : json_decode($translation->images_tr, true);
+					}
+				}
+
+				$product->name = $productLocaleNames;
+				$product->images = $productLocaleImages;
+				$product->parent_category_url = $categoryMostParentURL;
+				$product->category_url = $categoryURL;
+				$product->url = optional($product->seoUrl)->url ?? null;
+
+				/* Currency data */
+				$product->currency_name = optional($product->currency)->title ?? null;
+				$product->currency_symbol = optional($product->currency)->symbol ?? null;
+
+				/* Reviews data */
+				$product->total_reviews = $product->reviews_count ?? 0;
+				$product->avg_rating = round($product->reviews_avg_star ?? 0, 1);
+
+				/* Alt tags */
+				$product->alt_tags = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true) ?? [];
+
+				/* Selling unit data */
+				if ($product->sellingUnitAttribute) {
+					$attributeValue = $product->sellingUnitAttribute->attribute_value;
+					$product->selling_type_value = $attributeValue;
+					$product->selling_type_unit = strpos($attributeValue, '/') !== false ? trim(explode('/', $attributeValue)[1]) : $attributeValue;
+				} else {
+					$product->selling_type_value = null;
+					$product->selling_type_unit = null;
+				}
+
+				/* Transform product suppliers */
+				if ($product->productSuppliers) {
+					$product->productSuppliers->each(function ($productSupplier) {
+						unset($productSupplier->id);
+						unset($productSupplier->product_id);
 					});
-				},
-				]) // Eager load relationships
-			->get()
-				->keyBy('id'); // Use keyBy to quickly fetch by ID later
-				return [
-					'category_name' => $category->name,
-					'featured_products' => $featuredProducts->map(function ($product) use ($productDetails) {
-						$details = $productDetails[$product->id] ?? null;
-						if (!$details)
-						return null; // Skip if no details found
+				}
 
-					$totalReviews = $details->reviews->count();
-					$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
-					$currencyTitle = $details->currency->symbol;
+				/* Remove unwanted attributes from product */
+				unset($product->translations);
+				unset($product->seoUrl);
+				unset($product->currency);
+				unset($product->currency_id);
+				unset($product->reviews);
+				unset($product->reviews_count);
+				unset($product->reviews_avg_star);
+				unset($product->sellingUnitAttribute);
+				unset($product->pivot);
+			});
 
-					// Process images efficiently
-					$imageUrls = is_string($details->images)
-					? json_decode($details->images, true)
-					: (array) $details->images;
-					$cleanedAlt = is_string($details->alt_tags)
-					? json_decode($details->alt_tags, true)
-					: (array) $details->alt_tags;
+			/* Remove unwanted attributes from category */
+			unset($category->translations);
+			unset($category->seoUrl);
+			unset($category->parent);
+			unset($category->parent_id);
 
-					$sellingType = null;
-
-					if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
-						$fullValue = $details->sellingUnitAttribute->attribute_value;
-
-						$attributeUnit = strpos($fullValue, '/') !== false
-						? trim(explode('/', $fullValue)[1])
-						: $fullValue;
-
-						$sellingType = [
-							'attribute_value' => $details->sellingUnitAttribute->attribute_value,
-							'attribute_value_unit' => $attributeUnit,
-						];
-					}
-					$firstSupplier = $details->productSuppliers->first();
-					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
-
-					// Calculate per unit price
-					$unitsPerCase = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-					$packType = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
-
-					$basePrice = null;
-					if ($firstSupplier) {
-						$basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
-					}
-
-					// $basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
-					$perUnitPrice = null;
-
-					if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-						$unitValue = (float) $unitsPerCase->attribute_value;
-						if ($unitValue > 0) {
-							$calculated = round($basePrice / $unitValue, 2);
-							$perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
-						}
-					}
-
-					$details->per_unit_price = $perUnitPrice;
-
-
-
-					return [
-						'id' => $details->id,
-						'name' => $details->name,
-						'sku' => $details->sku,
-						'category_url' => $details->category_url(),
-						'parent_category_url' => $details->parent_category_url(),
-						'url' => $details->seoUrl->url ?? null,
-						'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-						'price' => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
-						"sale_price" => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : null,
-						'total_reviews' => $totalReviews,
-						'avg_rating' => $avgRating,
-						'left_stock' => $leftStock,
-						'currency' => $currencyTitle,
-						'images' => $imageUrls,
-						'alt_tags' => $cleanedAlt,
-						"original_price" => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
-						'front_sale_price' => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : (float) $details->price,
-						"best_price" => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
-						"selling_type" => $sellingType,
-						"per_unit_price" => $details->per_unit_price,
-						'vendor_id' => $firstSupplier->vendor_id ?? null,
-						'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-						'inventory' => $firstSupplier->inventory ?? null,
-						'in_stock' => $firstSupplier->in_stock ?? null,
-						'delivery_days' => $firstSupplier->delivery_days ?? null,
-						'return_policy' => $firstSupplier->return_policy ?? null,
-						'free_shipping' => $firstSupplier->free_shipping ?? null,
-						'warranty_information' => $firstSupplier->warranty_information ?? null,
-						'min_quantity' => $firstSupplier->min_quantity ?? 0,
-						'is_fixed' => $firstSupplier->is_fixed ?? 0,
-						'quote_available' => $details->quote_available ?? null,
-						'isRequired' => $details->is_required,
-					];
-				})->filter()->values(), // Remove null values and reset array keys
-			];//
+			return $category;
 		});
 
-		return response()->json([//
+		return response()->json([
 			'success' => true,
-			'data' => $categories,
-		])->header('Cache-Control', 'public, max-age=86400');
+			'message' => 'Featured categories retrieved successfully',
+			'data' => $featuredCategories
+		]);
 	}
 }
