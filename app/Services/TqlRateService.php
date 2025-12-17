@@ -9,18 +9,23 @@ use Illuminate\Support\Facades\config;
 class TqlRateService
 {
          
-    public function getRates(array $shipmentData)
-    {  
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' .config('services.tql.api_key'),
-            'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-        ])->post(config('services.tql.base_url') . '/rates', $shipmentData);
+    public function getRates(array $shipmentData, $token)
+    {   
+      $response = Http::withHeaders([
+        'Authorization' => 'Bearer ' . $token,
+        'Ocp-Apim-Subscription-Key' => config('services.tql.subscription_key'),
+        'Content-Type'=> 'application/json'
+    ])
+    
+    ->post('https://public.api.tql.com/ltl/quotes', $shipmentData);
  
-        if ($response->successful()) {
-            return $response->json()['rates'] ?? [];  // Assume response has 'rates' array
-        }
+            return ([
+            'status' => $response->status(),
+            'body'   => $response->json(),
+            'raw'    => $response->body()
+            ]);
+         
         
-        return [];
+        
     }
 }

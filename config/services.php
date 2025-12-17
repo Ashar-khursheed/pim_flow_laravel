@@ -108,8 +108,8 @@ return [
     'secret_key'     => env('PAYMOB_SECRET_KEY'),
     'public_key'     => env('PAYMOB_PUBLIC_KEY'),
 ],
-    'tql' => [
-    'base_url'       => env('TQL_BASE_URL', 'https://api.tql.com/v1'),
+    'tql' => [   
+    'base_url'       => env('TQL_BASE_URL') === 'live' ? 'https://public.api.tql.com/ltl' : 'https://public.api.tql.com/test-ltl',    
     'api_key'        => env('TQL_API_KEY'),
     'subscription_key'        => env('TQL_SUBSCRIPTION_KEY'),
     'client_id'        => env('TQL_CLIENT_ID'),
