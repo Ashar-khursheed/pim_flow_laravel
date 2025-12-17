@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\PasswordResetToken;
 use App\Models\User;
 use App\Models\Newsletter;
-
+use App\Models\Frontend\Wishlist;
 
 class Customer extends Authenticatable
 {
@@ -114,5 +114,10 @@ class Customer extends Authenticatable
 	public function customerCarts()
 	{
 		return $this->hasMany(CustomerCart::class, 'customer_id', 'id');
+	}
+
+	public function wishlist()
+	{
+		return $this->hasMany(Wishlist::class, 'customer_id');
 	}
 }
