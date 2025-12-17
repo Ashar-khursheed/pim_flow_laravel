@@ -26,9 +26,9 @@ class ProductXMLFeedWatchController extends Controller
      *         description="Number of items per page (default: 500)",
      *         required=false,
      *         @OA\Schema(type="integer", example=500)
-     *     ),     
-     *      
-     *     
+     *     ),
+     *
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -58,9 +58,7 @@ class ProductXMLFeedWatchController extends Controller
     //     return $data;
     // }
 
- 
-
-   public function generateProductFeed(Request $request)
+    public function generateProductFeed(Request $request)
     {
         $perPage = $request->input('per_page');
         $query = Product::with([
@@ -74,50 +72,64 @@ class ProductXMLFeedWatchController extends Controller
             'seoProductUrl',
             'productVariants'
         ])
-        ->select([
-            'id', 'name', 'sku', 'images', 'brand_id', 'status',
-            'gen_type', 'approved', 'description', 'quote_available',
-            'stock_status', 'barcode',
-        ])
-        ->where('status', 'published')
-        ->orderBy('id', 'desc');
+            ->select([
+                'id',
+                'name',
+                'sku',
+                'images',
+                'brand_id',
+                'status',
+                'gen_type',
+                'approved',
+                'description',
+                'quote_available',
+                'stock_status',
+                'barcode',
+                'benefits_features'
+
+            ])
+            ->where('status', 'published')
+            ->orderBy('id', 'desc');
 
         $website = config('app.url', 'https://www.thehorecastore.com');
 
-        // Stream the response instead of building string in memory
-        return response()->stream(function () use ($query, $website, $perPage, $request) {
-            echo '<?xml version="1.0" encoding="UTF-8"?>';
-            echo '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
-            echo '<channel>';
-            echo '<title>Product Feed</title>';
-            echo '<link>' . htmlspecialchars($website) . '</link>';
-            echo '<description>DataFeedWatch Product Feed</description>';
+        // Start XML
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">';
+        $xml .= '<channel>';
+        $xml .= '<title>Product Feed</title>';
+        $xml .= '<link>' . $website . '</link>';
+        $xml .= '<description>DataFeedWatch Product Feed</description>';
 
-            if (!empty($perPage)) {
-                $products = $query->paginate($perPage, ['*'], 'page', $request->input('page', 1));
+        if (!empty($perPage)) {
+            $products = $query->paginate($perPage, ['*'], 'page', 1);
+        } else {
+            $products = $query->get();
+        }
+
+        if (!empty($products)) {
+            $query->chunk(500, function ($products) use (&$xml) {
                 foreach ($products as $product) {
-                    echo $this->mapProductToXml($product);
-                }
-            } else {
-                // Stream each chunk directly - no memory buildup
-                $query->chunk(500, function ($products) {
-                    foreach ($products as $product) {
-                        echo $this->mapProductToXml($product);
-                    }
-                });
-            }
 
-            echo '</channel>';
-            echo '</rss>';
-        }, 200, [
-            'Content-Type' => 'application/xml; charset=UTF-8',
-        ]);
+                    $xml .= $this->mapProductToXml($product);
+                }
+            });
+        }
+
+        // Close channel and rss
+        $xml .= '</channel>';
+        $xml .= '</rss>';
+
+        return response($xml, 200)
+            ->header('Content-Type', 'application/xml');
     }
+
+
 
     /**
      * Helper function to map a single product to XML
      */
-public function mapProductToXml($product)
+    private function mapProductToXml($product)
     {
         // Get the first supplier for price info
         $firstSupplier = $product->productSuppliers->first();
@@ -211,53 +223,55 @@ public function mapProductToXml($product)
 
             return $result;
         })->flatten(1)->values();
- 
+
         // Start XML for this product
         $xml = '<item>';
         $xml .= '<g:id>' . $product->id . '</g:id>';
         $xml .= '<g:sku>' . htmlspecialchars($product->sku ?? '') . '</g:sku>';
         $xml .= '<g:barcode>' . htmlspecialchars($product->barcode ?? '') . '</g:barcode>';
-        $xml .= '<g:title>' . htmlspecialchars($seoData?->meta_title ?? $product->name) . '</g:title>';        
+        $xml .= '<g:title>' . htmlspecialchars($product?->name ?? $product->name) . '</g:title>';
         $xml .= '<g:link>' . config('app.url') . '/' . $fullSlug . '</g:link>';
         $xml .= '<g:description>' . htmlspecialchars($descriptionText) . '</g:description>';
         $xml .= '<g:price>' . number_format($price, 2) . '</g:price>';
         $xml .= '<g:sale_price>' . number_format($salePrice, 2) . '</g:sale_price>';
         $xml .= '<g:availability>' . $product->stock_status . '</g:availability>';
         $xml .= '<g:brand>' . htmlspecialchars($product->brand?->name ?? '') . '</g:brand>';
-        $xml .= '<g:gtin> '.htmlspecialchars($product->barcode ?? '').'</g:gtin>';
+        $xml .= '<g:gtin> ' . htmlspecialchars($product->barcode ?? '') . '</g:gtin>';
         $xml .= '<g:mpn>' . $product->sku . '</g:mpn>';
-       
-        $xml .= '<g:material>'.htmlspecialchars($parentCategory->name ?? '').'</g:material>';
 
+        $xml .= '<g:material>' . htmlspecialchars($parentCategory->name) . '</g:material>';
         if ($image) {
             $xml .= '<g:image_link>' . htmlspecialchars($image) . '</g:image_link>';
         }
 
         // Product attributes
         foreach ($attributes as $attr) {
-           
+
             $xml .= '<g:product_detail>';
             $xml .= '<g:section_name> Key Specification </g:section_name>';
             $xml .= '<g:attribute_name>' . htmlspecialchars($attr['attribute_name']) . '</g:attribute_name>';
             $xml .= '<g:attribute_value>' . htmlspecialchars($attr['attribute_value']) . '</g:attribute_value>';
-            
+
             $xml .= '</g:product_detail>';
-            
         }
 
         // Product variants
         foreach ($productVariants as $highlight) {
-            
-            $xml .= '<g:product_highlight>' . htmlspecialchars($highlight['label']) . '</g:product_highlight>';
-           
-            $xml .= '<g:attribute_name>' . htmlspecialchars($highlight['attribute_name']) . '</g:attribute_name>';
-            $xml .= '<g:attribute_value>' . htmlspecialchars($highlight['attrValue']) . '</g:attribute_value>';
-            
+            $xml .= '<g:product_highlight>' . htmlspecialchars($highlight['attribute_name']) . ' : ' . htmlspecialchars($highlight['attrValue']) . '</g:product_highlight>';
         }
-       
-        $xml .= '<g:store_code> </g:store_code>';      
+
+        if ($product->benefits_features) {
+            $benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true) ?? [];
+            // benefits_features
+            foreach ($benefits as $features) {
+
+                $xml .= '<g:product_highlight>' . htmlspecialchars($features['benefit']) . ' : ' . htmlspecialchars($features['feature']) . '</g:product_highlight>';
+            }
+        }
+
+        $xml .= '<g:store_code> </g:store_code>';
         $xml .= '<g:identifier_exists>no</g:identifier_exists>';
-        $xml .= '<g:condition>new</g:condition>';       
+        $xml .= '<g:condition>new</g:condition>';
         $xml .= '<g:google_product_category>' . htmlspecialchars($google_product_category) . '</g:google_product_category>';
         $xml .= '<g:sale_price_effective_date></g:sale_price_effective_date>';
         $xml .= '<g:product_type>' . htmlspecialchars($product_type) . '</g:product_type>';
@@ -284,9 +298,9 @@ public function mapProductToXml($product)
      *         description="Number of items per page (default: 1818)",
      *         required=false,
      *         @OA\Schema(type="integer", example=1818)
-     *     ),     
-     *      
-     *     
+     *     ),
+     *
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -305,10 +319,10 @@ public function mapProductToXml($product)
      * )
      */
 
-  public function generateOneProductFeed(Request $request)
+    public function generateOneProductFeed(Request $request)
     {
         $product_id = $request->input('product_id');
-        $query = Product::where('id',$product_id)->with([
+        $query = Product::where('id', $product_id)->with([
             'brand:id,name,logo',
             'categories:id,name,parent_id',
             'categories.parent:id,name',
@@ -318,6 +332,7 @@ public function mapProductToXml($product)
             'seoUrl',
             'seoProductUrl',
             'productVariants'
+
         ])
             ->select([
                 'id',
@@ -332,11 +347,12 @@ public function mapProductToXml($product)
                 'quote_available',
                 'stock_status',
                 'barcode',
+                'benefits_features'
 
             ])
             ->where('status', 'published')
             ->orderBy('id', 'desc');
-
+       
         $website = config('app.url', 'https://www.thehorecastore.com');
 
         // Start XML
@@ -349,14 +365,14 @@ public function mapProductToXml($product)
 
 
         $products = $query->get();
-        
-     
+
+
         if (!empty($products)) {
-            
-                foreach ($products as $product) {
-                    $xml .= $this->mapProductToXml($product);
-                }
-        
+
+            foreach ($products as $product) {
+
+                $xml .= $this->mapProductToXml($product);
+            }
         }
 
         // Close channel and rss
@@ -740,7 +756,7 @@ public function mapProductToXml($product)
             }
 
             $xml .= '<g:identifier_exists>no</g:identifier_exists>';
-            $xml .= '<g:material>'.htmlspecialchars($product['parent_category']).'</g:material>';
+            $xml .= '<g:material>' . htmlspecialchars($product['parent_category']) . '</g:material>';
             $xml .= '<g:store_code></g:store_code>';
             $xml .= '<g:condition>new</g:condition>';
             $xml .= '<g:google_product_category>' . $product['google_product_category'] . '</g:google_product_category>';
