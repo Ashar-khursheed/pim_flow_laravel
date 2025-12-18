@@ -172,11 +172,7 @@ class CustomerDocumentController extends Controller
 
         $documents = CustomerDocument::where('customer_id', $userId)->get();
     
-        return response()->json([
-                'success' => true,
-                'message' => 'Document deleted successfully.',
-                'data'=>$documents,                
-            ], 200);
+        return response()->json($documents);
        
     }
 
