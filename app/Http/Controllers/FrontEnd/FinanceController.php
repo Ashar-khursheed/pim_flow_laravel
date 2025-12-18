@@ -129,7 +129,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance cannot be created. Previous net term is Pending, Rejected, or Overdue.'
-            ], 422);
+            ], 200);
         }
         $data = $validator->validated();
         $data['customer_id'] = Auth::id();
@@ -162,7 +162,7 @@ class FinanceController extends Controller
             'success' => true,
             'message' => 'Application submitted successfully.',
             'data' => $finance
-        ], 201);
+        ], 200);
     }
 
 
@@ -270,20 +270,20 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Net Term finance is either not approved or is currently inactive'
-            ], 422);
+            ], 200);
         }
         if (!$finance->approved_amount) {
             return response()->json([
                 'success' => false,
                 'message' => 'Your request amount has not been approved.'
-            ], 422);
+            ], 200);
         }
 
         if ($request->order_amount > $finance->approved_amount) {
             return response()->json([
                 'success' => false,
                 'message' => "The order amount (" . number_format($request->order_amount, 2) . ") is less than the approved amount (" . number_format($finance->approved_amount, 2) . ").",
-            ], 422);
+            ], 200);
         }
 
 
@@ -449,7 +449,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Net Term finance is either not approved or is currently inactive'
-            ], 422);
+            ], 404);
         }
 
 
@@ -464,7 +464,7 @@ class FinanceController extends Controller
                 'success' => false,
                 'message' => 'Net term record not found.',
                 'accoutsStatus' => null
-            ], 200);
+            ], 404);
         }
     }
 
@@ -676,14 +676,14 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Net Term credit is not active or approved.'
-                ], 422);
+                ], 404);
             }
 
             if (!$finance->approved_amount || $finance->approved_amount <= 0) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Approved credit limit is missing or zero.'
-                ], 422);
+                ], 200);
             }
 
             $usedCredit = bcdiv($finance->used_credit_amount ?? '0', '1', 2);
@@ -696,7 +696,7 @@ class FinanceController extends Controller
                     'message' => 'Insufficient credit limit. '
                         . 'Requested: ' . $orderAmount
                         . ', Available: ' . $availableCredit
-                ], 422);
+                ], 200);
             }
 
 
@@ -852,7 +852,7 @@ class FinanceController extends Controller
             'data' => $paymentData,
             'total_pages' => $totalPages,
             'total_records' => $totalRecords,
-        ]);
+        ],200);
     }
 
     /**
@@ -955,7 +955,7 @@ class FinanceController extends Controller
             'data' => $paymentData,
             'total_pages' => $totalPages,
             'total_records' => $totalRecords,
-        ]);
+        ],200);
     }
 
     /**
@@ -1053,6 +1053,6 @@ class FinanceController extends Controller
             'data' => $paymentData,
             'total_pages' => $totalPages,
             'total_records' => $totalRecords,
-        ]);
+        ],200);
     }
 }
