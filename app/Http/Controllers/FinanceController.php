@@ -960,6 +960,7 @@ class FinanceController extends Controller
             $financesPayment->paid_on_date    = now();
             $financesPayment->paid_by         = Auth::id();
             $financesPayment->status         = $financesPayment->balance <= 0 ? 'Paid' : 'Pending';
+            $financesPayment->payment_mode    = 'NetTerm';
             $financesPayment->save();
 
             FinanceHistory::create([
@@ -1324,6 +1325,7 @@ class FinanceController extends Controller
                 $payment->paid_on_date = now();
                 $payment->status = $payment->due_amount - $payment->paid_amount <= 0 ? 'Paid' : 'Pending';
                 $payment->paid_by = Auth::id();
+                $payment->payment_mode    = 'NetTerm';
                 $payment->save();
 
                 // Correctly log ONLY the amount applied to THIS invoice
