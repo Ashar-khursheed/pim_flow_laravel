@@ -35,8 +35,8 @@ class NetTermApprovedMail extends Mailable
 		$termSelection = $finance->term_selection;
 
 		$siteEmail = match (config('app.website')) {
-			'US'  => 'support@thehorecastore.com',
-			'UAE'  => 'support@horecastore.ae',
+			'US'  => 'sales@thehorecastore.com',
+			'UAE'  => 'hello@horecastore.ae',
 			'US_T' => 'test_us_support@thehorecastore.co',
 			'UAE_T' => 'test_uae_support@thehorecastore.co',
 			default => 'test_support@thehorecastore.co',

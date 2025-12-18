@@ -853,6 +853,9 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	Route::prefix('/frontend/blogs')->group(function () {
 		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
 	});
+
+	Route::get('/frontend-categories/user-featured-products', [FCategoryController::class, 'getUserFeaturedCategoryProducts']);
+
 });
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
@@ -872,6 +875,8 @@ Route::get('/frontend/sale-categories/{id?}', [F_ProductController::class, 'sale
 Route::post('/frontend/guest/view-product', [F_RecentlyViewedProductController::class, 'saveGuestProductView']);
 Route::get('/frontend/guest/recent-products', [F_RecentlyViewedProductController::class, 'getGuestRecentProducts']);
 
+Route::get('/frontend-categories/featured-products', [FCategoryController::class, 'getFeaturedCategoryProducts']);
+Route::get('/frontend-categories/with-parents', [FCategoryController::class, 'fetchCategoriesWithParents']);
 Route::get('/frontend-categories', [FCategoryController::class, 'index']);
 
 
@@ -1000,6 +1005,7 @@ Route::get('/feed/products-2.xml', [ProductXMLFeedWatchController::class, 'getPr
 Route::get('/feed/products-3.xml', [ProductXMLFeedWatchController::class, 'getProductFeed3']);
 Route::get('/feed/products-4.xml', [ProductXMLFeedWatchController::class, 'getProductFeed4']);
 Route::get('/feed/products-5.xml', [ProductXMLFeedWatchController::class, 'getProductFeed5']);
+Route::get('/feed/one-products.xml', [ProductXMLFeedWatchController::class, 'generateOneProductFeed']);
 Route::prefix('/frontend/ccavenue')->group(function () {
 	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
 	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);

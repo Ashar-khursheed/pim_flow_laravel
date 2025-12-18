@@ -64,9 +64,10 @@ class CustomerDocumentController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Document uploaded successfully',
+            'success' => true,
+            'message' => 'Document create successfully',
             'data' => $document,
-        ], 201);
+        ], 200);
     }
 
     /**
@@ -124,6 +125,7 @@ class CustomerDocumentController extends Controller
         $document = CustomerDocument::find($id);
         if (!$document) {
             return response()->json([
+                'success' => false,
                 'message' => 'Document not found'
             ], 404);
         }
@@ -145,6 +147,7 @@ class CustomerDocumentController extends Controller
         $document->save();
 
         return response()->json([
+            'success' => true,
             'message' => 'Document updated successfully',
             'data' => $document
         ], 200);
@@ -168,8 +171,13 @@ class CustomerDocumentController extends Controller
             $isUserLoggedIn = $userId !== null;
 
         $documents = CustomerDocument::where('customer_id', $userId)->get();
-
-        return response()->json($documents);
+    
+        return response()->json([
+                'success' => true,
+                'message' => 'Document deleted successfully.',
+                'data'=>$documents,                
+            ], 200);
+       
     }
 
     /**
@@ -197,7 +205,12 @@ class CustomerDocumentController extends Controller
         Storage::delete($document->document_path);
         $document->delete();
 
-        return response()->json(['message' => 'Document deleted successfully']);
+         return response()->json([
+                'success' => true,
+                'message' => 'Document deleted successfully.',
+                
+            ], 200);
+         
     }
      /**
      * @OA\Get(
@@ -217,9 +230,10 @@ class CustomerDocumentController extends Controller
     public function customerDocuments($customer_id)
     {
         $documents = CustomerDocument::where('customer_id', $customer_id)->get();
-
         return response()->json([
-            'data' => $documents
-        ]);
+                'success' => true,
+                'message' => 'Document deleted successfully.',
+                'data' => $documents
+            ], 200);
     }
 }
