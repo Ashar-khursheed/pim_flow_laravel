@@ -18073,6 +18073,35 @@
                 "summary": "Get categories with featured products",
                 "description": "Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
                 "operationId": "309903020df05a6fa6ecedd9ddf61259",
+                "parameters": [
+                    {
+                        "name": "products_limit",
+                        "in": "query",
+                        "description": "Maximum number of products to return per category",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "categories_limit",
+                        "in": "query",
+                        "description": "Maximum number of categories to return",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "min_products",
+                        "in": "query",
+                        "description": "Minimum number of featured products required per category",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Featured categories retrieved successfully",
@@ -18081,6 +18110,58 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/frontend-categories/user-featured-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Category"
+                ],
+                "summary": "Get categories with featured products",
+                "description": "Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
+                "operationId": "e6fa157681f1d86b4f8fd65bc74709ce",
+                "parameters": [
+                    {
+                        "name": "products_limit",
+                        "in": "query",
+                        "description": "Maximum number of products to return per category",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "categories_limit",
+                        "in": "query",
+                        "description": "Maximum number of categories to return",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "min_products",
+                        "in": "query",
+                        "description": "Minimum number of featured products required per category",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Featured categories retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/faqs/product/{product_id}": {

@@ -853,6 +853,9 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	Route::prefix('/frontend/blogs')->group(function () {
 		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
 	});
+
+	Route::get('/frontend-categories/user-featured-products', [FCategoryController::class, 'getUserFeaturedCategoryProducts']);
+
 });
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
