@@ -17852,6 +17852,206 @@
                 ]
             }
         },
+        "/api/frontend-brands": {
+            "get": {
+                "tags": [
+                    "Frontend-Brand"
+                ],
+                "summary": "Get Brand List",
+                "description": "Fetches a list of brands.",
+                "operationId": "fce107c37db633fc35f88a0f79772ea2",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Category ID",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Brands retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend-brands/featured-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Brand"
+                ],
+                "summary": "Get featured brands with their featured products",
+                "description": "Retrieves featured and published brands that contain at least the minimum required number of featured products.",
+                "operationId": "76c52d284d7e8b7920ddaac312dc1d2f",
+                "parameters": [
+                    {
+                        "name": "products_limit",
+                        "in": "query",
+                        "description": "Maximum number of products to return per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of brands to return",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "min_products",
+                        "in": "query",
+                        "description": "Minimum number of featured products required per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search products by name or SKU",
+                        "schema": {
+                            "type": "string",
+                            "example": "blender"
+                        }
+                    },
+                    {
+                        "name": "min_rating",
+                        "in": "query",
+                        "description": "Minimum average rating (1-5)",
+                        "schema": {
+                            "type": "number",
+                            "example": 4
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Minimum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Maximum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 5000
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Featured brands retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend-brands/customer-featured-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Brand"
+                ],
+                "summary": "Get featured brands with their featured products",
+                "description": "Retrieves featured and published brands that contain at least the minimum required number of featured products.",
+                "operationId": "8db51381a9942e48535c6fc442f3c732",
+                "parameters": [
+                    {
+                        "name": "products_limit",
+                        "in": "query",
+                        "description": "Maximum number of products to return per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of brands to return",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "min_products",
+                        "in": "query",
+                        "description": "Minimum number of featured products required per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search products by name or SKU",
+                        "schema": {
+                            "type": "string",
+                            "example": "blender"
+                        }
+                    },
+                    {
+                        "name": "min_rating",
+                        "in": "query",
+                        "description": "Minimum average rating (1-5)",
+                        "schema": {
+                            "type": "number",
+                            "example": 4
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Minimum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Maximum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 5000
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Featured brands retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend-categories": {
             "get": {
                 "tags": [
@@ -17976,7 +18176,7 @@
                         }
                     },
                     {
-                        "name": "categories_limit",
+                        "name": "limit",
                         "in": "query",
                         "description": "Maximum number of categories to return",
                         "schema": {
@@ -18004,14 +18204,14 @@
                 }
             }
         },
-        "/api/frontend-categories/user-featured-products": {
+        "/api/frontend-categories/customer-featured-products": {
             "get": {
                 "tags": [
                     "Frontend-Category"
                 ],
                 "summary": "Get categories with featured products",
                 "description": "Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
-                "operationId": "e6fa157681f1d86b4f8fd65bc74709ce",
+                "operationId": "414e34bbc9aaecce79b805890e980557",
                 "parameters": [
                     {
                         "name": "products_limit",
@@ -18023,7 +18223,7 @@
                         }
                     },
                     {
-                        "name": "categories_limit",
+                        "name": "limit",
                         "in": "query",
                         "description": "Maximum number of categories to return",
                         "schema": {
@@ -48578,6 +48778,10 @@
         {
             "name": "Frontend-Discounts",
             "description": "Frontend-Discounts"
+        },
+        {
+            "name": "Frontend-Brand",
+            "description": "Frontend-Brand"
         },
         {
             "name": "Frontend-Category",

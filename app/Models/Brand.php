@@ -9,7 +9,8 @@ class Brand extends Model implements TranslatableContract
 {
     use Translatable;
 
-    public $translatedAttributes = ['name_tr', 'description_tr'];
+    // public $translatedAttributes = ['name_tr', 'description_tr'];
+    public $translatedAttributes = [];
 
     protected $table = 'ec_brands';
 

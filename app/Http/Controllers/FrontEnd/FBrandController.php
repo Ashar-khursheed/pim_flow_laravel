@@ -106,9 +106,9 @@ class FBrandController extends Controller
 	 *     @OA\Parameter(name="limit", in="query", description="Maximum number of brands to return", @OA\Schema(type="integer", example=5)),
 	 *     @OA\Parameter(name="min_products", in="query", description="Minimum number of featured products required per brand", @OA\Schema(type="integer", example=5)),
 	 *     @OA\Parameter(name="search", in="query", description="Search products by name or SKU", @OA\Schema(type="string", example="blender")),
-	 *     @OA\Parameter(name="min_rating", in="query", description="Minimum average rating (1-5)", @OA\Schema(type="number", format="float"),
+	 *     @OA\Parameter(name="min_rating", in="query", description="Minimum average rating (1-5)", @OA\Schema(type="number", example=4.0)),
 	 *     @OA\Parameter(name="price_min", in="query", description="Minimum price (uses sale price if available)", @OA\Schema(type="number", example=100.00)),
-	 *     @OA\Parameter(name="price_max", in="query", description="Maximum price (uses sale price if available)", @OA\Schema(type="number",example=5000.00)),
+	 *     @OA\Parameter(name="price_max", in="query", description="Maximum price (uses sale price if available)", @OA\Schema(type="number", example=5000.00)),
 	 *     @OA\Response(response=200, description="Featured brands retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
@@ -185,9 +185,9 @@ class FBrandController extends Controller
 	 *     @OA\Parameter(name="limit", in="query", description="Maximum number of brands to return", @OA\Schema(type="integer", example=5)),
 	 *     @OA\Parameter(name="min_products", in="query", description="Minimum number of featured products required per brand", @OA\Schema(type="integer", example=5)),
 	 *     @OA\Parameter(name="search", in="query", description="Search products by name or SKU", @OA\Schema(type="string", example="blender")),
-	 *     @OA\Parameter(name="min_rating", in="query", description="Minimum average rating (1-5)", @OA\Schema(type="number", format="float"),
+	 *     @OA\Parameter(name="min_rating", in="query", description="Minimum average rating (1-5)", @OA\Schema(type="number", example=4.0)),
 	 *     @OA\Parameter(name="price_min", in="query", description="Minimum price (uses sale price if available)", @OA\Schema(type="number", example=100.00)),
-	 *     @OA\Parameter(name="price_max", in="query", description="Maximum price (uses sale price if available)", @OA\Schema(type="number",example=5000.00)),
+	 *     @OA\Parameter(name="price_max", in="query", description="Maximum price (uses sale price if available)", @OA\Schema(type="number", example=5000.00)),
 	 *     @OA\Response(response=200, description="Featured brands retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}},
 	 * )
