@@ -473,11 +473,13 @@ class ProductController extends BaseController
 
 		// Extract first vendor's price and sale_price
 		$firstVendor = $product->vendors->first();
-		$productPrice = $firstVendor?->pivot?->price ?? null;
-		$productSalePrice = $firstVendor?->pivot?->sale_price ?? null;
-		$productDelivery_days = $firstVendor?->pivot?->delivery_days ?? null;
-		$productInventory = $firstVendor?->pivot?->inventory ?? null;
-		$productInStock = $firstVendor?->pivot?->in_stock ?? null;
+		$firstSupplier = $product->productSuppliers->first();
+
+		$formattedProduct['price'] = $firstSupplier->price ?? null;
+		$formattedProduct['sale_price'] = $firstSupplier->sale_price ?? null;
+		$formattedProduct['delivery_days'] = $firstSupplier->delivery_days ?? null;
+		$formattedProduct['inventory'] = $firstSupplier->inventory ?? null;
+		$formattedProduct['in_stock'] = $firstSupplier->in_stock ?? null;
 		$formattedCategories = [];
 
 		foreach ($product->categories as $category) {
