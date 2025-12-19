@@ -1144,13 +1144,13 @@ class OrderController extends BaseController
 		 
 		$path = env('STORAGE_ENV') . '/customer/orders';
 
-		$chequeFront = uploadImageToWebpS3FromFile(
+		$chequeFront = compressImageToS3(
 			$request,
 			'cheque_img',
 			$path
 		);
 
-		$chequeBack = uploadImageToWebpS3FromFile(
+		$chequeBack = compressImageToS3(
 			$request,
 			'cheque_img_back',
 			$path
