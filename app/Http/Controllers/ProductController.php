@@ -475,12 +475,16 @@ class ProductController extends BaseController
 		$firstVendor = $product->vendors->first();
 		$firstSupplier = $product->productSuppliers->first();
 
+		$formattedProduct = []; // initialize
+
+		$formattedProduct['categories'] = $formattedCategories;
 		$formattedProduct['price'] = $firstSupplier->price ?? null;
 		$formattedProduct['sale_price'] = $firstSupplier->sale_price ?? null;
 		$formattedProduct['delivery_days'] = $firstSupplier->delivery_days ?? null;
 		$formattedProduct['inventory'] = $firstSupplier->inventory ?? null;
 		$formattedProduct['in_stock'] = $firstSupplier->in_stock ?? null;
-		$formattedCategories = [];
+		$formattedProduct['product_attributes'] = [];
+
 
 		foreach ($product->categories as $category) {
 			$chain = [];
