@@ -852,7 +852,7 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
 	});
 
-	Route::get('/frontend-categories/user-featured-products', [FCategoryController::class, 'getUserFeaturedCategoryProducts']);
+	Route::get('/frontend-categories/customer-featured-products', [FCategoryController::class, 'getCustomerFeaturedCategoryProducts']);
 
 });
 

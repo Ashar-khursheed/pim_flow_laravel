@@ -26,11 +26,13 @@ class Brand extends Model implements TranslatableContract
 	{
 		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'brands');
 	}
+
     public function seoUrl()
     {
         return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
-        ->select(['id', 'url', 'relational_id'])
-        ->whereNotNull('url')
-        ->where('relational_type', 'Brand');
+        ->where(function ($query) {
+            $query->where('relational_type', 'Brand')
+            ->orWhere('relational_type', static::class);
+        });
     }
 }
