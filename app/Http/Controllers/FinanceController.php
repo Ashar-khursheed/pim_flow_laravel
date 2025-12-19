@@ -211,7 +211,7 @@ class FinanceController extends Controller
             'total_records' => $totalRecords,
             'total_pages' => $totalPages,
             'data' => $formattedFinance,
-        ]);
+        ], 200);
     }
 
     /**
@@ -527,14 +527,14 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot update because a NetTerm payment has already been made.',
-            ], 201);
+            ], 200);
         }
 
         if ($request->approved_amount > $finance->requested_amount) {
             return response()->json([
                 'success' => false,
                 'message' => 'Approved amount '.$request->approved_amount.' cannot be greater than the requested amount '.$finance->requested_amount,
-            ], 201);
+            ], 200);
         }
 
         // Handle approval logic
@@ -544,7 +544,7 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Cannot approve the request as there is pending due amount.',
-                ], 201);
+                ], 200);
             }
             $data['approvalBy'] = Auth::id();
             $data['approved_amount'] = $request->approved_amount;
@@ -647,7 +647,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record cannot be deleted due to remaining amount.'
-            ], 404);
+            ], 200);
         }
 
 
@@ -670,7 +670,7 @@ class FinanceController extends Controller
                 'success' => false,
                 'message' => 'Failed to delete record.',
                 'error'   => $e->getMessage()
-            ], 500);
+            ], 200);
         }
     }
 
@@ -759,13 +759,13 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot update because a NetTerm payment has already been paid.',
-            ], 201);
+            ], 200);
         }
         if ($request->approved_amount > $finance->requested_amount) {
             return response()->json([
                 'success' => false,
                 'message' => 'Approved amount '.$request->approved_amount.' cannot be greater than the requested amount '.$finance->requested_amount,
-            ], 201);
+            ], 200);
         }
         if ($request->accounts_status == 'Approved' && !empty($request->approved_amount)) {
             $next_due_amt = (float) $finance->next_due_amt;
@@ -773,7 +773,7 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Cannot approve the request as there is pending due amount.',
-                ], 201);
+                ], 200);
             }
 
             $finance->approvalBy = Auth::id();
@@ -804,7 +804,7 @@ class FinanceController extends Controller
             'success' => true,
             'message' => 'Finance account status updated successfully.',
             'data' => $finance
-        ]);
+        ], 200);
     }
     /**
      * @OA\Get(
@@ -939,14 +939,14 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'This invoice is already fully paid.'
-                ], 400);
+                ], 200);
             }
 
             if ($pay_amount > $remaining) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Payment amount cannot exceed remaining due: ' . number_format($remaining, 2)
-                ], 400);
+                ], 200);
             }
 
             // Load related finance with lock
@@ -999,7 +999,7 @@ class FinanceController extends Controller
                     'balance'         => $financesPayment->balance,
                     'status'          => $finance->status,
                 ]
-            ]);
+            ], 200);
         });
     }
 
@@ -1283,7 +1283,7 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'No outstanding balance to pay.'
-                ], 400);
+                ], 200);
             }
 
             $totalOutstanding = $pendingPayments->sum(function ($p) {
@@ -1295,7 +1295,7 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Payment amount cannot exceed total outstanding balance. Outstanding: ' . number_format($totalOutstanding, 2)
-                ], 400);
+                ], 200);
             }
 
             // Check if pay amount is less than minimum required
@@ -1303,7 +1303,7 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid payment amount.'
-                ], 400);
+                ], 200);
             }
 
 
@@ -1382,7 +1382,7 @@ class FinanceController extends Controller
                     'status'           => $finance->status,
                     'invoices_updated' => $invoicesUpdated,
                 ]
-            ]);
+            ],200);
         });
     }
 }
