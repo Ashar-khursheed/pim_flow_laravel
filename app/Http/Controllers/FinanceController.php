@@ -42,6 +42,8 @@ class FinanceController extends Controller
      *         description="Search by order id, transaction_id",
      *         @OA\Schema(type="string", example="")
      *     ),
+     *      @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date",example="2025-01-01")),
+     *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date",example="2025-12-31")),
      *     @OA\Parameter(
      *         name="page",
      *         in="query",
@@ -84,6 +86,18 @@ class FinanceController extends Controller
      */
     public function index(Request $request)
     {
+
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $from = $request->from_date . ' 00:00:00';
+            $to = $request->to_date . ' 23:59:59';
+
+            $records = Finance::whereBetween('created_at', [$from, $to])->pluck('id');
+            return response()->json([
+                'success' => true,
+                'message' => __('msg_rec_list'),
+                'data' => $records,
+            ]);
+        }
 
         $query = Finance::with(['createdBy', 'updatedBy', 'customer', 'customerAddress', 'approvalUser']);
         if ($request->filled('status') && $request->input('status') !== "all") {
@@ -146,10 +160,10 @@ class FinanceController extends Controller
                 ->where('status', 'Pending')
                 ->whereDate('next_due_date', '<', $today)
                 ->update(['status' => 'Overdue']);
-        FinancesPayment::where('customer_id', $finance->customer_id)
-            ->where('status', 'Pending')
-            ->whereDate('due_date', '<', $today)
-            ->update(['status' => 'Overdue']);
+            FinancesPayment::where('customer_id', $finance->customer_id)
+                ->where('status', 'Pending')
+                ->whereDate('due_date', '<', $today)
+                ->update(['status' => 'Overdue']);
 
 
             return [
@@ -533,7 +547,7 @@ class FinanceController extends Controller
         if ($request->approved_amount > $finance->requested_amount) {
             return response()->json([
                 'success' => false,
-                'message' => 'Approved amount '.$request->approved_amount.' cannot be greater than the requested amount '.$finance->requested_amount,
+                'message' => 'Approved amount ' . $request->approved_amount . ' cannot be greater than the requested amount ' . $finance->requested_amount,
             ], 200);
         }
 
@@ -643,12 +657,12 @@ class FinanceController extends Controller
             DB::beginTransaction();
 
 
-        if (!empty($finance->available_credit_amount) ||  $finance->next_due_amt >0 ) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Finance record cannot be deleted due to remaining amount.'
-            ], 200);
-        }
+            if (!empty($finance->available_credit_amount) ||  $finance->next_due_amt > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Finance record cannot be deleted due to remaining amount.'
+                ], 200);
+            }
 
 
             // Delete related payments
@@ -764,7 +778,7 @@ class FinanceController extends Controller
         if ($request->approved_amount > $finance->requested_amount) {
             return response()->json([
                 'success' => false,
-                'message' => 'Approved amount '.$request->approved_amount.' cannot be greater than the requested amount '.$finance->requested_amount,
+                'message' => 'Approved amount ' . $request->approved_amount . ' cannot be greater than the requested amount ' . $finance->requested_amount,
             ], 200);
         }
         if ($request->accounts_status == 'Approved' && !empty($request->approved_amount)) {
@@ -981,7 +995,7 @@ class FinanceController extends Controller
             // === Update Main Finance Record ===
             $finance->paid_amount   += $pay_amount;
             $finance->next_due_amt   = max(0, $finance->next_due_amt - $pay_amount);
-            if ($finance->available_credit_amount <= 0 && $finance->next_due_amt<=0) {
+            if ($finance->available_credit_amount <= 0 && $finance->next_due_amt <= 0) {
                 $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
             }
 
@@ -1360,7 +1374,7 @@ class FinanceController extends Controller
             $previouslyPaid = $finance->paid_amount ?? 0;
             $finance->paid_amount = $previouslyPaid + $totalApplied;
             $finance->next_due_amt = max(0, ($finance->next_due_amt ?? 0) - $totalApplied);
-            if ($finance->available_credit_amount <= 0 && $finance->next_due_amt<=0) {
+            if ($finance->available_credit_amount <= 0 && $finance->next_due_amt <= 0) {
                 $finance->status = $finance->next_due_amt <= 0 ? 'Paid' : 'Pending';
             }
 
@@ -1382,7 +1396,7 @@ class FinanceController extends Controller
                     'status'           => $finance->status,
                     'invoices_updated' => $invoicesUpdated,
                 ]
-            ],200);
+            ], 200);
         });
     }
 }

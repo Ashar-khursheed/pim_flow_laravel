@@ -801,7 +801,7 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
 	Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
-	Route::put('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
+	Route::post('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
 	Route::delete('/customer-reviews-delete/{id}', [F_UserReviewController::class, 'deleteReview']);
 
 	Route::get('/frontend/products/products-you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);

@@ -18,6 +18,8 @@ class GetInTouchController extends Controller
      *         required=false,
      *         @OA\Schema(type="string", example="john")
      *     ),
+     *  @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date",example="2025-01-01")),
+     *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date",example="2025-12-31")),
      *     @OA\Parameter(
      *         name="sort_by",
      *         in="query",
@@ -81,6 +83,21 @@ class GetInTouchController extends Controller
      */
     public function index(Request $request)
     {
+
+         if ($request->filled('from_date') && $request->filled('to_date')) {
+            $from = $request->from_date . ' 00:00:00';
+            $to = $request->to_date . ' 23:59:59';
+
+            $records = GetInTouch::whereBetween('created_at', [$from, $to])->pluck('id');
+            return response()->json([
+                'success' => true,
+                'message' => __('msg_rec_list'),
+                'data' => $records,
+            ]);
+        }
+
+
+
         $query = GetInTouch::query();
 
         // Search
