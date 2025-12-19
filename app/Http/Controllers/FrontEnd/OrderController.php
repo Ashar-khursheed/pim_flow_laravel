@@ -5,6 +5,7 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\BaseController;
 
 use App\Models\FrontEnd\Order;
+use App\Models\ChequeUpload;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 use App\Models\FrontEnd\CustomerAddress;
@@ -17,6 +18,7 @@ use Illuminate\Support\Str;
 use App\Models\Utm;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
+
 
 use App\Jobs\Order\OrderPlacedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
