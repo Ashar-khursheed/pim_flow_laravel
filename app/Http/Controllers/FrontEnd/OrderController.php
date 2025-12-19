@@ -1176,6 +1176,72 @@ class OrderController extends BaseController
 
 
 
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/save-cheque-upload",
+	 *     operationId="saveChequeUpload",
+	 *     tags={"Cheque Upload"},
+	 *     summary="Upload cheque front and back images",
+	 *     description="Uploads front and back cheque images and saves them against a session",
+	 *
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"cheque_img","cheque_img_back"},
+	 *                 @OA\Property(
+	 *                     property="cheque_img",
+	 *                     type="string",
+	 *                     format="binary",
+	 *                     description="Front side of cheque image (jpg, jpeg, png, webp)"
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="cheque_img_back",
+	 *                     type="string",
+	 *                     format="binary",
+	 *                     description="Back side of cheque image (jpg, jpeg, png, webp)"
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="session_id",
+	 *                     type="string",
+	 *                     example="sess_123456",
+	 *                     description="Optional session identifier"
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Cheque uploaded successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Cheque images uploaded and saved successfully"),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="object",
+	 *                 @OA\Property(property="id", type="integer", example=1),
+	 *                 @OA\Property(property="cheque_img", type="string", example="s3/path/front.webp"),
+	 *                 @OA\Property(property="cheque_img_back", type="string", example="s3/path/back.webp"),
+	 *                 @OA\Property(property="session_id", type="string", example="sess_123456"),
+	 *                 @OA\Property(property="created_at", type="string", example="2025-01-01 12:00:00")
+	 *             )
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation error",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Validation failed"),
+	 *             @OA\Property(property="errors", type="object")
+	 *         )
+	 *     )
+	 * )
+	 */
+
 	public function saveChequeUpload(Request $request)
 	{
 		$validator = Validator::make($request->all(), [
@@ -1228,38 +1294,91 @@ class OrderController extends BaseController
 		], 200);
 	}
 
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/get-cheque-uploads",
+	 *     operationId="getChequeUploadsBySession",
+	 *     tags={"Cheque Upload"},
+	 *     summary="Get cheque uploads by session ID",
+	 *     description="Returns all cheque uploads related to a session ID",
+	 *     @OA\Parameter(
+	 *         name="session_id",
+	 *         in="query",
+	 *         required=true,
+	 *         description="Session identifier",
+	 *         @OA\Schema(type="string", example="sess_123456")
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Cheque uploads retrieved successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Cheque uploads retrieved successfully"),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="id", type="integer", example=1),
+	 *                     @OA\Property(property="cheque_img", type="string", example="s3/path/front.webp"),
+	 *                     @OA\Property(property="cheque_img_back", type="string", example="s3/path/back.webp"),
+	 *                     @OA\Property(property="session_id", type="string", example="sess_123456"),
+	 *                     @OA\Property(property="created_at", type="string", example="2025-01-01 12:00:00")
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="No cheque uploads found",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="No cheque uploads found for this session"),
+	 *             @OA\Property(property="data", type="array", @OA\Items())
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation error"
+	 *     )
+	 * )
+	 */
 	public function getChequeUploadsBySession(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'session_id' => 'required|string|max:255',
-    ]);
+	{
+		$validator = Validator::make($request->all(), [
+			'session_id' => 'required|string|max:255',
+		]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors'  => $validator->errors(),
-        ], 422);
-    }
+		if ($validator->fails()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors'  => $validator->errors(),
+			], 422);
+		}
 
-    $chequeUploads = ChequeUpload::where('session_id', $request->session_id)
-                                  ->orderBy('created_at', 'desc')
-                                  ->get();
+		$chequeUploads = ChequeUpload::where('session_id', $request->session_id)
+									->orderBy('created_at', 'desc')
+									->get();
 
-    if ($chequeUploads->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No cheque uploads found for this session',
-            'data' => [],
-        ], 404);
-    }
+		if ($chequeUploads->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No cheque uploads found for this session',
+				'data' => [],
+			], 404);
+		}
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Cheque uploads retrieved successfully',
-        'data' => $chequeUploads,
-    ], 200);
-}
+		return response()->json([
+			'success' => true,
+			'message' => 'Cheque uploads retrieved successfully',
+			'data' => $chequeUploads,
+		], 200);
+	}
 
 	
 }

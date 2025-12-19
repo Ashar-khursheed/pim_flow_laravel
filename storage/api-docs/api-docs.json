@@ -21058,6 +21058,216 @@
                 ]
             }
         },
+        "/api/frontend/save-cheque-upload": {
+            "post": {
+                "tags": [
+                    "Cheque Upload"
+                ],
+                "summary": "Upload cheque front and back images",
+                "description": "Uploads front and back cheque images and saves them against a session",
+                "operationId": "saveChequeUpload",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "cheque_img",
+                                    "cheque_img_back"
+                                ],
+                                "properties": {
+                                    "cheque_img": {
+                                        "description": "Front side of cheque image (jpg, jpeg, png, webp)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "cheque_img_back": {
+                                        "description": "Back side of cheque image (jpg, jpeg, png, webp)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "session_id": {
+                                        "description": "Optional session identifier",
+                                        "type": "string",
+                                        "example": "sess_123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cheque uploaded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cheque images uploaded and saved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "cheque_img": {
+                                                    "type": "string",
+                                                    "example": "s3/path/front.webp"
+                                                },
+                                                "cheque_img_back": {
+                                                    "type": "string",
+                                                    "example": "s3/path/back.webp"
+                                                },
+                                                "session_id": {
+                                                    "type": "string",
+                                                    "example": "sess_123456"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "example": "2025-01-01 12:00:00"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/get-cheque-uploads": {
+            "get": {
+                "tags": [
+                    "Cheque Upload"
+                ],
+                "summary": "Get cheque uploads by session ID",
+                "description": "Returns all cheque uploads related to a session ID",
+                "operationId": "getChequeUploadsBySession",
+                "parameters": [
+                    {
+                        "name": "session_id",
+                        "in": "query",
+                        "description": "Session identifier",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "sess_123456"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cheque uploads retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cheque uploads retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "cheque_img": {
+                                                        "type": "string",
+                                                        "example": "s3/path/front.webp"
+                                                    },
+                                                    "cheque_img_back": {
+                                                        "type": "string",
+                                                        "example": "s3/path/back.webp"
+                                                    },
+                                                    "session_id": {
+                                                        "type": "string",
+                                                        "example": "sess_123456"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "example": "2025-01-01 12:00:00"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No cheque uploads found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No cheque uploads found for this session"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
         "/api/frontend/payments": {
             "get": {
                 "tags": [
@@ -49120,6 +49330,10 @@
         {
             "name": "CompressImage",
             "description": "CompressImage"
+        },
+        {
+            "name": "Cheque Upload",
+            "description": "Cheque Upload"
         },
         {
             "name": "Frontend-Payments",
