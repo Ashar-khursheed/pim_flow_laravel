@@ -838,53 +838,142 @@ class ProductController extends BaseController
 
     // Translation fields
     $translation = $product->translations->firstWhere('locale', $locale);
-    foreach ($attributes as $attribute) {
-        $value = $product->$attribute ?? null;
+    // foreach ($attributes as $attribute) {
+    //     $value = $product->$attribute ?? null;
 
-        switch ($attribute) {
-            case 'name':
-            case 'description':
-            case 'benefits_features':
-            case 'images':
-                $field = $attribute . '_tr';
-                $value = $translation ? $translation->$field ?? $value : $value;
-                $formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true);
-                break;
+    //     switch ($attribute) {
+    //         case 'name':
+    //         case 'description':
+    //         case 'benefits_features':
+    //         case 'images':
+    //             $field = $attribute . '_tr';
+    //             $value = $translation ? $translation->$field ?? $value : $value;
+    //             $formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true);
+    //             break;
 
-            case 'stock_status':
-                $stockStatusMappings = [
-                    'in_stock' => 'In Stock',
-                    'out_of_stock' => 'Out of Stock',
-                    'on_backorder' => 'Pre Order'
-                ];
-                $selectedStockStatus = $stockStatusMappings[$value] ?? $value;
-                $formattedProduct['stock_status'] = [
-                    'selected' => $selectedStockStatus,
-                    'values' => $stockStatusMappings
-                ];
-                break;
+    //         case 'stock_status':
+    //             $stockStatusMappings = [
+    //                 'in_stock' => 'In Stock',
+    //                 'out_of_stock' => 'Out of Stock',
+    //                 'on_backorder' => 'Pre Order'
+    //             ];
+    //             $selectedStockStatus = $stockStatusMappings[$value] ?? $value;
+    //             $formattedProduct['stock_status'] = [
+    //                 'selected' => $selectedStockStatus,
+    //                 'values' => $stockStatusMappings
+    //             ];
+    //             break;
 
-            case 'tax_id':
-                $tax = Tax::find($value);
-                $formattedProduct['tax'] = $tax ? [['title' => $tax->title, 'rate' => $tax->percentage]] : [['title' => null, 'rate' => null]];
-                break;
+    //         case 'tax_id':
+    //             $tax = Tax::find($value);
+    //             $formattedProduct['tax'] = $tax ? [['title' => $tax->title, 'rate' => $tax->percentage]] : [['title' => null, 'rate' => null]];
+    //             break;
 
-            case 'currency_id':
-                $formattedProduct['currency'] = $product->currency ? [['id' => $product->currency->id, 'title' => $product->currency->title]] : null;
-                break;
+    //         case 'currency_id':
+    //             $formattedProduct['currency'] = $product->currency ? [['id' => $product->currency->id, 'title' => $product->currency->title]] : null;
+    //             break;
 
-            case 'brand_id':
-                $formattedProduct['brand'] = $product->brand ? [['id' => $product->brand->id, 'name' => $product->brand->name]] : null;
-                break;
+    //         case 'brand_id':
+    //             $formattedProduct['brand'] = $product->brand ? [['id' => $product->brand->id, 'name' => $product->brand->name]] : null;
+    //             break;
 
-            default:
-                if (!in_array($attribute, ['categories', 'productAttributes'])) {
-                    $formattedProduct[$attribute] = $value;
-                }
-                break;
-        }
-    }
+    //         default:
+    //             if (!in_array($attribute, ['categories', 'productAttributes'])) {
+    //                 $formattedProduct[$attribute] = $value;
+    //             }
+    //             break;
+    //     }
+    // }
+	foreach ($attributes as $attribute) {
+			$value = $product->$attribute ?? null;
 
+			switch ($attribute) {
+
+				case 'name':
+				$field = $attribute . '_tr';
+				$value = $translation ? $translation->$field : $value;
+				$formattedProduct[$attribute] = $value;
+				break;
+
+				case 'benefits_features':
+				case 'description':
+				case 'images':
+				$field = $attribute . '_tr';
+				$value = $translation ? $translation->$field : $value;
+				$formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true);
+				break;
+
+				case 'refund':
+				$formattedProduct[$attribute] = [['value' => $value]];
+				break;
+
+				case 'stock_status':
+				$stockStatusMappings = [
+					'in_stock' => 'In Stock',
+					'out_of_stock' => 'Out of Stock',
+					'on_backorder' => 'Pre Order'
+				];
+
+				/* Map selected value to frontend readable text */
+				$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
+
+				$formattedProduct['stock_status'] = [
+					'selected' => $selectedStockStatus, /* This will now show 'In Stock', 'Out of Stock', etc. */
+					'values' => $stockStatusMappings /* Values remain the same */
+				];
+				break;
+
+				case 'tax_id':
+				$tax = Tax::find($value);
+				if ($tax) {
+					$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
+				} else {
+					$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
+				}
+				break;
+
+				case 'currency_id':
+				$formattedProduct['currency'] = $product->currency ? [
+					[
+						'id' => $product->currency->id,
+						'title' => $product->currency->title
+					]
+				] : null;
+				break;
+
+				case 'brand_id':
+				$formattedProduct['brand'] = $product->brand ? [
+					[
+						'id' => $product->brand->id,
+						'name' => $product->brand->name
+					]
+				] : null;
+				break;
+
+				case 'categories':
+				$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
+					return [
+						'id' => $category->id,
+						'name' => $category->name,
+						'parent_id' => $category->parent_id
+					];
+				}) : [];
+				break;
+
+				case 'video_path':
+				case 'documents':
+				$formattedProduct[$attribute] = is_array($value) ? $value : [];
+				break;
+
+				case 'status':
+				$formattedProduct[$attribute] = [['value' => $value]];
+				break;
+
+				default:
+				$formattedProduct[$attribute] = $value;
+				break;
+			}
+		}
     // Admin reviews
     $adminReviews = Review::where('product_id', $productId)->whereNull('customer_id')->get();
 
