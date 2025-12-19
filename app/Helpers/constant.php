@@ -380,7 +380,7 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 		return null;
 	}
 }
-
+ 
 function uploadFileToS3($file, $path)
 {
 	$filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
@@ -1026,6 +1026,7 @@ if (!function_exists('paymentGateway')) {
 			'Cash on Delivery',
 			'Stax',
 			'Square',
+
 		);
 		return $gateways;
 	}
