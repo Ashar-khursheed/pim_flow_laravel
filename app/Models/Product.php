@@ -107,7 +107,7 @@ class Product extends Model implements TranslatableContract
 
 	public function vendors()
 	{
-		return $this->belongsToMany(Vendor::class, 'product_suppliers', 'product_id', 'vendor_id')->withPivot(['price', 'sale_price']);
+		return $this->belongsToMany(Vendor::class, 'product_suppliers', 'product_id', 'vendor_id')->withPivot(['price', 'sale_price',]);
 	}
 
 	public function brand()
