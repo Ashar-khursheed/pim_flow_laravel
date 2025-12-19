@@ -421,302 +421,497 @@ class ProductController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+	// public function show($productId, Request $request)
+	// {
+	// 	$locale = in_array($request->locale ?? 'en', ['ar', 'en']) ? ($request->locale ?? 'en') : 'en';
+	// 	$attributeGroup = [
+	// 		'General' => ['sku', 'barcode', 'status', 'approved' , 'ar_approved'],
+
+	// 		'Inventory & Stock Management' => ['stock_status'],
+	// 		'Pricing & Sales' => ['tax_id', 'currency_id', 'approved_by'],
+	// 		'Marketing' => ['name', 'description', 'gen_type' , 'quote_available'],
+	// 		'Media' => ['images', 'video_path', 'documents', 'benefits_features'],
+	// 		'Store & Vendor Information' => ['brand_id'],
+	// 		'Performance & Analytics' => ['views', 'units_sold'],
+	// 		'Other' => ['order', 'website_ids'],
+	// 		'All' => []
+	// 	];
+
+	// 	$attributeGroup['All'] = array_merge(...array_values(array_filter($attributeGroup, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
+
+	// 	$relations = [
+	// 		'General' => ['categories:id,name,parent_id'],
+	// 		'Pricing & Sales' => ['currency:id,title'],
+	// 		'Shipping & Dimensions' => [],
+	// 		'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
+	// 		'Pricing' => ['vendors:id,name,price,sale_price,delivery_days,inventory,in_stock,dropshipping'],
+	// 		'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
+	// 	];
+
+	// 	$attrType = $request->attr_type ?? 'All';
+
+	// 	$attributes = $attributeGroup[$attrType] ?? $attributeGroup['All'];
+	// 	// $with = array_merge($relations[$attrType] ?? [], ['categories:id,name,parent_id']);
+	// 	$with = array_merge($relations[$attrType] ?? [], [
+	// 		'categories:id,name,parent_id',
+	// 		'categories.parent:id,name,parent_id',
+	// 		'categories.parent.parent:id,name,parent_id',
+	// 		'categories.children:id,name,parent_id',
+	// 		'vendors',
+	// 		'productAttributes.attributeDetails',
+	// 		'productAttributes.measurementUnit'
+	// 	]);
+
+	// 	$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+
+	// 	if (!$product) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Product does not exist.'
+	// 		]);
+	// 	}
+
+	// 	// Extract first vendor's price and sale_price
+	// 	$firstVendor = $product->vendors->first();
+	// 	$firstSupplier = $product->productSuppliers->first();
+
+	// 	$formattedProduct = []; // initialize
+
+	// 	$formattedProduct['categories'] = $formattedCategories;
+	// 	$formattedProduct['price'] = $firstSupplier->price ?? null;
+	// 	$formattedProduct['sale_price'] = $firstSupplier->sale_price ?? null;
+	// 	$formattedProduct['delivery_days'] = $firstSupplier->delivery_days ?? null;
+	// 	$formattedProduct['inventory'] = $firstSupplier->inventory ?? null;
+	// 	$formattedProduct['in_stock'] = $firstSupplier->in_stock ?? null;
+	// 	$formattedProduct['product_attributes'] = [];
+
+
+	// 	foreach ($product->categories as $category) {
+	// 		$chain = [];
+
+	// 		// Step 1: Build the chain from current to root
+	// 		$current = $category;
+	// 		while ($current) {
+	// 			$chain[] = $current;
+	// 			$current = $current->parent;
+	// 		}
+
+	// 		// Step 2: Reverse to go from root to child
+	// 		$chain = array_reverse($chain);
+
+	// 		// Step 3: Build nested structure, merging by ID
+	// 		$ref = &$formattedCategories;
+
+	// 		foreach ($chain as $cat) {
+	// 			// Check if this category already exists at this level
+	// 			$found = false;
+	// 			foreach ($ref as &$item) {
+	// 				if ($item['id'] == $cat->id) {
+	// 					$ref = &$item['children'];
+	// 					$found = true;
+	// 					break;
+	// 				}
+	// 			}
+
+	// 			if (!$found) {
+	// 				$new = [
+	// 					'id' => $cat->id,
+	// 					'name' => $cat->name,
+	// 					'children' => []
+	// 				];
+	// 				$ref[] = $new;
+	// 				$ref = &$ref[array_key_last($ref)]['children'];
+	// 			}
+	// 		}
+
+	// 		unset($ref); // Clear reference
+	// 	}
+
+	// 	/* Fetch reviews where customer_id is null */
+	// 	$adminReviews = Review::where('product_id', $productId)
+	// 	->whereNull('customer_id')
+	// 	->get();
+
+	// 	/* Fetch FAQs using the FAQ model */
+	// 	$faqs = FAQ::where('product_id', $productId)->get()->each(function ($faq) use ($locale) {
+	// 		$translation = $faq->translations->firstWhere('locale', $locale);
+
+	// 		$faq->question = $translation?->question_tr ?? $faq->question;
+	// 		$faq->answer = $translation?->answer_tr ?? $faq->answer;
+
+	// 		unset($faq->translations, $faq->question_tr, $faq->answer_tr);
+	// 	});
+
+	// 	if (!empty($product->video_path) && is_string($product->video_path)) {
+	// 		$product->video_path = json_decode($product->video_path, true) ?? [];
+	// 	}
+
+	// 	if (!empty($product->documents) && is_string($product->documents)) {
+	// 		$product->documents = json_decode($product->documents, true) ?? [];
+	// 	}
+
+	// 	/* Normalize the documents field */
+	// 	if (!empty($product->documents) && is_array($product->documents)) {
+	// 		$product->documents = array_map(function ($item) {
+	// 			/* Check if the item is an array with 'title' and 'path', or just a string */
+	// 			if (is_array($item) && isset($item['path'])) {
+	// 				return [
+	// 					'title' => $item['title'],
+	// 					'path' => $item['path']
+	// 				];
+	// 			} elseif (is_string($item)) {
+	// 				return [
+	// 					'title' => basename($item),
+	// 					'path' => $item
+	// 				];
+	// 			}
+	// 			return null;
+	// 		}, $product->documents);
+	// 	}
+	// 	$formattedProduct = [];
+
+	// 	$formattedProduct['categories'] = $formattedCategories;
+
+	// 	$formattedProduct['price'] = $productPrice;
+	// 	$formattedProduct['sale_price'] = $productSalePrice;
+	// 	$formattedProduct['delivery_days'] = $productDelivery_days;
+	// 	$formattedProduct['inventory'] = $productInventory;
+	// 	$formattedProduct['in_stock'] = $productInStock;
+	// 	$formattedProduct['product_attributes'] = [];
+
+	// 	foreach ($product->productAttributes as $attr) {
+	// 		$formattedProduct['product_attributes'][] = [
+	// 			'attribute_id' => $attr->attribute_id,
+	// 			'attribute_name' => $attr->attributeDetails->name ?? null,
+	// 			'attribute_value' => $attr->attribute_value,
+	// 			'measurement_unit_id' => $attr->measurement_unit_id,
+	// 			'measurement_unit_name' => $attr->measurementUnit->name ?? null,
+	// 		];
+	// 	}
+
+	// 	$formattedProduct['product_suppliers'] = $product->productSuppliers->map(function ($productSupplier) {
+	// 		return [
+	// 			'id' => $productSupplier->id,
+	// 			'product_id' => $productSupplier->product_id,
+	// 			'vendor_id' => $productSupplier->vendor_id,
+	// 			'vendor_sku' => $productSupplier->vendor_sku,
+	// 			'total_cost_per_item' => $productSupplier->total_cost_per_item,
+	// 			'inventory' => $productSupplier->inventory,
+	// 			'in_stock' => $productSupplier->in_stock,
+	// 			'vendor_name' => $productSupplier->vendor->name,
+	// 			'dropshipping' => $productSupplier->vendor->dropshipping ?? null, // 👈 added line
+
+	// 		];
+	// 	});
+	// 	$translation = $product->translations->firstWhere('locale', $locale);
+
+	// 	foreach ($attributes as $attribute) {
+	// 		$value = $product->$attribute ?? null;
+
+	// 		switch ($attribute) {
+
+	// 			case 'name':
+	// 			$field = $attribute . '_tr';
+	// 			$value = $translation ? $translation->$field : $value;
+	// 			$formattedProduct[$attribute] = $value;
+	// 			break;
+
+	// 			case 'benefits_features':
+	// 			case 'description':
+	// 			case 'images':
+	// 			$field = $attribute . '_tr';
+	// 			$value = $translation ? $translation->$field : $value;
+	// 			$formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true);
+	// 			break;
+
+	// 			case 'refund':
+	// 			$formattedProduct[$attribute] = [['value' => $value]];
+	// 			break;
+
+	// 			case 'stock_status':
+	// 			$stockStatusMappings = [
+	// 				'in_stock' => 'In Stock',
+	// 				'out_of_stock' => 'Out of Stock',
+	// 				'on_backorder' => 'Pre Order'
+	// 			];
+
+	// 			/* Map selected value to frontend readable text */
+	// 			$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
+
+	// 			$formattedProduct['stock_status'] = [
+	// 				'selected' => $selectedStockStatus, /* This will now show 'In Stock', 'Out of Stock', etc. */
+	// 				'values' => $stockStatusMappings /* Values remain the same */
+	// 			];
+	// 			break;
+
+	// 			case 'tax_id':
+	// 			$tax = Tax::find($value);
+	// 			if ($tax) {
+	// 				$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
+	// 			} else {
+	// 				$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
+	// 			}
+	// 			break;
+
+	// 			case 'currency_id':
+	// 			$formattedProduct['currency'] = $product->currency ? [
+	// 				[
+	// 					'id' => $product->currency->id,
+	// 					'title' => $product->currency->title
+	// 				]
+	// 			] : null;
+	// 			break;
+
+	// 			case 'brand_id':
+	// 			$formattedProduct['brand'] = $product->brand ? [
+	// 				[
+	// 					'id' => $product->brand->id,
+	// 					'name' => $product->brand->name
+	// 				]
+	// 			] : null;
+	// 			break;
+
+	// 			case 'categories':
+	// 			$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
+	// 				return [
+	// 					'id' => $category->id,
+	// 					'name' => $category->name,
+	// 					'parent_id' => $category->parent_id
+	// 				];
+	// 			}) : [];
+	// 			break;
+
+	// 			case 'video_path':
+	// 			case 'documents':
+	// 			$formattedProduct[$attribute] = is_array($value) ? $value : [];
+	// 			break;
+
+	// 			case 'status':
+	// 			$formattedProduct[$attribute] = [['value' => $value]];
+	// 			break;
+
+	// 			default:
+	// 			$formattedProduct[$attribute] = $value;
+	// 			break;
+	// 		}
+	// 	}
+
+	// 	$contentAllowedRoles = [
+	// 		'Super Admin',
+	// 		'Admin',
+	// 		'Content Writing Manager',
+	// 		'Content Writer',
+	// 		'Ecommerce Specialist',
+	// 	];
+
+	// 	$userRole = auth()->user() ? auth()->user()->getRoleNames()->first() : null;
+	// 	$isContentEnabled = $userRole && in_array($userRole, $contentAllowedRoles);
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Product detail',
+	// 		'product' => $formattedProduct,
+	// 		'categories_hierarchy' => $formattedCategories,
+	// 		'admin_reviews' => $adminReviews,
+	// 		'faq' => $faqs ?? [],
+	// 		'is_content_enabled' => $isContentEnabled,
+	// 	]);
+	// }
 	public function show($productId, Request $request)
-	{
-		$locale = in_array($request->locale ?? 'en', ['ar', 'en']) ? ($request->locale ?? 'en') : 'en';
-		$attributeGroup = [
-			'General' => ['sku', 'barcode', 'status', 'approved' , 'ar_approved'],
+{
+    $locale = in_array($request->locale ?? 'en', ['ar', 'en']) ? ($request->locale ?? 'en') : 'en';
 
-			'Inventory & Stock Management' => ['stock_status'],
-			'Pricing & Sales' => ['tax_id', 'currency_id', 'approved_by'],
-			'Marketing' => ['name', 'description', 'gen_type' , 'quote_available'],
-			'Media' => ['images', 'video_path', 'documents', 'benefits_features'],
-			'Store & Vendor Information' => ['brand_id'],
-			'Performance & Analytics' => ['views', 'units_sold'],
-			'Other' => ['order', 'website_ids'],
-			'All' => []
-		];
+    $attributeGroup = [
+        'General' => ['sku', 'barcode', 'status', 'approved', 'ar_approved'],
+        'Inventory & Stock Management' => ['stock_status'],
+        'Pricing & Sales' => ['tax_id', 'currency_id', 'approved_by'],
+        'Marketing' => ['name', 'description', 'gen_type', 'quote_available'],
+        'Media' => ['images', 'video_path', 'documents', 'benefits_features'],
+        'Store & Vendor Information' => ['brand_id'],
+        'Performance & Analytics' => ['views', 'units_sold'],
+        'Other' => ['order', 'website_ids'],
+        'All' => []
+    ];
 
-		$attributeGroup['All'] = array_merge(...array_values(array_filter($attributeGroup, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
+    $attributeGroup['All'] = array_merge(...array_values(array_filter($attributeGroup, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
 
-		$relations = [
-			'General' => ['categories:id,name,parent_id'],
-			'Pricing & Sales' => ['currency:id,title'],
-			'Shipping & Dimensions' => [],
-			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
-			'Pricing' => ['vendors:id,name,price,sale_price,delivery_days,inventory,in_stock,dropshipping'],
-			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
-		];
+    $relations = [
+        'General' => ['categories:id,name,parent_id'],
+        'Pricing & Sales' => ['currency:id,title'],
+        'Shipping & Dimensions' => [],
+        'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
+        'Pricing' => ['vendors:id,name'],
+        'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
+    ];
 
-		$attrType = $request->attr_type ?? 'All';
+    $attrType = $request->attr_type ?? 'All';
+    $attributes = $attributeGroup[$attrType] ?? $attributeGroup['All'];
 
-		$attributes = $attributeGroup[$attrType] ?? $attributeGroup['All'];
-		// $with = array_merge($relations[$attrType] ?? [], ['categories:id,name,parent_id']);
-		$with = array_merge($relations[$attrType] ?? [], [
-			'categories:id,name,parent_id',
-			'categories.parent:id,name,parent_id',
-			'categories.parent.parent:id,name,parent_id',
-			'categories.children:id,name,parent_id',
-			'vendors',
-			'productAttributes.attributeDetails',
-			'productAttributes.measurementUnit'
-		]);
+    $with = array_merge($relations[$attrType] ?? [], [
+        'categories:id,name,parent_id',
+        'categories.parent:id,name,parent_id',
+        'categories.parent.parent:id,name,parent_id',
+        'categories.children:id,name,parent_id',
+        'vendors',
+        'productAttributes.attributeDetails',
+        'productAttributes.measurementUnit',
+        'productSuppliers.vendor'
+    ]);
 
-		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+    $product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
 
-		if (!$product) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Product does not exist.'
-			]);
-		}
+    if (!$product) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Product does not exist.'
+        ]);
+    }
 
-		// Extract first vendor's price and sale_price
-		$firstVendor = $product->vendors->first();
-		$firstSupplier = $product->productSuppliers->first();
+    // Use first supplier for main product fields
+    $firstSupplier = $product->productSuppliers->first();
 
-		$formattedProduct = []; // initialize
+    $formattedProduct = [];
+    $formattedProduct['categories'] = [];
 
-		$formattedProduct['categories'] = $formattedCategories;
-		$formattedProduct['price'] = $firstSupplier->price ?? null;
-		$formattedProduct['sale_price'] = $firstSupplier->sale_price ?? null;
-		$formattedProduct['delivery_days'] = $firstSupplier->delivery_days ?? null;
-		$formattedProduct['inventory'] = $firstSupplier->inventory ?? null;
-		$formattedProduct['in_stock'] = $firstSupplier->in_stock ?? null;
-		$formattedProduct['product_attributes'] = [];
+    // Build nested category structure
+    foreach ($product->categories as $category) {
+        $chain = [];
+        $current = $category;
+        while ($current) {
+            $chain[] = $current;
+            $current = $current->parent;
+        }
+        $chain = array_reverse($chain);
 
+        $ref = &$formattedProduct['categories'];
+        foreach ($chain as $cat) {
+            $found = false;
+            foreach ($ref as &$item) {
+                if ($item['id'] == $cat->id) {
+                    $ref = &$item['children'];
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $new = ['id' => $cat->id, 'name' => $cat->name, 'children' => []];
+                $ref[] = $new;
+                $ref = &$ref[array_key_last($ref)]['children'];
+            }
+        }
+        unset($ref);
+    }
 
-		foreach ($product->categories as $category) {
-			$chain = [];
+    // Price & inventory fields from first supplier
+    $formattedProduct['price'] = $firstSupplier->price ?? null;
+    $formattedProduct['sale_price'] = $firstSupplier->sale_price ?? null;
+    $formattedProduct['delivery_days'] = $firstSupplier->delivery_days ?? null;
+    $formattedProduct['inventory'] = $firstSupplier->inventory ?? null;
+    $formattedProduct['in_stock'] = $firstSupplier->in_stock ?? null;
 
-			// Step 1: Build the chain from current to root
-			$current = $category;
-			while ($current) {
-				$chain[] = $current;
-				$current = $current->parent;
-			}
+    // Product attributes
+    $formattedProduct['product_attributes'] = $product->productAttributes->map(function ($attr) {
+        return [
+            'attribute_id' => $attr->attribute_id,
+            'attribute_name' => $attr->attributeDetails->name ?? null,
+            'attribute_value' => $attr->attribute_value,
+            'measurement_unit_id' => $attr->measurement_unit_id,
+            'measurement_unit_name' => $attr->measurementUnit->name ?? null,
+        ];
+    });
 
-			// Step 2: Reverse to go from root to child
-			$chain = array_reverse($chain);
+    // Product suppliers
+    $formattedProduct['product_suppliers'] = $product->productSuppliers->map(function ($ps) {
+        return [
+            'id' => $ps->id,
+            'product_id' => $ps->product_id,
+            'vendor_id' => $ps->vendor_id,
+            'vendor_sku' => $ps->vendor_sku,
+            'total_cost_per_item' => $ps->total_cost_per_item,
+            'inventory' => $ps->inventory,
+            'in_stock' => $ps->in_stock,
+            'delivery_days' => $ps->delivery_days,
+            'vendor_name' => $ps->vendor->name ?? null,
+            'dropshipping' => $ps->vendor->dropshipping ?? null,
+        ];
+    });
 
-			// Step 3: Build nested structure, merging by ID
-			$ref = &$formattedCategories;
+    // Translation fields
+    $translation = $product->translations->firstWhere('locale', $locale);
+    foreach ($attributes as $attribute) {
+        $value = $product->$attribute ?? null;
 
-			foreach ($chain as $cat) {
-				// Check if this category already exists at this level
-				$found = false;
-				foreach ($ref as &$item) {
-					if ($item['id'] == $cat->id) {
-						$ref = &$item['children'];
-						$found = true;
-						break;
-					}
-				}
+        switch ($attribute) {
+            case 'name':
+            case 'description':
+            case 'benefits_features':
+            case 'images':
+                $field = $attribute . '_tr';
+                $value = $translation ? $translation->$field ?? $value : $value;
+                $formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true);
+                break;
 
-				if (!$found) {
-					$new = [
-						'id' => $cat->id,
-						'name' => $cat->name,
-						'children' => []
-					];
-					$ref[] = $new;
-					$ref = &$ref[array_key_last($ref)]['children'];
-				}
-			}
+            case 'stock_status':
+                $stockStatusMappings = [
+                    'in_stock' => 'In Stock',
+                    'out_of_stock' => 'Out of Stock',
+                    'on_backorder' => 'Pre Order'
+                ];
+                $selectedStockStatus = $stockStatusMappings[$value] ?? $value;
+                $formattedProduct['stock_status'] = [
+                    'selected' => $selectedStockStatus,
+                    'values' => $stockStatusMappings
+                ];
+                break;
 
-			unset($ref); // Clear reference
-		}
+            case 'tax_id':
+                $tax = Tax::find($value);
+                $formattedProduct['tax'] = $tax ? [['title' => $tax->title, 'rate' => $tax->percentage]] : [['title' => null, 'rate' => null]];
+                break;
 
-		/* Fetch reviews where customer_id is null */
-		$adminReviews = Review::where('product_id', $productId)
-		->whereNull('customer_id')
-		->get();
+            case 'currency_id':
+                $formattedProduct['currency'] = $product->currency ? [['id' => $product->currency->id, 'title' => $product->currency->title]] : null;
+                break;
 
-		/* Fetch FAQs using the FAQ model */
-		$faqs = FAQ::where('product_id', $productId)->get()->each(function ($faq) use ($locale) {
-			$translation = $faq->translations->firstWhere('locale', $locale);
+            case 'brand_id':
+                $formattedProduct['brand'] = $product->brand ? [['id' => $product->brand->id, 'name' => $product->brand->name]] : null;
+                break;
 
-			$faq->question = $translation?->question_tr ?? $faq->question;
-			$faq->answer = $translation?->answer_tr ?? $faq->answer;
+            default:
+                if (!in_array($attribute, ['categories', 'productAttributes'])) {
+                    $formattedProduct[$attribute] = $value;
+                }
+                break;
+        }
+    }
 
-			unset($faq->translations, $faq->question_tr, $faq->answer_tr);
-		});
+    // Admin reviews
+    $adminReviews = Review::where('product_id', $productId)->whereNull('customer_id')->get();
 
-		if (!empty($product->video_path) && is_string($product->video_path)) {
-			$product->video_path = json_decode($product->video_path, true) ?? [];
-		}
+    // FAQs
+    $faqs = FAQ::where('product_id', $productId)->get()->each(function ($faq) use ($locale) {
+        $translation = $faq->translations->firstWhere('locale', $locale);
+        $faq->question = $translation?->question_tr ?? $faq->question;
+        $faq->answer = $translation?->answer_tr ?? $faq->answer;
+        unset($faq->translations, $faq->question_tr, $faq->answer_tr);
+    });
 
-		if (!empty($product->documents) && is_string($product->documents)) {
-			$product->documents = json_decode($product->documents, true) ?? [];
-		}
+    // Content enabled check
+    $contentAllowedRoles = ['Super Admin', 'Admin', 'Content Writing Manager', 'Content Writer', 'Ecommerce Specialist'];
+    $userRole = auth()->user() ? auth()->user()->getRoleNames()->first() : null;
+    $isContentEnabled = $userRole && in_array($userRole, $contentAllowedRoles);
 
-		/* Normalize the documents field */
-		if (!empty($product->documents) && is_array($product->documents)) {
-			$product->documents = array_map(function ($item) {
-				/* Check if the item is an array with 'title' and 'path', or just a string */
-				if (is_array($item) && isset($item['path'])) {
-					return [
-						'title' => $item['title'],
-						'path' => $item['path']
-					];
-				} elseif (is_string($item)) {
-					return [
-						'title' => basename($item),
-						'path' => $item
-					];
-				}
-				return null;
-			}, $product->documents);
-		}
-		$formattedProduct = [];
+    return response()->json([
+        'success' => true,
+        'message' => 'Product detail',
+        'product' => $formattedProduct,
+        'categories_hierarchy' => $formattedProduct['categories'],
+        'admin_reviews' => $adminReviews,
+        'faq' => $faqs ?? [],
+        'is_content_enabled' => $isContentEnabled,
+    ]);
+}
 
-		$formattedProduct['categories'] = $formattedCategories;
-
-		$formattedProduct['price'] = $productPrice;
-		$formattedProduct['sale_price'] = $productSalePrice;
-		$formattedProduct['delivery_days'] = $productDelivery_days;
-		$formattedProduct['inventory'] = $productInventory;
-		$formattedProduct['in_stock'] = $productInStock;
-		$formattedProduct['product_attributes'] = [];
-
-		foreach ($product->productAttributes as $attr) {
-			$formattedProduct['product_attributes'][] = [
-				'attribute_id' => $attr->attribute_id,
-				'attribute_name' => $attr->attributeDetails->name ?? null,
-				'attribute_value' => $attr->attribute_value,
-				'measurement_unit_id' => $attr->measurement_unit_id,
-				'measurement_unit_name' => $attr->measurementUnit->name ?? null,
-			];
-		}
-
-		$formattedProduct['product_suppliers'] = $product->productSuppliers->map(function ($productSupplier) {
-			return [
-				'id' => $productSupplier->id,
-				'product_id' => $productSupplier->product_id,
-				'vendor_id' => $productSupplier->vendor_id,
-				'vendor_sku' => $productSupplier->vendor_sku,
-				'total_cost_per_item' => $productSupplier->total_cost_per_item,
-				'inventory' => $productSupplier->inventory,
-				'in_stock' => $productSupplier->in_stock,
-				'vendor_name' => $productSupplier->vendor->name,
-				'dropshipping' => $productSupplier->vendor->dropshipping ?? null, // 👈 added line
-
-			];
-		});
-		$translation = $product->translations->firstWhere('locale', $locale);
-
-		foreach ($attributes as $attribute) {
-			$value = $product->$attribute ?? null;
-
-			switch ($attribute) {
-
-				case 'name':
-				$field = $attribute . '_tr';
-				$value = $translation ? $translation->$field : $value;
-				$formattedProduct[$attribute] = $value;
-				break;
-
-				case 'benefits_features':
-				case 'description':
-				case 'images':
-				$field = $attribute . '_tr';
-				$value = $translation ? $translation->$field : $value;
-				$formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true);
-				break;
-
-				case 'refund':
-				$formattedProduct[$attribute] = [['value' => $value]];
-				break;
-
-				case 'stock_status':
-				$stockStatusMappings = [
-					'in_stock' => 'In Stock',
-					'out_of_stock' => 'Out of Stock',
-					'on_backorder' => 'Pre Order'
-				];
-
-				/* Map selected value to frontend readable text */
-				$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
-
-				$formattedProduct['stock_status'] = [
-					'selected' => $selectedStockStatus, /* This will now show 'In Stock', 'Out of Stock', etc. */
-					'values' => $stockStatusMappings /* Values remain the same */
-				];
-				break;
-
-				case 'tax_id':
-				$tax = Tax::find($value);
-				if ($tax) {
-					$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
-				} else {
-					$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
-				}
-				break;
-
-				case 'currency_id':
-				$formattedProduct['currency'] = $product->currency ? [
-					[
-						'id' => $product->currency->id,
-						'title' => $product->currency->title
-					]
-				] : null;
-				break;
-
-				case 'brand_id':
-				$formattedProduct['brand'] = $product->brand ? [
-					[
-						'id' => $product->brand->id,
-						'name' => $product->brand->name
-					]
-				] : null;
-				break;
-
-				case 'categories':
-				$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
-					return [
-						'id' => $category->id,
-						'name' => $category->name,
-						'parent_id' => $category->parent_id
-					];
-				}) : [];
-				break;
-
-				case 'video_path':
-				case 'documents':
-				$formattedProduct[$attribute] = is_array($value) ? $value : [];
-				break;
-
-				case 'status':
-				$formattedProduct[$attribute] = [['value' => $value]];
-				break;
-
-				default:
-				$formattedProduct[$attribute] = $value;
-				break;
-			}
-		}
-
-		$contentAllowedRoles = [
-			'Super Admin',
-			'Admin',
-			'Content Writing Manager',
-			'Content Writer',
-			'Ecommerce Specialist',
-		];
-
-		$userRole = auth()->user() ? auth()->user()->getRoleNames()->first() : null;
-		$isContentEnabled = $userRole && in_array($userRole, $contentAllowedRoles);
-
-		return response()->json([
-			'success' => true,
-			'message' => 'Product detail',
-			'product' => $formattedProduct,
-			'categories_hierarchy' => $formattedCategories,
-			'admin_reviews' => $adminReviews,
-			'faq' => $faqs ?? [],
-			'is_content_enabled' => $isContentEnabled,
-		]);
-	}
 
 	/**
 	 * @OA\Post(
