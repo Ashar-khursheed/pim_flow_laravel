@@ -25,7 +25,7 @@ class FBrandController extends Controller
 	 *     @OA\Parameter(name="search", in="query", description="Search products by name or SKU", @OA\Schema(type="string", example="blender")),
 	 *     @OA\Parameter(name="min_rating", in="query", description="Minimum average rating (1-5)", @OA\Schema(type="number", format="float"),
 	 *     @OA\Parameter(name="price_min", in="query", description="Minimum price (uses sale price if available)", @OA\Schema(type="number", example=100.00)),
- 	 *     @OA\Parameter(name="price_max", in="query", description="Maximum price (uses sale price if available)", @OA\Schema(type="number",example=5000.00)),
+	 *     @OA\Parameter(name="price_max", in="query", description="Maximum price (uses sale price if available)", @OA\Schema(type="number",example=5000.00)),
 	 *     @OA\Response(response=200, description="Featured brands retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
@@ -104,7 +104,7 @@ class FBrandController extends Controller
 	 *     @OA\Parameter(name="search", in="query", description="Search products by name or SKU", @OA\Schema(type="string", example="blender")),
 	 *     @OA\Parameter(name="min_rating", in="query", description="Minimum average rating (1-5)", @OA\Schema(type="number", format="float"),
 	 *     @OA\Parameter(name="price_min", in="query", description="Minimum price (uses sale price if available)", @OA\Schema(type="number", example=100.00)),
- 	 *     @OA\Parameter(name="price_max", in="query", description="Maximum price (uses sale price if available)", @OA\Schema(type="number",example=5000.00)),
+	 *     @OA\Parameter(name="price_max", in="query", description="Maximum price (uses sale price if available)", @OA\Schema(type="number",example=5000.00)),
 	 *     @OA\Response(response=200, description="Featured brands retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}},
 	 * )
@@ -231,100 +231,13 @@ class FBrandController extends Controller
 	 *     )
 	 * )
 	 */
-
-// public function brandsByCategory($id): JsonResponse
-// {
-//     // Get category ids (parent + children)
-//     $categoryIds = collect([$id])->merge($this->getAllChildCategoryIds($id));
-
-//     // Collect unique brand IDs for products in these categories
-//     $brandIds = Product::whereHas('categories', function ($query) use ($categoryIds) {
-//             $query->whereIn('id', $categoryIds); // ✅ safer than hardcoding pivot
-//         })
-//         ->pluck('brand_id')
-//         ->unique()
-//         ->filter();
-
-//     if ($brandIds->isEmpty()) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'No brands found for this category or its child categories.',
-//             'data'    => []
-//         ], 404);
-//     }
-
-//     // Fetch brands that are actually used + published + have logo
-//     $brands = Brand::whereIn('id', $brandIds)
-//        ->where('status', '=', 'published')
-//         ->whereNotNull('logo')
-//         ->where('logo', '!=', 'null')
-//         ->select('id', 'name', 'logo')
-//         ->with('seoUrl')
-//         ->get()
-//         ->map(function ($brand) {
-//             return [
-//                 'id'   => $brand->id,
-//                 'name' => $brand->name,
-//                 'logo' => asset($brand->logo),
-//                 'url'  => $brand->seoUrl->url ?? null,
-//             ];
-//         })
-//         ->values();
-
-//     if ($brands->isEmpty()) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'No published brands with logos found.',
-//             'data'    => []
-//         ], 404);
-//     }
-
-//     return response()->json([
-//         'success' => true,
-//         'message' => 'Brands retrieved successfully.',
-//         'data'    => $brands
-//     ])->header('Cache-Control', 'public, max-age=86400');
-// }
-
-// public function brandsByCategory($id): JsonResponse
-// {
-//     // Ignore category filter and just fetch all brands with logos
-//     $brands = Brand::where('status', '=', 'published')
-//         ->whereNotNull('logo')
-//         ->where('logo', '!=', 'null')
-//         ->select('id', 'name', 'logo')
-//         ->with('seoUrl')
-//         ->get()
-//         ->map(function ($brand) {
-//             return [
-//                 'id'   => $brand->id,
-//                 'name' => $brand->name,
-//                 'logo' => asset($brand->logo),
-//                 'url'  => $brand->seoUrl->url ?? null,
-//             ];
-//         })
-//         ->values();
-
-//     if ($brands->isEmpty()) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'No published brands with logos found.',
-//             'data'    => []
-//         ], 404);
-//     }
-
-//     return response()->json([
-//         'success' => true,
-//         'message' => 'Brands retrieved successfully.',
-//         'data'    => $brands
-//     ])->header('Cache-Control', 'public, max-age=86400');
-// }
 	public function brandsByCategory($id): JsonResponse
 	{
-	// Get the main category and all its child categories
+
+		// Get the main category and all its child categories
 		$categoryIds = collect([$id])->merge($this->getAllChildCategoryIds($id));
 
-	// Find brands that have products in these categories
+		// Find brands that have products in these categories
 		$brands = Brand::where('status', '=', 'published')
 		->whereNotNull('logo')
 		->where('logo', '!=', 'null')
@@ -362,20 +275,20 @@ class FBrandController extends Controller
 		])->header('Cache-Control', 'public, max-age=86400');
 	}
 
-/**
- * Recursive helper to fetch all child category IDs
- */
-private function getAllChildCategoryIds($categoryId)
-{
-	$childIds = Category::where('parent_id', $categoryId)->pluck('id');
-	$allChildIds = collect($childIds);
+	/**
+	 * Recursive helper to fetch all child category IDs
+	 */
+	private function getAllChildCategoryIds($categoryId)
+	{
+		$childIds = Category::where('parent_id', $categoryId)->pluck('id');
+		$allChildIds = collect($childIds);
 
-	foreach ($childIds as $childId) {
-		$allChildIds = $allChildIds->merge($this->getAllChildCategoryIds($childId));
+		foreach ($childIds as $childId) {
+			$allChildIds = $allChildIds->merge($this->getAllChildCategoryIds($childId));
+		}
+
+		return $allChildIds;
 	}
-
-	return $allChildIds;
-}
 
 
 	/**
@@ -417,137 +330,17 @@ private function getAllChildCategoryIds($categoryId)
 	 *     )
 	 * )
 	 */
-
-	// public function getCategories($id)
-	// {
-	//     // Load brand with only published products and their published categories
-	//     $brand = Brand::with([
-	//         'products' => function ($query) {
-	//             $query->where('status', 'published')
-	//                   ->whereHas('categories', fn($q) => $q->where('status', 'published'));
-	//         },
-	//         'products.categories' => function ($query) {
-	//             $query->where('status', 'published');
-	//         }
-	//     ])->findOrFail($id);
-
-	//     $categoryCounts = [];
-
-	//     foreach ($brand->products as $product) {
-	//         foreach ($product->categories as $category) {
-	//             // Check if this category is a published leaf
-	//             $hasPublishedChildren = Category::where('parent_id', $category->id)
-	//                                             ->where('status', 'published')
-	//                                             ->exists();
-
-	//             if ($hasPublishedChildren) {
-	//                 continue; // Skip non-leaf categories
-	//             }
-
-	//             if (!isset($categoryCounts[$category->id])) {
-	//                 $categoryCounts[$category->id] = [
-	//                     'id' => $category->id,
-	//                     'name' => $category->name,
-	//                     'image' => $category->image,
-	//                     'product_count' => 0
-	//                 ];
-	//             }
-
-	//             $categoryCounts[$category->id]['product_count']++;
-	//         }
-	//     }
-
-	//     // Keep response structure same
-	//     $categories = array_values($categoryCounts);
-
-	//     return response()->json([
-	//         'success' => true,
-	//         'brand_id' => $id,
-	//         'categories' => $categories
-	//     ]);
-	// }
-//     public function getCategories($id)
-// {
-//     // 🧠 Determine if $id is numeric (brand ID) or a slug
-//     if (is_numeric($id)) {
-//         $brand = Brand::with([
-//             'products' => function ($query) {
-//                 $query->where('status', 'published')
-//                       ->whereHas('categories', fn($q) => $q->where('status', 'published'));
-//             },
-//             'products.categories' => function ($query) {
-//                 $query->where('status', 'published');
-//             }
-//         ])->findOrFail($id);
-//     } else {
-//         $seoEntry = DB::table('seo_management')
-//             ->where('url', $id)
-//             ->where('relational_type', 'Brand')
-//             ->first();
-
-//         if (!$seoEntry) {
-//             return response()->json([
-//                 'success' => false,
-//                 'message' => 'Brand not found with slug',
-//             ], 404);
-//         }
-
-//         $brand = Brand::with([
-//             'products' => function ($query) {
-//                 $query->where('status', 'published')
-//                       ->whereHas('categories', fn($q) => $q->where('status', 'published'));
-//             },
-//             'products.categories' => function ($query) {
-//                 $query->where('status', 'published');
-//             }
-//         ])->findOrFail($seoEntry->relational_id);
-//     }
-
-//     $categoryCounts = [];
-
-//     foreach ($brand->products as $product) {
-//         foreach ($product->categories as $category) {
-//             // Check if this category is a published leaf
-//             $hasPublishedChildren = Category::where('parent_id', $category->id)
-//                                             ->where('status', 'published')
-//                                             ->exists();
-
-//             if ($hasPublishedChildren) {
-//                 continue; // Skip non-leaf categories
-//             }
-
-//             if (!isset($categoryCounts[$category->id])) {
-//                 $categoryCounts[$category->id] = [
-//                     'id' => $category->id,
-//                     'name' => $category->name,
-//                     'image' => $category->image,
-//                     'product_count' => 0
-//                 ];
-//             }
-
-//             $categoryCounts[$category->id]['product_count']++;
-//         }
-//     }
-
-//     $categories = array_values($categoryCounts);
-
-//     return response()->json([
-//         'success' => true,
-//         'brand_id' => $brand->id,
-//         'categories' => $categories
-//     ]);
-// }
 	public function getCategories($id)
 	{
-	// 🧠 Determine if $id is numeric (brand ID) or a slug
+		// 🧠 Determine if $id is numeric (brand ID) or a slug
 		if (is_numeric($id)) {
 			$brand = Brand::with([
 				'products' => function ($query) {
 					$query->where('status', 'published')
 					->whereHas('categories', fn($q) => $q->where('status', 'published'));
 				},
-			'products.categories.seoURL' // ✅ Load seoURL for categories
-		])->findOrFail($id);
+				'products.categories.seoURL' // ✅ Load seoURL for categories
+			])->findOrFail($id);
 		} else {
 			$seoEntry = DB::table('seo_management')
 			->where('url', $id)
@@ -566,8 +359,8 @@ private function getAllChildCategoryIds($categoryId)
 					$query->where('status', 'published')
 					->whereHas('categories', fn($q) => $q->where('status', 'published'));
 				},
-			'products.categories.seoURL' // ✅ Load seoURL for categories
-		])->findOrFail($seoEntry->relational_id);
+				'products.categories.seoURL' // ✅ Load seoURL for categories
+			])->findOrFail($seoEntry->relational_id);
 		}
 
 		$categoryCounts = [];
@@ -580,35 +373,33 @@ private function getAllChildCategoryIds($categoryId)
 				->exists();
 
 				if ($hasPublishedChildren) {
-				continue; // Skip non-leaf categories
-			}
+					continue; // Skip non-leaf categories
+				}
 
-			if (!isset($categoryCounts[$category->id])) {
-				$categoryCounts[$category->id] = [
-					'id' => $category->id,
-					'name' => $category->name,
-					'image' => $category->image,
-					'url' => optional($category->seoURL)->url, // ✅ Add category URL
-					'product_count' => 0
-				];
-			}
+				if (!isset($categoryCounts[$category->id])) {
+					$categoryCounts[$category->id] = [
+						'id' => $category->id,
+						'name' => $category->name,
+						'image' => $category->image,
+						'url' => optional($category->seoURL)->url, // ✅ Add category URL
+						'product_count' => 0
+					];
+				}
 
-			$categoryCounts[$category->id]['product_count']++;
+				$categoryCounts[$category->id]['product_count']++;
+			}
 		}
+
+		$categories = array_values($categoryCounts);
+
+		return response()->json([
+			'success' => true,
+			'brand_id' => $brand->id,
+			'categories' => $categories
+		]) ->header('Cache-Control', 'public, max-age=86400');
 	}
 
-	$categories = array_values($categoryCounts);
-
-	return response()->json([
-		'success' => true,
-		'brand_id' => $brand->id,
-		'categories' => $categories
-	]) ->header('Cache-Control', 'public, max-age=86400');
-}
-
-
-
-	 /**
+	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/products/brand/{brandId}/category/{categoryId?}",
 	 *     tags={"Frontend-Brands"},
@@ -709,208 +500,13 @@ private function getAllChildCategoryIds($categoryId)
 	 *     )
 	 * )
 	 */
-
-	//  public function getProductsByBrandAndCategory(Request $request, $brandId, $categoryId = null)
-	//  {
-	//      try {
-	//          $userId = auth()->id();
-	//          $isUserLoggedIn = $userId !== null;
-
-	//          // 🧠 Get wishlist product IDs
-	//          $wishlistProductIds = $isUserLoggedIn
-	//              ? DB::table('ec_wish_lists')
-	//                  ->where('customer_id', $userId)
-	//                  ->pluck('product_id')
-	//                  ->map(fn($id) => (int) $id)
-	//                  ->toArray()
-	//              : session()->get('guest_wishlist', []);
-
-	//          $searchTerm = strtolower($request->input('search'));
-
-	//         //  $brand = Brand::with([
-	//         //      'products' => function ($query) {
-	//         //          $query->where('status', 'published')
-	//         //              ->whereHas('categories', function ($catQuery) {
-	//         //                  $catQuery->where('status', 'published');
-	//         //              });
-	//         //      },
-	//         //      'products.categories' => function ($query) {
-	//         //          $query->where('status', 'published');
-	//         //      }
-	//         //  ])->findOrFail($brandId);
-	//         // 🔍 Determine if $brandId is a numeric ID or a slug from seo_management
-	//         if (is_numeric($brandId)) {
-	//             $brand = Brand::with([
-	//                 'products' => function ($query) {
-	//                     $query->where('status', 'published')
-	//                         ->whereHas('categories', function ($catQuery) {
-	//                             $catQuery->where('status', 'published');
-	//                         });
-	//                 },
-	//                 'products.categories' => function ($query) {
-	//                     $query->where('status', 'published');
-	//                 }
-	//             ])->findOrFail($brandId);
-	//         } else {
-	//             // Try to resolve slug from seo_management
-	//             $seoEntry = \DB::table('seo_management')
-	//                 ->where('url', $brandId)
-	//                 ->where('relational_type', 'Brand')
-	//                 ->first();
-
-	//             if (!$seoEntry) {
-	//                 return response()->json(['success' => false, 'message' => 'Brand not found'], 404);
-	//             }
-
-	//             $brand = Brand::with([
-	//                 'products' => function ($query) {
-	//                     $query->where('status', 'published')
-	//                         ->whereHas('categories', function ($catQuery) {
-	//                             $catQuery->where('status', 'published');
-	//                         });
-	//                 },
-	//                 'products.categories' => function ($query) {
-	//                     $query->where('status', 'published');
-	//                 }
-	//             ])->findOrFail($seoEntry->relational_id);
-	//         }
-
-
-	//          // 🔎 Filter by category
-	//          $filteredProducts = is_null($categoryId)
-	//              ? $brand->products
-	//              : $brand->products->filter(function ($product) use ($categoryId) {
-	//                  return $product->categories->contains('id', $categoryId);
-	//              })->values();
-
-	//          // 🔍 Filter by search term
-	//          if (!empty($searchTerm)) {
-	//              $filteredProducts = $filteredProducts->filter(function ($product) use ($searchTerm) {
-	//                  return stripos($product->name, $searchTerm) !== false;
-	//              })->values();
-	//          }
-
-	//          if ($filteredProducts->isEmpty()) {
-	//              return response()->json([
-	//                  'success' => true,
-	//                  'message' => 'No products found for this brand' . ($categoryId ? ' and category' : '') . ($searchTerm ? ' with search term' : ''),
-	//                  'data' => [],
-	//                  'pagination' => $this->emptyPagination(),
-	//              ]);
-	//          }
-
-	//          $productIds = $filteredProducts->pluck('id')->toArray();
-
-	//          $productsWithRelations = Product::whereIn('id', $productIds)
-	//              ->with([
-	//                  'reviews:id,product_id,star',
-	//                  'currency',
-	//                  'productSuppliers'
-	//                  , 'seoUrl'
-	//              ])
-	//              ->get()
-	//              ->keyBy('id');
-
-	//          $perPage = 50;
-	//          $page = max(1, (int) $request->input('page', 1));
-	//          $total = count($productIds);
-	//          $offset = ($page - 1) * $perPage;
-	//          $paginatedProducts = $filteredProducts->slice($offset, $perPage);
-
-	//          $pagination = $this->buildPagination($page, $perPage, $total);
-
-	//          $transformedProducts = $paginatedProducts->map(function ($product) use ($productsWithRelations, $wishlistProductIds) {
-	//              $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
-
-	//              $imageUrls = is_string($product->images)
-	//                  ? json_decode($product->images, true)
-	//                  : (array) $product->images;
-
-	//              $videos = is_string($product->video_path)
-	//                  ? json_decode($product->video_path, true) ?? []
-	//                  : ($product->video_path ?? []);
-
-	//              $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
-	//              $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
-
-	//              $quantity = $product->quantity ?? 0;
-	//              $unitsSold = $product->units_sold ?? 0;
-	//              $leftStock = $quantity - $unitsSold;
-
-	//              $sellingType = null;
-
-	//              if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-	//                  $fullValue = $product->sellingUnitAttribute->attribute_value;
-
-	//                  $attributeUnit = strpos($fullValue, '/') !== false
-	//                      ? trim(explode('/', $fullValue)[1])
-	//                      : $fullValue;
-
-	//                  $sellingType = [
-	//                      'attribute_value' => $product->sellingUnitAttribute->attribute_value,
-	//                      'attribute_value_unit' => $attributeUnit,
-	//                  ];
-	//              }
-
-	//              $firstSupplier = $product->productSuppliers->first();
-
-	//              return [
-	//                  'id' => $product->id,
-	//                  'name' => $product->name,
-	//                  'sku' => $product->sku,
-	//                  'url' => $product->seoUrl->url ?? null,
-	//                  'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-	//                  'price' => $firstSupplier ? (float) $firstSupplier->price : null,
-	//                  'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-	//                  'total_reviews' => $totalReviews,
-	//                  'avg_rating' => $avgRating,
-	//                  'left_stock' => $leftStock,
-	//                  'currency_title' => $productWithRelations->currency
-	//                      ? ($productWithRelations->currency->is_prefix_symbol
-	//                          ? $productWithRelations->currency->symbol
-	//                          : ($product->price . ' ' . $productWithRelations->currency->symbol))
-	//                      : $product->price,
-	//                  'in_wishlist' => in_array($product->id, $wishlistProductIds),
-	//                  'images' => $imageUrls,
-	//                  "original_price" => $firstSupplier ? (float) $firstSupplier->price : null,
-	//                  'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-	//                  "best_price" => $firstSupplier ? (float) $firstSupplier->price : null,
-	//                  "selling_type" => $sellingType,
-	//                  "per_unit_price" => $product->per_unit_price,
-	//                  'vendor_id' => $firstSupplier->vendor_id ?? null,
-	//                  'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-	//                  'inventory' => $firstSupplier->inventory ?? null,
-	//                  'in_stock' => $firstSupplier->in_stock ?? null,
-	//                  'delivery_days' => $firstSupplier->delivery_days ?? null,
-	//                  'delivery_days' => $firstSupplier->delivery_days ?? null,
-	//                  'return_policy' => $firstSupplier->return_policy ?? null,
-	//                  'free_shipping' => $firstSupplier->free_shipping ?? null,
-	//                  'warranty_information' => $firstSupplier->warranty_information ?? null,
-	//              ];
-	//          });
-
-	//          return response()->json([
-	//              'success' => true,
-	//              'data' => $transformedProducts->values(),
-	//              'pagination' => $pagination,
-	//              'message' => 'Products retrieved successfully',
-	//          ]);
-	//      } catch (\Exception $e) {
-	//          Log::error('Error in getProductsByBrandAndCategory: ' . $e->getMessage());
-	//          return response()->json([
-	//              'success' => false,
-	//              'message' => 'An error occurred while fetching products',
-	//              'error' => $e->getMessage(),
-	//          ], 500);
-	//      }
-	//  }
-	 public function getProductsByBrandAndCategory(Request $request, $brandId, $categoryId = null)
-	 {
+	public function getProductsByBrandAndCategory(Request $request, $brandId, $categoryId = null)
+	{
 	 	try {
 	 		$userId = auth()->id();
 	 		$isUserLoggedIn = $userId !== null;
 
-		// 🧠 Get wishlist product IDs
+			// 🧠 Get wishlist product IDs
 	 		$wishlistProductIds = $isUserLoggedIn
 	 		? DB::table('ec_wish_lists')
 	 		->where('customer_id', $userId)
@@ -921,7 +517,7 @@ private function getAllChildCategoryIds($categoryId)
 
 	 		$searchTerm = strtolower($request->input('search'));
 
-		// 🔍 Determine if $brandId is a numeric ID or a slug from seo_management
+			// 🔍 Determine if $brandId is a numeric ID or a slug from seo_management
 	 		if (is_numeric($brandId)) {
 	 			$brand = Brand::with([
 	 				'products' => function ($query) {
@@ -957,16 +553,11 @@ private function getAllChildCategoryIds($categoryId)
 	 			])->findOrFail($seoEntry->relational_id);
 	 		}
 
-		// 🔎 Filter by category
-		// $filteredProducts = is_null($categoryId)
-		//     ? $brand->products
-		//     : $brand->products->filter(function ($product) use ($categoryId) {
-		//         return $product->categories->contains('id', $categoryId);
-		//     })->values();
-		// 🔎 Filter by category (works with both ID or URL)
+
+			// 🔎 Filter by category (works with both ID or URL)
 	 		if (!is_null($categoryId)) {
 	 			if (!is_numeric($categoryId)) {
-		// If slug, resolve to category ID
+			// If slug, resolve to category ID
 	 				$seoCategory = DB::table('seo_management')
 	 				->where('url', $categoryId)
 	 				->where('relational_type', 'Category')
@@ -982,7 +573,7 @@ private function getAllChildCategoryIds($categoryId)
 	 				$categoryId = $seoCategory->relational_id;
 	 			}
 
-	// Now always filter by ID (whether original or resolved)
+			// Now always filter by ID (whether original or resolved)
 	 			$filteredProducts = $brand->products->filter(function ($product) use ($categoryId) {
 	 				return $product->categories->contains('id', $categoryId);
 	 			})->values();
@@ -991,7 +582,7 @@ private function getAllChildCategoryIds($categoryId)
 	 		}
 
 
-		// 🔍 Filter by search term
+			// 🔍 Filter by search term
 	 		if (!empty($searchTerm)) {
 	 			$filteredProducts = $filteredProducts->filter(function ($product) use ($searchTerm) {
 	 				return stripos($product->name, $searchTerm) !== false;
@@ -1116,11 +707,7 @@ private function getAllChildCategoryIds($categoryId)
 	 			'error' => $e->getMessage(),
 	 		], 500);
 	 	}
-	 }
-
-
-
-
+	}
 
 	 protected function emptyPagination()
 	 {
@@ -1191,9 +778,9 @@ private function getAllChildCategoryIds($categoryId)
 
 	public function getAllBrandsAlphabetically(Request $request): JsonResponse
 	{
-	$letter = strtoupper($request->query('letter')); // e.g. ?letter=B
+		$letter = strtoupper($request->query('letter')); // e.g. ?letter=B
 
-	$brandsQuery = Brand::where('status', 'published')
+		$brandsQuery = Brand::where('status', 'published')
 		->whereNotNull('thumbnail') // Only include brands with a thumbnail
 		->select('id', 'name', 'logo', 'thumbnail', 'ar_thumbnail')
 		->orderBy('name');
@@ -1236,8 +823,4 @@ private function getAllChildCategoryIds($categoryId)
 			]) ->header('Cache-Control', 'public, max-age=86400');
 		}
 	}
-
-
-
-
 }
