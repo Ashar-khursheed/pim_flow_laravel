@@ -785,6 +785,8 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 	Route::post('/frontend/compress-image-check', [F_OrderController::class, 'compressImage']);
 
+
+
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
 
 	Route::post('/frontend/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
@@ -799,7 +801,7 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
 	Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
-	Route::put('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
+	Route::post('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
 	Route::delete('/customer-reviews-delete/{id}', [F_UserReviewController::class, 'deleteReview']);
 
 	Route::get('/frontend/products/products-you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
@@ -1103,4 +1105,7 @@ Route::get('frontend/paymob/thank', [F_PaymobController::class, 'pay']);
 Route::post('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/thanks', [F_PaymobController::class, 'response']);
+
+
+	Route::post('/frontend/save-cheque-upload', [YourController::class, 'saveChequeUpload']);
 // test change

@@ -1173,4 +1173,60 @@ class OrderController extends BaseController
 			],
 		], 200);
 	}
+
+
+
+	public function saveChequeUpload(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'session_id'       => 'nullable|string|max:255',
+		]);
+
+		if ($validator->fails()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors'  => $validator->errors(),
+			], 422);
+		}
+
+		$path = env('STORAGE_ENV') . '/customer/orders';
+
+		$chequeFront = compressImageToS3(
+			$request,
+			'cheque_img',
+			$path
+		);
+
+		$chequeBack = compressImageToS3(
+			$request,
+			'cheque_img_back',
+			$path
+		);
+
+		// Upload failed check
+		if (!$chequeFront || !$chequeBack) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Image upload failed',
+			], 200);
+		}
+
+		// Save to database
+		$chequeUpload = ChequeUpload::create([
+			'cheque_img'      => $chequeFront,
+			'cheque_img_back' => $chequeBack,
+			'session_id'      => $request->session_id,
+		]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Cheque images uploaded and saved successfully',
+			'data' => $chequeUpload,
+		], 200);
+	}
+
+	
 }
