@@ -1228,5 +1228,38 @@ class OrderController extends BaseController
 		], 200);
 	}
 
+	public function getChequeUploadsBySession(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'session_id' => 'required|string|max:255',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors'  => $validator->errors(),
+        ], 422);
+    }
+
+    $chequeUploads = ChequeUpload::where('session_id', $request->session_id)
+                                  ->orderBy('created_at', 'desc')
+                                  ->get();
+
+    if ($chequeUploads->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No cheque uploads found for this session',
+            'data' => [],
+        ], 404);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Cheque uploads retrieved successfully',
+        'data' => $chequeUploads,
+    ], 200);
+}
+
 	
 }

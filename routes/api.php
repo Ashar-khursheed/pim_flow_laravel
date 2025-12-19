@@ -1107,5 +1107,7 @@ Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/thanks', [F_PaymobController::class, 'response']);
 
 
-	Route::post('/frontend/save-cheque-upload', [YourController::class, 'saveChequeUpload']);
+	Route::post('/frontend/save-cheque-upload', [ F_OrderController::class, 'saveChequeUpload']);
+	Route::get('/frontend/get-cheque-uploads', [ F_OrderController::class, 'getChequeUploadsBySession']);
+
 // test change
