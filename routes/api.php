@@ -785,6 +785,8 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 	Route::post('/frontend/compress-image-check', [F_OrderController::class, 'compressImage']);
 
+
+
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
 
 	Route::post('/frontend/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
@@ -1103,4 +1105,7 @@ Route::get('frontend/paymob/thank', [F_PaymobController::class, 'pay']);
 Route::post('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/thanks', [F_PaymobController::class, 'response']);
+
+
+	Route::post('/frontend/save-cheque-upload', [YourController::class, 'saveChequeUpload']);
 // test change
