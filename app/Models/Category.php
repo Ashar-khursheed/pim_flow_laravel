@@ -90,14 +90,14 @@ class Category extends Model implements TranslatableContract
 		return $this->belongsToMany(AttributeGroup::class, 'category_attribute_groups')->using(CategoryAttributeGroup::class);
 	}
 
-	public static function getLeafCategories($category)
+	public function getLeafCategories()
 	{
-		if ($category->children->isEmpty()) {
-			return collect([$category]);
+		if ($this->children->isEmpty()) {
+			return collect([$this]);
 		}
 
-		return $category->children->flatMap(function ($child) {
-			return self::getLeafCategories($child);
+		return $this->children->flatMap(function ($child) {
+			return $child->getLeafCategories();
 		});
 	}
 
@@ -147,7 +147,7 @@ class Category extends Model implements TranslatableContract
 
 	public function productIdsFromLeafCategories()
 	{
-		$leafIds = self::getLeafCategories($this)->where('status', 'published')->pluck('id')->toArray();
+		$leafIds = $this->getLeafCategories()->where('status', 'published')->pluck('id')->toArray();
 
 		return ProductCategory::whereIn('category_id', $leafIds)->pluck('product_id')->unique()->values();
 	}

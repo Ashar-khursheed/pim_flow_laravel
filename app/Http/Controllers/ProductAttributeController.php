@@ -73,7 +73,7 @@ class ProductAttributeController extends BaseController
 		}
 
 		/* Get leaf categories */
-		$leafCategories = Category::getLeafCategories($parentCategory);
+		$leafCategories = $parentCategory->getLeafCategories();
 		$leafCategoryIds = $leafCategories->pluck('id')->toArray();
 
 		/* Fetch products within range */

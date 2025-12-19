@@ -121,8 +121,7 @@ class ProductExportController extends BaseController
 			});
 		} elseif ($request->type == "Category") {
 			$category = Category::find($request->relational_id);
-			$leafCategories = Category::getLeafCategories($category);
-			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+			$leafCategoryIds = $category->getLeafCategories()->pluck('id')->toArray();
 			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
 				$q->whereIn('category_id', $leafCategoryIds);
 			});
