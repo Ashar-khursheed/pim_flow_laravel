@@ -14,7 +14,7 @@ use PhpUnitsOfMeasure\PhysicalQuantity\Power;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-
+use Illuminate\Support\Str;
 use App\Models\MeasurementUnit;
 use App\Models\ProductSupplier;
 use App\Models\AccessoryItem;
@@ -381,6 +381,75 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 	}
 }
  
+
+function compressImageToS3(Request $request, string $key, string $pathPrefix)
+{
+    if (!$request->hasFile($key) || !$request->file($key)->isValid()) {
+        return null;
+    }
+    try {
+        $file = $request->file($key);
+
+        // Create image from file
+        $image = imagecreatefromstring(file_get_contents($file->getRealPath()));
+        if (!$image) {
+            Log::error('Failed to create image resource.');
+            return null;
+        }
+
+        // Convert to true color
+        if (!imageistruecolor($image)) {
+            imagepalettetotruecolor($image);
+        }
+
+        // ✅ Resize (Max width 1200px)
+        $width  = imagesx($image);
+        $height = imagesy($image);
+
+        if ($width > 1000) {
+            $newWidth  = 1000;
+            $newHeight = intval(($height / $width) * $newWidth);
+
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            imagecopyresampled(
+                $resized,
+                $image,
+                0,
+                0,
+                0,
+                0,
+                $newWidth,
+                $newHeight,
+                $width,
+                $height
+            );
+
+            imagedestroy($image);
+            $image = $resized;
+        }
+
+        // ✅ Compress to WebP (QUALITY CONTROL)
+        ob_start();
+        imagewebp($image, null, 75);  
+        $webpData = ob_get_clean();
+
+        imagedestroy($image);
+
+        // Generate file name
+         $fileName = Str::uuid() . '.webp';		 
+        $path = $pathPrefix . '/' . $fileName;
+
+        // Upload to S3
+        Storage::disk('s3')->put($path, $webpData);
+
+        return Storage::disk('s3')->url($path);
+
+    } catch (\Throwable $e) {
+        Log::error('uploadImageToWebpS3FromFile error: ' . $e->getMessage());
+        return null;
+    }
+}
+
 function uploadFileToS3($file, $path)
 {
 	$filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
