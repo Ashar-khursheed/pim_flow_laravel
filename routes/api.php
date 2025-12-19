@@ -783,6 +783,8 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
 	Route::apiResource('frontend/orders', F_OrderController::class)	->names('frontend.orders');
 
+	Route::post('/frontend/compress-image-check', [F_OrderController::class, 'compressImage']);
+
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
 
 	Route::post('/frontend/wishlist/add', [F_WishlistController::class, 'addToWishlist']);

@@ -20751,14 +20751,14 @@
                                         "example": false
                                     },
                                     "cheque_img": {
-                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
+                                        "description": "Cheque image link",
                                         "type": "string",
-                                        "format": "binary"
+                                        "format": "string"
                                     },
                                     "cheque_img_back": {
-                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
+                                        "description": "Cheque image link",
                                         "type": "string",
-                                        "format": "binary"
+                                        "format": "string"
                                     },
                                     "coupon_id": {
                                         "description": "Coupon ID",
@@ -20987,6 +20987,57 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/frontend/compress-image-check": {
+            "post": {
+                "tags": [
+                    "CompressImage"
+                ],
+                "summary": "Upload and compress cheque images",
+                "operationId": "827799783b98b6b1bff32e1a122afcd3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "cheque_img",
+                                    "cheque_img_back"
+                                ],
+                                "properties": {
+                                    "cheque_img": {
+                                        "description": "Cheque front image",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "cheque_img_back": {
+                                        "description": "Cheque back image",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cheque images uploaded and compressed successfully"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/payments": {
@@ -33489,7 +33540,9 @@
                                             "Stax",
                                             "Square",
                                             "CC Avenue",
-                                            "NetTerm"
+                                            "NetTerm",
+                                            "Check",
+                                            "Cheque"
                                         ],
                                         "example": "Credit Card"
                                     },
@@ -33943,13 +33996,16 @@
                                             "Debit Card",
                                             "Tabby",
                                             "Cheque",
+                                            "Check",
                                             "Tamara",
                                             "Paymob",
                                             "COD",
                                             "PayPal",
                                             "Stax",
                                             "Square",
-                                            "NetTerm"
+                                            "NetTerm",
+                                            "Check",
+                                            "Cheque"
                                         ],
                                         "example": "Cash on Delivery"
                                     },
@@ -49022,6 +49078,10 @@
         {
             "name": "FrontEnd-Orders",
             "description": "FrontEnd-Orders"
+        },
+        {
+            "name": "CompressImage",
+            "description": "CompressImage"
         },
         {
             "name": "Frontend-Payments",

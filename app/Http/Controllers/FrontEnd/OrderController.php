@@ -11,6 +11,7 @@ use App\Models\FrontEnd\CustomerAddress;
 use App\Models\FrontEnd\Finance;
 use App\Models\FrontEnd\FinancesPayment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Utm;
@@ -202,8 +203,8 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
 	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
-	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
-	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
+	 *                 @OA\Property(property="cheque_img", type="string", format="string", description="Cheque image link"),
+	 *                 @OA\Property(property="cheque_img_back", type="string", format="string", description="Cheque image link"),
 	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
 	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
@@ -281,8 +282,8 @@ class OrderController extends BaseController
 			'is_cod' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
-			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
-			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+    		'cheque_img' => 'nullable|required_if:pay_with_cheque,true|string',
+    		'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|string',
 			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
 			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
 			'additional_discount' => 'nullable|numeric|min:0',
@@ -358,16 +359,20 @@ class OrderController extends BaseController
 
 			/* Handle cheque payment discount */
 			if ($payWithCheque) {
-				$chequeImg = uploadImageToWebpS3FromFile(
-					$request,
-					'cheque_img',
-					env('STORAGE_ENV') . '/customer/orders'
-				);
-				$chequeImgBack = uploadImageToWebpS3FromFile(
-					$request,
-					'cheque_img_back',
-					env('STORAGE_ENV') . '/customer/orders'
-				);
+
+
+				// $chequeImg = uploadImageToWebpS3FromFile(
+				// 	$request,
+				// 	'cheque_img',
+				// 	env('STORAGE_ENV') . '/customer/orders'
+				// );
+				// $chequeImgBack = uploadImageToWebpS3FromFile(
+				// 	$request,
+				// 	'cheque_img_back',
+				// 	env('STORAGE_ENV') . '/customer/orders'
+				// );
+				$chequeImg = $request->cheque_img;
+				$chequeImgBack = $request->cheque_img_back;
 				$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
 				$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
 				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
@@ -1070,5 +1075,102 @@ class OrderController extends BaseController
 			'message' => 'Order with tracking info retrieved',
 			'data' => $order,
 		]);
+	}
+
+
+
+	/**
+ * @OA\Post(
+ *     path="/api/frontend/compress-image-check",
+ *     summary="Upload and compress cheque images",
+ *     tags={"CompressImage"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 type="object",
+ *                 required={"cheque_img","cheque_img_back"},
+ *                 @OA\Property(
+ *                     property="cheque_img",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="Cheque front image"
+ *                 ),
+ *                 @OA\Property(
+ *                     property="cheque_img_back",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="Cheque back image"
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Cheque images uploaded and compressed successfully"
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation failed"
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized"
+ *     )
+ * )
+ */
+
+
+	public function compressImage(Request $request)
+	{
+		 
+		$validator = Validator::make($request->all(), [
+			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+		]);
+
+		if ($validator->fails()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors'  => $validator->errors(),
+			], 422);
+		}
+
+		 
+		$path = env('STORAGE_ENV') . '/customer/orders';
+
+		$chequeFront = uploadImageToWebpS3FromFile(
+			$request,
+			'cheque_img',
+			$path
+		);
+
+		$chequeBack = uploadImageToWebpS3FromFile(
+			$request,
+			'cheque_img_back',
+			$path
+		);
+		// Upload failed check
+		if (!$chequeFront || !$chequeBack) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Image upload failed',
+			], 200);
+		}
+
+	 
+		return response()->json([
+			'success' => true,
+			'message' => 'Cheque images uploaded successfully',
+			'data' => [
+				'cheque_img'      => $chequeFront,
+				'cheque_img_back' => $chequeBack,
+			],
+		], 200);
 	}
 }
