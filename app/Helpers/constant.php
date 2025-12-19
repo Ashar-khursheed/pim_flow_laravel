@@ -383,13 +383,13 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
  
 
 function compressImageToS3(Request $request, string $key, string $pathPrefix)
-{
+{  
     if (!$request->hasFile($key) || !$request->file($key)->isValid()) {
         return null;
     }
     try {
         $file = $request->file($key);
-
+ 
         // Create image from file
         $image = imagecreatefromstring(file_get_contents($file->getRealPath()));
         if (!$image) {

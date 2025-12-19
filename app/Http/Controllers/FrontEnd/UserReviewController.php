@@ -71,168 +71,219 @@ class UserReviewController extends Controller
     }
 
 
-  /**
-     * @OA\Post(
-     *     path="/api/add-customer-reviews",
-     *     summary="Create a new review",
-     *     tags={"Frontend-User Reviews"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"product_id", "star", "comment"},
-     *             @OA\Property(property="product_id", type="integer", example=1),
-     *             @OA\Property(property="star", type="integer", minimum=1, maximum=5, example=5),
-     *             @OA\Property(property="comment", type="string", example="Great product!"),
-     *             @OA\Property(
-     *                 property="images",
-     *                 type="array",
-     *                 @OA\Items(type="string", format="binary")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Review added successfully"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="User not authenticated"
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Server error"
-     *     )
-     * )
-     */
+   /**
+ * @OA\Post(
+ *     path="/api/add-customer-reviews",
+ *     summary="Create a new review",
+ *     tags={"Frontend-User Reviews"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 type="object",
+ *                 required={"product_id","star","comment"},
+ *
+ *                 @OA\Property(
+ *                     property="product_id",
+ *                     type="integer",
+ *                     example=1
+ *                 ),
+ *                 @OA\Property(
+ *                     property="star",
+ *                     type="integer",
+ *                     minimum=1,
+ *                     maximum=5,
+ *                     example=5
+ *                 ),
+ *                 @OA\Property(
+ *                     property="comment",
+ *                     type="string",
+ *                     example="Great product!"
+ *                 ),
+ *                 @OA\Property(
+ *                     property="images[]",
+ *                     type="array",
+ *                     description="Review images",
+ *                     @OA\Items(
+ *                         type="string",
+ *                         format="binary"
+ *                     )
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=201,
+ *         description="Review added successfully"
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized"
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error"
+ *     )
+ * )
+ */
+
+
     public function createReview(Request $request)
     {
         $userId = Auth::id();
 
         if (!$userId) {
-            return response()->json(['message' => 'User not authenticated.', 'success' => false], 401);
+            return response()->json([
+                'success' => false,
+                'message' => 'User not authenticated.'
+            ], 401);
         }
 
-        // Validate request
+        // ✅ Validation
         $request->validate([
             'product_id' => 'required|exists:ec_products,id',
-            'star' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string',
-            'images' => 'nullable|array',
-            'images.*' => 'file|mimes:jpeg,png,jpg,gif|max:2048',
+            'star'       => 'required|integer|min:1|max:5',
+            'comment'    => 'required|string',
+            'images'     => 'nullable|array',
+            'images.*'   => 'image|mimes:jpeg,png,jpg,webp|max:10240', // 10MB
         ]);
 
-        // Check if the user already submitted a review for this product
+        // ✅ Prevent duplicate review
         $existingReview = Review::where('customer_id', $userId)
             ->where('product_id', $request->product_id)
             ->first();
 
         if ($existingReview) {
             return response()->json([
-                'message' => 'You have already submitted a review for this product.',
                 'success' => true,
-                'review' => $existingReview,
+                'message' => 'You have already submitted a review for this product.',
+                'review'  => $existingReview,
             ], 200);
         }
 
-        // Handle file uploads
         try {
-            $images = [];
-            $imageUrls = [];
-            if ($request->has('images')) {
-                $destinationPath = public_path('storage');
-                // Ensure the directory exists
-                if (!file_exists($destinationPath)) {
-                    mkdir($destinationPath, 0755, true);
-                }
-                $i = 1;
-                foreach ($request->file('images') as $image) {
-                    // Save the image to the destination path
-                    $image->move($destinationPath, $image->getClientOriginalName());
+            $uploadedImages = [];
+            
+            $path = env('STORAGE_ENV') . '/customer/review';    
+            // ✅ Upload & compress images
+           if ($request->hasFile('images') && is_array($request->file('images'))) {
+      
+                foreach ($request->file('images') as $key=>$imageFile) {
 
-                    // Store the image names and URLs
-                    $images[$i] = $image->getClientOriginalName();
-                    $imageUrls[$i] = url('storage/' . $image->getClientOriginalName());
-                    $i++;
+                    if (!$imageFile->isValid()) {
+                        continue;
+                    }
+     	            $tempRequest = new \Illuminate\Http\Request();
+				    $tempRequest->files->set('review_image_single', $imageFile);
+
+                    $url = compressImageToS3(
+                        $tempRequest,
+                        'review_image_single',
+                        $path
+                    );
+ 
+                     if ($url) {
+                        $uploadedImages[] = $url;
+                    }
                 }
             }
-
-            // Create the review with status set to "published"
+ 
+            $images = json_encode($uploadedImages);
+            // ✅ Create review
             $review = Review::create([
-                'customer_id' => $userId,
+                'customer_id'   => $userId,
                 'customer_name' => Auth::user()->name,
-                'product_id' => $request->product_id,
-                'star' => $request->star,
-                'comment' => $request->comment,
-                'status' => 'published', // Automatically set to published
-                'images' => !empty($images) ? $images : null,
+                'product_id'    => $request->product_id,
+                'star'          => $request->star,
+                'comment'       => $request->comment,
+                'status'        => 'published',
+                'images'        => !empty($images) ? $images : null,
             ]);
 
-            if ($review) {
-                $reviewData = $review->toArray();
-                $reviewData['image_urls'] = $imageUrls;
-
-                return response()->json([
-                    'message' => 'Review added successfully ',
-                    'success' => true,
-                    'review' => $reviewData,
-                ], 201);
-            }
-
-            return response()->json(['message' => 'Review failed', 'success' => false], 500);
+            return response()->json([
+                'success' => true,
+                'message' => 'Review added successfully',
+                'review'  => array_merge(
+                    $review->toArray(),
+                    ['image_urls' => $uploadedImages]
+                )
+            ], 201);
 
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Error occurred: ' . $e->getMessage(), 'success' => false], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error occurred: ' . $e->getMessage()
+            ], 500);
         }
     }
 
-
-    /**
- * Update a specific review
- *
- * @param \Illuminate\Http\Request $request
- * @param int $id
- * @return \Illuminate\Http\JsonResponse
- */
+ 
       /**
-         * @OA\Put(
-         *     path="/api/customer-reviews-update/{id}",
-         *     summary="Update an existing review",
-         *     tags={"Frontend-User Reviews"},
-         *     security={{"bearerAuth":{}}},
-         *     @OA\Parameter(
-         *         name="id",
-         *         in="path",
-         *         required=true,
-         *         description="Review ID",
-         *         @OA\Schema(type="integer")
-         *     ),
-         *     @OA\RequestBody(
-         *         required=false,
-         *         @OA\JsonContent(
-         *             @OA\Property(property="star", type="integer", minimum=1, maximum=5, example=4),
-         *             @OA\Property(property="comment", type="string", example="Updated comment."),
-         *             @OA\Property(
-         *                 property="images",
-         *                 type="array",
-         *                 @OA\Items(type="string", format="binary")
-         *             )
-         *         )
-         *     ),
-         *     @OA\Response(
-         *         response=201,
-         *         description="Review updated successfully"
-         *     ),
-         *     @OA\Response(
-         *         response=401,
-         *         description="User not authenticated"
-         *     ),
-         *     @OA\Response(
-         *         response=404,
-         *         description="Review not found or unauthorized"
-         *     )
-         * )
-     */
+ * @OA\Post(
+ *     path="/api/customer-reviews-update/{id}",
+ *     summary="Update an existing review",
+ *     tags={"Frontend-User Reviews"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="Review ID",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *
+ *     @OA\RequestBody(
+ *         required=false,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 type="object",
+ *
+ *                 @OA\Property(
+ *                     property="star",
+ *                     type="integer",
+ *                     minimum=1,
+ *                     maximum=5,
+ *                     example=4
+ *                 ),
+ *                 @OA\Property(
+ *                     property="comment",
+ *                     type="string",
+ *                     example="Updated comment."
+ *                 ),
+ *                 @OA\Property(
+ *                     property="images[]",
+ *                     type="array",
+ *                     description="Updated review images",
+ *                     @OA\Items(
+ *                         type="string",
+ *                         format="binary"
+ *                     )
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Review updated successfully"
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="User not authenticated"
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Review not found or unauthorized"
+ *     )
+ * )
+ */
+
     public function updateReview(Request $request, $id)
     {
         $userId = Auth::id(); // Get the authenticated user's ID
@@ -253,29 +304,40 @@ class UserReviewController extends Controller
             'star' => 'nullable|integer|min:1|max:5',
             'comment' => 'nullable|string',
             'images' => 'nullable|array',
-            'images.*' => 'file|mimes:jpeg,png,jpg,gif|max:2048',
+            'images.*' => 'file|mimes:jpeg,png,jpg,gif,webp|max:10240',
         ]);
 
         $dataToUpdate = $request->only(['star', 'comment']);
         $images = [];
         $imageUrls = [];
-        if ($request->has('images')) {
-            $destinationPath = public_path('storage');
-            // Ensure the directory exists
-            if (!file_exists($destinationPath)) {
-                mkdir($destinationPath, 0755, true);
-            }
-            $i = 1;
-            foreach ($request->file('images') as $image) {
-                // Save the image to the destination path
-                $image->move($destinationPath, $image->getClientOriginalName());
+        $uploadedImages = [];
+        $path = env('STORAGE_ENV') . '/customer/review';   
+         
+            // ✅ Upload & compress images
+           if ($request->hasFile('images') && is_array($request->file('images'))) {
+      
+                foreach ($request->file('images') as $key=>$imageFile) {
 
-                // Store the image names and URLs
-                $images[$i] = $image->getClientOriginalName();
-                $imageUrls[$i] = url('storage/' . $image->getClientOriginalName());
-                $i++;
+                    if (!$imageFile->isValid()) {
+                        continue;
+                    }
+     	            $tempRequest = new \Illuminate\Http\Request();
+				    $tempRequest->files->set('review_image_single', $imageFile);
+
+                    $url = compressImageToS3(
+                        $tempRequest,
+                        'review_image_single',
+                        $path
+                    );
+ 
+                     if ($url) {
+                        $uploadedImages[] = $url;
+                    }
+                }
             }
-        }
+ 
+            $images = json_encode($uploadedImages);
+        
 
         if (!empty($images)) {
             $dataToUpdate['images'] = $images;
@@ -285,7 +347,7 @@ class UserReviewController extends Controller
 
         if ($review) {
             $reviewData = $review->toArray();
-            $reviewData['image_urls'] = $imageUrls;
+            $reviewData['image_urls'] = $images;
 
             return response()->json([
                 'message' => 'Review updated successfully',

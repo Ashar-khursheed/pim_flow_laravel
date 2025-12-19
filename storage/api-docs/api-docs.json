@@ -10795,6 +10795,24 @@
                         }
                     },
                     {
+                        "name": "from_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-01-01"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-12-31"
+                        }
+                    },
+                    {
                         "name": "page",
                         "in": "query",
                         "description": "Page number for pagination",
@@ -29327,7 +29345,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "product_id",
@@ -29349,7 +29367,8 @@
                                         "type": "string",
                                         "example": "Great product!"
                                     },
-                                    "images": {
+                                    "images[]": {
+                                        "description": "Review images",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
@@ -29367,10 +29386,10 @@
                         "description": "Review added successfully"
                     },
                     "401": {
-                        "description": "User not authenticated"
+                        "description": "Unauthorized"
                     },
-                    "500": {
-                        "description": "Server error"
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
@@ -29381,12 +29400,12 @@
             }
         },
         "/api/customer-reviews-update/{id}": {
-            "put": {
+            "post": {
                 "tags": [
                     "Frontend-User Reviews"
                 ],
                 "summary": "Update an existing review",
-                "operationId": "7ad26f8d5d51ae4ce32962caf01ec109",
+                "operationId": "2f9f02c983ae6aecaa68558337c013e4",
                 "parameters": [
                     {
                         "name": "id",
@@ -29401,7 +29420,7 @@
                 "requestBody": {
                     "required": false,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "properties": {
                                     "star": {
@@ -29414,7 +29433,8 @@
                                         "type": "string",
                                         "example": "Updated comment."
                                     },
-                                    "images": {
+                                    "images[]": {
+                                        "description": "Updated review images",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
@@ -29428,7 +29448,7 @@
                     }
                 },
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Review updated successfully"
                     },
                     "401": {
@@ -30186,6 +30206,24 @@
                         "schema": {
                             "type": "string",
                             "example": "john"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-01-01"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-12-31"
                         }
                     },
                     {
