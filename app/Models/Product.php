@@ -355,16 +355,9 @@ class Product extends Model implements TranslatableContract
 			return $query;
 		}
 
+		/* Use the ProductSupplier scope */
 		return $query->whereHas('productSuppliers', function($q) use ($priceMin, $priceMax) {
-			$priceExpression = 'CASE WHEN sale_price > 0 THEN sale_price ELSE price END';
-
-			if ($priceMin !== null && $priceMax !== null) {
-				$q->whereRaw("{$priceExpression} BETWEEN ? AND ?", [$priceMin, $priceMax]);
-			} elseif ($priceMin !== null) {
-				$q->whereRaw("{$priceExpression} >= ?", [$priceMin]);
-			} elseif ($priceMax !== null) {
-				$q->whereRaw("{$priceExpression} <= ?", [$priceMax]);
-			}
+			$q->priceRange($priceMin, $priceMax);
 		});
 	}
 }

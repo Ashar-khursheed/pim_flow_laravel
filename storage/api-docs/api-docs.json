@@ -17869,6 +17869,36 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "start_letter",
+                        "in": "query",
+                        "description": "Filter brands by starting letter (a-z)",
+                        "schema": {
+                            "type": "string",
+                            "example": "A"
+                        }
+                    },
+                    {
+                        "name": "with_logo_only",
+                        "in": "query",
+                        "description": "Show only brands with logos",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
