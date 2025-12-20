@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 
 use App\Models\Category;
 use App\Models\SeoManagement;
+use App\Models\ProductCategory;
 
 use App\Traits\TransformProduct;
 
@@ -21,7 +22,7 @@ class FCategoryController extends Controller
 	 *     summary="Get product categories with hierarchical structure",
 	 *     description="Retrieves published product categories in a parent-child hierarchical structure. Supports filtering by parent category (via ID or slug), limiting child categories per parent, and optionally including the parent category itself in the response. Categories are returned with translations, SEO URLs, and product counts.",
 	 *     @OA\Parameter(name="parent_id", in="query", description="Filter categories by parent ID.", @OA\Schema(type="integer", example=1)),
-	 *     @OA\Parameter(name="brand_url", in="query", description="Filter categories by brand URL.", @OA\Schema(type="integer", example="beckers")),
+	 *     @OA\Parameter(name="brand_url", in="query", description="Filter categories by brand URL.", @OA\Schema(type="string", example="hoshizaki")),
 	 *     @OA\Parameter(name="limit", in="query", description="Maximum number of child categories to load per parent category.", @OA\Schema(type="integer", example=5)),
 	 *     @OA\Parameter(name="slug", in="query", description="Filter by parent category slug instead of ID.", @OA\Schema(type="string", example="kitchen-equipment")),
 	 *     @OA\Parameter(name="with_parent", in="query", description="Whether to include the parent category", @OA\Schema(type="boolean", example=true)),
@@ -35,10 +36,13 @@ class FCategoryController extends Controller
 		$limit = $request->get('limit');
 		$withParent = $request->boolean('with_parent');
 		$slug = $request->get('slug');
-		$sortBy = $request->get('sort_by');
+		$brandUrl = $request->get('brand_url');
+		$sortBy = $request->get('sort_by', 'order');
 
+		/* Handle category slug */
 		if ($slug) {
 			$seoRecord = SeoManagement::where('url', $slug)->where('relational_type', 'Category')->first(['relational_id']);
+
 			if (!$seoRecord) {
 				return response()->json([
 					'success' => false,
@@ -46,8 +50,8 @@ class FCategoryController extends Controller
 				]);
 			}
 
-			/* Check if category exists and is published in one query */
 			$categoryExists = Category::where('id', $seoRecord->relational_id)->where('status', 'published')->exists();
+
 			if (!$categoryExists) {
 				return response()->json([
 					'success' => false,
@@ -58,6 +62,37 @@ class FCategoryController extends Controller
 			$parentID = $seoRecord->relational_id;
 		}
 
+		/* Handle brand filter */
+		$brandCategoryIds = [];
+		$brandId = null;
+
+		if ($brandUrl) {
+			$brandSeoRecord = SeoManagement::where('url', $brandUrl)->where('relational_type', 'Brand')->first(['relational_id']);
+			if (!$brandSeoRecord) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Brand not found'
+				]);
+			}
+
+			$brandId = $brandSeoRecord->relational_id;
+			$brandCategoryIds = ProductCategory::join('ec_products as products', 'products.id', '=', 'product_categories.product_id')
+			->where('products.brand_id', $brandId)
+			->where('products.status', 'published')
+			->distinct()
+			->pluck('product_categories.category_id')
+			->toArray();
+
+			if (empty($brandCategoryIds)) {
+				return response()->json([
+					'success' => true,
+					'message' => 'No categories found for this brand',
+					'data' => []
+				]);
+			}
+		}
+
+		/* Build categories query */
 		$records = Category::select([
 			'id', 'name', 'parent_id', 'image', 'order', 'last_child'
 		])
@@ -70,9 +105,26 @@ class FCategoryController extends Controller
 				}
 			}
 		])
-		->withCount('products')
 		->where('status', 'published');
 
+		/* Apply brand-specific product count */
+		if ($brandId) {
+			$records->withCount(['products as products_count' => function($q) use ($brandId) {
+				$q->where('brand_id', $brandId)
+				->where('status', 'published');
+			}]);
+		} else {
+			$records->withCount(['products as products_count' => function($q) {
+				$q->where('status', 'published');
+			}]);
+		}
+
+		/* Apply brand filter */
+		if (!empty($brandCategoryIds)) {
+			$records->whereIn('id', $brandCategoryIds);
+		}
+
+		/* Apply parent filter */
 		if ($parentID) {
 			$records->where(function ($query) use ($parentID, $withParent) {
 				$query->where('parent_id', $parentID);
@@ -80,16 +132,16 @@ class FCategoryController extends Controller
 					$query->orWhere('id', $parentID);
 				}
 			});
-		} else {
+		} elseif (empty($brandCategoryIds)) {
 			$records->where('parent_id', 0);
 		}
 
-		if ($sortBy) {
-			$records = $records->orderBy($sortBy);
-		}
+		/* Apply sorting */
+		$records->orderBy($sortBy);
 
 		$records = $records->get();
 
+		/* Transform categories */
 		$records->transform(function ($category) {
 			return $this->transformCategoryRecursive($category);
 		});
@@ -99,14 +151,6 @@ class FCategoryController extends Controller
 			'message' => 'Categories retrieved successfully.',
 			'data' => $records
 		]);
-
-		// $cacheKey = $parentID ? "categories_index_$parentID" : "categories_index_all";
-
-		// $categoriesMenus = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($records) {
-		// 	return $records->get();
-		// });
-
-		// return response()->json($records)->header('Cache-Control', 'public, max-age=86400');
 	}
 
 	/* Recursively transform category structure */

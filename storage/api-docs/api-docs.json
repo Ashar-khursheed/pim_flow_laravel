@@ -18101,6 +18101,15 @@
                         }
                     },
                     {
+                        "name": "brand_url",
+                        "in": "query",
+                        "description": "Filter categories by brand URL.",
+                        "schema": {
+                            "type": "string",
+                            "example": "hoshizaki"
+                        }
+                    },
+                    {
                         "name": "limit",
                         "in": "query",
                         "description": "Maximum number of child categories to load per parent category.",
@@ -18121,7 +18130,7 @@
                     {
                         "name": "with_parent",
                         "in": "query",
-                        "description": "Whether to include the parent category details in the response along with its children",
+                        "description": "Whether to include the parent category",
                         "schema": {
                             "type": "boolean",
                             "example": true
