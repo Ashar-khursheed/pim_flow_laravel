@@ -460,7 +460,7 @@ class BlogController extends Controller
         $comment = $post->comments()->create([
             'comment' => $request->comment,
             'parent_id' => $request->parent_id ?? null,
-            'created_by' => Auth::id(), // Automatically assign logged-in user
+            'created_by' => Auth::id()??1,  
         ]);
 
         return response()->json([

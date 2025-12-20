@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Controllers\FrontEnd;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Review;
@@ -15,7 +17,7 @@ class UserReviewController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
 
-        /**
+    /**
      * @OA\Get(
      *     path="/api/customer-reviews",
      *     summary="Get all reviews for the authenticated customer",
@@ -35,6 +37,7 @@ class UserReviewController extends Controller
      *     )
      * )
      */
+
     public function getCustomerReviews()
     {
         $userId = Auth::id(); // Get the authenticated user
@@ -50,14 +53,10 @@ class UserReviewController extends Controller
 
             // Generate URLs dynamically
             if ($images) {
-                $imageUrls = collect($images)->mapWithKeys(function ($fileName, $key) {
-                    return [$key => url('storage/' . $fileName)];
-                })->toArray();
-
-                // Add the new imageUrls field
-                $record->imageUrls = $imageUrls;
+                $record->imageUrls =  is_string($record->images)
+                    ? json_decode($record->images, true) ?? []
+                    : (is_array($record->images) ? $record->images : []);
             }
-
             return $record;
         });
 
@@ -67,69 +66,73 @@ class UserReviewController extends Controller
         }
 
         // Return reviews with product data
-        return response()->json($reviews);
+
+        return response()->json([
+            'success' => true,
+            'data' => $reviews
+        ], 200);
     }
 
 
-   /**
- * @OA\Post(
- *     path="/api/add-customer-reviews",
- *     summary="Create a new review",
- *     tags={"Frontend-User Reviews"},
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\MediaType(
- *             mediaType="multipart/form-data",
- *             @OA\Schema(
- *                 type="object",
- *                 required={"product_id","star","comment"},
- *
- *                 @OA\Property(
- *                     property="product_id",
- *                     type="integer",
- *                     example=1
- *                 ),
- *                 @OA\Property(
- *                     property="star",
- *                     type="integer",
- *                     minimum=1,
- *                     maximum=5,
- *                     example=5
- *                 ),
- *                 @OA\Property(
- *                     property="comment",
- *                     type="string",
- *                     example="Great product!"
- *                 ),
- *                 @OA\Property(
- *                     property="images[]",
- *                     type="array",
- *                     description="Review images",
- *                     @OA\Items(
- *                         type="string",
- *                         format="binary"
- *                     )
- *                 )
- *             )
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=201,
- *         description="Review added successfully"
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized"
- *     ),
- *     @OA\Response(
- *         response=422,
- *         description="Validation error"
- *     )
- * )
- */
+    /**
+     * @OA\Post(
+     *     path="/api/add-customer-reviews",
+     *     summary="Create a new review",
+     *     tags={"Frontend-User Reviews"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 required={"product_id","star","comment"},
+     *
+     *                 @OA\Property(
+     *                     property="product_id",
+     *                     type="integer",
+     *                     example=1
+     *                 ),
+     *                 @OA\Property(
+     *                     property="star",
+     *                     type="integer",
+     *                     minimum=1,
+     *                     maximum=5,
+     *                     example=5
+     *                 ),
+     *                 @OA\Property(
+     *                     property="comment",
+     *                     type="string",
+     *                     example="Great product!"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="images[]",
+     *                     type="array",
+     *                     description="Review images",
+     *                     @OA\Items(
+     *                         type="string",
+     *                         format="binary"
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=201,
+     *         description="Review added successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
 
 
     public function createReview(Request $request)
@@ -167,31 +170,31 @@ class UserReviewController extends Controller
 
         try {
             $uploadedImages = [];
-            
-            $path = env('STORAGE_ENV') . '/customer/review';    
+
+            $path = env('STORAGE_ENV') . '/production/review';
             // ✅ Upload & compress images
-           if ($request->hasFile('images') && is_array($request->file('images'))) {
-      
-                foreach ($request->file('images') as $key=>$imageFile) {
+            if ($request->hasFile('images') && is_array($request->file('images'))) {
+
+                foreach ($request->file('images') as $key => $imageFile) {
 
                     if (!$imageFile->isValid()) {
                         continue;
                     }
-     	            $tempRequest = new \Illuminate\Http\Request();
-				    $tempRequest->files->set('review_image_single', $imageFile);
+                    $tempRequest = new \Illuminate\Http\Request();
+                    $tempRequest->files->set('review_image_single', $imageFile);
 
                     $url = compressImageToS3(
                         $tempRequest,
                         'review_image_single',
                         $path
                     );
- 
-                     if ($url) {
+
+                    if ($url) {
                         $uploadedImages[] = $url;
                     }
                 }
             }
- 
+
             $images = json_encode($uploadedImages);
             // ✅ Create review
             $review = Review::create([
@@ -212,7 +215,6 @@ class UserReviewController extends Controller
                     ['image_urls' => $uploadedImages]
                 )
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -221,68 +223,68 @@ class UserReviewController extends Controller
         }
     }
 
- 
-      /**
- * @OA\Post(
- *     path="/api/customer-reviews-update/{id}",
- *     summary="Update an existing review",
- *     tags={"Frontend-User Reviews"},
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="Review ID",
- *         @OA\Schema(type="integer")
- *     ),
- *
- *     @OA\RequestBody(
- *         required=false,
- *         @OA\MediaType(
- *             mediaType="multipart/form-data",
- *             @OA\Schema(
- *                 type="object",
- *
- *                 @OA\Property(
- *                     property="star",
- *                     type="integer",
- *                     minimum=1,
- *                     maximum=5,
- *                     example=4
- *                 ),
- *                 @OA\Property(
- *                     property="comment",
- *                     type="string",
- *                     example="Updated comment."
- *                 ),
- *                 @OA\Property(
- *                     property="images[]",
- *                     type="array",
- *                     description="Updated review images",
- *                     @OA\Items(
- *                         type="string",
- *                         format="binary"
- *                     )
- *                 )
- *             )
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="Review updated successfully"
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="User not authenticated"
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Review not found or unauthorized"
- *     )
- * )
- */
+
+    /**
+     * @OA\Post(
+     *     path="/api/customer-reviews-update/{id}",
+     *     summary="Update an existing review",
+     *     tags={"Frontend-User Reviews"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Review ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 type="object",
+     *
+     *                 @OA\Property(
+     *                     property="star",
+     *                     type="integer",
+     *                     minimum=1,
+     *                     maximum=5,
+     *                     example=4
+     *                 ),
+     *                 @OA\Property(
+     *                     property="comment",
+     *                     type="string",
+     *                     example="Updated comment."
+     *                 ),
+     *                 @OA\Property(
+     *                     property="images[]",
+     *                     type="array",
+     *                     description="Updated review images",
+     *                     @OA\Items(
+     *                         type="string",
+     *                         format="binary"
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Review updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="User not authenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Review not found or unauthorized"
+     *     )
+     * )
+     */
 
     public function updateReview(Request $request, $id)
     {
@@ -311,33 +313,33 @@ class UserReviewController extends Controller
         $images = [];
         $imageUrls = [];
         $uploadedImages = [];
-        $path = env('STORAGE_ENV') . '/customer/review';   
-         
-            // ✅ Upload & compress images
-           if ($request->hasFile('images') && is_array($request->file('images'))) {
-      
-                foreach ($request->file('images') as $key=>$imageFile) {
+        $path = env('STORAGE_ENV') . '/production/review';
 
-                    if (!$imageFile->isValid()) {
-                        continue;
-                    }
-     	            $tempRequest = new \Illuminate\Http\Request();
-				    $tempRequest->files->set('review_image_single', $imageFile);
+        // ✅ Upload & compress images
+        if ($request->hasFile('images') && is_array($request->file('images'))) {
 
-                    $url = compressImageToS3(
-                        $tempRequest,
-                        'review_image_single',
-                        $path
-                    );
- 
-                     if ($url) {
-                        $uploadedImages[] = $url;
-                    }
+            foreach ($request->file('images') as $key => $imageFile) {
+
+                if (!$imageFile->isValid()) {
+                    continue;
+                }
+                $tempRequest = new \Illuminate\Http\Request();
+                $tempRequest->files->set('review_image_single', $imageFile);
+
+                $url = compressImageToS3(
+                    $tempRequest,
+                    'review_image_single',
+                    $path
+                );
+
+                if ($url) {
+                    $uploadedImages[] = $url;
                 }
             }
- 
-            $images = json_encode($uploadedImages);
-        
+        }
+
+        $images = json_encode($uploadedImages);
+
 
         if (!empty($images)) {
             $dataToUpdate['images'] = $images;
@@ -364,7 +366,7 @@ class UserReviewController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
 
-       /**SEOManagement
+    /**SEOManagement
      * @OA\Delete(
      *     path="/api/customer-reviews-delete/{id}",
      *     summary="Delete a review",
@@ -585,75 +587,73 @@ class UserReviewController extends Controller
     //     ]);
     // }
     public function getProductReviews(Request $request)
-{
-    \Log::info($request->all());
+    {
+        \Log::info($request->all());
 
-    $input = $request->input('product_id');
+        $input = $request->input('product_id');
 
-    if (!$input) {
-        return response()->json(['success' => false, 'message' => 'Product ID or slug is required.'], 400);
-    }
-
-    // Resolve product ID from slug if needed
-    if (is_numeric($input)) {
-        $productId = (int) $input;
-    } else {
-        $product = Product::whereHas('seoUrl', function ($q) use ($input) {
-            $q->where('url', $input);
-        })->first();
-
-        if (!$product) {
-            return response()->json(['success' => false, 'message' => 'Product not found.'], 404);
+        if (!$input) {
+            return response()->json(['success' => false, 'message' => 'Product ID or slug is required.'], 400);
         }
 
-        $productId = $product->id;
-    }
+        // Resolve product ID from slug if needed
+        if (is_numeric($input)) {
+            $productId = (int) $input;
+        } else {
+            $product = Product::whereHas('seoUrl', function ($q) use ($input) {
+                $q->where('url', $input);
+            })->first();
 
-    $totalReviews = Review::where('product_id', $productId)->count();
+            if (!$product) {
+                return response()->json(['success' => false, 'message' => 'Product not found.'], 404);
+            }
 
-    $query = Review::query()->where('product_id', $productId);
-
-    if ($request->has('star')) {
-        $query->where('star', $request->input('star'));
-    }
-
-    if ($request->input('sort') === 'highest') {
-        $query->orderBy('star', 'desc');
-    } elseif ($request->input('sort') === 'lowest') {
-        $query->orderBy('star', 'asc');
-    } else {
-        $query->orderBy('created_at', 'desc');
-    }
-
-    $reviews = $query->paginate($request->input('per_page', 15));
-
-    // Normalize review images
-    $reviews->getCollection()->transform(function ($review) {
-        if (!empty($review->images) && !is_array($review->images)) {
-            $review->images = json_decode($review->images, true) ?: [];
+            $productId = $product->id;
         }
-        return $review;
-    });
 
-    // Star counts
-    $starCounts = [];
-    for ($i = 1; $i <= 5; $i++) {
-        $starCounts["{$i}_star"] = Review::where('star', $i)->where('product_id', $productId)->count();
+        $totalReviews = Review::where('product_id', $productId)->count();
+
+        $query = Review::query()->where('product_id', $productId);
+
+        if ($request->has('star')) {
+            $query->where('star', $request->input('star'));
+        }
+
+        if ($request->input('sort') === 'highest') {
+            $query->orderBy('star', 'desc');
+        } elseif ($request->input('sort') === 'lowest') {
+            $query->orderBy('star', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $reviews = $query->paginate($request->input('per_page', 15));
+
+        // Normalize review images
+        $reviews->getCollection()->transform(function ($review) {
+            if (!empty($review->images) && !is_array($review->images)) {
+                $review->images = json_decode($review->images, true) ?: [];
+            }
+            return $review;
+        });
+
+        // Star counts
+        $starCounts = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $starCounts["{$i}_star"] = Review::where('star', $i)->where('product_id', $productId)->count();
+        }
+
+        $averageRating = Review::where('product_id', $productId)->avg('star');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'reviews' => $reviews,
+                'total_reviews' => $totalReviews,
+                'star_counts' => $starCounts,
+                'average_rating' => round($averageRating, 2),
+                'product_id' => $productId,
+            ],
+        ]);
     }
-
-    $averageRating = Review::where('product_id', $productId)->avg('star');
-
-    return response()->json([
-        'success' => true,
-        'data' => [
-            'reviews' => $reviews,
-            'total_reviews' => $totalReviews,
-            'star_counts' => $starCounts,
-            'average_rating' => round($averageRating, 2),
-            'product_id' => $productId,
-        ],
-    ]);
-}
-
-
 }
