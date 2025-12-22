@@ -358,6 +358,7 @@ class FCategoryController extends Controller
 		$limit = $request->get('limit', 5);
 		$minProducts = $request->get('min_products', 5);
 
+		/* Fetch categories with products */
 		$records = Category::select(['id', 'parent_id', 'name'])
 		->where('status', 'published')
 		->where('is_featured', 1)
