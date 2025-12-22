@@ -154,18 +154,6 @@ class FinanceController extends Controller
         // Format the results
         $formattedFinance = $financeManagement->map(function ($finance) {
             $address = $finance->customerAddress;
-
-            $today = now()->toDateString();
-            Finance::where('customer_id', $finance->customer_id)
-                ->where('status', 'Pending')
-                ->whereDate('next_due_date', '<', $today)
-                ->update(['status' => 'Overdue']);
-            FinancesPayment::where('customer_id', $finance->customer_id)
-                ->where('status', 'Pending')
-                ->whereDate('due_date', '<', $today)
-                ->update(['status' => 'Overdue']);
-
-
             return [
                 'id' => $finance->id,
                 'customer_id' => $finance->customer_id,
