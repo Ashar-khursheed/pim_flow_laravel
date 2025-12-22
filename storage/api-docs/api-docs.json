@@ -11102,6 +11102,10 @@
                                         ],
                                         "example": "Accounts payable"
                                     },
+                                    "business_email": {
+                                        "type": "string",
+                                        "example": "business@domain.com"
+                                    },
                                     "accounts_payable_email": {
                                         "type": "string",
                                         "example": "pay@gmail.com"
@@ -18554,7 +18558,7 @@
                                         "type": "string",
                                         "example": "Doe"
                                     },
-                                    "email": {
+                                    "business_email": {
                                         "type": "string",
                                         "example": "john@gmail.com"
                                     },
@@ -33855,7 +33859,10 @@
                                             "CC Avenue",
                                             "NetTerm",
                                             "Check",
-                                            "Cheque"
+                                            "Cheque",
+                                            "Ascentium Capital",
+                                            "Resolve Pay",
+                                            "Approve"
                                         ],
                                         "example": "Credit Card"
                                     },
@@ -34318,7 +34325,9 @@
                                             "Square",
                                             "NetTerm",
                                             "Check",
-                                            "Cheque"
+                                            "Ascentium Capital",
+                                            "Resolve Pay",
+                                            "Approve"
                                         ],
                                         "example": "Cash on Delivery"
                                     },
