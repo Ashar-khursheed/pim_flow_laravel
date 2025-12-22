@@ -21268,6 +21268,59 @@
                 }
             }
         },
+        "/api/frontend/user-stats": {
+            "get": {
+                "tags": [
+                    "Frontend Orders"
+                ],
+                "summary": "Get total orders, wishlist count, and net term amount for authenticated user",
+                "description": "Returns total orders, total wishlist items, and total net term amount for the logged-in user",
+                "operationId": "getUserStats",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_orders": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "total_wishlist": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "total_net_term_amount": {
+                                                    "type": "string",
+                                                    "example": "1234.56"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/payments": {
             "get": {
                 "tags": [
@@ -49334,6 +49387,10 @@
         {
             "name": "Cheque Upload",
             "description": "Cheque Upload"
+        },
+        {
+            "name": "Frontend Orders",
+            "description": "Frontend Orders"
         },
         {
             "name": "Frontend-Payments",
