@@ -136,65 +136,7 @@ class FBrandController extends Controller
 	 */
 	public function getFeaturedBrandProducts(Request $request)
 	{
-		$productsLimit = $request->get('products_limit', 10);
-		$limit = $request->get('limit', 5);
-		$minProducts = $request->get('min_products', 5);
-		$search = $request->get('search');
-		$minRating = $request->get('min_rating');
-		$priceMin = $request->get('price_min');
-		$priceMax = $request->get('price_max');
-
-		$records = Brand::select(['id', 'name'])
-		->where('status', 'published')
-		->where('is_featured', 1)
-		->with([
-			'translations:id,locale,brand_id,name_tr',
-			'seoUrl:id,relational_id,relational_type,url',
-			'featuredProducts' => function($query) use ($productsLimit, $search, $minRating, $priceMin, $priceMax) {
-				$query->select(['id', 'name', 'sku', 'currency_id', 'units_sold', 'alt_tags', 'quote_available', 'brand_id'])
-				->search($search)
-				->minRating($minRating)
-				->priceRange($priceMin, $priceMax)
-				->with([
-					'translations',
-					'seoUrl:id,relational_id,relational_type,url',
-					'productSuppliers' => function($q) use ($priceMin, $priceMax) {
-						$q->select(['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 'sale_price', 'price', 'inventory', 'in_stock', 'min_quantity', 'is_fixed', 'delivery_days', 'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'])
-						->priceRange($priceMin, $priceMax)
-						->cheapest();
-					},
-					'reviews:id,product_id,star',
-					'currency:id,title,symbol',
-					'sellingUnitAttribute'
-				])
-				->withCount('reviews')
-				->withAvg('reviews', 'star')
-				->orderByDesc('units_sold')
-				->limit($productsLimit);
-			}
-		])
-		->has('featuredProducts', '>=', $minProducts)
-		->take($limit)
-		->get();
-
-		// dd($records->toArray());
-
-		/* Transform brands */
-		$records->transform(function ($brand) {
-			/* Transform brand name to locale object */
-			$brand->name = $this->getLocalizedData($brand->translations, 'name_tr');
-
-			/* Transform featured products */
-			$brand->featuredProducts->each(function ($product) {
-				$this->transformFeaturedProduct($product);
-			});
-
-			/* Remove unwanted attributes from brand */
-			unset($brand->translations);
-			unset($brand->seoUrl);
-
-			return $brand;
-		});
+		$records = $this->fetchFeaturedBrandProducts($request);
 
 		return response()->json([
 			'success' => true,
@@ -222,6 +164,18 @@ class FBrandController extends Controller
 	 */
 	public function getCustomerFeaturedBrandProducts(Request $request)
 	{
+		$wishlistProductIds = auth()->user()->wishlist()->pluck('product_id')->toArray();
+		$records = $this->fetchFeaturedBrandProducts($request, $wishlistProductIds);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Featured brands retrieved successfully',
+			'data' => $records
+		]);
+	}
+
+	private function fetchFeaturedBrandProducts(Request $request, ?array $wishlistProductIds = null)
+	{
 		$productsLimit = $request->get('products_limit', 10);
 		$limit = $request->get('limit', 5);
 		$minProducts = $request->get('min_products', 5);
@@ -229,7 +183,6 @@ class FBrandController extends Controller
 		$minRating = $request->get('min_rating');
 		$priceMin = $request->get('price_min');
 		$priceMax = $request->get('price_max');
-		$wishlistProductIds = auth()->user()->wishlist()->pluck('product_id')->all();
 
 		$records = Brand::select(['id', 'name'])
 		->where('status', 'published')
@@ -272,37 +225,18 @@ class FBrandController extends Controller
 			/* Transform featured products */
 			$brand->featuredProducts->each(function ($product) use ($wishlistProductIds) {
 				$this->transformFeaturedProduct($product);
-				$product->in_wishlist = in_array($product->id, $wishlistProductIds);
+				/* Add wishlist status if wishlist IDs provided */
+				if ($wishlistProductIds !== null) {
+					$product->in_wishlist = in_array($product->id, $wishlistProductIds);
+				}
 			});
 
 			/* Remove unwanted attributes from brand */
-			unset($brand->translations);
-			unset($brand->seoUrl);
+			unset($brand->translations, $brand->seoUrl);
 
 			return $brand;
 		});
-
-		return response()->json([
-			'success' => true,
-			'message' => 'Featured brands retrieved successfully',
-			'data' => $records
-		]);
-	}
-
-	private function getWishlistProductIds()
-	{
-		$userId = Auth::id();
-
-		if ($userId) {
-			return Cache::remember("wishlist_user_{$userId}", 60, function () use ($userId) {
-				return DB::table('ec_wish_lists')
-				->where('customer_id', $userId)
-				->pluck('product_id')
-				->toArray();
-			});
-		}
-
-		return session()->get('guest_wishlist', []);
+		return $records;
 	}
 
 	// /**
