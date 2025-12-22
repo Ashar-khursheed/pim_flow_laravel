@@ -785,6 +785,9 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 	Route::post('/frontend/compress-image-check', [F_OrderController::class, 'compressImage']);
 
+	Route::get('/frontend/user-stats', [F_OrderController::class, 'userStats']);
+	
+
 
 
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);

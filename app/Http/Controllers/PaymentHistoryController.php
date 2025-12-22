@@ -115,19 +115,19 @@ class PaymentHistoryController extends Controller
 			$query->where(function ($q) use ($search) {
 
 				$q->where('transaction_id', 'like', "%{$search}%")
-				->orWhere('payment_method', 'like', "%{$search}%")
-				->orWhere('rider_name', 'like', "%{$search}%")
-				->orWhere('notes', 'like', "%{$search}%")
+					->orWhere('payment_method', 'like', "%{$search}%")
+					->orWhere('rider_name', 'like', "%{$search}%")
+					->orWhere('notes', 'like', "%{$search}%")
 
-				->orWhereHas('order', function ($orderQuery) use ($search) {
-					$orderQuery->where('order_number', 'like', "%{$search}%");
-				})
+					->orWhereHas('order', function ($orderQuery) use ($search) {
+						$orderQuery->where('order_number', 'like', "%{$search}%");
+					})
 
-				->orWhere(function ($numericQuery) use ($search) {
-					if (is_numeric($search)) {
-						$numericQuery->where('order_id', $search);
-					}
-				});
+					->orWhere(function ($numericQuery) use ($search) {
+						if (is_numeric($search)) {
+							$numericQuery->where('order_id', $search);
+						}
+					});
 			});
 		}
 
@@ -154,9 +154,9 @@ class PaymentHistoryController extends Controller
 
 		// Apply sorting and pagination
 		$paymentManagement = $query->orderBy($sortBy, $sortDir)
-		->offset(($page - 1) * $perPage)
-		->limit($perPage)
-		->get();
+			->offset(($page - 1) * $perPage)
+			->limit($perPage)
+			->get();
 
 		// Format the results
 		$formattedPayments = $paymentManagement->map(function ($payment) {
@@ -166,7 +166,7 @@ class PaymentHistoryController extends Controller
 				'order_id' => $payment->order_id,
 				'order_number' => $payment->order?->order_number ?? null, // Include order_number
 				'transaction_id' => $payment->transaction_id,
-				'payment_mode' => $payment->payment_mode,
+				'payment_mode' => ($payment->payment_mode === 'Cheque') ? 'Check' : $payment->payment_mode,
 				'amount' => number_format($payment->amount, 2), // Format amount
 				'status' => $payment->status,
 				'notes' => $payment->notes,
@@ -323,14 +323,12 @@ class PaymentHistoryController extends Controller
 				'message' => 'Payment recorded successfully.',
 				'data' => $payment
 			], 201);
-
 		} catch (ValidationException $e) {
 			return response()->json([
 				'success' => false,
 				'message' => 'The given data was invalid.',
 				'errors' => $e->errors()
 			], 422);
-
 		} catch (\Exception $e) {
 			DB::rollBack();
 			return response()->json([
@@ -413,7 +411,6 @@ class PaymentHistoryController extends Controller
 				'error' => $e->getMessage()
 			], 404);
 		}
-
 	}
 
 	/**
@@ -464,6 +461,4 @@ class PaymentHistoryController extends Controller
 			]
 		]);
 	}
-
-
 }
