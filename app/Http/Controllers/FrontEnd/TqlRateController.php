@@ -187,9 +187,10 @@ class TqlRateController extends Controller
                 ], 404);
             }
 
-
+ 
 
             $carrierPrices = collect($rates->json()['content']['carrierPrices']);
+            $content =  $rates->json()['content'];
 
             if ($carrierPrices->isEmpty()) {
                 return response()->json([
@@ -197,7 +198,7 @@ class TqlRateController extends Controller
                     'message' => 'No carrier prices available.',
                 ], 404);
             }
-
+ 
             $cheapest = $carrierPrices->sortBy('customerRate')->first();
             $fastest = $carrierPrices
                 ->reject(fn($c) => $c['carrierQuoteId'] === $cheapest['carrierQuoteId'])
@@ -222,6 +223,7 @@ class TqlRateController extends Controller
                 'Cheapest'   => $cheapest,
               //  'Fastest'    => $fastest,
                 //'Best Value' => $bestValue
+               
             ])->filter()->map(function ($carrier, $label) {
                 $carrier['label'] = $label;
                 return $carrier;
@@ -231,7 +233,9 @@ class TqlRateController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Rates retrieved successfully.',
-                'data' => $finalCarriers
+                'data' => $finalCarriers,
+                'quoteId' => $content['quoteId'] ?? null,
+                'commodityId' => $content['quoteCommodities'][0]['commodityId'] ?? null,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
