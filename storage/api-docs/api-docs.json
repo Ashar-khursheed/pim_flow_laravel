@@ -28950,14 +28950,14 @@
                                 "properties": {
                                     "carrierPriceId": {
                                         "type": "string",
-                                        "example": "000000"
+                                        "example": "180037922"
                                     },
                                     "customerEmailAddresses": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "email",
-                                            "example": "abc1234@email.com"
+                                            "example": "john.doe@company.com"
                                         },
                                         "minItems": 1
                                     },
@@ -28970,31 +28970,31 @@
                                         "properties": {
                                             "puNumber": {
                                                 "type": "string",
-                                                "example": ""
+                                                "example": "PU12345"
                                             },
                                             "stopName": {
                                                 "type": "string",
-                                                "example": "Test"
+                                                "example": "New York Warehouse"
                                             },
                                             "contactName": {
                                                 "type": "string",
-                                                "example": "Test Test"
+                                                "example": "John Smith"
                                             },
                                             "contactPhone": {
                                                 "type": "string",
-                                                "example": "5555555555"
+                                                "example": "5165557890"
                                             },
                                             "contactExtension": {
                                                 "type": "string",
-                                                "example": "12345"
+                                                "example": "101"
                                             },
                                             "address1": {
                                                 "type": "string",
-                                                "example": "123 Test Street"
+                                                "example": "250 Express Drive South"
                                             },
                                             "address2": {
                                                 "type": "string",
-                                                "nullable": true
+                                                "example": "Suite 100"
                                             },
                                             "hoursOpen": {
                                                 "type": "string",
@@ -29011,31 +29011,31 @@
                                         "properties": {
                                             "deliveryPO": {
                                                 "type": "string",
-                                                "example": ""
+                                                "example": "PO789456"
                                             },
                                             "stopName": {
                                                 "type": "string",
-                                                "example": "TestPlace"
+                                                "example": "Ohio Distribution Center"
                                             },
                                             "contactName": {
                                                 "type": "string",
-                                                "example": "Test people"
+                                                "example": "Michael Brown"
                                             },
                                             "contactPhone": {
                                                 "type": "string",
-                                                "example": "5555555555"
+                                                "example": "5135554321"
                                             },
                                             "contactExtension": {
                                                 "type": "string",
-                                                "nullable": true
+                                                "example": "202"
                                             },
                                             "address1": {
                                                 "type": "string",
-                                                "example": "1234 Test Street"
+                                                "example": "1200 Central Parkway"
                                             },
                                             "address2": {
                                                 "type": "string",
-                                                "nullable": true
+                                                "example": "Dock 4"
                                             },
                                             "hoursOpen": {
                                                 "type": "string",
@@ -29114,7 +29114,7 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "example": "8828101"
+                            "example": "34996030"
                         }
                     }
                 ],

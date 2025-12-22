@@ -415,7 +415,7 @@ class TqlRateController extends Controller
      *             @OA\Property(
      *                 property="carrierPriceId",
      *                 type="string",
-     *                 example="000000"
+     *                 example="180037922"
      *             ),
      *
      *             @OA\Property(
@@ -425,7 +425,7 @@ class TqlRateController extends Controller
      *                 @OA\Items(
      *                     type="string",
      *                     format="email",
-     *                     example="abc1234@email.com"
+     *                     example="john.doe@company.com"
      *                 )
      *             ),
      *
@@ -439,13 +439,13 @@ class TqlRateController extends Controller
      *             @OA\Property(
      *                 property="pickupDetails",
      *                 type="object",
-     *                 @OA\Property(property="puNumber", type="string", example=""),
-     *                 @OA\Property(property="stopName", type="string", example="Test"),
-     *                 @OA\Property(property="contactName", type="string", example="Test Test"),
-     *                 @OA\Property(property="contactPhone", type="string", example="5555555555"),
-     *                 @OA\Property(property="contactExtension", type="string", example="12345"),
-     *                 @OA\Property(property="address1", type="string", example="123 Test Street"),
-     *                 @OA\Property(property="address2", type="string", nullable=true),
+     *                 @OA\Property(property="puNumber", type="string", example="PU12345"),
+     *                 @OA\Property(property="stopName", type="string", example="New York Warehouse"),
+     *                 @OA\Property(property="contactName", type="string", example="John Smith"),
+     *                 @OA\Property(property="contactPhone", type="string", example="5165557890"),
+     *                 @OA\Property(property="contactExtension", type="string", example="101"),
+     *                 @OA\Property(property="address1", type="string", example="250 Express Drive South"),
+     *                 @OA\Property(property="address2", type="string", example="Suite 100"),
      *                 @OA\Property(property="hoursOpen", type="string", example="9:00 AM"),
      *                 @OA\Property(property="hoursClose", type="string", example="5:00 PM")
      *             ),
@@ -453,13 +453,13 @@ class TqlRateController extends Controller
      *             @OA\Property(
      *                 property="deliveryDetails",
      *                 type="object",
-     *                 @OA\Property(property="deliveryPO", type="string", example=""),
-     *                 @OA\Property(property="stopName", type="string", example="TestPlace"),
-     *                 @OA\Property(property="contactName", type="string", example="Test people"),
-     *                 @OA\Property(property="contactPhone", type="string", example="5555555555"),
-     *                 @OA\Property(property="contactExtension", type="string", nullable=true),
-     *                 @OA\Property(property="address1", type="string", example="1234 Test Street"),
-     *                 @OA\Property(property="address2", type="string", nullable=true),
+     *                 @OA\Property(property="deliveryPO", type="string", example="PO789456"),
+     *                 @OA\Property(property="stopName", type="string", example="Ohio Distribution Center"),
+     *                 @OA\Property(property="contactName", type="string", example="Michael Brown"),
+     *                 @OA\Property(property="contactPhone", type="string", example="5135554321"),
+     *                 @OA\Property(property="contactExtension", type="string", example="202"),
+     *                 @OA\Property(property="address1", type="string", example="1200 Central Parkway"),
+     *                 @OA\Property(property="address2", type="string", example="Dock 4"),
      *                 @OA\Property(property="hoursOpen", type="string", example="9:00 AM"),
      *                 @OA\Property(property="hoursClose", type="string", example="5:00 PM")
      *             )
@@ -766,7 +766,7 @@ class TqlRateController extends Controller
      *         description="TQL poNumber id",
      *         @OA\Schema(
      *             type="string",
-     *             example="8828101"
+     *             example="34996030"
      *         )
      *     ),
      *
