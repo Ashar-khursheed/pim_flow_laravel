@@ -58,8 +58,6 @@ class Product extends Model implements TranslatableContract
 		'images_tr',
 	];
 
-	public $translatedAttributes = [];
-
 	public static $observerUserId = null;
 	protected $table = 'ec_products';
 
