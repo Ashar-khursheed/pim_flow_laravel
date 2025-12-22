@@ -632,81 +632,6 @@ class TqlRateController extends Controller
      * )
      */
 
-    // public function getQuote(Request $request, $quoteId)
-    // {
-    //     $scope = 'https://tqlidentity.onmicrosoft.com/services_combined/LTLQuotes.Write';
-
-    //     $token = $this->getTqlToken($scope);
-    //     if (!$token) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Unable to generate token from TQL.',
-    //         ], 500);
-    //     }
-
-    //     $response = Http::withHeaders([
-    //         'Authorization' => 'Bearer ' . $token,
-    //         'Ocp-Apim-Subscription-Key' => config('services.tql.subscription_key'),
-    //         'Accept' => 'application/json',
-    //     ])->get(config('services.tql.base_url') . '/quotes/' . $quoteId);
-
-    //     if (!$response->successful()) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'No rates found or service unavailable.',
-    //         ], 404);
-    //     }
-
-    //     $carrierPrices = collect($response->json()['content']['carrierPrices']);
-
-    //     if ($carrierPrices->isEmpty()) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'No carrier prices available.',
-    //         ], 404);
-    //     }
-
-    //     $cheapest = $carrierPrices->sortBy('customerRate')->first();
-
-    //     // $fastest  = $carrierPrices->sortBy('transitDays')->first();
-
-    //     $fastest = $carrierPrices
-    //         ->reject(fn($c) => $c['carrierQuoteId'] === $cheapest['carrierQuoteId'])
-    //         ->sortBy('transitDays')
-    //         ->first();
-
-
-    //     $bestValue = $carrierPrices
-    //         ->reject(
-    //             fn($c) =>
-    //             in_array($c['carrierQuoteId'], [
-    //                 $cheapest['carrierQuoteId'],
-    //                 optional($fastest)['carrierQuoteId']
-    //             ])
-    //         )
-    //         ->map(function ($item) {
-    //             $item['score'] = ($item['customerRate'] * 0.7)
-    //                 + ($item['transitDays'] * 0.3);
-    //             return $item;
-    //         })
-    //         ->sortBy('score')
-    //         ->first();
-    //     $finalCarriers = collect([
-    //         'Cheapest'   => $cheapest,
-    //         'Fastest'    => $fastest,
-    //         'Best Value' => $bestValue
-    //     ])->filter()->map(function ($carrier, $label) {
-    //         $carrier['label'] = $label;
-    //         return $carrier;
-    //     })->values();
-
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => 'Top carrier options retrieved.',
-    //         'data' => $finalCarriers
-    //     ], 200);
-    // }
 
     public function getQuote(Request $request, $quoteId)
     {
@@ -746,11 +671,7 @@ class TqlRateController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Rates retrieved successfully.',
-            'data' =>  [
-                'status' => $response->status(),
-                'body'   => $response->json(),
-                'raw'    => $response->body()
-            ]
+            'data' =>   $response->json() 
         ], 200);
     }
     /**
@@ -821,11 +742,7 @@ class TqlRateController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Rates retrieved successfully.',
-            'data' =>  [
-                'status' => $response->status(),
-                'body'   => $response->json(),
-                'raw'    => $response->body()
-            ]
+            'data' =>    $response->json(),                
         ], 200);
     }
 }
