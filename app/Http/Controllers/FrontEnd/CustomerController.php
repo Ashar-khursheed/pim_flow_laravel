@@ -9,7 +9,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Google_Client;
-
+use App\Models\Discount;
+use Illuminate\Support\Carbon;
+use Firebase\JWT\JWK;
+use Firebase\JWT\JWT;
+use Illuminate\Support\Facades\DB;
+use App\Models\FrontEnd\Coupon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
@@ -145,7 +151,6 @@ class CustomerController extends BaseController
 				'message' => 'Customer registered successfully.',
 				'user' => $customer
 			], 201);
-
 		} catch (\Exception $e) {
 			\Log::error('Error registering customer: ' . $e->getMessage());
 			return response()->json([
@@ -154,6 +159,7 @@ class CustomerController extends BaseController
 			], 500);
 		}
 	}
+
 
 	private function sendToOdoo($customer)
 	{
@@ -227,24 +233,24 @@ class CustomerController extends BaseController
 		$allCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
 			$query->where('customer_id', $userId);
 		})
-		->get()
-		->map(function ($discount) {
-			return [
-				'id' => $discount->id,
-				'code' => $discount->code,
-				'value' => $discount->value,
-				'type' => $discount->type,
-				'min_order_price' => $discount->min_order_price,
-				'start_date' => $discount->start_date,
-				'end_date' => $discount->end_date,
-			];
-		});
+			->get()
+			->map(function ($discount) {
+				return [
+					'id' => $discount->id,
+					'code' => $discount->code,
+					'value' => $discount->value,
+					'type' => $discount->type,
+					'min_order_price' => $discount->min_order_price,
+					'start_date' => $discount->start_date,
+					'end_date' => $discount->end_date,
+				];
+			});
 
 		// Get used coupons from ec_customer_used_coupons table
 		$usedCoupons = DB::table('ec_customer_used_coupons')
-		->join('ec_discounts', 'ec_customer_used_coupons.discount_id', '=', 'ec_discounts.id')
-		->where('ec_customer_used_coupons.customer_id', $userId)
-		->get(['ec_discounts.id', 'ec_discounts.code', 'ec_discounts.value', 'ec_discounts.type', 'ec_discounts.min_order_price', 'ec_discounts.start_date', 'ec_discounts.end_date']);
+			->join('ec_discounts', 'ec_customer_used_coupons.discount_id', '=', 'ec_discounts.id')
+			->where('ec_customer_used_coupons.customer_id', $userId)
+			->get(['ec_discounts.id', 'ec_discounts.code', 'ec_discounts.value', 'ec_discounts.type', 'ec_discounts.min_order_price', 'ec_discounts.start_date', 'ec_discounts.end_date']);
 
 		// Get expired coupons (past end_date)
 		$expiredCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
@@ -265,12 +271,12 @@ class CustomerController extends BaseController
 			});
 
 		// Get available (valid) coupons
-			$availableCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
-				$query->where('customer_id', $userId);
-			})
+		$availableCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
+			$query->where('customer_id', $userId);
+		})
 			->where(function ($query) {
 				$query->where('end_date', '>=', Carbon::now())
-				->orWhereNull('end_date');
+					->orWhereNull('end_date');
 			})
 			->get()
 			->map(function ($discount) {
@@ -285,13 +291,13 @@ class CustomerController extends BaseController
 				];
 			});
 
-			return response()->json([
+		return response()->json([
 			'all_coupons' => $allCoupons, // This includes all coupons linked to the customer
 			'available_coupons' => $availableCoupons,
 			'used_coupons' => $usedCoupons,
 			'expired_coupons' => $expiredCoupons
 		]);
-		}
+	}
 
 
 	/**
@@ -329,16 +335,16 @@ class CustomerController extends BaseController
 		$discounts = Discount::whereHas('customers', function ($query) use ($userId) {
 			$query->where('customer_id', $userId);
 		})
-		->where(function ($query) use ($searchTerm) {
-			$query->where('code', 'LIKE', "%{$searchTerm}%")
-			->orWhere('type', 'LIKE', "%{$searchTerm}%")
-			->orWhere('value', 'LIKE', "%{$searchTerm}%");
-		})
-		->where(function ($query) {
-			$query->where('end_date', '>=', Carbon::now())
-			->orWhereNull('end_date');
-		})
-		->get();
+			->where(function ($query) use ($searchTerm) {
+				$query->where('code', 'LIKE', "%{$searchTerm}%")
+					->orWhere('type', 'LIKE', "%{$searchTerm}%")
+					->orWhere('value', 'LIKE', "%{$searchTerm}%");
+			})
+			->where(function ($query) {
+				$query->where('end_date', '>=', Carbon::now())
+					->orWhereNull('end_date');
+			})
+			->get();
 
 		if ($discounts->isEmpty()) {
 			return response()->json([
@@ -488,7 +494,6 @@ class CustomerController extends BaseController
 				$batch->add(new WelcomeMailJob([
 					'recordId' => $customer->id,
 				]));
-
 			} catch (\Exception $e) {
 				\Log::error('Google Login Registration Failed: ' . $e->getMessage());
 
@@ -513,8 +518,8 @@ class CustomerController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => $customer->wasRecentlyCreated
-			? 'User registered successfully using Google.'
-			: 'User logged in successfully with Google.',
+				? 'User registered successfully using Google.'
+				: 'User logged in successfully with Google.',
 			'token' => $token,
 			'user' => $customer,
 		]);
@@ -683,5 +688,103 @@ class CustomerController extends BaseController
 			'success' => true,
 			'message' => 'Password changed successfully',
 		]);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/coupon-register",
+	 *     summary="Coupon Register a new customer",
+	 *     tags={"FrontEnd-Customer"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"name", "email"},	 *                 
+	 *                 @OA\Property(property="name", type="string", example="John Doe"),
+	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),                
+	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000")
+	 *                 
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="Customer registered successfully", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
+	public function couponRegister(Request $request)
+	{
+		$validated = $request->validate([
+			'name' => 'required|string|max:255',
+			'email' => 'required|string|email|max:255',
+			'mobile_number' => 'required|string|max:255',
+		]);
+
+		$existingCustomer = Customer::where('email', $validated['email'])->first();
+		if ($existingCustomer) {
+			return response()->json([
+				'success' => false,
+				'message' => 'You are already registered. Please login to continue.',
+			], 409);
+		}
+
+		$randomPassword = Str::random(8);
+		$hashedPassword = Hash::make($randomPassword);
+
+		$guestCustomer = new Customer([
+			'name' => $validated['name'],
+			'email' => $validated['email'],
+			'password' => $hashedPassword,
+			'type' => 'Private',
+			'mobile_number' => $request->input('mobile_number'),
+		]);
+		$guestCustomer->save();
+		
+		$data['customer_ids'] = $guestCustomer->id;
+		$data['code'] = 'WELCOME50';
+		$data['name'] = 'welcome50';
+		$data['description'] = 'string';
+		$data['type'] = 'fixed';
+		$data['value'] = 50; //AED 
+		$data['basis'] = 'customer';
+		$data['min_order_value'] = 550;
+		$data['max_order_value'] = 999999;
+		$data['usage_type'] = 'once';
+		$data['usage_limit'] = 10000;
+		$data['usage_limit_per_customer'] = 1;
+		$data['start_date'] = now();
+		$data['expire_date'] = now()->addDays(365);
+		$data['is_active'] = '1';
+		$data['status'] = 'approved';
+		$data['created_by'] = 1;
+		$data['approved_by'] = 1;
+		$data['approved_at'] = now();	
+		$coupon = Coupon::where('code','WELCOME50')->first();
+		if (!$coupon) {					
+			$coupon = Coupon::create($data);
+		}
+
+		// Attach relationships based on basis
+		if ($data['basis'] === 'customer' && !empty($data['customer_ids'])) {
+			$coupon->customers()->attach($data['customer_ids']);
+		}
+
+		$coupon->load(['customers']);
+
+		$batch = Bus::batch([])->name('Welcome mail on guest')->dispatch();
+
+		$batch->options['queue'] = config('app.website') . '_GUST_WLCM';
+		$batch->add(new GuestWelcomeMailJob([
+			'recordId' => $guestCustomer->id,
+			'randomPassword' => $randomPassword,
+		]));
+
+		$this->sendToOdoo($guestCustomer);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Guest account created successfully.',
+			'user' => $guestCustomer,
+			'plain_password' => $randomPassword
+		], 201);
 	}
 }

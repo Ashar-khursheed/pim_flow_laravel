@@ -14,7 +14,7 @@ use PhpUnitsOfMeasure\PhysicalQuantity\Power;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-
+use Illuminate\Support\Str;
 use App\Models\MeasurementUnit;
 use App\Models\ProductSupplier;
 use App\Models\AccessoryItem;
@@ -380,6 +380,75 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 		return null;
 	}
 }
+ 
+
+function compressImageToS3(Request $request, string $key, string $pathPrefix)
+{  
+    if (!$request->hasFile($key) || !$request->file($key)->isValid()) {
+        return null;
+    }
+    try {
+        $file = $request->file($key);
+ 
+        // Create image from file
+        $image = imagecreatefromstring(file_get_contents($file->getRealPath()));
+        if (!$image) {
+            Log::error('Failed to create image resource.');
+            return null;
+        }
+
+        // Convert to true color
+        if (!imageistruecolor($image)) {
+            imagepalettetotruecolor($image);
+        }
+
+        // ✅ Resize (Max width 1200px)
+        $width  = imagesx($image);
+        $height = imagesy($image);
+
+        if ($width > 1000) {
+            $newWidth  = 1000;
+            $newHeight = intval(($height / $width) * $newWidth);
+
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            imagecopyresampled(
+                $resized,
+                $image,
+                0,
+                0,
+                0,
+                0,
+                $newWidth,
+                $newHeight,
+                $width,
+                $height
+            );
+
+            imagedestroy($image);
+            $image = $resized;
+        }
+
+        // ✅ Compress to WebP (QUALITY CONTROL)
+        ob_start();
+        imagewebp($image, null, 75);  
+        $webpData = ob_get_clean();
+
+        imagedestroy($image);
+
+        // Generate file name
+         $fileName = Str::uuid() . '.webp';		 
+        $path = $pathPrefix . '/' . $fileName;
+
+        // Upload to S3
+        Storage::disk('s3')->put($path, $webpData);
+
+        return Storage::disk('s3')->url($path);
+
+    } catch (\Throwable $e) {
+        Log::error('uploadImageToWebpS3FromFile error: ' . $e->getMessage());
+        return null;
+    }
+}
 
 function uploadFileToS3($file, $path)
 {
@@ -418,8 +487,8 @@ if (!function_exists('getDateRange')) {
 	function getDateRange(Carbon\Carbon|string $createdAt, string $deliveryDays): string
 	{
 		$createdAt = $createdAt instanceof \Carbon\Carbon
-			? $createdAt->copy()
-			: \Carbon\Carbon::parse($createdAt);
+		? $createdAt->copy()
+		: \Carbon\Carbon::parse($createdAt);
 
 		$deliveryDays = trim($deliveryDays);
 		$isWeekFormat = str_contains($deliveryDays, 'Week');
@@ -463,8 +532,8 @@ if (!function_exists('getDateRange')) {
 		}
 
 		return $isRange
-			? $startDate->format('D, F j') . ' - ' . $endDate->format('D, F j')
-			: $startDate->format('D, F j');
+		? $startDate->format('D, F j') . ' - ' . $endDate->format('D, F j')
+		: $startDate->format('D, F j');
 	}
 }
 
@@ -628,28 +697,28 @@ if (!function_exists('glitch_error_reporting_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-				$mails = $usMails;
-				break;
+			$mails = $usMails;
+			break;
 
 			case 'UAE':
-				$mails = $uaeMails;
-				break;
+			$mails = $uaeMails;
+			break;
 
 			case 'US_T':
-				$mails = $usTestMails;
-				break;
+			$mails = $usTestMails;
+			break;
 
 			case 'UAE_T':
-				$mails = $uaeTestMails;
-				break;
+			$mails = $uaeTestMails;
+			break;
 
 			case 'LOCAL':
-				$mails = $localMails;
-				break;
+			$mails = $localMails;
+			break;
 
 			default:
-				$mails = [];
-				break;
+			$mails = [];
+			break;
 		}
 		return $mails;
 	}
@@ -701,28 +770,28 @@ if (!function_exists('order_cc_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-				$mails = $usMails;
-				break;
+			$mails = $usMails;
+			break;
 
 			case 'UAE':
-				$mails = $uaeMails;
-				break;
+			$mails = $uaeMails;
+			break;
 
 			case 'US_T':
-				$mails = $usTestMails;
-				break;
+			$mails = $usTestMails;
+			break;
 
 			case 'UAE_T':
-				$mails = $uaeTestMails;
-				break;
+			$mails = $uaeTestMails;
+			break;
 
 			case 'LOCAL':
-				$mails = $localMails;
-				break;
+			$mails = $localMails;
+			break;
 
 			default:
-				$mails = [];
-				break;
+			$mails = [];
+			break;
 		}
 		return $mails;
 	}
@@ -767,28 +836,28 @@ if (!function_exists('inquiry_cc_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-				$mails = $usMails;
-				break;
+			$mails = $usMails;
+			break;
 
 			case 'UAE':
-				$mails = $uaeMails;
-				break;
+			$mails = $uaeMails;
+			break;
 
 			case 'US_T':
-				$mails = $usTestMails;
-				break;
+			$mails = $usTestMails;
+			break;
 
 			case 'UAE_T':
-				$mails = $uaeTestMails;
-				break;
+			$mails = $uaeTestMails;
+			break;
 
 			case 'LOCAL':
-				$mails = $localMails;
-				break;
+			$mails = $localMails;
+			break;
 
 			default:
-				$mails = [];
-				break;
+			$mails = [];
+			break;
 		}
 		return $mails;
 	}
@@ -828,28 +897,28 @@ if (!function_exists('quote_cc_mails')) {
 
 		switch (config('app.website')) {
 			case 'US':
-				$mails = $usMails;
-				break;
+			$mails = $usMails;
+			break;
 
 			case 'UAE':
-				$mails = $uaeMails;
-				break;
+			$mails = $uaeMails;
+			break;
 
 			case 'US_T':
-				$mails = $usTestMails;
-				break;
+			$mails = $usTestMails;
+			break;
 
 			case 'UAE_T':
-				$mails = $uaeTestMails;
-				break;
+			$mails = $uaeTestMails;
+			break;
 
 			case 'LOCAL':
-				$mails = $localMails;
-				break;
+			$mails = $localMails;
+			break;
 
 			default:
-				$mails = [];
-				break;
+			$mails = [];
+			break;
 		}
 		return $mails;
 	}
@@ -954,8 +1023,8 @@ function createDistributedRanges($values, $maxRanges)
 
 	for ($i = 0; $i < $maxRanges; $i++) {
 		$currentMax = ($i === $maxRanges - 1)
-			? (int) ceil($max)
-			: (int) floor($currentMin + $rangeSize);
+		? (int) ceil($max)
+		: (int) floor($currentMin + $rangeSize);
 
 		/* Ensure we have at least one value in this range */
 		$hasValueInRange = false;
@@ -983,17 +1052,17 @@ function createDistributedRanges($values, $maxRanges)
 function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier
 {
 	$productSupplier = ProductSupplier::where('product_id', $productID)->where('vendor_id', $vendorID)
-		->selectRaw('
+	->selectRaw('
 		CASE
 		WHEN sale_price > 0 AND sale_price < price THEN sale_price
 		ELSE price
 		END as unit_price,
 		shipping_charge
 		')
-		->first();
+	->first();
 
 	if ($productSupplier) {
-		$productSupplier->shipping_charge = ((float)$productSupplier->shipping_charge == 0) ? null : $productSupplier->shipping_charge;
+		$productSupplier->shipping_charge = ((float)$productSupplier->shipping_charge == 0) ? 0 : $productSupplier->shipping_charge;
 	}
 
 	return $productSupplier;
@@ -1026,6 +1095,7 @@ if (!function_exists('paymentGateway')) {
 			'Cash on Delivery',
 			'Stax',
 			'Square',
+
 		);
 		return $gateways;
 	}
@@ -1051,5 +1121,63 @@ if (!function_exists('cheque_discount_percentage')) {
 	function cheque_discount_percentage()
 	{
 		return 3;
+	}
+}
+
+if (!function_exists('home_categories')) {
+	function home_categories()
+	{
+		$usCategory = [
+			"Reach In Refrigerator",
+			"Pizza Prep Table",
+			"Worktop Refrigerator",
+			"Chef Base Refrigerator",
+			"Undercounter Refrigerator",
+			"Beer Dispenser",
+			"Back Bar Cooler",
+			"Glass Chillers and Frosters",
+			"Commercial Grill & Griddle",
+			"Commercial Gas Fryer",
+			"Deck Oven",
+			"Commercial Espresso Machine",
+			"Milk Cooler",
+			"Commercial Food Processors",
+			"Planetary Mixer",
+		];
+
+		$uaeCategory = [
+			"Work Top Refrigerators",
+			"Commercial Fryers",
+			"Combi Ovens",
+			"Commercial Blenders",
+			"Commercial Gas And Electric Cookers",
+			"Upright Freezers",
+			"Espresso Machines",
+			"Commercial Grills And Griddles",
+			"Commercial Toasters",
+			"Upright Chillers",
+			"White Dinnerware",
+			"Cheese",
+			"Food Processors",
+			"Salamanders",
+			"Salad Chillers"
+		];
+
+		switch (config('app.website')) {
+			case 'US':
+			case 'US_T':
+			$categories = $usCategory;
+			break;
+
+			case 'UAE':
+			case 'UAE_T':
+			$categories = $uaeCategory;
+			break;
+
+			default:
+			$categories = [];
+			break;
+		}
+		return $categories;
 	}
 }

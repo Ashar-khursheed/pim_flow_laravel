@@ -5,17 +5,21 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\BaseController;
 
 use App\Models\FrontEnd\Order;
+use App\Models\ChequeUpload;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 use App\Models\FrontEnd\CustomerAddress;
 use App\Models\FrontEnd\Finance;
 use App\Models\FrontEnd\FinancesPayment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Utm;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
+use App\Models\FrontEnd\Wishlist;
+
 
 use App\Jobs\Order\OrderPlacedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
@@ -202,8 +206,8 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
 	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
-	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
-	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
+	 *                 @OA\Property(property="cheque_img", type="string", format="string", description="Cheque image link"),
+	 *                 @OA\Property(property="cheque_img_back", type="string", format="string", description="Cheque image link"),
 	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
 	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
@@ -281,8 +285,8 @@ class OrderController extends BaseController
 			'is_cod' => 'nullable|boolean',
 
 			'pay_with_cheque' => 'nullable|boolean',
-			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
-			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+    		'cheque_img' => 'nullable|required_if:pay_with_cheque,true|string',
+    		'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|string',
 			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
 			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
 			'additional_discount' => 'nullable|numeric|min:0',
@@ -358,16 +362,20 @@ class OrderController extends BaseController
 
 			/* Handle cheque payment discount */
 			if ($payWithCheque) {
-				$chequeImg = uploadImageToWebpS3FromFile(
-					$request,
-					'cheque_img',
-					env('STORAGE_ENV') . '/customer/orders'
-				);
-				$chequeImgBack = uploadImageToWebpS3FromFile(
-					$request,
-					'cheque_img_back',
-					env('STORAGE_ENV') . '/customer/orders'
-				);
+
+
+				// $chequeImg = uploadImageToWebpS3FromFile(
+				// 	$request,
+				// 	'cheque_img',
+				// 	env('STORAGE_ENV') . '/customer/orders'
+				// );
+				// $chequeImgBack = uploadImageToWebpS3FromFile(
+				// 	$request,
+				// 	'cheque_img_back',
+				// 	env('STORAGE_ENV') . '/customer/orders'
+				// );
+				$chequeImg = $request->cheque_img;
+				$chequeImgBack = $request->cheque_img_back;
 				$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
 				$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
 				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
@@ -1071,4 +1079,368 @@ class OrderController extends BaseController
 			'data' => $order,
 		]);
 	}
+
+
+
+	/**
+ * @OA\Post(
+ *     path="/api/frontend/compress-image-check",
+ *     summary="Upload and compress cheque images",
+ *     tags={"CompressImage"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 type="object",
+ *                 required={"cheque_img","cheque_img_back"},
+ *                 @OA\Property(
+ *                     property="cheque_img",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="Cheque front image"
+ *                 ),
+ *                 @OA\Property(
+ *                     property="cheque_img_back",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="Cheque back image"
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Cheque images uploaded and compressed successfully"
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation failed"
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized"
+ *     )
+ * )
+ */
+
+
+	public function compressImage(Request $request)
+	{
+		 
+		$validator = Validator::make($request->all(), [
+			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+		]);
+
+		if ($validator->fails()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors'  => $validator->errors(),
+			], 422);
+		}
+
+		 
+		$path = env('STORAGE_ENV') . '/customer/orders';
+
+		$chequeFront = compressImageToS3(
+			$request,
+			'cheque_img',
+			$path
+		);
+
+		$chequeBack = compressImageToS3(
+			$request,
+			'cheque_img_back',
+			$path
+		);
+		// Upload failed check
+		if (!$chequeFront || !$chequeBack) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Image upload failed',
+			], 200);
+		}
+
+	 
+		return response()->json([
+			'success' => true,
+			'message' => 'Cheque images uploaded successfully',
+			'data' => [
+				'cheque_img'      => $chequeFront,
+				'cheque_img_back' => $chequeBack,
+			],
+		], 200);
+	}
+
+
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/save-cheque-upload",
+	 *     operationId="saveChequeUpload",
+	 *     tags={"Cheque Upload"},
+	 *     summary="Upload cheque front and back images",
+	 *     description="Uploads front and back cheque images and saves them against a session",
+	 *
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"cheque_img","cheque_img_back"},
+	 *                 @OA\Property(
+	 *                     property="cheque_img",
+	 *                     type="string",
+	 *                     format="binary",
+	 *                     description="Front side of cheque image (jpg, jpeg, png, webp)"
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="cheque_img_back",
+	 *                     type="string",
+	 *                     format="binary",
+	 *                     description="Back side of cheque image (jpg, jpeg, png, webp)"
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="session_id",
+	 *                     type="string",
+	 *                     example="sess_123456",
+	 *                     description="Optional session identifier"
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Cheque uploaded successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Cheque images uploaded and saved successfully"),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="object",
+	 *                 @OA\Property(property="id", type="integer", example=1),
+	 *                 @OA\Property(property="cheque_img", type="string", example="s3/path/front.webp"),
+	 *                 @OA\Property(property="cheque_img_back", type="string", example="s3/path/back.webp"),
+	 *                 @OA\Property(property="session_id", type="string", example="sess_123456"),
+	 *                 @OA\Property(property="created_at", type="string", example="2025-01-01 12:00:00")
+	 *             )
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation error",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Validation failed"),
+	 *             @OA\Property(property="errors", type="object")
+	 *         )
+	 *     )
+	 * )
+	 */
+
+	public function saveChequeUpload(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'session_id'       => 'nullable|string|max:255',
+		]);
+
+		if ($validator->fails()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors'  => $validator->errors(),
+			], 422);
+		}
+
+		$path = env('STORAGE_ENV') . '/customer/orders';
+
+		$chequeFront = compressImageToS3(
+			$request,
+			'cheque_img',
+			$path
+		);
+
+		$chequeBack = compressImageToS3(
+			$request,
+			'cheque_img_back',
+			$path
+		);
+
+		// Upload failed check
+		if (!$chequeFront || !$chequeBack) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Image upload failed',
+			], 200);
+		}
+
+		// Save to database
+		$chequeUpload = ChequeUpload::create([
+			'cheque_img'      => $chequeFront,
+			'cheque_img_back' => $chequeBack,
+			'session_id'      => $request->session_id,
+		]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Cheque images uploaded and saved successfully',
+			'data' => $chequeUpload,
+		], 200);
+	}
+
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/get-cheque-uploads",
+	 *     operationId="getChequeUploadsBySession",
+	 *     tags={"Cheque Upload"},
+	 *     summary="Get cheque uploads by session ID",
+	 *     description="Returns all cheque uploads related to a session ID",
+	 *     @OA\Parameter(
+	 *         name="session_id",
+	 *         in="query",
+	 *         required=true,
+	 *         description="Session identifier",
+	 *         @OA\Schema(type="string", example="sess_123456")
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Cheque uploads retrieved successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Cheque uploads retrieved successfully"),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="id", type="integer", example=1),
+	 *                     @OA\Property(property="cheque_img", type="string", example="s3/path/front.webp"),
+	 *                     @OA\Property(property="cheque_img_back", type="string", example="s3/path/back.webp"),
+	 *                     @OA\Property(property="session_id", type="string", example="sess_123456"),
+	 *                     @OA\Property(property="created_at", type="string", example="2025-01-01 12:00:00")
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="No cheque uploads found",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="No cheque uploads found for this session"),
+	 *             @OA\Property(property="data", type="array", @OA\Items())
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation error"
+	 *     )
+	 * )
+	 */
+	public function getChequeUploadsBySession(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'session_id' => 'required|string|max:255',
+		]);
+
+		if ($validator->fails()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors'  => $validator->errors(),
+			], 422);
+		}
+
+		$chequeUploads = ChequeUpload::where('session_id', $request->session_id)
+									->orderBy('created_at', 'desc')
+									->get();
+
+		if ($chequeUploads->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No cheque uploads found for this session',
+				'data' => [],
+			], 404);
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Cheque uploads retrieved successfully',
+			'data' => $chequeUploads,
+		], 200);
+	}
+
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/user-stats",
+	 *     operationId="getUserStats",
+	 *     tags={"Frontend Orders"},
+	 *     summary="Get total orders, wishlist count, and net term amount for authenticated user",
+	 *     description="Returns total orders, total wishlist items, and total net term amount for the logged-in user",
+ 	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successful response",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="object",
+	 *                 @OA\Property(property="total_orders", type="integer", example=10),
+	 *                 @OA\Property(property="total_wishlist", type="integer", example=5),
+	 *                 @OA\Property(property="total_net_term_amount", type="string", example="1234.56")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthenticated"
+	 *     )
+	 * )
+	 */
+	public function userStats(Request $request)
+	{
+		$userId = auth()->id();
+
+		// Total orders
+		$totalOrders = Order::where('customer_id', $userId)->count();
+
+		// Total wishlist items
+		$totalWishlist = DB::table('ec_wish_lists')
+			->where('customer_id', $userId)
+			->count();
+
+		// Total net term amount from finances
+		$totalNetTermAmount = DB::table('finances')
+			->where('customer_id', $userId)
+			->sum('available_credit_amount');
+
+		return response()->json([
+			'success' => true,
+			'data' => [
+				'total_orders' => $totalOrders,
+				'total_wishlist' => $totalWishlist,
+				'total_net_term_amount' => number_format($totalNetTermAmount, 2, '.', ''),
+			]
+		]);
+	}
+
+
+
+	
 }

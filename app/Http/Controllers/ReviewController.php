@@ -270,15 +270,35 @@ class ReviewController extends Controller
         }
 
         $imagePaths = [];
+        $uploadedImages = [];
+        $path = env('STORAGE_ENV') . '/production/review';   
+        
+        // ✅ Upload & compress images
+        if ($request->hasFile('images') && is_array($request->file('images'))) {
+    
+            foreach ($request->file('images') as $key=>$imageFile) {
 
-        //  Only loop if there are uploaded files
-        if ($request->hasFile('images') && count($request->file('images')) > 0) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('production/reviews', 's3');
-                $imagePaths[] = Storage::disk('s3')->url($path);
+                if (!$imageFile->isValid()) {
+                    continue;
+                }
+                $tempRequest = new \Illuminate\Http\Request();
+                $tempRequest->files->set('review_image_single', $imageFile);
+
+                $url = compressImageToS3(
+                    $tempRequest,
+                    'review_image_single',
+                    $path
+                );
+
+                    if ($url) {
+                    $uploadedImages[] = $url;
+                }
             }
         }
 
+        $images = json_encode($uploadedImages);
+    
+        
         // Ensure default empty array for images
         $review = Review::create([
             'customer_name' => $request->customer_name,
@@ -287,7 +307,7 @@ class ReviewController extends Controller
             'star' => $request->star,
             'comment' => $request->comment,
             'status' => $request->status ?? 'published',
-            'images' => !empty($imagePaths) ? $imagePaths : [],
+            'images' => !empty($images) ? $images : [],
             'created_at' => Carbon::now()->subDays(rand(60, 730)),
             'updated_at' => Carbon::now()->subDays(rand(60, 730)),
 
@@ -314,13 +334,7 @@ class ReviewController extends Controller
      * )
      */
     public function show($id)
-    {
-        // if (!auth()->user()->can('show review')) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => "You don't have permission to access this module.",
-        //     ]);
-        // }
+    {         
         $review = Review::with('product:id,name')->find($id);
         if (!$review) {
             return response()->json(['message' => 'Review not found'], 404);
@@ -429,7 +443,7 @@ class ReviewController extends Controller
         $review->status = $request->input('status', $review->status);
         $review->customer_name = $request->input('customer_name', $review->customer_name);
         $review->customer_email = $request->input('customer_email', $review->customer_email);
-
+        $existingImages = [];
         // Ensure existing images are an array
         $existingImages = is_string($review->images) ? json_decode($review->images, true) ?? [] : [];
 
@@ -442,17 +456,37 @@ class ReviewController extends Controller
                 return !in_array($image, $deleteImages);
             }));
         }
+  
+          $path = env('STORAGE_ENV') . '/production/review';   
+           
+            // Upload & compress images
+           if ($request->hasFile('images') && is_array($request->file('images'))) {
+      
+                foreach ($request->file('images') as $key=>$imageFile) {
 
-        // Upload new images to S3 and append to existing images
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('production/reviews', 's3'); // Upload to S3
-                $existingImages[] = Storage::disk('s3')->url($path); // Append new image URL
+                    if (!$imageFile->isValid()) {
+                        continue;
+                    }
+     	            $tempRequest = new \Illuminate\Http\Request();
+				    $tempRequest->files->set('review_image_single', $imageFile);
+
+                    $url = compressImageToS3(
+                        $tempRequest,
+                        'review_image_single',
+                        $path
+                    );
+ 
+                     if ($url) {
+                        $existingImages[] = $url;
+                    }
+                }
             }
-        }
+ 
+            $images = json_encode($existingImages);
+        
 
         // Store updated images list as JSON (Fix double escaping issue)
-        $review->images = $existingImages;
+        $review->images = $images;
 
         // Allow modification of created_at only
 
@@ -481,13 +515,7 @@ class ReviewController extends Controller
      * )
      */
     public function destroy($id)
-    {
-        // if (!auth()->user()->can('delete review')) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => "You don't have permission to access this module.",
-        //     ]);
-        // }
+    {        
         $review = Review::find($id);
         if (!$review) {
             return response()->json(['message' => 'Review not found'], 404);
@@ -519,15 +547,7 @@ class ReviewController extends Controller
      * )
      */
     public function import(Request $request, ExcelImporterService $excelImporter)
-    {
-        /* Permission Check */
-        // if (!auth()->user()->can('import Review')) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => "You don't have permission to access this module.",
-        //     ]);
-        // }
-
+    {         
         /* Validate request data */
         $request->validate([
             'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
