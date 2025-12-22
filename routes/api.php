@@ -660,7 +660,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/nofraud/process/{order_id}', [NoFraudController::class, 'processNoFraud']);
 
 	Route::apiResource('/get-in-touch', GetInTouchController::class);
-	Route::get('/get-in-touch/{id}', [GetInTouchController::class, 'show']);
+	Route::get('frontend/get-in-touch/{id}', [GetInTouchController::class, 'show']);
 
 
 
