@@ -113,6 +113,7 @@ class FinanceController extends Controller
                 $q->where('legal_business_name', 'like', "%{$search}%")
                     ->orWhere('requested_amount', 'like', "%{$search}%")
                     ->orWhere('term_selection', 'like', "%{$search}%")
+                    ->orWhere('business_email', 'like', "%{$search}%")
                     ->orWhere('accounts_payable_email', 'like', "%{$search}%")
                     ->orWhere('accounts_payable_phone', 'like', "%{$search}%")
                     ->orWhere('status', 'like', "%{$search}%")
@@ -170,6 +171,7 @@ class FinanceController extends Controller
                 'approved_amount' => number_format($finance->approved_amount, 2),
                 'approval_date' => $finance->approval_date ? date('d-m-Y', strtotime($finance->approval_date)) : null,
                 'approvalBy' => $finance->approvalUser?->username ?? null,
+                'business_email' => $finance->business_email ?? null,
                 'accounts_payable_email' => $finance->accounts_payable_email,
                 'accounts_payable_phone' => $finance->accounts_payable_phone,
 
@@ -296,6 +298,7 @@ class FinanceController extends Controller
 
             'approval_date' => $finance->approval_date ? date('d-m-Y', strtotime($finance->approval_date)) : null,
             'approvalBy' => $finance->approvalUser?->username,
+            'business_email' => $finance->business_email ?? null,
             'accounts_payable_email' => $finance->accounts_payable_email,
             'accounts_payable_phone' => $finance->accounts_payable_phone,
 
@@ -413,6 +416,11 @@ class FinanceController extends Controller
      *                 ),
      *
      *                 @OA\Property(
+     *                     property="business_email",
+     *                     type="string",
+     *                     example="business@domain.com"
+     *                 ),
+     *                 @OA\Property(
      *                     property="accounts_payable_email",
      *                     type="string",
      *                     example="pay@gmail.com"
@@ -499,6 +507,7 @@ class FinanceController extends Controller
             'documents' => 'nullable|file|mimes:pdf|max:10240',
             'type_of_business' => 'nullable|string|max:255',
             'role_at_business' => 'nullable|string|max:255',
+            'business_email' => 'nullable|email|string|max:255',
             'accounts_payable_email' => 'required|email|string|max:255',
             'accounts_payable_phone' => 'required|string|max:255',
             'annual_revenue' => 'required|string',

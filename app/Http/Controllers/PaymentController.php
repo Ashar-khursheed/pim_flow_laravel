@@ -68,7 +68,7 @@ class PaymentController extends Controller
 	 *                 type="string",
 	 *                 description="Method of payment",
 	 *                 example="Credit Card",
-	 *                 enum={"Credit Card", "Debit Card", "PayPal", "Bank Transfer", "Cash", "Stripe", "Razorpay","Paymob","Stax","Square","CC Avenue","NetTerm","Check","Cheque"}
+	 *                 enum={"Credit Card", "Debit Card", "PayPal", "Bank Transfer", "Cash", "Stripe", "Razorpay","Paymob","Stax","Square","CC Avenue","NetTerm","Check","Cheque","Ascentium Capital","Resolve Pay","Approve"}
 	 *             ),
 	 *             @OA\Property(
 	 *                 property="amount",
@@ -118,7 +118,7 @@ class PaymentController extends Controller
 			$validated = $request->validate([
 				'order_id' => 'required|integer|exists:orders,id',
 				'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id',
-				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,Paymob,CC Avenue,Stax,Square,NetTerm,Check,Cheque',
+				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,Paymob,CC Avenue,Stax,Square,NetTerm,Check,Cheque,Ascentium Capital,Resolve Pay,Approve',
 				'amount' => 'required|numeric|min:0.01|max:999999.99',
 				'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
 				'payment_date' => 'required|date|before_or_equal:today',

@@ -18,6 +18,7 @@ class Finance extends Model
         'type_of_business',
         'annual_revenue',
         'years_in_business',
+        'business_email',
         'accounts_payable_email',
         'accounts_payable_phone',
         'accounts_status',
