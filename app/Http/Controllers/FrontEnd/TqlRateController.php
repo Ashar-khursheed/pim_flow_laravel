@@ -220,8 +220,8 @@ class TqlRateController extends Controller
                 ->first();
             $finalCarriers = collect([
                 'Cheapest'   => $cheapest,
-                'Fastest'    => $fastest,
-                'Best Value' => $bestValue
+              //  'Fastest'    => $fastest,
+                //'Best Value' => $bestValue
             ])->filter()->map(function ($carrier, $label) {
                 $carrier['label'] = $label;
                 return $carrier;
