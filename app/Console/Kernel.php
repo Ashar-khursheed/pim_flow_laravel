@@ -3,7 +3,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-
+use Illuminate\Support\Facades\Log;
 class Kernel extends ConsoleKernel
 {
     /**
@@ -25,5 +25,7 @@ class Kernel extends ConsoleKernel
 
         // Generate product feed every hour
         $schedule->command('feed:generate')->hourly();
+        $schedule->command('seo:dailyUpdateLlmsSeo')->dailyAt('02:00');
+        $schedule->command('finance:overdue-status')->dailyAt('02:00');
     }
 }
