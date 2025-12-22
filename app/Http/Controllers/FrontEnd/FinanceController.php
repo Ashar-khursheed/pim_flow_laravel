@@ -198,7 +198,7 @@ class FinanceController extends Controller
                 'success' => false,
                 'message' => 'No finance record found.',
                 'data' => null
-            ], 404);
+            ], 200);
         }
 
         return response()->json([
@@ -388,7 +388,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found'
-            ], 404);
+            ], 200);
         }
 
         $finance->available_credit_amount = $request->available_credit_amount;
@@ -450,7 +450,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Net Term finance is either not approved or is currently inactive'
-            ], 404);
+            ], 200);
         }
 
 
@@ -465,7 +465,7 @@ class FinanceController extends Controller
                 'success' => false,
                 'message' => 'Net term record not found.',
                 'accoutsStatus' => null
-            ], 404);
+            ], 200);
         }
     }
 
@@ -488,7 +488,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Response(
-     *         response=404,
+     *         response=200,
      *         description="Validation error",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
@@ -515,7 +515,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found.'
-            ], 404);
+            ], 200);
         }
         $address = $finance->customerAddress;
         $financeData =  [
@@ -533,7 +533,7 @@ class FinanceController extends Controller
             'approved_amount' => number_format($finance->approved_amount, 2),
             'approval_date' => date('d-m-Y', strtotime($finance->approval_date)),
             'approvalBy' => $finance->approvalUser?->username,
-            'business_email' => $finance->business_email,
+            '   ' => $finance->business_email,
             'accounts_payable_email' => $finance->accounts_payable_email,
             'accounts_payable_phone' => $finance->accounts_payable_phone,
             'used_credit_amount' => $finance->used_credit_amount,
@@ -678,7 +678,7 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Net Term credit is not active or approved.'
-                ], 404);
+                ], 200);
             }
 
             if (!$finance->approved_amount || $finance->approved_amount <= 0) {
@@ -777,7 +777,7 @@ class FinanceController extends Controller
      *             @OA\Property(property="total_records", type="integer")
      *         )
      *     ),
-     *     @OA\Response(response=404, description="No payment history found")
+     *     @OA\Response(response=200, description="No payment history found")
      * )
      */
     public function getPaymentOrderHistory(Request $request)
@@ -807,7 +807,7 @@ class FinanceController extends Controller
                 'data' => [],
                 'total_pages' => 0,
                 'total_records' => 0
-            ], 404);
+            ], 200);
         }
 
         $paymentData = $paymentHistory->map(function ($payment) {
@@ -911,7 +911,7 @@ class FinanceController extends Controller
                 'data' => [],
                 'total_pages' => 0,
                 'total_records' => 0
-            ], 404);
+            ], 200);
         }
 
         $paymentData = $paymentHistory->map(function ($payment) {
@@ -980,7 +980,7 @@ class FinanceController extends Controller
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=404, description="Finance not found")
+     *     @OA\Response(response=200, description="Finance not found")
      * )
      */
     public function getPaymentHistory(Request $request)
@@ -1009,7 +1009,7 @@ class FinanceController extends Controller
                 'data' => [],
                 'total_pages' => 0,
                 'total_records' => 0
-            ], 404);
+            ], 200);
         }
 
         $paymentData = $paymentHistory->map(function ($payment) {
