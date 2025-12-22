@@ -318,59 +318,7 @@ class FCategoryController extends Controller
 	 */
 	public function getFeaturedCategoryProducts(Request $request)
 	{
-		$productsLimit = $request->get('products_limit', 10);
-		$limit = $request->get('limit', 5);
-		$minProducts = $request->get('min_products', 5);
-
-		$records = Category::select(['id', 'parent_id', 'name'])
-		->where('status', 'published')
-		->where('is_featured', 1)
-		->whereDoesntHave('children')
-		->with([
-			'translations',
-			'seoUrl:id,relational_id,relational_type,url',
-			'featuredProducts' => function($query) use ($productsLimit) {
-				$query->select(['id', 'name', 'sku', 'currency_id', 'units_sold', 'alt_tags', 'quote_available'])
-				->with([
-					'translations',
-					'seoUrl:id,relational_id,relational_type,url',
-					'productSuppliers:id,product_id,vendor_id,vendor_sku,cost_per_item,sale_price,price,inventory,in_stock,min_quantity,is_fixed,delivery_days,return_policy,free_shipping,shipping_charge,warranty_information',
-					'reviews:id,product_id,star',
-					'currency:id,title,symbol',
-					'sellingUnitAttribute'
-				])
-				->withCount('reviews')
-				->withAvg('reviews', 'star')
-				->orderByDesc('units_sold')
-				->limit($productsLimit);
-			}
-		])
-		->has('featuredProducts', '>=', $minProducts)
-		->take($limit)
-		->get();
-
-		/* Transform categories */
-		$records->transform(function ($category) {
-			/* Transform category name to locale object */
-			$category->name = $this->getLocalizedData($category->translations, 'name_tr');
-
-			/* Get category URLs */
-			$categoryMostParentURL = optional($category->mostParent)->seoUrl->url ?? null;
-			$categoryURL = optional($category->seoUrl)->url ?? null;
-
-			/* Transform featured products */
-			$category->featuredProducts->each(function ($product) use ($categoryMostParentURL, $categoryURL) {
-				$this->transformFeaturedProduct($product, $categoryMostParentURL, $categoryURL);
-			});
-
-			/* Remove unwanted attributes from category */
-			unset($category->translations);
-			unset($category->seoUrl);
-			unset($category->parent);
-			unset($category->parent_id);
-
-			return $category;
-		});
+		$records = $this->getFeaturedCategoriesWithProducts($request);
 
 		return response()->json([
 			'success' => true,
@@ -394,10 +342,21 @@ class FCategoryController extends Controller
 	 */
 	public function getCustomerFeaturedCategoryProducts(Request $request)
 	{
+		$wishlistProductIds = auth()->user()->wishlist()->pluck('product_id')->toArray();
+		$records = $this->getFeaturedCategoriesWithProducts($request, $wishlistProductIds);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Featured categories retrieved successfully',
+			'data' => $records
+		]);
+	}
+
+	private function getFeaturedCategoriesWithProducts(Request $request, ?array $wishlistProductIds = null)
+	{
 		$productsLimit = $request->get('products_limit', 10);
 		$limit = $request->get('limit', 5);
 		$minProducts = $request->get('min_products', 5);
-		$wishlistProductIds = auth()->user()->wishlist()->pluck('product_id')->all();
 
 		$records = Category::select(['id', 'parent_id', 'name'])
 		->where('status', 'published')
@@ -438,22 +397,19 @@ class FCategoryController extends Controller
 			/* Transform featured products */
 			$category->featuredProducts->each(function ($product) use ($categoryMostParentURL, $categoryURL, $wishlistProductIds) {
 				$this->transformFeaturedProduct($product, $categoryMostParentURL, $categoryURL);
-				$product->in_wishlist = in_array($product->id, $wishlistProductIds);
+
+				/* Add wishlist status if provided */
+				if ($wishlistProductIds !== null) {
+					$product->in_wishlist = in_array($product->id, $wishlistProductIds);
+				}
 			});
 
 			/* Remove unwanted attributes from category */
-			unset($category->translations);
-			unset($category->seoUrl);
-			unset($category->parent);
-			unset($category->parent_id);
+			unset($category->translations, $category->seoUrl, $category->parent, $category->parent_id);
 
 			return $category;
 		});
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Featured categories retrieved successfully',
-			'data' => $records
-		]);
+		return $records;
 	}
 }
