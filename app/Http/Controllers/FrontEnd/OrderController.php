@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use App\Models\Utm;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
+use App\Models\FrontEnd\Wishlist;
 
 
 use App\Jobs\Order\OrderPlacedMailJob;
@@ -1381,6 +1382,65 @@ class OrderController extends BaseController
 			'data' => $chequeUploads,
 		], 200);
 	}
+
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/user-stats",
+	 *     operationId="getUserStats",
+	 *     tags={"Frontend Orders"},
+	 *     summary="Get total orders, wishlist count, and net term amount for authenticated user",
+	 *     description="Returns total orders, total wishlist items, and total net term amount for the logged-in user",
+ 	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successful response",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="object",
+	 *                 @OA\Property(property="total_orders", type="integer", example=10),
+	 *                 @OA\Property(property="total_wishlist", type="integer", example=5),
+	 *                 @OA\Property(property="total_net_term_amount", type="string", example="1234.56")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthenticated"
+	 *     )
+	 * )
+	 */
+	public function userStats(Request $request)
+	{
+		$userId = auth()->id();
+
+		// Total orders
+		$totalOrders = Order::where('customer_id', $userId)->count();
+
+		// Total wishlist items
+		$totalWishlist = DB::table('ec_wish_lists')
+			->where('customer_id', $userId)
+			->count();
+
+		// Total net term amount from finances
+		$totalNetTermAmount = DB::table('finances')
+			->where('customer_id', $userId)
+			->sum('amount');
+
+		return response()->json([
+			'success' => true,
+			'data' => [
+				'total_orders' => $totalOrders,
+				'total_wishlist' => $totalWishlist,
+				'total_net_term_amount' => number_format($totalNetTermAmount, 2, '.', ''),
+			]
+		]);
+	}
+
+
 
 	
 }
