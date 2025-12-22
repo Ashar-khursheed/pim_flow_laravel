@@ -225,6 +225,7 @@ class FBrandController extends Controller
 			/* Transform featured products */
 			$brand->featuredProducts->each(function ($product) use ($wishlistProductIds) {
 				$this->transformFeaturedProduct($product);
+
 				/* Add wishlist status if wishlist IDs provided */
 				if ($wishlistProductIds !== null) {
 					$product->in_wishlist = in_array($product->id, $wishlistProductIds);
@@ -236,6 +237,7 @@ class FBrandController extends Controller
 
 			return $brand;
 		});
+
 		return $records;
 	}
 
