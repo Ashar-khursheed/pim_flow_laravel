@@ -28,8 +28,8 @@ class FProductController extends Controller
 	 *     @OA\Parameter(name="min_rating", in="query", description="Min rating (0-5)", @OA\Schema(type="number")),
 	 *     @OA\Parameter(name="price_min", in="query", description="Min price", @OA\Schema(type="number")),
 	 *     @OA\Parameter(name="price_max", in="query", description="Max price", @OA\Schema(type="number")),
-	 *     @OA\Parameter(name="sort_by", in="query", description="Sort field", @OA\Schema(type="string")),
-	 *     @OA\Parameter(name="sort_order", in="query", description="asc/desc", @OA\Schema(type="string", default="asc")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Sort field", @OA\Schema(type="string", enum={"id", "name", "code", "type", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_order", in="query", description="Sort order (asc or desc)", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="Products retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
@@ -38,16 +38,18 @@ class FProductController extends Controller
 		$page = $request->get('page', 1);
 		$length = $request->get('length', 20);
 		$search = $request->get('search');
+		$categoryID = $request->get('category_id');
 		$categoryUrl = $request->get('category_url');
+		$brandID = $request->get('brand_id');
 		$brandUrl = $request->get('brand_url');
+
 		$minRating = $request->get('min_rating');
 		$priceMin = $request->get('price_min');
 		$priceMax = $request->get('price_max');
 		$sortBy = $request->get('sort_by', 'created_at');
 		$sortOrder = $request->get('sort_order', 'desc');
-		$isFeatured = $request->boolean('is_featured');
 
-		$products = Product::select(['id', 'name', 'sku', 'brand_id', 'currency_id', 'units_sold', 'alt_tags', 'quote_available'])
+		$products = Product::select(['id', 'name', 'sku', 'brand_id', 'currency_id', 'alt_tags', 'quote_available'])
 		->where('status', 'published')
 		->search($search)
 		->minRating($minRating)
