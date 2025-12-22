@@ -1276,7 +1276,7 @@ class ProductController extends Controller
     $userId = Auth::id();
     $isUserLoggedIn = $userId !== null;
 
-    Log::info('User logged in:', ['user_id' => $userId]);
+		Log::info('User logged in:', ['user_id' => $userId]);
 
     $wishlistProductIds = [];
     if ($isUserLoggedIn) {
@@ -1658,6 +1658,9 @@ class ProductController extends Controller
             if (!$attributeName) {
                 continue;
             }
+            
+            $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
+            $full_slug = trim($full_slug, '/');
 
             $seenAttributeValues = [];
 

@@ -10776,10 +10776,9 @@
                             "type": "string",
                             "enum": [
                                 "Pending",
-                                "Completed",
-                                "Failed",
-                                "Cancelled",
-                                "Refunded",
+                                "Approved",
+                                "Rejected",
+                                "Hold",
                                 "all"
                             ],
                             "example": "all"
@@ -10793,6 +10792,24 @@
                         "schema": {
                             "type": "string",
                             "example": ""
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-01-01"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-12-31"
                         }
                     },
                     {
@@ -17532,6 +17549,52 @@
                 ]
             }
         },
+        "/api/frontend/coupon-register": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Customer"
+                ],
+                "summary": "Coupon Register a new customer",
+                "operationId": "7ccb8d3a6b2f43ef6b75311228f7e0d0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "971500000000"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Customer registered successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/customer-documents": {
             "get": {
                 "tags": [
@@ -17601,6 +17664,69 @@
             }
         },
         "/api/frontend/customer-documents/{id}": {
+            "post": {
+                "tags": [
+                    "Frontend CustomerDocuments"
+                ],
+                "summary": "Update customer document",
+                "operationId": "ae24b65275ea1364c0cacfaaed2b5139",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Customer document ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Trade License"
+                                    },
+                                    "document": {
+                                        "type": "file"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Document updated successfully"
+                    },
+                    "404": {
+                        "description": "Document not found"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "delete": {
                 "tags": [
                     "Frontend CustomerDocuments"
@@ -20996,14 +21122,14 @@
                                         "example": false
                                     },
                                     "cheque_img": {
-                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
+                                        "description": "Cheque image link",
                                         "type": "string",
-                                        "format": "binary"
+                                        "format": "string"
                                     },
                                     "cheque_img_back": {
-                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
+                                        "description": "Cheque image link",
                                         "type": "string",
-                                        "format": "binary"
+                                        "format": "string"
                                     },
                                     "coupon_id": {
                                         "description": "Coupon ID",
@@ -21232,6 +21358,320 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/frontend/compress-image-check": {
+            "post": {
+                "tags": [
+                    "CompressImage"
+                ],
+                "summary": "Upload and compress cheque images",
+                "operationId": "827799783b98b6b1bff32e1a122afcd3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "cheque_img",
+                                    "cheque_img_back"
+                                ],
+                                "properties": {
+                                    "cheque_img": {
+                                        "description": "Cheque front image",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "cheque_img_back": {
+                                        "description": "Cheque back image",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cheque images uploaded and compressed successfully"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/save-cheque-upload": {
+            "post": {
+                "tags": [
+                    "Cheque Upload"
+                ],
+                "summary": "Upload cheque front and back images",
+                "description": "Uploads front and back cheque images and saves them against a session",
+                "operationId": "saveChequeUpload",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "cheque_img",
+                                    "cheque_img_back"
+                                ],
+                                "properties": {
+                                    "cheque_img": {
+                                        "description": "Front side of cheque image (jpg, jpeg, png, webp)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "cheque_img_back": {
+                                        "description": "Back side of cheque image (jpg, jpeg, png, webp)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "session_id": {
+                                        "description": "Optional session identifier",
+                                        "type": "string",
+                                        "example": "sess_123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cheque uploaded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cheque images uploaded and saved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "cheque_img": {
+                                                    "type": "string",
+                                                    "example": "s3/path/front.webp"
+                                                },
+                                                "cheque_img_back": {
+                                                    "type": "string",
+                                                    "example": "s3/path/back.webp"
+                                                },
+                                                "session_id": {
+                                                    "type": "string",
+                                                    "example": "sess_123456"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "example": "2025-01-01 12:00:00"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/get-cheque-uploads": {
+            "get": {
+                "tags": [
+                    "Cheque Upload"
+                ],
+                "summary": "Get cheque uploads by session ID",
+                "description": "Returns all cheque uploads related to a session ID",
+                "operationId": "getChequeUploadsBySession",
+                "parameters": [
+                    {
+                        "name": "session_id",
+                        "in": "query",
+                        "description": "Session identifier",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "sess_123456"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cheque uploads retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cheque uploads retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "cheque_img": {
+                                                        "type": "string",
+                                                        "example": "s3/path/front.webp"
+                                                    },
+                                                    "cheque_img_back": {
+                                                        "type": "string",
+                                                        "example": "s3/path/back.webp"
+                                                    },
+                                                    "session_id": {
+                                                        "type": "string",
+                                                        "example": "sess_123456"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "example": "2025-01-01 12:00:00"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No cheque uploads found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No cheque uploads found for this session"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/frontend/user-stats": {
+            "get": {
+                "tags": [
+                    "Frontend Orders"
+                ],
+                "summary": "Get total orders, wishlist count, and net term amount for authenticated user",
+                "description": "Returns total orders, total wishlist items, and total net term amount for the logged-in user",
+                "operationId": "getUserStats",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_orders": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "total_wishlist": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "total_net_term_amount": {
+                                                    "type": "string",
+                                                    "example": "1234.56"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/payments": {
@@ -28489,27 +28929,65 @@
                 }
             }
         },
+        "/api/frontend/tql-token": {
+            "post": {
+                "tags": [
+                    "Frontend-TQL"
+                ],
+                "summary": "Get TQL shipping rate (returns only the price amount)",
+                "operationId": "0221c6048a7ae31577c347024487723a",
+                "responses": {
+                    "200": {
+                        "description": "TQL token generated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "access_token": {
+                                            "type": "string",
+                                            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                                        },
+                                        "expires_in": {
+                                            "type": "integer",
+                                            "example": 3600
+                                        },
+                                        "token_type": {
+                                            "type": "string",
+                                            "example": "Bearer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
         "/api/frontend/tql-rate": {
             "post": {
                 "tags": [
-                    "Frontend-TQL Rates Shipping"
+                    "Frontend-TQL"
                 ],
                 "summary": "Get TQL shipping rate (returns only the price amount)",
-                "operationId": "dd37ebac3b800b9bd697a929481eea7b",
+                "operationId": "e8834d1cf4c5d7a693dbe6565ecd7059",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "pickLocationType",
+                                    "dropLocationType",
+                                    "shipmentDate",
+                                    "origin",
+                                    "destination",
+                                    "quoteCommodities"
+                                ],
                                 "properties": {
-                                    "carrierPriceId": {
-                                        "type": "string",
-                                        "example": "7654433"
-                                    },
-                                    "customerEmailAddresses": {
-                                        "type": "string",
-                                        "example": "name@gmail.com"
-                                    },
                                     "pickLocationType": {
                                         "type": "string",
                                         "example": "Commercial"
@@ -28521,151 +28999,79 @@
                                     "shipmentDate": {
                                         "type": "string",
                                         "format": "date-time",
-                                        "example": "2025-12-09T17:11:52.705Z"
+                                        "example": "2025-12-22T17:11:52Z"
                                     },
                                     "origin": {
+                                        "required": [
+                                            "postalCode",
+                                            "city",
+                                            "state",
+                                            "country"
+                                        ],
                                         "properties": {
                                             "postalCode": {
                                                 "type": "string",
-                                                "example": "33131"
+                                                "example": "11741"
                                             },
                                             "city": {
                                                 "type": "string",
-                                                "example": "Miami"
+                                                "example": "Holbrook"
                                             },
                                             "state": {
                                                 "type": "string",
-                                                "example": "FL"
+                                                "example": "NY"
                                             },
                                             "country": {
                                                 "type": "string",
-                                                "example": "US"
+                                                "example": "USA"
                                             }
                                         },
                                         "type": "object"
                                     },
                                     "destination": {
+                                        "required": [
+                                            "postalCode",
+                                            "city",
+                                            "state",
+                                            "country"
+                                        ],
                                         "properties": {
                                             "postalCode": {
                                                 "type": "string",
-                                                "example": "90013"
+                                                "example": "45203"
                                             },
                                             "city": {
                                                 "type": "string",
-                                                "example": "Los Angeles"
+                                                "example": "Cincinnati"
                                             },
                                             "state": {
                                                 "type": "string",
-                                                "example": "CA"
+                                                "example": "OH"
                                             },
                                             "country": {
                                                 "type": "string",
-                                                "example": "US"
+                                                "example": "USA"
                                             }
                                         },
                                         "type": "object"
-                                    },
-                                    "pickupDetails": {
-                                        "properties": {
-                                            "address1": {
-                                                "type": "string",
-                                                "example": "1234 SW 8th St"
-                                            },
-                                            "address2": {
-                                                "type": "string",
-                                                "example": "Suite 500"
-                                            },
-                                            "stopName": {
-                                                "type": "string",
-                                                "example": "ABC Manufacturing"
-                                            },
-                                            "contactName": {
-                                                "type": "string",
-                                                "example": "John Smith"
-                                            },
-                                            "contactPhone": {
-                                                "type": "string",
-                                                "example": "305-555-0198"
-                                            },
-                                            "contactExtension": {
-                                                "type": "string",
-                                                "example": "123"
-                                            },
-                                            "hoursOpen": {
-                                                "type": "string",
-                                                "example": "8:00 AM"
-                                            },
-                                            "hoursClosed": {
-                                                "type": "string",
-                                                "example": "5:00 PM"
-                                            },
-                                            "puNumber": {
-                                                "type": "string",
-                                                "example": "PU20251209-001"
-                                            }
-                                        },
-                                        "type": "object"
-                                    },
-                                    "deliveryDetails": {
-                                        "properties": {
-                                            "address1": {
-                                                "type": "string",
-                                                "example": "5678 E Olympic Blvd"
-                                            },
-                                            "address2": {
-                                                "type": "string",
-                                                "example": "Dock 12"
-                                            },
-                                            "stopName": {
-                                                "type": "string",
-                                                "example": "XYZ Distribution Center"
-                                            },
-                                            "contactName": {
-                                                "type": "string",
-                                                "example": "Maria Garcia"
-                                            },
-                                            "contactPhone": {
-                                                "type": "string",
-                                                "example": "213-555-0234"
-                                            },
-                                            "contactExtension": {
-                                                "type": "string",
-                                                "example": ""
-                                            },
-                                            "hoursOpen": {
-                                                "type": "string",
-                                                "example": "7:00 AM"
-                                            },
-                                            "hoursClosed": {
-                                                "type": "string",
-                                                "example": "4:00 PM"
-                                            },
-                                            "deliveryPO": {
-                                                "type": "string",
-                                                "example": "PO-987654"
-                                            }
-                                        },
-                                        "type": "object"
-                                    },
-                                    "accessorials": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "example": "INPU=>Pickup – Inside"
-                                        },
-                                        "example": [
-                                            "INPU=>Pickup – Inside",
-                                            "LIFT=>Liftgate at Pickup",
-                                            "NOTIFY=>Notify Before Delivery"
-                                        ]
                                     },
                                     "quoteCommodities": {
                                         "type": "array",
                                         "items": {
+                                            "required": [
+                                                "freightClassCode",
+                                                "unitTypeCode",
+                                                "description",
+                                                "quantity",
+                                                "weight",
+                                                "dimensionLength",
+                                                "dimensionWidth",
+                                                "dimensionHeight"
+                                            ],
                                             "properties": {
                                                 "freightClassCode": {
-                                                    "type": "string",
-                                                    "example": "85"
+                                                    "type": "number",
+                                                    "example": 85
                                                 },
                                                 "unitTypeCode": {
                                                     "type": "string",
@@ -28673,7 +29079,7 @@
                                                 },
                                                 "description": {
                                                     "type": "string",
-                                                    "example": "Electronics - Flat Screen TVs"
+                                                    "example": "Electronics"
                                                 },
                                                 "quantity": {
                                                     "type": "integer",
@@ -28694,60 +29100,11 @@
                                                 "dimensionHeight": {
                                                     "type": "integer",
                                                     "example": 72
-                                                },
-                                                "nmfc": {
-                                                    "type": "string",
-                                                    "example": "109980-02",
-                                                    "nullable": true
-                                                },
-                                                "pieceCaseCount": {
-                                                    "type": "integer",
-                                                    "example": 6,
-                                                    "nullable": true
-                                                },
-                                                "isHazmat": {
-                                                    "type": "boolean",
-                                                    "example": false,
-                                                    "nullable": true
-                                                },
-                                                "isStackable": {
-                                                    "type": "boolean",
-                                                    "example": false,
-                                                    "nullable": true
                                                 }
                                             },
                                             "type": "object"
                                         },
-                                        "example": [
-                                            {
-                                                "freightClassCode": "85",
-                                                "unitTypeCode": "PLT",
-                                                "description": "Electronics - Flat Screen TVs",
-                                                "quantity": 6,
-                                                "weight": 2400,
-                                                "dimensionLength": 48,
-                                                "dimensionWidth": 40,
-                                                "dimensionHeight": 72,
-                                                "nmfc": "109980-02",
-                                                "pieceCaseCount": 6,
-                                                "isHazmat": false,
-                                                "isStackable": false
-                                            },
-                                            {
-                                                "freightClassCode": "125",
-                                                "unitTypeCode": "CTN",
-                                                "description": "Clothing on hangers",
-                                                "quantity": 10,
-                                                "weight": 800,
-                                                "dimensionLength": 60,
-                                                "dimensionWidth": 48,
-                                                "dimensionHeight": 60,
-                                                "nmfc": "039760",
-                                                "pieceCaseCount": 10,
-                                                "isHazmat": false,
-                                                "isStackable": true
-                                            }
-                                        ]
+                                        "minItems": 1
                                     }
                                 },
                                 "type": "object"
@@ -28756,11 +29113,370 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Quote created"
+                    "200": {
+                        "description": "Rates retrieved"
                     },
-                    "400": {
-                        "description": "Invalid input"
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/api/frontend/tql-createQuote": {
+            "post": {
+                "tags": [
+                    "Frontend-TQL"
+                ],
+                "summary": "Create TQL)",
+                "operationId": "6a2f8dbde3a56a6760f4bcb70642831e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pickLocationType",
+                                    "dropLocationType",
+                                    "shipmentDate",
+                                    "origin",
+                                    "destination",
+                                    "quoteCommodities"
+                                ],
+                                "properties": {
+                                    "pickLocationType": {
+                                        "type": "string",
+                                        "example": "Commercial"
+                                    },
+                                    "dropLocationType": {
+                                        "type": "string",
+                                        "example": "Commercial"
+                                    },
+                                    "shipmentDate": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-12-22T17:11:52Z"
+                                    },
+                                    "origin": {
+                                        "required": [
+                                            "postalCode",
+                                            "city",
+                                            "state",
+                                            "country"
+                                        ],
+                                        "properties": {
+                                            "postalCode": {
+                                                "type": "string",
+                                                "example": "11741"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Holbrook"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "NY"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "USA"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "destination": {
+                                        "required": [
+                                            "postalCode",
+                                            "city",
+                                            "state",
+                                            "country"
+                                        ],
+                                        "properties": {
+                                            "postalCode": {
+                                                "type": "string",
+                                                "example": "45203"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Cincinnati"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "OH"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "USA"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "quoteCommodities": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "freightClassCode",
+                                                "unitTypeCode",
+                                                "description",
+                                                "quantity",
+                                                "weight",
+                                                "dimensionLength",
+                                                "dimensionWidth",
+                                                "dimensionHeight"
+                                            ],
+                                            "properties": {
+                                                "freightClassCode": {
+                                                    "type": "number",
+                                                    "example": 85
+                                                },
+                                                "unitTypeCode": {
+                                                    "type": "string",
+                                                    "example": "PLT"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Electronics"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 6
+                                                },
+                                                "weight": {
+                                                    "type": "number",
+                                                    "example": 2400
+                                                },
+                                                "dimensionLength": {
+                                                    "type": "integer",
+                                                    "example": 48
+                                                },
+                                                "dimensionWidth": {
+                                                    "type": "integer",
+                                                    "example": 40
+                                                },
+                                                "dimensionHeight": {
+                                                    "type": "integer",
+                                                    "example": 72
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rates retrieved"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/api/frontend/tql-tenderShipment": {
+            "post": {
+                "tags": [
+                    "Frontend-TQL"
+                ],
+                "summary": "Create TQL Tender Shipment",
+                "operationId": "5b0f90423a64bea21b043a9419b9b042",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "carrierPriceId",
+                                    "customerEmailAddresses",
+                                    "shipmentDate"
+                                ],
+                                "properties": {
+                                    "carrierPriceId": {
+                                        "type": "string",
+                                        "example": "000000"
+                                    },
+                                    "customerEmailAddresses": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "email",
+                                            "example": "abc1234@email.com"
+                                        },
+                                        "minItems": 1
+                                    },
+                                    "shipmentDate": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-12-22T17:11:52Z"
+                                    },
+                                    "pickupDetails": {
+                                        "properties": {
+                                            "puNumber": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "stopName": {
+                                                "type": "string",
+                                                "example": "Test"
+                                            },
+                                            "contactName": {
+                                                "type": "string",
+                                                "example": "Test Test"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string",
+                                                "example": "5555555555"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string",
+                                                "example": "12345"
+                                            },
+                                            "address1": {
+                                                "type": "string",
+                                                "example": "123 Test Street"
+                                            },
+                                            "address2": {
+                                                "type": "string",
+                                                "nullable": true
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "9:00 AM"
+                                            },
+                                            "hoursClose": {
+                                                "type": "string",
+                                                "example": "5:00 PM"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "deliveryDetails": {
+                                        "properties": {
+                                            "deliveryPO": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "stopName": {
+                                                "type": "string",
+                                                "example": "TestPlace"
+                                            },
+                                            "contactName": {
+                                                "type": "string",
+                                                "example": "Test people"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string",
+                                                "example": "5555555555"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string",
+                                                "nullable": true
+                                            },
+                                            "address1": {
+                                                "type": "string",
+                                                "example": "1234 Test Street"
+                                            },
+                                            "address2": {
+                                                "type": "string",
+                                                "nullable": true
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "9:00 AM"
+                                            },
+                                            "hoursClose": {
+                                                "type": "string",
+                                                "example": "5:00 PM"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tender shipment created successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/api/frontend/tql-getQuote/{quoteId}": {
+            "get": {
+                "tags": [
+                    "Frontend-TQL"
+                ],
+                "summary": "Get TQL by quoteId)",
+                "operationId": "bda0971416af6663e9dae2df4632baf5",
+                "parameters": [
+                    {
+                        "name": "quoteId",
+                        "in": "path",
+                        "description": "TQL Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "8828101"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Quote retrieved successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/api/frontend/tql-tracking/{poNumber}": {
+            "get": {
+                "tags": [
+                    "Frontend-TQL"
+                ],
+                "summary": "Get TQL tracking by poNumber)",
+                "operationId": "56a058c571970fa63c8f0eb186273fe4",
+                "parameters": [
+                    {
+                        "name": "poNumber",
+                        "in": "path",
+                        "description": "TQL poNumber id",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "8828101"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Quote retrieved successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
                     },
                     "500": {
                         "description": "Server error"
@@ -29245,7 +29961,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "product_id",
@@ -29267,7 +29983,8 @@
                                         "type": "string",
                                         "example": "Great product!"
                                     },
-                                    "images": {
+                                    "images[]": {
+                                        "description": "Review images",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
@@ -29285,10 +30002,10 @@
                         "description": "Review added successfully"
                     },
                     "401": {
-                        "description": "User not authenticated"
+                        "description": "Unauthorized"
                     },
-                    "500": {
-                        "description": "Server error"
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
@@ -29299,12 +30016,12 @@
             }
         },
         "/api/customer-reviews-update/{id}": {
-            "put": {
+            "post": {
                 "tags": [
                     "Frontend-User Reviews"
                 ],
                 "summary": "Update an existing review",
-                "operationId": "7ad26f8d5d51ae4ce32962caf01ec109",
+                "operationId": "2f9f02c983ae6aecaa68558337c013e4",
                 "parameters": [
                     {
                         "name": "id",
@@ -29319,7 +30036,7 @@
                 "requestBody": {
                     "required": false,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "properties": {
                                     "star": {
@@ -29332,7 +30049,8 @@
                                         "type": "string",
                                         "example": "Updated comment."
                                     },
-                                    "images": {
+                                    "images[]": {
+                                        "description": "Updated review images",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
@@ -29346,7 +30064,7 @@
                     }
                 },
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Review updated successfully"
                     },
                     "401": {
@@ -30104,6 +30822,24 @@
                         "schema": {
                             "type": "string",
                             "example": "john"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-01-01"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-12-31"
                         }
                     },
                     {
@@ -33470,7 +34206,9 @@
                                             "Stax",
                                             "Square",
                                             "CC Avenue",
-                                            "NetTerm"
+                                            "NetTerm",
+                                            "Check",
+                                            "Cheque"
                                         ],
                                         "example": "Credit Card"
                                     },
@@ -33924,13 +34662,16 @@
                                             "Debit Card",
                                             "Tabby",
                                             "Cheque",
+                                            "Check",
                                             "Tamara",
                                             "Paymob",
                                             "COD",
                                             "PayPal",
                                             "Stax",
                                             "Square",
-                                            "NetTerm"
+                                            "NetTerm",
+                                            "Check",
+                                            "Cheque"
                                         ],
                                         "example": "Cash on Delivery"
                                     },
@@ -49013,6 +49754,18 @@
             "description": "FrontEnd-Orders"
         },
         {
+            "name": "CompressImage",
+            "description": "CompressImage"
+        },
+        {
+            "name": "Cheque Upload",
+            "description": "Cheque Upload"
+        },
+        {
+            "name": "Frontend Orders",
+            "description": "Frontend Orders"
+        },
+        {
             "name": "Frontend-Payments",
             "description": "Frontend-Payments"
         },
@@ -49113,8 +49866,8 @@
             "description": "Tax"
         },
         {
-            "name": "Frontend-TQL Rates Shipping",
-            "description": "Frontend-TQL Rates Shipping"
+            "name": "Frontend-TQL",
+            "description": "Frontend-TQL"
         },
         {
             "name": "Frontend TXT",

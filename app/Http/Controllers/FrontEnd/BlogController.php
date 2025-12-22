@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use OpenApi\Annotations as OA;
 use App\Models\FrontEnd\BlogComment;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 
 class BlogController extends Controller
@@ -215,6 +216,12 @@ class BlogController extends Controller
     public function like($id)
     {
         $blog = Blog::findOrFail($id);
+        $ip = request()->ip();
+        $liked = Cache::has("blog_like_{$id}_{$ip}");
+        if ($liked) {
+        return response()->json(['total_likes' => $blog->total_likes]);
+        }
+        Cache::put("blog_like_{$id}_{$ip}", true, now()->addDays(30));
         $blog->increment('total_likes');
         return response()->json(['total_likes' => $blog->total_likes]);
     }
@@ -240,6 +247,12 @@ class BlogController extends Controller
     public function share($id)
     {
         $blog = Blog::findOrFail($id);
+        $ip = request()->ip();
+        $liked = Cache::has("blog_share_{$id}_{$ip}");
+        if ($liked) {
+        return response()->json(['total_shares' => $blog->total_shares]);
+        }
+        Cache::put("blog_share_{$id}_{$ip}", true, now()->addDays(30));
         $blog->increment('total_shares');
         return response()->json(['total_shares' => $blog->total_shares]);
     }
@@ -265,6 +278,12 @@ class BlogController extends Controller
     public function view($id)
     {
         $blog = Blog::findOrFail($id);
+        $ip = request()->ip();
+        $liked = Cache::has("blog_view_{$id}_{$ip}");
+        if ($liked) {
+        return response()->json(['total_views' => $blog->total_views]);
+        }
+        Cache::put("blog_view_{$id}_{$ip}", true, now()->addDays(30));
         $blog->increment('total_views');
         return response()->json(['total_views' => $blog->total_views]);
     }
@@ -441,7 +460,7 @@ class BlogController extends Controller
         $comment = $post->comments()->create([
             'comment' => $request->comment,
             'parent_id' => $request->parent_id ?? null,
-            'created_by' => Auth::id(), // Automatically assign logged-in user
+            'created_by' => Auth::id()??1,  
         ]);
 
         return response()->json([

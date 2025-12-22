@@ -27,11 +27,10 @@ class DeactivateExpiredCoupons extends Command
      */
     public function handle()
     {
-        $currentDate = Carbon::now();
-
+        $currentDate = now()->toDateString();
         $count = Coupon::where('expire_date', '<', $currentDate)
-            ->where('is_active', 1)
-            ->update(['is_active' => 0]);
+            ->where('is_active', '1')
+            ->update(['is_active' => '0']);
 
         $this->info("Deactivated {$count} expired coupons at {$currentDate->toDateTimeString()}");
         Log::error("Deactivated {$count} expired coupons at {$currentDate->toDateTimeString()}");

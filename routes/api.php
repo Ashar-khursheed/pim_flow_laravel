@@ -674,6 +674,7 @@ Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
 
 
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
+Route::post('frontend/coupon-register', [F_CustomerController::class, 'couponRegister']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']);
@@ -749,6 +750,7 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 	Route::get('/frontend/customer-documents', [F_CustomerDocumentController::class, 'index']);
 	Route::post('/frontend/customer-documents', [F_CustomerDocumentController::class, 'store']);
+	Route::post('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'update']);
 	Route::delete('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'destroy']);
 	Route::get('/frontend/customer-documents/{customer_id}', [F_CustomerDocumentController::class, 'customerDocuments']);
 
@@ -782,6 +784,13 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
 	Route::apiResource('frontend/orders', F_OrderController::class)	->names('frontend.orders');
 
+	Route::post('/frontend/compress-image-check', [F_OrderController::class, 'compressImage']);
+
+	Route::get('/frontend/user-stats', [F_OrderController::class, 'userStats']);
+	
+
+
+
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
 
 	Route::post('/frontend/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
@@ -796,7 +805,7 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
 	Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
-	Route::put('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
+	Route::post('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
 	Route::delete('/customer-reviews-delete/{id}', [F_UserReviewController::class, 'deleteReview']);
 
 	Route::get('/frontend/products/products-you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
@@ -1001,6 +1010,7 @@ Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
 Route::get('/feed/products.xml', [ProductXMLFeedWatchController::class, 'generateProductFeed']);
+Route::get('/feed/one-products.xml', [ProductXMLFeedWatchController::class, 'generateOneProductFeed']);
 Route::get('/feed/products-1.xml', [ProductXMLFeedWatchController::class, 'getProductFeed1']);
 Route::get('/feed/products-2.xml', [ProductXMLFeedWatchController::class, 'getProductFeed2']);
 Route::get('/feed/products-3.xml', [ProductXMLFeedWatchController::class, 'getProductFeed3']);
@@ -1015,7 +1025,12 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 });
 
 
-Route::post('frontend/tql-rate', [TqlRateController::class, 'createLtlQuote']);
+Route::post('frontend/tql-token', [TqlRateController::class, 'tqltoken']);
+Route::post('frontend/tql-rate', [TqlRateController::class, 'tqlRates']);
+Route::post('frontend/tql-createQuote', [TqlRateController::class, 'createQuote']);
+Route::post('frontend/tql-tenderShipment', [TqlRateController::class, 'tenderShipment']);
+Route::get('frontend/tql-getQuote/{quoteId}', [TqlRateController::class, 'getQuote']);
+Route::get('frontend/tql-tracking/{poNumber}', [TqlRateController::class, 'getTracking']);
 
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
@@ -1097,4 +1112,9 @@ Route::get('frontend/paymob/thank', [F_PaymobController::class, 'pay']);
 Route::post('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/thanks', [F_PaymobController::class, 'response']);
+
+
+	Route::post('/frontend/save-cheque-upload', [ F_OrderController::class, 'saveChequeUpload']);
+	Route::get('/frontend/get-cheque-uploads', [ F_OrderController::class, 'getChequeUploadsBySession']);
+
 // test change
