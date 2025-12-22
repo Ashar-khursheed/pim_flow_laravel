@@ -30498,30 +30498,14 @@
                 "tags": [
                     "Inquiries"
                 ],
-                "summary": "Get all inquiries with pagination and filters",
+                "summary": "Get inquiry IDs with optional date range filter",
                 "operationId": "0002d5f7ccef92ece21eb4fe4d42d4f7",
                 "parameters": [
                     {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number for pagination",
-                        "schema": {
-                            "type": "integer",
-                            "minimum": 1
-                        }
-                    },
-                    {
-                        "name": "length",
-                        "in": "query",
-                        "description": "Number of records per page.",
-                        "schema": {
-                            "type": "integer",
-                            "minimum": 1
-                        }
-                    },
-                    {
                         "name": "from_date",
                         "in": "query",
+                        "description": "Start date in YYYY-MM-DD format",
+                        "required": false,
                         "schema": {
                             "type": "string",
                             "format": "date"
@@ -30530,6 +30514,8 @@
                     {
                         "name": "to_date",
                         "in": "query",
+                        "description": "End date in YYYY-MM-DD format",
+                        "required": false,
                         "schema": {
                             "type": "string",
                             "format": "date"
@@ -30538,7 +30524,8 @@
                     {
                         "name": "global",
                         "in": "query",
-                        "description": "Global search for all fields",
+                        "description": "Global search across multiple fields",
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -30546,7 +30533,8 @@
                     {
                         "name": "sort_by",
                         "in": "query",
-                        "description": "Column name to sort by",
+                        "description": "Column to sort by",
+                        "required": false,
                         "schema": {
                             "type": "string",
                             "enum": [
@@ -30565,22 +30553,46 @@
                     {
                         "name": "sort_dir",
                         "in": "query",
-                        "description": "Sort direction (asc or desc)",
+                        "description": "Sort direction",
+                        "required": false,
                         "schema": {
                             "type": "string",
+                            "default": "desc",
                             "enum": [
                                 "asc",
                                 "desc"
                             ]
-                        },
-                        "example": "asc"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Retrieved successfully",
+                        "description": "IDs retrieved successfully",
                         "content": {
-                            "application/json": {}
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer",
+                                                "example": 1
+                                            }
+                                        },
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 100
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
                         }
                     }
                 },
