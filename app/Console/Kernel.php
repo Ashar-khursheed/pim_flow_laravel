@@ -21,11 +21,10 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // Deactivate expired coupons every hour
-        $schedule->command('coupons:deactivate-expired')->hourly();
+      $schedule->command('coupons:deactivate-expired')->dailyAt('00:00');
+        $schedule->command('feed:generate')->dailyAt('00:00');
 
-        // Generate product feed every hour
-        $schedule->command('feed:generate')->hourly();
-        $schedule->command('seo:dailyUpdateLlmsSeo')->dailyAt('02:00');
-        $schedule->command('finance:overdue-status')->dailyAt('02:00');
+        $schedule->command('seo:dailyUpdateLlmsSeo')->dailyAt('00:00');
+        $schedule->command('finance:overdue-status')->dailyAt('00:00');
     }
 }
