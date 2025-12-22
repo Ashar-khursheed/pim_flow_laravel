@@ -1428,7 +1428,7 @@ class OrderController extends BaseController
 		// Total net term amount from finances
 		$totalNetTermAmount = DB::table('finances')
 			->where('customer_id', $userId)
-			->sum('amount');
+			->sum('available_credit_amount');
 
 		return response()->json([
 			'success' => true,
