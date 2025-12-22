@@ -12982,7 +12982,7 @@
                         "description": "Brand ID",
                         "required": true,
                         "schema": {
-                            "type": "integer",
+                            "type": "string",
                             "example": 1
                         }
                     },
@@ -18293,6 +18293,120 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/frontend-products": {
+            "get": {
+                "tags": [
+                    "Frontend Product"
+                ],
+                "summary": "Get products with filters",
+                "description": "Retrieves paginated products with comprehensive filtering options",
+                "operationId": "23bffee003eddbb58870d031ddb15ce2",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Items per page (1-100)",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by name/SKU",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category_url",
+                        "in": "query",
+                        "description": "Category slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "brand_url",
+                        "in": "query",
+                        "description": "Brand slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "min_rating",
+                        "in": "query",
+                        "description": "Min rating (0-5)",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Min price",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Max price",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort field",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "code",
+                                "type",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Products retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
             }
         },
         "/api/frontend/faqs/product/{product_id}": {
@@ -48837,6 +48951,10 @@
         {
             "name": "Frontend-Category",
             "description": "Frontend-Category"
+        },
+        {
+            "name": "Frontend Product",
+            "description": "Frontend Product"
         },
         {
             "name": "Frontend - FAQs",
