@@ -249,7 +249,7 @@ class FinanceController extends Controller
      *         )
      *     ),
      *     @OA\Response(
-     *         response=404,
+     *         response=200,
      *         description="Finance record not found",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
@@ -279,7 +279,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found.'
-            ], 404);
+            ], 200);
         }
         $address = $finance->customerAddress;
         $financeData =  [
@@ -489,7 +489,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Response(
-     *         response=404,
+     *         response=200,
      *         description="Record not found",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
@@ -530,7 +530,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Record not found'
-            ], 404);
+            ], 200);
         }
         $data = $validator->validated();
         $data['updated_by'] = Auth::id() ?? 1;
@@ -625,7 +625,7 @@ class FinanceController extends Controller
      *         )
      *     ),
      *     @OA\Response(
-     *         response=404,
+     *         response=200,
      *         description="Finance record not found",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
@@ -647,7 +647,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found.'
-            ], 404);
+            ], 200);
         }
 
         try {
@@ -744,7 +744,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Response(
-     *         response=404,
+     *         response=200,
      *         description="Finance record not found"
      *     )
      * )
@@ -764,7 +764,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found.'
-            ], 404);
+            ], 200);
         }
         if ($finance->status == 'Paid') {
             return response()->json([
@@ -844,7 +844,7 @@ class FinanceController extends Controller
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=404, description="Finance not found")
+     *     @OA\Response(response=200, description="Finance not found")
      * )
      */
     public function getDueDetails($id)
@@ -855,7 +855,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found.'
-            ], 404);
+            ], 200);
         }
         if (!empty($finance->balance)) {
             return response()->json([
@@ -938,7 +938,7 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Finance payment record not found or access denied.'
-                ], 404);
+                ], 200);
             }
 
             // Recalculate current remaining balance
@@ -1042,7 +1042,7 @@ class FinanceController extends Controller
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=404, description="Finance not found")
+     *     @OA\Response(response=200, description="Finance not found")
      * )
      */
     public function getPaymentHistory($id)
@@ -1056,7 +1056,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'No payment history found.'
-            ], 404);
+            ], 200);
         }
 
         $paymentData = $paymentHistory->map(function ($finance) {
@@ -1129,7 +1129,7 @@ class FinanceController extends Controller
      *         )
      *     ),
      *
-     *     @OA\Response(response=404, description="Finance not found")
+     *     @OA\Response(response=200, description="Finance not found")
      * )
      */
 
@@ -1162,7 +1162,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found'
-            ], 404);
+            ], 200);
         }
 
         // If due exists
@@ -1253,7 +1253,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Response(
-     *         response=404,
+     *         response=200,
      *         description="Finance not found",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
