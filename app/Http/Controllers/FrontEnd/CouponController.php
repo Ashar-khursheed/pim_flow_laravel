@@ -54,13 +54,6 @@ class CouponController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Coupon::with(['creator', 'approver', 'customers', 'categories', 'products']);
-
-        //Coupon expire automatic is_active false
-        $today = now()->toDateString();        
-        Coupon::whereDate('expire_date', '<', $today)
-        ->where('is_active', '1')           
-        ->update(['is_active' => 0]);
-
         // Global Search Implementation
         if ($request->filled('global')) {
             $searchTerm = $request->input('global');
@@ -1339,12 +1332,6 @@ class CouponController extends Controller
             ], 401);
         }
  
-        //Coupon expire automatic is_active false
-        $today = now()->toDateString();        
-        Coupon::whereDate('expire_date', '<', $today)
-        ->where('is_active', '1')           
-        ->update(['is_active' => 0]);
-
         $couponCode = $request->query('coupon_code');
         $orderValue = $request->query('orderValue');
         $coupon = Coupon::where('code', $couponCode)->first();
