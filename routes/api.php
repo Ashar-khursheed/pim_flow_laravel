@@ -112,6 +112,7 @@ use App\Http\Controllers\FrontEnd\CustomerAddressController as F_CustomerAddress
 use App\Http\Controllers\FrontEnd\CategoryController as F_CategoryController;
 use App\Http\Controllers\FrontEnd\FCategoryController;
 use App\Http\Controllers\FrontEnd\FBrandController;
+use App\Http\Controllers\FrontEnd\FProductController;
 use App\Http\Controllers\FrontEnd\CountryController as F_CountryController;
 use App\Http\Controllers\FrontEnd\CouponController as F_CouponController;
 use App\Http\Controllers\FrontEnd\OrderController as F_OrderController;
@@ -787,7 +788,7 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	Route::post('/frontend/compress-image-check', [F_OrderController::class, 'compressImage']);
 
 	Route::get('/frontend/user-stats', [F_OrderController::class, 'userStats']);
-	
+
 
 
 
@@ -891,6 +892,8 @@ Route::get('/frontend-categories', [FCategoryController::class, 'index']);
 Route::get('/frontend-brands/featured-products', [FBrandController::class, 'getFeaturedBrandProducts']);
 Route::get('/frontend-brands', [FBrandController::class, 'index']);
 
+Route::get('/frontend-products', [FProductController::class, 'index']);
+
 Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);
 Route::get('/frontend/categories/sale', [F_CategoryController::class, 'saleCategories']);
 Route::get('/frontend/all-categories', [F_CategoryController::class, 'fetchAllCategories']);
@@ -940,9 +943,6 @@ Route::get('/frontend/brands/alphabetical', [F_BrandController::class, 'getAllBr
 Route::get('/frontend/countries', [F_CountryController::class, 'index']);
 Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
 Route::get('/frontend/country-phonecodes', [F_CountryController::class, 'getPhoneCodes']);
-
-
-
 
 Route::prefix('/frontend/blogs')->group(function () {
 	Route::get('/', [F_BlogController::class, 'index']);

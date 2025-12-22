@@ -5,8 +5,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
-use App\Models\Brand;
-use App\Models\Category;
+use App\Models\Product;
+use App\Models\SeoManagement;
 
 use App\Traits\TransformProduct;
 
@@ -17,14 +17,16 @@ class FProductController extends Controller
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend-products",
-	 *     tags={"Frontend Product"},
+	 *     tags={"Frontend FProduct"},
 	 *     summary="Get products with filters",
 	 *     description="Retrieves paginated products with comprehensive filtering options",
 	 *     @OA\Parameter(name="page", in="query", description="Page number", @OA\Schema(type="integer", default=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Items per page (1-100)", @OA\Schema(type="integer", default=20)),
 	 *     @OA\Parameter(name="search", in="query", description="Search by name/SKU", @OA\Schema(type="string")),
-	 *     @OA\Parameter(name="category_url", in="query", description="Category slug", @OA\Schema(type="string")),
-	 *     @OA\Parameter(name="brand_url", in="query", description="Brand slug", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="brand_id", in="query", description="Brand ID", @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="brand_url", in="query", description="Brand slug", @OA\Schema(type="string", example="hoshizaki")),
+	 *     @OA\Parameter(name="category_id", in="query", description="Category ID", @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="category_url", in="query", description="Category slug", @OA\Schema(type="string", example="ice-bins")),
 	 *     @OA\Parameter(name="min_rating", in="query", description="Min rating (0-5)", @OA\Schema(type="number")),
 	 *     @OA\Parameter(name="price_min", in="query", description="Min price", @OA\Schema(type="number")),
 	 *     @OA\Parameter(name="price_max", in="query", description="Max price", @OA\Schema(type="number")),
@@ -49,7 +51,7 @@ class FProductController extends Controller
 		$sortBy = $request->get('sort_by', 'created_at');
 		$sortOrder = $request->get('sort_order', 'desc');
 
-		$products = Product::select(['id', 'name', 'sku', 'brand_id', 'currency_id', 'alt_tags', 'quote_available'])
+		$recordsQuery = Product::select(['id', 'name', 'sku', 'brand_id', 'currency_id', 'alt_tags', 'quote_available', 'brand_id'])
 		->where('status', 'published')
 		->search($search)
 		->minRating($minRating)
@@ -58,15 +60,37 @@ class FProductController extends Controller
 		->with([
 			'translations',
 			'seoUrl:id,relational_id,relational_type,url',
-			'productSuppliers:id,product_id,vendor_id,sale_price,price',
+			'productSuppliers' => function($q) use ($priceMin, $priceMax) {
+				$q->select(['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 'sale_price', 'price', 'inventory', 'in_stock', 'min_quantity', 'is_fixed', 'delivery_days', 'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'])
+				->priceRange($priceMin, $priceMax)
+				->cheapest();
+			},
 			'reviews:id,product_id,star',
 			'currency:id,title,symbol',
-			'brand:id,name'
+			'brand:id,name',
+			'sellingUnitAttribute',
 		])
 		->withCount('reviews')
 		->withAvg('reviews', 'star')
-		->orderBy($sortBy, $sortOrder)
-		->paginate($length, ['*'], 'page', $page);
+		->orderBy($sortBy, $sortOrder);
+		/* Clone query for counting */
+		$totalRecords = (clone $recordsQuery)->count();
+		$totalPages = (int) ceil($totalRecords / $length);
+
+		/* If requested page exceeds total pages (after search), fallback to page 1 */
+		if ($page > $totalPages && $totalPages > 0) {
+			$page = 1;
+		}
+
+		$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get();
+
+		/* Transform products */
+		$records->each(function ($product) {
+			$this->transformFeaturedProduct($product);
+		});
+
+		dd($records->toArray());
+
 
 		return response()->json([
 			'success' => true,

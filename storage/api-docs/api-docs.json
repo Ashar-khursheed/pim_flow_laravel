@@ -18424,7 +18424,7 @@
         "/api/frontend-products": {
             "get": {
                 "tags": [
-                    "Frontend Product"
+                    "Frontend FProduct"
                 ],
                 "summary": "Get products with filters",
                 "description": "Retrieves paginated products with comprehensive filtering options",
@@ -18457,11 +18457,11 @@
                         }
                     },
                     {
-                        "name": "category_url",
+                        "name": "brand_id",
                         "in": "query",
-                        "description": "Category slug",
+                        "description": "Brand ID",
                         "schema": {
-                            "type": "string"
+                            "type": "integer"
                         }
                     },
                     {
@@ -18469,7 +18469,25 @@
                         "in": "query",
                         "description": "Brand slug",
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "example": "hoshizaki"
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Category ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "category_url",
+                        "in": "query",
+                        "description": "Category slug",
+                        "schema": {
+                            "type": "string",
+                            "example": "ice-bins"
                         }
                     },
                     {
@@ -49694,8 +49712,8 @@
             "description": "Frontend-Category"
         },
         {
-            "name": "Frontend Product",
-            "description": "Frontend Product"
+            "name": "Frontend FProduct",
+            "description": "Frontend FProduct"
         },
         {
             "name": "Frontend - FAQs",
