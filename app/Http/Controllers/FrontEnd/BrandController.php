@@ -702,7 +702,7 @@ class BrandController extends Controller
      *         in="path",
      *         description="Brand ID",
      *         required=true,
-     *         @OA\Schema(type="integer", example=1)
+     *         @OA\Schema(type="string", example=1)
      *     ),
      *     @OA\Parameter(
      *         name="categoryId",
