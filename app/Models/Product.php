@@ -51,12 +51,14 @@ class Product extends Model implements TranslatableContract
 {
 	use Translatable;
 
-	public $translatedAttributes = [
-		'name_tr',
-		'description_tr',
-		'benefits_features_tr',
-		'images_tr',
-	];
+	// public $translatedAttributes = [
+	// 	'name_tr',
+	// 	'description_tr',
+	// 	'benefits_features_tr',
+	// 	'images_tr',
+	// ];
+
+	public $translatedAttributes = [];
 
 	public static $observerUserId = null;
 	protected $table = 'ec_products';
@@ -85,7 +87,6 @@ class Product extends Model implements TranslatableContract
 		'gen_type' => 'nullable|integer',
 		'approved' => 'nullable|integer',
 		'ar_approved' => 'nullable|integer'
-
 	];
 
 	public function categories()
@@ -128,15 +129,6 @@ class Product extends Model implements TranslatableContract
 		return $this->morphOne(Metabox::class, 'reference')->where('meta_key', 'seo_meta');
 	}
 
-	// public function seoManagement()
-	// {
-	// 	return $this->morphOne(SeoManagement::class, 'relational');
-	// }
-public function seoManagement()
-{
-    return $this->hasOne(SeoManagement::class, 'relational_id')
-                ->where('relational_type', 'Product');
-}
 	public function slug()
 	{
 		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'products');
@@ -309,6 +301,52 @@ public function seoManagement()
 		return $this->accessories()->where('isRequired', 1)->exists();
 	}
 
+	/**
+	 * Scope for searching products
+	 */
+	public function scopeSearch($query, $search)
+	{
+		if (!$search) {
+			return $query;
+		}
 
+		return $query->where(function($q) use ($search) {
+			$q->where('name', 'like', '%' . $search . '%')
+			->orWhere('sku', 'like', '%' . $search . '%')
+			->orWhereHas('translations', function($q) use ($search) {
+				$q->where('name_tr', 'like', '%' . $search . '%');
+			});
+		});
+	}
 
+	/**
+	 * Scope for filtering by minimum rating
+	 */
+	public function scopeMinRating($query, $minRating)
+	{
+		if (!$minRating) {
+			return $query;
+		}
+
+		return $query->whereHas('reviews', function($q) use ($minRating) {
+			$q->select('product_id')
+			->groupBy('product_id')
+			->havingRaw('AVG(star) >= ?', [$minRating]);
+		});
+	}
+
+	/**
+	 * Scope for filtering by price range
+	 * Uses sale_price if available, otherwise uses regular price
+	 */
+	public function scopePriceRange($query, $priceMin = null, $priceMax = null)
+	{
+		if ($priceMin === null && $priceMax === null) {
+			return $query;
+		}
+		/* Use the ProductSupplier scope */
+		return $query->whereHas('productSuppliers', function($q) use ($priceMin, $priceMax) {
+			$q->priceRange($priceMin, $priceMax);
+		});
+	}
 }

@@ -254,7 +254,7 @@ class AuthController extends BaseController
 			]);
 		}
 
-		if (now()->diffInMinutes($user->passwordResetToken->created_at) > 10080) {
+		if (now()->diffInMinutes($user->passwordResetToken->created_at) > 10) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Your reset token has expired. Please request a new one from the "Forgot Password" section.'

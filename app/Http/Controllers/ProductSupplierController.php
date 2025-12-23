@@ -548,8 +548,7 @@ class ProductSupplierController extends BaseController
 			$category = Category::find($request->relational_id);
 
 			if ($category) {
-				$leafCategories = Category::getLeafCategories($category);
-				$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+				$leafCategoryIds = $category->getLeafCategories()->pluck('id')->toArray();
 
 				$query->whereHas('product.categories', function ($q) use ($leafCategoryIds) {
 					$q->whereIn('categories.id', $leafCategoryIds);
