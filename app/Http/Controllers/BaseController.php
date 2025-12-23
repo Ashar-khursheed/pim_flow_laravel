@@ -29,6 +29,21 @@ use App\Http\Controllers\Controller;
  * )
  *
  * @OA\Tag(
+ *     name="Frontend-Category",
+ *     description="........"
+ * )
+ *
+ * @OA\Tag(
+ *     name="Frontend-Brand",
+ *     description="........"
+ * )
+ *
+ * @OA\Tag(
+ *     name="Frontend FProduct",
+ *     description="........"
+ * )
+ *
+ * @OA\Tag(
  *     name="Attributes",
  *     description="API Endpoints for Attribute Management"
  * )

@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers\FrontEnd;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -10,7 +10,7 @@ use App\Models\SeoManagement;
 
 use App\Traits\TransformProduct;
 
-class FProductController extends Controller
+class FProductController extends BaseController
 {
 	use TransformProduct;
 
@@ -53,10 +53,27 @@ class FProductController extends Controller
 
 		$recordsQuery = Product::select(['id', 'name', 'sku', 'brand_id', 'currency_id', 'alt_tags', 'quote_available', 'brand_id'])
 		->where('status', 'published')
+		->when($categoryID, function($q) use ($categoryID) {
+			$q->whereHas('categories', function($query) use ($categoryID) {
+				$query->where('categories.id', $categoryID);
+			});
+		})
+		->when($categoryUrl, function($q) use ($categoryUrl) {
+			$q->whereHas('categories.seoUrl', function($query) use ($categoryUrl) {
+				$query->where('url', $categoryUrl);
+			});
+		})
+		->when($brandID, function($q) use ($brandID) {
+			$q->where('brand_id', $brandID);
+		})
+		->when($brandUrl, function($q) use ($brandUrl) {
+			$q->whereHas('brand.seoUrl', function($query) use ($brandUrl) {
+				$query->where('url', $brandUrl);
+			});
+		})
 		->search($search)
 		->minRating($minRating)
 		->priceRange($priceMin, $priceMax)
-		->qwhen($isFeatured, fn($q) => $q->where('is_featured', 1))
 		->with([
 			'translations',
 			'seoUrl:id,relational_id,relational_type,url',
@@ -67,7 +84,6 @@ class FProductController extends Controller
 			},
 			'reviews:id,product_id,star',
 			'currency:id,title,symbol',
-			'brand:id,name',
 			'sellingUnitAttribute',
 		])
 		->withCount('reviews')
@@ -89,21 +105,12 @@ class FProductController extends Controller
 			$this->transformFeaturedProduct($product);
 		});
 
-		dd($records->toArray());
-
-
 		return response()->json([
 			'success' => true,
 			'message' => 'Products retrieved successfully',
-			'data' => $products->items(),
-			'pagination' => [
-				'total' => $products->total(),
-				'per_page' => $products->perPage(),
-				'current_page' => $products->currentPage(),
-				'last_page' => $products->lastPage(),
-				'from' => $products->firstItem(),
-				'to' => $products->lastItem()
-			]
+			'data' => $records,
+			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
 		]);
 	}
 }

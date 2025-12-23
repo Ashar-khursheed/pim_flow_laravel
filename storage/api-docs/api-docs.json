@@ -49448,6 +49448,18 @@
             "description": "To generate Json Web Token"
         },
         {
+            "name": "Frontend-Category",
+            "description": "........"
+        },
+        {
+            "name": "Frontend-Brand",
+            "description": "........"
+        },
+        {
+            "name": "Frontend FProduct",
+            "description": "........"
+        },
+        {
             "name": "Attributes",
             "description": "API Endpoints for Attribute Management"
         },
@@ -49702,18 +49714,6 @@
         {
             "name": "Frontend-Discounts",
             "description": "Frontend-Discounts"
-        },
-        {
-            "name": "Frontend-Brand",
-            "description": "Frontend-Brand"
-        },
-        {
-            "name": "Frontend-Category",
-            "description": "Frontend-Category"
-        },
-        {
-            "name": "Frontend FProduct",
-            "description": "Frontend FProduct"
         },
         {
             "name": "Frontend - FAQs",

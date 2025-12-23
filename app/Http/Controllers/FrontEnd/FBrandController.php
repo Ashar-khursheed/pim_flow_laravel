@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers\FrontEnd;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -10,7 +10,7 @@ use App\Models\Category;
 
 use App\Traits\TransformProduct;
 
-class FBrandController extends Controller
+class FBrandController extends BaseController
 {
 	use TransformProduct;
 

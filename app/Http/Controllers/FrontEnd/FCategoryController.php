@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\FrontEnd;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -12,7 +12,7 @@ use App\Models\ProductCategory;
 
 use App\Traits\TransformProduct;
 
-class FCategoryController extends Controller
+class FCategoryController extends BaseController
 {
 	use TransformProduct;
 	/**
