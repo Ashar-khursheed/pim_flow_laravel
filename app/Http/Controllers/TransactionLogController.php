@@ -109,7 +109,7 @@ class TransactionLogController extends BaseController
 			'data' => $records,
 			'total_pages' => $totalPages ?? 1,
 			'total_records' => $totalRecords,
-		]);
+		],200);
 	}
 
 	/**
@@ -194,7 +194,7 @@ class TransactionLogController extends BaseController
 			'success' => true,
 			'message' => 'Transaction log detail',
 			'data' => $record
-		]);
+		],200);
 	}
 
 	/**
