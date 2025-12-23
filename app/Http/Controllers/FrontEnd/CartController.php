@@ -528,7 +528,7 @@ class CartController extends Controller
             'cart_id' => $cartId,
             'checkout_url' => url("/Checkout/{$cartId}"),
             'customer_cart' => $customerCart,
-        ]);
+        ],200);
     }
 
 
@@ -575,7 +575,7 @@ class CartController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cart was already empty or could not be cleared.',
-            ]);
+            ],200);
         }
 
         $deleted = CustomerCartProduct::where('customer_cart_id', $customerCart->id)->delete();
@@ -593,12 +593,12 @@ class CartController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Cart cleared successfully.',
-            ]);
+            ],200);
         } else {
             return response()->json([
                 'success' => false,
                 'message' => 'Cart was already empty or could not be cleared.',
-            ]);
+            ],200);
         }
     }
 
@@ -653,7 +653,7 @@ class CartController extends Controller
         $customerCart = CustomerCart::where('customer_id', $userId)->first();
 
         if (!$customerCart) {
-            return response()->json(['success' => false, 'message' => 'Cart not found']);
+            return response()->json(['success' => false, 'message' => 'Cart not found'],200);
         }
 
         $deleted = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
@@ -665,7 +665,7 @@ class CartController extends Controller
             $this->updateCartTotals($customerCart);
         }
 
-        return response()->json(['success' => true]);
+        return response()->json(['success' => true],200);
     }
 
        /**
@@ -741,7 +741,7 @@ class CartController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Cart not found'
-                ], 404);
+                ], 200);
             }
 
             $accessories = $request->input('accessories_options', []);

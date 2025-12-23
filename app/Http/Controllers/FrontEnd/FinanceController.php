@@ -488,7 +488,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Response(
-     *         response=200,
+     *         response=422,
      *         description="Validation error",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
@@ -777,7 +777,7 @@ class FinanceController extends Controller
      *             @OA\Property(property="total_records", type="integer")
      *         )
      *     ),
-     *     @OA\Response(response=200, description="No payment history found")
+     *     @OA\Response(response=404, description="No payment history found")
      * )
      */
     public function getPaymentOrderHistory(Request $request)
@@ -980,7 +980,7 @@ class FinanceController extends Controller
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Finance not found")
+     *     @OA\Response(response=404, description="Finance not found")
      * )
      */
     public function getPaymentHistory(Request $request)
