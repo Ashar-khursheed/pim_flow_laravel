@@ -1276,8 +1276,9 @@ class ProductController extends BaseController
 			}
 		}
 
+		
 		/* Handle multilingual product attributes with sync */
-		if ($request->has('product_attributes')) {
+		if ($request->has('product_attributes') && !empty($request->input('product_attributes')) ) {
 			$productAttributes = $request->input('product_attributes', []);
 
 			/* Decode JSON if string */
@@ -1431,7 +1432,7 @@ class ProductController extends BaseController
 			}
 
 			/* Handle multilingual product description */
-			if ($request->has('description')) {
+			if ($request->has('description') && !empty($request->input('description'))) {
 				$descriptions = $request->input('description', []);
 				$updatedDescriptions = [];
 
@@ -1474,7 +1475,7 @@ class ProductController extends BaseController
 			}
 
 			/* Handle multilingual benefits & features */
-			if ($request->has('benefits_features')) {
+			if ($request->has('benefits_features') && !empty($request->input('benefits_features'))) {
 				$benefitsFeatures = $request->input('benefits_features', []);
 				$updatedBenefitsFeatures = [];
 
@@ -1594,6 +1595,7 @@ class ProductController extends BaseController
 
 		if ($canModifyImages) {
 			if ($request->has('images') && !empty(array_filter($request->images))) {
+			 
 				$updatedImages = [];
 				$manager = new ImageManager(new Driver()); // ✅ Initialize once
 

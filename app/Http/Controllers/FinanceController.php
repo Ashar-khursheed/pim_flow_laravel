@@ -218,53 +218,60 @@ class FinanceController extends Controller
         ], 200);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/finances/{id}",
-     *     summary="Get finance record by ID",
-     *     tags={"Finance"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="Finance record ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Finance record retrieved successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Finance record retrieved successfully."),
-     *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="payment_selection", type="string", example="Credit"),
-     *                 @OA\Property(property="amount", type="number", format="float", example=5000.75),
-     *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd"),     *
-     *                 @OA\Property(property="documents", type="string", example="https://s3.amazonaws.com/path/to/document.pdf"),
-     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-01T10:00:00Z"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-01-02T15:30:00Z")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Finance record not found",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Finance record not found.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
-     *         )
-     *     )
-     * )
-     */
+     /**
+ * @OA\Get(
+ *     path="/api/finances/{id}",
+ *     summary="Get finance record by ID",
+ *     tags={"Finance"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="Finance record ID",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Finance record retrieved successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Finance record retrieved successfully."),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 @OA\Property(property="id", type="integer", example=1),
+ *                 @OA\Property(property="payment_selection", type="string", example="Credit"),
+ *                 @OA\Property(property="amount", type="number", format="float", example=5000.75),
+ *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd"),
+ *                 @OA\Property(property="documents", type="string", example="https://s3.amazonaws.com/path/to/document.pdf"),
+ *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-01T10:00:00Z"),
+ *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-01-02T15:30:00Z")
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=404,
+ *         description="Finance record not found",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Finance record not found.")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+ *         )
+ *     )
+ * )
+ */
+
     public function show($id)
     {
         $finance = Finance::with([
@@ -489,7 +496,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Response(
-     *         response=200,
+     *         response=404,
      *         description="Record not found",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
@@ -625,7 +632,7 @@ class FinanceController extends Controller
      *         )
      *     ),
      *     @OA\Response(
-     *         response=200,
+     *         response=404,
      *         description="Finance record not found",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
@@ -744,7 +751,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Response(
-     *         response=200,
+     *         response=404,
      *         description="Finance record not found"
      *     )
      * )
@@ -844,7 +851,7 @@ class FinanceController extends Controller
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Finance not found")
+     *     @OA\Response(response=404, description="Finance not found")
      * )
      */
     public function getDueDetails($id)
@@ -1042,7 +1049,7 @@ class FinanceController extends Controller
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Finance not found")
+     *     @OA\Response(response=404, description="Finance not found")
      * )
      */
     public function getPaymentHistory($id)
@@ -1129,7 +1136,7 @@ class FinanceController extends Controller
      *         )
      *     ),
      *
-     *     @OA\Response(response=200, description="Finance not found")
+     *     @OA\Response(response=404, description="Finance not found")
      * )
      */
 
@@ -1253,7 +1260,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Response(
-     *         response=200,
+     *         response=404,
      *         description="Finance not found",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),

@@ -141,7 +141,7 @@ public function saveForLater(Request $request)
         return response()->json([
             'success' => false,
             'message' => 'Product supplier not found',
-        ], 404);
+        ], 200);
     }
 
  
@@ -170,7 +170,7 @@ public function saveForLater(Request $request)
             return response()->json([
                 'success' => false,
                 'message' => 'Product not found in cart or wishlist.',
-            ], 404);
+            ], 200);
         }
     }
 
@@ -397,7 +397,7 @@ public function showSaveForLater(Request $request)
                 'success' => false,
 				 'message' => 'Product not found in Save for Later.',
                  'data' => [],
-			 ], 404);
+			 ], 200);
 		 }
 	 
 		 // Delete the record
