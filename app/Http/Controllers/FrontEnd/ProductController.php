@@ -1270,200 +1270,654 @@ class ProductController extends Controller
 		// 		'pagination' => $pagination
 		// 	])->header('Cache-Control', 'public, max-age=86400');
 		// }
-		public function getAllProducts(Request $request)
+    
+// 		public function getAllProducts(Request $request)
+// {
+//     // User and wishlist logic
+//     $userId = Auth::id();
+//     $isUserLoggedIn = $userId !== null;
+
+// 		Log::info('User logged in:', ['user_id' => $userId]);
+
+//     $wishlistProductIds = [];
+//     if ($isUserLoggedIn) {
+//         // ✅ For single product, just check this one product
+//         $productId = $request->input('product_id');
+//         $slug = $request->input('slug');
+        
+//         if ($productId) {
+//             $wishlistProductIds = DB::table('ec_wish_lists')
+//                 ->where('customer_id', $userId)
+//                 ->where('product_id', $productId)
+//                 ->exists() ? [$productId => true] : [];
+//         }
+//         // We'll check slug-based product later if needed
+//     } else {
+//         $wishlistProductIds = array_flip(session()->get('guest_wishlist', []));
+//     }
+
+//     // ✅ SINGLE PRODUCT QUERY - No filtering needed, direct fetch
+//     $productId = $request->input('product_id');
+//     $slug = $request->input('slug');
+    
+//     $query = Product::with([
+//         'categories.seoUrl', // Eager load category SEO URLs
+//         'brand.seoUrl',
+//         'productSuppliers',
+//         'brand.products.reviews',
+//         'seoUrl',
+//         'accessories.items',
+//         'productVariants',
+//         'reviews',
+//         'currency',
+//         'productAttributes' => function ($query) {
+//             $query->whereHas('attributeDetails', function ($q) {
+//                 $q->whereIn('name', ['Units per Case', 'Pack Type']);
+//             });
+//         }
+//     ])->where('status', 'published');
+
+//     if ($productId) {
+//         $query->where('id', $productId);
+//     } elseif ($slug) {
+//         $query->whereHas('seoUrl', function ($q) use ($slug) {
+//             $q->where('url', $slug);
+//         });
+//     } else {
+//         // If neither ID nor slug provided, return error
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Product ID or slug is required'
+//         ], 400);
+//     }
+
+//     // ✅ Get single product, not paginated
+//     $product = $query->first();
+
+//     if (!$product) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Product not found'
+//         ], 404);
+//     }
+
+//     // ✅ Update wishlist check for slug-based queries
+//     if ($slug && $isUserLoggedIn && empty($wishlistProductIds)) {
+//         $wishlistProductIds = DB::table('ec_wish_lists')
+//             ->where('customer_id', $userId)
+//             ->where('product_id', $product->id)
+//             ->exists() ? [$product->id => true] : [];
+//     }
+
+//     // Transform the product
+//     $product->benefits_features = json_decode($product->benefits_features, true);
+
+//     if ($product->seoUrl) {
+//         $product->url = $product->seoUrl->url;
+//         unset($product->seoUrl);
+//     } else {
+//         $product->url = null;
+//     }
+
+//     if (is_string($product->description)) {
+//         $decoded = json_decode($product->description, true);
+
+//         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+//             $product->description = array_values(array_filter(array_map(function ($item) {
+//                 if (is_null($item) || strtolower($item) === 'null') {
+//                     return null;
+//                 }
+
+//                 $item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
+//                 $item = preg_replace('/\s+/', ' ', $item);
+//                 $item = trim($item);
+
+//                 $lowerItem = strtolower($item);
+//                 if (
+//                     stripos($lowerItem, '<p>null') === 0 ||
+//                     $lowerItem === '<p>null</p>'
+//                 ) {
+//                     return null;
+//                 }
+
+//                 return $item !== '' ? $item : null;
+//             }, $decoded)));
+//         } else {
+//             $product->description = [$product->description];
+//         }
+//     }
+
+//     if ($product->brand) {
+//         $product->brand_id = $product->brand->id;
+//         $product->brand_name = $product->brand->name;
+//         $product->brand_logo = $product->brand->logo;
+
+//         if ($product->brand->seoUrl) {
+//             $product->brand_url = $product->brand->seoUrl->url;
+//         } else {
+//             $product->brand_url = null;
+//         }
+
+//         // ✅ OPTIMIZED: Single query for brand stats
+//         $brandStats = \DB::table('ec_reviews')
+//             ->join('ec_products', 'ec_reviews.product_id', '=', 'ec_products.id')
+//             ->where('ec_products.brand_id', $product->brand->id)
+//             ->selectRaw('COUNT(*) as review_count, AVG(star) as avg_rating')
+//             ->first();
+
+//         $product->brand_avg_rating = $brandStats->review_count > 0 
+//             ? round($brandStats->avg_rating, 1) 
+//             : null;
+//         $product->brand_review_count = $brandStats->review_count;
+//     }
+
+//     $product->images = collect(json_decode($product->images, true))->map(function ($image) {
+//         return $image;
+//     });
+    
+//     $product->alt_tags = collect(json_decode($product->alt_tags, true))->map(function ($alt_tags) {
+//         return $alt_tags;
+//     });
+
+//     $desiredOrder = [
+//         'Technical Specification Sheet',
+//         'Warranty Information',
+//         'Horeca Buying Guide',
+//         'Setup & Usage Instructions',
+//         'Product Installation Guide',
+//         'Installation & Elevation Diagram',
+//         'Spare Parts List',
+//         'Product Brochure',
+//     ];
+
+//     $documents = is_string($product->documents)
+//         ? json_decode($product->documents, true)
+//         : $product->documents;
+
+//     if (is_array($documents)) {
+//         foreach ($documents as &$doc) {
+//             if (isset($doc['title'])) {
+//                 $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+//             }
+
+//             if (isset($doc['path'])) {
+//                 $filename = basename($doc['path']);
+//                 $doc['path'] = url('/media/' . $filename);
+//             }
+//         }
+
+//         usort($documents, function ($a, $b) use ($desiredOrder) {
+//             $posA = isset($a['title']) ? array_search($a['title'], $desiredOrder) : PHP_INT_MAX;
+//             $posB = isset($b['title']) ? array_search($b['title'], $desiredOrder) : PHP_INT_MAX;
+//             $posA = $posA === false ? PHP_INT_MAX : $posA;
+//             $posB = $posB === false ? PHP_INT_MAX : $posB;
+//             return $posA <=> $posB;
+//         });
+
+//         $product->documents = $documents;
+//     } else {
+//         $product->documents = [];
+//     }
+
+//     $videoPaths = json_decode($product->video_path, true);
+//     $product->video_path = collect($videoPaths)->map(function ($video) {
+//         return $video;
+//     });
+
+//     $sellingType = null;
+//     if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+//         $fullValue = $product->sellingUnitAttribute->attribute_value;
+//         if (strpos($fullValue, '/') !== false) {
+//             $parts = explode('/', $fullValue);
+//             $product->sellingUnitAttribute->attribute_value_unit = trim($parts[1]);
+//         } else {
+//             $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
+//         }
+//     }
+
+//     if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
+//         $fullValue = $product->ingredientsAttribute->attribute_value;
+//     }
+
+//     // Calculate per unit price
+//     $unitsPerCase = null;
+//     $packType = null;
+
+//     if (!empty($product->per_unit_price_attributes)) {
+//         $unitsPerCase = collect($product->per_unit_price_attributes)
+//             ->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
+//         $packType = collect($product->per_unit_price_attributes)
+//             ->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+//     }
+
+//     $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+//     $perUnitPrice = null;
+
+//     if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+//         $unitValue = (float) $unitsPerCase->attribute_value;
+//         if ($unitValue > 0) {
+//             $calculated = round($basePrice / $unitValue, 2);
+//             $perUnitPrice = $calculated . '/' . ($packType?->attribute_value ?? '');
+//         }
+//     }
+
+//     $product->per_unit_price = $perUnitPrice;
+
+//     // Add review and stock details
+//     $totalReviews = $product->reviews->count();
+//     $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
+//     $quantity = $product->quantity ?? 0;
+//     $unitsSold = $product->units_sold ?? 0;
+//     $leftStock = $quantity - $unitsSold;
+
+//     $product->total_reviews = $totalReviews;
+//     $product->avg_rating = $avgRating;
+//     $product->leftStock = $leftStock;
+//     $product->in_wishlist = isset($wishlistProductIds[$product->id]);
+
+//     $firstSupplier = $product->productSuppliers->first();
+
+//     if ($firstSupplier) {
+//         $product->vendor_sku = $firstSupplier->vendor_sku;
+//         $product->price = (float) $firstSupplier->price;
+//         $product->sale_price = (float) $firstSupplier->sale_price;
+//         $product->original_price = (float) $firstSupplier->price;
+//         $product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+//         $product->best_price = (float) $firstSupplier->price;
+//         $product->vendor_id = $firstSupplier->vendor_id;
+//         $product->map = (float) $firstSupplier->map;
+//         $product->inventory = $firstSupplier->inventory;
+//         $product->in_stock = $firstSupplier->in_stock;
+//         $product->delivery_days = $firstSupplier->delivery_days;
+//         $product->return_policy = $firstSupplier->return_policy;
+//         $product->free_shipping = $firstSupplier->free_shipping;
+//         $product->min_quantity = $firstSupplier->min_quantity;
+//         $product->is_fixed = $firstSupplier->is_fixed;
+//     } else {
+//         $product->vendor_sku = null;
+//         $product->price = 0;
+//         $product->sale_price = 0;
+//         $product->original_price = 0;
+//         $product->front_sale_price = 0;
+//         $product->best_price = 0;
+//         $product->vendor_id = null;
+//         $product->map = 0;
+//         $product->inventory = null;
+//         $product->in_stock = null;
+//         $product->delivery_days = null;
+//         $product->return_policy = null;
+//         $product->free_shipping = null;
+//         $product->warranty_information = null;
+//         $product->min_quantity = 0;
+//         $product->is_fixed = 0;
+//     }
+
+//     if ($product->currency) {
+//         $product->currency_title = $product->currency->is_prefix_symbol
+//             ? $product->currency->symbol
+//             : $product->price . ' ' . $product->currency->symbol;
+//     } else {
+//         $product->currency_title = $product->price;
+//     }
+
+//     // ✅ OPTIMIZED: Get all categories with their parents in fewer queries
+//     $allCategories = collect();
+//     $product->categories->each(function ($category) use ($allCategories) {
+//         $getParentHierarchy = function ($cat) use (&$getParentHierarchy) {
+//             $parents = collect();
+//             if ($cat->parent_id) {
+//                 $parent = Category::with('seoUrl')->find($cat->parent_id);
+//                 if ($parent) {
+//                     $parents = $parents->merge($getParentHierarchy($parent));
+//                     $parents->push($parent);
+//                 }
+//             }
+//             return $parents;
+//         };
+
+//         $parentHierarchy = $getParentHierarchy($category);
+//         $allCategories->push(...$parentHierarchy);
+//         $allCategories->push($category);
+//     });
+
+//     $product->category_list = $allCategories->unique('id')->map(function ($category) {
+//         return [
+//             'id' => $category->id,
+//             'name' => $category->name,
+//             'slug' => optional($category->seoUrl)->url ?? $category->slug,
+//         ];
+//     })->values();
+
+//     $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
+//     $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
+
+//     // Transform accessories
+//     $product->accessories = $product->accessories->map(function ($accessory) {
+//         return [
+//             'id' => $accessory->id,
+//             'name' => $accessory->name,
+//             'isapproved' => $accessory->isapproved,
+//             'isRequired' => $accessory->isRequired,
+//             'items' => $accessory->items->map(function ($item) {
+//                 return [
+//                     'id' => $item->id,
+//                     'name' => $item->name,
+//                     'sku' => $item->sku ?? null,
+//                 ];
+//             }),
+//         ];
+//     })->values();
+
+//     if ($product->accessories->isEmpty()) {
+//         $product->accessories = [];
+//     }
+
+//     // ✅ PRODUCT VARIANTS
+//     $product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
+//         $childIds = json_decode($variant->child_ids, true) ?? [];
+//         $variants = json_decode($variant->variants, true) ?? [];
+        
+//         $childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
+
+//         if (empty($childIds) || empty($variants)) {
+//             return [];
+//         }
+
+//         if (!$product->relationLoaded('productAttributes')) {
+//             $product->load('productAttributes');
+//         }
+
+//         $currentProductAttributes = ProductAttribute::where('product_id', $product->id)
+//             ->pluck('attribute_value', 'attribute_id')
+//             ->toArray();
+
+//         // ✅ BATCH LOAD all variant data at once
+//         $children = Product::whereIn('id', $childIds)
+//             ->with(['productSuppliers' => function($q) {
+//                 $q->select('product_id', 'price', 'sale_price');
+//             }])
+//             ->select('id', 'sku', 'images')
+//             ->get();
+
+//         $attributeIds = array_column($variants, 'attribute_id');
+//         $attributes = Attribute::whereIn('id', $attributeIds)->pluck('name', 'id');
+        
+//         $productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+//             ->whereIn('attribute_id', $attributeIds)
+//             ->get()
+//             ->groupBy('product_id');
+
+//         $seoUrls = SeoManagement::whereIn('relational_id', $childIds)
+//             ->pluck('url', 'relational_id');
+
+//         $result = [];
+
+//         foreach ($variants as $v) {
+//             $attributeId = $v['attribute_id'];
+//             $attributeName = $attributes[$attributeId] ?? null;
+
+//             if (!$attributeName) {
+//                 continue;
+//             }
+            
+//             $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
+//             $full_slug = trim($full_slug, '/');
+
+//             $seenAttributeValues = [];
+
+//             foreach ($children as $child) {
+//                 $attrValue = $productAttributes->get($child->id)
+//                     ?->firstWhere('attribute_id', $attributeId)
+//                     ?->attribute_value ?? null;
+
+//                 if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+//                     continue;
+//                 }
+
+//                 $seenAttributeValues[$attrValue] = true;
+
+//                 $isSelected = isset($currentProductAttributes[$attributeId])
+//                     && $currentProductAttributes[$attributeId] == $attrValue;
+
+//                 $firstSupplier = $child->productSuppliers->first();
+//                 $price = $firstSupplier ? (float) $firstSupplier->price : 0;
+//                 $salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
+
+//                 $images = json_decode($child->images, true) ?? [];
+//                 $slug = $seoUrls[$child->id] ?? null;
+
+//                 $parentCategoryUrl = '';
+//                 $categoryUrl = '';
+                
+//                 try {
+//                     $tempProduct = Product::find($child->id);
+//                     if ($tempProduct) {
+//                         $parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
+//                             ? $tempProduct->parent_category_url() 
+//                             : '';
+//                         $categoryUrl = method_exists($tempProduct, 'category_url') 
+//                             ? $tempProduct->category_url() 
+//                             : '';
+//                     }
+//                 } catch (\Exception $e) {
+//                     \Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
+//                 }
+                
+//                 $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
+//                 $full_slug = trim($full_slug, '/');
+
+//                 $result[] = [
+//                     'product_id' => $child->id,
+//                     'sku' => $child->sku,
+//                     'attribute_id' => $attributeId,
+//                     'attribute_value' => $attrValue,
+//                     'attribute_name' => $attributeName,
+//                     'type' => $v['type'] ?? 'dropdown',
+//                     'label' => $v['labels'] ?? $attributeName,
+//                     'selected' => $isSelected,
+//                     'price' => $price,
+//                     'sale_price' => $salePrice,
+//                     'images' => $images,
+//                     'slug' => $slug,
+//                     'parent_slug' => $parentCategoryUrl,
+//                     'child_slug' => $categoryUrl,
+//                     'full_slug' => $full_slug,
+//                 ];
+//             }
+//         }
+
+//         return $result;
+//     })->flatten(1)->values();
+
+//     if ($product->productVariants->isEmpty()) {
+//         $product->productVariants = [];
+//     }
+
+//     // Get category URLs
+//     try {
+//         if (method_exists($product, 'category_url')) {
+//             $product->category_url = $product->category_url();
+//         } else {
+//             $product->category_url = null;
+//         }
+
+//         if (method_exists($product, 'parent_category_url')) {
+//             $product->parent_category_url = $product->parent_category_url();
+//         } else {
+//             $product->parent_category_url = null;
+//         }
+//     } catch (\Throwable $e) {
+//         \Log::error('Error fetching category URLs for product ID ' . $product->id . ': ' . $e->getMessage());
+//         $product->category_url = null;
+//         $product->parent_category_url = null;
+//     }
+
+//     // ✅ Wrap product in collection to match original structure
+//     $productCollection = collect([$product]);
+
+//     // ✅ Return data wrapped in the same structure as original with pagination-like format
+//     return response()->json([
+//         'success' => true,
+//         'data' => [
+//             'current_page' => 1,
+//             'data' => $productCollection, // Product inside data array
+//             'first_page_url' => url()->current() . '?page=1',
+//             'from' => 1,
+//             'last_page' => 1,
+//             'last_page_url' => url()->current() . '?page=1',
+//             'next_page_url' => null,
+//             'path' => url()->current(),
+//             'per_page' => 1,
+//             'prev_page_url' => null,
+//             'to' => 1,
+//             'total' => 1,
+//         ]
+//     ])->header('Cache-Control', 'public, max-age=3600');
+// }
+    public function getAllProducts(Request $request)
 {
-    // User and wishlist logic
     $userId = Auth::id();
     $isUserLoggedIn = $userId !== null;
-
-		Log::info('User logged in:', ['user_id' => $userId]);
-
-    $wishlistProductIds = [];
-    if ($isUserLoggedIn) {
-        // ✅ For single product, just check this one product
-        $productId = $request->input('product_id');
-        $slug = $request->input('slug');
-        
-        if ($productId) {
-            $wishlistProductIds = DB::table('ec_wish_lists')
-                ->where('customer_id', $userId)
-                ->where('product_id', $productId)
-                ->exists() ? [$productId => true] : [];
-        }
-        // We'll check slug-based product later if needed
-    } else {
-        $wishlistProductIds = array_flip(session()->get('guest_wishlist', []));
-    }
-
-    // ✅ SINGLE PRODUCT QUERY - No filtering needed, direct fetch
+    
+    Log::info('User logged in:', ['user_id' => $userId]);
+    
     $productId = $request->input('product_id');
     $slug = $request->input('slug');
     
-    $query = Product::with([
-        'categories.seoUrl', // Eager load category SEO URLs
-        'brand.seoUrl',
-        'productSuppliers',
-        'brand.products.reviews',
-        'seoUrl',
-        'accessories.items',
-        'productVariants',
-        'reviews',
-        'currency',
-        'productAttributes' => function ($query) {
-            $query->whereHas('attributeDetails', function ($q) {
-                $q->whereIn('name', ['Units per Case', 'Pack Type']);
-            });
-        }
-    ])->where('status', 'published');
-
-    if ($productId) {
-        $query->where('id', $productId);
-    } elseif ($slug) {
-        $query->whereHas('seoUrl', function ($q) use ($slug) {
-            $q->where('url', $slug);
-        });
-    } else {
-        // If neither ID nor slug provided, return error
+    if (!$productId && !$slug) {
         return response()->json([
             'success' => false,
             'message' => 'Product ID or slug is required'
         ], 400);
     }
-
-    // ✅ Get single product, not paginated
-    $product = $query->first();
-
+    
+    // ✅ OPTIMIZED: Single eager-loaded query with all necessary relationships
+    $product = Product::with([
+        'categories.seoUrl',
+        'brand.seoUrl',
+        'productSuppliers',
+        'seoUrl',
+        'accessories.items',
+        'productVariants',
+        'reviews:id,product_id,star',
+        'currency',
+        'productAttributes.attributeDetails',
+    ])
+    ->where('status', 'published')
+    ->when($productId, fn($q) => $q->where('id', $productId))
+    ->when($slug, fn($q) => $q->whereHas('seoUrl', fn($sq) => $sq->where('url', $slug)))
+    ->first();
+    
     if (!$product) {
         return response()->json([
             'success' => false,
             'message' => 'Product not found'
         ], 404);
     }
-
-    // ✅ Update wishlist check for slug-based queries
-    if ($slug && $isUserLoggedIn && empty($wishlistProductIds)) {
-        $wishlistProductIds = DB::table('ec_wish_lists')
+    
+    // ✅ OPTIMIZED: Check wishlist ONLY for this product
+    $isInWishlist = false;
+    if ($isUserLoggedIn) {
+        $isInWishlist = DB::table('ec_wish_lists')
             ->where('customer_id', $userId)
             ->where('product_id', $product->id)
-            ->exists() ? [$product->id => true] : [];
-    }
-
-    // Transform the product
-    $product->benefits_features = json_decode($product->benefits_features, true);
-
-    if ($product->seoUrl) {
-        $product->url = $product->seoUrl->url;
-        unset($product->seoUrl);
+            ->exists();
     } else {
-        $product->url = null;
+        $wishlist = session()->get('guest_wishlist', []);
+        $isInWishlist = in_array($product->id, $wishlist);
     }
-
+    
+    // ========================================
+    // PRODUCT TRANSFORMATION STARTS HERE
+    // ========================================
+    
+    $product->benefits_features = json_decode($product->benefits_features, true);
+    $product->url = $product->seoUrl->url ?? null;
+    unset($product->seoUrl);
+    
+    // Description cleanup
     if (is_string($product->description)) {
         $decoded = json_decode($product->description, true);
-
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             $product->description = array_values(array_filter(array_map(function ($item) {
-                if (is_null($item) || strtolower($item) === 'null') {
-                    return null;
-                }
-
+                if (is_null($item) || strtolower($item) === 'null') return null;
                 $item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
-                $item = preg_replace('/\s+/', ' ', $item);
-                $item = trim($item);
-
+                $item = preg_replace('/\s+/', ' ', trim($item));
                 $lowerItem = strtolower($item);
-                if (
-                    stripos($lowerItem, '<p>null') === 0 ||
-                    $lowerItem === '<p>null</p>'
-                ) {
+                if (stripos($lowerItem, '<p>null') === 0 || $lowerItem === '<p>null</p>') {
                     return null;
                 }
-
                 return $item !== '' ? $item : null;
             }, $decoded)));
         } else {
             $product->description = [$product->description];
         }
     }
-
+    
+    // Brand info
     if ($product->brand) {
         $product->brand_id = $product->brand->id;
         $product->brand_name = $product->brand->name;
         $product->brand_logo = $product->brand->logo;
-
-        if ($product->brand->seoUrl) {
-            $product->brand_url = $product->brand->seoUrl->url;
-        } else {
-            $product->brand_url = null;
-        }
-
-        // ✅ OPTIMIZED: Single query for brand stats
-        $brandStats = \DB::table('ec_reviews')
+        $product->brand_url = $product->brand->seoUrl->url ?? null;
+        
+        // ✅ OPTIMIZED: Single aggregated query for brand stats
+        $brandStats = DB::table('ec_reviews')
             ->join('ec_products', 'ec_reviews.product_id', '=', 'ec_products.id')
             ->where('ec_products.brand_id', $product->brand->id)
             ->selectRaw('COUNT(*) as review_count, AVG(star) as avg_rating')
             ->first();
-
+        
         $product->brand_avg_rating = $brandStats->review_count > 0 
             ? round($brandStats->avg_rating, 1) 
             : null;
         $product->brand_review_count = $brandStats->review_count;
     }
-
-    $product->images = collect(json_decode($product->images, true))->map(function ($image) {
-        return $image;
-    });
     
-    $product->alt_tags = collect(json_decode($product->alt_tags, true))->map(function ($alt_tags) {
-        return $alt_tags;
-    });
-
-    $desiredOrder = [
-        'Technical Specification Sheet',
-        'Warranty Information',
-        'Horeca Buying Guide',
-        'Setup & Usage Instructions',
-        'Product Installation Guide',
-        'Installation & Elevation Diagram',
-        'Spare Parts List',
-        'Product Brochure',
-    ];
-
-    $documents = is_string($product->documents)
-        ? json_decode($product->documents, true)
+    // Images & videos
+    $product->images = collect(json_decode($product->images, true));
+    $product->alt_tags = collect(json_decode($product->alt_tags, true));
+    
+    // Documents
+    $documents = is_string($product->documents) 
+        ? json_decode($product->documents, true) 
         : $product->documents;
-
+    
     if (is_array($documents)) {
+        $desiredOrder = [
+            'Technical Specification Sheet',
+            'Warranty Information',
+            'Horeca Buying Guide',
+            'Setup & Usage Instructions',
+            'Product Installation Guide',
+            'Installation & Elevation Diagram',
+            'Spare Parts List',
+            'Product Brochure',
+        ];
+        
         foreach ($documents as &$doc) {
             if (isset($doc['title'])) {
                 $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
             }
-
             if (isset($doc['path'])) {
-                $filename = basename($doc['path']);
-                $doc['path'] = url('/media/' . $filename);
+                $doc['path'] = url('/media/' . basename($doc['path']));
             }
         }
-
+        
         usort($documents, function ($a, $b) use ($desiredOrder) {
-            $posA = isset($a['title']) ? array_search($a['title'], $desiredOrder) : PHP_INT_MAX;
-            $posB = isset($b['title']) ? array_search($b['title'], $desiredOrder) : PHP_INT_MAX;
-            $posA = $posA === false ? PHP_INT_MAX : $posA;
-            $posB = $posB === false ? PHP_INT_MAX : $posB;
-            return $posA <=> $posB;
+            $posA = array_search($a['title'] ?? '', $desiredOrder);
+            $posB = array_search($b['title'] ?? '', $desiredOrder);
+            return ($posA === false ? PHP_INT_MAX : $posA) <=> ($posB === false ? PHP_INT_MAX : $posB);
         });
-
+        
         $product->documents = $documents;
     } else {
         $product->documents = [];
     }
-
-    $videoPaths = json_decode($product->video_path, true);
-    $product->video_path = collect($videoPaths)->map(function ($video) {
-        return $video;
-    });
-
-    $sellingType = null;
+    
+    $product->video_path = collect(json_decode($product->video_path, true));
+    
+    // Selling unit attribute
     if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
         $fullValue = $product->sellingUnitAttribute->attribute_value;
         if (strpos($fullValue, '/') !== false) {
@@ -1473,49 +1927,41 @@ class ProductController extends Controller
             $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
         }
     }
-
-    if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
-        $fullValue = $product->ingredientsAttribute->attribute_value;
-    }
-
-    // Calculate per unit price
+    
+    // Per unit price calculation
     $unitsPerCase = null;
     $packType = null;
-
-    if (!empty($product->per_unit_price_attributes)) {
-        $unitsPerCase = collect($product->per_unit_price_attributes)
-            ->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
-        $packType = collect($product->per_unit_price_attributes)
-            ->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+    
+    if ($product->productAttributes) {
+        foreach ($product->productAttributes as $attr) {
+            if ($attr->attributeDetails && $attr->attributeDetails->name === 'Units per Case') {
+                $unitsPerCase = $attr;
+            }
+            if ($attr->attributeDetails && $attr->attributeDetails->name === 'Pack Type') {
+                $packType = $attr;
+            }
+        }
     }
-
+    
     $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-    $perUnitPrice = null;
-
+    $product->per_unit_price = null;
+    
     if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
         $unitValue = (float) $unitsPerCase->attribute_value;
         if ($unitValue > 0) {
             $calculated = round($basePrice / $unitValue, 2);
-            $perUnitPrice = $calculated . '/' . ($packType?->attribute_value ?? '');
+            $product->per_unit_price = $calculated . '/' . ($packType?->attribute_value ?? '');
         }
     }
-
-    $product->per_unit_price = $perUnitPrice;
-
-    // Add review and stock details
-    $totalReviews = $product->reviews->count();
-    $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-    $quantity = $product->quantity ?? 0;
-    $unitsSold = $product->units_sold ?? 0;
-    $leftStock = $quantity - $unitsSold;
-
-    $product->total_reviews = $totalReviews;
-    $product->avg_rating = $avgRating;
-    $product->leftStock = $leftStock;
-    $product->in_wishlist = isset($wishlistProductIds[$product->id]);
-
+    
+    // Reviews & stock
+    $product->total_reviews = $product->reviews->count();
+    $product->avg_rating = $product->total_reviews > 0 ? $product->reviews->avg('star') : null;
+    $product->leftStock = ($product->quantity ?? 0) - ($product->units_sold ?? 0);
+    $product->in_wishlist = $isInWishlist;
+    
+    // Supplier info
     $firstSupplier = $product->productSuppliers->first();
-
     if ($firstSupplier) {
         $product->vendor_sku = $firstSupplier->vendor_sku;
         $product->price = (float) $firstSupplier->price;
@@ -1546,220 +1992,192 @@ class ProductController extends Controller
         $product->delivery_days = null;
         $product->return_policy = null;
         $product->free_shipping = null;
-        $product->warranty_information = null;
         $product->min_quantity = 0;
         $product->is_fixed = 0;
     }
-
-    if ($product->currency) {
-        $product->currency_title = $product->currency->is_prefix_symbol
-            ? $product->currency->symbol
-            : $product->price . ' ' . $product->currency->symbol;
-    } else {
-        $product->currency_title = $product->price;
-    }
-
-    // ✅ OPTIMIZED: Get all categories with their parents in fewer queries
+    
+    // Currency
+    $product->currency_title = $product->currency 
+        ? ($product->currency->is_prefix_symbol ? $product->currency->symbol : $product->price . ' ' . $product->currency->symbol)
+        : $product->price;
+    
+    // ✅ OPTIMIZED: Category hierarchy - build it iteratively
     $allCategories = collect();
-    $product->categories->each(function ($category) use ($allCategories) {
-        $getParentHierarchy = function ($cat) use (&$getParentHierarchy) {
-            $parents = collect();
-            if ($cat->parent_id) {
-                $parent = Category::with('seoUrl')->find($cat->parent_id);
-                if ($parent) {
-                    $parents = $parents->merge($getParentHierarchy($parent));
-                    $parents->push($parent);
-                }
-            }
-            return $parents;
-        };
-
-        $parentHierarchy = $getParentHierarchy($category);
-        $allCategories->push(...$parentHierarchy);
-        $allCategories->push($category);
-    });
-
+    foreach ($product->categories as $category) {
+        // Build hierarchy for this category
+        $hierarchy = collect([$category]);
+        $current = $category;
+        
+        while ($current->parent_id) {
+            $parent = Category::with('seoUrl')->find($current->parent_id);
+            if (!$parent) break;
+            $hierarchy->prepend($parent);
+            $current = $parent;
+        }
+        
+        $allCategories = $allCategories->merge($hierarchy);
+    }
+    
     $product->category_list = $allCategories->unique('id')->map(function ($category) {
         return [
             'id' => $category->id,
             'name' => $category->name,
-            'slug' => optional($category->seoUrl)->url ?? $category->slug,
+            'slug' => $category->seoUrl->url ?? $category->slug,
         ];
     })->values();
-
-    $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
+    
     $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
-
-    // Transform accessories
+    
+    // Accessories
     $product->accessories = $product->accessories->map(function ($accessory) {
         return [
             'id' => $accessory->id,
             'name' => $accessory->name,
             'isapproved' => $accessory->isapproved,
             'isRequired' => $accessory->isRequired,
-            'items' => $accessory->items->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'sku' => $item->sku ?? null,
-                ];
-            }),
+            'items' => $accessory->items->map(fn($item) => [
+                'id' => $item->id,
+                'name' => $item->name,
+                'sku' => $item->sku ?? null,
+            ]),
         ];
     })->values();
-
+    
     if ($product->accessories->isEmpty()) {
         $product->accessories = [];
     }
-
-    // ✅ PRODUCT VARIANTS
-    $product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
-        $childIds = json_decode($variant->child_ids, true) ?? [];
-        $variants = json_decode($variant->variants, true) ?? [];
+    
+    // ✅ OPTIMIZED: Product Variants - All in one place
+    if ($product->productVariants->isNotEmpty()) {
+        $allVariantResults = [];
         
-        $childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
-
-        if (empty($childIds) || empty($variants)) {
-            return [];
-        }
-
-        if (!$product->relationLoaded('productAttributes')) {
-            $product->load('productAttributes');
-        }
-
-        $currentProductAttributes = ProductAttribute::where('product_id', $product->id)
-            ->pluck('attribute_value', 'attribute_id')
-            ->toArray();
-
-        // ✅ BATCH LOAD all variant data at once
-        $children = Product::whereIn('id', $childIds)
-            ->with(['productSuppliers' => function($q) {
-                $q->select('product_id', 'price', 'sale_price');
-            }])
-            ->select('id', 'sku', 'images')
-            ->get();
-
-        $attributeIds = array_column($variants, 'attribute_id');
-        $attributes = Attribute::whereIn('id', $attributeIds)->pluck('name', 'id');
-        
-        $productAttributes = ProductAttribute::whereIn('product_id', $childIds)
-            ->whereIn('attribute_id', $attributeIds)
-            ->get()
-            ->groupBy('product_id');
-
-        $seoUrls = SeoManagement::whereIn('relational_id', $childIds)
-            ->pluck('url', 'relational_id');
-
-        $result = [];
-
-        foreach ($variants as $v) {
-            $attributeId = $v['attribute_id'];
-            $attributeName = $attributes[$attributeId] ?? null;
-
-            if (!$attributeName) {
+        foreach ($product->productVariants as $variant) {
+            $childIds = json_decode($variant->child_ids, true) ?? [];
+            $variants = json_decode($variant->variants, true) ?? [];
+            
+            // Merge current product ID with child IDs
+            $childIds = collect($childIds)->push($product->id)->unique()->values()->toArray();
+            
+            if (empty($childIds) || empty($variants)) {
                 continue;
             }
             
-            $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
-            $full_slug = trim($full_slug, '/');
-
-            $seenAttributeValues = [];
-
-            foreach ($children as $child) {
-                $attrValue = $productAttributes->get($child->id)
-                    ?->firstWhere('attribute_id', $attributeId)
-                    ?->attribute_value ?? null;
-
-                if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
-                    continue;
-                }
-
-                $seenAttributeValues[$attrValue] = true;
-
-                $isSelected = isset($currentProductAttributes[$attributeId])
-                    && $currentProductAttributes[$attributeId] == $attrValue;
-
-                $firstSupplier = $child->productSuppliers->first();
-                $price = $firstSupplier ? (float) $firstSupplier->price : 0;
-                $salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
-
-                $images = json_decode($child->images, true) ?? [];
-                $slug = $seoUrls[$child->id] ?? null;
-
-                $parentCategoryUrl = '';
-                $categoryUrl = '';
-                
+            // Get current product attributes for comparison
+            $currentProductAttributes = $product->productAttributes
+                ->pluck('attribute_value', 'attribute_id')
+                ->toArray();
+            
+            // ✅ BATCH LOAD all data at once
+            $children = Product::whereIn('id', $childIds)
+                ->with(['productSuppliers' => function($q) {
+                    $q->select('product_id', 'price', 'sale_price');
+                }])
+                ->select('id', 'sku', 'images')
+                ->get()
+                ->keyBy('id');
+            
+            $attributeIds = array_column($variants, 'attribute_id');
+            $attributes = Attribute::whereIn('id', $attributeIds)->pluck('name', 'id');
+            
+            $productAttributes = ProductAttribute::whereIn('product_id', $childIds)
+                ->whereIn('attribute_id', $attributeIds)
+                ->get()
+                ->groupBy('product_id');
+            
+            $seoUrls = SeoManagement::whereIn('relational_id', $childIds)
+                ->pluck('url', 'relational_id');
+            
+            // ✅ Pre-fetch category URLs for ALL children at once (avoiding N+1)
+            $childProducts = Product::whereIn('id', $childIds)->get();
+            $categoryUrlsMap = [];
+            
+            foreach ($childProducts as $childProduct) {
                 try {
-                    $tempProduct = Product::find($child->id);
-                    if ($tempProduct) {
-                        $parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
-                            ? $tempProduct->parent_category_url() 
-                            : '';
-                        $categoryUrl = method_exists($tempProduct, 'category_url') 
-                            ? $tempProduct->category_url() 
-                            : '';
-                    }
+                    $categoryUrlsMap[$childProduct->id] = [
+                        'parent' => method_exists($childProduct, 'parent_category_url') ? $childProduct->parent_category_url() : '',
+                        'child' => method_exists($childProduct, 'category_url') ? $childProduct->category_url() : '',
+                    ];
                 } catch (\Exception $e) {
-                    \Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
+                    \Log::error('Error getting category URLs for product ' . $childProduct->id . ': ' . $e->getMessage());
+                    $categoryUrlsMap[$childProduct->id] = ['parent' => '', 'child' => ''];
                 }
+            }
+            
+            // Process variants
+            foreach ($variants as $v) {
+                $attributeId = $v['attribute_id'];
+                $attributeName = $attributes[$attributeId] ?? null;
                 
-                $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
-                $full_slug = trim($full_slug, '/');
-
-                $result[] = [
-                    'product_id' => $child->id,
-                    'sku' => $child->sku,
-                    'attribute_id' => $attributeId,
-                    'attribute_value' => $attrValue,
-                    'attribute_name' => $attributeName,
-                    'type' => $v['type'] ?? 'dropdown',
-                    'label' => $v['labels'] ?? $attributeName,
-                    'selected' => $isSelected,
-                    'price' => $price,
-                    'sale_price' => $salePrice,
-                    'images' => $images,
-                    'slug' => $slug,
-                    'parent_slug' => $parentCategoryUrl,
-                    'child_slug' => $categoryUrl,
-                    'full_slug' => $full_slug,
-                ];
+                if (!$attributeName) continue;
+                
+                $seenAttributeValues = [];
+                
+                foreach ($children as $childId => $child) {
+                    $attrValue = $productAttributes->get($childId)
+                        ?->firstWhere('attribute_id', $attributeId)
+                        ?->attribute_value ?? null;
+                    
+                    if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
+                        continue;
+                    }
+                    
+                    $seenAttributeValues[$attrValue] = true;
+                    
+                    $isSelected = isset($currentProductAttributes[$attributeId])
+                        && $currentProductAttributes[$attributeId] == $attrValue;
+                    
+                    $firstSupplier = $child->productSuppliers->first();
+                    
+                    $slug = $seoUrls[$childId] ?? null;
+                    $urls = $categoryUrlsMap[$childId] ?? ['parent' => '', 'child' => ''];
+                    
+                    $full_slug = trim($urls['parent'] . '/' . $urls['child'] . '/' . $slug, '/');
+                    
+                    $allVariantResults[] = [
+                        'product_id' => $childId,
+                        'sku' => $child->sku,
+                        'attribute_id' => $attributeId,
+                        'attribute_value' => $attrValue,
+                        'attribute_name' => $attributeName,
+                        'type' => $v['type'] ?? 'dropdown',
+                        'label' => $v['labels'] ?? $attributeName,
+                        'selected' => $isSelected,
+                        'price' => $firstSupplier ? (float) $firstSupplier->price : 0,
+                        'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : 0,
+                        'images' => json_decode($child->images, true) ?? [],
+                        'slug' => $slug,
+                        'parent_slug' => $urls['parent'],
+                        'child_slug' => $urls['child'],
+                        'full_slug' => $full_slug,
+                    ];
+                }
             }
         }
-
-        return $result;
-    })->flatten(1)->values();
-
-    if ($product->productVariants->isEmpty()) {
+        
+        $product->productVariants = collect($allVariantResults);
+    } else {
         $product->productVariants = [];
     }
-
-    // Get category URLs
+    
+    // Category URLs
     try {
-        if (method_exists($product, 'category_url')) {
-            $product->category_url = $product->category_url();
-        } else {
-            $product->category_url = null;
-        }
-
-        if (method_exists($product, 'parent_category_url')) {
-            $product->parent_category_url = $product->parent_category_url();
-        } else {
-            $product->parent_category_url = null;
-        }
+        $product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
+        $product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
     } catch (\Throwable $e) {
         \Log::error('Error fetching category URLs for product ID ' . $product->id . ': ' . $e->getMessage());
         $product->category_url = null;
         $product->parent_category_url = null;
     }
-
-    // ✅ Wrap product in collection to match original structure
-    $productCollection = collect([$product]);
-
-    // ✅ Return data wrapped in the same structure as original with pagination-like format
+    
+    // ========================================
+    // RETURN RESPONSE
+    // ========================================
+    
     return response()->json([
         'success' => true,
         'data' => [
             'current_page' => 1,
-            'data' => $productCollection, // Product inside data array
+            'data' => [$product],
             'first_page_url' => url()->current() . '?page=1',
             'from' => 1,
             'last_page' => 1,

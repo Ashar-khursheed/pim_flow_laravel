@@ -30995,13 +30995,13 @@
                 ]
             }
         },
-        "/api/frontend/get-in-touch/{id}": {
+        "/api/get-in-touch/{id}": {
             "get": {
                 "tags": [
                     "GetInTouch"
                 ],
                 "summary": "Get a single get-in-touch entry",
-                "operationId": "02125c076d3688fd6ff8eb1ffbd2e21a",
+                "operationId": "65ae3dce8382491d2c870bb6f758be47",
                 "parameters": [
                     {
                         "name": "id",
