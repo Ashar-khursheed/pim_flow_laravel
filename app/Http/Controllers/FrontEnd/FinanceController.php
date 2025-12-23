@@ -458,7 +458,8 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Net Term status fetch successfully..',
-                'accouts_status' => $finance->accounts_status
+                'accouts_status' => $finance->accounts_status,
+                'status' => $finance->status
             ], 200);
         } else {
             return response()->json([
