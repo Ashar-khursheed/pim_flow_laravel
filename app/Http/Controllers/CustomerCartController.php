@@ -196,7 +196,7 @@ class CustomerCartController extends Controller
 
 				/* Website-specific shipping rules */
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-					// $cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+					$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
 				}
 
 				$totalAmount = $cartAmount + $taxAmount + $cartShipping;
@@ -345,7 +345,7 @@ class CustomerCartController extends Controller
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
-				$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+				$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
 			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
 				$taxableAmount = $cartAmount + $cartShipping;
 				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
@@ -590,7 +590,7 @@ class CustomerCartController extends Controller
 
 		/* Website-specific shipping rules */
 		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-			$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+			$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
 		}
 
 		$totalAmount = $cartAmount + $taxAmount + $cartShipping;
@@ -775,7 +775,7 @@ class CustomerCartController extends Controller
 
 		/* Website-specific shipping rules */
 		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-			$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+			$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
 		}
 
 		$totalAmount = $cartAmount + $taxAmount + $cartShipping;
