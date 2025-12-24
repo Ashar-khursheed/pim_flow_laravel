@@ -139,7 +139,7 @@ class GetInTouchController extends Controller
 
         /**
          * @OA\Get(
-         *     path="/api/frontend/get-in-touch/{id}",
+         *     path="/api/get-in-touch/{id}",
          *     summary="Get a single get-in-touch entry",
          *     tags={"GetInTouch"},
          *     security={{"bearerAuth":{}}},

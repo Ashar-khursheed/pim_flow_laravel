@@ -664,6 +664,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('/get-in-touch', GetInTouchController::class);
 
 
+
 });
 
 
