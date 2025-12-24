@@ -144,7 +144,7 @@ class CustomerCartController extends Controller
 
 			/* Website-specific shipping rules */
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+				$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
 			}
 
 			$totalAmount = $cartAmount + $taxAmount + $cartShipping;
@@ -256,7 +256,7 @@ class CustomerCartController extends Controller
 			$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+				$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
 			}
 
 			$totalAmount = $cartAmount + $taxAmount + $cartShipping;
