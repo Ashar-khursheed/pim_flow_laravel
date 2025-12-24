@@ -412,7 +412,7 @@ class OrderController extends BaseController
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-				// $orderShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
+				$orderShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
 			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
 				$taxableAmount = $discountedAmount + $orderShipping;
 				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
@@ -1130,7 +1130,7 @@ class OrderController extends BaseController
 
 	public function compressImage(Request $request)
 	{
-		 
+
 		$validator = Validator::make($request->all(), [
 			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
 			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
@@ -1144,7 +1144,7 @@ class OrderController extends BaseController
 			], 422);
 		}
 
-		 
+
 		$path = env('STORAGE_ENV') . '/customer/orders';
 
 		$chequeFront = compressImageToS3(
@@ -1166,7 +1166,7 @@ class OrderController extends BaseController
 			], 200);
 		}
 
-	 
+
 		return response()->json([
 			'success' => true,
 			'message' => 'Cheque images uploaded successfully',
@@ -1442,5 +1442,5 @@ class OrderController extends BaseController
 
 
 
-	
+
 }
