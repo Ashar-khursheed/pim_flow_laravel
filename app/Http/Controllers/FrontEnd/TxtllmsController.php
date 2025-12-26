@@ -24,7 +24,7 @@ class TxtllmsController extends Controller
      *         description="Number of items per page (default: 500)",
      *         required=false,
      *         @OA\Schema(type="integer", example=500)
-     *     ),    
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="llms.txt generated successfully",
@@ -49,7 +49,7 @@ class TxtllmsController extends Controller
      */
 
     public function getAllPageTxt(Request $request)
-    {           
+    {
 
           try {
             $txt = "- [about-us](https://thehorecastore.com/pages/about-us): HORECA STORE - Operating Supplies for Hotel & Cafe.";
@@ -58,8 +58,7 @@ class TxtllmsController extends Controller
             $perPage = $request->input('per_page');
 
             $query = Product::with([
-                    'seoProductUrl:id,relational_id,url',
-                    'seoManagement:id,relational_id,title_tag,primary_keyword'
+                    'seoProductUrl:id,relational_id,url,title_tag,primary_keyword',
                 ])
                 ->whereHas('seoProductUrl', function ($q) {
                     $q->whereNotNull('url');
@@ -75,13 +74,13 @@ class TxtllmsController extends Controller
 
             $txtfiles = $products->map(function ($product) {
                 return [
-                    'fullurl' => config('app.url') . '/' . 
+                    'fullurl' => config('app.url') . '/' .
                         $product->parent_category_url() . '/' .
                         $product->category_url() . '/' .
                         ($product->seoProductUrl->url ?? ""),
 
-                    'title_tag' => $product->seoManagement->title_tag ?? '',
-                    'primary_keyword' => $product->seoManagement->primary_keyword ?? '',
+                    'title_tag' => $product->seoProductUrl->title_tag ?? '',
+                    'primary_keyword' => $product->seoProductUrl->primary_keyword ?? '',
                 ];
             });
 
@@ -427,15 +426,13 @@ class TxtllmsController extends Controller
 
 
     public function getProductsTxt($offset, $limit)
-    { 
+    {
         try {
 
             $txt = "";
             $txtfiles = Product::with([
-                'seoProductUrl:id,relational_id,url',
-                'seoManagement:id,relational_id,title_tag,primary_keyword'
+                'seoProductUrl:id,relational_id,url,title_tag,primary_keyword',
             ])
-
                 ->whereHas('seoProductUrl', function ($q) {
                     $q->whereNotNull('url');
                 })
@@ -451,8 +448,8 @@ class TxtllmsController extends Controller
                             $product->category_url() . '/' .
                             ($product->seoProductUrl->url ?? ""),
 
-                        'title_tag' => $product->seoManagement->title_tag ?? '',
-                        'primary_keyword' => $product->seoManagement->primary_keyword ?? '',
+                        'title_tag' => $product->seoProductUrl->title_tag ?? '',
+                        'primary_keyword' => $product->seoProductUrl->primary_keyword ?? '',
                     ];
                 });
             if ($txtfiles) {

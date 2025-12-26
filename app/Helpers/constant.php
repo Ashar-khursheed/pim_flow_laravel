@@ -380,16 +380,16 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 		return null;
 	}
 }
- 
+
 
 function compressImageToS3(Request $request, string $key, string $pathPrefix)
-{  
+{
     if (!$request->hasFile($key) || !$request->file($key)->isValid()) {
         return null;
     }
     try {
         $file = $request->file($key);
- 
+
         // Create image from file
         $image = imagecreatefromstring(file_get_contents($file->getRealPath()));
         if (!$image) {
@@ -430,13 +430,13 @@ function compressImageToS3(Request $request, string $key, string $pathPrefix)
 
         // ✅ Compress to WebP (QUALITY CONTROL)
         ob_start();
-        imagewebp($image, null, 75);  
+        imagewebp($image, null, 75);
         $webpData = ob_get_clean();
 
         imagedestroy($image);
 
         // Generate file name
-         $fileName = Str::uuid() . '.webp';		 
+         $fileName = Str::uuid() . '.webp';
         $path = $pathPrefix . '/' . $fileName;
 
         // Upload to S3
@@ -679,6 +679,7 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'fm@horecastore.ae',
 			'qa04@horecastore.ae',
 			'qa05@horecastore.ae',
+			'customerservice01@horecastore.ae',
 		];
 
 		$usTestMails = [

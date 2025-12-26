@@ -13003,7 +13003,7 @@
                         "description": "Brand ID",
                         "required": true,
                         "schema": {
-                            "type": "integer",
+                            "type": "string",
                             "example": 1
                         }
                     },
@@ -17982,6 +17982,236 @@
                 ]
             }
         },
+        "/api/frontend-brands": {
+            "get": {
+                "tags": [
+                    "Frontend-Brand"
+                ],
+                "summary": "Get Brand List",
+                "description": "Fetches a list of brands.",
+                "operationId": "fce107c37db633fc35f88a0f79772ea2",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Category ID",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "start_letter",
+                        "in": "query",
+                        "description": "Filter brands by starting letter (a-z)",
+                        "schema": {
+                            "type": "string",
+                            "example": "A"
+                        }
+                    },
+                    {
+                        "name": "with_logo_only",
+                        "in": "query",
+                        "description": "Show only brands with logos",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Brands retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend-brands/featured-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Brand"
+                ],
+                "summary": "Get featured brands with their featured products",
+                "description": "Retrieves featured and published brands that contain at least the minimum required number of featured products.",
+                "operationId": "76c52d284d7e8b7920ddaac312dc1d2f",
+                "parameters": [
+                    {
+                        "name": "products_limit",
+                        "in": "query",
+                        "description": "Maximum number of products to return per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of brands to return",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "min_products",
+                        "in": "query",
+                        "description": "Minimum number of featured products required per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search products by name or SKU",
+                        "schema": {
+                            "type": "string",
+                            "example": "blender"
+                        }
+                    },
+                    {
+                        "name": "min_rating",
+                        "in": "query",
+                        "description": "Minimum average rating (1-5)",
+                        "schema": {
+                            "type": "number",
+                            "example": 4
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Minimum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Maximum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 5000
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Featured brands retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend-brands/customer-featured-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Brand"
+                ],
+                "summary": "Get featured brands with their featured products",
+                "description": "Retrieves featured and published brands that contain at least the minimum required number of featured products.",
+                "operationId": "8db51381a9942e48535c6fc442f3c732",
+                "parameters": [
+                    {
+                        "name": "products_limit",
+                        "in": "query",
+                        "description": "Maximum number of products to return per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of brands to return",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "min_products",
+                        "in": "query",
+                        "description": "Minimum number of featured products required per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search products by name or SKU",
+                        "schema": {
+                            "type": "string",
+                            "example": "blender"
+                        }
+                    },
+                    {
+                        "name": "min_rating",
+                        "in": "query",
+                        "description": "Minimum average rating (1-5)",
+                        "schema": {
+                            "type": "number",
+                            "example": 4
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Minimum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Maximum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 5000
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Featured brands retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend-categories": {
             "get": {
                 "tags": [
@@ -17998,6 +18228,15 @@
                         "schema": {
                             "type": "integer",
                             "example": 1
+                        }
+                    },
+                    {
+                        "name": "brand_url",
+                        "in": "query",
+                        "description": "Filter categories by brand URL.",
+                        "schema": {
+                            "type": "string",
+                            "example": "hoshizaki"
                         }
                     },
                     {
@@ -18021,7 +18260,7 @@
                     {
                         "name": "with_parent",
                         "in": "query",
-                        "description": "Whether to include the parent category details in the response along with its children",
+                        "description": "Whether to include the parent category",
                         "schema": {
                             "type": "boolean",
                             "example": true
@@ -18106,7 +18345,7 @@
                         }
                     },
                     {
-                        "name": "categories_limit",
+                        "name": "limit",
                         "in": "query",
                         "description": "Maximum number of categories to return",
                         "schema": {
@@ -18134,14 +18373,14 @@
                 }
             }
         },
-        "/api/frontend-categories/user-featured-products": {
+        "/api/frontend-categories/customer-featured-products": {
             "get": {
                 "tags": [
                     "Frontend-Category"
                 ],
                 "summary": "Get categories with featured products",
                 "description": "Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
-                "operationId": "e6fa157681f1d86b4f8fd65bc74709ce",
+                "operationId": "414e34bbc9aaecce79b805890e980557",
                 "parameters": [
                     {
                         "name": "products_limit",
@@ -18153,7 +18392,7 @@
                         }
                     },
                     {
-                        "name": "categories_limit",
+                        "name": "limit",
                         "in": "query",
                         "description": "Maximum number of categories to return",
                         "schema": {
@@ -18184,6 +18423,138 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/frontend-products": {
+            "get": {
+                "tags": [
+                    "Frontend FProduct"
+                ],
+                "summary": "Get products with filters",
+                "description": "Retrieves paginated products with comprehensive filtering options",
+                "operationId": "23bffee003eddbb58870d031ddb15ce2",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Items per page (1-100)",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by name/SKU",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "brand_id",
+                        "in": "query",
+                        "description": "Brand ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "brand_url",
+                        "in": "query",
+                        "description": "Brand slug",
+                        "schema": {
+                            "type": "string",
+                            "example": "hoshizaki"
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Category ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "category_url",
+                        "in": "query",
+                        "description": "Category slug",
+                        "schema": {
+                            "type": "string",
+                            "example": "ice-bins"
+                        }
+                    },
+                    {
+                        "name": "min_rating",
+                        "in": "query",
+                        "description": "Min rating (0-5)",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Min price",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Max price",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort field",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "code",
+                                "type",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Products retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
             }
         },
         "/api/frontend/faqs/product/{product_id}": {
@@ -29071,6 +29442,251 @@
                 }
             }
         },
+        "/api/frontend/tql-loads-tender": {
+            "post": {
+                "tags": [
+                    "Frontend-TQL"
+                ],
+                "summary": "Request TQL loads Tendering",
+                "operationId": "60920849b0580244ce95ca35e6bd8343",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "customerEmailAddresses": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "test@tql.com"
+                                        }
+                                    },
+                                    "scac": {
+                                        "type": "string",
+                                        "example": "BBFG"
+                                    },
+                                    "serviceLevel": {
+                                        "type": "string",
+                                        "example": "Standard"
+                                    },
+                                    "customerReference": {
+                                        "type": "string",
+                                        "example": "Sample Reference"
+                                    },
+                                    "poNumber": {
+                                        "type": "string",
+                                        "example": "34996030"
+                                    },
+                                    "soNumber": {
+                                        "type": "string",
+                                        "example": "34996030"
+                                    },
+                                    "specialInstructions": {
+                                        "type": "string",
+                                        "example": "Handle with care"
+                                    },
+                                    "commodities": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "unitTypeCode": {
+                                                    "type": "string",
+                                                    "example": "PLT"
+                                                },
+                                                "freightClassCode": {
+                                                    "type": "string",
+                                                    "example": "55"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Fresh Tomatoes"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 4
+                                                },
+                                                "weight": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1200.5
+                                                },
+                                                "dimensionLength": {
+                                                    "type": "integer",
+                                                    "example": 48
+                                                },
+                                                "dimensionWidth": {
+                                                    "type": "integer",
+                                                    "example": 40
+                                                },
+                                                "dimensionHeight": {
+                                                    "type": "integer",
+                                                    "example": 60
+                                                },
+                                                "isStackable": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
+                                                "isHazmat": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "accessorials": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Liftgate Pickup"
+                                        }
+                                    },
+                                    "shipmentDate": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-01-16T00:00:00-05:00"
+                                    },
+                                    "pickupDetails": {
+                                        "properties": {
+                                            "puNumber": {
+                                                "type": "string",
+                                                "example": "PU-789456"
+                                            },
+                                            "address1": {
+                                                "type": "string",
+                                                "example": "617 Test Street"
+                                            },
+                                            "address2": {
+                                                "type": "string",
+                                                "example": "Suite 200"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Cincinnati"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "OH"
+                                            },
+                                            "postalCode": {
+                                                "type": "string",
+                                                "example": "45203"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "USA"
+                                            },
+                                            "stopName": {
+                                                "type": "string",
+                                                "example": "Cincinnati Distribution Center"
+                                            },
+                                            "locationType": {
+                                                "type": "string",
+                                                "example": "Commercial"
+                                            },
+                                            "contactName": {
+                                                "type": "string",
+                                                "example": "John Smith"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string",
+                                                "example": "2169582529"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string",
+                                                "example": "569"
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "09:30 AM"
+                                            },
+                                            "hoursClose": {
+                                                "type": "string",
+                                                "example": "09:30 PM"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "deliveryDetails": {
+                                        "properties": {
+                                            "deliveryPO": {
+                                                "type": "string",
+                                                "example": "DEL-123456"
+                                            },
+                                            "address1": {
+                                                "type": "string",
+                                                "example": "383 Test Drive"
+                                            },
+                                            "address2": {
+                                                "type": "string",
+                                                "example": "Warehouse B"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Fresno"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "CA"
+                                            },
+                                            "postalCode": {
+                                                "type": "string",
+                                                "example": "93714"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "USA"
+                                            },
+                                            "stopName": {
+                                                "type": "string",
+                                                "example": "Fresno Receiving Facility"
+                                            },
+                                            "locationType": {
+                                                "type": "string",
+                                                "example": "Commercial"
+                                            },
+                                            "contactName": {
+                                                "type": "string",
+                                                "example": "David Johnson"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string",
+                                                "example": "9995771510"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string",
+                                                "example": "195"
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "11:00 AM"
+                                            },
+                                            "hoursClose": {
+                                                "type": "string",
+                                                "example": "04:00 AM"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Shipment created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/tql-getQuote/{quoteId}": {
             "get": {
                 "tags": [
@@ -30624,13 +31240,13 @@
                 ]
             }
         },
-        "/api/frontend/get-in-touch/{id}": {
+        "/api/get-in-touch/{id}": {
             "get": {
                 "tags": [
                     "GetInTouch"
                 ],
                 "summary": "Get a single get-in-touch entry",
-                "operationId": "02125c076d3688fd6ff8eb1ffbd2e21a",
+                "operationId": "65ae3dce8382491d2c870bb6f758be47",
                 "parameters": [
                     {
                         "name": "id",
@@ -49086,6 +49702,18 @@
             "description": "To generate Json Web Token"
         },
         {
+            "name": "Frontend-Category",
+            "description": "........"
+        },
+        {
+            "name": "Frontend-Brand",
+            "description": "........"
+        },
+        {
+            "name": "Frontend FProduct",
+            "description": "........"
+        },
+        {
             "name": "Attributes",
             "description": "API Endpoints for Attribute Management"
         },
@@ -49340,10 +49968,6 @@
         {
             "name": "Frontend-Discounts",
             "description": "Frontend-Discounts"
-        },
-        {
-            "name": "Frontend-Category",
-            "description": "Frontend-Category"
         },
         {
             "name": "Frontend - FAQs",

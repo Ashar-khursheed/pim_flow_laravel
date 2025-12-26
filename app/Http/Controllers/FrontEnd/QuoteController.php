@@ -278,7 +278,7 @@ class QuoteController extends BaseController
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-				$quoteShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
+				$quoteShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
 			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
 				$taxableAmount = $discountedAmount + $quoteShipping;
 				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
@@ -594,7 +594,7 @@ class QuoteController extends BaseController
 
 			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-				$quoteShipping = (($discountedAmount + $taxAmount) < 300) ? 25 : 0;
+				$quoteShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
 			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
 				$taxableAmount = $discountedAmount + $quoteShipping;
 				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);

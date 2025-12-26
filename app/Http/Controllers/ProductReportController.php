@@ -96,8 +96,7 @@ class ProductReportController extends Controller
 					'message' => 'Category id not found',
 				]);
 			}
-			$leafCategories = Category::getLeafCategories($category);
-			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+			$leafCategoryIds = $category->getLeafCategories()->pluck('id')->toArray();
 			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
 				$q->whereIn('category_id', $leafCategoryIds);
 			});
@@ -271,8 +270,7 @@ class ProductReportController extends Controller
 					'message' => 'Category id not found',
 				]);
 			}
-			$leafCategories = Category::getLeafCategories($category);
-			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+			$leafCategoryIds = $category->getLeafCategories()->pluck('id')->toArray();
 			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
 				$q->whereIn('category_id', $leafCategoryIds);
 			});
@@ -365,7 +363,7 @@ class ProductReportController extends Controller
 	 *                     type="array",
 	 *                     @OA\Items(
 	 *                         @OA\Property(property="vendor_id", type="integer", example=22)
-	 *                          
+	 *
 	 *                     )
 	 *                 )
 	 *             )
@@ -424,10 +422,10 @@ class ProductReportController extends Controller
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
-				'sku' => $product->sku,				 
+				'sku' => $product->sku,
 				'brand' => optional($product->brand)->name,
-				'status' => $product->status,				 
-				'category_name' => $product->categories->pluck('name')->implode(', '),				 
+				'status' => $product->status,
+				'category_name' => $product->categories->pluck('name')->implode(', '),
 				'vendor_name' => $product->vendors->pluck('name')->first(),
 				 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 			];
