@@ -10,7 +10,8 @@ class ProductAttribute extends Model implements TranslatableContract
 {
 	use Translatable;
 
-	public $translatedAttributes = ['attribute_value_tr'];
+	// public $translatedAttributes = ['attribute_value_tr'];
+	public $translatedAttributes = [];
 
 	protected $fillable = ['product_id', 'attribute_id', 'attribute_value', 'measurement_unit_id'];
 
