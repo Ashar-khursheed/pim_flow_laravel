@@ -425,13 +425,13 @@ class WishlistController extends Controller
             // ===============================
             // Accessories (EXACT SAME AS getAllProducts API) ✅
             // ===============================
-         $product->accessories = $product->accessories->map(function ($accessory) {
+        $product->accessories = collect($product->accessories)->map(function ($accessory) {
             return [
                 'id' => $accessory->id,
                 'name' => $accessory->name,
                 'isapproved' => $accessory->isapproved,
                 'isRequired' => $accessory->isRequired,
-                'items' => $accessory->items->map(function ($item) {
+                'items' => collect($accessory->items)->map(function ($item) {
                     $cleanName = $item->name;
 
                     // Remove extra quotes or slashes if saved like "\"SDE 1\""
@@ -449,14 +449,10 @@ class WishlistController extends Controller
             ];
         })->values();
 
-            if ($product->accessories->isEmpty()) {
-                $product->accessories = [];
-            }
-
-            if ($product->accessories->isEmpty()) {
-                $product->accessories = [];
-            }
-
+// Ensure it's an array if empty
+if ($product->accessories->isEmpty()) {
+    $product->accessories = [];
+}
             // --------------------
             // Required flag (main product)
             // --------------------
