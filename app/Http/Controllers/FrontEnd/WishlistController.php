@@ -425,19 +425,33 @@ class WishlistController extends Controller
             // ===============================
             // Accessories (EXACT SAME AS getAllProducts API) ✅
             // ===============================
-            $product->accessories = $product->accessories->map(function ($accessory) {
-                return [
-                    'id' => $accessory->id,
-                    'name' => $accessory->name,
-                    'isapproved' => $accessory->isapproved,
-                    'isRequired' => $accessory->isRequired,
-                    'items' => $accessory->items->map(fn ($item) => [
+         $product->accessories = $product->accessories->map(function ($accessory) {
+            return [
+                'id' => $accessory->id,
+                'name' => $accessory->name,
+                'isapproved' => $accessory->isapproved,
+                'isRequired' => $accessory->isRequired,
+                'items' => $accessory->items->map(function ($item) {
+                    $cleanName = $item->name;
+
+                    // Remove extra quotes or slashes if saved like "\"SDE 1\""
+                    if (is_string($cleanName)) {
+                        $cleanName = trim($cleanName, '"'); // remove surrounding quotes
+                        $cleanName = stripslashes($cleanName); // remove any backslashes
+                    }
+
+                    return [
                         'id' => $item->id,
-                        'name' => $item->name,
+                        'name' => $cleanName,
                         'sku' => $item->sku ?? null,
-                    ])->values(),
-                ];
-            })->values();
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+            if ($product->accessories->isEmpty()) {
+                $product->accessories = [];
+            }
 
             if ($product->accessories->isEmpty()) {
                 $product->accessories = [];
