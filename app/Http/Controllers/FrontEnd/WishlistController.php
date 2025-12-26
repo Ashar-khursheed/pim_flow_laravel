@@ -279,7 +279,7 @@ class WishlistController extends Controller
     //         'total_items' => $wishlistItems->count()
     //     ]);
     // }
-    public function getWishlist(Request $request)
+  public function getWishlist(Request $request)
     {
         $userId = Auth::id();
 
@@ -288,14 +288,14 @@ class WishlistController extends Controller
             'product.productSuppliers',
             'product.brand',
             'product.seoUrl',
-            'product.accessories.seoUrl' // ✅ accessories
+            'product.accessories' // ✅ FIXED
         )
         ->where('customer_id', $userId)
         ->orderBy('created_at', 'desc')
         ->get();
 
         // ===============================
-        // USER DISCOUNTS
+        // DISCOUNTS
         // ===============================
         $userDiscountIds = DB::table('ec_discount_customers')
             ->where('customer_id', $userId)
@@ -309,7 +309,7 @@ class WishlistController extends Controller
             ->select('product_id', 'discount_id')
             ->get()
             ->groupBy('product_id')
-            ->map(fn ($discounts) => $discounts->pluck('discount_id')->toArray());
+            ->map(fn ($d) => $d->pluck('discount_id')->toArray());
 
         $discounts = DB::table('ec_discounts')
             ->whereIn('id', array_merge($userDiscountIds, $productDiscounts->flatten()->toArray()))
@@ -317,130 +317,84 @@ class WishlistController extends Controller
             ->keyBy('id');
 
         // ===============================
-        // TRANSFORM DATA
+        // TRANSFORM
         // ===============================
         $wishlistItems->transform(function ($item) use ($productDiscounts, $discounts) {
 
             $product = $item->product;
+            if (!$product) return $item;
 
-            if (!$product) {
-                return $item;
-            }
-
-            // --------------------
             // Brand
-            // --------------------
             $product->brand_name = optional($product->brand)->name;
             $product->unsetRelation('brand');
 
-            // --------------------
             // Images
-            // --------------------
             $product->images = collect(json_decode($product->images, true) ?? []);
             $product->in_wishlist = 1;
             $product->quantity = $item->quantity ?? 1;
 
-            // --------------------
             // Discounts
-            // --------------------
             $discountIds = $productDiscounts[$product->id] ?? [];
             $product->discounts = collect($discountIds)
                 ->map(fn ($id) => $discounts[$id] ?? null)
                 ->filter()
                 ->values();
 
-            // --------------------
             // Currency
-            // --------------------
             $product->currency = optional($product->currency)->symbol;
             $product->unsetRelation('currency');
 
-            // --------------------
             // URLs
-            // --------------------
             $product->url = optional($product->seoUrl)->url;
             $product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
             $product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
 
-            // --------------------
-            // Selling Type
-            // --------------------
+            // Selling type
             $sellingType = null;
             if ($product->sellingUnitAttribute?->attribute_value) {
-                $fullValue = $product->sellingUnitAttribute->attribute_value;
+                $full = $product->sellingUnitAttribute->attribute_value;
                 $sellingType = [
-                    'attribute_value' => $fullValue,
-                    'attribute_value_unit' => str_contains($fullValue, '/')
-                        ? trim(explode('/', $fullValue)[1])
-                        : $fullValue,
+                    'attribute_value' => $full,
+                    'attribute_value_unit' => str_contains($full, '/')
+                        ? trim(explode('/', $full)[1])
+                        : $full,
                 ];
             }
 
-            // --------------------
             // Supplier
-            // --------------------
-            $firstSupplier = $product->productSuppliers->first();
-
-            if ($firstSupplier) {
-                $product->vendor_sku = $firstSupplier->vendor_sku;
-                $product->price = (float) $firstSupplier->price;
-                $product->sale_price = (float) $firstSupplier->sale_price;
-                $product->original_price = (float) $firstSupplier->price;
-                $product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
-                $product->best_price = (float) $firstSupplier->price;
-                $product->vendor_id = $firstSupplier->vendor_id;
-                $product->map = (float) $firstSupplier->map;
-                $product->inventory = $firstSupplier->inventory;
-                $product->in_stock = $firstSupplier->in_stock;
-                $product->delivery_days = $firstSupplier->delivery_days;
-                $product->return_policy = $firstSupplier->return_policy;
-                $product->free_shipping = $firstSupplier->free_shipping;
-                $product->min_quantity = $firstSupplier->min_quantity;
-                $product->is_fixed = $firstSupplier->is_fixed;
+            $supplier = $product->productSuppliers->first();
+            if ($supplier) {
+                $product->vendor_sku = $supplier->vendor_sku;
+                $product->price = (float) $supplier->price;
+                $product->sale_price = (float) $supplier->sale_price;
+                $product->original_price = (float) $supplier->price;
+                $product->front_sale_price = (float) ($supplier->sale_price ?? $supplier->price);
+                $product->best_price = (float) $supplier->price;
+                $product->vendor_id = $supplier->vendor_id;
+                $product->inventory = $supplier->inventory;
+                $product->in_stock = $supplier->in_stock;
+                $product->delivery_days = $supplier->delivery_days;
+                $product->free_shipping = $supplier->free_shipping;
+                $product->min_quantity = $supplier->min_quantity;
+                $product->is_fixed = $supplier->is_fixed;
                 $product->selling_type = $sellingType;
-
-                $product->warranty_information =
-                    $product->warrantyAttribute?->attribute_value
-                    ?? $firstSupplier->warranty_information
-                    ?? null;
-            } else {
-                $product->vendor_sku = null;
-                $product->price = null;
-                $product->sale_price = null;
-                $product->original_price = null;
-                $product->front_sale_price = null;
-                $product->best_price = null;
-                $product->vendor_id = null;
-                $product->map = null;
-                $product->inventory = null;
-                $product->in_stock = null;
-                $product->delivery_days = null;
-                $product->return_policy = null;
-                $product->free_shipping = null;
-                $product->min_quantity = 0;
-                $product->is_fixed = 0;
-                $product->selling_type = $sellingType;
-                $product->warranty_information = $product->warrantyAttribute?->attribute_value ?? null;
             }
 
-            // --------------------
-            // Accessories ✅
-            // --------------------
+            // ===============================
+            // Accessories ✅ FIXED
+            // ===============================
             $product->accessories = collect($product->accessories ?? [])
                 ->map(function ($acc) {
                     return [
                         'id' => $acc->id,
                         'name' => $acc->name,
                         'sku' => $acc->sku,
-                        'url' => $acc->seoUrl->url ?? null,
                         'isRequired' => (bool) ($acc->is_required ?? false),
                     ];
                 })
                 ->values();
 
-            // --------------------
-            // Required flag for main product ✅
-            // --------------------
+            // Required flag for main product
             $product->isRequired = (bool) ($product->is_required ?? false);
 
             return $item;
@@ -451,6 +405,7 @@ class WishlistController extends Controller
             'total_items' => $wishlistItems->count()
         ]);
     }
+
 
 
 
