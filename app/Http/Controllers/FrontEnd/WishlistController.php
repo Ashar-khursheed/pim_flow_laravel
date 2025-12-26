@@ -425,29 +425,29 @@ class WishlistController extends Controller
             // ===============================
             // Accessories (EXACT SAME AS getAllProducts API) ✅
             // ===============================
-        $product->accessories = collect($product->accessories)->map(function ($accessory) {
+     $product->accessories = collect($product->accessories)->map(function ($accessory) {
+    return [
+        'id' => $accessory->id,
+        'name' => $accessory->name,
+        'isapproved' => $accessory->isapproved,
+        'isRequired' => $accessory->isRequired,
+        'items' => collect($accessory->items)->map(function ($item) {
+            $cleanName = $item->name;
+
+            // Remove extra quotes or slashes if saved like "\"SDE 1\""
+            if (is_string($cleanName)) {
+                $cleanName = trim($cleanName, '"'); // remove surrounding quotes
+                $cleanName = stripslashes($cleanName); // remove any backslashes
+            }
+
             return [
-                'id' => $accessory->id,
-                'name' => $accessory->name,
-                'isapproved' => $accessory->isapproved,
-                'isRequired' => $accessory->isRequired,
-                'items' => collect($accessory->items)->map(function ($item) {
-                    $cleanName = $item->name;
-
-                    // Remove extra quotes or slashes if saved like "\"SDE 1\""
-                    if (is_string($cleanName)) {
-                        $cleanName = trim($cleanName, '"'); // remove surrounding quotes
-                        $cleanName = stripslashes($cleanName); // remove any backslashes
-                    }
-
-                    return [
-                        'id' => $item->id,
-                        'name' => $cleanName,
-                        'sku' => $item->sku ?? null,
-                    ];
-                })->values(),
+                'id' => $item->id,
+                'name' => $cleanName,
+                'sku' => $item->sku ?? null,
             ];
-            })->values();
+        })->values(),
+    ];
+})->values();
 
             // Ensure it's an array if empty
             if ($product->accessories->isEmpty()) {
