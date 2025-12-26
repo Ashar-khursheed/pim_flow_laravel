@@ -3,16 +3,23 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\BaseController;
+
 use App\Models\FrontEnd\Order;
+use App\Models\ChequeUpload;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 use App\Models\FrontEnd\CustomerAddress;
+use App\Models\FrontEnd\Finance;
+use App\Models\FrontEnd\FinancesPayment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Utm;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
+use App\Models\FrontEnd\Wishlist;
+
 
 use App\Jobs\Order\OrderPlacedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
@@ -155,7 +162,7 @@ class OrderController extends BaseController
 						unset($orderProduct->accessoryCharges);
 					}
 				}
-				foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -186,31 +193,44 @@ class OrderController extends BaseController
 	 *     tags={"FrontEnd-Orders"},
 	 *     @OA\RequestBody(
 	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             required={"customer_address_id", "tax_percentage", "products"},
-	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
-	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
-	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
-	 *             @OA\Property(property="tax_percentage", type="number", example=5),
-	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
-	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
-	 *             @OA\Property(property="is_cod", type="boolean", example=false),
-	 *             @OA\Property(property="coupon_id", type="integer", example=1),
-	 *             @OA\Property(property="discount", type="number", format="float", example=200),
-	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
-	 *             @OA\Property(property="is_payment", type="boolean", example=false),
-	 * 			   @OA\Property(property="is_paymob", type="boolean", example=false),
-	 *             @OA\Property(property="is_squarePayment", type="boolean", example=false),
-	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
-	 *             @OA\Property(
-	 *                 property="products",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity"},
-	 *                     @OA\Property(property="product_id", type="integer", example=101),
-	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="accessory_item_ids", type="array", @OA\Items(type="integer"))
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"customer_address_id", "tax_percentage", "products"},
+	 *                 @OA\Property(property="customer_address_id", type="integer", example=1, description="Customer address ID"),
+	 *                 @OA\Property(property="is_lift_gate", type="boolean", example=true, description="Lift gate required"),
+	 *                 @OA\Property(property="is_residential_address", type="boolean", example=true, description="Residential address"),
+	 *                 @OA\Property(property="is_inside_delivery", type="boolean", example=true, description="Inside delivery required"),
+	 *                 @OA\Property(property="tax_percentage", type="number", format="float", example=5, description="Tax percentage"),
+	 *                 @OA\Property(property="ship_all_at_once", type="boolean", example=true, description="Ship all items together"),
+	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
+	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
+	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
+	 *                 @OA\Property(property="cheque_img", type="string", format="string", description="Cheque image link"),
+	 *                 @OA\Property(property="cheque_img_back", type="string", format="string", description="Cheque image link"),
+	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
+	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
+	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
+	 *                 @OA\Property(property="is_payment", type="boolean", example=false, description="Payment gateway"),
+	 *                 @OA\Property(property="is_paymob", type="boolean", example=false, description="Paymob payment"),
+	 *                 @OA\Property(property="is_squarePayment", type="boolean", example=false, description="Square payment"),
+	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),
+	 *                 @OA\Property(
+	 *                     property="products",
+	 *                     type="array",
+	 *                     description="Array of products to order",
+	 *                     @OA\Items(
+	 *                         required={"product_id", "vendor_id", "quantity"},
+	 *                         @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
+	 *                         @OA\Property(property="vendor_id", type="integer", example=22, description="Vendor ID"),
+	 *                         @OA\Property(property="quantity", type="integer", example=5, description="Product quantity"),
+	 *                         @OA\Property(
+	 *                             property="accessory_item_ids",
+	 *                             type="array",
+	 *                             description="Array of accessory item IDs",
+	 *                             @OA\Items(type="integer", example=50)
+	 *                         )
+	 *                     )
 	 *                 )
 	 *             )
 	 *         )
@@ -221,14 +241,56 @@ class OrderController extends BaseController
 	 */
 	public function store(Request $request)
 	{
+		/* Parse boolean strings to actual booleans */
+		$booleanFields = [
+			'is_lift_gate',
+			'is_residential_address',
+			'is_inside_delivery',
+			'ship_all_at_once',
+			'separate_deliveries',
+			'is_cod',
+			'pay_with_cheque',
+			'is_reserved',
+			'is_payment',
+			'is_paymob',
+			'is_squarePayment',
+			'is_customer_pickup'
+		];
+
+		/* Parse products JSON string to array */
+		foreach ($booleanFields as $field) {
+			if ($request->has($field)) {
+				$request->merge([
+					$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)
+				]);
+			}
+		}
+		if ($request->has('products') && is_string($request->products)) {
+			$productsString = $request->products;
+			if (strpos(trim($productsString), '{') === 0 && strpos(trim($productsString), '[') !== 0) {
+				$productsString = '[' . $productsString . ']';
+			}
+			$products = json_decode($productsString, true);
+			$request->merge(['products' => $products]);
+		}
+
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
 			'is_residential_address' => 'nullable|boolean',
+			'is_inside_delivery' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
 			'is_cod' => 'nullable|boolean',
+
+			'pay_with_cheque' => 'nullable|boolean',
+    		'cheque_img' => 'nullable|required_if:pay_with_cheque,true|string',
+    		'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|string',
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
+			'additional_discount' => 'nullable|numeric|min:0',
+
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 			'is_reserved' => 'nullable|boolean',
@@ -258,6 +320,8 @@ class OrderController extends BaseController
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -269,6 +333,8 @@ class OrderController extends BaseController
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
+				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -276,10 +342,11 @@ class OrderController extends BaseController
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
 					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => $shipping,
 				];
 			}
 
+			$payWithCheque = $request->boolean('pay_with_cheque', false);
 			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
@@ -290,16 +357,68 @@ class OrderController extends BaseController
 				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
 				$orderShipping += $product['shipping_charge'];
 			}
-			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$discountedAmount = $orderAmount - $discount;
-			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
-			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
+			/* Handle cheque payment discount */
+			if ($payWithCheque) {
+
+
+				// $chequeImg = uploadImageToWebpS3FromFile(
+				// 	$request,
+				// 	'cheque_img',
+				// 	env('STORAGE_ENV') . '/customer/orders'
+				// );
+				// $chequeImgBack = uploadImageToWebpS3FromFile(
+				// 	$request,
+				// 	'cheque_img_back',
+				// 	env('STORAGE_ENV') . '/customer/orders'
+				// );
+				$chequeImg = $request->cheque_img;
+				$chequeImgBack = $request->cheque_img_back;
+				$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
+				$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
+				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
+				$discountedAmount -= $chequeDiscount;
+			} else {
+				$chequeImg = null;
+				$chequeImgBack = null;
+				$chequeDiscountPercentage = 0;
+				$chequeDiscount = 0;
 			}
 
+
+			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
+
+			/* -----------------------------------------
+			ADDITIONAL AMOUNT & ADDITIONAL DISCOUNT
+			----------------------------------------- */
+			$additionalAmount = $request->additional_amount_price ?? 0;
+			$discountedAmount += $additionalAmount;
+
+			$extraDiscount = $request->additional_discount ?? 0;
+			$discountedAmount -= $extraDiscount;
+
+			if ($discountedAmount < 0) {
+				$discountedAmount = 0;
+			}
+			/* ----------------------------------------- */
+
+			$customer = auth()->user();
+
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$orderShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
+			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+				$taxableAmount = $discountedAmount + $orderShipping;
+				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+			} else {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+			}
 			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 
 			/* Get the latest order by ID (most recent) */
@@ -316,14 +435,27 @@ class OrderController extends BaseController
 				'order_number' => $orderNumber,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $orderShipping,
 				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
+				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-				'tax_percentage' => $request->tax_percentage,
-				'tax_amount' => $taxAmount,
+				'additional_amount_name' => $request->additional_amount_name,
+				'additional_amount_price' => $additionalAmount,
+				'additional_discount' => $extraDiscount,
+
+				'pay_with_cheque' => $payWithCheque,
+				'cheque_discount_percentage' => $chequeDiscountPercentage,
+				'cheque_discount' => $chequeDiscount,
+				'cheque_img' => $chequeImg,
+				'cheque_img_back' => $chequeImgBack,
+
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
+
+				'tax_percentage' => $taxPercentage,
+				'tax_amount' => $taxAmount,
+				'shipping_charge' => $orderShipping,
+
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
@@ -377,12 +509,16 @@ class OrderController extends BaseController
 				$cart->delete();
 			});
 
-
 			DB::commit();
 
-			if ($request->boolean('is_cod')) {
-				$batch = Bus::batch([])->name("Order Place on frontend COD for order {$orderNumber}")->dispatch();
-
+			if ($request->boolean('pay_with_cheque')) {
+				$batch = Bus::batch([])->name("Order Placed by Customer (CHECK) - #{$order->order_number}")->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+				$batch->add(new OrderPlacedMailJob([
+					'recordId' => $order->id
+				]));
+			} else if ($request->boolean('is_cod')) {
+				$batch = Bus::batch([])->name("Order Placed by Customer (COD) - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
 					'recordId' => $order->id
@@ -433,7 +569,7 @@ class OrderController extends BaseController
 				}
 			}
 
-			foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}
@@ -444,7 +580,6 @@ class OrderController extends BaseController
 				'message' => 'Order created successfully',
 				'data' => $order
 			], 201);
-
 		} catch (\Exception $e) {
 			DB::rollBack();
 
@@ -454,7 +589,6 @@ class OrderController extends BaseController
 			], 500);
 		}
 	}
-
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/orders/{id}",
@@ -564,7 +698,7 @@ class OrderController extends BaseController
 			$orderProduct->is_returnable = 'yes';
 		}
 
-		foreach (['amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+		foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
 				$order->$key = number_format($order->$key, 2, '.', '');
 			}
@@ -784,8 +918,13 @@ class OrderController extends BaseController
 		}
 
 		$allowedStatuses = [
-			'Pending', 'Confirmed', 'Supplier Delivery', 'International',
-			'Export', 'On hold', 'Ready to ship'
+			'Pending',
+			'Confirmed',
+			'Supplier Delivery',
+			'International',
+			'Export',
+			'On hold',
+			'Ready to ship'
 		];
 
 		if (!in_array($order->status, $allowedStatuses)) {
@@ -801,8 +940,7 @@ class OrderController extends BaseController
 		$order->orderProducts()->update(['status' => $request->status]);
 
 		if ($request->status == 'Cancelled') {
-			$batch = Bus::batch([])->name('Order Mails')->dispatch();
-
+			$batch = Bus::batch([])->name("Order Cancelled by Customer - #{$order->order_number}")->dispatch();
 			$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
 			$batch->add(new OrderCancelledMailJob([
 				'recordId' => $order->id
@@ -839,130 +977,75 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	// public function buyItAgain(Request $request)
-	// {
-	// 	// Fetch last 5 delivered orders with products
-	// 	$deliveredOrders = $customer->orders()
-	// 	->where('status', 'Delivered')
-	// 	->orderByDesc('created_at')
-	// 	->take(5)
-	// 	->with(['orderProducts.product.productSuppliers', 'orderProducts.product.currency', 'orderProducts.product.brand'])
-	// 	->get();
-
-	// 	$addedProducts = collect();
-
-	// 	foreach ($deliveredOrders as $order) {
-	// 		foreach ($order->orderProducts as $orderProduct) {
-	// 			$product = $orderProduct->product;
-	// 			if (!$product) {
-	// 				continue;
-	// 			}
-
-	// 			// find a vendor_id if available
-	// 			$vendorId = $product->productSuppliers->first()->vendor_id ?? null;
-
-	// 			// build a request like addToCart expects
-	// 			$cartRequest = new Request([
-	// 				'product_id' => $product->id,
-	// 				'quantity'   => $orderProduct->quantity,
-	// 				'vendor_id'  => $vendorId,
-	// 			]);
-
-	// 			// call your CartController function
-	// 			$cartResponse = app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
-
-	// 			$addedProducts->push([
-	// 				'product_id' => $product->id,
-	// 				'name'       => $product->name,
-	// 				'quantity'   => $orderProduct->quantity,
-	// 				'unit_price' => $orderProduct->unit_price,
-	// 				'brand_name' => $product->brand->name ?? null,
-	// 			]);
-	// 		}
-	// 	}
-
-	// 	if ($addedProducts->isEmpty()) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'No delivered orders found or no valid products available to buy again.'
-	// 		], 404);
-	// 	}
-
-	// 	return response()->json([
-	// 		'success' => true,
-	// 		'message' => 'Products added to your cart successfully.',
-	// 		'data'    => $addedProducts,
-	// 	], 200);
-	// }
 	public function buyItAgain(Request $request)
-{
-    // Get authenticated customer
-    $customerId = auth()->id();
+	{
+		// Get authenticated customer
+		$customerId = auth()->id();
 
-    if (!$customerId) {
-        return response()->json([
-            'success' => false,
-            'message' => 'User not authenticated.'
-        ], 401);
-    }
+		if (!$customerId) {
+			return response()->json([
+				'success' => false,
+				'message' => 'User not authenticated.'
+			], 401);
+		}
 
-    // Fetch last 5 delivered orders with products
-    $deliveredOrders = Order::where('customer_id', $customerId)
-       ->whereIn('status', ['Delivered', 'Cancelled'])
-        ->orderByDesc('created_at')
-        ->take(5)
-        ->with([
-            'orderProducts.product.productSuppliers',
-            'orderProducts.product.currency',
-            'orderProducts.product.brand'
-        ])
-        ->get();
+		// Fetch last 5 delivered orders with products
+		$deliveredOrders = Order::where('customer_id', $customerId)
+		->whereIn('status', ['Delivered', 'Cancelled'])
+		->orderByDesc('created_at')
+		->take(5)
+		->with([
+			'orderProducts.product.productSuppliers',
+			'orderProducts.product.currency',
+			'orderProducts.product.brand'
+		])
+		->get();
 
-    $addedProducts = collect();
+		$addedProducts = collect();
 
-    foreach ($deliveredOrders as $order) {
-        foreach ($order->orderProducts as $orderProduct) {
-            $product = $orderProduct->product;
-            if (!$product) {
-                continue;
-            }
+		foreach ($deliveredOrders as $order) {
+			foreach ($order->orderProducts as $orderProduct) {
+				$product = $orderProduct->product;
+				if (!$product) {
+					continue;
+				}
 
-            // find a vendor_id if available
-            $vendorId = $product->productSuppliers->first()->vendor_id ?? null;
+				// find a vendor_id if available
+				$vendorId = $product->productSuppliers->first()->vendor_id ?? null;
 
-            // build a request like addToCart expects
-            $cartRequest = new Request([
-                'product_id' => $product->id,
-                'quantity'   => $orderProduct->quantity,
-                'vendor_id'  => $vendorId,
-            ]);
+				// build a request like addToCart expects
+				$cartRequest = new Request([
+					'product_id' => $product->id,
+					'quantity'   => $orderProduct->quantity,
+					'vendor_id'  => $vendorId,
+				]);
 
-            // call your CartController function
-            app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
+				// call your CartController function
+				app(\App\Http\Controllers\FrontEnd\CartController::class)->addToCart($cartRequest);
 
-            $addedProducts->push([
-                'product_id' => $product->id,
-                'name'       => $product->name,
-                'quantity'   => $orderProduct->quantity,
-                'unit_price' => $orderProduct->unit_price,
-                'brand_name' => $product->brand->name ?? null,
-            ]);
-        }
-    }
+				$addedProducts->push([
+					'product_id' => $product->id,
+					'name'       => $product->name,
+					'quantity'   => $orderProduct->quantity,
+					'unit_price' => $orderProduct->unit_price,
+					'brand_name' => $product->brand->name ?? null,
+				]);
+			}
+		}
 
-    if ($addedProducts->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No delivered orders found or no valid products available to buy again.'
-        ], 404);
-    }
+		if ($addedProducts->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No delivered orders found or no valid products available to buy again.'
+			], 404);
+		}
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Products added to your cart successfully.',
-        'data'    => $addedProducts,
-    ], 200);
-}
+		return response()->json([
+			'success' => true,
+			'message' => 'Products added to your cart successfully.',
+			'data'    => $addedProducts,
+		], 200);
+	}
 
 
 	/**
@@ -996,4 +1079,368 @@ class OrderController extends BaseController
 			'data' => $order,
 		]);
 	}
+
+
+
+	/**
+ * @OA\Post(
+ *     path="/api/frontend/compress-image-check",
+ *     summary="Upload and compress cheque images",
+ *     tags={"CompressImage"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 type="object",
+ *                 required={"cheque_img","cheque_img_back"},
+ *                 @OA\Property(
+ *                     property="cheque_img",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="Cheque front image"
+ *                 ),
+ *                 @OA\Property(
+ *                     property="cheque_img_back",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="Cheque back image"
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Cheque images uploaded and compressed successfully"
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation failed"
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized"
+ *     )
+ * )
+ */
+
+
+	public function compressImage(Request $request)
+	{
+
+		$validator = Validator::make($request->all(), [
+			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+		]);
+
+		if ($validator->fails()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors'  => $validator->errors(),
+			], 422);
+		}
+
+
+		$path = env('STORAGE_ENV') . '/customer/orders';
+
+		$chequeFront = compressImageToS3(
+			$request,
+			'cheque_img',
+			$path
+		);
+
+		$chequeBack = compressImageToS3(
+			$request,
+			'cheque_img_back',
+			$path
+		);
+		// Upload failed check
+		if (!$chequeFront || !$chequeBack) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Image upload failed',
+			], 200);
+		}
+
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Cheque images uploaded successfully',
+			'data' => [
+				'cheque_img'      => $chequeFront,
+				'cheque_img_back' => $chequeBack,
+			],
+		], 200);
+	}
+
+
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/save-cheque-upload",
+	 *     operationId="saveChequeUpload",
+	 *     tags={"Cheque Upload"},
+	 *     summary="Upload cheque front and back images",
+	 *     description="Uploads front and back cheque images and saves them against a session",
+	 *
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"cheque_img","cheque_img_back"},
+	 *                 @OA\Property(
+	 *                     property="cheque_img",
+	 *                     type="string",
+	 *                     format="binary",
+	 *                     description="Front side of cheque image (jpg, jpeg, png, webp)"
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="cheque_img_back",
+	 *                     type="string",
+	 *                     format="binary",
+	 *                     description="Back side of cheque image (jpg, jpeg, png, webp)"
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="session_id",
+	 *                     type="string",
+	 *                     example="sess_123456",
+	 *                     description="Optional session identifier"
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Cheque uploaded successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Cheque images uploaded and saved successfully"),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="object",
+	 *                 @OA\Property(property="id", type="integer", example=1),
+	 *                 @OA\Property(property="cheque_img", type="string", example="s3/path/front.webp"),
+	 *                 @OA\Property(property="cheque_img_back", type="string", example="s3/path/back.webp"),
+	 *                 @OA\Property(property="session_id", type="string", example="sess_123456"),
+	 *                 @OA\Property(property="created_at", type="string", example="2025-01-01 12:00:00")
+	 *             )
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation error",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Validation failed"),
+	 *             @OA\Property(property="errors", type="object")
+	 *         )
+	 *     )
+	 * )
+	 */
+
+	public function saveChequeUpload(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'session_id'       => 'nullable|string|max:255',
+		]);
+
+		if ($validator->fails()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors'  => $validator->errors(),
+			], 422);
+		}
+
+		$path = env('STORAGE_ENV') . '/customer/orders';
+
+		$chequeFront = compressImageToS3(
+			$request,
+			'cheque_img',
+			$path
+		);
+
+		$chequeBack = compressImageToS3(
+			$request,
+			'cheque_img_back',
+			$path
+		);
+
+		// Upload failed check
+		if (!$chequeFront || !$chequeBack) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Image upload failed',
+			], 200);
+		}
+
+		// Save to database
+		$chequeUpload = ChequeUpload::create([
+			'cheque_img'      => $chequeFront,
+			'cheque_img_back' => $chequeBack,
+			'session_id'      => $request->session_id,
+		]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Cheque images uploaded and saved successfully',
+			'data' => $chequeUpload,
+		], 200);
+	}
+
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/get-cheque-uploads",
+	 *     operationId="getChequeUploadsBySession",
+	 *     tags={"Cheque Upload"},
+	 *     summary="Get cheque uploads by session ID",
+	 *     description="Returns all cheque uploads related to a session ID",
+	 *     @OA\Parameter(
+	 *         name="session_id",
+	 *         in="query",
+	 *         required=true,
+	 *         description="Session identifier",
+	 *         @OA\Schema(type="string", example="sess_123456")
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Cheque uploads retrieved successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Cheque uploads retrieved successfully"),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="id", type="integer", example=1),
+	 *                     @OA\Property(property="cheque_img", type="string", example="s3/path/front.webp"),
+	 *                     @OA\Property(property="cheque_img_back", type="string", example="s3/path/back.webp"),
+	 *                     @OA\Property(property="session_id", type="string", example="sess_123456"),
+	 *                     @OA\Property(property="created_at", type="string", example="2025-01-01 12:00:00")
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="No cheque uploads found",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="No cheque uploads found for this session"),
+	 *             @OA\Property(property="data", type="array", @OA\Items())
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation error"
+	 *     )
+	 * )
+	 */
+	public function getChequeUploadsBySession(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'session_id' => 'required|string|max:255',
+		]);
+
+		if ($validator->fails()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Validation failed',
+				'errors'  => $validator->errors(),
+			], 422);
+		}
+
+		$chequeUploads = ChequeUpload::where('session_id', $request->session_id)
+									->orderBy('created_at', 'desc')
+									->get();
+
+		if ($chequeUploads->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No cheque uploads found for this session',
+				'data' => [],
+			], 404);
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Cheque uploads retrieved successfully',
+			'data' => $chequeUploads,
+		], 200);
+	}
+
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/user-stats",
+	 *     operationId="getUserStats",
+	 *     tags={"Frontend Orders"},
+	 *     summary="Get total orders, wishlist count, and net term amount for authenticated user",
+	 *     description="Returns total orders, total wishlist items, and total net term amount for the logged-in user",
+ 	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successful response",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="object",
+	 *                 @OA\Property(property="total_orders", type="integer", example=10),
+	 *                 @OA\Property(property="total_wishlist", type="integer", example=5),
+	 *                 @OA\Property(property="total_net_term_amount", type="string", example="1234.56")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthenticated"
+	 *     )
+	 * )
+	 */
+	public function userStats(Request $request)
+	{
+		$userId = auth()->id();
+
+		// Total orders
+		$totalOrders = Order::where('customer_id', $userId)->count();
+
+		// Total wishlist items
+		$totalWishlist = DB::table('ec_wish_lists')
+			->where('customer_id', $userId)
+			->count();
+
+		// Total net term amount from finances
+		$totalNetTermAmount = DB::table('finances')
+			->where('customer_id', $userId)
+			->sum('available_credit_amount');
+
+		return response()->json([
+			'success' => true,
+			'data' => [
+				'total_orders' => $totalOrders,
+				'total_wishlist' => $totalWishlist,
+				'total_net_term_amount' => number_format($totalNetTermAmount, 2, '.', ''),
+			]
+		]);
+	}
+
+
+
+
 }

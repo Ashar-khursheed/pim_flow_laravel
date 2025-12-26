@@ -15,17 +15,28 @@ class Order extends Model
 	use SoftDeletes;
 
 	protected $fillable = [
+		'utm_id',
 		'order_number',
 		'customer_id',
 		'customer_address_id',
 		'shipping_charge',
 		'is_lift_gate',
 		'is_residential_address',
+		'is_inside_delivery',
 		'amount',
 		'tax_percentage',
 		'tax_amount',
 		'coupon_id',
 		'discount',
+		'additional_amount_name',
+		'additional_amount_price',
+		'additional_amount_details',
+		'additional_discount',
+		'pay_with_cheque',
+		'cheque_discount_percentage',
+		'cheque_discount',
+		'cheque_img',
+		'cheque_img_back',
 		'total_amount',
 		'total_products',
 		'ship_all_at_once',
@@ -34,16 +45,15 @@ class Order extends Model
 		'paid_amount',
 		'pending_amount',
 		'status',
+		'payment_link',
 		'is_reserved',
+		'is_payment',
+		'is_squarePayment',
+		'is_paymob',
 		'is_customer_pickup',
 		'is_cod',
 		'created_by',
 		'updated_by',
-		'utm_id',
-		'payment_link',
-		'is_payment',
-		'is_paymob',
-		'is_squarePayment',
 	];
 
 	public function creator()
@@ -127,5 +137,9 @@ class Order extends Model
 		return $this->hasOne(\App\Models\Utm::class, 'id', 'utm_id');
 	}
 
+	 public function invoice()
+	{
+		return $this->hasOne(Invoice::class, 'order_id', 'id');
+	}
 
 }

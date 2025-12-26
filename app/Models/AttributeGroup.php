@@ -3,11 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 
-class AttributeGroup extends Model
+class AttributeGroup extends Model implements TranslatableContract
 {
-	// protected $fillable = ['name'];
-	protected $guarded = [];
+	use Translatable;
+
+	public $translatedAttributes = ['name_tr'];
+
+	protected $fillable = ['name'];
 
 	public function creator()
 	{

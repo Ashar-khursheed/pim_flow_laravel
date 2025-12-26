@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 
 
 
@@ -21,11 +22,22 @@ use Illuminate\Database\Eloquent\Model;
  *     @OA\Property(property="updated_at", type="string", format="date-time")
  * )
  */
-class Faq extends Model
+class Faq extends Model implements TranslatableContract
 {
-    use HasFactory;
+    use Translatable;
 
+    public $translatedAttributes = [
+        'question_tr',
+        'answer_tr',
+    ];
     protected $fillable = ['question', 'answer', 'category_id', 'status', 'product_id'];
+
+    protected static function booted()
+    {
+        static::deleting(function ($faq) {
+            $faq->translations()->delete();
+        });
+    }
 
     public function category()
     {

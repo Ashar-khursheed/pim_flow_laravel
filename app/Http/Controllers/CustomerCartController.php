@@ -75,6 +75,11 @@ class CustomerCartController extends Controller
 				foreach ($searchableColumns as $col) {
 					$q->orWhere("customer_carts.$col", 'like', '%' . $search . '%');
 				}
+
+			$q->orWhereHas('customer', function ($sub) use ($search) {
+				$sub->where('name', 'like', '%' . $search . '%')
+				->orWhere('email', 'like', '%' . $search . '%');
+				});
 			});
 		}
 
@@ -126,7 +131,7 @@ class CustomerCartController extends Controller
 			$records = $recordsQuery
 			->offset(($page - 1) * $length)
 			->limit($length)
-			->get(['id', 'reference_number', 'customer_id', 'is_lift_gate', 'is_residential_address', 'total_amount', 'total_products', 'created_by', 'created_at']);
+			->get(['id', 'reference_number', 'customer_id', 'is_lift_gate', 'is_residential_address', 'is_inside_delivery', 'total_amount', 'total_products', 'created_by', 'created_at']);
 
 			/* Transform results */
 			$records->transform(function ($record) {
@@ -181,6 +186,9 @@ class CustomerCartController extends Controller
 				if ($record->is_residential_address) {
 					$cartAmount += 199;
 				}
+				if ($record->is_inside_delivery) {
+					$cartAmount += 249;
+				}
 
 				/* Tax calculations */
 				$taxPercentage = $record->tax_percentage ?? 0;
@@ -188,7 +196,7 @@ class CustomerCartController extends Controller
 
 				/* Website-specific shipping rules */
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-					$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+					$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
 				}
 
 				$totalAmount = $cartAmount + $taxAmount + $cartShipping;
@@ -200,6 +208,7 @@ class CustomerCartController extends Controller
 					'customer'               => $record->customer,
 					'is_lift_gate'           => $record->is_lift_gate,
 					'is_residential_address' => $record->is_residential_address,
+					'is_inside_delivery'     => $record->is_inside_delivery,
 					'amount'                 => number_format($cartAmount, 2, '.', ''),
 					'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 					'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
@@ -236,8 +245,12 @@ class CustomerCartController extends Controller
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
 	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
 	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
+	 *             @OA\Property(property="is_inside_delivery", type="boolean", example=true),
 	 *             @OA\Property(property="is_new_customer", type="boolean", example=false),
+	 *             @OA\Property(property="pay_with_cheque", type="boolean", example=false),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
+	 *  		   @OA\Property(property="additional_amount_name", type="string", example="Accessory 1"),
+	 *             @OA\Property(property="additional_amount_price", type="number", format="float", example=100),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -261,12 +274,16 @@ class CustomerCartController extends Controller
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
 			'is_residential_address' => 'nullable|boolean',
+			'is_inside_delivery' => 'nullable|boolean',
 			'is_new_customer' => 'nullable|boolean',
+			'pay_with_cheque' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
 		]);
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
@@ -283,6 +300,8 @@ class CustomerCartController extends Controller
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -290,15 +309,20 @@ class CustomerCartController extends Controller
 				if (!$fetchedDetail) {
 					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
 				}
+
+				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => $shipping,
 				];
 			}
 
+			$payWithCheque = $request->boolean('pay_with_cheque', false);
 			$totalProducts = 0;
 			$cartAmount = 0;
 			$cartShipping = 0;
@@ -308,15 +332,26 @@ class CustomerCartController extends Controller
 				$cartShipping += $product['shipping_charge'];
 			}
 
-			$cartAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-			$cartAmount += $request->boolean('is_residential_address') ? 199 : 0;
-
-			$taxAmount = round($cartAmount * ($request->tax_percentage / 100), 2);
-
-			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+			if (!empty($request->additional_amount_price)) {
+				$cartAmount += (float) $request->additional_amount_price;
 			}
 
+			$cartAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$cartAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$cartAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
+
+			$customer = Customer::find($request->customer_id);
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+				$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
+				$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
+			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+				$taxableAmount = $cartAmount + $cartShipping;
+				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+			} else {
+				$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
+			}
 			$totalAmount = $cartAmount + $taxAmount + $cartShipping;
 
 			/* Get the latest cart by ID (most recent) */
@@ -340,16 +375,20 @@ class CustomerCartController extends Controller
 			}
 
 			/* Always update these fields */
-			$customerCart->customer_address_id    = $request->customer_address_id;
-			$customerCart->shipping_charge        = $cartShipping;
-			$customerCart->is_lift_gate           = $request->is_lift_gate;
+			$customerCart->customer_address_id = $request->customer_address_id;
+			$customerCart->shipping_charge = $cartShipping;
+			$customerCart->is_lift_gate = $request->is_lift_gate;
 			$customerCart->is_residential_address = $request->is_residential_address;
-			$customerCart->amount                 = $cartAmount;
-			$customerCart->tax_percentage         = $request->tax_percentage;
-			$customerCart->tax_amount             = $taxAmount;
-			$customerCart->total_amount           = $totalAmount;
-			$customerCart->total_products         = $totalProducts;
-			$customerCart->updated_by             = auth()->id();
+			$customerCart->is_inside_delivery = $request->is_inside_delivery;
+			$customerCart->pay_with_cheque = $payWithCheque;
+			$customerCart->amount = $cartAmount;
+			$customerCart->tax_percentage = $taxPercentage;
+			$customerCart->tax_amount = $taxAmount;
+			$customerCart->total_amount = $totalAmount;
+			$customerCart->total_products = $totalProducts;
+			$customerCart->updated_by = auth()->id();
+			$customerCart->additional_amount_name = $request->additional_amount_name ?? null;
+			$customerCart->additional_amount_price = $request->additional_amount_price ?? null;
 
 			$customerCart->save();
 
@@ -431,9 +470,12 @@ class CustomerCartController extends Controller
 				'address'                => $customerCart->customerAddress,
 				'is_lift_gate'           => $customerCart->is_lift_gate,
 				'is_residential_address' => $customerCart->is_residential_address,
+				'additional_amount_name' => $customerCart->additional_amount_name,
+				'additional_amount_price' => $customerCart->additional_amount_price,
+				'is_inside_delivery'     => $customerCart->is_inside_delivery,
 				'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 				'amount'                 => number_format($cartAmount, 2, '.', ''),
-				'tax_percentage'         => $request->tax_percentage,
+				'tax_percentage'         => $taxPercentage,
 				'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 				'total_amount'           => number_format($totalAmount, 2, '.', ''),
 				'total_products'         => $totalProducts,
@@ -548,7 +590,7 @@ class CustomerCartController extends Controller
 
 		/* Website-specific shipping rules */
 		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-			$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+			$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
 		}
 
 		$totalAmount = $cartAmount + $taxAmount + $cartShipping;
@@ -558,11 +600,11 @@ class CustomerCartController extends Controller
 			'id'                     => $record->id,
 			'reference_number'       => $record->reference_number,
 			'customer'               => $record->customer,
-			'customer_address'               => $record->customerAddress,
+			'customer_address'       => $record->customerAddress,
 			'is_lift_gate'           => $record->is_lift_gate,
 			'is_residential_address' => $record->is_residential_address,
 			'amount'                 => number_format($cartAmount, 2, '.', ''),
-			'tax_percentage'             => number_format($taxPercentage, 2, '.', ''),
+			'tax_percentage'         => number_format($taxPercentage, 2, '.', ''),
 			'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 			'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 			'total_amount'           => number_format($totalAmount, 2, '.', ''),
@@ -615,11 +657,48 @@ class CustomerCartController extends Controller
 		$cartShipping = 0;
 		$cartProducts = [];
 
+		// foreach ($customerCart->customerCartProducts as $customerCartProduct) {
+		// 	$product = $customerCartProduct->product;
+		// 	if (!$product) continue;
+
+		// 	/* Decode images if stored as JSON string */
+		// 	$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+		// 	$image = $images[0] ?? null;
+
+		// 	$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
+
+		// 	$unitPrice = 0;
+		// 	$shippingCharge = 0;
+		// 	if ($supplier) {
+		// 		$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
+		// 		$shippingCharge = $supplier['shipping_charge'] ?? 0;
+		// 	}
+
+		// 	$quantity = $customerCartProduct->quantity ?? 0;
+		// 	$subTotal = $quantity * $unitPrice;
+
+		// 	$totalProducts += $quantity;
+		// 	$cartAmount += $subTotal;
+		// 	$cartShipping += $shippingCharge;
+
+		// 	/* Push product data */
+		// 	$cartProducts[] = [
+		// 		'product_id'      => $customerCartProduct->product_id,
+		// 		'vendor_id'       => $customerCartProduct->vendor_id,
+		// 		'name'            => $product->name,
+		// 		'image'           => $image,
+		// 		'sku'             => $product->sku,
+		// 		'currency_symbol' => $product->currency->symbol ?? null,
+		// 		'quantity'        => $quantity,
+		// 		'unit_price'      => number_format($unitPrice, 2, '.', ''),
+		// 		'sub_total'       => number_format($subTotal, 2, '.', ''),
+		// 		'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
+		// 	];
+		// }
 		foreach ($customerCart->customerCartProducts as $customerCartProduct) {
 			$product = $customerCartProduct->product;
 			if (!$product) continue;
 
-			/* Decode images if stored as JSON string */
 			$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 			$image = $images[0] ?? null;
 
@@ -628,9 +707,31 @@ class CustomerCartController extends Controller
 			$unitPrice = 0;
 			$shippingCharge = 0;
 			if ($supplier) {
-				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
+				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price'])
+					? $supplier['sale_price']
+					: $supplier['price'];
+
 				$shippingCharge = $supplier['shipping_charge'] ?? 0;
 			}
+
+			// ============================================
+			// 🔥 ADD YOUR NEW US / US_T SHIPPING LOGIC HERE
+			// ============================================
+			if (in_array(config('app.website'), ['US', 'US_T'])) {
+
+				$state = $customerCart->customerAddress->state ?? null;
+
+				if (!$customerCart->is_customer_pickup) {
+					if ($state === 'Texas') {
+						$shippingCharge = ($shippingCharge > 0) ? $shippingCharge : 99;
+					} else {
+						$shippingCharge = ($shippingCharge > 0) ? $shippingCharge : 199;
+					}
+				} else {
+					$shippingCharge = 0;
+				}
+			}
+			// ============================================
 
 			$quantity = $customerCartProduct->quantity ?? 0;
 			$subTotal = $quantity * $unitPrice;
@@ -639,7 +740,6 @@ class CustomerCartController extends Controller
 			$cartAmount += $subTotal;
 			$cartShipping += $shippingCharge;
 
-			/* Push product data */
 			$cartProducts[] = [
 				'product_id'      => $customerCartProduct->product_id,
 				'vendor_id'       => $customerCartProduct->vendor_id,
@@ -654,12 +754,19 @@ class CustomerCartController extends Controller
 			];
 		}
 
+
 		/* Add surcharges */
 		if ($customerCart->is_lift_gate) {
 			$cartAmount += 75;
 		}
 		if ($customerCart->is_residential_address) {
 			$cartAmount += 199;
+		}
+		if ($customerCart->is_inside_delivery) {
+			$cartAmount += 250;
+		}
+		if ($customerCart->additional_amount_price) {
+			$cartAmount += $customerCart->additional_amount_price;
 		}
 
 		/* Tax calculations */
@@ -668,7 +775,7 @@ class CustomerCartController extends Controller
 
 		/* Website-specific shipping rules */
 		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-			$cartShipping = ($cartAmount + $taxAmount) < 300 ? 25 : 0;
+			$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
 		}
 
 		$totalAmount = $cartAmount + $taxAmount + $cartShipping;
@@ -679,12 +786,15 @@ class CustomerCartController extends Controller
 			'address'                => $customerCart->customerAddress,
 			'is_lift_gate'           => $customerCart->is_lift_gate,
 			'is_residential_address' => $customerCart->is_residential_address,
+			'is_inside_delivery'     => $customerCart->is_inside_delivery,
 			'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
 			'amount'                 => number_format($cartAmount, 2, '.', ''),
 			'tax_percentage'         => $taxPercentage,
 			'tax_amount'             => number_format($taxAmount, 2, '.', ''),
 			'total_amount'           => number_format($totalAmount, 2, '.', ''),
 			'total_products'         => $totalProducts,
+			'additional_amount_name' => $customerCart->additional_amount_name,
+			'additional_amount_price' => $customerCart->additional_amount_price,
 			'products'               => $cartProducts,
 		];
 

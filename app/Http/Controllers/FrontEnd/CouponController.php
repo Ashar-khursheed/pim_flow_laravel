@@ -7,7 +7,12 @@ use App\Models\FrontEnd\Coupon;
 use App\Models\FrontEnd\Customers;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\FinancesPayment;
+use App\Models\FrontEnd\CouponCustomer;
+use App\Models\FrontEnd\CouponCategory;
+use App\Models\FrontEnd\CouponProduct;
 use App\Models\FrontEnd\CouponUsage;
+use App\Models\FrontEnd\Order;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
@@ -49,21 +54,20 @@ class CouponController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Coupon::with(['creator', 'approver', 'customers', 'categories', 'products']);
-
         // Global Search Implementation
         if ($request->filled('global')) {
             $searchTerm = $request->input('global');
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('code', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('title', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('name', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('description', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('discount_amount', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('minimum_order_amount', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('maximum_discount_amount', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('value', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('min_order_value', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('max_order_value', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('usage_limit', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('status', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('basis', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('discount_type', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('usage_type', 'LIKE', '%' . $searchTerm . '%')
                     // Search in related models
                     ->orWhereHas('creator', function ($creatorQuery) use ($searchTerm) {
                         $creatorQuery->where('name', 'LIKE', '%' . $searchTerm . '%')
@@ -76,7 +80,7 @@ class CouponController extends Controller
                     ->orWhereHas('customers', function ($customerQuery) use ($searchTerm) {
                         $customerQuery->where('name', 'LIKE', '%' . $searchTerm . '%')
                             ->orWhere('email', 'LIKE', '%' . $searchTerm . '%')
-                            ->orWhere('phone', 'LIKE', '%' . $searchTerm . '%');
+                            ->orWhere('mobile_number', 'LIKE', '%' . $searchTerm . '%');
                     })
                     ->orWhereHas('categories', function ($categoryQuery) use ($searchTerm) {
                         $categoryQuery->where('name', 'LIKE', '%' . $searchTerm . '%')
@@ -143,6 +147,8 @@ class CouponController extends Controller
             ->offset(($page - 1) * $perPage)
             ->limit($perPage)
             ->get();
+           
+
 
         return response()->json([
             'success' => true,
@@ -200,60 +206,142 @@ class CouponController extends Controller
             new OA\Response(response: 422, description: 'Validation errors')
         ]
     )]
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'code' => 'string|max:255|unique:coupons,code',
+    //         'name' => 'string|max:255',
+    //         'description' => 'nullable|string',
+    //         'type' => 'in:fixed,percentage',
+    //         'value' => 'required|numeric|min:0',
+    //         'basis' => 'required|in:customer,category,product,promotional',
+    //         'min_order_value' => 'nullable|numeric|min:0',
+    //         'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
+    //         'usage_type' => 'required|in:once,multiple,unlimited',
+    //         'usage_limit' => 'nullable|integer|min:1',
+    //         'usage_limit_per_customer' => 'nullable|integer|min:1',
+    //         'start_date' => 'required|date|after_or_equal:today',
+    //         'expire_date' => 'required|date|after:start_date',
+    //         'is_active' => 'boolean',
+
+    //         // 👇 Conditional validation
+    //         'customer_ids' => 'required_if:basis,customer|array',
+    //         'customer_ids.*' => 'required_if:basis,customer|exists:customers,id',
+
+    //         'category_ids' => 'required_if:basis,category|array',
+    //         'category_ids.*' => 'required_if:basis,category|exists:categories,id',
+
+    //         'product_ids' => 'required_if:basis,product|array',
+    //         'product_ids.*' => 'required_if:basis,product|exists:ec_products,id',
+    //     ]);
+
+    //     $validated['created_by'] = auth()->id();
+
+    //     $coupon = Coupon::create($validated);
+
+    //     // Attach relationships based on basis
+    //     if ($validated['basis'] === 'customer' && !empty($validated['customer_ids'])) {
+    //         $coupon->customers()->attach($validated['customer_ids']);
+    //     }
+
+    //     if ($validated['basis'] === 'category' && !empty($validated['category_ids'])) {
+    //         $coupon->categories()->attach($validated['category_ids']);
+    //     }
+
+    //     if ($validated['basis'] === 'product' && !empty($validated['product_ids'])) {
+    //         $coupon->products()->attach($validated['product_ids']);
+    //     }
+
+    //     $coupon->load(['creator', 'customers', 'categories', 'products']);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $coupon,
+    //         'message' => 'Coupon created successfully'
+    //     ], 201);
+    // }
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'code' => 'string|max:255|unique:coupons,code',
-            'name' => 'string|max:255',
-            'description' => 'nullable|string',
-            'type' => 'in:fixed,percentage',
-            'value' => 'required|numeric|min:0',
-            'basis' => 'required|in:customer,category,product,promotional',
-            'min_order_value' => 'nullable|numeric|min:0',
-            'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
-            'usage_type' => 'required|in:once,multiple,unlimited',
-            'usage_limit' => 'nullable|integer|min:1',
-            'usage_limit_per_customer' => 'nullable|integer|min:1',
-            'start_date' => 'required|date|after_or_equal:today',
-            'expire_date' => 'required|date|after:start_date',
-            'is_active' => 'boolean',
+     $validated = $request->validate([
+        'code' => 'string|max:255|unique:coupons,code',
+        'name' => 'string|max:255',
+        'description' => 'nullable|string',
+        'type' => 'in:fixed,percentage',      
+        'value' => 'sometimes|required|numeric|min:0|lte:min_order_value',             
+        'basis' => 'required|in:customer,category,product,promotional',
+        'min_order_value' => 'nullable|numeric|min:0',
+        'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
+        'usage_type' => 'required|in:once,multiple,unlimited',
+        'usage_limit' => 'nullable|integer|min:1',
+        'usage_limit_per_customer' => 'nullable|integer|min:1',
+        
+        // More lenient date validation
+       // 'start_date' => [
+       //      'required',
+       //      'date',
+       //      function ($attribute, $value, $fail) {
+       //          $startDate = \Carbon\Carbon::parse($value)->format('Y-m-d');
+       //          $today = \Carbon\Carbon::today()->format('Y-m-d');
+                
+       //          if ($startDate < $today) {
+       //              $fail('The start date cannot be in the past.');
+       //          }
+       //      }
+       //  ],
+        'start_date' => [
+                'required',
+                'date',
+            ],
+        'expire_date' => [
+            'required',
+            'date',
+            function ($attribute, $value, $fail) use ($request) {
+                $expireDate = \Carbon\Carbon::parse($value)->startOfDay();
+                $startDate = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+                
+                if ($expireDate->lt($startDate)) {
+                    $fail('The expire date must be after the start date.');
+                }
+            }
+        ],
+        
+        'is_active' => 'boolean',
 
-            // 👇 Conditional validation
-            'customer_ids' => 'required_if:basis,customer|array',
-            'customer_ids.*' => 'required_if:basis,customer|exists:customers,id',
+        // Conditional validation
+        'customer_ids' => 'required_if:basis,customer|array',
+        'customer_ids.*' => 'required_if:basis,customer|exists:customers,id',
 
-            'category_ids' => 'required_if:basis,category|array',
-            'category_ids.*' => 'required_if:basis,category|exists:categories,id',
+        'category_ids' => 'required_if:basis,category|array',
+        'category_ids.*' => 'required_if:basis,category|exists:categories,id',
 
-            'product_ids' => 'required_if:basis,product|array',
-            'product_ids.*' => 'required_if:basis,product|exists:ec_products,id',
-        ]);
+        'product_ids' => 'required_if:basis,product|array',
+        'product_ids.*' => 'required_if:basis,product|exists:ec_products,id',
+    ]);
 
-        $validated['created_by'] = auth()->id();
+    $validated['created_by'] = auth()->id();
 
-        $coupon = Coupon::create($validated);
+    $coupon = Coupon::create($validated);
 
-        // Attach relationships based on basis
-        if ($validated['basis'] === 'customer' && !empty($validated['customer_ids'])) {
-            $coupon->customers()->attach($validated['customer_ids']);
-        }
-
-        if ($validated['basis'] === 'category' && !empty($validated['category_ids'])) {
-            $coupon->categories()->attach($validated['category_ids']);
-        }
-
-        if ($validated['basis'] === 'product' && !empty($validated['product_ids'])) {
-            $coupon->products()->attach($validated['product_ids']);
-        }
-
-        $coupon->load(['creator', 'customers', 'categories', 'products']);
-
-        return response()->json([
-            'success' => true,
-            'data' => $coupon,
-            'message' => 'Coupon created successfully'
-        ], 201);
+    // Attach relationships based on basis
+    if ($validated['basis'] === 'customer' && !empty($validated['customer_ids'])) {
+        $coupon->customers()->attach($validated['customer_ids']);
     }
+
+    if ($validated['basis'] === 'category' && !empty($validated['category_ids'])) {
+        $coupon->categories()->attach($validated['category_ids']);
+    }
+
+    if ($validated['basis'] === 'product' && !empty($validated['product_ids'])) {
+        $coupon->products()->attach($validated['product_ids']);
+    }
+
+    $coupon->load(['creator', 'customers', 'categories', 'products']);
+    return response()->json([
+        'success' => true,
+        'data' => $coupon,
+        'message' => 'Coupon created successfully'
+    ], 201);
+}
 
     #[OA\Get(
         path: '/api/coupons/{id}',
@@ -293,6 +381,7 @@ class CouponController extends Controller
         path: '/api/coupons/{id}',
         summary: 'Update coupon',
         tags: ['Coupons'],
+        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Coupon ID', schema: new OA\Schema(type: 'integer'))
         ],
@@ -342,8 +431,8 @@ class CouponController extends Controller
             'code' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('coupons')->ignore($coupon->id)],
             'name' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'sometimes|required|in:fixed,percentage',
-            'value' => 'sometimes|required|numeric|min:0',
+            'type' => 'sometimes|required|in:fixed,percentage',          
+            'value' => 'sometimes|required|numeric|min:0|lte:min_order_value',
             'basis' => 'sometimes|required|in:customer,category,product,promotional',
             'min_order_value' => 'nullable|numeric|min:0',
             'max_order_value' => 'nullable|numeric|min:0|gte:min_order_value',
@@ -561,11 +650,11 @@ class CouponController extends Controller
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
             'product_ids' => 'nullable|array',
-            'product_ids.*' => 'exists:products,id',
+            'product_ids.*' => 'exists:ec_products,id',
         ]);
 
         $coupon = Coupon::where('code', $validated['code'])->first();
-
+ 
         if (!$coupon) {
             return response()->json([
                 'success' => false,
@@ -634,7 +723,7 @@ class CouponController extends Controller
         }
 
         if ($coupon->basis === 'product' && !empty($validated['product_ids'])) {
-            $validProducts = $coupon->products()->pluck('products.id')->toArray();
+            $validProducts = $coupon->products()->pluck('ec_products.id')->toArray();
             if (empty(array_intersect($validated['product_ids'], $validProducts))) {
                 return response()->json([
                     'success' => false,
@@ -1070,7 +1159,7 @@ class CouponController extends Controller
         if ($coupon->min_order_value && $orderValue < $coupon->min_order_value) {
             return [
                 'valid' => false,
-                'reason' => 'Minimum order value of $' . number_format($coupon->min_order_value, 2) . ' required'
+                'reason' => 'Minimum order value of ' . number_format($coupon->min_order_value, 2) . ' required'
             ];
         }
 
@@ -1078,10 +1167,15 @@ class CouponController extends Controller
         if ($coupon->max_order_value && $orderValue > $coupon->max_order_value) {
             return [
                 'valid' => false,
-                'reason' => 'Order value exceeds maximum limit of $' . number_format($coupon->max_order_value, 2)
+                'reason' => 'Order value exceeds maximum limit of ' . number_format($coupon->max_order_value, 2)
             ];
         }
-
+        if ($orderValue < $coupon->value ) {     
+            return [
+                'valid' => false,
+                'reason' =>  "The order amount (" . number_format($orderValue, 2) . ") is less than the coupon value (" . number_format($coupon->value, 2) . ").",          
+                ];                             
+        }
         // Check customer-specific coupon
         if ($coupon->basis === 'customer') {
             $isValidCustomer = $coupon->customers()->where('customer_id', $customerId)->exists();
@@ -1179,6 +1273,13 @@ class CouponController extends Controller
      *         description="The coupon code to validate",
      *         @OA\Schema(type="string", example="SUMMER2025")
      *     ),
+     *  @OA\Parameter(
+     *         name="orderValue",
+     *         in="query",
+     *         required=true,
+     *         description="The orderValue to validate",
+     *         @OA\Schema(type="number", example="500")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Coupon is valid",
@@ -1230,46 +1331,147 @@ class CouponController extends Controller
                 'message' => 'Unauthorized',
             ], 401);
         }
-
+ 
         $couponCode = $request->query('coupon_code');
-
-        $coupon = Coupon::where('code', $couponCode)
-            ->where('is_active', true)        // active status
-            ->where('status', 'approved')    // approved in DB
-            ->where(function ($q) {
-                $q->whereNull('start_date')
-                    ->orWhere('start_date', '<=', now());
-            })
-            ->where(function ($q) {
-                $q->whereNull('expire_date')
-                    ->orWhere('expire_date', '>=', now());
-            })
-            ->first();
-
+        $orderValue = $request->query('orderValue');
+        $coupon = Coupon::where('code', $couponCode)->first();
         if (!$coupon) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid or expired coupon',
             ], 400);
         }
+        $usage_type = $coupon->usage_type;
+        $usage_limit = $coupon->usage_limit;
+        $usage_limit_per_customer = $coupon->usage_limit_per_customer;
+        $basis = $coupon->basis;
 
-        // Check if coupon is customer-specific
-        if ($coupon->basis === 'customer') {
-            $isAssigned = $coupon->customers()
-                ->where('customer_id', $customerId)
-                ->exists();
+        
+        $current_total_usage = Order::where('coupon_id',$coupon->id)->where('customer_id',$customerId)->get()->count();
+ 
+        // $current_total_usage = $coupon->usage_count;  
+ 
+        $current_customer_usage = $coupon->usages()->where('customer_id', $customerId)->count(); 
 
-            if (!$isAssigned) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This coupon is not valid for your account',
-                ], 403);
+      
+        $current_customer_count = CouponCustomer::where('coupon_id', $coupon->id)
+            ->where('customer_id', $customerId)
+            ->count();
+
+        $category_ids = CouponCategory::where('coupon_id', $coupon->id)
+            ->pluck('category_id')
+            ->toArray();
+        $validCategories = $coupon->categories()->pluck('categories.id')->toArray();
+
+        $productIds = CouponProduct::where('coupon_id', $coupon->id)
+            ->pluck('product_id')
+            ->toArray();
+       
+        $is_valid = true;
+        $error_message = '';        
+        if ($usage_type == 'once') {             
+            if ($current_total_usage >= 1) {                
+                $is_valid = false;
+                $error_message = 'This coupon can only be used once and has already been used.';
+            }
+        } elseif ($usage_type == 'multiple') {
+                     
+            if ($usage_limit > 0 && $current_total_usage >= $usage_limit) {
+                $is_valid = false;
+                $error_message = "This coupon has reached its usage limit of {$usage_limit}.";
+            }
+        } elseif ($usage_type == 'unlimited') {
+            if ($is_valid && $usage_limit_per_customer > 0) {
+                if ($current_customer_usage >= $usage_limit_per_customer) {
+                    $is_valid = false;
+                    $error_message = "You have reached the usage limit of {$usage_limit_per_customer} for this coupon.";
+                }
             }
         }
+         
+         
+        if ($is_valid) {
+            switch ($basis) {
+                case 'customer':
+                      $isAssigned = $coupon->customers()
+                    ->where('customer_id', $customerId)
+                    ->exists();                   
+                    if (!$isAssigned) {
+                        $is_valid = false;
+                        $error_message = "This coupon is not valid for your account.";
+                    }             
+                     
+                    break;
 
+                case 'category':
+                     
+                    $validCategories = $coupon->categories()->pluck('categories.id')->toArray();                 
+                    if (empty(array_intersect($category_ids, $validCategories))) {
+ 
+                        $is_valid = false;
+                        $error_message = "This category has reached its usage limit.";
+                    }
+                    break;
+
+                case 'product':
+                    $validProducts = $coupon->products()->pluck('ec_products.id')->toArray();
+                    if (empty(array_intersect($productIds, $validProducts))) {
+
+                        $is_valid = false;
+                        $error_message = "This product has reached its usage limit.";
+                    }
+                    break;
+            }
+        }
+ 
+         if ($orderValue < $coupon->min_order_value) {
+            
+            $is_valid = false;          
+            $error_message = 'Minimum order value of ' . number_format($coupon->min_order_value, 2) . ' required';
+        }
+        if ($orderValue < $coupon->value ) {            
+            $is_valid = false;          
+            $error_message = "The order amount (" . number_format($orderValue, 2) . ") is less than the coupon value (" . number_format($coupon->value, 2) . ").";             
+        }
+
+        if ($coupon->max_order_value && $orderValue > $coupon->max_order_value) {
+            
+            $is_valid = false;
+            $error_message = 'Order value exceeds maximum limit of ' . number_format($coupon->max_order_value, 2);
+        }
+
+        if ($coupon->type === 'percentage') {    
+            $percentage =  ($orderValue * $coupon->value) / 100;
+             if ($coupon->max_order_value && $percentage > $coupon->max_order_value) {
+                $is_valid = false;
+                $error_message = 'Order value exceeds maximum limit of ' . number_format($coupon->max_order_value, 2);
+             }
+            if ($percentage < $coupon->value ) {     
+            return [
+                $is_valid = false,
+                $error_message =  "The order amount (" . number_format($orderValue, 2) . ") is less than the coupon value (" . number_format($coupon->value, 2) . ").",          
+                ];                             
+            }
+            if ($percentage < $coupon->min_order_value) {
+                $is_valid = false;          
+                $error_message = 'Minimum order value of ' . number_format($coupon->min_order_value, 2) . ' required';
+            }
+             
+        }
+        
+        if (!$coupon->isValid()) {
+            $is_valid = false;
+            $error_message = 'This coupon is not valid OR expired coupon.';
+        }
+ 
+        if ($coupon->isExpired()) {
+            $is_valid = false;
+            $error_message = 'This coupon has expired.';
+        }
+        if($is_valid){
         return response()->json([
-            'success' => true,
-            'message' => 'Coupon is valid',
+            'success' => $is_valid,
+            'message' => $error_message,
             'data' => [
                 'coupon_id' => $coupon->id,
                 'coupon_code' => $coupon->code,
@@ -1280,7 +1482,78 @@ class CouponController extends Controller
                 'expire_date' => $coupon->expire_date,
             ],
         ]);
+    }else{
+          return response()->json([
+            'success' => $is_valid,
+            'message' => $error_message,
+            'data' => [],
+        ]);
+
     }
+
+        
+    }
+    // public function checkCustomerCoupon_old(Request $request)
+    // {
+    //     $customerId = auth()->id(); // Logged-in customer ID
+
+    //     if (!$customerId) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Unauthorized',
+    //         ], 401);
+    //     }
+
+    //     $couponCode = $request->query('coupon_code');
+
+    //     $coupon = Coupon::where('code', $couponCode)
+    //         ->where('is_active', true)        // active status
+    //         ->where('status', 'approved')    // approved in DB
+    //         ->where(function ($q) {
+    //             $q->whereNull('start_date')
+    //                 ->orWhere('start_date', '<=', now());
+    //         })
+    //         ->where(function ($q) {
+    //             $q->whereNull('expire_date')
+    //                 ->orWhere('expire_date', '>=', now());
+    //         })
+    //         ->first();
+ 
+    //     if (!$coupon) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Invalid or expired coupon',
+    //         ], 400);
+    //     }
+
+    //     // Check if coupon is customer-specific
+    //     if ($coupon->basis === 'customer') {
+    //         $isAssigned = $coupon->customers()
+    //             ->where('customer_id', $customerId)
+    //             ->exists();
+
+    //         if (!$isAssigned) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'This coupon is not valid for your account',
+    //             ], 403);
+    //         }
+    //     }
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Coupon is valid',
+    //         'data' => [
+    //             'coupon_id' => $coupon->id,
+    //             'coupon_code' => $coupon->code,
+    //             'coupon_name' => $coupon->name,
+    //             'coupon_description' => $coupon->description,
+    //             'discount_type' => $coupon->type,
+    //             'discount_value' => $coupon->value,
+    //             'expire_date' => $coupon->expire_date,
+    //         ],
+    //     ]);
+    // }
 
 
 

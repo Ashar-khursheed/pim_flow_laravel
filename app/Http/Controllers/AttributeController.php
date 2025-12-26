@@ -9,19 +9,9 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
 use App\Models\Attribute;
+use App\Models\AttributeValue;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\TransactionLog;
-use App\Models\MeasurementUnit;
-
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-
-use App\Services\ExcelImporterService;
-use App\Repository\ExcelRepository;
-
-use App\Jobs\ImportProductAttributeJob;
 
 class AttributeController extends BaseController
 {
@@ -193,6 +183,12 @@ class AttributeController extends BaseController
 		$attribute->updated_at = now();
 		$attribute->save();
 
+		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+			$attribute->translateOrNew('en')->name_tr = $request->name;
+		}
+
+		$attribute->save();
+
 		return response()->json([
 			'success' => true,
 			'message' => __("msg_create"),
@@ -213,6 +209,7 @@ class AttributeController extends BaseController
 	 *         description="ID of the attribute",
 	 *         @OA\Schema(type="integer", example=1)
 	 *     ),
+	 *     @OA\Parameter(name="locale", in="query", required=true, @OA\Schema(type="string", enum={"ar", "en"}, example="ar")),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -225,6 +222,7 @@ class AttributeController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
+		$locale = in_array($request->locale ?? 'en', ['ar', 'en']) ? ($request->locale ?? 'en') : 'en';
 		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroup:id,name', 'measurementUnits:id,name,measurement_type_id'])->find($attributeId);
 
 		if (!$attribute) {
@@ -233,6 +231,8 @@ class AttributeController extends BaseController
 				'message' => __("err_exist")
 			]);
 		}
+
+		// $translation = $attribute->translations->firstWhere('locale', $locale);
 
 		/* Append measurement_type from first unit if exists */
 		$firstUnit = $attribute->measurementUnits->first();
@@ -247,6 +247,9 @@ class AttributeController extends BaseController
 
 
 		$attribute->validations = json_decode($attribute->validations);
+
+		// $field = 'name_tr';
+		// $attribute->name = $translation ? $translation->$field : $attribute->name;
 
 		return response()->json([
 			'success' => true,
@@ -322,6 +325,7 @@ class AttributeController extends BaseController
 		]);
 
 		$input = $request->all();
+		$locale = $request->locale ?? 'en';
 
 		DB::beginTransaction();
 		try {
@@ -348,24 +352,42 @@ class AttributeController extends BaseController
 				$valuesToDelete = array_diff($existingValues, $providedValues);
 				$valuesToAdd = array_diff($providedValues, $existingValues);
 
+				/* Delete removed values and their translations */
 				if (!empty($valuesToDelete)) {
 					$attributeValuesToDelete = $attribute->attributeValues()
 					->whereIn('attribute_value', $valuesToDelete)
 					->get();
 
 					foreach ($attributeValuesToDelete as $value) {
+						/* Delete translations if available */
+						if (method_exists($value, 'translations')) {
+							$value->translations()->delete();
+						}
 						$value->delete();
 					}
 				}
 
+				/* Add new values with translation */
 				foreach ($valuesToAdd as $newValue) {
-					$attribute->attributeValues()->create(['attribute_value' => $newValue]);
+					$newAttributeValue = $attribute->attributeValues()->create([
+						'attribute_value' => $newValue,
+					]);
+
+					/* Since input is always in English, save translation explicitly */
+					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$newAttributeValue->translateOrNew('en')->attribute_value_tr = $newValue;
+					}
+					$newAttributeValue->save();
 				}
 			}
+
 
 			/* Delete attribute values if type changed from 'select' */
 			if ($request->type !== 'select' && $attribute->type === 'select') {
 				foreach ($attribute->attributeValues as $value) {
+					if (method_exists($value, 'translations')) {
+						$value->translations()->delete();
+					}
 					$value->delete();
 				}
 			}
@@ -377,7 +399,43 @@ class AttributeController extends BaseController
 			];
 			foreach ($fillableFields as $field) {
 				if (array_key_exists($field, $input)) {
-					$attribute->$field = $input[$field];
+					// if ($field == 'name') {
+					// 	$updatedName = $input['name'];
+					// 	/* use translated table */
+					// 	$existingName = optional($product->translate($locale))->name ?? [];
+
+					// 	/* Only save if changed */
+					// 	if ($updatedName !== $existingName) {
+					// 		if ($locale === 'en') {
+					// 			$attribute->name = $updatedName;
+					// 		}
+
+					// 		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+					// 			$attribute->translateOrNew($locale)->name_tr = $updatedName;
+					// 		}
+					// 		$attribute->save();
+					// 	}
+					if ($field == 'name') {
+						$updatedName = $input['name'];
+
+						// Use translated table correctly
+						$existingName = optional($attribute->translate($locale))->name ?? [];
+
+						// Only save if changed
+						if ($updatedName !== $existingName) {
+							if ($locale === 'en') {
+								$attribute->name = $updatedName;
+							}
+
+							if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+								$attribute->translateOrNew($locale)->name_tr = $updatedName;
+							}
+
+							$attribute->save();
+						}
+					} else {
+						$attribute->$field = $input[$field];
+					}
 				}
 			}
 
@@ -443,11 +501,17 @@ class AttributeController extends BaseController
 
 		if ($attribute->type === 'select') {
 			foreach ($attribute->attributeValues as $value) {
+				if (method_exists($value, 'translations')) {
+					$value->translations()->delete();
+				}
 				$value->delete();
 			}
 		}
 
 		/* Proceed with deletion */
+		if (method_exists($attribute, 'translations')) {
+			$attribute->translations()->delete();
+		}
 		$attribute->delete();
 
 		return response()->json([
@@ -458,333 +522,76 @@ class AttributeController extends BaseController
 
 	/**
 	 * @OA\Post(
-	 *     path="/api/attributes/export",
-	 *     summary="Export product attribute data to Excel",
+	 *     path="/api/attributes/generate-translation",
+	 *     summary="Generate or update attribute translation",
+	 *     description="This endpoint generates or updates translations for an attribute and its values.",
 	 *     tags={"Attributes"},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"parent_category_id", "range_from", "range_to"},
-	 *             @OA\Property(property="status", type="string", example="all", description="Status (e.g., draft, published)"),
-	 *             @OA\Property(property="parent_category_id", type="integer", example=1, description="Parent category ID"),
-	 *             @OA\Property(property="brand_id", type="integer", example=1, description="Brand ID"),
-	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
-	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)")
+	 *             required={"id", "locale", "name"},
+	 *             @OA\Property(property="id", type="integer", example=1, description="ID of the attribute to translate"),
+	 *             @OA\Property(property="locale", type="string", example="ar", description="Locale code for translation (e.g. ar)"),
+	 *             @OA\Property(property="name", type="string", example="الحجم", description="Translated name of the attribute"),
+	 *             @OA\Property(
+	 *                 property="attribute_values",
+	 *                 type="object",
+	 *                 example={"1": "صغير", "2": "متوسط", "3": "كبير"},
+	 *                 description="Key-value pairs of attribute value translations (key = attribute_value_id, value = translated text)"
+	 *             )
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function export(Request $request, ExcelRepository $excelRepo)
+	public function generateTranslation(Request $request)
 	{
-		if (!auth()->user()->can('export attribute')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		/* Validate request data */
-		$request->validate([
-			'status' => 'required|string|in:all,draft,published',
-			'parent_category_id' => 'required|integer|exists:categories,id',
-			'brand_id' => 'nullable|integer|exists:ec_brands,id',
-			'range_from' => 'required|integer|min:1',
-			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
+		$validated = $request->validate([
+			'id' => 'required|exists:attributes,id',
+			'locale' => 'required|string|in:ar',
+			'name' => 'required|string',
+			'attribute_values' => 'nullable|array',
+			'attribute_values.*' => 'string|nullable',
 		]);
 
-		$parentCategory = Category::findOrFail($request->parent_category_id);
+		$attribute = Attribute::find($validated['id']);
 
-		$categoryAttributes = [];
-		if (!$parentCategory->children()->exists()) {
-			$categoryAttributeIds = [];
-			if ($parentCategory->subCategory && $parentCategory->subCategory->attributes_ids) {
-				$raw = $parentCategory->subCategory->attributes_ids;
-				if (is_array($raw)) {
-					$raw = $raw[0];
-				}
-				$categoryAttributeIds = array_map('intval', explode(',', $raw));
-			}
-
-			$categoryAttributes = Attribute::whereIn('id', $categoryAttributeIds)->pluck('name')->toArray();
-		}
-
-		/* Get leaf categories */
-		$leafCategories = Category::getLeafCategories($parentCategory);
-		$leafCategoryIds = $leafCategories->pluck('id')->toArray();
-
-		/* Fetch products within range */
-		$products = Product::query();
-		if ($request->status && $request->status != "all") {
-			$products->where('status', $request->status);
-		}
-		$products = $products->whereHas('categories', fn($query) => $query->whereIn('category_id', $leafCategoryIds));
-		if ($request->brand_id) {
-			$products = $products->whereHas('brand', function ($query) use ($request) {
-				$query->where('id', $request->brand_id);
-			});
-		}
-		$products = $products->offset($request->range_from - 1)
-		->limit($request->range_to - $request->range_from + 1)
-		->orderBy('id', 'asc')
-		->get(['id', 'sku', 'name']);
-
-		if ($products->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No products exist in the associated leaf categories.'
-			]);
-		}
-
-		/* Fetch unique attributes */
-		$uniqueAttributes = $leafCategories
-		->flatMap->categoryAllAttributes()
-		->unique('id')
-		->sortBy('id')
-		->reject(fn($attribute) => $attribute->type === 'multiselect')
-		->mapWithKeys(function ($attribute) {
-			$data = [
-				'name' => $attribute->name,
-				'type' => $attribute->type,
-				'attribute_value' => $attribute->type === 'toggle'
-				? ['Yes', 'No']
-				: $attribute->attributeValues->pluck('attribute_value')->toArray(),
-			];
-
-			if ($attribute->type === 'measurement') {
-				$data['measurement_units'] = $attribute->measurementUnits->pluck('name')->toArray();
-			}
-
-			return [$attribute->id => $data];
-		})
-		->toArray();
-
-		$attributeNames = array_map(function ($attr) {
-			if ($attr['type'] === 'measurement') {
-				return [$attr['name'], $attr['name'] . ' Measurement Unit'];
-			}
-			return [$attr['name']];
-		}, $uniqueAttributes);
-
-		$attributeNames = array_merge(...$attributeNames);
-
-		$header = array_merge(['ID', 'SKU', 'Name'], $attributeNames);
-
-		/* Prepare spreadsheet */
-		$spreadsheet = $excelRepo->newSpreadsheet();
-		$sheet = $spreadsheet->getActiveSheet();
-		$sheet->setTitle('Attributes');
-
-		$highlightedAttribute = [];
-		foreach ($categoryAttributes as $attribute) {
-			$highlightedAttribute[] = $attribute;
-			$measurementUnit = $attribute . ' Measurement Unit';
-			if (in_array($measurementUnit, $attributeNames)) {
-				$highlightedAttribute[] = $measurementUnit;
-			}
-		}
-
-		/* Set headers */
-		$excelRepo->setHeader($sheet, $header, $highlightedAttribute);
-
-		/* Populate data */
-		$measurementNameIds = MeasurementUnit::pluck('name', 'id')->toArray();
-		$row = 2;
-		foreach ($products as $product) {
-			$existingAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
-			$existingMeasuments = $product->productAttributes->whereNotNull('measurement_unit_id')->pluck('measurement_unit_id', 'attribute_id')->toArray();
-			$col = 'A';
-
-			/* Set product details */
-			$sheet->setCellValue($col++ . $row, $product->id);
-			$sheet->setCellValue($col++ . $row, $product->sku);
-			$sheet->setCellValue($col++ . $row, $product->name);
-
-			foreach ($uniqueAttributes as $attributeId => $attributeDetail) {
-				$existingVal = $existingAttributes[$attributeId] ?? '';
-				$cell = $col++ . $row;
-
-				if (!empty($attributeDetail['attribute_value']) && in_array($attributeDetail['type'], ['select', 'toggle'])) {
-					$excelRepo->setDropdown($spreadsheet, $sheet, $cell, $attributeDetail['name'], $attributeDetail['attribute_value'], $existingVal);
-
-				} else if ($attributeDetail['type'] === 'measurement') {
-					$sheet->setCellValue($cell, $existingVal);
-
-					$existingMeasurementUnitID = $existingMeasuments[$attributeId] ?? '';
-					$existingMeasurementValue = $measurementNameIds[$existingMeasurementUnitID] ?? '';
-
-					$unitCell = $col++ . $row;
-					$excelRepo->setDropdown(
-						$spreadsheet,
-						$sheet,
-						$unitCell,
-						$attributeDetail['name'] . ' Measurement Unit',
-						$attributeDetail['measurement_units'],
-						$existingMeasurementValue
-					);
-
-				} else {
-					$sheet->setCellValue($cell, $existingVal);
-				}
-			}
-
-			$row++;
-		}
-
-		$parentCategoryName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $parentCategory->name);
-		$fileName = 'attributes_'.$parentCategoryName.'_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
-
-		return $excelRepo->downloadFile($fileName, $spreadsheet);
-	}
-
-	/**
-	 * @OA\Post(
-	 *     path="/api/attributes/import",
-	 *     summary="Import product attributes from an Excel file",
-	 *     tags={"Attributes"},
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 required={"upload_file"},
-	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB")
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(response=200, description="Imported successfully", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
-	public function import(Request $request, ExcelImporterService $excelImporter)
-	{
-		if (!auth()->user()->can('import attribute')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
-
-		/* Validate request data */
-		$request->validate([
-			'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
-		]);
-
+		DB::beginTransaction();
 		try {
-			$attributeFileFormatArray = [
-				'ID'   => 'id',
-				'SKU' => 'sku',
-				'Name' => 'name',
-			];
+			$locale = $validated['locale'];
 
-			$excelImporter->processExcelImport(
-				$request->file('upload_file'),
-				$attributeFileFormatArray,
-				'Product Attribute', /* Module name */
-				config('app.website') . '_ATTRIBUTE', /* Job name */
-				'Import Product Attributes', /* Batch name */
-				ImportProductAttributeJob::class
-			);
+			/* Update attribute translation */
+			$attribute->translateOrNew($locale)->name_tr = $validated['name'];
+			$attribute->save();
+
+			/* Update attribute value translations */
+			if ($attribute->type === 'select' && !empty($validated['attribute_values'])) {
+				foreach ($validated['attribute_values'] as $id => $translatedValue) {
+					$attrValue = AttributeValue::find($id);
+					if ($attrValue) {
+						$attrValue->translateOrNew($locale)->attribute_value_tr = $translatedValue;
+						$attrValue->save();
+					}
+				}
+			}
+
+			DB::commit();
 
 			return response()->json([
 				'success' => true,
-				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+				'message' => __("Translations updated successfully."),
+				'data' => $attribute->load('attributeValues'),
 			]);
-		} catch(\Exception $exception) {
-			$error[] = 'Error: ' . $exception->getMessage();
-			$error[] = 'File: ' . $exception->getFile();
-			$error[] = 'Line: ' . $exception->getLine();
+		} catch (\Exception $e) {
+			DB::rollBack();
+
 			return response()->json([
 				'success' => false,
-				'message' => $error
-			]);
+				'message' => __("err_update"),
+				'error' => $e->getMessage(),
+			], 500);
 		}
 	}
-
-
-
-	// 		$mandatoryHeaders = ['ID', 'SKU', 'Name'];
-
-	// 		$file = $request->file('upload_file');
-	// 		$spreadsheet = $this->excel->loadFile($file->getRealPath());
-	// 		$sheet = $spreadsheet->getActiveSheet();
-	// 		$data = $sheet->toArray();
-	// 		$header = array_shift($data);
-
-	// 		/* Check required header */
-	// 		$missingHeaders = array_diff($mandatoryHeaders, $header);
-	// 		if (!empty($missingHeaders)) {
-	// 			return response()->json([
-	// 				'success' => false,
-	// 				'message' => 'Missing mandatory columns: ' . implode(', ', $missingHeaders)
-	// 			]);
-	// 		}
-
-	// 		$totalRecords = count($data);
-	// 		if ($totalRecords == 0) {
-	// 			return response()->json([
-	// 				'success' => false,
-	// 				'message' => 'The uploaded Excel file does not contain any records. Please ensure the file has valid data and try again.'
-	// 			]);
-	// 		}
-
-	// 		if ($totalRecords > 2000) {
-	// 			return response()->json([
-	// 				'success' => false,
-	// 				'message' => 'The uploaded Excel file contains more than 2000 records. Please reduce the number of rows and try again.'
-	// 			]);
-	// 		}
-
-	// 		/* Create batch */
-	// 		$batch = Bus::batch([])
-	// 		->before(function (Batch $batch) use ($totalRecords) {
-	// 			$descArray = [
-	// 				"Total Count" => $totalRecords,
-	// 				"Success Count" => 0,
-	// 				"Failed Count" => 0,
-	// 				"Errors" => []
-	// 			];
-	// 			/* Save transaction log */
-	// 			$log = new TransactionLog();
-	// 			$log->module = "Product Attribute";
-	// 			$log->action = "Import";
-	// 			$log->identifier = $batch->id;
-	// 			$log->status = 'In-progress';
-	// 			$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
-	// 			$log->created_by = auth()->id() ?? null;
-	// 			$log->created_at = now();
-	// 			$log->save();
-	// 		})
-	// 		->finally(function (Batch $batch) {
-	// 			$log = TransactionLog::where('identifier', $batch->id)->first();
-	// 			TransactionLog::where('id', $log->id)->update([
-	// 				'status' => 'Completed',
-	// 			]);
-	// 		})
-	// 		->name("Import Product Attributes")
-	// 		->dispatch();
-
-	// 		/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
-	// 		$chunkSize = 50;
-	// 		$chunks = array_chunk($data, $chunkSize);
-
-	// 		foreach ($chunks as $chunk) {
-	// 			$data = [
-	// 				'header' => $header,
-	// 				'chunk' => $chunk
-	// 			];
-	// 			$batch->options['queue'] = 'JOB2';
-	// 			$batch->add(new ImportProductAttributeJob($data));
-	// 		}
-	// 		return response()->json([
-	// 			'success' => true,
-	// 			'message' => 'The import process has been scheduled successfully. Please track it under import log.'
-	// 		]);
-	// 	} catch(\Exception $exception) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => $exception->getMessage()
-	// 		]);
-	// 	}
-	// }
 }

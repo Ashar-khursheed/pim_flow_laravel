@@ -232,6 +232,10 @@ class BrandController extends Controller
                             'return_policy' => $firstSupplier?->return_policy ?? null,
                             'free_shipping' => $firstSupplier?->free_shipping ?? null,
                             'warranty_information' => $firstSupplier?->warranty_information ?? null,
+                            'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                            'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                            'quote_available' => $product->quote_available ?? null,
+                             'isRequired' => $product->isRequired,
 
                         ];
 
@@ -317,7 +321,7 @@ class BrandController extends Controller
      * )
      */
     public function getAllBrandGuestProducts(Request $request)
-    {
+    {  
         // Subquery for best price and delivery days by SKU (only published products)
         $subQuery = Product::select('sku')
             ->where('status', 'published') // Add this line
@@ -445,7 +449,7 @@ class BrandController extends Controller
                         }
 
                         $details->per_unit_price = $perUnitPrice;
-                       
+                        
                         return [
                             'id' => $details->id,
                             'name' => $details->name,
@@ -470,11 +474,12 @@ class BrandController extends Controller
                             'map' => (float) ($firstSupplier->map ?? 0),
                             'inventory' => $firstSupplier->inventory ?? null,
                             'in_stock' => $firstSupplier->in_stock ?? null,
-                            'delivery_days' => $firstSupplier->delivery_days ?? null,
-                            'delivery_days' => $firstSupplier->delivery_days ?? null,
+                            'delivery_days' => $firstSupplier->delivery_days ?? null,                            
                             'return_policy' => $firstSupplier->return_policy ?? null,
                             'free_shipping' => $firstSupplier->free_shipping ?? null,
                             'warranty_information' => $firstSupplier->warranty_information ?? null,
+                            'quote_available' => $details->quote_available ?? null,
+                             'isRequired' => $details->is_required,
                         ] ;
 
                     })->values(),
@@ -580,14 +585,56 @@ class BrandController extends Controller
 //     ])->header('Cache-Control', 'public, max-age=86400');
 // }
 
+// public function brandsByCategory($id): JsonResponse
+// {
+//     // Ignore category filter and just fetch all brands with logos
+//     $brands = Brand::where('status', '=', 'published')
+//         ->whereNotNull('logo')
+//         ->where('logo', '!=', 'null')
+//         ->select('id', 'name', 'logo')
+//         ->with('seoUrl')
+//         ->get()
+//         ->map(function ($brand) {
+//             return [
+//                 'id'   => $brand->id,
+//                 'name' => $brand->name,
+//                 'logo' => asset($brand->logo),
+//                 'url'  => $brand->seoUrl->url ?? null,
+//             ];
+//         })
+//         ->values();
+
+//     if ($brands->isEmpty()) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'No published brands with logos found.',
+//             'data'    => []
+//         ], 404);
+//     }
+
+//     return response()->json([
+//         'success' => true,
+//         'message' => 'Brands retrieved successfully.',
+//         'data'    => $brands
+//     ])->header('Cache-Control', 'public, max-age=86400');
+// }
 public function brandsByCategory($id): JsonResponse
 {
-    // Ignore category filter and just fetch all brands with logos
+    // Get the main category and all its child categories
+    $categoryIds = collect([$id])->merge($this->getAllChildCategoryIds($id));
+
+    // Find brands that have products in these categories
     $brands = Brand::where('status', '=', 'published')
         ->whereNotNull('logo')
         ->where('logo', '!=', 'null')
+        ->whereHas('products', function ($query) use ($categoryIds) {
+            $query->whereHas('categories', function ($categoryQuery) use ($categoryIds) {
+                $categoryQuery->whereIn('categories.id', $categoryIds);
+            });
+        })
         ->select('id', 'name', 'logo')
         ->with('seoUrl')
+        ->distinct()
         ->get()
         ->map(function ($brand) {
             return [
@@ -602,7 +649,7 @@ public function brandsByCategory($id): JsonResponse
     if ($brands->isEmpty()) {
         return response()->json([
             'success' => false,
-            'message' => 'No published brands with logos found.',
+            'message' => 'No published brands with logos found for this category.',
             'data'    => []
         ], 404);
     }
@@ -1347,6 +1394,10 @@ if (!is_null($categoryId)) {
                 'return_policy' => $firstSupplier->return_policy ?? null,
                 'free_shipping' => $firstSupplier->free_shipping ?? null,
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
+                'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                 'quote_available' => $product->quote_available ?? null,
+                  'isRequired' => $product->isRequired,
             ];
         });
 

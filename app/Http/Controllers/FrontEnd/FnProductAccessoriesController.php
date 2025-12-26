@@ -60,6 +60,8 @@ class FnProductAccessoriesController extends Controller
                 return [
                     'product_id' => $accessory->product_id,
                     'accessory_id' => $accessory->id,
+                    'isapproved' => $accessory->isapproved,
+                    'isRequired' => $accessory->isRequired,
                     'name' => $accessory->name,
                     'accessory_item' => $accessoryItems,
                 ];

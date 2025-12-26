@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Frontend;
+namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentManagement;
@@ -93,7 +93,7 @@ class PaymentManagementController extends Controller
 			$validated = $request->validate([
 				'order_id' => 'required|integer|exists:orders,id',
 				'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id',
-				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,Paymob,Stax,Square,CC Avenue',
+				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,Paymob,Stax,Square,CC Avenue,NetTerm,Check,Cheque',
 				'amount' => 'required|numeric|min:0.01|max:999999.99',
 				'status' => 'required|string|in:Pending,Completed,Failed,Cancelled,Refunded',
 				'payment_date' => 'required|date|before_or_equal:today',
@@ -151,7 +151,7 @@ class PaymentManagementController extends Controller
 				$order->update(['is_reserved' => 0]);
 
 				// ✅ Send email when payment completed
-				$batch = Bus::batch([])->name('Order Place on frontend payment')->dispatch();
+				$batch = Bus::batch([])->name("Order Placed by Customer (Paid) - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
 					'recordId' => $order->id

@@ -58,7 +58,7 @@ class ProductSupplierController extends BaseController
 		->select(
 			'product_suppliers.*',
 			'ec_products.name as product_name',
-			 'ec_products.sku as product_sku', 
+			 'ec_products.sku as product_sku',
 			'vendors.name as vendor_name'
 		);
 
@@ -73,7 +73,7 @@ class ProductSupplierController extends BaseController
 			$recordsQuery->where(function ($q) use ($search) {
 				$q->orWhere('product_suppliers.id', 'like', "%$search%")
 				->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
-				  ->orWhere('ec_products.sku', 'like', "%$search%") 
+				  ->orWhere('ec_products.sku', 'like', "%$search%")
 				->orWhere('ec_products.name', 'like', "%$search%")
 				->orWhere('vendors.name', 'like', "%$search%");
 			});
@@ -84,10 +84,10 @@ class ProductSupplierController extends BaseController
 			$recordsQuery->orderBy('ec_products.name', $sortDir);
 		} elseif ($sortBy === 'vendor_name') {
 			$recordsQuery->orderBy('vendors.name', $sortDir);
-		} 
+		}
 		elseif ($sortBy === 'product_sku') {
         $recordsQuery->orderBy('ec_products.sku', $sortDir);
-		} 
+		}
 		else {
 				$recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
 			}
@@ -493,7 +493,7 @@ class ProductSupplierController extends BaseController
 	 *         @OA\JsonContent(
 	 *             required={"type", "relational_id", "range_from", "range_to"},
 	 *             @OA\Property(property="status", type="string", example="all", description="Status"),
-	 *             @OA\Property(property="type", type="string", example="Category", description="Type should be either 'Brand' or 'Category'"),
+	 *             @OA\Property(property="type", type="string", enum={"Brand","Vendor","Category"}, example="Category", description="Type should be either 'Brand' or 'Category'"),
 	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >= 1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)")
@@ -829,4 +829,189 @@ class ProductSupplierController extends BaseController
 
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
+
+	 /**
+     * @OA\Put(
+     *     path="/api/product-supplier/{id}/update-price",
+     *     summary="Update price, sale price, and total cost per item for a product supplier",
+     *     tags={"Product Supplier"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID of the product supplier",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="price", type="number", format="float", example=150),
+     *             @OA\Property(property="sale_price", type="number", format="float", example=120),
+     *             @OA\Property(property="total_cost_per_item", type="number", format="float", example=100)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successfully updated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Product supplier updated successfully."),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Supplier not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Supplier not found.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="errors", type="array", @OA\Items(type="string"))
+     *         )
+     *     ),
+	 *		 security={{"bearerAuth":{}}}
+     * )
+     */
+    public function updatePrice(Request $request, $id)
+    {
+        $supplier = ProductSupplier::find($id);
+
+        if (!$supplier) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Supplier not found.'
+            ], 404);
+        }
+
+        $data = $request->validate([
+            'price' => 'required|numeric|min:0',
+            'sale_price' => 'nullable|numeric|min:0',
+            'total_cost_per_item' => 'required|numeric|min:0',
+        ]);
+
+        // Business rules
+        if (!empty($data['sale_price']) && $data['price'] < $data['sale_price']) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['Price cannot be less than sale price.']
+            ], 422);
+        }
+
+        $supplier->update([
+            'price' => $data['price'],
+            'sale_price' => $data['sale_price'] ?? null,
+            'total_cost_per_item' => $data['total_cost_per_item']
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Product supplier updated successfully.',
+            'data' => $supplier
+        ], 200);
+    }
+
+	/**
+	 * @OA\Put(
+	 *     path="/api/product-supplier/update-price-by-sku/{sku}",
+	 *     summary="Update price, sale price, and total cost per item for a product supplier using SKU",
+	 *     tags={"Product Supplier"},
+	 *     @OA\Parameter(
+	 *         name="sku",
+	 *         in="path",
+	 *         description="SKU of the product",
+	 *         required=true,
+	 *         @OA\Schema(type="string")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="price", type="number", format="float", example=150),
+	 *             @OA\Property(property="sale_price", type="number", format="float", example=120)
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successfully updated product supplier price by SKU",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Product supplier updated successfully."),
+	 *             @OA\Property(property="data", type="object")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="Product or supplier not found",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Product or supplier not found.")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation errors",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="errors", type="array", @OA\Items(type="string"))
+	 *         )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function updatePriceBySku(Request $request, $sku)
+	{
+		// Step 1: Find product by SKU
+		$product = Product::where('sku', $sku)->first();
+
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product not found.'
+			], 404);
+		}
+
+		// Step 2: Find supplier record linked to this product
+		$supplier = ProductSupplier::where('product_id', $product->id)->first();
+
+		if (!$supplier) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Supplier not found for this product.'
+			], 404);
+		}
+
+		// Step 3: Validate request
+		$data = $request->validate([
+			'price' => 'required|numeric|min:0',
+			'sale_price' => 'nullable|numeric|min:0'
+		]);
+
+		// Business rule
+		if (!empty($data['sale_price']) && $data['price'] < $data['sale_price']) {
+			return response()->json([
+				'success' => false,
+				'errors' => ['Price cannot be less than sale price.']
+			], 422);
+		}
+
+		// Step 4: Update supplier record
+		$supplier->update([
+			'price' => $data['price'],
+			'sale_price' => $data['sale_price'] ?? null
+		]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Product supplier updated successfully.',
+			'data' => $supplier
+		], 200);
+	}
+
+
+
 }

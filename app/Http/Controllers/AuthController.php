@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
+use App\Models\FrontEnd\Coupon;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
@@ -57,7 +58,6 @@ class AuthController extends BaseController
 				'message' => 'The provided credentials are incorrect.'
 			], 401);
 		}
-
 		$token = $user->createToken('auth_token')->plainTextToken;
 
 		return response()->json([
@@ -102,8 +102,8 @@ class AuthController extends BaseController
 			'success' => true,
 			'has_permission' => $hasPermission,
 			'message' => $hasPermission
-			? "User has the '{$permission}' permission."
-			: "User does not have the '{$permission}' permission.",
+				? "User has the '{$permission}' permission."
+				: "User does not have the '{$permission}' permission.",
 		]);
 	}
 
@@ -291,11 +291,11 @@ class AuthController extends BaseController
 			$limit = 5000;
 			$offset = ($page - 1) * $limit;
 			$customers = Customer::where('id', '<', 1)
-			->whereNull('password')
-			->orderBy('id', 'desc')
-			->offset($offset)
-			->limit($limit)
-			->get();
+				->whereNull('password')
+				->orderBy('id', 'desc')
+				->offset($offset)
+				->limit($limit)
+				->get();
 
 			/* Check if any customers found */
 			if ($customers->isEmpty()) {
@@ -315,9 +315,9 @@ class AuthController extends BaseController
 
 			/* Create single batch with all jobs and proper queue configuration */
 			$batch = Bus::batch($jobs)
-			->name('Common Password Mail')
-			->onQueue(config('app.website') . '_COMM_PWD')
-			->dispatch();
+				->name('Common Password Mail')
+				->onQueue(config('app.website') . '_COMM_PWD')
+				->dispatch();
 
 			return response()->json([
 				'success' => true,

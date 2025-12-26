@@ -76,10 +76,11 @@ class ExcelImporterService
 			$chunkStarts = range(2, $totalRows, $rowsPerChunk);
 		}
 
-		$batch = Bus::batch([])->before(function (Batch $batch) use ($module, $totalRecords) {
+		$action = str_contains($module, ' Translation') ? "Import_Translation" : "Import";
+		$batch = Bus::batch([])->before(function (Batch $batch) use ($module, $totalRecords, $action) {
 			TransactionLog::create([
 				'module' => $module,
-				'action' => "Import",
+				'action' => $action,
 				'identifier' => $batch->id,
 				'status' => 'In-progress',
 				'description' => json_encode([

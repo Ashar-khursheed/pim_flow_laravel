@@ -68,7 +68,7 @@ class QuotePlacedMailJob implements ShouldQueue
 				->replyTo($replyToEmail)
 			);
 
-			if (in_array(config('app.website'), ['UAE', 'US', 'SA'])) {
+			if (in_array(config('app.website'), ['UAE', 'US', 'UAE_T', 'US_T'])) {
 				$recipients = quote_cc_mails();
 				$to = array_shift($recipients);
 				$cc = $recipients;

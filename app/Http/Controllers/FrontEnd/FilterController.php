@@ -4,6 +4,7 @@ namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 
 use App\Models\Category;
 use App\Models\Product;
@@ -75,6 +76,12 @@ class FilterController extends Controller
 	 */
 	public function index(Request $request)
 	{
+		// $locale = $request->input('locale', 'ar');
+		// // dd($locale);
+		// if (in_array($locale, ['ar', 'en'])) {
+		// 	App::setLocale($locale);
+		// }
+
 		/* Validate request data */
 		$request->validate([
 			'category_id' => 'required|integer|exists:categories,id',
@@ -109,8 +116,18 @@ class FilterController extends Controller
 
 		$filters = [];
 
-		$priceRange = Product::join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
-		->join('product_suppliers', 'ec_products.id', '=', 'product_suppliers.product_id')
+
+		// $priceRange = Product::join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
+		// ->join('product_suppliers', 'ec_products.id', '=', 'product_suppliers.product_id')
+		// ->whereIn('product_categories.category_id', $categoryIds)
+		// ->where('ec_products.status', 'published')
+		// ->selectRaw('
+		// 	MIN(CASE WHEN product_suppliers.sale_price > 0 THEN product_suppliers.sale_price ELSE product_suppliers.price END) as min_price,
+		// 	MAX(CASE WHEN product_suppliers.sale_price > 0 THEN product_suppliers.sale_price ELSE product_suppliers.price END) as max_price
+		// 	')
+		// ->first();
+		$priceRange = ProductSupplier::join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
+		->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
 		->whereIn('product_categories.category_id', $categoryIds)
 		->where('ec_products.status', 'published')
 		->selectRaw('
@@ -436,8 +453,14 @@ class FilterController extends Controller
 				'return_policy' => $firstSupplier->return_policy ?? null,
 				'free_shipping' => $firstSupplier->free_shipping ?? null,
 				'warranty_information' => $firstSupplier->warranty_information ?? null,
+				'min_quantity' => $firstSupplier->min_quantity ?? 0,
+				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'quote_available' => $product->quote_available ?? null,
+				 'isRequired' => $product->isRequired,
 			];
 		}
+
+
 		/************************* Fetch Products ***********************/
 		$finalResponse = array_merge([
 			'success' => true,

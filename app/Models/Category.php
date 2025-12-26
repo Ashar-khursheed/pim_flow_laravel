@@ -3,30 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use OpenApi\Annotations as OA;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use App\Models\SeoManagement;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 
-/**
- * @OA\Schema(
- *     schema="Category",
- *     title="Category",
- *     description="Product Category model",
- *     type="object",
- *     required={"id", "name"},
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="name", type="string", example="Electronics"),
- *     @OA\Property(property="description", type="string", example="All electronic devices"),
- *     @OA\Property(property="status", type="string", example="active"),
- *     @OA\Property(property="image", type="string", example="https://example.com/category.jpg"),
- *     @OA\Property(property="parent_id", type="integer", nullable=true, example=null),
- *     @OA\Property(property="slug", type="string", example="electronics"),
- *     @OA\Property(property="children", type="array", @OA\Items(ref="#/components/schemas/Category"))
- * )
- */
-class Category extends Model
+class Category extends Model implements TranslatableContract
 {
+	use Translatable;
+
+	// public $translatedAttributes = ['name_tr'];
+	public $translatedAttributes = [];
+
 	protected $table = 'categories';
 
 	protected $fillable = [
@@ -39,12 +25,20 @@ class Category extends Model
 		'is_featured',
 		'icon',
 		'icon_image',
-		'slug'
+		'slug',
+		'last_child'
 	];
 
 	public function parent()
 	{
 		return $this->belongsTo(Category::class, 'parent_id');
+	}
+
+	public function parentRecursive()
+	{
+		return $this->belongsTo(Category::class, 'parent_id')
+		->select(['id', 'name', 'parent_id'])
+		->with(['translations','seoUrl:id,relational_id,relational_type,url', 'parentRecursive']);
 	}
 
 	public function scopeLastChildCategories($query, $parentId)
@@ -67,7 +61,17 @@ class Category extends Model
 
 	public function childrenRecursive()
 	{
-		return $this->hasMany(Category::class, 'parent_id')->with('childrenRecursive')->select(['id', 'name', 'slug', 'parent_id']);
+		return $this->hasMany(Category::class, 'parent_id')->with('childrenRecursive')->select(['id', 'name', 'parent_id']);
+	}
+
+	public function publishedChildren()
+	{
+		return $this->hasMany(Category::class, 'parent_id')
+		->select(['id', 'name', 'parent_id', 'image', 'order', 'last_child'])
+		->with(['translations', 'seoUrl:id,relational_id,relational_type,url', 'publishedChildren'])
+		->withCount('products')
+		->where('status', 'published')
+		->orderBy('order');
 	}
 
 	public function slug()
@@ -131,6 +135,16 @@ class Category extends Model
 		);
 	}
 
+	public function featuredProducts()
+	{
+		return $this->belongsToMany(
+			Product::class,
+			'product_categories',
+			'category_id',
+			'product_id'
+		)->where('is_featured', 1)->where('status', 'published');
+	}
+
 	public function productIdsFromLeafCategories()
 	{
 		$leafIds = self::getLeafCategories($this)->where('status', 'published')->pluck('id')->toArray();
@@ -189,16 +203,24 @@ class Category extends Model
 
 		$leafIds = $leafCategories->where('status', 'published')->pluck('id')->toArray();
 
-		return Product::query()
+		// return Product::query()
+		// ->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
+		// ->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
+		// ->whereIn('product_categories.category_id', $leafIds)
+		// ->where('ec_products.status', 'published')
+		// ->select('ec_brands.id', 'ec_brands.name')
+		// ->distinct()
+		// ->get();
+
+		return Brand::query()
+		->join('ec_products', 'ec_brands.id', '=', 'ec_products.brand_id')
 		->join('product_categories', 'ec_products.id', '=', 'product_categories.product_id')
-		->join('ec_brands', 'ec_products.brand_id', '=', 'ec_brands.id')
 		->whereIn('product_categories.category_id', $leafIds)
 		->where('ec_products.status', 'published')
 		->select('ec_brands.id', 'ec_brands.name')
 		->distinct()
 		->get();
 	}
-
 
 	public function category_url()
 	{

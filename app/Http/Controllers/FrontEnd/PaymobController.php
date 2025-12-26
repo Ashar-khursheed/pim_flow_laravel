@@ -196,7 +196,7 @@
 // }
 
 
-namespace App\Http\Controllers\Frontend;
+namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -520,7 +520,7 @@ class PaymobController extends Controller
 
             // Step Create order
             $merchantOrderId = $order->order_number ?? uniqid('order_');
-            $amountCents = (int) ($order->total_amount * 100);
+            $amountCents = (int) ($order->pending_amount * 100);
 
             $orderResponse = Http::post("{$baseUrl}/ecommerce/orders", [
                 'auth_token' => $authToken,
@@ -556,8 +556,8 @@ class PaymobController extends Controller
                 'billing_data' => $billingData,
                 'currency' => 'SAR', // Fixed: Should be AED for UAE, not EGP
                 'integration_id' => env('PAYMOB_LINK_ID'),
-                'redirect_url' => 'https://www.horecastore.ae/Saudia-en/thanks',
-                'notification_url' => 'https://d1szysbal095g7.cloudfront.net/api/paymob/webhook',             
+                'redirect_url' => config('app.url').'/thanks',
+                'notification_url' => config('app.backend_url').'/api/paymob/webhook',
 
             ]);
             $paymentToken = $paymentKeyResponse->json()['token'];

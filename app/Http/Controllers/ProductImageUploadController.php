@@ -778,6 +778,72 @@ class ProductImageUploadController extends Controller
         return $sanitized;
     }
 
+    // private function processExtractedDirectory($extractPath)
+    // {
+    //     $processedSkus = [];
+    //     $skuDirectories = File::directories($extractPath);
+
+    //     $user = auth()->user();
+    //     $userRole = $user ? $user->getRoleNames()->first() : null;
+
+    //     $allowedRoles = ['Super Admin', 'Admin'];
+
+    //     foreach ($skuDirectories as $skuDir) {
+    //         // Force garbage collection between SKUs
+    //         gc_collect_cycles();
+            
+    //         $originalSku = basename($skuDir);
+    //         $sanitizedSku = $this->sanitizeSku($originalSku);
+
+    //         $product = Product::where('sku', $originalSku)->first();
+
+    //         if ($product) {
+    //             if ($product->approved == 1 && !in_array($userRole, $allowedRoles)) {
+    //                 $processedSkus[] = [
+    //                     'sku' => $originalSku,
+    //                     'status' => 'already_approved',
+    //                     'errors' => ['This product is already approved and cannot be modified.'],
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             $result = $this->uploadProductImagesToS3($skuDir, $originalSku, $sanitizedSku);
+
+    //             if (!empty($result['imageUrls'])) {
+    //                 $product->images = $result['imageUrls'];
+    //                  if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+    //                 $jsonEncoded = json_encode($result['imageUrls']);
+    //                 $product->translateOrNew('en')->images_tr = $jsonEncoded;
+    //             }
+    //                 $product->save();
+
+    //                 $processedSkus[] = [
+    //                     'sku' => $originalSku,
+    //                     'status' => empty($result['errors']) ? 'success' : 'partial_success',
+    //                     'image_count' => count($result['imageUrls']),
+    //                     'errors' => $result['errors'],
+    //                     'sanitized_sku' => $sanitizedSku,
+    //                     'image_url' => $result['imageUrls']
+    //                 ];
+    //             } else {
+    //                 $processedSkus[] = [
+    //                     'sku' => $originalSku,
+    //                     'status' => 'no_valid_images_found',
+    //                     'errors' => $result['errors'],
+    //                     'image_url' => $result['imageUrls']
+    //                 ];
+    //             }
+    //         } else {
+    //             $processedSkus[] = [
+    //                 'sku' => $originalSku,
+    //                 'status' => 'product_not_found'
+    //             ];
+    //         }
+    //     }
+
+    //     return $processedSkus;
+    // }
+
     private function processExtractedDirectory($extractPath)
     {
         $processedSkus = [];
@@ -811,6 +877,13 @@ class ProductImageUploadController extends Controller
 
                 if (!empty($result['imageUrls'])) {
                     $product->images = $result['imageUrls'];
+                    
+                    // Add translation for UAE, UAE_T, and SA locales
+                    if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+                        $jsonEncoded = json_encode($result['imageUrls']);
+                        $product->translateOrNew('en')->images_tr = $jsonEncoded;
+                    }
+                    
                     $product->save();
 
                     $processedSkus[] = [
@@ -839,7 +912,6 @@ class ProductImageUploadController extends Controller
 
         return $processedSkus;
     }
-
     private function uploadProductImagesToS3($imagesDir, $originalSku, $sanitizedSku)
     {
         $storageEnv = env('STORAGE_ENV');

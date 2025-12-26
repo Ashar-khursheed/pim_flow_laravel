@@ -119,7 +119,9 @@ class ImportKeywordJob implements ShouldQueue
 				foreach ($langCodes as $locale) {
 					$title = ${$locale . '_title'} ?? null;
 					if (!empty($title)) {
-						$appKeyword->translateOrNew($locale)->title = $title;
+						if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+							$appKeyword->translateOrNew($locale)->title = $title;
+						}
 					}
 				}
 				$appKeyword->save();

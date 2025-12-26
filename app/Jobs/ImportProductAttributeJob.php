@@ -138,6 +138,11 @@ class ImportProductAttributeJob implements ShouldQueue
 								$attribute = $categoryAttribute->attributeValues()->firstOrCreate([
 									'attribute_value' => $attributeValue
 								]);
+
+								if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+									$attribute->translateOrNew('en')->attribute_value_tr = $attributeValue;
+									$attribute->save();
+								}
 							}
 
 							/* Handle measurement unit */
@@ -232,11 +237,17 @@ class ImportProductAttributeJob implements ShouldQueue
 					DB::rollBack();
 				} else {
 					/* Delete old attributes that are not in the provided list */
-					$product->productAttributes()->whereNotIn('attribute_id', $attributeIds)->delete();
+					$product->productAttributes()
+					->whereNotIn('attribute_id', $attributeIds)
+					->get()
+					->each(function ($productAttribute) {
+						$productAttribute->translations()->delete();
+						$productAttribute->delete();
+					});
 
-					/* Insert or update new attributes */
+					/* Insert or update new attributes with translations */
 					foreach ($attributeData as $data) {
-						$product->productAttributes()->updateOrCreate(
+						$productAttribute = $product->productAttributes()->updateOrCreate(
 							[
 								'product_id' => $data['product_id'],
 								'attribute_id' => $data['attribute_id']
@@ -246,6 +257,12 @@ class ImportProductAttributeJob implements ShouldQueue
 								'measurement_unit_id' => $data['measurement_unit_id'],
 							]
 						);
+
+						/* Handle translations for non-English locales */
+						if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+							$productAttribute->translateOrNew('en')->attribute_value_tr = $data['attribute_value'];
+							$productAttribute->save();
+						}
 					}
 
 					DB::commit();

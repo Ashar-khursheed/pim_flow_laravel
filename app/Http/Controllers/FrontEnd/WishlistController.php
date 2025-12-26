@@ -51,14 +51,18 @@ class WishlistController extends Controller
         // Validate the incoming request data
         $validated = $request->validate([
             'product_id' => 'required|integer|exists:ec_products,id',
+            'quantity'   => 'nullable|integer|min:1', // quantity not required but must be >= 1
         ]);
 
         $customerId = Auth::id();
-        
+
+        // If quantity not provided, set default = 1
+        $quantity = $validated['quantity'] ?? 1;
+
         // Check if product already exists in wishlist
         $existingWishlist = Wishlist::where('customer_id', $customerId)
-                                  ->where('product_id', $validated['product_id'])
-                                  ->first();
+            ->where('product_id', $validated['product_id'])
+            ->first();
 
         if ($existingWishlist) {
             return response()->json([
@@ -66,6 +70,7 @@ class WishlistController extends Controller
                 'wishlist' => [
                     'customer_id' => $existingWishlist->customer_id,
                     'product_id' => $existingWishlist->product_id,
+                    'quantity'    => $existingWishlist->quantity,
                     'in_wishlist' => 1,
                     'created_at' => $existingWishlist->created_at,
                     'updated_at' => $existingWishlist->updated_at,
@@ -77,6 +82,7 @@ class WishlistController extends Controller
         $wishlist = Wishlist::create([
             'customer_id' => $customerId,
             'product_id' => $validated['product_id'],
+            'quantity'   => $quantity,
         ]);
 
         return response()->json([
@@ -84,12 +90,14 @@ class WishlistController extends Controller
             'wishlist' => [
                 'customer_id' => $wishlist->customer_id,
                 'product_id' => $wishlist->product_id,
+                'quantity'    => $wishlist->quantity,
                 'in_wishlist' => 1,
                 'created_at' => $wishlist->created_at,
                 'updated_at' => $wishlist->updated_at,
             ]
         ], 201);
     }
+
 
     /**
      * @OA\Get(
@@ -195,6 +203,8 @@ class WishlistController extends Controller
                 // Images
                 $product->images = collect(json_decode($product->images, true) ?? []);
                 $product->in_wishlist = 1;
+                $product->quantity = $item->quantity ?? 1;
+
 
                 // Discounts
                 $discountIds = $productDiscounts[$product->id] ?? [];
@@ -249,6 +259,9 @@ class WishlistController extends Controller
                     $product->delivery_days = $firstSupplier->delivery_days;
                     $product->return_policy = $firstSupplier->return_policy;
                     $product->free_shipping = $firstSupplier->free_shipping;
+                    $product->min_quantity = $firstSupplier->min_quantity;
+                    $product->is_fixed = $firstSupplier->is_fixed;
+                    
                    if (!empty($product->warrantyAttribute?->attribute_value)) {
                         $product->warranty_information = $product->warrantyAttribute->attribute_value;
                     } elseif (!empty($firstSupplier?->warranty_information)) {
@@ -271,7 +284,9 @@ class WishlistController extends Controller
                     $product->in_stock = null;
                     $product->delivery_days = null;
                     $product->return_policy = null;
-                    $product->free_shipping = null;// Warranty: prefer attribute value over supplier
+                    $product->free_shipping = null; 
+                    $product->min_quantity = 0;
+                    $product->is_fixed = 0;
                     if (!empty($product->warrantyAttribute?->attribute_value)) {
                         $product->warranty_information = $product->warrantyAttribute->attribute_value;
                     } elseif (!empty($firstSupplier?->warranty_information)) {
@@ -281,6 +296,7 @@ class WishlistController extends Controller
                     }
                     $product->selling_type =$sellingType;
                 }
+
             }
 
             return $item;

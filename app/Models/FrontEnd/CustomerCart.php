@@ -14,14 +14,16 @@ class CustomerCart extends Model
 		'shipping_charge',
 		'is_lift_gate',
 		'is_residential_address',
+		'is_inside_delivery',
 		'amount',
 		'tax_percentage',
 		'tax_amount',
 		'total_amount',
 		'total_products',
+		'additional_amount_name',
+		'additional_amount_price',
 		'created_by',
 		'updated_by',
-		
 	];
 
 	public function creator()

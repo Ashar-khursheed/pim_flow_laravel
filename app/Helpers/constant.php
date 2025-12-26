@@ -14,7 +14,7 @@ use PhpUnitsOfMeasure\PhysicalQuantity\Power;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-
+use Illuminate\Support\Str;
 use App\Models\MeasurementUnit;
 use App\Models\ProductSupplier;
 use App\Models\AccessoryItem;
@@ -140,8 +140,6 @@ if (!function_exists('product_constants')) {
 				"upload_video" => "Upload Video",
 				"barcode" => "Barcode (ISBN, UPC, GTIN, etc.)",
 				"status" => "Status",
-				"google_shopping_category" => "Google Shopping Category",
-				"google_shopping_mpn" => "Google Shopping Mpn",
 				"is_featured" => "Is Featured",
 			],
 			'DISCOUNT_SECTION' => [
@@ -243,8 +241,6 @@ if (!function_exists('product_import_constants')) {
 				'Upload Video' => 'uploadVideo',
 				'Barcode (ISBN, UPC, GTIN, etc.)' => 'barcode',
 				'Status' => 'status',
-				'Google Shopping Category' => 'googleShoppingCategory',
-				'Google Shopping Mpn' => 'googleShoppingMpn',
 				'Is Featured' => 'isFeatured',
 			],
 
@@ -383,6 +379,75 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 		Log::error('uploadImageToWebpS3FromFile error: ' . $e->getMessage());
 		return null;
 	}
+}
+
+
+function compressImageToS3(Request $request, string $key, string $pathPrefix)
+{
+    if (!$request->hasFile($key) || !$request->file($key)->isValid()) {
+        return null;
+    }
+    try {
+        $file = $request->file($key);
+
+        // Create image from file
+        $image = imagecreatefromstring(file_get_contents($file->getRealPath()));
+        if (!$image) {
+            Log::error('Failed to create image resource.');
+            return null;
+        }
+
+        // Convert to true color
+        if (!imageistruecolor($image)) {
+            imagepalettetotruecolor($image);
+        }
+
+        // ✅ Resize (Max width 1200px)
+        $width  = imagesx($image);
+        $height = imagesy($image);
+
+        if ($width > 1000) {
+            $newWidth  = 1000;
+            $newHeight = intval(($height / $width) * $newWidth);
+
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            imagecopyresampled(
+                $resized,
+                $image,
+                0,
+                0,
+                0,
+                0,
+                $newWidth,
+                $newHeight,
+                $width,
+                $height
+            );
+
+            imagedestroy($image);
+            $image = $resized;
+        }
+
+        // ✅ Compress to WebP (QUALITY CONTROL)
+        ob_start();
+        imagewebp($image, null, 75);
+        $webpData = ob_get_clean();
+
+        imagedestroy($image);
+
+        // Generate file name
+         $fileName = Str::uuid() . '.webp';
+        $path = $pathPrefix . '/' . $fileName;
+
+        // Upload to S3
+        Storage::disk('s3')->put($path, $webpData);
+
+        return Storage::disk('s3')->url($path);
+
+    } catch (\Throwable $e) {
+        Log::error('uploadImageToWebpS3FromFile error: ' . $e->getMessage());
+        return null;
+    }
 }
 
 function uploadFileToS3($file, $path)
@@ -601,9 +666,8 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'sales@thehorecastore.com',
 			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$uaeMails = [
@@ -611,17 +675,21 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'hello@horecastore.ae',
 			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
 			'css01@horecastore.ae',
 			'fm@horecastore.ae',
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
+			'customerservice01@horecastore.ae',
 		];
 
-		$testMails = [
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+		$usTestMails = [
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
+		];
+
+		$uaeTestMails = [
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
 		];
 
 		$localMails = [
@@ -639,11 +707,11 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			break;
 
 			case 'US_T':
-			$mails = $testMails;
+			$mails = $usTestMails;
 			break;
 
 			case 'UAE_T':
-			$mails = $testMails;
+			$mails = $uaeTestMails;
 			break;
 
 			case 'LOCAL':
@@ -668,7 +736,12 @@ if (!function_exists('order_cc_mails')) {
 			'ofs@thehorecastore.com',
 			'ofs02@thehorecastore.com',
 			'dmm@thehorecastore.com',
-			'webdeveloper04@horecastore.ae',
+			'ga@thehorecastore.com',
+			'ga02@thehorecastore.com',
+
+			'sales@thehorecastore.com',
+			'ussales1@thehorecastore.com',
+			'css07@thehorecastore.com',
 		];
 
 		$uaeMails = [
@@ -679,13 +752,18 @@ if (!function_exists('order_cc_mails')) {
 			'css01@horecastore.ae',
 			'cbfb@horecastore.ae',
 			'procurement@horecastore.ae',
-			'webdeveloper04@horecastore.ae',
+			'saas@horecastore.ae',
+			'customerservice02@horecastore.ae',
 		];
 
-		$testMails = [
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+		$usTestMails = [
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
+		];
+
+		$uaeTestMails = [
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
 		];
 
 		$localMails = [
@@ -703,11 +781,11 @@ if (!function_exists('order_cc_mails')) {
 			break;
 
 			case 'US_T':
-			$mails = $testMails;
+			$mails = $usTestMails;
 			break;
 
 			case 'UAE_T':
-			$mails = $testMails;
+			$mails = $uaeTestMails;
 			break;
 
 			case 'LOCAL':
@@ -739,12 +817,20 @@ if (!function_exists('inquiry_cc_mails')) {
 			'imran@horecastore.ae',
 			'dmm@thehorecastore.com',
 			'pm@horecastore.ae',
+			'css01@horecastore.ae',
+			'css03@horecastore.ae',
+			'css09@horecastore.ae',
+			'hello@horecastore.ae',
 		];
 
-		$testMails = [
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+		$usTestMails = [
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
+		];
+
+		$uaeTestMails = [
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
 		];
 
 		$localMails = [
@@ -762,11 +848,11 @@ if (!function_exists('inquiry_cc_mails')) {
 			break;
 
 			case 'US_T':
-			$mails = $testMails;
+			$mails = $usTestMails;
 			break;
 
 			case 'UAE_T':
-			$mails = $testMails;
+			$mails = $uaeTestMails;
 			break;
 
 			case 'LOCAL':
@@ -785,8 +871,9 @@ if (!function_exists('quote_cc_mails')) {
 	function quote_cc_mails()
 	{
 		$usMails = [
-			'webdeveloper01@horecastore.ae',
-			'webdeveloper04@horecastore.ae',
+			'noman.peera@thehorecastore.com',
+			'css07@thehorecastore.com',
+			'sales@thehorecastore.com',
 		];
 
 		$uaeMails = [
@@ -798,10 +885,14 @@ if (!function_exists('quote_cc_mails')) {
 			'pm@horecastore.ae',
 		];
 
-		$testMails = [
-			'qa03@thehorecastore.com',
-			'qa04@thehorecastore.com',
-			'qa05@thehorecastore.com',
+		$usTestMails = [
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
+		];
+
+		$uaeTestMails = [
+			'qa04@horecastore.ae',
+			'qa05@horecastore.ae',
 		];
 
 		$localMails = [
@@ -819,11 +910,11 @@ if (!function_exists('quote_cc_mails')) {
 			break;
 
 			case 'US_T':
-			$mails = $testMails;
+			$mails = $usTestMails;
 			break;
 
 			case 'UAE_T':
-			$mails = $testMails;
+			$mails = $uaeTestMails;
 			break;
 
 			case 'LOCAL':
@@ -976,7 +1067,7 @@ function productSupplierDetail(int $productID, int $vendorID): ?ProductSupplier
 	->first();
 
 	if ($productSupplier) {
-		$productSupplier->shipping_charge = $productSupplier->shipping_charge ?? 0;
+		$productSupplier->shipping_charge = ((float)$productSupplier->shipping_charge == 0) ? 0 : $productSupplier->shipping_charge;
 	}
 
 	return $productSupplier;
@@ -1009,7 +1100,89 @@ if (!function_exists('paymentGateway')) {
 			'Cash on Delivery',
 			'Stax',
 			'Square',
+
 		);
 		return $gateways;
+	}
+}
+
+
+
+function dataEncodeJsonBase64($o)
+{
+	$o = json_encode($o);
+	$o = base64_encode($o);
+	return $o;
+}
+function dataDecodeJsonBase64($o)
+{
+	$o = base64_decode($o);
+	$o = json_decode($o);
+
+	return $o;
+}
+
+if (!function_exists('cheque_discount_percentage')) {
+	function cheque_discount_percentage()
+	{
+		return 3;
+	}
+}
+
+if (!function_exists('home_categories')) {
+	function home_categories()
+	{
+		$usCategory = [
+			"Reach In Refrigerator",
+			"Pizza Prep Table",
+			"Worktop Refrigerator",
+			"Chef Base Refrigerator",
+			"Undercounter Refrigerator",
+			"Beer Dispenser",
+			"Back Bar Cooler",
+			"Glass Chillers and Frosters",
+			"Commercial Grill & Griddle",
+			"Commercial Gas Fryer",
+			"Deck Oven",
+			"Commercial Espresso Machine",
+			"Milk Cooler",
+			"Commercial Food Processors",
+			"Planetary Mixer",
+		];
+
+		$uaeCategory = [
+			"Work Top Refrigerators",
+			"Commercial Fryers",
+			"Combi Ovens",
+			"Commercial Blenders",
+			"Commercial Gas And Electric Cookers",
+			"Upright Freezers",
+			"Espresso Machines",
+			"Commercial Grills And Griddles",
+			"Commercial Toasters",
+			"Upright Chillers",
+			"White Dinnerware",
+			"Cheese",
+			"Food Processors",
+			"Salamanders",
+			"Salad Chillers"
+		];
+
+		switch (config('app.website')) {
+			case 'US':
+			case 'US_T':
+			$categories = $usCategory;
+			break;
+
+			case 'UAE':
+			case 'UAE_T':
+			$categories = $uaeCategory;
+			break;
+
+			default:
+			$categories = [];
+			break;
+		}
+		return $categories;
 	}
 }

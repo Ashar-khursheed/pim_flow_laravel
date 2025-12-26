@@ -19,6 +19,7 @@ return new class extends Migration
 			$table->decimal('shipping_charge', 10, 2);
 			$table->boolean('is_lift_gate')->nullable();
 			$table->boolean('is_residential_address')->nullable();
+			$table->boolean('is_inside_delivery')->nullable();
 			$table->decimal('amount', 10, 2);
 			$table->decimal('tax_percentage', 10, 4);
 			$table->decimal('tax_amount', 10, 2);

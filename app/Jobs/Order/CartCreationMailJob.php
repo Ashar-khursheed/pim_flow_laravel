@@ -62,6 +62,19 @@ class CartCreationMailJob implements ShouldQueue
 				->from($fromEmail, $fromName)
 				->replyTo($replyToEmail)
 			);
+
+			if (in_array(config('app.website'), ['US', 'US_T'])) {
+				$recipients = order_cc_mails();
+				$to = array_shift($recipients);
+				$cc = $recipients;
+				Mail::to($to)->cc($cc)->send(
+					(
+						new CartCreationMail($customerCart, $this->randomPassword, $this->isNewCustomer)
+					)
+					->from($fromEmail, $fromName)
+					->replyTo($replyToEmail)
+				);
+			}
 		}
 	}
 

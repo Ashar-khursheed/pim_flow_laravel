@@ -48,6 +48,11 @@ use App\Http\Controllers\Controller;
  *     description="API Endpoints for Product Management"
  * )
  *
+ * @OA\Tag(
+ *     name="Product Attributes",
+ *     description="API Endpoints for Product Attributes Management"
+ * )
+ *
  *  @OA\Tag(
  *     name="Products Report",
  *     description="API Endpoints for Product Report Management"
@@ -61,6 +66,10 @@ use App\Http\Controllers\Controller;
  *     description="API Endpoints for Product Accessories"
  * )
  *	@OA\Tag(
+ *     name="Made To Orders",
+ *     description="API Endpoints for Made To Orders"
+ * )
+ *	@OA\Tag(
  *     name="Delivery Payment History",
  *     description="Get list of Delivery Payment History"
  * )
@@ -69,8 +78,20 @@ use App\Http\Controllers\Controller;
  *     description="API Endpoints for managing product variants"
  * )
  * @OA\Tag(
+ *     name="Product Feed XML",
+ *     description="API Endpoints for managing product XML Data FeedWatch"
+ * )
+ * @OA\Tag(
+ *     name="Finance",
+ *     description="API Endpoints for Finance Management"
+ * )
+ * @OA\Tag(
  *     name="Categories",
  *     description="API Endpoints for Category Management"
+ * )
+ * @OA\Tag(
+ *     name="Customers",
+ *     description="API Endpoints for Customers"
  * )
  *
  * @OA\Tag(

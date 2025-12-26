@@ -10,7 +10,7 @@ class AttributeValueTranslation extends Model
 	protected $fillable = [
 		'locale',
 		'attribute_value_id',
-		'title',
+		'attribute_value_tr',
 	];
 
 }

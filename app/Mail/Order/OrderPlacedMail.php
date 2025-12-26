@@ -35,6 +35,10 @@ class OrderPlacedMail extends Mailable
 		$orderUrl = url("/my-order");
 
 		$orderNumber = $order->order_number;
+		$payWithCheque = $order->pay_with_cheque;
+
+		$checkIncomplete = $order->pay_with_cheque && $order->is_reserved;
+
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$currency = match (config('app.website')) {
 			'UAE', 'UAE_T' => 'AED',
@@ -43,7 +47,9 @@ class OrderPlacedMail extends Mailable
 			default => '$',
 		};
 		$paidAmount = $order->paid_amount ?? 0;
-		$paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
+		// $paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
+		$paymentMethod = $payWithCheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery');
+
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -54,6 +60,61 @@ class OrderPlacedMail extends Mailable
 
 		$products = collect();
 
+		// foreach ($order->orderProducts as $orderProduct) {
+		// 	$productSupplierDetail = $orderProduct->vendorProductSupplier;
+		// 	$productDetail = $orderProduct->product;
+
+		// 	if ($productDetail) {
+		// 		$product = new \stdClass();
+
+		// 		$images = is_array($productDetail->images) ? $productDetail->images : (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
+		// 		$product->image = is_array($images) ? ($images[0] ?? null) : null;
+		// 		$product->name = $productDetail->name;
+		// 		$product->expectedShippingDate = $productSupplierDetail
+		// 		? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
+		// 		: null;
+
+		// 		/* Original Price (before discount) */
+		// 		$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
+
+		// 		$product->priceBeforeDiscount = $originalPrice;
+		// 		$product->unitPrice = $orderProduct->unit_price;
+
+		// 		if (
+		// 			$productSupplierDetail &&
+		// 			$productSupplierDetail->price > $orderProduct->unit_price &&
+		// 			$productSupplierDetail->price > 0 &&
+		// 			$orderProduct->unit_price > 0
+		// 		) {
+		// 			$product->discount = (($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100;
+
+		// 		} else {
+		// 			$product->discount = 0;
+		// 		}
+
+		// 		$product->quantity = (int) $orderProduct->quantity;
+		// 		$product->total = $orderProduct->amount;
+
+		// 		$product->accessories = [];
+
+		// 		$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)->where('relation_id', $orderProduct->id)->get();
+		// 		if ($accessoryCharges->isNotEmpty()) {
+		// 			$product->accessories = $accessoryCharges->map(function ($charge) {
+		// 				return [
+		// 					'id' => $charge->id,
+		// 					'accessory_item_id' => $charge->accessory_item_id,
+		// 					'accessory_item_name' => $charge->accessoryItem->name ?? null,
+		// 					'accessory_item_price' => $charge->accessoryItem->price ?? null,
+		// 					'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+		// 					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+		// 					'amount' => $charge->amount,
+		// 				];
+		// 			});
+		// 		}
+
+		// 		$products->push($product);
+		// 	}
+		// }
 		foreach ($order->orderProducts as $orderProduct) {
 			$productSupplierDetail = $orderProduct->vendorProductSupplier;
 			$productDetail = $orderProduct->product;
@@ -61,16 +122,17 @@ class OrderPlacedMail extends Mailable
 			if ($productDetail) {
 				$product = new \stdClass();
 
-				$images = is_array($productDetail->images) ? $productDetail->images : (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
+				$images = is_array($productDetail->images)
+					? $productDetail->images
+					: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
 				$product->expectedShippingDate = $productSupplierDetail
-				? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
-				: null;
+					? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
+					: null;
 
 				/* Original Price (before discount) */
 				$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
-
 				$product->priceBeforeDiscount = $originalPrice;
 				$product->unitPrice = $orderProduct->unit_price;
 
@@ -81,7 +143,6 @@ class OrderPlacedMail extends Mailable
 					$orderProduct->unit_price > 0
 				) {
 					$product->discount = (($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100;
-
 				} else {
 					$product->discount = 0;
 				}
@@ -91,7 +152,9 @@ class OrderPlacedMail extends Mailable
 
 				$product->accessories = [];
 
-				$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)->where('relation_id', $orderProduct->id)->get();
+				$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)
+					->where('relation_id', $orderProduct->id)
+					->get();
 				if ($accessoryCharges->isNotEmpty()) {
 					$product->accessories = $accessoryCharges->map(function ($charge) {
 						return [
@@ -106,9 +169,31 @@ class OrderPlacedMail extends Mailable
 					});
 				}
 
+				// ===========================
+				// Apply per-product Texas shippings
+				// ===========================
+				$productShipping = $orderProduct->shipping_charge ?? 0;
+
+				if (in_array(config('app.website'), ['US', 'US_T'])) {
+					$state = $order->customerAddress->state ?? null;
+
+					if (!$order->is_customer_pickup) {
+						if ($state === 'Texas') {
+							$productShipping = ($productShipping > 0) ? $productShipping : 99;
+						} else {
+							$productShipping = ($productShipping > 0) ? $productShipping : 199;
+						}
+					} else {
+						$productShipping = 0;
+					}
+				}
+
+				$product->shippingCharge = $productShipping;
+
 				$products->push($product);
 			}
 		}
+
 
 		/* Total price before discount (raw value) */
 		$totalPriceWithoutDiscount = $products->sum(function ($p) {
@@ -120,14 +205,25 @@ class OrderPlacedMail extends Mailable
 
 		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
 		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $order->is_inside_delivery ? 249 : 0;
 
 		$subTotal = $order->amount ?? 0;
-		$shippingCharge = $order->shipping_charge ?? 0;
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? 'VAT' : 'SALES TAX';
-		$taxPercent = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? round($order->tax_percentage) : $order->tax_percentage;
-		$taxAmount = $order->tax_amount ?? 0;
 		$discount = $order->discount ?? 0;
+
+		$chequeDiscount = $order->cheque_discount ?? 0;
+		$chequeDiscountPercentage = $order->cheque_discount_percentage ?? 0;
+
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
+		$taxPercent = ($order->tax_percentage ?? 0) + 0;
+		$taxAmount = $order->tax_amount ?? 0;
+
+		$shippingCharge = $order->shipping_charge ?? 0;
 		$total = $order->total_amount ?? 0;
+
+
+		/* Amount Before Tax */
+		$amountBeforeTax = $subTotal - $discount - $chequeDiscount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -150,6 +246,10 @@ class OrderPlacedMail extends Mailable
 			'orderUrl' => $orderUrl,
 
 			'orderNumber' => $orderNumber,
+			'checkIncomplete' => $checkIncomplete,
+			'chequeDiscount' => $chequeDiscount,
+			'chequeDiscountPercentage' => $chequeDiscountPercentage,
+
 			'orderDate' => $orderDate,
 			'currency' => $currency,
 			'paidAmount' => $paidAmount,
@@ -166,6 +266,7 @@ class OrderPlacedMail extends Mailable
 
 			'liftGateCharge' => $liftGateCharge,
 			'residentialAddressCharge' => $residentialAddressCharge,
+			'insideDeliveryCharge' => $insideDeliveryCharge,
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
 			'taxName' => $taxName,
@@ -173,12 +274,17 @@ class OrderPlacedMail extends Mailable
 			'taxAmount' => $taxAmount,
 			'discount' => $discount,
 			'total' => $total,
-
+  		    'amountBeforeTax' => $amountBeforeTax, // <<< ADD THIS
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject("Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed")
+		if ($checkIncomplete) {
+			$subject = "We Received Your Check Image – Your Order#{$orderNumber} Is Reserved";
+		} else {
+			$subject = "Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed";
+		}
+		return $this->subject($subject)
 		->markdown('emails.orders.order-placed')
 		->with($params);
 	}

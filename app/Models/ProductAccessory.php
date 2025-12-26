@@ -17,20 +17,12 @@ class ProductAccessory extends Model
         'product_id',
         'name',        
         'isapproved',
+        'isRequired',
         'approved_by',
         'created_by',
         'updated_by'
     ];
-
-    protected $casts = [
-        'isapproved' => 'boolean',
-        'product_id' => 'integer',
-        'approved_by' => 'integer',
-        'created_by' => 'integer',
-        'updated_by' => 'integer',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime'
-    ];
+    
 
     protected $hidden = [];
 

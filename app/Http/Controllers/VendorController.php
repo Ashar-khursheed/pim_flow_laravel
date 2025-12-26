@@ -275,7 +275,7 @@ class VendorController extends BaseController
 		unset($data['pre_onboarding_vendor_id']);
 
 		/* Handle File Uploads to S3 */
-		$data['logo_url'] = $this->uploadImageToWebpS3FromFile($request, 'logo', env('STORAGE_ENV') . '/vendors/logos');
+		$data['logo_url'] = uploadImageToWebpS3FromFile($request, 'logo', env('STORAGE_ENV') . '/vendors/logos');
 		$data['tax_certificate_url'] = $this->uploadPdfToS3FromFile($request, 'tax_certificate', env('STORAGE_ENV') . '/vendors/tax_certificates');
 		$data['business_licence_url'] = $this->uploadPdfToS3FromFile($request, 'business_licence', env('STORAGE_ENV') . '/vendors/business_licences');
 		unset($data['logo'], $data['tax_certificate'], $data['business_licence']);
@@ -338,40 +338,6 @@ class VendorController extends BaseController
 		$request->merge([
 			'dropshipping' => filter_var($request->input('dropshipping'), FILTER_VALIDATE_BOOLEAN),
 		]);
-	}
-
-	private function uploadImageToWebpS3FromFile(Request $request, string $key, string $pathPrefix)
-	{
-		if (!$request->hasFile($key) || !$request->file($key)->isValid()) {
-			return null;
-		}
-
-		try {
-			$file = $request->file($key);
-			$image = imagecreatefromstring(file_get_contents($file->getRealPath()));
-			if (!$image) {
-				return null;
-			}
-
-			if (!imageistruecolor($image)) {
-				imagepalettetotruecolor($image);
-			}
-
-			ob_start();
-			imagewebp($image);
-			$webpData = ob_get_clean();
-			imagedestroy($image);
-
-			$filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-			$uniqueName = $filename . '_' . time() . '.webp';
-			$path = "{$pathPrefix}/{$uniqueName}";
-
-			Storage::disk('s3')->put($path, $webpData);
-
-			return Storage::disk('s3')->url($path);
-		} catch (\Exception $e) {
-			return null;
-		}
 	}
 
 	private function uploadPdfToS3FromFile(Request $request, string $key, string $pathPrefix)
@@ -613,7 +579,7 @@ class VendorController extends BaseController
 
 		/* Handle File Uploads to S3 */
 		if ($request->hasFile('logo')) {
-			$data['logo_url'] = $this->uploadImageToWebpS3FromFile($request, 'logo', env('STORAGE_ENV') . '/vendors/logos');
+			$data['logo_url'] = uploadImageToWebpS3FromFile($request, 'logo', env('STORAGE_ENV') . '/vendors/logos');
 		}
 		if ($request->hasFile('tax_certificate')) {
 			$data['tax_certificate_url'] = $this->uploadPdfToS3FromFile($request, 'tax_certificate', env('STORAGE_ENV') . '/vendors/tax_certificates');

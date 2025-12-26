@@ -100,97 +100,180 @@ class CcavenueController extends Controller
      *     )
      * )
      */
+    // public function initiatePayment(PaymentRequest $request): JsonResponse
+    // {
+    //     try {
+    //         $data = $request->validated();
+    //         $data['amount'] = number_format((float) $data['amount'], 2, '.', '');
+
+    //         // Get merchant ID
+    //         $merchantId = $this->ccavenueService->getMerchantId();
+
+    //         // Set default values
+    //         $data['language'] = $data['language'] ?? 'EN';
+
+    //          $data['redirect_url'] = env('CCAVENUE_REDIRECT_URL');
+    //         $data['cancel_url'] = env('CCAVENUE_CANCEL_URL');
+
+    //         // Define allowed parameters for CCAvenue
+    //         $allowedKeys = [
+    //             'order_id',
+    //             'currency',
+    //             'amount',
+    //             'redirect_url',
+    //             'cancel_url',
+    //             'language',
+    //             'billing_name',
+    //             'billing_address',
+    //             'billing_city',
+    //             'billing_state',
+    //             'billing_zip',
+    //             'billing_country',
+    //             'billing_tel',
+    //             'billing_email',
+    //             'delivery_name',
+    //             'delivery_address',
+    //             'delivery_city',
+    //             'delivery_state',
+    //             'delivery_zip',
+    //             'delivery_country',
+    //             'delivery_tel',
+    //             'merchant_param1',
+    //             'merchant_param2',
+    //             'merchant_param3',
+    //             'merchant_param4',
+    //             'merchant_param5',
+    //             'promo_code',
+    //             'customer_identifier'
+    //         ];
+
+    //         // Build merchant data string - start with merchant_id
+    //         $merchantData = "merchant_id={$merchantId}";
+
+    //         foreach ($data as $key => $value) {
+    //             if (in_array($key, $allowedKeys) && !empty($value)) {
+    //                 $merchantData .= "&{$key}={$value}";
+    //             }
+    //         }
+
+    //         // Validate required fields
+    //         $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
+    //         foreach ($requiredFields as $field) {
+    //             if (empty($data[$field])) {
+    //                 throw new \Exception("Required field '{$field}' is missing");
+    //             }
+    //         }
+
+    //         \Log::info('Final merchant data:', [$merchantData]);
+    //         \Log::info('Data being processed:', $data);
+
+    //         // Generate payment URL
+    //         $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Payment URL generated successfully',
+    //             'data' => [
+    //                 'payment_url' => $paymentUrl,
+    //                 'order_id' => $data['order_id'],
+    //                 'amount' => $data['amount'],
+    //                 'currency' => $data['currency']
+    //             ]
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         \Log::error('CCAvenue payment initiation failed:', [
+    //             'error' => $e->getMessage(),
+    //             'trace' => $e->getTraceAsString()
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to generate payment URL',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
     public function initiatePayment(PaymentRequest $request): JsonResponse
-    {
-        try {
-            $data = $request->validated();
-            $data['amount'] = number_format((float) $data['amount'], 2, '.', '');
+{
+    try {
+        $data = $request->validated();
+        $data['amount'] = number_format((float) $data['amount'], 2, '.', '');
 
-            // Get merchant ID
-            $merchantId = $this->ccavenueService->getMerchantId();
+        // Get merchant ID
+        $merchantId = $this->ccavenueService->getMerchantId();
 
-            // Set default values
-            $data['language'] = $data['language'] ?? 'EN';
+        // Set default values
+        $data['language'] = $data['language'] ?? 'EN';        
+        $url = config('app.url');
+        $backendUrl = config('app.backend_url');
+        // Set default values   
+        $data['language'] = $data['language'] ?? 'EN';       
+        //$data['redirect_url'] =  url('/api/frontend/ccavenue/handle-response');
+        $data['redirect_url'] =  $backendUrl.'/api/frontend/ccavenue/handle-response';     
+        $data['currency'] = "AED";
+        $data['order_id'] =  rand(00000000,99999999);
+        $data['cancel_url'] = $backendUrl.'/api/frontend/ccavenue/failed';
+        $data['notify_url'] = $backendUrl . '/api/payment/ccavenue/notify';
+        // Allowed parameters for CCAvenue
+        $allowedKeys = [
+            'order_id', 'currency', 'amount', 'redirect_url', 'cancel_url', 'language',
+            'billing_name', 'billing_address', 'billing_city', 'billing_state', 'billing_zip',
+            'billing_country', 'billing_tel', 'billing_email',
+            'delivery_name', 'delivery_address', 'delivery_city', 'delivery_state', 'delivery_zip',
+            'delivery_country', 'delivery_tel',
+            'merchant_param1','merchant_param2','merchant_param3','merchant_param4','merchant_param5',
+            'promo_code', 'customer_identifier'
+        ];
 
-            // Define allowed parameters for CCAvenue
-            $allowedKeys = [
-                'order_id',
-                'currency',
-                'amount',
-                'redirect_url',
-                'cancel_url',
-                'language',
-                'billing_name',
-                'billing_address',
-                'billing_city',
-                'billing_state',
-                'billing_zip',
-                'billing_country',
-                'billing_tel',
-                'billing_email',
-                'delivery_name',
-                'delivery_address',
-                'delivery_city',
-                'delivery_state',
-                'delivery_zip',
-                'delivery_country',
-                'delivery_tel',
-                'merchant_param1',
-                'merchant_param2',
-                'merchant_param3',
-                'merchant_param4',
-                'merchant_param5',
-                'promo_code',
-                'customer_identifier'
-            ];
-
-            // Build merchant data string - start with merchant_id
-            $merchantData = "merchant_id={$merchantId}";
-
-            foreach ($data as $key => $value) {
-                if (in_array($key, $allowedKeys) && !empty($value)) {
-                    $merchantData .= "&{$key}={$value}";
-                }
+        // Build merchant data string
+        $merchantData = "merchant_id={$merchantId}";
+        foreach ($data as $key => $value) {
+            if (in_array($key, $allowedKeys) && !empty($value)) {
+                $merchantData .= "&{$key}={$value}";
             }
-
-            // Validate required fields
-            $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
-            foreach ($requiredFields as $field) {
-                if (empty($data[$field])) {
-                    throw new \Exception("Required field '{$field}' is missing");
-                }
-            }
-
-            \Log::info('Final merchant data:', [$merchantData]);
-            \Log::info('Data being processed:', $data);
-
-            // Generate payment URL
-            $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment URL generated successfully',
-                'data' => [
-                    'payment_url' => $paymentUrl,
-                    'order_id' => $data['order_id'],
-                    'amount' => $data['amount'],
-                    'currency' => $data['currency']
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('CCAvenue payment initiation failed:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to generate payment URL',
-                'error' => $e->getMessage()
-            ], 500);
         }
+
+        // Validate required fields
+        // $requiredFields = ['order_id', 'amount', 'currency'];
+         $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                throw new \Exception("Required field '{$field}' is missing");
+            }
+        }
+
+        \Log::info('Final merchant data:', [$merchantData]);
+        \Log::info('Data being processed:', $data);
+ 
+        // Generate payment URL
+        $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment URL generated successfully',
+            'data' => [
+                'payment_url' => $paymentUrl,
+                'order_id'    => $data['order_id'],
+                'amount'      => $data['amount'],
+                'currency'    => $data['currency']
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('CCAvenue payment initiation failed:', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to generate payment URL',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * @OA\Post(
@@ -244,49 +327,281 @@ class CcavenueController extends Controller
      *     )
      * )
      */
+    // public function handleResponse(Request $request)
+    // {
+    //     try {
+    //         $encResponse = $request->input('encResp');
+
+    //         if (empty($encResponse)) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Invalid encrypted response'
+    //             ], 400);
+    //         }
+
+    //         // Decrypt and parse response
+    //         $responseData = $this->ccavenueService->parseResponse($encResponse);
+
+    //         // Determine payment status
+    //         $orderStatus = $responseData['order_status'] ?? 'Unknown';
+    //         $statusMessage = $this->getStatusMessage($orderStatus);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Payment response processed successfully',
+    //             'data' => array_merge($responseData, [
+    //                 'status_message' => $statusMessage,
+    //                 'is_success' => $orderStatus === 'Success'
+    //             ])
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to process payment response',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+    // public function handleResponse(Request $request)
+    // {
+    //     try {
+    //         $encResponse = $request->input('encResp');
+
+    //         if (!$encResponse) {
+    //             return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment/failure'); // fallback redirect
+    //         }
+
+    //         // Decrypt CCAvenue response
+    //         $responseData = $this->ccavenueService->parseResponse($encResponse);
+
+    //         $orderStatus = $responseData['order_status'] ?? 'Failure';
+    //         $orderId     = $responseData['order_id'] ?? null;
+
+    //         if ($orderStatus === 'Success') {
+    //             // Payment successful
+    //             return redirect(env('CCAVENUE_REDIRECT_URL') . "/payment/success?order_id={$orderId}");
+    //         } else {
+    //             // Payment failed
+    //             return redirect(env('CCAVENUE_REDIRECT_URL') . "/payment/declined?order_id={$orderId}");
+    //         }
+
+    //     } catch (\Exception $e) {
+    //         return redirect(env('CCAVENUE_REDIRECT_URL') . '/payment/failure');
+    //     }
+    // }
     public function handleResponse(Request $request)
+{
+    try {
+        $encResponse = $request->input('encResp');
+
+        if (empty($encResponse)) {
+            \Log::warning('CCAvenue handleResponse called without encResp', $request->all());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve payment status',
+                'error' => 'CCAvenue handleResponse called without encResp'
+            ], 500);
+        }
+
+        // decrypt and parse
+        $responseData = $this->ccavenueService->parseResponse($encResponse);
+ 
+        \Log::info('CCAvenue decrypted response', $responseData);
+
+       
+        $orderId      = $responseData['order_id'] ?? null;
+        $status       = $responseData['order_status'] ?? ($responseData['status'] ?? 'Unknown');
+        // $amount       = $responseData['amount'] ?? null;
+        // $currency     = $responseData['currency'] ?? null;
+        // $trackingId   = $responseData['tracking_id'] ?? $responseData['bank_ref_no'] ?? null;
+        // $bankRefNo    = $responseData['bank_ref_no'] ?? null;
+        // $paymentMode  = $responseData['payment_mode'] ?? null;
+        // $responseCode = $responseData['status_code'] ?? null;
+        // $statusMsg    = $responseData['status_message'] ?? null;
+        //  $transDate    = now();
+
+        // // card info (if provided, likely masked)
+        // $cardBrand    = $responseData['card_name'] ?? $responseData['card_type'] ?? null;
+        // $cardHolder   = $responseData['card_holder_name'] ?? null;
+        // $maskedCard   = $responseData['card_number'] ?? $responseData['card_no'] ?? null; // usually masked
+
+        // merchant params (if you used them)
+        // $merchantParam1 = $responseData['merchant_param1'] ?? null;
+        // ... merchant_param2..5
+        if($status=='Success'){
+        $status =  'Completed';
+        }else{
+        $status =  'Failed';
+
+        }
+        
+        // PaymentManagement::updateOrInsert(
+        //     ['order_id' => $orderId],
+        //     [
+        //         'order_id'      => $orderId,
+        //         'status'        => $status,
+        //         'payment_method'  => "ccavenue",
+        //         'amount'        => $amount,               
+        //         'transaction_id'   => $trackingId,            
+        //         'payment_mode'  => $paymentMode,
+        //         'payment_date' => now(),
+        //         'notes'=> json_encode($responseData),                
+        //     ]
+        // );
+            $merchantData = "";
+            foreach ($responseData as $key => $value) {
+                 $merchantData .= "&{$key}={$value}";
+            }
+        $giveData = dataEncodeJsonBase64($merchantData);
+       
+            // Determine payment status   
+            $url = config('app.url');
+            return redirect($url.'/review-checkout?status=compete&encResp='.$giveData);
+
+    } catch (\Exception $e) {
+         return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve payment status',
+                'error' => $e->getMessage()
+            ], 500);
+        
+        
+    }
+}
+    public function failed(Request $request)
     {
         try {
             $encResponse = $request->input('encResp');
-
             if (empty($encResponse)) {
+                \Log::warning('CCAvenue handleResponse called without encResp', $request->all());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid encrypted response'
-                ], 400);
+                    'message' => 'Failed to retrieve payment status',
+                    'error' => 'CCAvenue handleResponse called without encResp'
+                ], 500);
             }
 
-            // Decrypt and parse response
+            // decrypt and parse
             $responseData = $this->ccavenueService->parseResponse($encResponse);
+    
+            \Log::info('CCAvenue decrypted response', $responseData);        
+            $status       = $responseData['order_status'] ?? ($responseData['status'] ?? 'Unknown');
+        
+            // ... merchant_param2..5
+            if($status=='Success'){
+            $status =  'Completed';
+            }else{
+            $status =  'Failed';
 
-            // Determine payment status
-            $orderStatus = $responseData['order_status'] ?? 'Unknown';
-            $statusMessage = $this->getStatusMessage($orderStatus);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment response processed successfully',
-                'data' => array_merge($responseData, [
-                    'status_message' => $statusMessage,
-                    'is_success' => $orderStatus === 'Success'
-                ])
-            ]);
+            }
+            
+            // PaymentManagement::updateOrInsert(
+            //     ['order_id' => $orderId],
+            //     [
+            //         'order_id'      => $orderId,
+            //         'status'        => $status,
+            //         'payment_method'  => "ccavenue",
+            //         'amount'        => $amount,               
+            //         'transaction_id'   => $trackingId,            
+            //         'payment_mode'  => $paymentMode,
+            //         'payment_date' => now(),
+            //         'notes'=> json_encode($responseData),                
+            //     ]
+            // );
+                $merchantData = "";
+                foreach ($responseData as $key => $value) {
+                    $merchantData .= "&{$key}={$value}";
+                }
+            $giveData = dataEncodeJsonBase64($merchantData);
+        
+                // Determine payment status   
+                $url = config('app.url');
+                return redirect($url.'/review-checkout?status=incompete&encResp='.$giveData);
 
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to process payment response',
-                'error' => $e->getMessage()
-            ], 500);
+                    'success' => false,
+                    'message' => 'Failed to retrieve payment status',
+                    'error' => $e->getMessage()
+                ], 500);            
         }
     }
+    // public function handleResponse(Request $request)
+    // {
+    //     try {
+    //         $encResponse = $request->input('encResp');
+
+    //         if (!$encResponse) {
+    //             \Log::warning('CCAvenue handleResponse called without encResp', $request->all());
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'No encrypted response received'
+    //             ], 400);
+    //         }
+
+    //         // Decrypt the response
+    //         $responseData = $this->ccavenueService->parseResponse($encResponse);
+
+    //         \Log::info('CCAvenue decrypted response', $responseData);
+
+    //         // Save all data in DB
+    //         \DB::table('payments')->updateOrInsert(
+    //             ['order_id' => $responseData['order_id']],
+    //             [
+    //                 'order_id'       => $responseData['order_id'] ?? null,
+    //                 'status'         => $responseData['order_status'] ?? null,
+    //                 'amount'         => $responseData['amount'] ?? null,
+    //                 'currency'       => $responseData['currency'] ?? null,
+    //                 'tracking_id'    => $responseData['tracking_id'] ?? null,
+    //                 'bank_ref_no'    => $responseData['bank_ref_no'] ?? null,
+    //                 'payment_mode'   => $responseData['payment_mode'] ?? null,
+    //                 'card_brand'     => $responseData['card_type'] ?? null,
+    //                 'card_number'    => $responseData['card_number'] ?? null,
+    //                 'card_holder'    => $responseData['card_holder_name'] ?? null,
+    //                 'trans_date'     => $responseData['trans_date'] ?? null,
+    //                 'response_raw'   => json_encode($responseData),
+    //                 'updated_at'     => now(),
+    //                 'created_at'     => now()
+    //             ]
+    //         );
+
+    //         // Optional: trigger order creation
+    //         if (strtolower($responseData['order_status'] ?? '') === 'success') {
+    //             $this->orderService->createOrderFromPayment($responseData);
+    //         }
+
+    //         // Return JSON to frontend (React) with all payment info
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Payment processed successfully',
+    //             'data' => $responseData
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         \Log::error('CCAvenue handleResponse exception', [
+    //             'error' => $e->getMessage(),
+    //             'trace' => $e->getTraceAsString()
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to process payment response',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+
+
 
     /**
      * @OA\Get(
      *     path="/api/frontend/ccavenue/payment-status/{orderId}",
      *     summary="Get payment status by order ID",
      *     description="Check the status of a payment using order ID",
-     *     operationId="getPaymentStatus", 
+     *     operationId="getPaymentStatus",
      *     tags={"CCAvenue"},
      *     @OA\Parameter(
      *         name="orderId",
@@ -364,24 +679,16 @@ class CcavenueController extends Controller
     public function createCCavenuePaymentLink($order)
     {
         $url = config('app.url');
+        $backendUrl = config('app.backend_url');
         $customerAddress = CustomerAddress::find($order->customer_address_id);
         $customer = Customer::find($order->customer_id);
         $orderList = array();
-        $orderList['order_id'] = $order->id;
-        $orderList['redirect_url'] = 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks';
-        $orderList['cancel_url'] = 'https://development.d28qosi1cuigvb.amplifyapp.com/failed';
-        // $orderList['redirect_url'] = $url.'/thanks';
-        // $orderList['cancel_url'] = $url.'/failed';
-
-      
-        // $orderList['webhook_url'] = url('/api/ccavenue/webhook');
-         $orderList['notify_url'] = url('/api/payment/ccavenue/notify');
-
-      
-        // $orderList['cancel_url'] = url('api/ccavenue/failed');
-        
+        $orderList['order_id'] = $order->order_number;
+        $orderList['redirect_url'] = $url.'/thanks';
+        $orderList['cancel_url'] = $url.'/failed';
+        $orderList['notify_url'] = $backendUrl.'/api/payment/ccavenue/notify';
         $orderList['currency'] = "AED";
-        $orderList['amount'] = $order->total_amount;
+        $orderList['amount'] = $order->pending_amount;
         $orderList['language'] = "EN";
         $orderList['tax_percentage'] = $order->tax_percentage;
         $orderList['billing_city'] = $customerAddress->city;
@@ -391,7 +698,7 @@ class CcavenueController extends Controller
         $orderList['billing_email'] = $customer->email;
         $orderList['delivery_tel'] = $customer->mobile_number;
         $orderList['delivery_zip'] = "";
- 
+
 
         $allowedKeys = [
             'order_id',
@@ -400,7 +707,7 @@ class CcavenueController extends Controller
             'redirect_url',
             'cancel_url',
             'webhook_url',
-            'notify_url',             
+            'notify_url',
             'language'
         ];
         $merchantId = $this->ccavenueService->getMerchantId();
@@ -442,52 +749,52 @@ class CcavenueController extends Controller
         $workingKey = env('CCAVENUE_WORKING_KEY');
         $accessCode = env('CCAVENUE_ACCESS_CODE');
         \Log::error('CCAvenue Webhook Received', $request->all());
-       
+
         $encResponse = $request->input('encResp');
      //   $encResponse = $request->encResp;
         //This is the response sent by the CCAvenue Server
         $rcvdString = CcavenueHelper::decrypt($encResponse, $workingKey);
         //Crypto Decryption used as per the specified working key.
- 
+
         $order_status = "";
         $decryptValues = explode('&', $rcvdString);
         $dataSize = sizeof($decryptValues);
- 
+
         for ($i = 0; $i < $dataSize; $i++) {
             $information = explode('=', $decryptValues[$i]);
             if ($i == 3)
                 $order_status = $information[1];
         }
- 
+
         if ($order_status === "Success") {
             $msg = "Thank you for registering with us. We will be sending you the registration slip very soon on your email id.";
- 
+
         } else if ($order_status === "Aborted") {
             $msg = "Sorry, you have not been registered with us.However,the transaction has been declined & Security Error. Illegal access detected.";
- 
+
         } else if ($order_status === "Failure") {
             $msg = "Sorry, you have not been registered with us.However,the transaction has been declined.";
         } else {
             $msg = "Sorry, you have not been registered with us.However,the transaction has been declined & Security Error. Illegal access detected " . $order_status;
- 
+
         }
- 
- 
- 
- 
+
+
+
+
         $information = array();
         foreach ($decryptValues as $value) {
             $t = explode('=', $value);
             $information[$t[0]] = urldecode($t[1]);
         }
         $information = json_decode(json_encode($information));
- 
- 
+
+
         $status = $order_status;
         if (isset($information)) {
- 
- 
-            $order = Order::where('id', $information->order_id)->first();
+
+
+            $order = Order::where('order_number', $information->order_id)->first();
             if (!$order) {
                 return response()->json(['success' => false, 'message' => 'Order not found'], 404);
             }
@@ -513,7 +820,7 @@ class CcavenueController extends Controller
                     $status = "Pending";
             }
         }
- 
+
         if ($information->order_status == 'Success') {
             if ($order->amount_total == $information->amount) {
                 // Mark order as paid and remove payment link
@@ -532,10 +839,10 @@ class CcavenueController extends Controller
                     'payment_link' => null,
                     'is_reserved' => false,
                 ]);
- 
+
             }
         }
- 
+
         PaymentManagement::create([
             'order_id' => $information->order_id,
             'transaction_id' => $information->tracking_id,
@@ -547,24 +854,24 @@ class CcavenueController extends Controller
             'notes' => $information->status_message,
             'payment_details' => ''
         ]);
- 
+
         if ($information) {
- 
+
             return response()->json([
                 'success' => true,
                 'message' => $msg,
                 'data' => $information
             ]);
- 
+
         } else {
- 
+
             return response()->json([
                 'success' => false,
                 'message' => $msg,
                 'data' => $information
             ]);
         }
- 
+
     }
 
     /**
@@ -691,5 +998,56 @@ class CcavenueController extends Controller
 
     }
 
+
+
+        function dataEncodeJsonBase64($o){
+            $o = json_encode($o);
+            $o = base64_encode($o);
+            return $o;
+            }
+        function dataDecodeJsonBase64($o){
+            $o = base64_decode($o);
+            $o = json_decode($o); 
+            
+            return $o;
+        }
+
+    /**
+     * @OA\Post(
+     *     path="/api/ccavenue/dataEncodeCCavenue",
+     *     summary="CCAvenue Payment Cancel Redirect",
+     *     tags={"CCAvenue"},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="encResp",
+     *                 type="string",
+     *                 example="b2dwx821x92x0a78sd89asd7as8d7as8d7a..."
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment was cancelled"
+     *     )
+     * )
+     */
+
+    public function dataEncodeCCavenue(Request $request)
+    {
+
+        $encResponse = $request->encResp;
+        $data = dataDecodeJsonBase64(o: $encResponse);    
+        return response()->json([
+                'success' => true,
+                'message' => 'Data has been successfully decrypted',
+                'data' => $data
+            ]);
+
+    }
 
 }

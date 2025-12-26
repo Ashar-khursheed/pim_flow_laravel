@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\PasswordResetToken;
 use App\Models\User;
 use App\Models\Newsletter;
-
+use App\Models\Frontend\Wishlist;
 
 class Customer extends Authenticatable
 {
@@ -38,6 +38,10 @@ class Customer extends Authenticatable
 		'country_code',
 		'mobile_number',
 		'profile_img',
+		'is_tax_free',
+		'approval_action_by',
+		'approval_action_notes',
+		'approval_action_at',
 		'created_by',
 		'is_social_login',
 		'apple_id',
@@ -110,5 +114,10 @@ class Customer extends Authenticatable
 	public function customerCarts()
 	{
 		return $this->hasMany(CustomerCart::class, 'customer_id', 'id');
+	}
+
+	public function wishlist()
+	{
+		return $this->hasMany(Wishlist::class, 'customer_id');
 	}
 }

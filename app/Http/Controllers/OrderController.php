@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\Customer;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 
@@ -28,6 +30,7 @@ use App\Jobs\Order\OutDeliveryMailJob;
 use App\Jobs\Order\OrderDeliveredMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 use App\Jobs\Order\PartialOrderCancelledMailJob;
+use App\Jobs\Order\OrderUpdateMailJob;
 
 class OrderController extends Controller
 {
@@ -188,6 +191,28 @@ class OrderController extends Controller
 				$record->nofraud_decision = $data['decision'] ?? null;
 				unset($record->nofraudResponse);
 
+				// Handle UTM: keep object, default fields to "Organic"
+				if ($record->utm) {
+					$record->utm->utm_source = $record->utm->utm_source ?? 'Organic';
+					$record->utm->utm_medium = $record->utm->utm_medium ?? 'Organic';
+					$record->utm->utm_campaign = $record->utm->utm_campaign ?? 'Organic';
+					$record->utm->utm_term = $record->utm->utm_term ?? 'Organic';
+					$record->utm->utm_content = $record->utm->utm_content ?? 'Organic';
+					$record->utm->gclid = $record->utm->gclid ?? 'Organic';
+				} else {
+					$record->utm = (object)[
+						'id' => null,
+						'utm_source' => 'Organic',
+						'utm_medium' => 'Organic',
+						'utm_campaign' => 'Organic',
+						'utm_term' => 'Organic',
+						'utm_content' => 'Organic',
+						'gclid' => 'Organic',
+						'session_id' => null,
+						'created_at' => null,
+						'updated_at' => null
+					];
+				}
 
 				unset($record->creator, $record->updator);
 
@@ -227,7 +252,7 @@ class OrderController extends Controller
 					}
 				}
 
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -235,7 +260,7 @@ class OrderController extends Controller
 
 				return $record;
 			});
-		} else {
+		} else {//
 			$records = $recordsQuery->orderBy('order_number', 'asc')->get(['id', 'order_number']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
@@ -257,31 +282,44 @@ class OrderController extends Controller
 	 *     tags={"Orders"},
 	 *     @OA\RequestBody(
 	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             required={"customer_id", "customer_address_id", "products"},
-	 *             @OA\Property(property="customer_id", type="integer", example=1),
-	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
-	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
-	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
-	 *             @OA\Property(property="tax_percentage", type="number", example=5),
-	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
-	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
-	 *             @OA\Property(property="coupon_id", type="integer", example=1),
-	 *             @OA\Property(property="discount", type="number", format="float", example=200),
-	 *             @OA\Property(property="is_reserved", type="boolean", example=false),
-	 *             @OA\Property(property="is_payment", type="boolean", example=false),
-	 *             @OA\Property(property="is_paymob", type="boolean", example=false),
-	 *             @OA\Property(property="is_squarePayment", type="boolean", example=false),
-	 *             @OA\Property(property="is_customer_pickup", type="boolean", example=false),
-	 *             @OA\Property(
-	 *                 property="products",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity"},
-	 *                     @OA\Property(property="product_id", type="integer", example=101),
-	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="accessory_item_ids", type="array", @OA\Items(type="integer"))
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"customer_id", "customer_address_id", "tax_percentage", "products"},
+	 *                 @OA\Property(property="customer_id", type="integer", example=1, description="Customer ID"),
+	 *                 @OA\Property(property="customer_address_id", type="integer", example=1, description="Customer address ID"),
+	 *                 @OA\Property(property="is_lift_gate", type="boolean", example=true, description="Lift gate required"),
+	 *                 @OA\Property(property="is_residential_address", type="boolean", example=true, description="Residential address"),
+	 *                 @OA\Property(property="is_inside_delivery", type="boolean", example=true, description="Inside delivery required"),
+	 *                 @OA\Property(property="tax_percentage", type="number", format="float", example=5, description="Tax percentage"),
+	 *                 @OA\Property(property="ship_all_at_once", type="boolean", example=true, description="Ship all items together"),
+	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
+	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
+	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
+	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
+	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
+	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
+	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
+	 *                 @OA\Property(property="is_payment", type="boolean", example=false, description="Payment gateway"),
+	 *                 @OA\Property(property="is_paymob", type="boolean", example=false, description="Paymob payment"),
+	 *                 @OA\Property(property="is_squarePayment", type="boolean", example=false, description="Square payment"),
+	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),
+	 *                 @OA\Property(
+	 *                     property="products",
+	 *                     type="array",
+	 *                     description="Array of products to order",
+	 *                     @OA\Items(
+	 *                         required={"product_id", "vendor_id", "quantity"},
+	 *                         @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
+	 *                         @OA\Property(property="vendor_id", type="integer", example=22, description="Vendor ID"),
+	 *                         @OA\Property(property="quantity", type="integer", example=5, description="Product quantity"),
+	 *                         @OA\Property(
+	 *                             property="accessory_item_ids",
+	 *                             type="array",
+	 *                             description="Array of accessory item IDs",
+	 *                             @OA\Items(type="integer", example=50)
+	 *                         )
+	 *                     )
 	 *                 )
 	 *             )
 	 *         )
@@ -297,11 +335,17 @@ class OrderController extends Controller
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
 			'is_residential_address' => 'nullable|boolean',
-			'tax_percentage' => 'required|numeric|min:0',
+			'is_inside_delivery' => 'nullable|boolean',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
+
+			'pay_with_cheque' => 'nullable|boolean',
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
+			'tax_percentage' => 'required|numeric|min:0',
 			'is_reserved' => 'nullable|boolean',
 			'is_payment' => 'nullable|boolean',
 			'is_paymob' => 'nullable|boolean',
@@ -329,6 +373,8 @@ class OrderController extends Controller
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -340,6 +386,9 @@ class OrderController extends Controller
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
+				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
+
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -347,10 +396,11 @@ class OrderController extends Controller
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
 					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => $shipping,
 				];
 			}
 
+			$payWithCheque = $request->boolean('pay_with_cheque', false);
 			$discount = $request->discount ?? 0;
 			$totalProducts = 0;
 			$orderAmount = 0;
@@ -361,16 +411,49 @@ class OrderController extends Controller
 				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
 				$orderShipping += $product['shipping_charge'];
 			}
-			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$discountedAmount = $orderAmount - $discount;
-			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
 
-			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
+			/* Handle cheque payment discount */
+			if ($payWithCheque) {
+				$chequeImg = uploadImageToWebpS3FromFile(
+					$request,
+					'cheque_img',
+					env('STORAGE_ENV') . '/customer/orders'
+				);
+				$chequeImgBack = uploadImageToWebpS3FromFile(
+					$request,
+					'cheque_img_back',
+					env('STORAGE_ENV') . '/customer/orders'
+				);
+				$chequeDiscountPercentage = 0;
+				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
+				$discountedAmount -= $chequeDiscount;
+			} else {
+				$chequeImg = null;
+				$chequeImgBack = null;
+				$chequeDiscountPercentage = 0;
+				$chequeDiscount = 0;
 			}
 
+			/* Add extra charges */
+			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
+
+			/* Tax rules */
+			$customer = Customer::find($request->customer_id);
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$orderShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
+			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+				$taxableAmount = $discountedAmount + $orderShipping;
+				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+			} else {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+			}
 			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 
 			/* Get the latest order by ID (most recent) */
@@ -386,14 +469,24 @@ class OrderController extends Controller
 				'order_number' => $orderNumber,
 				'customer_id' => $request->customer_id,
 				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $orderShipping,
 				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
+				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-				'tax_percentage' => $request->tax_percentage,
-				'tax_amount' => $taxAmount,
+
+				'pay_with_cheque' => $payWithCheque,
+				'cheque_discount_percentage' => $chequeDiscountPercentage,
+				'cheque_discount' => $chequeDiscount,
+				'cheque_img' => $chequeImg,
+				'cheque_img_back' => $chequeImgBack,
+
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
+
+				'tax_percentage' => $taxPercentage,
+				'tax_amount' => $taxAmount,
+				'shipping_charge' => $orderShipping,
+
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
@@ -448,7 +541,7 @@ class OrderController extends Controller
 				$cart->delete();
 			});
 
-			if ($request->boolean('is_reserved')) {
+			if ($request->boolean('is_reserved') && !$payWithCheque) {
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					$paymentLink = null;
 					if ($request->boolean('is_payment')) {
@@ -505,7 +598,24 @@ class OrderController extends Controller
 					}
 				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
 					$paymentLink = null;
-					if ($request->boolean('is_squarePayment')) {
+						if ($request->boolean('is_payment')) {
+						try {
+							$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)->generatePaymentLink($order);
+							if ($paymentLink) {
+								$order = Order::find($order->id);
+								$order->payment_link = $paymentLink;
+								$order->save();
+							}
+						} catch (\Exception $e) {
+							\Log::error('Stripe Payment Link generation failed', [
+								'order_id' => $order->id,
+								'error' => $e->getMessage(),
+								'trace' => $e->getTraceAsString()
+							]);
+						}
+
+					}
+					else if ($request->boolean('is_squarePayment')) {
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
 							->createPaymentLink($order);
@@ -521,7 +631,7 @@ class OrderController extends Controller
 								'trace' => $e->getTraceAsString()
 							]);
 						}
-					}else{
+					} else {
 
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\StaxPaymentController::class)
@@ -544,15 +654,14 @@ class OrderController extends Controller
 
 			DB::commit();
 
-			if ($request->boolean('is_reserved')) {
-				$batch = Bus::batch([])->name('Order Reserved')->dispatch();
+			if ($request->boolean('is_reserved') && !$payWithCheque) {
+				$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_RES';
 				$batch->add(new OrderReservedMailJob([
 					'recordId' => $order->id
 				]));
 			} else {
-				$batch = Bus::batch([])->name('Order Place backend')->dispatch();
-
+				$batch = Bus::batch([])->name("Order Placed by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
 					'recordId' => $order->id
@@ -613,7 +722,7 @@ class OrderController extends Controller
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}
@@ -807,7 +916,7 @@ class OrderController extends Controller
 			}
 		}
 
-		foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+		foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
 				$order->$key = number_format($order->$key, 2, '.', '');
 			}
@@ -854,8 +963,7 @@ class OrderController extends Controller
 
 		try {
 			/* Create a new batch for resending order place mail */
-			$batch = Bus::batch([])->name("Resend Order place Mail for Order #{$order->id}")->dispatch();
-
+			$batch = Bus::batch([])->name("Resend Order place Mail - #{$order->order_number}")->dispatch();
 			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 			$batch->add(new OrderPlacedMailJob([
 				'recordId' => $order->id
@@ -863,7 +971,7 @@ class OrderController extends Controller
 
 			return response()->json([
 				'success' => true,
-				'message' => "Order place mail resent successfully for Order #{$order->id}."
+				'message' => "Order place mail resent successfully for Order #{$order->order_number}."
 			]);
 		} catch (\Throwable $e) {
 			return response()->json([
@@ -883,16 +991,20 @@ class OrderController extends Controller
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"customer_address_id", "tax_percentage", "products"},
+	 *             required={"customer_address_id", "tax_percentage", "update_reason", "products"},
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
 	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
 	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
+	 *             @OA\Property(property="is_inside_delivery", type="boolean", example=true),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
-	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
+	 *             @OA\Property(property="additional_amount_name", type="string", example="Accessory 1"),
+	 *             @OA\Property(property="additional_amount_price", type="number", format="float", example=100),
+	 *             @OA\Property(property="additional_discount", type="number", format="float", example=200),
+	 *             @OA\Property(property="update_reason", type="string"),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -938,15 +1050,28 @@ class OrderController extends Controller
 			], 400);
 		}
 
+		/* For temporary use - Later updated by user forcefully */
+		if (!$request->has('update_reason')) {
+			$request->merge(['update_reason' => "Order updated by admin due to changes in order details."]);
+		}
+
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
 			'is_residential_address' => 'nullable|boolean',
+			'is_inside_delivery' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
+
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
+			'additional_discount' => 'nullable|numeric|min:0',
+
+			'update_reason' => 'required|string',
+
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -969,6 +1094,8 @@ class OrderController extends Controller
 		DB::beginTransaction();
 
 		try {
+			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
 			/* Collect all product supplier details in one go */
 			$productDetails = [];
 			foreach ($request->products as $product) {
@@ -980,6 +1107,8 @@ class OrderController extends Controller
 				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
+				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
 				$productDetails[] = [
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
@@ -987,7 +1116,7 @@ class OrderController extends Controller
 					'unit_price' => $fetchedDetail->unit_price,
 					'accessoryItems' => $accessoryItems,
 					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => (in_array(config('app.website'), ['UAE', 'UAE_T']) || $request->boolean('is_customer_pickup')) ? 0 : ($fetchedDetail->shipping_charge ?? 0),
+					'shipping_charge' => $shipping,
 				];
 			}
 
@@ -1001,30 +1130,56 @@ class OrderController extends Controller
 				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
 				$orderShipping += $product['shipping_charge'];
 			}
-			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
-			$discountedAmount = $orderAmount - $discount;
-			$taxAmount = round($discountedAmount * ($request->tax_percentage / 100), 2);
-
-			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$orderShipping = ($discountedAmount + $taxAmount) < 300 ? 25 : 0;
+			if (!empty($request->additional_amount_price)) {
+				$orderAmount += (float) $request->additional_amount_price;
 			}
 
+			$discountedAmount = $orderAmount - $discount;
+
+			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
+			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
+
+			/* Tax rules */
+			$customer = $order->customer;
+			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+				$orderShipping = ($discountedAmount + $taxAmount) < 500 ? 30 : 0;
+			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+				$taxableAmount = $discountedAmount + $orderShipping;
+				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+			} else {
+				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+			}
 			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
-			$paidAmount = $request->paid_amount ?? 0;
+
+			$additionalDiscount = $request->additional_discount ?? 0;
+			$totalAmount -= (float) $additionalDiscount;
+
+			$paidAmount = $order->paid_amount ?? 0;
 			$pendingAmount = $totalAmount - $paidAmount;
+
+			/* Get original total amount before update */
+			$originalTotalAmount = $order->total_amount;
+			$prevPendingAmount = $order->pending_amount;
 
 			$order->update([
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $orderShipping,
 				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
+				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-				'tax_percentage' => $request->tax_percentage,
+				'tax_percentage' => $taxPercentage,
 				'tax_amount' => $taxAmount,
 				'coupon_id' => $request->coupon_id ?? null,
 				'discount' => $discount,
+				'additional_amount_name' => $request->additional_amount_name ?? null,
+				'additional_amount_price' => $request->additional_amount_price ?? null,
+				'additional_discount' => $additionalDiscount,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
@@ -1067,11 +1222,56 @@ class OrderController extends Controller
 			OrderTracking::create([
 				'order_id' => $order->id,
 				'status' => 'Order Updated By Backend Panel',
-				'description' => 'Order has been successfully updated',
+				'description' => $originalTotalAmount != $totalAmount ? "Amount changed from {$originalTotalAmount} to {$totalAmount}. " . ($request->update_reason ?? '') : ($request->update_reason ?? ''),
 				'created_by' => auth()->id()
 			]);
 
 			DB::commit();
+
+			if ($pendingAmount > 0) {
+				$paymentLink = null;
+				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+					try {
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
+						if ($paymentLink) {
+							$order = Order::find($order->id);
+							$order->payment_link = $paymentLink;
+							$order->save();
+						}
+					} catch (\Exception $e) {
+						\Log::error('Paymob Payment Link generation failed', [
+							'order_id' => $order->id,
+							'error' => $e->getMessage(),
+							'trace' => $e->getTraceAsString()
+						]);
+					}
+				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
+					try {
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)->generatePaymentLink($order);
+						if ($paymentLink) {
+							$order = Order::find($order->id);
+							$order->payment_link = $paymentLink;
+							$order->save();
+						}
+					} catch (\Exception $e) {
+						\Log::error('Stax Payment Link generation failed', [
+							'order_id' => $order->id,
+							'error' => $e->getMessage(),
+							'trace' => $e->getTraceAsString()
+						]);
+					}
+				}
+			}
+
+			if ($originalTotalAmount != $totalAmount || $prevPendingAmount != $pendingAmount) {
+				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
+				$batch->add(new OrderUpdateMailJob([
+					'recordId' => $order->id,
+					'originalTotalAmount' => $originalTotalAmount,
+					'updateReason' => $request->update_reason,
+				]));
+			}
 
 			/* Load relationships */
 			$order->load([
@@ -1100,6 +1300,22 @@ class OrderController extends Controller
 				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 				: null;
 
+				$shipping = $orderProduct->shipping_charge ?? 0;
+				if (in_array(config('app.website'), ['US', 'US_T'])) {
+					$state = $order->customerAddress->state ?? null;
+
+					if (!$order->is_customer_pickup) {
+						if ($state === 'Texas') {
+							$shipping = ($shipping > 0) ? $shipping : 99;
+						} else {
+							$shipping = ($shipping > 0) ? $shipping : 199;
+						}
+					} else {
+						$shipping = 0;
+					}
+				}
+				$orderProduct->shipping_charge = $shipping;
+
 				if ($orderProduct->accessoryCharges) {
 					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
 						return [
@@ -1124,7 +1340,7 @@ class OrderController extends Controller
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}
@@ -1212,11 +1428,7 @@ class OrderController extends Controller
 				'created_by' => auth()->id(),
 			]);
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Order Mails')->dispatch();
-
+			$batch = Bus::batch([])->name("Order Cancelled by Backend - #{$order->order_number}")->dispatch();
 			$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
 			$batch->add(new OrderCancelledMailJob([
 				'recordId' => $order->id
@@ -1329,32 +1541,28 @@ class OrderController extends Controller
 			'created_by' => auth()->id(),
 		]);
 
-		if (in_array($newStatus, ['Confirmed', 'Out for delivery', 'Delivered', 'Cancelled'])) {
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Order Mails')->dispatch();
+		if ($newStatus == 'Confirmed') {
+			$batch = Bus::batch([])->name("Order Confirmation - #{$order->order_number}")->dispatch();
+			$batch->options['queue'] = config('app.website') . '_ORD_CNF';
+			$batch->add(new OrderConfirmationMailJob([
+				'recordId' => $order->id
+			]));
+		}
 
-			if ($newStatus == 'Confirmed') {
-				$batch->options['queue'] = config('app.website') . '_ORD_CNF';
-				$batch->add(new OrderConfirmationMailJob([
-					'recordId' => $order->id
-				]));
-			}
+		if ($newStatus == 'Out for delivery') {
+			$batch = Bus::batch([])->name("Order Out for Delivery - #{$order->order_number}")->dispatch();
+			$batch->options['queue'] = config('app.website') . '_ORD_OUT';
+			$batch->add(new OutDeliveryMailJob([
+				'recordId' => $order->id
+			]));
+		}
 
-			if ($newStatus == 'Out for delivery') {
-				$batch->options['queue'] = config('app.website') . '_ORD_OUT';
-				$batch->add(new OutDeliveryMailJob([
-					'recordId' => $order->id
-				]));
-			}
-
-			if ($newStatus == 'Delivered') {
-				$batch->options['queue'] = config('app.website') . '_ORD_DLVR';
-				$batch->add(new OrderDeliveredMailJob([
-					'recordId' => $order->id
-				]));
-			}
+		if ($newStatus == 'Delivered') {
+			$batch = Bus::batch([])->name("Order Delivered - #{$order->order_number}")->dispatch();
+			$batch->options['queue'] = config('app.website') . '_ORD_DLVR';
+			$batch->add(new OrderDeliveredMailJob([
+				'recordId' => $order->id
+			]));
 		}
 
 		return response()->json([
@@ -1442,11 +1650,7 @@ class OrderController extends Controller
 				'created_by' => auth()->id(),
 			]);
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Order Mails')->dispatch();
-
+			$batch = Bus::batch([])->name("Order Partially Cancelled by Backend - #{$order->order_number}")->dispatch();
 			$batch->options['queue'] = config('app.website') . '_ORD_PART_CNCL';
 			$batch->add(new PartialOrderCancelledMailJob([
 				'recordId' => $orderProduct->id,

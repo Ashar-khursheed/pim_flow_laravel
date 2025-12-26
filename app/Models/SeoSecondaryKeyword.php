@@ -18,4 +18,5 @@ class SeoSecondaryKeyword extends Model
 	{
 		return $this->belongsTo(SeoManagement::class, 'primary_keyword_id');
 	}
+	
 }

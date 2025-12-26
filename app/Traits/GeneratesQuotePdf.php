@@ -36,10 +36,10 @@ trait GeneratesQuotePdf
 		$backendURL = config('app.backend_url');
 		$pdfLogoUrl = public_path('logo.png');
 
-		$companyName = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? 'HORECA TRADING CO LLC.' : 'THE HORECA STORE INC';
-		$companyStreet = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? 'Showroom 01 - Building No 9 19th Street' : '8800 Bissonnet Street, Ste A,';
-		$companyCity = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? 'Dubai - United Arab Emirates' : 'Houston, Texas 77074';
-		$companyPhone = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? '(866) 446-7322' : '1 (866) 446-7322';
+		$companyName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'HORECA TRADING CO LLC.' : 'THE HORECA STORE INC';
+		$companyStreet = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'Showroom 01 - Building No 9 19th Street' : '8800 Bissonnet Street, Ste A,';
+		$companyCity = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'Dubai - United Arab Emirates' : 'Houston, Texas 77074';
+		$companyPhone = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '800-467-322' : '1 (866) 446-7322';
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -95,7 +95,8 @@ trait GeneratesQuotePdf
 				// : $currency . ' ' . number_format($quoteProduct->shipping_charge, 2, '.', ',');
 
 				$product->deliveryDays = $productSupplierDetail->delivery_days ?? null;
-				$product->productURL = config('app.url') . '/products/' . $productDetail->seoProductUrl->url ?? $productDetail->id;
+
+				$product->productURL = config('app.url') . '/' . $productDetail->parent_category_url() . '/' . $productDetail->category_url() . '/' . ($productDetail->seoProductUrl->url ?? $productDetail->id);
 
 				$images = is_array($productDetail->images)
 				? $productDetail->images
@@ -125,6 +126,7 @@ trait GeneratesQuotePdf
 		$shippingCharge = $quote->shipping_charge ?? 0;
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? 'VAT' : 'Sales Tax';
 		$taxPercent = $quote->tax_percentage;
+		$taxPercent = $taxPercent + 0;
 		$taxAmount = $quote->tax_amount ?? 0;
 		$discount = $quote->discount ?? 0;
 		$total = $quote->total_amount ?? 0;

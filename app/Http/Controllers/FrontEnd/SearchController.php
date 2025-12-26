@@ -152,6 +152,10 @@ class SearchController extends Controller
                'warranty_information' => !empty($product->warrantyAttribute?->attribute_value)
                     ? $product->warrantyAttribute->attribute_value
                     : ($firstSupplier->warranty_information ?? null),
+                'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                'quote_available' => $product->quote_available ?? null,
+                 'isRequired' => $product->isRequired,
+                'is_fixed' => $firstSupplier->is_fixed ?? 0,
                 'brand' => $product->brand ? [
                     'id' => $product->brand->id,
                     'name' => $product->brand->name,
@@ -606,6 +610,10 @@ class SearchController extends Controller
                 'return_policy' => $firstSupplier->return_policy ?? null,
                 'free_shipping' => $firstSupplier->free_shipping ?? null,
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
+                'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                'quote_available' => $product->quote_available ?? null,
+                 'isRequired' => $product->isRequired,
+                'is_fixed' => $firstSupplier->is_fixed ?? 0,
                 'brand' => $product->brand ? [
                     'id' => $product->brand->id,
                     'name' => $product->brand->name,

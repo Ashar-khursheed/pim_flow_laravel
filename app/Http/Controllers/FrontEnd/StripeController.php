@@ -44,7 +44,146 @@ class StripeController extends Controller
      *     )
      * )
      */
-    public function createPaymentIntent(Request $request)
+    // public function createPaymentIntent(Request $request)
+    // {
+    //     // Validate input
+    //     $request->validate([
+    //         'amount' => 'required|numeric|min:1',
+    //         'payment_method_id' => 'required|string',
+    //         'currency' => 'sometimes|string|in:aed,usd',
+    //         'customer_info' => 'sometimes|array'
+    //     ]);
+
+    //     // Set Stripe Secret Key
+    //     Stripe::setApiKey(config('services.stripe.secret'));
+
+    //     // try {
+    //     //     // Create PaymentIntent
+    //     //     $paymentIntent = PaymentIntent::create([
+    //     //         'amount' => (int) round($request->amount * 100), // Convert to smallest unit and round
+    //     //         'currency' => $request->currency ?? 'aed',
+    //     //         'payment_method' => $request->payment_method_id,
+    //     //         'confirmation_method' => 'manual',
+    //     //         'confirm' => true,
+    //     //         'return_url' => config('app.url') . '/payment/return',
+    //     //         'description' => 'Order Payment - ' . now()->format('Y-m-d H:i:s'),
+    //     //         'metadata' => [
+    //     //             'customer_name' => $request->customer_info['name'] ?? '',
+    //     //             'customer_email' => $request->customer_info['email'] ?? '',
+    //     //             'order_timestamp' => now()->toISOString()
+    //     //         ]
+    //     //     ]);
+    //         try {
+
+    //     // STEP 1: Update Payment Method with Customer Billing Details
+    //         // STEP 1: Create a Customer in Stripe
+    //     $customer = \Stripe\Customer::create([
+    //         'name' => $request->customer_info['name'] ?? null,
+    //         'email' => $request->customer_info['email'] ?? null,
+    //     ]);
+
+    //     // STEP 2: Attach Payment Method to Customer
+    //     \Stripe\PaymentMethod::retrieve($request->payment_method_id)
+    //         ->attach(['customer' => $customer->id]);
+
+    //     // STEP 3: Update PaymentMethod with billing details (now allowed)
+    //     \Stripe\PaymentMethod::update(
+    //         $request->payment_method_id,
+    //         [
+    //             'billing_details' => [
+    //                 'name' => $request->customer_info['name'] ?? null,
+    //                 'email' => $request->customer_info['email'] ?? null,
+    //             ]
+    //         ]
+    //     );
+
+    //     // STEP 4: Create PaymentIntent
+    //     $paymentIntent = PaymentIntent::create([
+    //         'amount' => (int) round($request->amount * 100),
+    //         'currency' => $request->currency ?? 'aed',
+    //         'payment_method' => $request->payment_method_id,
+    //         'customer' => $customer->id,   // <-- THIS ensures Stripe shows name/email
+    //         'confirmation_method' => 'manual',
+    //         'confirm' => true,
+    //         'return_url' => config('app.url') . '/payment/return',
+    //         'description' => 'Order Payment - ' . now()->format('Y-m-d H:i:s'),
+    //     ]);
+
+
+    //         // Handle the payment intent status
+    //         if ($paymentIntent->status === 'requires_action') {
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'requires_action' => true,
+    //                 'client_secret' => $paymentIntent->client_secret,
+    //                 'payment_intent_id' => $paymentIntent->id,
+    //                 'payment_mode' => 'Credit Card',
+    //                 'status' => 'requires_action',
+    //                 'payment_method' => 'Stripe'
+    //             ]);
+    //         } else if ($paymentIntent->status === 'succeeded') {
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'requires_action' => false,
+    //                 'payment_intent_id' => $paymentIntent->id,
+    //                 'payment_mode' => 'Credit Card',
+    //                 'status' => 'completed',
+    //                 'payment_method' => 'Stripe',
+    //                 'client_secret' => $paymentIntent->client_secret
+    //             ]);
+    //         } else {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'error' => 'Payment failed with status: ' . $paymentIntent->status,
+    //                 'payment_intent_status' => $paymentIntent->status
+    //             ], 400);
+    //         }
+
+    //     } catch (\Stripe\Exception\CardException $e) {
+    //         // Card was declined
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => $e->getError()->message,
+    //             'decline_code' => $e->getError()->decline_code ?? null
+    //         ], 400);
+    //     } catch (\Stripe\Exception\RateLimitException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Too many requests made to the API too quickly'
+    //         ], 429);
+    //     } catch (\Stripe\Exception\InvalidRequestException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Invalid parameters: ' . $e->getError()->message
+    //         ], 400);
+    //     } catch (\Stripe\Exception\AuthenticationException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Authentication with Stripe\'s API failed'
+    //         ], 401);
+    //     } catch (\Stripe\Exception\ApiConnectionException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Network communication with Stripe failed'
+    //         ], 500);
+    //     } catch (\Stripe\Exception\ApiErrorException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Stripe API error: ' . $e->getError()->message
+    //         ], 500);
+    //     } catch (\Exception $e) {
+    //         \Log::error('Stripe Payment Error: ' . $e->getMessage(), [
+    //             'trace' => $e->getTraceAsString(),
+    //             'request_data' => $request->all()
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'An unexpected error occurred. Please try again.'
+    //         ], 500);
+    //     }
+    // }
+     public function createPaymentIntent(Request $request)
     {
         // Validate input
         $request->validate([
@@ -58,11 +197,33 @@ class StripeController extends Controller
         Stripe::setApiKey(config('services.stripe.secret'));
 
         try {
-            // Create PaymentIntent
+            // STEP 1: Create a Customer in Stripe
+            $customer = \Stripe\Customer::create([
+                'name' => $request->customer_info['name'] ?? null,
+                'email' => $request->customer_info['email'] ?? null,
+            ]);
+
+            // STEP 2: Attach Payment Method to Customer
+            \Stripe\PaymentMethod::retrieve($request->payment_method_id)
+                ->attach(['customer' => $customer->id]);
+
+            // STEP 3: Update PaymentMethod with billing details
+            \Stripe\PaymentMethod::update(
+                $request->payment_method_id,
+                [
+                    'billing_details' => [
+                        'name' => $request->customer_info['name'] ?? null,
+                        'email' => $request->customer_info['email'] ?? null,
+                    ]
+                ]
+            );
+
+            // STEP 4: Create PaymentIntent
             $paymentIntent = PaymentIntent::create([
-                'amount' => (int) round($request->amount * 100), // Convert to smallest unit and round
+                'amount' => (int) round($request->amount * 100),
                 'currency' => $request->currency ?? 'aed',
                 'payment_method' => $request->payment_method_id,
+                'customer' => $customer->id,
                 'confirmation_method' => 'manual',
                 'confirm' => true,
                 'return_url' => config('app.url') . '/payment/return',
@@ -74,38 +235,52 @@ class StripeController extends Controller
                 ]
             ]);
 
+            // STEP 5: Handle PaymentIntent Status
+            $status = $paymentIntent->status;
 
-            // Handle the payment intent status
-            if ($paymentIntent->status === 'requires_action') {
+            if ($status === 'requires_action') {
                 return response()->json([
                     'success' => true,
                     'requires_action' => true,
-                    'client_secret' => $paymentIntent->client_secret,
-                    'payment_intent_id' => $paymentIntent->id,
-                    'payment_mode' => 'Credit Card',
                     'status' => 'requires_action',
-                    'payment_method' => 'Stripe'
+                    'payment_intent_id' => $paymentIntent->id,
+                    'client_secret' => $paymentIntent->client_secret,
+                    'message' => 'Customer authentication required.'
                 ]);
-            } else if ($paymentIntent->status === 'succeeded') {
+            } elseif ($status === 'succeeded') {
                 return response()->json([
                     'success' => true,
-                    'requires_action' => false,
-                    'payment_intent_id' => $paymentIntent->id,
-                    'payment_mode' => 'Credit Card',
                     'status' => 'completed',
-                    'payment_method' => 'Stripe',
-                    'client_secret' => $paymentIntent->client_secret
+                    'payment_intent_id' => $paymentIntent->id,
+                    'client_secret' => $paymentIntent->client_secret,
+                    'message' => 'Payment succeeded.'
+                ]);
+            } elseif ($status === 'requires_capture') {
+                return response()->json([
+                    'success' => true,
+                    'status' => 'requires_capture',
+                    'payment_intent_id' => $paymentIntent->id,
+                    'client_secret' => $paymentIntent->client_secret,
+                    'message' => 'Payment authorized. Capture required.'
+                ]);
+            } elseif (in_array($status, ['processing', 'pending'])) {
+                return response()->json([
+                    'success' => true,
+                    'status' => $status,
+                    'payment_intent_id' => $paymentIntent->id,
+                    'client_secret' => $paymentIntent->client_secret,
+                    'message' => 'Payment is pending. Confirm via webhook.'
                 ]);
             } else {
                 return response()->json([
                     'success' => false,
-                    'error' => 'Payment failed with status: ' . $paymentIntent->status,
-                    'payment_intent_status' => $paymentIntent->status
+                    'status' => $status,
+                    'payment_intent_id' => $paymentIntent->id,
+                    'error' => 'Payment not completed.'
                 ], 400);
             }
 
         } catch (\Stripe\Exception\CardException $e) {
-            // Card was declined
             return response()->json([
                 'success' => false,
                 'error' => $e->getError()->message,
@@ -141,13 +316,13 @@ class StripeController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-
             return response()->json([
                 'success' => false,
                 'error' => 'An unexpected error occurred. Please try again.'
             ], 500);
         }
     }
+
 
     /**
      * Add this method to confirm payment intent after 3D Secure
@@ -218,7 +393,7 @@ class StripeController extends Controller
             'order_id' => 'required',
 
         ]);
-
+        $url = config('app.url');
         $totalAmount = ($request->amount) * 100;
         $itemName = $request->itemName;
         $currency = $request->currency;
@@ -230,8 +405,9 @@ class StripeController extends Controller
                 'message' => 'Invalid order_id, not found in records'
             ], 404);
         }
-        $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = url('/api/stripe/failed');
+
+        $success_url = config('app.url').'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancel_url = config('app.url').'/failed';
         $stripeSecret = config('services.stripe.secret');
 
         $res = Http::withOptions(['verify' => false])
@@ -265,8 +441,8 @@ class StripeController extends Controller
                 'payment_url' => $body['url'],
             ],
             'checkout_options' => [
-                'success_url' => url('/api/stripe/thanks?order_id=' . $order_id),
-                'failed_url' => url('/api/stripe/failed?order_id=' . $order_id)
+                'success_url' => config('app.url').'/thanks?session_id={CHECKOUT_SESSION_ID}' ,
+                'failed_url' => config('app.url').'/failed?session_id={CHECKOUT_SESSION_ID}'
             ]
         ];
         // You now have a permanent payment link
@@ -276,9 +452,9 @@ class StripeController extends Controller
 
     }
 
-    public function generatePaymentLink($order)
+   public function generatePaymentLink($order)
     {
-        $totalAmount = (int) round($order->total_amount * 100);
+        $totalAmount = (int) round($order->pending_amount * 100);
 
         // Handle both real orders and test objects
         if (is_object($order) && isset($order->orderProducts)) {
@@ -289,22 +465,22 @@ class StripeController extends Controller
         } else {
             $itemName = "Order #" . $order->order_number;
         }
-        $url = config('app.url');
-        $stripeSecret = config('services.stripe.secret');
-        $currency = "AED";        
-        $success_url = 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url = 'https://development.d28qosi1cuigvb.amplifyapp.com/failed';
-        //  $success_url = $url.'/thanks' . '?session_id={CHECKOUT_SESSION_ID}';
-        //  $cancel_url = $url.'/failed';
 
-        // $success_url = url('/api/stripe/thanks') . '?session_id={CHECKOUT_SESSION_ID}';
-        // $cancel_url = url('/api/stripe/failed');
+        $stripeSecret = config('services.stripe.secret');
+
+        // ✅ Currency based on APP_WEBSITE
+        $appWebsite = env('APP_WEBSITE', 'UAE');
+        $currency = $appWebsite === 'US' ? 'USD' : 'AED';
+
+        $success_url = config('app.url') . '/thanks?session_id={CHECKOUT_SESSION_ID}';
+        $cancel_url  = config('app.url') . '/failed?session_id={CHECKOUT_SESSION_ID}';
+
         $res = Http::withOptions(['verify' => false])
             ->withToken($stripeSecret)
             ->asForm()
             ->post('https://api.stripe.com/v1/checkout/sessions', [
                 'payment_method_types[]' => 'card',
-                'line_items[0][price_data][currency]' => $currency,
+                'line_items[0][price_data][currency]' => strtolower($currency),
                 'line_items[0][price_data][unit_amount]' => $totalAmount,
                 'line_items[0][price_data][product_data][name]' => $itemName,
                 'line_items[0][quantity]' => 1,
@@ -316,13 +492,10 @@ class StripeController extends Controller
 
         $body = $res->json();
 
-        if (!isset($body['url'])) {
-            return;
-        } else {
-            return $body['url'];
-        }
-
+        return $body['url'] ?? null;
     }
+
+    
 
     public function handleWebhook(Request $request)
     {

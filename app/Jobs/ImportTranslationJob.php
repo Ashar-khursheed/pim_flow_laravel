@@ -13,9 +13,11 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Language;
 use App\Models\TransactionLog;
 use App\Models\Attribute;
+use App\Models\AttributeGroup;
 use App\Models\AttributeValue;
 use App\Models\ProductAttribute;
 use App\Models\Product;
+use App\Models\FAQ;
 
 class ImportTranslationJob implements ShouldQueue
 {
@@ -48,6 +50,54 @@ class ImportTranslationJob implements ShouldQueue
 		$successCount = 0;
 		$failCount = 0;
 
+		/* Define type configuration */
+		$typeConfig = [
+			'Attribute Group Translation' => [
+				'model' => AttributeGroup::class,
+				'fields' => ['name'],
+				'trans_fields' => ['name_tr'],
+				'var_prefix' => 'name'
+			],
+			'Attribute Translation' => [
+				'model' => Attribute::class,
+				'fields' => ['name'],
+				'trans_fields' => ['name_tr'],
+				'var_prefix' => 'name'
+			],
+			'Attribute Value Translation' => [
+				'model' => AttributeValue::class,
+				'fields' => ['attribute_value'],
+				'trans_fields' => ['attribute_value_tr'],
+				'var_prefix' => 'attribute_value'
+			],
+			'Product Attribute Translation' => [
+				'model' => ProductAttribute::class,
+				'fields' => ['attribute_value'],
+				'trans_fields' => ['attribute_value_tr'],
+				'var_prefix' => 'attribute_value'
+			],
+			'Product Translation' => [
+				'model' => Product::class,
+				'fields' => ['name', 'description', 'benefits_features', 'images'],
+				'trans_fields' => ['name_tr', 'description_tr', 'benefits_features_tr', 'images_tr'],
+				'var_prefix' => null
+			],
+			'FAQ Translation' => [
+				'model' => FAQ::class,
+				'fields' => ['question', 'answer'],
+				'trans_fields' => ['question_tr', 'answer_tr'],
+				'var_prefix' => null
+			],
+		];
+
+		$config = $typeConfig[$module] ?? null;
+
+		if (!$config) {
+			$this->logError($errors, 0, $prevSuccess, $prevFail, ["Invalid module type: {$module}"]);
+			$this->updateLog($log, $desc, $errors, $prevSuccess, $prevFail, $successCount, $failCount);
+			return;
+		}
+
 		foreach ($this->rows as $index => $row) {
 			$rowErrors = [];
 
@@ -67,44 +117,29 @@ class ImportTranslationJob implements ShouldQueue
 			if (empty($id)) {
 				$rowErrors[] = 'ID is required.';
 			}
-			if (empty($name)) {
-				$rowErrors[] = 'Name is required.';
-			}
 
+			/* Check if at least one translation exists */
 			$hasTranslation = false;
 			foreach ($langCodes as $locale) {
-				if ($module === 'Product Translation') {
-					if (!empty(${$locale . '_name'})) {
+				foreach ($config['trans_fields'] as $transField) {
+					$baseField = str_replace('_tr', '', $transField);
+					$varName = "{$locale}_{$baseField}";
+					if (!empty(${$varName})) {
 						$hasTranslation = true;
-						break;
-					}
-				} else {
-					if (!empty(${$locale . '_title'})) {
-						$hasTranslation = true;
-						break;
+						break 2;
 					}
 				}
 			}
 
 			if (!$hasTranslation) {
-				if ($module === 'Product Translation') {
-					$rowErrors[] = 'At least one name translation is required.';
-				} else {
-					$rowErrors[] = 'At least one title translation is required.';
-				}
+				$rowErrors[] = 'At least one translation field is required.';
 			}
 
-			$model = match ($module) {
-				'Attribute Translation' => Attribute::class,
-				'Attribute Value Translation' => AttributeValue::class,
-				'Product Attribute Translation' => ProductAttribute::class,
-				'Product Translation' => Product::class,
-			};
-
 			/* Fetch record */
+			$model = $config['model'];
 			$record = $model::find($id);
 			if (!$record) {
-				$rowErrors[] = "Record with ID $id not found.";
+				$rowErrors[] = "Record with ID {$id} not found.";
 			}
 
 			if (!empty($rowErrors)) {
@@ -113,34 +148,42 @@ class ImportTranslationJob implements ShouldQueue
 				continue;
 			}
 
-			/* Save keyword */
+			/* Save translations */
 			try {
 				DB::beginTransaction();
 
-				/* Save translations */
 				foreach ($langCodes as $locale) {
-					if ($module === 'Product Translation') {
-						$name = ${$locale . '_name'} ?? null;
-						$description = ${$locale . '_description'} ?? null;
-						$benefits = ${$locale . '_benefits_features'} ?? null;
-						$images = ${$locale . '_images'} ?? null;
+					$hasData = false;
+					$translationData = [];
 
-						if (!empty($name) || !empty($description) || !empty($benefits) || !empty($images)) {
-							$translation = $record->translateOrNew($locale);
-							$translation->name = $name;
-							$translation->description = $description;
-							$translation->benefits_features = $benefits;
-							$translation->images = $images;
+					/* Collect translation data */
+					foreach ($config['trans_fields'] as $transField) {
+						$baseField = str_replace('_tr', '', $transField);
+						$varName = "{$locale}_{$baseField}";
+						$value = ${$varName} ?? null;
+
+						if (!empty($value)) {
+							$hasData = true;
+							$translationData[$transField] = $value;
 						}
-					} else {
-						$title = ${$locale . '_title'} ?? null;
+					}
 
-						if (!empty($title)) {
-							$record->translateOrNew($locale)->title = $title;
+					/* Save translation if has data */
+					if ($hasData && in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+						$translation = $record->translations()
+							->where('locale', $locale)
+							->first();
+
+						if (!$translation) {
+							$translation = $record->translations()->create([
+								'locale' => $locale,
+								...$translationData
+							]);
+						} else {
+							$translation->update($translationData);
 						}
 					}
 				}
-				$record->save();
 
 				DB::commit();
 				$successCount++;
@@ -156,9 +199,14 @@ class ImportTranslationJob implements ShouldQueue
 		}
 
 		/* Update transaction log */
+		$this->updateLog($log, $desc, $errors, $prevSuccess, $prevFail, $successCount, $failCount);
+	}
+
+	protected function updateLog($log, $desc, $errors, $prevSuccess, $prevFail, $successCount, $failCount)
+	{
 		$desc["Success Count"] = $prevSuccess + $successCount;
 		$desc["Failed Count"] = $prevFail + $failCount;
-		$desc["Errors"] = array_merge($desc["Errors"], $errors);
+		$desc["Errors"] = array_merge($desc["Errors"] ?? [], $errors);
 
 		$log->update(['description' => json_encode($desc)]);
 	}

@@ -17,49 +17,92 @@ use App\Http\Controllers\DocumentUploadController;
 //     ->where('any', '.*');
 
 Route::get('/media/{filename}', function ($filename) {
-    $path = "production/documents/{$filename}";
+	$path = "production/documents/{$filename}";
 
-    if (!Storage::disk('s3')->exists($path)) {
-        abort(404, 'File not found');
-    }
+	if (!Storage::disk('s3')->exists($path)) {
+		abort(404, 'File not found');
+	}
 
-    $fileContent = Storage::disk('s3')->get($path);
-    $mimeType = Storage::disk('s3')->mimeType($path);
+	$fileContent = Storage::disk('s3')->get($path);
+	$mimeType = Storage::disk('s3')->mimeType($path);
 
-    return response($fileContent, 200)
-        ->header('Content-Type', $mimeType)
-        ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
+	return response($fileContent, 200)
+	->header('Content-Type', $mimeType)
+	->header('Content-Disposition', 'inline; filename="'.$filename.'"');
 });
 //use App\Http\Controllers\FrontEnd\StripeController as F_StripeController;
 //Route::post('/api/stripe/webhook', [F_StripeController::class, 'handleWebhook']) ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class);
 Route::get('/robots.txt', function (Request $request) {
-    $host = $request->getHost();
+	$host = $request->getHost();
 
-    if ($host === 'thehorecastore.co') {
-        // Disallow all crawling
-        return response("User-agent: *\nDisallow: /", 200)
-            ->header('Content-Type', 'text/plain');
-    }
+	if ($host === 'thehorecastore.co') {
+		// Disallow all crawling
+		return response("User-agent: *\nDisallow: /", 200)
+		->header('Content-Type', 'text/plain');
+	}
 
-    // Allow all crawling for thehorecastore.com or other domains
-    return response("User-agent: *\nDisallow:", 200)
-        ->header('Content-Type', 'text/plain');
+	// Allow all crawling for thehorecastore.com or other domains
+	return response("User-agent: *\nDisallow:", 200)
+	->header('Content-Type', 'text/plain');
 });
 
 Route::get('/health', function () {
-    try {
-        DB::connection()->getPdo();
-        return response()->json(['status' => 'ok'], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'db' => $e->getMessage()
-        ], 500);
-    }
+	try {
+		DB::connection()->getPdo();
+		return response()->json(['status' => 'ok'], 200);
+	} catch (\Exception $e) {
+		return response()->json([
+			'status' => 'error',
+			'db' => $e->getMessage()
+		], 500);
+	}
 });
 
 Route::get('/compress-pdf', [DocumentUploadController::class, 'compress']);
 
+Route::get('/ccavenue-proxy', function (Request $request) {
+	$targetUrl = $request->query('url');
 
+	// ✅ Security: allow only valid CCAvenue URLs
+	if (!$targetUrl || !preg_match('#^https://(secure|test)\.ccavenue\.com/#i', $targetUrl)) {
+		return response('Invalid or unauthorized URL', 403);
+	}
 
+	try {
+		$response = Http::withHeaders([
+			'User-Agent' => 'Mozilla/5.0 (ProxyBot)',
+		])->get($targetUrl);
 
+		// ✅ Return content with headers safe for iframe
+		return response($response->body(), $response->status())
+		->header('Content-Type', $response->header('Content-Type', 'text/html'))
+		->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+		->header('Pragma', 'no-cache')
+		->header('Expires', '0');
+	} catch (\Throwable $e) {
+		\Log::error('CCAvenue Proxy Error', ['error' => $e->getMessage()]);
+		return response('Proxy failed: ' . $e->getMessage(), 500);
+	}
+});
+
+Route::get('/frontend/data-feed.xml', function () {
+    $path = storage_path('app/public/data-feed.xml');
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path, [
+        'Content-Type' => 'application/xml',
+    ]);
+});
+
+Route::get('/frontend/llms.txt', function () {
+    $path = storage_path('app/public/llms.txt');
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'text/plain',
+    ]);
+});

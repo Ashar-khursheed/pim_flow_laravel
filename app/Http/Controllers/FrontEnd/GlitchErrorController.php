@@ -68,6 +68,7 @@ class GlitchErrorController extends BaseController
 	 *             @OA\Schema(
 	 *                 required={"email", "description"},
 	 *                 @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
 	 *                 @OA\Property(property="description", type="string", example="Page not loading properly."),
 	 *                 @OA\Property(property="device", type="string", example="Android."),
 	 *                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary"))
@@ -81,6 +82,7 @@ class GlitchErrorController extends BaseController
 	{
 		$request->validate([
 			'email' => 'required|string|email',
+			'mobile_number' => 'nullable|string',
 			'description' => 'required|string|min:10|max:250',
 			'images' => 'nullable|array',
 			'images.*' => 'nullable|file|mimes:jpeg,png,jpg,webp|max:2048',
@@ -108,18 +110,13 @@ class GlitchErrorController extends BaseController
 		$images = json_encode($uploadedImages);
 		$record = GlitchError::create([
 			'email' => $request->email,
+			'mobile_number' => $request->mobile_number,
 			'description' => $request->description,
 			'device' => $request->device,
 			'images' => $images,
 		]);
 
-		$batch = Bus::batch([])->before(function (Batch $batch) {
-
-		})->catch(function (Batch $batch, Throwable $e) {
-
-		})->finally(function (Batch $batch) {
-
-		})->name('Glitch Errors')->dispatch();
+		$batch = Bus::batch([])->name('Glitch Errors')->dispatch();
 
 		$batch->options['queue'] = config('app.website') . '_GLITCH';
 		$batch->add(new SendGlitchErrorReportMailJob([

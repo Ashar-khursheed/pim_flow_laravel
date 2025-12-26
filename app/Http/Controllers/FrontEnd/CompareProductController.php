@@ -151,8 +151,10 @@ class CompareProductController extends Controller
                     'totalReviews' => $products->reviews?->count() ?? 0,
                     'avgRating' => $products->reviews?->count() > 0 ? $products->reviews->avg('star') : null,
                     'warranty_information' => $firstSupplier->warranty_information ?? null,
-
-                    // alternate table fields (null if main)
+                    'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                    'is_fixed' => $firstSupplier->is_fixed ?? 0,     
+                    'quote_available' => $product->quote_available ?? null,   
+                     'isRequired' => $product->isRequired,          
                     'alt_id' => $product->id,
                     'alt_status' => $product->status,
                     'product_alternate_id' => $product->product_alternate_id ?? $mainProductId,

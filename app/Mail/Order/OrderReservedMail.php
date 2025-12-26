@@ -8,6 +8,7 @@ use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\AccessoryCharge;
 
 class OrderReservedMail extends Mailable
 {
@@ -58,7 +59,9 @@ class OrderReservedMail extends Mailable
 			if ($productDetail) {
 				$product = new \stdClass();
 
-				$images = is_array($productDetail->images) ? $productDetail->images : (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
+				$images = is_array($productDetail->images)
+				? $productDetail->images
+				: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
 				$product->delivery_days = $productSupplierDetail
@@ -67,7 +70,6 @@ class OrderReservedMail extends Mailable
 
 				/* Original Price (before discount) */
 				$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
-
 				$product->priceBeforeDiscount = $originalPrice;
 				$product->unitPrice = $orderProduct->unit_price;
 
@@ -78,13 +80,52 @@ class OrderReservedMail extends Mailable
 					$orderProduct->unit_price > 0
 				) {
 					$product->discount = (($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100;
-
 				} else {
 					$product->discount = 0;
 				}
 
 				$product->quantity = (int) $orderProduct->quantity;
 				$product->total = $orderProduct->amount;
+
+				$product->accessories = [];
+
+				$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)
+				->where('relation_id', $orderProduct->id)
+				->get();
+				if ($accessoryCharges->isNotEmpty()) {
+					$product->accessories = $accessoryCharges->map(function ($charge) {
+						return [
+							'id' => $charge->id,
+							'accessory_item_id' => $charge->accessory_item_id,
+							'accessory_item_name' => $charge->accessoryItem->name ?? null,
+							'accessory_item_price' => $charge->accessoryItem->price ?? null,
+							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+							'amount' => $charge->amount,
+						];
+					});
+				}
+
+				// ===========================
+				// Apply per-product Texas shipping
+				// ===========================
+				$productShipping = $orderProduct->shipping_charge ?? 0;
+
+				if (in_array(config('app.website'), ['US', 'US_T'])) {
+					$state = $order->customerAddress->state ?? null;
+
+					if (!$order->is_customer_pickup) {
+						if ($state === 'Texas') {
+							$productShipping = ($productShipping > 0) ? $productShipping : 99;
+						} else {
+							$productShipping = ($productShipping > 0) ? $productShipping : 199;
+						}
+					} else {
+						$productShipping = 0;
+					}
+				}
+
+				$product->shippingCharge = $productShipping;
 
 				$products->push($product);
 			}
@@ -100,12 +141,15 @@ class OrderReservedMail extends Mailable
 
 		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
 		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $order->is_inside_delivery ? 249 : 0;
 
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
 		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) ? 'VAT' : 'SALES TAX';
 		$taxPercent = $order->tax_percentage;
+		$taxPercent = $taxPercent + 0;
 		$taxAmount = $order->tax_amount ?? 0;
+		$discount = $order->discount ?? 0;
 		$total = $order->total_amount ?? 0;
 
 		$siteUrl = match (config('app.website')) {
@@ -146,11 +190,13 @@ class OrderReservedMail extends Mailable
 
 			'liftGateCharge' => $liftGateCharge,
 			'residentialAddressCharge' => $residentialAddressCharge,
+			'insideDeliveryCharge' => $insideDeliveryCharge,
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
 			'taxName' => $taxName,
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
+			'discount' => $discount,
 			'total' => $total,
 
 			'siteUrl' => $siteUrl,

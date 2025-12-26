@@ -55,10 +55,11 @@
                 <p style="margin: 0 0 10px;"><strong>Is this link safe?</strong></p>
                 <p style="margin: 0 0 10px;">The password reset link in this email starts with: <strong>{{ $frontEndUrl }}</strong></p>
                 <p style="margin: 0 0 10px;">For your security, you can also copy and paste the following URL into your browser:</p>
-                <p style="margin: 0 0 10px;"><a href="{{ $resetUrl }}" style="color: #186737;">{{ $resetUrl }}</a></p>
-                <p style="margin: 0;">If you didn’t request a password reset, you can safely ignore this email.</p>
+                <p style="margin: 0 0 10px; word-break: break-all; overflow-wrap: break-word;">
+                    <a href="{{ $resetUrl }}" style="color: #186737; word-break: break-all;">{{ $resetUrl }}</a>
+                </p>
+                <p style="margin: 0;">If you didn't request a password reset, you can safely ignore this email.</p>
             </div>
-
         </div>
     </div>
 </body>

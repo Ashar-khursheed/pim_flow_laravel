@@ -4,9 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 
-class SeoManagement extends Model
+class SeoManagement extends Model implements TranslatableContract
 {
+    use Translatable;
+
+    // public $translatedAttributes = ["primary_keyword_tr", "title_tag_tr", "meta_title_tr", "meta_description_tr", "og_title_tr", "og_description_tr", "og_image_url_tr", "og_image_alt_text_tr", "og_image_name_tr", "paragraph_1_tr", "paragraph_2_tr", "paragraph_3_tr", "paragraph_4_tr", "banner_image_file_tr", "banner_image_alt_text_tr"];
+    public $translatedAttributes = [];
+
 	protected $fillable = [
 		'relational_id',
 		'relational_type',

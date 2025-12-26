@@ -201,6 +201,7 @@ class CartController extends Controller
                 'shipping_charge' => 0,
                 'is_lift_gate' => 0,
                 'is_residential_address' => 1,
+                'is_inside_delivery' => 0,
                 'amount' => 0,
                 'tax_percentage' => 0,
                 'tax_amount' => 0,
@@ -355,7 +356,7 @@ class CartController extends Controller
                 'success' => true,
                 'data' => [],
                 'cart_id' => $cartId,
-                'checkout_url' => url("/Checkout/{$cartId}")
+                'checkout_url' => url("review/Checkout/{$cartId}")
             ]);
         }
 
@@ -387,12 +388,14 @@ class CartController extends Controller
             ->get()
             ->keyBy('id');
 
-        $transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $productDiscounts, $discounts) {
+        $transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $productDiscounts, $discounts, $customerCart) {
             $product = $cartProduct->product;
 
             $cartItem = (object)[
                 'id' => $cartProduct->id,
                 'user_id' => $cartProduct->customerCart->customer_id,
+                'product_id' => $cartProduct->product_id,
+                'product_id' => $cartProduct->product_id,
                 'product_id' => $cartProduct->product_id,
                 'quantity' => $cartProduct->quantity,
                 'product' => $product
@@ -472,6 +475,47 @@ class CartController extends Controller
                         ];
                     }
                 }
+                $productShipping = $cartProduct->shipping_charge ?? 0;
+
+                if (in_array(config('app.website'), ['US', 'US_T'])) {
+
+                    $state = $customerCart->customerAddress->state ?? null;
+
+                    if (!$customerCart->is_customer_pickup) {
+                        if ($state === 'Texas') {
+                            $productShipping = ($productShipping > 0) ? $productShipping : 99;
+                        } else {
+                            $productShipping = ($productShipping > 0) ? $productShipping : 199;
+                        }
+                    } else {
+                        $productShipping = 0;
+                    }
+                }
+
+                $product->shippingCharge = $productShipping;
+
+                // ------------------- SHIPPING CHARGE LOGIC FOR CUSTOMER CART -------------------
+                $cartShippingCharge = $customerCart->shipping_charge ?? 0;
+
+                if (in_array(config('app.website'), ['US', 'US_T'])) {
+
+                    $state = $customerCart->customerAddress->state ?? null;
+
+                    if (!$customerCart->is_customer_pickup) {
+
+                        if ($state === 'Texas') {
+                            $cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 99;
+                        } else {
+                            $cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 199;
+                        }
+
+                    } else {
+                        $cartShippingCharge = 0;
+                    }
+                }
+
+                // assign final charge to customer cart model
+                $customerCart->shipping_charge = $cartShippingCharge;
 
 
 
@@ -482,7 +526,8 @@ class CartController extends Controller
             'success' => true,
             'data' => $transformedItems,
             'cart_id' => $cartId,
-            'checkout_url' => url("/Checkout/{$cartId}")
+            'checkout_url' => url("/Checkout/{$cartId}"),
+            'customer_cart' => $customerCart,
         ]);
     }
 
@@ -787,12 +832,64 @@ class CartController extends Controller
      * )
      */
 
+    // public function updateCartQuantity(Request $request)
+    // {
+    //     $request->validate([
+    //         'product_id' => 'required|integer',
+    //         'quantity' => 'required|integer|min:1',
+    //         'vendor_id' => 'nullable|integer',
+    //     ]);
+
+    //     if (!Auth::check()) {
+    //         return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+    //     }
+
+    //     $start = microtime(true);
+    //     $userId = Auth::id();
+    //     $productId = $request->input('product_id');
+    //     $quantity = $request->input('quantity');
+    //     $vendorId = $request->input('vendor_id');
+
+    //     $customerCart = CustomerCart::where('customer_id', $userId)->first();
+
+    //     if (!$customerCart) {
+    //         return response()->json(['success' => false, 'message' => 'Cart not found']);
+    //     }
+
+    //     $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+    //         ->where('product_id', $productId);
+
+    //     if ($vendorId) {
+    //         $cartProduct->where('vendor_id', $vendorId);
+    //     }
+
+    //     $cartProduct = $cartProduct->first();
+
+    //     if (!$cartProduct) {
+    //         return response()->json(['success' => false, 'message' => 'Product not found in cart']);
+    //     }
+
+    //     // Update quantity and amounts
+    //     $cartProduct->quantity = $quantity;
+    //     $cartProduct->amount = $quantity * $cartProduct->unit_price;
+    //     $cartProduct->total_amount = $cartProduct->amount + $cartProduct->shipping_charge;
+    //     $cartProduct->save();
+
+    //     // Update cart totals
+    //     $this->updateCartTotals($customerCart);
+
+    //     $end = microtime(true);
+    //     Log::info('updateCartQuantity duration: ' . round(($end - $start) * 1000) . 'ms');
+
+    //     return response()->json(['success' => true]);
+    // }
     public function updateCartQuantity(Request $request)
     {
         $request->validate([
-            'product_id' => 'required|integer',
-            'quantity' => 'required|integer|min:1',
-            'vendor_id' => 'nullable|integer',
+            'product_id'   => 'required|integer',
+            'quantity'     => 'required|integer|min:1',
+            'vendor_id'    => 'nullable|integer',
+            'accessories_options' => 'nullable|array'
         ]);
 
         if (!Auth::check()) {
@@ -804,6 +901,7 @@ class CartController extends Controller
         $productId = $request->input('product_id');
         $quantity = $request->input('quantity');
         $vendorId = $request->input('vendor_id');
+        $accessories = $request->input('accessories_options', []);
 
         $customerCart = CustomerCart::where('customer_id', $userId)->first();
 
@@ -811,26 +909,42 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Cart not found']);
         }
 
-        $cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+        // Base query
+        $cartProductQuery = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
             ->where('product_id', $productId);
 
         if ($vendorId) {
-            $cartProduct->where('vendor_id', $vendorId);
+            $cartProductQuery->where('vendor_id', $vendorId);
         }
 
-        $cartProduct = $cartProduct->first();
+           if (!empty($accessories)) {
+                $accessoryIds = array_column($accessories, 'accessory_id');
+                $cartProductQuery->whereJsonContains('accessories_options', $accessoryIds);
+            } else {
+                // No accessories
+                $cartProductQuery->where(function ($q) {
+                    $q->whereNull('accessories_options')
+                    ->orWhere('accessories_options', '[]')
+                    ->orWhere('accessories_options', '');
+                });
+            }
+
+
+
+
+        $cartProduct = $cartProductQuery->first();
 
         if (!$cartProduct) {
             return response()->json(['success' => false, 'message' => 'Product not found in cart']);
         }
 
-        // Update quantity and amounts
+        // Update quantity and recalc amounts
         $cartProduct->quantity = $quantity;
         $cartProduct->amount = $quantity * $cartProduct->unit_price;
         $cartProduct->total_amount = $cartProduct->amount + $cartProduct->shipping_charge;
         $cartProduct->save();
 
-        // Update cart totals
+        // Update full cart totals
         $this->updateCartTotals($customerCart);
 
         $end = microtime(true);
@@ -838,6 +952,8 @@ class CartController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+
 
    /**
      * @OA\Post(
@@ -1320,6 +1436,7 @@ public function addMultipleToCart(Request $request)
             'shipping_charge' => 0,
             'is_lift_gate' => 0,
             'is_residential_address' => 1,
+            'is_inside_delivery' => 0,
             'amount' => 0,
             'tax_percentage' => 0,
             'tax_amount' => 0,

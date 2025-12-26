@@ -4,8 +4,8 @@ namespace App\Models;
 use App\Models\Slug;
 use App\Models\ProductCategory;
 use Illuminate\Database\Eloquent\Model;
-// use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
-// use Astrotomic\Translatable\Translatable;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use OpenApi\Annotations as OA;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Frontend\Wishlist; // Add this at the top of your Product model
@@ -44,29 +44,26 @@ use App\Models\SeoManagement;
  *     @OA\Property(property="best_price", type="number", format="float", example=80.00),
  *     @OA\Property(property="delivery_days", type="string", nullable=true),
  *     @OA\Property(property="in_wishlist", type="boolean", example=true),
- *     @OA\Property(property="categories", type="array", @OA\Items(ref="#/components/schemas/Category")),
- *     @OA\Property(property="brand", ref="#/components/schemas/Brand")
  * )
  */
 
-// class Product extends Model implements TranslatableContract
-class Product extends Model
+class Product extends Model implements TranslatableContract
 {
-	// use Translatable;
+	use Translatable;
 
-	// public $translatedAttributes = [
-	// 	'name',
-	// 	'description',
-	// 	'benefits_features',
-	// 	'images',
-	// ];
+	public $translatedAttributes = [
+		'name_tr',
+		'description_tr',
+		'benefits_features_tr',
+		'images_tr',
+	];
 
 	public static $observerUserId = null;
 	protected $table = 'ec_products';
 
 	protected $fillable = [
 		'name',
-		'website_id',
+		'website_ids',
 		'description',
 		'images',
 		'sku',
@@ -75,7 +72,6 @@ class Product extends Model
 		'is_featured',
 		'brand_id',
 		'quote_available',
-		'is_variation',
 		'tax_id',
 		'views',
 		'stock_status',
@@ -85,10 +81,10 @@ class Product extends Model
 		'documents',
 		'video_path',
 		'frequently_bought_together' => 'array',
-		'google_shopping_category',
 		'benefits_features' => 'array',
 		'gen_type' => 'nullable|integer',
-		'approved' => 'nullable|integer'
+		'approved' => 'nullable|integer',
+		'ar_approved' => 'nullable|integer'
 
 	];
 
@@ -109,7 +105,7 @@ class Product extends Model
 
 	public function vendors()
 	{
-		return $this->belongsToMany(Vendor::class, 'product_suppliers', 'product_id', 'vendor_id')->withPivot(['price', 'sale_price']);
+		return $this->belongsToMany(Vendor::class, 'product_suppliers', 'product_id', 'vendor_id')->withPivot(['price', 'sale_price',]);
 	}
 
 	public function brand()
@@ -136,7 +132,11 @@ class Product extends Model
 	// {
 	// 	return $this->morphOne(SeoManagement::class, 'relational');
 	// }
-
+public function seoManagement()
+{
+    return $this->hasOne(SeoManagement::class, 'relational_id')
+                ->where('relational_type', 'Product');
+}
 	public function slug()
 	{
 		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'products');
@@ -201,104 +201,114 @@ class Product extends Model
 		->whereDoesntHave('children')
 		->orderByDesc('product_categories.created_at')
 		->orderByDesc('product_categories.category_id')
-			->limit(1); // This returns a relation, usable in `with()`
+		->limit(1);
+	}
+
+	/* Get unique attributes associated with the product's latest category */
+	public function productCategoryAttributes()
+	{
+		$category = $this->latestChildCategory();
+		if (!$category) {
+			return collect();
 		}
 
-		/* Get unique attributes associated with the product's latest category */
-		public function productCategoryAttributes()
-		{
-			$category = $this->latestChildCategory();
-			if (!$category) {
-				return collect();
-			}
+		$categoryAttributes = $category->categoryAttributeGroups->flatMap->groupsAttributes ?? [];
 
-			$categoryAttributes = $category->categoryAttributeGroups->flatMap->groupsAttributes ?? [];
+		return $categoryAttributes->unique('id')->values();
+	}
 
-			return $categoryAttributes->unique('id')->values();
+	public function seo()
+	{
+		return $this->hasOne(SeoSchema::class, 'product_id', 'id');
+	}
+
+	public function seoSchema()
+	{
+		return $this->hasOne(SeoSchema::class, 'product_id', 'id');
+	}
+	public function tax()
+	{
+		return $this->belongsTo(Tax::class, 'tax_id');
+	}
+
+	public function reviews()
+	{
+		return $this->hasMany(Review::class, 'product_id');
+	}
+
+	public function faqs()
+	{
+		return $this->hasMany(Faq::class, 'product_id');
+	}
+
+	public function productSuppliers()
+	{
+		return $this->hasMany(ProductSupplier::class, 'product_id');
+	}
+	public function productVariants()
+	{
+		return $this->hasMany(ProductVariant::class, 'parent_id');
+	}
+
+	public function wishlist()
+	{
+		return $this->hasMany(Wishlist::class, 'product_id');
+	}
+
+	public function isInWishlist($customerId)
+	{
+		if ($customerId) {
+			return $this->wishlist()->where('user_id', $customerId)->exists();
+		}
+		return false;
+	}
+
+	public function slugData()
+	{
+		return $this->morphOne(Slug::class, 'reference')->where('prefix', 'products');
+	}
+	public function questions()
+	{
+		return $this->hasMany(ProductQuestion::class);
+	}
+	public function alternateProducts()
+	{
+		return $this->hasMany(AlternateProduct::class, 'product_id', 'id');
+	}
+
+	public function category_url()
+	{
+
+		$category = $this->latestChildCategory();
+		if ($category && $category->seoUrl) {
+			return $category->seoUrl->url;
 		}
 
-		public function seo()
-		{
-			return $this->hasOne(SeoSchema::class, 'product_id', 'id');
-		}
+		return null;
+	}
 
-		public function seoSchema()
-		{
-			return $this->hasOne(SeoSchema::class, 'product_id', 'id');
-		}
-		public function tax()
-		{
-			return $this->belongsTo(Tax::class, 'tax_id');
-		}
+	public function parent_category_url()
+	{
+		$category = $this->latestChildCategory();
+		$mostParent = $category?->most_parent;
 
-		public function reviews()
-		{
-			return $this->hasMany(Review::class, 'product_id');
-		}
-
-		public function faqs()
-		{
-			return $this->hasMany(Faq::class, 'product_id');
-		}
-
-		public function productSuppliers()
-		{
-			return $this->hasMany(ProductSupplier::class, 'product_id');
-		}
-
-		public function wishlist()
-		{
-			return $this->hasMany(Wishlist::class, 'product_id');
-		}
-
-		public function isInWishlist($customerId)
-		{
-			if ($customerId) {
-				return $this->wishlist()->where('user_id', $customerId)->exists();
-			}
-			return false;
-		}
-
-		public function slugData()
-		{
-			return $this->morphOne(Slug::class, 'reference')->where('prefix', 'products');
-		}
-		public function questions()
-		{
-			return $this->hasMany(ProductQuestion::class);
-		}
-		public function alternateProducts()
-		{
-			return $this->hasMany(AlternateProduct::class, 'product_id', 'id');
-		}
-
-		public function category_url()
-		{
-
-			$category = $this->latestChildCategory();
-			if ($category && $category->seoUrl) {
-				return $category->seoUrl->url;
-			}
-
-			return null;
-		}
-
-		public function parent_category_url()
-		{
-			$category = $this->latestChildCategory();
-			$mostParent = $category?->most_parent;
-
-			return $mostParent && $mostParent->seoUrl
-			? $mostParent->seoUrl->url
-			: null;
-		}
+		return $mostParent && $mostParent->seoUrl
+		? $mostParent->seoUrl->url
+		: null;
+	}
 
 	// In Product.php
 	// In Product.phps
-		public function accessories()
-		{
-			return $this->hasMany(ProductAccessory::class, 'product_id')->approved();
-		}
-
-
+	public function accessories()
+	{
+		return $this->hasMany(ProductAccessory::class, 'product_id')->approved();
 	}
+
+	public function getIsRequiredAttribute()
+	{
+		return $this->accessories()->where('isRequired', 1)->exists();
+	}
+
+
+
+}

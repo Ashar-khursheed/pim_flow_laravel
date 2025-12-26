@@ -17,8 +17,6 @@ class PaymentRequest extends FormRequest
             'order_id' => 'required|string|max:50',
             'amount' => 'required|numeric|min:0.01',
             'currency' => 'required|string|in:INR,USD,EUR,GBP,AED',
-            'redirect_url' => 'required|url',
-            'cancel_url' => 'required|url',
             'language' => 'sometimes|string|in:EN,HI',
             
             // Billing information (optional)

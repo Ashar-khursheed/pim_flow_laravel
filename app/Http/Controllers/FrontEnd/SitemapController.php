@@ -11,7 +11,20 @@ use App\Models\Brand;
 use Carbon\Carbon;
 class SitemapController extends Controller
 {
-    private $baseUrl = 'https://www.horecastore.ae';
+    public function __construct()
+    {
+        // Determine the base URL dynamically from APP_WEBSITE
+        $website = env('APP_WEBSITE');
+
+        if ($website === 'US') {
+            $this->baseUrl = 'https://www.thehorecastore.com';
+        } elseif ($website === 'UAE') {
+            $this->baseUrl = 'https://www.horecastore.ae';
+        } else {
+            $this->baseUrl = 'https://www.horecastore.ae/sa-en'; // fallback
+        }
+    }
+
 
 
     private function buildXml()
@@ -397,8 +410,10 @@ class SitemapController extends Controller
      *     )
      * )
      */
+    
     public function getCategoriesSitemap()
     {
+        // Fetch only top-level published categories
         $mainCategories = Category::select(['id', 'name', 'updated_at'])
             ->with('seoUrl')
             ->where('parent_id', 0)
@@ -409,7 +424,7 @@ class SitemapController extends Controller
             ->get()
             ->map(function ($category) {
                 return [
-                    'loc' => $category->seoUrl->url, // safe now
+                    'loc' => $category->seoUrl->url,
                     'lastmod' => $category->updated_at
                         ? $category->updated_at->toAtomString()
                         : now()->toAtomString(),
@@ -418,15 +433,28 @@ class SitemapController extends Controller
                 ];
             });
 
-        $subCategories = Category::with(['seoUrl', 'parent.parent.seoUrl']) // preload seoUrls up the chain
+        // Fetch subcategories whose full parent chain is published
+        $subCategories = Category::with(['seoUrl', 'parent', 'parent.parent'])
             ->whereNotNull('parent_id')
             ->where('parent_id', '!=', 0)
+            ->where('status', 'published')
             ->whereHas('seoUrl', fn($q) => $q->whereNotNull('url'))
-            ->select(['id', 'name', 'updated_at', 'slug', 'parent_id'])
             ->get()
+            ->filter(function ($subcategory) {
+                // ensure all parent categories are published
+                $parent = $subcategory->parent;
+                $superParent = $parent?->parent;
+
+                return $parent && $parent->status === 'published'
+                    && (!$superParent || $superParent->status === 'published');
+            })
             ->map(function ($subcategory) {
                 $superParent = $subcategory->getSuperParent();
-                $aprentUrls = SeoManagement::select('url', 'relational_id')->where('relational_type', 'Category')->where('relational_id', $superParent)->first();
+
+                $aprentUrls = SeoManagement::select('url', 'relational_id')
+                    ->where('relational_type', 'Category')
+                    ->where('relational_id', $superParent)
+                    ->first();
 
                 return [
                     'loc' => $aprentUrls->url . '/' . ($subcategory->seoUrl->url ?? ''),
@@ -437,12 +465,15 @@ class SitemapController extends Controller
                     'priority' => '0.8',
                 ];
             });
+
         $sitemaps = $mainCategories->merge($subCategories);
+
+        // --- XML Output ---
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
         foreach ($sitemaps as $sitemap) {
             $xml .= '<url>';
-
             $xml .= '<loc>' . $this->baseUrl . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
             $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
             $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
@@ -450,12 +481,11 @@ class SitemapController extends Controller
             $xml .= '</url>';
         }
 
-        $xml .= '</urlset>';
+        $xml .= '</urlset>  ';
 
         return response($xml, 200)->header('Content-Type', 'application/xml');
-
-
     }
+
 
 
     /**
@@ -484,15 +514,277 @@ class SitemapController extends Controller
      *     )
      * )
      */
-   public function getProductsSitemap1() { return $this->generateProductsSitemap(0, 1000); }
+public function getProductsSitemap() { return $this->generateProductsSitemap(0, 1000); }
+
+    /**
+     * Get XML product Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/products-1.xml",
+     *     summary="Get products.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
+public function getProductsSitemap1() { return $this->generateProductsSitemap(0, 1000); }
+/**
+     * Get XML product Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/products-2.xml",
+     *     summary="Get products2.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
 public function getProductsSitemap2() { return $this->generateProductsSitemap(1000, 1000); }
+/**
+     * Get XML product Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/products-3.xml",
+     *     summary="Get products3.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
 public function getProductsSitemap3() { return $this->generateProductsSitemap(2000, 1000); }
+    /**
+     * Get XML product Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/products-4.xml",
+     *     summary="Get products4.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
 public function getProductsSitemap4() { return $this->generateProductsSitemap(3000, 1000); }
+    /**
+     * Get XML product Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/products-5.xml",
+     *     summary="Get products5.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
 public function getProductsSitemap5() { return $this->generateProductsSitemap(4000, 1000); }
+/**
+     * Get XML product Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/products-6.xml",
+     *     summary="Get products6.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
 public function getProductsSitemap6() { return $this->generateProductsSitemap(5000, 1000); }
+    /**
+     * Get XML product Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/products-7.xml",
+     *     summary="Get products7.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
 public function getProductsSitemap7() { return $this->generateProductsSitemap(6000, 1000); }
+/**
+     * Get XML product Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/products-8.xml",
+     *     summary="Get products8.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
 public function getProductsSitemap8() { return $this->generateProductsSitemap(7000, 1000); }
+/**
+     * Get XML product Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/products-9.xml",
+     *     summary="Get products9.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
 public function getProductsSitemap9() { return $this->generateProductsSitemap(8000, 1000); }
+/**
+     * Get XML product Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/products-10.xml",
+     *     summary="Get products10.xml",
+     *     description="Returns the XML sitemap containing public URLs of the website.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/xml",
+     *             @OA\Schema(type="string", format="xml", example="<?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://example.com/</loc><lastmod>2025-09-06T00:00:00+00:00</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *         )
+     *     )
+     * )
+     */
 public function getProductsSitemap10() { return $this->generateProductsSitemap(9000, 1000); }
 
 private function generateProductsSitemap($offset, $limit)

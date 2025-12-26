@@ -10,6 +10,6 @@ class AttributeTranslation extends Model
 	protected $fillable = [
 		'locale',
 		'attribute_id',
-		'title',
+		'name_tr',
 	];
 }

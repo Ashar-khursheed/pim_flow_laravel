@@ -54,7 +54,7 @@ class AlternateProductController extends Controller
             }
 
             // Step 2: Get published products with those IDs
-            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute' , 'seoUrl'])
+            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'seoUrl'])
                 ->where('status', 'published')
                 ->whereIn('id', $alternateProductIds)
                 ->get()
@@ -125,9 +125,13 @@ class AlternateProductController extends Controller
                     'return_policy' => $firstSupplier->return_policy ?? null,
                     'free_shipping' => $firstSupplier->free_shipping ?? null,
                     'warranty_information' => $firstSupplier->warranty_information ?? null,
-
+                    'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                    'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                     'quote_available' => $product->quote_available ?? null,
                     // ✅ New: Similarity score
                     'similarity' => $similarityMap[$product->id] ?? null,
+                    'isRequired' => $product->isRequired,
+
                 ];
             });
 
@@ -183,14 +187,14 @@ class AlternateProductController extends Controller
             }
 
             // Step 2: Get published products with those IDs
-            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute' , 'seoUrl',])
+            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'seoUrl',])
                 ->where('status', 'published')
                 ->whereIn('id', $alternateProductIds)
                 ->get()
                 ->sortBy(fn($product) => array_search($product->id, $alternateProductIds));
 
             // Transform response
-            $transformedProducts = $products->map(function ($product)use ( $similarityMap){
+            $transformedProducts = $products->map(function ($product) use ($similarityMap) {
                 $images = $this->normalizeMediaUrls($product->images);
                 $videos = $this->normalizeMediaUrls($product->video_path);
 
@@ -253,7 +257,11 @@ class AlternateProductController extends Controller
                     'return_policy' => $firstSupplier->return_policy ?? null,
                     'free_shipping' => $firstSupplier->free_shipping ?? null,
                     'warranty_information' => $firstSupplier->warranty_information ?? null,
-                     'similarity' => $similarityMap[$product->id] ?? null,
+                    'similarity' => $similarityMap[$product->id] ?? null,
+                    'min_quantity' => $firstSupplier->min_quantity ?? 0,
+                    'is_fixed' => $firstSupplier->is_fixed ?? 0,
+                    'quote_available' => $product->quote_available ?? null,
+                     'isRequired' => $product->isRequired,
                 ];
             });
 

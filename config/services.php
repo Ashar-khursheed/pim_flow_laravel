@@ -21,7 +21,7 @@ return [
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
-        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+        'region' => env('AWS_SES_REGION', env('AWS_DEFAULT_REGION', 'us-east-1')),
     ],
 
     'resend' => [
@@ -53,7 +53,7 @@ return [
         'key' => env('STRIPE_MODE') === 'live' ? env('STRIPE_LIVE_PUBLIC') : env('STRIPE_TEST_PUBLIC'),
         'secret' => env('STRIPE_MODE') === 'live' ? env('STRIPE_LIVE_SECRET') : env('STRIPE_TEST_SECRET'),
         'webhook_secret' => env('STRIPE_MODE') === 'live' ? env('STRIPE_LIVE_WEBHOOK_SECRET') : env('STRIPE_TEST_WEBHOOK_SECRET'),
-        
+
         // Individual keys for direct access if needed
         'live' => [
             'public' => env('STRIPE_LIVE_PUBLIC'),
@@ -95,11 +95,11 @@ return [
     ],
 
      'stax' => [
-        'base_url' => env('STAX_BASE_URL', 'https://apiprod.fattlabs.com'),         
+        'base_url' => env('STAX_BASE_URL', 'https://apiprod.fattlabs.com'),
         'api_key' => env('STAX_API_KEY'),
         'public_key' => env('STAX_PUBLIC_KEY'),
     ],
-    'paymob' => [    
+    'paymob' => [
     'base_url'       => env('PAYMOB_MODE') === 'live' ? 'https://accept.paymobsolutions.com/api' : 'https://uae.paymob.com/api',
     'api_key'        => env('PAYMOB_API_KEY'),
     'integration_id' => env('PAYMOB_INTEGRATION_ID'),
@@ -107,6 +107,17 @@ return [
     'hmac'           => env('PAYMOB_HMAC'),
     'secret_key'     => env('PAYMOB_SECRET_KEY'),
     'public_key'     => env('PAYMOB_PUBLIC_KEY'),
+],
+    'tql' => [   
+    'base_url'       => env('TQL_BASE_URL') === 'live' ? 'https://public.api.tql.com/ltl' : 'https://public.api.tql.com/test-ltl',    
+    'api_key'        => env('TQL_API_KEY'),
+    'subscription_key'        => env('TQL_SUBSCRIPTION_KEY'),
+    'client_id'        => env('TQL_CLIENT_ID'),
+    'client_secret'        => env('TQL_CLIENT_SECRET'),
+    'username'        => env('TQL_USERNAME'),
+    'password'        => env('TQL_PASSWORD'),
+    'token_url'        => env('TQL_TOKEN_URL'),
+
 ],
 
 

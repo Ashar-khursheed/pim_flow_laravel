@@ -282,7 +282,7 @@ class SquarePaymentController extends Controller
                 throw new \Exception('Square credentials not configured');
             }
 
-            $totalAmount = (int) round($order->total_amount * 100);
+            $totalAmount = (int) round($order->pending_amount * 100);
             
             // Handle both real orders and test objects
             if (is_object($order) && isset($order->orderProducts)) {

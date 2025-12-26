@@ -1,276 +1,194 @@
-# app.py
-# pip install streamlit pandas pymysql numpy SQLAlchemy langchain-core langchain-openai textwrap
-import json
-import re
-import textwrap
-import numpy as np
-import pandas as pd
+import sys
 import pymysql
-from sqlalchemy import create_engine
-import streamlit as st
+import pandas as pd
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-# --- Fix Pydantic forward-ref issue for ChatOpenAI on some stacks ---
-try:
-    ChatOpenAI.model_rebuild()
-except Exception:
-    pass
-st.set_page_config(page_title="HORECA Arabic Content Generator", layout="wide")
-st.title("HORECA Arabic Content Generator")
-st.caption("PyMySQL → pandas → LangChain(OpenAI). Tab 1 shows attribute_combined. Tab 2: English source first, then Arabic JSON.")
-# -------------------------
-# Sidebar controls
-# -------------------------
-st.sidebar.header("Database Connection")
-host = st.sidebar.text_input("Host", value="horecadbdevelopment.c1c86oy8g663.me-south-1.rds.amazonaws.com")
-port = st.sidebar.number_input("Port", value=3306, step=1)
-user = st.sidebar.text_input("Username", value="horecaDbUAE")
-password = st.sidebar.text_input("Password", value="Blackmango2025", type="password")
-db_name = st.sidebar.text_input("Database", value="horecadbuae")
-st.sidebar.header("OpenAI")
-openai_key = st.sidebar.text_input("OPENAI_API_KEY", value="", type="password", help="Paste your OpenAI API key here")
-model_name = "gpt-5"
-st.sidebar.divider()
-load_btn = st.sidebar.button("Connect & Load Data", type="primary")
-# -------------------------
-# SQL (row-per-attribute) — now with brand
-# -------------------------
-SQL = textwrap.dedent("""
-    SELECT
-      p.id AS id,
-      p.sku AS sku,
-      p.name AS product_name,
-      b.name AS brand_name, -- brand from ec_brands
-      a.name AS attribute_name,
-      pa.attribute_value
-    FROM ec_products AS p
-    LEFT JOIN ec_brands AS b ON b.id = p.brand_id
-    JOIN product_attributes AS pa ON pa.product_id = p.id
-    JOIN attributes AS a ON a.id = pa.attribute_id
-    ORDER BY p.id, a.name;
-""")
-# -------------------------
-# Helpers
-# -------------------------
-def get_connection(h, u, p, prt, db):
-    return pymysql.connect(host=h, user=u, password=p, port=prt, database=db)
-@st.cache_data(show_spinner=True, ttl=600)
-def load_joined_dataframe(h, u, p, prt, db):
-    engine_str = f"mysql+pymysql://{u}:{p}@{h}:{prt}/{db}"
-    engine = create_engine(engine_str)
-    try:
-        df = pd.read_sql(SQL, engine)
-        return df
-    finally:
-        engine.dispose()
-def build_out_dict(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    One row per product with attribute_combined (dict), built via pivot
-    to avoid groupby.apply warnings.
-    """
-    meta = ["id", "sku", "product_name", "brand_name"]
-    wide = (
-        df.pivot_table(
-            index=meta, columns="attribute_name", values="attribute_value", aggfunc="first"
-        ).reset_index()
-    )
-    attr_cols = [c for c in wide.columns if c not in meta]
-    wide["attribute_combined"] = wide[attr_cols].apply(
-        lambda r: {k: v for k, v in r.items() if pd.notna(v)}, axis=1
-    )
-    return wide[meta + ["attribute_combined"]]
-def get_product_row(out_df: pd.DataFrame, product_id):
-    pid = str(product_id).strip()
-    mask = out_df["id"].astype(str).str.strip() == pid
-    if not mask.any():
-        return None
-    return out_df.loc[mask].iloc[0]
-def to_builtin(obj):
-    """Recursively convert NumPy/pandas scalars for JSON serialization."""
-    if isinstance(obj, dict):
-        return {str(k): to_builtin(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple, set)):
-        return [to_builtin(v) for v in obj]
-    if isinstance(obj, (np.integer,)): return int(obj)
-    if isinstance(obj, (np.floating,)): return float(obj)
-    if isinstance(obj, (np.bool_,)): return bool(obj)
-    if obj is pd.NA or (isinstance(obj, float) and pd.isna(obj)): return None
-    return obj
-def build_product_payload(row: pd.Series) -> dict:
-    return {
-        "id": row["id"],
-        "sku": row.get("sku"),
-        "product_name": row.get("product_name"),
-        "brand_name": row.get("brand_name"), # include brand in payload
-        "attributes": row.get("attribute_combined") or {},
-    }
-def choose_k(atr: dict) -> int:
-    n = len(atr or {})
-    if n <= 4: return 4
-    if n <= 8: return 5
-    return 6
-# -------------------------
-# Tabs
-# -------------------------
-data_tab, generate_tab = st.tabs(["1) Load & View attribute_combined", "2) Generate (English → Arabic)"])
-# ----- Tab 1 -----
-with data_tab:
-    st.subheader("Step 1: Connect and Load")
-    if load_btn:
-        try:
-            df = load_joined_dataframe(host, user, password, port, db_name)
-            if df.empty:
-                st.warning("The query returned no rows.")
-            else:
-                out_dict = build_out_dict(df)
-                show_cols = ["id", "sku", "product_name", "brand_name", "attribute_combined"]
-                st.success(f"Loaded {len(out_dict):,} products. Showing id, sku, product_name, brand_name, attribute_combined.")
-                st.dataframe(out_dict[show_cols], width="stretch", height=620)
-                st.session_state["out_dict"] = out_dict
-        except Exception as e:
-            st.error(f"Error loading data: {e}")
-# ----- Tab 2 -----
-with generate_tab:
-    st.subheader("Step 2: Generate")
-    if "out_dict" not in st.session_state:
-        st.warning("Load data first (Tab 1).")
-    else:
-        out_dict = st.session_state["out_dict"]
-        c1, c2 = st.columns([2, 1])
-        product_id_input = c1.text_input("Enter Product ID", value="")
-        run_btn = c2.button("Generate", type="primary", use_container_width=True)
-        if run_btn:
-            if not product_id_input.strip():
-                st.error("Please enter a Product ID."); st.stop()
-            if not openai_key.strip():
-                st.error("Please paste your OPENAI_API_KEY in the sidebar."); st.stop()
-            row = get_product_row(out_dict, product_id_input)
-            if row is None:
-                st.error(f"Product doesn't exist with associated id: {product_id_input}"); st.stop()
-            # Build payload / English source first
-            product_payload = build_product_payload(row)
-            attribute_json = json.dumps(to_builtin(product_payload), ensure_ascii=False, indent=2)
-            k = choose_k(product_payload.get("attributes", {}))
-            # Show ENGLISH SOURCE FIRST
-            st.markdown("### English Source (attribute_combined)")
-            st.code(attribute_json, language="json")
-            # PROMPT — updated with your exact Arabic/brand/units/token rules
-            # Note: Ensured all literal braces in examples are properly escaped with double {{ }}
-            PROMPT_TEMPLATE = textwrap.dedent("""
-            Use ONLY this product JSON as your source of truth:
-            {attribute_json}
+from langchain_core.prompts import PromptTemplate
+from langchain.chains import LLMChain
+from langchain_core.output_parsers import JsonOutputParser
+import os, json
 
-ROLE & AUDIENCE
-Act as a HORECA content specialist creating product content for a B2B eCommerce platform. Audience: chefs, commercial kitchen operators, hotels, catering.
+SQL = """
+SELECT
+    ec_products.id AS product_id,
+    ec_products.sku as SKU,
+    ec_products.name AS product_name,
+    attributes.name AS attribute_name,
+    product_attributes.attribute_value AS attribute_value
+FROM ec_products
+JOIN product_attributes
+    ON ec_products.id = product_attributes.product_id
+JOIN attributes
+    ON product_attributes.attribute_id = attributes.id;
+"""
 
-TONE & STYLE
-- Modern Standard Arabic (MSA), clear, factual, B2B.
-- Active voice, no fluff/hype.
-- Use ONLY listed attributes; never invent.
-- Keep units/values exactly as provided in data, and always translate them to Arabic.
-- All content must be written in Right-to-Left (RTL).
-- All numbers must be written in Arabic numerals (٠١٢٣٤٥٦٧٨٩).
-- For “Liter”, “L”, or “Liters” always use "لتر". Do not use "لترات" and do not skip it where required by the data.
-- Do not mix units of capacity and length. “L” must be translated as "لتر", and “l” must be translated according to its associated feature in the data.
+conn = pymysql.connect(
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USERNAME"),
+    password=os.getenv("DB_PASSWORD"),
+    port=int(os.getenv("DB_PORT")),
+    database=os.getenv("DB_DATABASE")
+)
 
-CRITICAL NAMING & TOKEN RULES
-- Brand handling:
-  * If brand_name is already Arabic, copy it EXACTLY as given (no changes).
-  * If brand_name is in English, transliterate it ONCE to Arabic and reuse that consistently.
-  * Do NOT merge brand name, model name, and SKU. Keep each as provided in the data.
-- If "1-Group", "2-Group", "3-Group", or "Group" appears, always translate "Group" as "مجموعة" and convert the numbers "1", "2", "3" into Arabic numerals.
-- Colors: if multiple are listed in English, render all in Arabic joined by "و".
-- Do NOT start sentences with filler like "تعتبر". Start directly.
-- Keep SKU exactly as provided (ASCII), preceded by Arabic label where needed.
-- If a feature name like "UltraVent" appears, transliterate appropriately while preserving meaning in context.
+df = pd.read_sql(SQL, conn)
 
-HARD RULES (NEVER BREAK)
-- Do NOT mention product weight unless handheld and specified.
-- Dimensions, if provided, must be translated exactly as given in the data (no reformatting).
-- Do NOT invent details not in specs.
-- Translate attributes exactly as given in the data.
-- Do NOT reference packaging/shipping/case quantity or origin if "Made in China".
-- No em dashes — use commas or periods.
-- Do NOT use "fl oz"; use "oz".
-- Do NOT generate section titles in the output.
+# Group and combine attributes into a dictionary
+data = []
+for (product_id, product_name), group in df.groupby(['product_id', 'product_name']):
+    attributes = {row['attribute_name']: row['attribute_value'] for _, row in group.iterrows()}
+    data.append({
+        "product_id": product_id,
+        "sku" : group['SKU'].iloc[0],
+        "product_name": product_name,
+        "attributes": attributes
+    })
+df_out = pd.DataFrame(data)
+df_out.head()
+conn.close()
 
-OUTPUT STRUCTURE — RETURN JSON ONLY (no markdown, no extra prose)
+# user_input = int(input("Enter the product ID to generate content for: "))
+if len(sys.argv) < 2:
+    raise ValueError("Please provide a product ID as a command-line argument.")
+
+user_input = int(sys.argv[1])
+
+if user_input in df_out['product_id'].values:
+    product_row = df_out.loc[df_out["product_id"] == user_input].iloc[0]
+else:
+    raise ValueError(f'{user_input} is not a valid PRODUCT ID in the database.')
+
+def _get_from_attrs(attrs: dict, candidates):
+    for k, v in attrs.items():
+        kl = str(k).strip().lower()
+        for c in candidates:
+            if kl == c:
+                return v
+    return ""
+
+attrs = product_row["attributes"] if isinstance(product_row["attributes"], dict) else {}
+brand_name = _get_from_attrs(attrs, ["brand", "brand name", "manufacturer"])
+
+sku_value = ""
+if "sku" in product_row and pd.notna(product_row["sku"]):
+    sku_value = str(product_row["sku"]).strip()
+else:
+    sku_value = _get_from_attrs(attrs, ["sku", "item code", "product code", "model", "mpn"])
+
+product_json = {
+    "brand_name": brand_name or "",
+    "product_name": product_row["product_name"],
+    "sku": sku_value or "",
+    "attributes": attrs
+}
+model = ChatOpenAI(
+   model="gpt-4",
+    api_key=os.getenv("OPENAI_API_KEY")
+)
+
+prompt_text = """
+Act as a HORECA content specialist creating professional product content for a B2B eCommerce platform.
+Audience: chefs, commercial kitchen operators, hotels, and catering businesses.
+
+🗣️ TONE & STYLE
+Write in Modern Standard Arabic (MSA) — clear, factual, and professional.
+Maintain a B2B tone: informative, concise, and confident.
+Use active voice, no fluff, no marketing exaggeration.
+All text must be Right-to-Left (RTL) aligned.
+Write all numbers using English digits (e.g., 1, 2, 3).
+Keep decimal points as dots (.) and not commas (e.g., 1.6 not 1,6).
+Sentences must always end with a period (no em dashes).
+Do not include section titles in descriptions. The first line must be a natural sentence, not a heading.
+
+⚙️ UNITS & MEASUREMENTS
+Liter / L / Liters → لتر (never لترات; never omitted).
+Kg / kilogram / kilograms → كجم.
+g / gram / grams → غرام.
+cm / Cms → سم.
+Dimensions must be translated exactly as in data — no rearranging or auto-formatting (do not use WxDxH).
+Do not mix capacity (لتر) and length (سم) units.
+Keep decimal precision exactly as given in data.
+
+🧩 NAMING, BRAND, AND ATTRIBUTE RULES
+Brand names:
+If already in Arabic → copy exactly as given.
+If in English → transliterate once and reuse consistently.
+Do not merge brand name, product name, or SKU — keep separate.
+SKU must always appear as رمز المنتج {{{{sku}}}} when mentioned.
+If product type (e.g., Series, Collection) is listed, keep it distinct from the brand name and title — do not omit or merge it.
+For “1-Group”, “2-Group”, “3-Group” → translate as: ١ مجموعة, ٢ مجموعة, ٣ مجموعة.
+Electrical phases: 1-Phase → طور أحادي, 2-Phase → طور ثنائي, 3-Phase → طور ثلاثي.
+Colors: if multiple, join with "و" (e.g., "أسود وفضي").
+Translate “Halal” correctly as حلال (never “هلال”).
+Stainless steel → ستانلس ستيل.
+Specific meat cuts → translate into common UAE Arabic, not transliteration.
+For “UltraVent” or similar trademarks, transliterate appropriately.
+Never invent, omit, or reinterpret attribute values.
+
+Titles
+- Do not generate titles inside the description.
+- The first sentence must be a proper descriptive sentence, not a title-style line.
+- Generate a stable, consistent title for each product based on the given data.
+- Do not include any English words in the title.
+- DO NOT EVER TRANSLATE THE BRAND NAME INTO ARABIC LANGUAGE. JUST THE WORD ITSELF CONVERT IT INTO ARABIC NAME THATS IT. LIKE TRANSLATE THE EXACT ENGLISH NAME INTO ARABIC NAME. DO NOT CHANGE THE BRAND NAME AT ALL.
+- Give the title better and best than an other e-commerce platform.
+
+📦 DESCRIPTION GUIDELINES
+Generate 4 descriptions which should be overall less than 500 characters including spaces.
+Always write from right to left (RTL).
+Do not include any English words in the description.
+DO NOT EVER TRANSLATE THE BRAND NAME INTO ARABIC LANGUAGE. JUST THE WORD ITSELF CONVERT IT INTO ARABIC NAME THATS IT. LIKE TRANSLATE THE EXACT ENGLISH NAME INTO ARABIC NAME. DO NOT CHANGE THE BRAND NAME AT ALL.
+Generate a 4-paragraph Arabic description (~٣٠٠–٣٥٠ characters each). Each paragraph must end with a period.
+Paragraph 1: “يعد {{{{brand_name}}}} {{{{product_name}}}} رمز المنتج {{{{sku}}}}…” (omit brand/SKU gracefully if missing).
+Paragraph 2: Core technical specifications, functions, and control features.
+Paragraph 3: If dimensions exist, include them exactly as in data. Add brief installation/placement/safety notes.
+Paragraph 4: Certifications, warranty, commercial suitability. Include accessories/compliance only if listed (e.g., ADA, Halal, BPA-free).
+
+Hard Rules:
+Never mention product weight unless handheld and explicitly listed.
+Never reference packaging, shipping, or origin if “Made in China.”
+Do not invent missing specs or claims.
+
+🌟 BENEFITS SECTION
+Output must contain exactly 5 items.
+Each item object: {{"benefit": "Benefit Title", "feature": "One crisp sentence linking to a listed spec."}}
+No dimensions or weight as benefits. Each benefit must tie directly to a listed spec.
+
+❓ TECHNICAL FAQ SECTION
+Provide exactly 5 concise Q&A pairs. All in Arabic, factual, technical, not marketing.
+No weight/dimensions unless handheld. End each sentence with a period.
+
+💾 OUTPUT FORMAT (STRICT JSON ONLY)
+Output valid JSON only — no Markdown, no extra text.
 {{
+  "title": "Stable Arabic title from data",
   "description": ["paragraph1", "paragraph2", "paragraph3", "paragraph4"],
-  "benefits": [ // EXACTLY {k} items
-    {{"benefit": "Benefit Title", "feature": "One crisp sentence linking to a listed spec."}}
+  "benefits": [
+    {{"benefit": "Benefit Title", "feature": "Linked feature sentence."}}
   ],
-  "faqs": [ // EXACTLY 5 items
+  "faqs": [
     {{"question": "Question?", "answer": "Answer."}}
   ]
 }}
 
-GUIDANCE FOR CONTENT
-1) DESCRIPTION (4 paragraphs; ~٣٠٠–٣٥٠ chars each; end with periods)
-   - P1: "The {{brand_name}} {{product_name}} and SKU {{sku}} is …" If brand or SKU missing, omit gracefully.
-   - P2: Core technical specifications and control features.
-   - P3: If dimensions exist, include them exactly as translated from data, with brief install/safety notes.
-   - P4: Certifications, warranty, commercial suitability; accessories only if listed.
+Use ONLY this product JSON as your source of truth.
+{product_json}
+"""
 
-2) BENEFITS — EXACTLY {k} pairs (no dimensions or weight); each supported by listed features.
+template = PromptTemplate(input_variables=["product_json"], template=prompt_text)
+output_parser = JsonOutputParser()
+chain = LLMChain(llm=model, prompt=template, output_parser=output_parser)
 
-3) TECHNICAL FAQ — EXACTLY 5 Q&A (short, factual; no dimensions/weight unless handheld).
+payload = json.dumps(product_json, ensure_ascii=False)
+result = chain.run(product_json=payload)
 
-IMPORTANT
-- Output must be VALID JSON only, with exactly the required list lengths.
-- End every sentence with a period.
-- All content must be in Arabic, RTL-aligned, with numbers in Arabic numerals.
-            """).strip()
-            # Build prompt & call model (pass API key explicitly)
-            prompt = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-            msgs = prompt.format_messages(attribute_json=attribute_json, k=k)
-            with st.spinner("Translating to Arabic JSON via OpenAI..."):
-                llm = ChatOpenAI(
-                    api_key=openai_key, # key from sidebar
-                    model=model_name, # default gpt-5 per your request
-                    temperature=1.0,
-                    timeout=120,
-                )
-                try:
-                    resp = llm.invoke(msgs)
-                    raw = resp.content.strip()
-                    if not raw:
-                        raise ValueError("OpenAI returned an empty response.")
-                except Exception as e:
-                    st.error(f"Error during OpenAI API call: {str(e)}")
-                    st.stop()
-                # Strict JSON parse with tiny repair for trailing commas
-                try:
-                    result_json = json.loads(raw)
-                except json.JSONDecodeError:
-                    fixed = re.sub(r",\s*([}\]])", r"\1", raw)
-                    try:
-                        result_json = json.loads(fixed)
-                    except json.JSONDecodeError:
-                        st.error("Failed to parse OpenAI response as JSON. Raw response below:")
-                        st.code(raw, language="text")
-                        st.stop()
-                # Enforce counts
-                if not isinstance(result_json.get("benefits"), list) or len(result_json["benefits"]) != k:
-                    arr = (result_json.get("benefits") or [])[:k]
-                    arr += [{"benefit": ".", "feature": "."}] * (k - len(arr))
-                    result_json["benefits"] = arr
-                if not isinstance(result_json.get("faqs"), list) or len(result_json["faqs"]) != 5:
-                    arr = (result_json.get("faqs") or [])[:5]
-                    arr += [{"question": ".", "answer": "."}] * (5 - len(arr))
-                    result_json["faqs"] = arr[:5]
-            st.markdown("### Arabic JSON (translated output)")
-            st.json(result_json, expanded=True)
-            # Downloads
-            st.download_button(
-                "Download English Source JSON",
-                data=attribute_json.encode("utf-8"),
-                file_name=f"product_{row['id']}_source.json",
-                mime="application/json",
-            )
-            st.download_button(
-                "Download Arabic JSON",
-                data=json.dumps(result_json, ensure_ascii=False, indent=2).encode("utf-8"),
-                file_name=f"product_{row['id']}_arabic.json",
-                mime="application/json",
-            )
+try:
+    out = json.loads(result) if isinstance(result, str) else result
+    if isinstance(out, dict):
+        out = [out]
+    final_output = json.dumps(out, ensure_ascii=False)
+
+    print(final_output)
+    # with open(f"product_{user_input}.json", "w", encoding="utf-8") as f:
+    #     f.write(final_output)
+
+except Exception as e:
+    print("Error:", e)
