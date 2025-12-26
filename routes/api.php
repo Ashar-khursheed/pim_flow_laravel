@@ -487,6 +487,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
     Route::post('/ltl/quotes/tender', [TenderController::class, 'tender']);
     Route::get('/tracking/{poNumber}', [TrackingController::class, 'track']);
     Route::post('/ltl/loads/tender', [TenderController::class, 'tenderByScac']);
+    Route::post('/ltl/loads/tender', [TenderController::class, 'tenderByScac']);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
@@ -1032,6 +1033,7 @@ Route::post('frontend/tql-createQuote', [TqlRateController::class, 'createQuote'
 Route::post('frontend/tql-tenderShipment', [TqlRateController::class, 'tenderShipment']);
 Route::get('frontend/tql-getQuote/{quoteId}', [TqlRateController::class, 'getQuote']);
 Route::get('frontend/tql-tracking/{poNumber}', [TqlRateController::class, 'getTracking']);
+Route::post('frontend/tql-loads-tender', [TqlRateController::class, 'tqlLoadsTender']);
 
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
