@@ -447,25 +447,25 @@ class WishlistController extends Controller
                     ];
                 })->values(),
             ];
-        })->values();
+            })->values();
 
-// Ensure it's an array if empty
-if ($product->accessories->isEmpty()) {
-    $product->accessories = [];
-}
-            // --------------------
-            // Required flag (main product)
-            // --------------------
-            $product->isRequired = (bool) ($product->is_required ?? false);
+            // Ensure it's an array if empty
+            if ($product->accessories->isEmpty()) {
+                $product->accessories = [];
+            }
+                        // --------------------
+                // Required flag (main product)
+                // --------------------
+                $product->isRequired = (bool) ($product->is_required ?? false);
 
-            return $item;
-        });
+                return $item;
+            });
 
-        return response()->json([
-            'wishlist' => $wishlistItems,
-            'total_items' => $wishlistItems->count()
-        ]);
-    }
+            return response()->json([
+                'wishlist' => $wishlistItems,
+                'total_items' => $wishlistItems->count()
+            ]);
+        }
 
 
 
