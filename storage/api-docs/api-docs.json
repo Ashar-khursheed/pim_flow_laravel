@@ -21388,6 +21388,11 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "is_ccavenue": {
+                                        "description": "ccavenue payment",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "is_squarePayment": {
                                         "description": "Square payment",
                                         "type": "boolean",
