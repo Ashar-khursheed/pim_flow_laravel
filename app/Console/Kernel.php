@@ -25,6 +25,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('feed:generate')->dailyAt('00:00');
 
         $schedule->command('seo:dailyUpdateLlmsSeo')->dailyAt('00:00');
+        $schedule->command('ccavenue:cancelled72-ccavenue')->dailyAt('00:00');
         $schedule->command('finance:overdue-status')->dailyAt('00:00');
     }
 }
