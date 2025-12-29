@@ -414,7 +414,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('products/{id}/product-category-attribute-groups', [ProductAttributeController::class, 'productCategoryAttributeGroups']);
 
 	Route::post('/attributes/generate-translation', [AttributeController::class, 'generateTranslation']);
-	Route::resource('attributes', AttributeController::class);
+	Route::resource('attributes', AttributeController::class);	 
+	Route::post('attributes/{id}/image', [AttributeController::class, 'updateImageAttribute']);
 	Route::delete('attribute-groups/{id}/remove-attribute/{attribute_id}', [AttributeGroupController::class, 'removeAttribute']);
 	Route::resource('attribute-groups', AttributeGroupController::class);
 	Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);

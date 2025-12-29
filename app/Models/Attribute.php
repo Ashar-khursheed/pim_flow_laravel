@@ -12,7 +12,7 @@ class Attribute extends Model implements TranslatableContract
 
 	public $translatedAttributes = ['name_tr'];
 
-	protected $fillable = ['name', 'code', 'type', 'attribute_group_id', 'validations', 'created_by', 'updated_by'];
+	protected $fillable = ['name', 'code', 'type', 'attribute_group_id', 'validations', 'created_by', 'updated_by','images'];
 
 	public function creator()
 	{
