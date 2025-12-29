@@ -15,11 +15,17 @@ trait TransformProduct
 	 * @param string|null $categoryURL Category URL
 	 * @return void
 	 */
-	public function transformFeaturedProduct($product, $categoryMostParentURL = null, $categoryURL = null)
+	public function transformFeaturedProduct($product, $categoryMostParentURL = null, $categoryURL = null, $withDescription = false, $withAttributes = false)
 	{
 		/* Transform product name and images to locale objects */
 		$product->name = $this->getLocalizedData($product->translations, 'name_tr');
 		$product->images = $this->getLocalizedData($product->translations, 'images_tr', true);
+
+		if ($withDescription) {
+			$product->description = $this->getLocalizedData($product->translations, 'description_tr', true);
+			$product->benefits_features_tr = $this->getLocalizedData($product->translations, 'benefits_features_tr', true);
+		}
+
 		$product->parent_category_url = $categoryMostParentURL ?? $product->parent_category_url();
 		$product->category_url = $categoryURL ?? $product->category_url();
 		$product->url = optional($product->seoUrl)->url ?? null;
@@ -56,6 +62,21 @@ trait TransformProduct
 			});
 		}
 
+		if ($withAttributes) {
+			$product->all_attributes = $product->productAttributes->map(function ($productAttribute) {
+				$attribute = [
+					'attribute_name' => $this->getLocalizedData($productAttribute->attributeDetails->translations, 'name_tr'),
+					'attribute_value' => $this->getLocalizedData($productAttribute->translations, 'attribute_value_tr')
+				];
+
+				if ($productAttribute->measurementUnit) {
+					$attribute['measurement_unit'] = $this->getLocalizedData($productAttribute->measurementUnit->translations, 'name_tr');
+				}
+
+				return $attribute;
+			});
+		}
+
 		/* Remove unwanted attributes from product */
 		unset(
 			$product->translations,
@@ -66,6 +87,7 @@ trait TransformProduct
 			$product->reviews_count,
 			$product->reviews_avg_star,
 			$product->sellingUnitAttribute,
+			$product->productAttributes,
 			$product->pivot
 		);
 	}
@@ -88,8 +110,8 @@ trait TransformProduct
 
 				if ($parseJson && $value) {
 					$data[$translation->locale] = is_array($value)
-						? $value
-						: json_decode($value, true);
+					? $value
+					: json_decode($value, true);
 				} else {
 					$data[$translation->locale] = $value;
 				}
