@@ -289,6 +289,7 @@ class FinanceController extends Controller
             ], 200);
         }
         $address = $finance->customerAddress;
+        // dd($address);
         $financeData =  [
             'id' => $finance->id,
             'customer_id' => $finance->customer_id,
@@ -321,7 +322,11 @@ class FinanceController extends Controller
             'business_name' => $finance->customer?->business_name,
             'customer_email' => $finance->customer?->email,
             'customer_mobile' => $finance->customer?->mobile_number,
-
+            'country' => $finance->customer?->country,
+            'state' => $finance->customer?->state,
+            'city' => $finance->customer?->city,
+            'address' => $finance->customer?->address,
+            'zip_code' => $finance->customer?->zip_code, 
             'annual_revenue' => $finance->annual_revenue,
             'years_in_business' => $finance->years_in_business,
 

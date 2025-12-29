@@ -1631,12 +1631,12 @@
                     "Attributes"
                 ],
                 "summary": "Create a new attribute",
-                "description": "Creates a new attribute with name, code, and type.",
+                "description": "Creates a new attribute with name, code, type, and multiple images.",
                 "operationId": "48e2284fe9ed7ecdc495aa7191e74084",
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "name",
@@ -1655,6 +1655,14 @@
                                     "type": {
                                         "type": "string",
                                         "example": "text"
+                                    },
+                                    "images[]": {
+                                        "description": "Upload multiple images",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -1663,10 +1671,46 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Success",
+                    "200": {
+                        "description": "Attribute created successfully",
                         "content": {
-                            "application/json": {}
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Attribute created successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
                         }
                     }
                 },
@@ -1850,6 +1894,136 @@
                         "content": {
                             "application/json": {}
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attributes/{id}/image": {
+            "post": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Upload or update images for an existing attribute",
+                "description": "Uploads one or more images for the specified attribute and replaces any existing ones.",
+                "operationId": "updateAttributeImage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the attribute to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Multipart form data with image files",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "images[]": {
+                                        "description": "Array of image files (multiple upload)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "delete_images[]": {
+                                        "description": "List of image URLs to delete",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Images updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Attribute images updated successfully."
+                                        },
+                                        "data": {
+                                            "$ref": ""
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Insufficient permissions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "You don't have permission to update attributes."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Attribute not found"
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "example": {
+                                                "images.0": [
+                                                    "The images.0 must be an image."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error"
                     }
                 },
                 "security": [
@@ -18461,6 +18635,23 @@
                         }
                     },
                     {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Category ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "category_url",
+                        "in": "query",
+                        "description": "Category slug",
+                        "schema": {
+                            "type": "string",
+                            "example": "ice-bins"
+                        }
+                    },
+                    {
                         "name": "brand_id",
                         "in": "query",
                         "description": "Brand ID",
@@ -18478,20 +18669,38 @@
                         }
                     },
                     {
-                        "name": "category_id",
+                        "name": "product_id",
                         "in": "query",
-                        "description": "Category ID",
+                        "description": "Product ID",
                         "schema": {
                             "type": "integer"
                         }
                     },
                     {
-                        "name": "category_url",
+                        "name": "product_url",
                         "in": "query",
-                        "description": "Category slug",
+                        "description": "Product slug",
                         "schema": {
                             "type": "string",
-                            "example": "ice-bins"
+                            "example": "hoshizaki-ice-storage-bin-140l"
+                        }
+                    },
+                    {
+                        "name": "with_description",
+                        "in": "query",
+                        "description": "Whether to include the product description",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "with_attributes",
+                        "in": "query",
+                        "description": "Whether to include the additional attributes",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
                         }
                     },
                     {
