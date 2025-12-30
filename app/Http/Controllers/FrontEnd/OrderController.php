@@ -1059,17 +1059,18 @@ class OrderController extends BaseController
 	 *     path="/api/frontend/orders/tracking",
 	 *     summary="Track order by order ID",
 	 *     tags={"FrontEnd-Orders"},
+	 * 		security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(name="order_number", in="query", required=true, description="Order number to track", @OA\Schema(type="string", example=12345)),
 	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
 	public function orderTracking(Request $request)
-	{
+	{  
 		$request->validate([
 			'order_number' => 'required|string|exists:orders,order_number',
 		]);
 
-		$order = Order::with(['tracking'])->where('order_number', $request->order_number)->first();
+		$order = Order::with(['tracking','customerDefaultAddress'])->where('order_number', $request->order_number)->first();
 
 		if (!$order) {
 			return response()->json([
