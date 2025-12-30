@@ -213,6 +213,7 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
 	 *                 @OA\Property(property="is_payment", type="boolean", example=false, description="Payment gateway"),
 	 *                 @OA\Property(property="is_paymob", type="boolean", example=false, description="Paymob payment"),
+	 *                 @OA\Property(property="is_ccavenue", type="boolean", example=false, description="ccavenue payment"),
 	 *                 @OA\Property(property="is_squarePayment", type="boolean", example=false, description="Square payment"),
 	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),
 	 *                 @OA\Property(
@@ -253,6 +254,7 @@ class OrderController extends BaseController
 			'is_reserved',
 			'is_payment',
 			'is_paymob',
+			'is_ccavenue',
 			'is_squarePayment',
 			'is_customer_pickup'
 		];
@@ -296,6 +298,8 @@ class OrderController extends BaseController
 			'is_reserved' => 'nullable|boolean',
 			'is_payment' => 'nullable|boolean',
 			'is_paymob' => 'nullable|boolean',
+			'is_ccavenue' => 'nullable|boolean',
+
 			'is_squarePayment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
@@ -465,6 +469,8 @@ class OrderController extends BaseController
 				'is_reserved' => $request->boolean('is_reserved'),
 				'is_payment' => $request->boolean('is_payment'),
 				'is_paymob' => $request->boolean('is_paymob'),
+				'is_ccavenue' => $request->boolean('is_ccavenue'),
+
 				'is_squarePayment' => $request->boolean('is_squarePayment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'is_cod' => $request->boolean('is_cod'),
@@ -1053,17 +1059,18 @@ class OrderController extends BaseController
 	 *     path="/api/frontend/orders/tracking",
 	 *     summary="Track order by order ID",
 	 *     tags={"FrontEnd-Orders"},
+	 * 		security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(name="order_number", in="query", required=true, description="Order number to track", @OA\Schema(type="string", example=12345)),
 	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
 	public function orderTracking(Request $request)
-	{
+	{  
 		$request->validate([
 			'order_number' => 'required|string|exists:orders,order_number',
 		]);
 
-		$order = Order::with(['tracking'])->where('order_number', $request->order_number)->first();
+		$order = Order::with(['tracking','customerDefaultAddress'])->where('order_number', $request->order_number)->first();
 
 		if (!$order) {
 			return response()->json([
