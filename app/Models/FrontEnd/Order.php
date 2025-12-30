@@ -142,5 +142,11 @@ class Order extends Model
 	{
 		return $this->hasOne(Invoice::class, 'order_id', 'id');
 	}
+	public function customerDefaultAddress()
+	{
+		return $this->hasOne(CustomerAddress::class, 'customer_id', 'customer_id')
+			->where('is_default', 1);
+	}
+
 
 }
