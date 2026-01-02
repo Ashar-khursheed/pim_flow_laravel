@@ -284,7 +284,7 @@ class FCategoryController extends Controller
 			'translations',
 			'seoUrl:id,relational_id,relational_type,url',
 			'featuredProducts' => function($query) use ($productsPerCategory) {
-				$query->select(['id', 'name', 'sku', 'currency_id', 'units_sold', 'alt_tags', 'quote_available'])
+				$query->select(['id', 'name', 'sku', 'currency_id', 'alt_tags', 'quote_available'])
 				->with([
 					'translations',
 					'seoUrl:id,relational_id,relational_type,url',
@@ -295,7 +295,6 @@ class FCategoryController extends Controller
 				])
 				->withCount('reviews')
 				->withAvg('reviews', 'star')
-				->orderByDesc('units_sold')
 				->limit($productsPerCategory);
 			}
 		])
@@ -423,7 +422,7 @@ class FCategoryController extends Controller
 			'translations',
 			'seoUrl:id,relational_id,relational_type,url',
 			'featuredProducts' => function($query) use ($productsPerCategory) {
-				$query->select(['id', 'name', 'sku', 'currency_id', 'units_sold', 'alt_tags', 'quote_available'])
+				$query->select(['id', 'name', 'sku', 'currency_id', 'alt_tags', 'quote_available'])
 				->with([
 					'translations',
 					'seoUrl:id,relational_id,relational_type,url',
@@ -434,7 +433,6 @@ class FCategoryController extends Controller
 				])
 				->withCount('reviews')
 				->withAvg('reviews', 'star')
-				->orderByDesc('units_sold')
 				->limit($productsPerCategory);
 			}
 		])

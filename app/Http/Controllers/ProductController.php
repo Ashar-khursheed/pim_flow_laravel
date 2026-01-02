@@ -10,7 +10,6 @@ use Illuminate\Bus\Batch;
 
 use App\Models\Product;
 use App\Models\Category;
-use App\Models\Tax;
 use App\Models\Currency;
 use App\Models\Unit;
 use App\Models\Vendor;
@@ -428,11 +427,11 @@ class ProductController extends BaseController
 	// 		'General' => ['sku', 'barcode', 'status', 'approved' , 'ar_approved'],
 
 	// 		'Inventory & Stock Management' => ['stock_status'],
-	// 		'Pricing & Sales' => ['tax_id', 'currency_id', 'approved_by'],
+	// 		'Pricing & Sales' => ['currency_id', 'approved_by'],
 	// 		'Marketing' => ['name', 'description', 'gen_type' , 'quote_available'],
 	// 		'Media' => ['images', 'video_path', 'documents', 'benefits_features'],
 	// 		'Store & Vendor Information' => ['brand_id'],
-	// 		'Performance & Analytics' => ['views', 'units_sold'],
+	// 		'Performance & Analytics' => ['views'],
 	// 		'Other' => ['order', 'website_ids'],
 	// 		'All' => []
 	// 	];
@@ -644,15 +643,6 @@ class ProductController extends BaseController
 	// 			];
 	// 			break;
 
-	// 			case 'tax_id':
-	// 			$tax = Tax::find($value);
-	// 			if ($tax) {
-	// 				$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
-	// 			} else {
-	// 				$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
-	// 			}
-	// 			break;
-
 	// 			case 'currency_id':
 	// 			$formattedProduct['currency'] = $product->currency ? [
 	// 				[
@@ -724,11 +714,11 @@ class ProductController extends BaseController
 		$attributeGroup = [
 			'General' => ['sku', 'barcode', 'status', 'approved', 'ar_approved'],
 			'Inventory & Stock Management' => ['stock_status'],
-			'Pricing & Sales' => ['tax_id', 'currency_id', 'approved_by'],
+			'Pricing & Sales' => ['currency_id', 'approved_by'],
 			'Marketing' => ['name', 'description', 'gen_type', 'quote_available'],
 			'Media' => ['images', 'video_path', 'documents', 'benefits_features'],
 			'Store & Vendor Information' => ['brand_id'],
-			'Performance & Analytics' => ['views', 'units_sold'],
+			'Performance & Analytics' => ['views'],
 			'Other' => ['order', 'website_ids'],
 			'All' => []
 		];
@@ -864,11 +854,6 @@ class ProductController extends BaseController
 		//             ];
 		//             break;
 
-		//         case 'tax_id':
-		//             $tax = Tax::find($value);
-		//             $formattedProduct['tax'] = $tax ? [['title' => $tax->title, 'rate' => $tax->percentage]] : [['title' => null, 'rate' => null]];
-		//             break;
-
 		//         case 'currency_id':
 		//             $formattedProduct['currency'] = $product->currency ? [['id' => $product->currency->id, 'title' => $product->currency->title]] : null;
 		//             break;
@@ -923,15 +908,6 @@ class ProductController extends BaseController
 					];
 					break;
 
-					case 'tax_id':
-					$tax = Tax::find($value);
-					if ($tax) {
-						$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
-					} else {
-						$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
-					}
-					break;
-
 					case 'currency_id':
 					$formattedProduct['currency'] = $product->currency ? [
 						[
@@ -967,7 +943,7 @@ class ProductController extends BaseController
 					case 'documents':
 						$formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true) ?? [];
 					break;
-		
+
 
 					case 'status':
 					$formattedProduct[$attribute] = [['value' => $value]];
@@ -1043,7 +1019,6 @@ class ProductController extends BaseController
 	 *                 @OA\Property(property="sale_price", type="number", format="float", example=149.99),
 	 *                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
 	 *                 @OA\Property(property="cost_per_item_currency", type="string", example="USD", description="Currency of the cost per item"),
-	 *                 @OA\Property(property="tax_id", type="integer", example=3),
 	 *                 @OA\Property(property="currency_id", type="integer", example=1),
 	 *                 @OA\Property(property="name", type="string", example="Sample Product"),
 	 *                 @OA\Property(property="description", type="string", example="Short description."),
@@ -1064,7 +1039,6 @@ class ProductController extends BaseController
 	 *                 @OA\Property(property="vendor_id", type="integer", example=7),
 	 *                 @OA\Property(property="brand_id", type="integer", example=13),
 	 *                 @OA\Property(property="views", type="integer", example=200),
-	 *                 @OA\Property(property="units_sold", type="integer", example=50),
 	 *                 @OA\Property(property="order", type="integer", example=1),
 	 *                 @OA\Property(property="box_quantity", type="integer", example=5),
 	 *                 @OA\Property(property="delivery_days", type="integer", example=3),
@@ -1744,7 +1718,7 @@ class ProductController extends BaseController
 		$input['documents'] = json_encode($input['documents']);
 
 		/* List of valid fields allowed for updating */
-		$validArray = ["sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "video_path", "documents", "brand_id", "views", "units_sold", "order", "benefits_features", "gen_type", "approved" , "ar_approved"];
+		$validArray = ["sku", "status", "barcode", "currency_id", "name", "description", "video_path", "documents", "brand_id", "views", "order", "benefits_features", "gen_type", "approved" , "ar_approved"];
 
 		unset($input['product_attributes']);
 		unset($input['vendor_id']);
@@ -1753,17 +1727,6 @@ class ProductController extends BaseController
 
 		/* Initialize an error array to store validation errors */
 		$rowError = [];
-
-		/* Tax ID validation */
-		if (isset($input['tax_id'])) {
-			$taxArray = Tax::pluck("id")->toArray();
-			if (!is_numeric($input['tax_id']) || !in_array((int) $input['tax_id'], $taxArray)) {
-				$rowError[] = "Invalid tax value. Please select a valid tax ID.";
-			} else {
-				$product->tax_id = (int) $input['tax_id'];
-				unset($input['tax_id']); /* Remove processed field */
-			}
-		}
 
 		/* Currency ID validation */
 		if (isset($input['currency_id'])) {
@@ -2511,15 +2474,12 @@ class ProductController extends BaseController
 					$product->is_featured = $mainProduct->is_featured;
 					$product->brand_id = $mainProduct->brand_id;
 					$product->quote_available = $mainProduct->quote_available;
-					$product->tax_id = $mainProduct->tax_id;
 					$product->views = '0';
 					$product->stock_status = $mainProduct->stock_status;
 					$product->barcode = $mainProduct->barcode;
 					$product->approved_by = $mainProduct->approved_by;
 					$product->documents = $mainProduct->documents;
 					$product->video_path = $mainProduct->video_path;
-					$product->units_sold = $mainProduct->units_sold;
-					$product->frequently_bought_together = $mainProduct->frequently_bought_together;
 					$product->currency_id = $mainProduct->currency_id;
 					$product->status = 'draft';
 					$product->created_at = now();
