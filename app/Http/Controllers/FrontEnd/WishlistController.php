@@ -283,7 +283,7 @@ class WishlistController extends Controller
 
 		return response()->json([//
 			'wishlist' => $wishlistItems,
-			'total_items' => $wishlistItems->count
+			'total_items' => $wishlistItems->count()
 		]);
 	}
 
