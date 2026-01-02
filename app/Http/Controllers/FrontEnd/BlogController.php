@@ -149,6 +149,8 @@ class BlogController extends Controller
             'thumbnail_alt' => $blog->thumbnail_alt,
             'created_date' => $blog->created_date,
             'written_by' => $blog->written_by,
+               'author_designation' => $blog->author_designation,
+             'author_desc' => $blog->author_desc,
             'image' => $blog->image,
             'tags' => $blog->tags ?? [],
             'total_views' => $blog->total_views ?? 0,
