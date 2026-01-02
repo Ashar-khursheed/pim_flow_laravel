@@ -148,7 +148,7 @@ class WishlistController extends Controller
 		// ===============================
 		// TRANSFORM DATA
 		// ===============================
-		$wishlistItems->transform(function ($item) use ($productDiscounts, $discounts) {
+		$wishlistItems->transform(function ($item) use ($discounts) {
 
 			$product = $item->product;
 			if (!$product) {
