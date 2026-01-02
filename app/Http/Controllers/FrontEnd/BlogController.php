@@ -345,6 +345,8 @@ class BlogController extends Controller
              'mobile_banner' => $blog->mobile_banner,
              'created_date' => $blog->created_date,
              'written_by' => $blog->written_by,
+              'author_designation' => $blog->author_designation,
+             'author_desc' => $blog->author_desc,
              'image' => $blog->image,
              'mobile_banner_alt' => $blog->mobile_banner_alt,
              'thumbnail' => $blog->thumbnail,
