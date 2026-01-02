@@ -271,10 +271,10 @@ class ProductExportController extends BaseController
 					$row[] = implode(',', $cleanUrls);
 					break;
 
-					case 'frequently_bought_together':
-					$fbtArray = json_decode($product->frequently_bought_together, true) ?? [];
-					$row[] = implode(',', array_column($fbtArray, 'value'));
-					break;
+					// case 'frequently_bought_together':
+					// $fbtArray = json_decode($product->frequently_bought_together, true) ?? [];
+					// $row[] = implode(',', array_column($fbtArray, 'value'));
+					// break;
 
 					case 'url':
 					$row[] = "";

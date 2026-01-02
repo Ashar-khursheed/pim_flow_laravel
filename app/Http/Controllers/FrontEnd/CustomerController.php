@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Google_Client;
-use App\Models\Discount;
+// use App\Models\Discount;
 use Illuminate\Support\Carbon;
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
@@ -210,166 +210,165 @@ class CustomerController extends BaseController
 		}
 	}
 
-	/**
-	 * @OA\Get(
-	 *     path="/api/frontend/coupons/customer",
-	 *     tags={"FrontEnd-Customer"},
-	 *     summary="Get customer coupons",
-	 *     description="Returns all coupons related to the authenticated customer, grouped as all, available, used, and expired.",
-	 *     operationId="getCustomerCoupons",
-	 *     security={{"bearerAuth":{}}},
-	 *     @OA\Response(response=200, description="List of customer coupons", @OA\MediaType(mediaType="application/json"))
-	 * )
-	 */
-	public function getCustomerCoupons(Request $request)
-	{
-		$userId = Auth::id();
+	// /**
+	//  * @OA\Get(
+	//  *     path="/api/frontend/coupons/customer",
+	//  *     tags={"FrontEnd-Customer"},
+	//  *     summary="Get customer coupons",
+	//  *     description="Returns all coupons related to the authenticated customer, grouped as all, available, used, and expired.",
+	//  *     operationId="getCustomerCoupons",
+	//  *     security={{"bearerAuth":{}}},
+	//  *     @OA\Response(response=200, description="List of customer coupons", @OA\MediaType(mediaType="application/json"))
+	//  * )
+	//  */
+	// public function getCustomerCoupons(Request $request)
+	// {
+	// 	$userId = Auth::id();
 
-		if (!$userId) {
-			return response()->json(['message' => 'User not authenticated.'], 401);
-		}
+	// 	if (!$userId) {
+	// 		return response()->json(['message' => 'User not authenticated.'], 401);
+	// 	}
 
-		// Get all coupons related to the customer
-		$allCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
-			$query->where('customer_id', $userId);
-		})
-			->get()
-			->map(function ($discount) {
-				return [
-					'id' => $discount->id,
-					'code' => $discount->code,
-					'value' => $discount->value,
-					'type' => $discount->type,
-					'min_order_price' => $discount->min_order_price,
-					'start_date' => $discount->start_date,
-					'end_date' => $discount->end_date,
-				];
-			});
+	// 	// Get all coupons related to the customer
+	// 	$allCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
+	// 		$query->where('customer_id', $userId);
+	// 	})
+	// 		->get()
+	// 		->map(function ($discount) {
+	// 			return [
+	// 				'id' => $discount->id,
+	// 				'code' => $discount->code,
+	// 				'value' => $discount->value,
+	// 				'type' => $discount->type,
+	// 				'min_order_price' => $discount->min_order_price,
+	// 				'start_date' => $discount->start_date,
+	// 				'end_date' => $discount->end_date,
+	// 			];
+	// 		});
 
-		// Get used coupons from ec_customer_used_coupons table
-		$usedCoupons = DB::table('ec_customer_used_coupons')
-			->join('ec_discounts', 'ec_customer_used_coupons.discount_id', '=', 'ec_discounts.id')
-			->where('ec_customer_used_coupons.customer_id', $userId)
-			->get(['ec_discounts.id', 'ec_discounts.code', 'ec_discounts.value', 'ec_discounts.type', 'ec_discounts.min_order_price', 'ec_discounts.start_date', 'ec_discounts.end_date']);
+	// 	// Get used coupons from ec_customer_used_coupons table
+	// 	$usedCoupons = DB::table('ec_customer_used_coupons')
+	// 		->join('ec_discounts', 'ec_customer_used_coupons.discount_id', '=', 'ec_discounts.id')
+	// 		->where('ec_customer_used_coupons.customer_id', $userId)
+	// 		->get(['ec_discounts.id', 'ec_discounts.code', 'ec_discounts.value', 'ec_discounts.type', 'ec_discounts.min_order_price', 'ec_discounts.start_date', 'ec_discounts.end_date']);
 
-		// Get expired coupons (past end_date)
-		$expiredCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
-			$query->where('customer_id', $userId);
-		})
-			->where('end_date', '<', Carbon::now()) // Coupons that have expired
-			->get()
-			->map(function ($discount) {
-				return [
-					'id' => $discount->id,
-					'code' => $discount->code,
-					'value' => $discount->value,
-					'type' => $discount->type,
-					'min_order_price' => $discount->min_order_price,
-					'start_date' => $discount->start_date,
-					'end_date' => $discount->end_date,
-				];
-			});
+	// 	// Get expired coupons (past end_date)
+	// 	$expiredCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
+	// 		$query->where('customer_id', $userId);
+	// 	})
+	// 		->where('end_date', '<', Carbon::now()) // Coupons that have expired
+	// 		->get()
+	// 		->map(function ($discount) {
+	// 			return [
+	// 				'id' => $discount->id,
+	// 				'code' => $discount->code,
+	// 				'value' => $discount->value,
+	// 				'type' => $discount->type,
+	// 				'min_order_price' => $discount->min_order_price,
+	// 				'start_date' => $discount->start_date,
+	// 				'end_date' => $discount->end_date,
+	// 			];
+	// 		});
 
-		// Get available (valid) coupons
-		$availableCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
-			$query->where('customer_id', $userId);
-		})
-			->where(function ($query) {
-				$query->where('end_date', '>=', Carbon::now())
-					->orWhereNull('end_date');
-			})
-			->get()
-			->map(function ($discount) {
-				return [
-					'id' => $discount->id,
-					'code' => $discount->code,
-					'value' => $discount->value,
-					'type' => $discount->type,
-					'min_order_price' => $discount->min_order_price,
-					'start_date' => $discount->start_date,
-					'end_date' => $discount->end_date,
-				];
-			});
+	// 	// Get available (valid) coupons
+	// 	$availableCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
+	// 		$query->where('customer_id', $userId);
+	// 	})
+	// 		->where(function ($query) {
+	// 			$query->where('end_date', '>=', Carbon::now())
+	// 				->orWhereNull('end_date');
+	// 		})
+	// 		->get()
+	// 		->map(function ($discount) {
+	// 			return [
+	// 				'id' => $discount->id,
+	// 				'code' => $discount->code,
+	// 				'value' => $discount->value,
+	// 				'type' => $discount->type,
+	// 				'min_order_price' => $discount->min_order_price,
+	// 				'start_date' => $discount->start_date,
+	// 				'end_date' => $discount->end_date,
+	// 			];
+	// 		});
 
-		return response()->json([
-			'all_coupons' => $allCoupons, // This includes all coupons linked to the customer
-			'available_coupons' => $availableCoupons,
-			'used_coupons' => $usedCoupons,
-			'expired_coupons' => $expiredCoupons
-		]);
-	}
+	// 	return response()->json([
+	// 		'all_coupons' => $allCoupons, // This includes all coupons linked to the customer
+	// 		'available_coupons' => $availableCoupons,
+	// 		'used_coupons' => $usedCoupons,
+	// 		'expired_coupons' => $expiredCoupons
+	// 	]);
+	// }
 
 
-	/**
-	 * @OA\Get(
-	 *     path="/api/frontend/coupons/search",
-	 *     tags={"FrontEnd-Customer"},
-	 *     summary="Search customer coupons",
-	 *     description="Search through the customer's coupons using a query term.",
-	 *     operationId="searchCustomerCoupons",
-	 *     security={{"bearerAuth":{}}},
-	 *     @OA\Parameter(
-	 *         name="query",
-	 *         in="query",
-	 *         required=true,
-	 *         description="Search term (coupon code, type, or value)",
-	 *         @OA\Schema(type="string")
-	 *     ),
-	 *     @OA\Response(response=200, description="Search results", @OA\MediaType(mediaType="application/json"))
-	 * )
-	 */
+	// /**
+	//  * @OA\Get(
+	//  *     path="/api/frontend/coupons/search",
+	//  *     tags={"FrontEnd-Customer"},
+	//  *     summary="Search customer coupons",
+	//  *     description="Search through the customer's coupons using a query term.",
+	//  *     operationId="searchCustomerCoupons",
+	//  *     security={{"bearerAuth":{}}},
+	//  *     @OA\Parameter(
+	//  *         name="query",
+	//  *         in="query",
+	//  *         required=true,
+	//  *         description="Search term (coupon code, type, or value)",
+	//  *         @OA\Schema(type="string")
+	//  *     ),
+	//  *     @OA\Response(response=200, description="Search results", @OA\MediaType(mediaType="application/json"))
+	//  * )
+	//  */
+	// public function searchCustomerCoupons(Request $request)
+	// {
+	// 	$userId = Auth::id();
 
-	public function searchCustomerCoupons(Request $request)
-	{
-		$userId = Auth::id();
+	// 	if (!$userId) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'User not authenticated.'
+	// 		], 200);
+	// 	}
 
-		if (!$userId) {
-			return response()->json([
-				'success' => false,
-				'message' => 'User not authenticated.'
-			], 200);
-		}
+	// 	$searchTerm = $request->input('query');
 
-		$searchTerm = $request->input('query');
+	// 	$discounts = Discount::whereHas('customers', function ($query) use ($userId) {
+	// 		$query->where('customer_id', $userId);
+	// 	})
+	// 		->where(function ($query) use ($searchTerm) {
+	// 			$query->where('code', 'LIKE', "%{$searchTerm}%")
+	// 				->orWhere('type', 'LIKE', "%{$searchTerm}%")
+	// 				->orWhere('value', 'LIKE', "%{$searchTerm}%");
+	// 		})
+	// 		->where(function ($query) {
+	// 			$query->where('end_date', '>=', Carbon::now())
+	// 				->orWhereNull('end_date');
+	// 		})
+	// 		->get();
 
-		$discounts = Discount::whereHas('customers', function ($query) use ($userId) {
-			$query->where('customer_id', $userId);
-		})
-			->where(function ($query) use ($searchTerm) {
-				$query->where('code', 'LIKE', "%{$searchTerm}%")
-					->orWhere('type', 'LIKE', "%{$searchTerm}%")
-					->orWhere('value', 'LIKE', "%{$searchTerm}%");
-			})
-			->where(function ($query) {
-				$query->where('end_date', '>=', Carbon::now())
-					->orWhereNull('end_date');
-			})
-			->get();
+	// 	if ($discounts->isEmpty()) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'No matching coupons found.'
+	// 		], 200);
+	// 	}
 
-		if ($discounts->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No matching coupons found.'
-			], 200);
-		}
+	// 	$coupons = $discounts->map(function ($discount) {
+	// 		return [
+	// 			'id' => $discount->id,
+	// 			'code' => $discount->code,
+	// 			'value' => $discount->value,
+	// 			'type' => $discount->type,
+	// 			'min_order_price' => $discount->min_order_price,
+	// 			'start_date' => $discount->start_date,
+	// 			'end_date' => $discount->end_date,
+	// 		];
+	// 	});
 
-		$coupons = $discounts->map(function ($discount) {
-			return [
-				'id' => $discount->id,
-				'code' => $discount->code,
-				'value' => $discount->value,
-				'type' => $discount->type,
-				'min_order_price' => $discount->min_order_price,
-				'start_date' => $discount->start_date,
-				'end_date' => $discount->end_date,
-			];
-		});
-
-		return response()->json([
-			'success' => true,
-			'coupons' => $coupons
-		], 200);
-	}
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'coupons' => $coupons
+	// 	], 200);
+	// }
 
 
 	public function appleLogin(Request $request)
@@ -700,11 +699,11 @@ class CustomerController extends BaseController
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 required={"name", "email"},	 *                 
+	 *                 required={"name", "email"},	 *
 	 *                 @OA\Property(property="name", type="string", example="John Doe"),
-	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),                
+	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000")
-	 *                 
+	 *
 	 *             )
 	 *         )
 	 *     ),
@@ -738,13 +737,13 @@ class CustomerController extends BaseController
 			'mobile_number' => $request->input('mobile_number'),
 		]);
 		$guestCustomer->save();
-		
+
 		$data['customer_ids'] = $guestCustomer->id;
 		$data['code'] = 'WELCOME50';
 		$data['name'] = 'welcome50';
 		$data['description'] = 'string';
 		$data['type'] = 'fixed';
-		$data['value'] = 50; //AED 
+		$data['value'] = 50; //AED
 		$data['basis'] = 'customer';
 		$data['min_order_value'] = 550;
 		$data['max_order_value'] = 999999;
@@ -757,9 +756,9 @@ class CustomerController extends BaseController
 		$data['status'] = 'approved';
 		$data['created_by'] = 1;
 		$data['approved_by'] = 1;
-		$data['approved_at'] = now();	
+		$data['approved_at'] = now();
 		$coupon = Coupon::where('code','WELCOME50')->first();
-		if (!$coupon) {					
+		if (!$coupon) {
 			$coupon = Coupon::create($data);
 		}
 

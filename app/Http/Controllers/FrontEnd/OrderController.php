@@ -1070,8 +1070,94 @@ class OrderController extends BaseController
 			'order_number' => 'required|string|exists:orders,order_number',
 		]);
 
-		$order = Order::with(['tracking','customerDefaultAddress'])->where('order_number', $request->order_number)->first();
+		$order = Order::where('order_number', $request->order_number)->first();
 
+		$order->load([
+			'customer:id,name,email,type,country_code,mobile_number',
+			'customerDefaultAddress',
+			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+			'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+			'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+			'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
+			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+			'orderProducts.product.brand:id,name',
+			'orderProducts.product.currency:id,symbol',
+			'orderProducts.product.seoProductUrl:id,relational_id,relational_type,url',
+			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'orderProducts.product.warrantyAttribute',
+			'tracking',
+			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
+		]);
+
+		/* Mutate the data for each order product */
+		foreach ($order->orderProducts as $orderProduct) {
+			$product = $orderProduct->product;
+			if ($product) {
+				$product->images = is_array($product->images)
+				? $product->images
+				: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+
+				$product->brand_name = $product->brand->name ?? null;
+				$product->currency_symbol = $product->currency->symbol ?? null;
+				$product->warranty = $product->warrantyAttribute->attribute_value ?? null;
+				$product->category_url = method_exists($product, 'category_url')
+				? $product->category_url()
+				: null;
+
+				$product->parent_category_url = method_exists($product, 'parent_category_url')
+				? $product->parent_category_url()
+				: null;
+
+				$product->url = $product->seoProductUrl->url ?? null;
+
+				unset($product->brand, $product->currency);
+			}
+
+			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
+			->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+
+			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+			: null;
+
+			if ($orderProduct->accessoryCharges) {
+				$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+					return [
+						'id' => $charge->id,
+						'accessory_item_id' => $charge->accessory_item_id,
+						'accessory_item_name' => $charge->accessoryItem->name ?? null,
+						'accessory_item_price' => $charge->accessoryItem->price ?? null,
+						'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+						'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+						'amount' => $charge->amount,
+					];
+				});
+
+				unset($orderProduct->accessoryCharges);
+			}
+		}
+
+		if (
+			$order->status === 'Delivered' &&
+			$orderProduct->product_supplier &&
+			isset($orderProduct->product_supplier['return_policy'])
+		) {
+			$returnDays = (int) $orderProduct->product_supplier['return_policy'];
+			$deliveryDate = \Carbon\Carbon::parse($order->updated_at);
+			$returnUntil = $deliveryDate->copy()->addDays($returnDays);
+
+			$orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
+		} else {
+			$orderProduct->is_returnable = 'yes';
+		}
+
+		foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			if (isset($order->$key)) {
+				$order->$key = number_format($order->$key, 2, '.', '');
+			}
+		}
+
+		 
 		if (!$order) {
 			return response()->json([
 				'success' => false,
