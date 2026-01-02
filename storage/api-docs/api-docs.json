@@ -47251,6 +47251,10 @@
                                             11
                                         ]
                                     },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "ABC STreet Houston"
+                                    },
                                     "city_ids": {
                                         "type": "array",
                                         "items": {
@@ -47262,15 +47266,9 @@
                                             3
                                         ]
                                     },
-                                    "zipcode_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        },
-                                        "example": [
-                                            101,
-                                            102
-                                        ]
+                                    "zipcode": {
+                                        "type": "string",
+                                        "example": "11211"
                                     },
                                     "dropshipping": {
                                         "type": "boolean",
@@ -47470,6 +47468,10 @@
                                             11
                                         ]
                                     },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "ABC STreet Houston"
+                                    },
                                     "city_ids": {
                                         "type": "array",
                                         "items": {
@@ -47481,15 +47483,9 @@
                                             3
                                         ]
                                     },
-                                    "zipcode_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        },
-                                        "example": [
-                                            101,
-                                            102
-                                        ]
+                                    "zipcode": {
+                                        "type": "string",
+                                        "example": "11211"
                                     },
                                     "dropshipping": {
                                         "type": "boolean",

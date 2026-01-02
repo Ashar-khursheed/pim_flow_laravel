@@ -97,7 +97,7 @@ class VendorController extends BaseController
 			}
 
 			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
-				'id', 'name', 'country_id', 'email', 'contact_person', 'mobile_number', 'landline_number', 'dropshipping', 'website_link', 'type', 'warehouse_locations', 'credit_limit', 'net_terms', 'logo_url', 'business_licence_number', 'created_by', 'created_at'
+				'id', 'name', 'country_id', 'zipcode', 'email', 'contact_person', 'mobile_number', 'landline_number', 'dropshipping', 'website_link', 'type', 'warehouse_locations', 'credit_limit', 'net_terms', 'logo_url', 'business_licence_number', 'created_by', 'created_at'
 			]);
 
 			/* Add country_name and created_by */
@@ -165,19 +165,14 @@ class VendorController extends BaseController
 	 *                     @OA\Items(type="integer"),
 	 *                     example={10, 11}
 	 *                 ),
+	 *                 @OA\Property(property="address", type="string", example="ABC STreet Houston"),
 	 *                 @OA\Property(
 	 *                     property="city_ids",
 	 *                     type="array",
 	 *                     @OA\Items(type="integer"),
 	 *                     example={1, 2, 3}
 	 *                 ),
-	 *                 @OA\Property(
-	 *                     property="zipcode_ids",
-	 *                     type="array",
-	 *                     @OA\Items(type="integer"),
-	 *                     example={101, 102}
-	 *                 ),
-	 *
+	 *                 @OA\Property(property="zipcode", type="string", example="11211"),
 	 *                 @OA\Property(property="dropshipping", type="boolean", example=true),
 	 *                 @OA\Property(property="website_link", type="string", example="https://example.com"),
 	 *                 @OA\Property(property="domain", type="string", enum={"Horeca", "Rapid Supplies"}, example="Horeca"),
@@ -246,13 +241,9 @@ class VendorController extends BaseController
 			'city_ids' => 'nullable|array',
 			'city_ids.*' => 'integer|exists:cities,id',
 
-			'zipcode_ids' => 'nullable|array',
-			'zipcode_ids.*' => 'integer|exists:zipcodes,id',
+			'address' => 'nullable|string',
+			'zipcode' => 'nullable|string',
 
-			'city_ids' => 'nullable|array',
-			'city_ids.*' => 'integer',
-			'zipcode_ids' => 'nullable|array',
-			'zipcode_ids.*' => 'integer',
 			'dropshipping' => 'boolean',
 			'website_link' => 'nullable|string',
 			'domain' => 'in:Horeca,Rapid Supplies',
@@ -283,7 +274,6 @@ class VendorController extends BaseController
 		/* Implode array fields with | */
 		$data['website_ids'] = isset($data['website_ids']) ? implode(',', $data['website_ids']) : null;
 		$data['city_ids'] = isset($data['city_ids']) ? implode(',', $data['city_ids']) : null;
-		$data['zipcode_ids'] = isset($data['zipcode_ids']) ? implode(',', $data['zipcode_ids']) : null;
 		$data['warehouse_locations'] = isset($data['warehouse_locations']) ? implode('|', $data['warehouse_locations']) : null;
 
 		$data['created_by'] = auth()->id();
@@ -321,7 +311,7 @@ class VendorController extends BaseController
 
 	private function preprocessVendorRequest(Request $request): void
 	{
-		$fieldsToExplode = ['website_ids', 'city_ids', 'zipcode_ids', 'warehouse_locations'];
+		$fieldsToExplode = ['website_ids', 'city_ids', 'warehouse_locations'];
 
 		foreach ($fieldsToExplode as $field) {
 			if ($request->filled($field) && is_string($request->$field)) {
@@ -398,10 +388,6 @@ class VendorController extends BaseController
 		$record->cities = City::whereIn('id', $record->city_ids)->select('id', 'name')->get();
 		unset($record->city_ids);
 
-		$record->zipcode_ids = $record->zipcode_ids ? explode(',', $record->zipcode_ids) : [];
-		$record->zipcodes = Zipcode::whereIn('id', $record->zipcode_ids)->select('id', 'zip_code')->get();
-		unset($record->zipcode_ids);
-
 		$record->website_ids = $record->website_ids ? explode(',', $record->website_ids) : [];
 		$record->websites = Website::whereIn('id', $record->website_ids)->select('id', 'name')->get();
 		unset($record->website_ids);
@@ -467,18 +453,14 @@ class VendorController extends BaseController
 	 *                     @OA\Items(type="integer"),
 	 *                     example={10, 11}
 	 *                 ),
+	 *                 @OA\Property(property="address", type="string", example="ABC STreet Houston"),
 	 *                 @OA\Property(
 	 *                     property="city_ids",
 	 *                     type="array",
 	 *                     @OA\Items(type="integer"),
 	 *                     example={1, 2, 3}
 	 *                 ),
-	 *                 @OA\Property(
-	 *                     property="zipcode_ids",
-	 *                     type="array",
-	 *                     @OA\Items(type="integer"),
-	 *                     example={101, 102}
-	 *                 ),
+	 *                 @OA\Property(property="zipcode", type="string", example="11211"),
 	 *
 	 *                 @OA\Property(property="dropshipping", type="boolean", example=true),
 	 *                 @OA\Property(property="website_link", type="string", example="https://example.com"),
@@ -556,8 +538,8 @@ class VendorController extends BaseController
 			'city_ids' => 'nullable|array',
 			'city_ids.*' => 'integer|exists:cities,id',
 
-			'zipcode_ids' => 'nullable|array',
-			'zipcode_ids.*' => 'integer|exists:zipcodes,id',
+			'address' => 'nullable|string',
+			'zipcode' => 'nullable|string',
 
 			'dropshipping' => 'boolean',
 			'website_link' => 'nullable|string',
@@ -593,7 +575,6 @@ class VendorController extends BaseController
 		/* Implode array fields with | */
 		$data['website_ids'] = isset($data['website_ids']) ? implode(',', $data['website_ids']) : null;
 		$data['city_ids'] = isset($data['city_ids']) ? implode(',', $data['city_ids']) : null;
-		$data['zipcode_ids'] = isset($data['zipcode_ids']) ? implode(',', $data['zipcode_ids']) : null;
 		$data['warehouse_locations'] = isset($data['warehouse_locations']) ? implode('|', $data['warehouse_locations']) : null;
 
 		$data['updated_by'] = auth()->id();
@@ -694,7 +675,9 @@ class VendorController extends BaseController
 				'Contact Person' => 'contact_person',
 				'Landline Number' => 'landline_number',
 				'Mobile Number' => 'mobile_number',
+				'Address' => 'address',
 				'Cities(Separated By |)' => 'cities',
+				'Zipcode' => 'zipcode',
 				'Dropshipping' => 'dropshipping',
 				'Website Link' => 'website_link',
 				'Domain' => 'domain',
@@ -782,7 +765,9 @@ class VendorController extends BaseController
 			'Contact Person',
 			'Landline Number',
 			'Mobile Number',
+			'Address',
 			'Cities(Separated By |)',
+			'Zipcode',
 			'Dropshipping',
 			'Website Link',
 			'Domain',
@@ -819,7 +804,9 @@ class VendorController extends BaseController
 				$record->contact_person,
 				$record->landline_number,
 				$record->mobile_number,
+				$record->address,
 				$cityNames,
+				$record->zipcode,
 				$record->dropshipping,
 				$record->website_link,
 				$record->domain ? ($record->domain === 'Horeca' ? 1 : 2) : null,
