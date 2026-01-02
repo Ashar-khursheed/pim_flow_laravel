@@ -26,8 +26,6 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CustomerCartExportController;
 use App\Http\Controllers\ProductExportController;
 use App\Http\Controllers\SliderController;
-use App\Http\Controllers\DiscountController;
-use App\Http\Controllers\FlashSaleController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\SeoSchemaController;
 use App\Http\Controllers\TransactionLogController;
@@ -105,7 +103,6 @@ use App\Http\Controllers\FrontEnd\ProductYouMayLikeController as F_ProductYouMay
 use App\Http\Controllers\FrontEnd\ProductAttributeController as F_ProductAttributeController;
 use App\Http\Controllers\FrontEnd\BrandPageController as F_BrandPageController;
 use App\Http\Controllers\FrontEnd\BlogController as F_BlogController;
-use App\Http\Controllers\FrontEnd\DiscountController as F_DiscountController;
 use App\Http\Controllers\FrontEnd\BrandController as F_BrandController;
 use App\Http\Controllers\FrontEnd\CartController as F_CartController;
 use App\Http\Controllers\FrontEnd\CustomerAddressController as F_CustomerAddressController;
@@ -560,13 +557,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('customerCartExport/export', [CustomerCartExportController::class,'export']);
 
-	// Discount API Routes
-	Route::apiResource('discounts', DiscountController::class);
-
-	// Flash Sale API Routes
-	Route::apiResource('flash-sales', FlashSaleController::class);
-
-
 	Route::get('/seo-management/check-url', [SeoManagementController::class, 'checkURL']);
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
@@ -817,9 +807,6 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
 	Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
-
-
-	Route::get('/frontend/discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
 
 	Route::get('/frontend/brandproducts', [F_BrandController::class, 'getAllBrandProducts']);
 	Route::get('/frontend/homebrandproducts', [F_BrandController::class, 'getAllHomeBrandProducts']);

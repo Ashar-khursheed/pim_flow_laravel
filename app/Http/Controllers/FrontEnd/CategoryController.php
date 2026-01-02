@@ -478,7 +478,7 @@ class CategoryController extends Controller
 				'products' => function ($query) {
 					$query->where('is_featured', 1)
 					->where('status', 'published')
-						->select('id', 'name', 'sku', 'currency_id', 'units_sold'); // Select only necessary fields
+						->select('id', 'name', 'sku', 'currency_id'); // Select only necessary fields
 					}
 				])
 			->take(5)
@@ -648,7 +648,7 @@ class CategoryController extends Controller
 				'products' => function ($query) {
 					$query->where('is_featured', 1)
 					->where('status', 'published')
-						->select('id', 'name', 'sku', 'currency_id', 'units_sold'); // Select only necessary fields
+						->select('id', 'name', 'sku', 'currency_id'); // Select only necessary fields
 					}
 				])
 			->take(5)

@@ -134,7 +134,6 @@ class WishlistController extends Controller
 	public function getWishlist(Request $request)
 	{
 		$userId = Auth::id();
-
 		$wishlistItems = Wishlist::with(
 			'product.currency',
 			'product.productSuppliers',
@@ -145,28 +144,6 @@ class WishlistController extends Controller
 		->where('customer_id', $userId)
 		->orderBy('created_at', 'desc')
 		->get();
-
-		// ===============================
-		// USER & PRODUCT DISCOUNTS
-		// ===============================
-		$userDiscountIds = DB::table('ec_discount_customers')
-		->where('customer_id', $userId)
-		->pluck('discount_id')
-		->toArray();
-
-		$productIds = $wishlistItems->pluck('product.id')->filter()->toArray();
-
-		$productDiscounts = DB::table('ec_discount_products')
-		->whereIn('product_id', $productIds)
-		->select('product_id', 'discount_id')
-		->get()
-		->groupBy('product_id')
-		->map(fn ($d) => $d->pluck('discount_id')->toArray());
-
-		$discounts = DB::table('ec_discounts')
-		->whereIn('id', array_merge($userDiscountIds, $productDiscounts->flatten()->toArray()))
-		->get()
-		->keyBy('id');
 
 		// ===============================
 		// TRANSFORM DATA
@@ -190,15 +167,6 @@ class WishlistController extends Controller
 			$product->images = collect(json_decode($product->images, true) ?? []);
 			$product->in_wishlist = 1;
 			$product->quantity = $item->quantity ?? 1;
-
-			// --------------------
-			// Discounts
-			// --------------------
-			$discountIds = $productDiscounts[$product->id] ?? [];
-			$product->discounts = collect($discountIds)
-			->map(fn ($id) => $discounts[$id] ?? null)
-			->filter()
-			->values();
 
 			// --------------------
 			// Currency
@@ -315,7 +283,7 @@ class WishlistController extends Controller
 
 		return response()->json([//
 			'wishlist' => $wishlistItems,
-			'total_items' => $wishlistItems->count()
+			'total_items' => $wishlistItems->count
 		]);
 	}
 
@@ -570,7 +538,6 @@ class WishlistController extends Controller
 
 		foreach ($products as $item) {
 			$productId = $item['product_id'];
-
 			// Check if the product is already in the wishlist
 			$exists = Wishlist::where('customer_id', $userId)
 			->where('product_id', $productId)

@@ -74,7 +74,6 @@ class Product extends Model implements TranslatableContract
 		'is_featured',
 		'brand_id',
 		'quote_available',
-		'tax_id',
 		'views',
 		'stock_status',
 		'barcode',
@@ -82,7 +81,7 @@ class Product extends Model implements TranslatableContract
 		'specs_sheet',
 		'documents',
 		'video_path',
-		'frequently_bought_together' => 'array',
+		// 'frequently_bought_together' => 'array',
 		'benefits_features' => 'array',
 		'gen_type' => 'nullable|integer',
 		'approved' => 'nullable|integer',
@@ -176,11 +175,6 @@ class Product extends Model implements TranslatableContract
 		});
 	}
 
-	// public function discounts(): BelongsToMany
-	// {
-	// 	return $this->belongsToMany(Discount::class, 'ec_discount_products', 'product_id', 'discount_id');
-	// }
-
 	/* Get the latest category associated with the product */
 	public function latestChildCategory()
 	{
@@ -217,10 +211,6 @@ class Product extends Model implements TranslatableContract
 	public function seoSchema()
 	{
 		return $this->hasOne(SeoSchema::class, 'product_id', 'id');
-	}
-	public function tax()
-	{
-		return $this->belongsTo(Tax::class, 'tax_id');
 	}
 
 	public function reviews()

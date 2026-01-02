@@ -60,7 +60,7 @@ class CartController extends Controller
 			'product_id' => 'required|exists:ec_products,id',
 			'quantity' => 'required|integer|min:1',
 			'vendor_id' => 'nullable|exists:vendors,id',
-			'accessories_options' => 'nullable|array', // accessory_id => selected_item_id
+			'accessories_options' => 'nullable|array',
 			'accessories_options.*' => 'integer|exists:accessory_items,id',
 		]);
 
@@ -253,25 +253,7 @@ class CartController extends Controller
 		])
 		->get();
 
-		// Fetch applicable discounts for the user
-		$userDiscountIds = DB::table('ec_discount_customers')
-		->where('customer_id', $userId)
-		->pluck('discount_id')
-		->toArray();
-
-		$productDiscounts = DB::table('ec_discount_products')
-		->whereIn('product_id', $cartItems->pluck('product.id'))
-		->select('product_id', 'discount_id')
-		->get()
-		->groupBy('product_id')
-		->map(fn($discounts) => $discounts->pluck('discount_id')->toArray());
-
-		$discounts = DB::table('ec_discounts')
-		->whereIn('id', array_merge($userDiscountIds, $productDiscounts->flatten()->toArray()))
-		->get()
-		->keyBy('id');
-
-		$transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $productDiscounts, $discounts, $customerCart) {
+		$transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $customerCart) {
 			$product = $cartProduct->product;
 
 			$cartItem = (object)[
@@ -289,8 +271,6 @@ class CartController extends Controller
 			$product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
 			$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
 
-			$discountIds = $productDiscounts[$product->id] ?? [];
-			$product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
 			$product->url = $product->seoUrl->url ?? null;
 
 			$symbol = optional($product->currency)->symbol;
@@ -411,9 +391,8 @@ class CartController extends Controller
 			'cart_id' => $cartId,
 			'checkout_url' => url("/Checkout/{$cartId}"),
 			'customer_cart' => $customerCart,
-		],200);
+		]);
 	}
-
 
 	/**
 	 * @OA\Delete(
@@ -457,7 +436,7 @@ class CartController extends Controller
 			return response()->json([
 				'success' => false,
 				'message' => 'Cart was already empty or could not be cleared.',
-			],200);
+			]);
 		}
 
 		$deleted = CustomerCartProduct::where('customer_cart_id', $customerCart->id)->delete();
@@ -475,12 +454,12 @@ class CartController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Cart cleared successfully.',
-			],200);
+			]);
 		} else {
 			return response()->json([
 				'success' => false,
 				'message' => 'Cart was already empty or could not be cleared.',
-			],200);
+			]);
 		}
 	}
 
@@ -534,7 +513,7 @@ class CartController extends Controller
 		$customerCart = CustomerCart::where('customer_id', $userId)->first();
 
 		if (!$customerCart) {
-			return response()->json(['success' => false, 'message' => 'Cart not found'],200);
+			return response()->json(['success' => false, 'message' => 'Cart not found']);
 		}
 
 		$deleted = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
@@ -542,11 +521,11 @@ class CartController extends Controller
 		->delete();
 
 		if ($deleted > 0) {
-			// Update cart totals
+		// Update cart totals
 			$this->updateCartTotals($customerCart);
 		}
 
-		return response()->json(['success' => true],200);
+		return response()->json(['success' => true]);
 	}
 
 	/**
@@ -622,7 +601,7 @@ class CartController extends Controller
 				return response()->json([
 					'success' => false,
 					'message' => 'Cart not found'
-				], 200);
+				]);
 			}
 
 			$accessories = $request->input('accessories_options', []);
@@ -650,20 +629,20 @@ class CartController extends Controller
 				return response()->json([
 					'success' => true,
 					'message' => 'Product removed successfully'
-				], 200);
+				]);
 			}
 
 			return response()->json([
 				'success' => false,
 				'message' => 'Product not found in cart'
-			], 404);
+			]);
 
 		} catch (\Exception $e) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Server error while removing product from cart',
 				'error'   => $e->getMessage(),
-			], 500);
+			]);
 		}
 	}
 
@@ -960,10 +939,10 @@ class CartController extends Controller
 			'subtotal' => (float) $customerCart->amount,
 			'tax' => (float) $customerCart->tax_amount,
 			'total_with_tax' => (float) $customerCart->total_amount,
-			'savings' => 0, // Calculate if needed
-			'item_count' => (int) $customerCart->total_products,
-			'currency_title' => $currencyTitle,
-		]);
+										'savings' => 0, // Calculate if needed
+										'item_count' => (int) $customerCart->total_products,
+										'currency_title' => $currencyTitle,
+									]);
 	}
 
 	/**
@@ -1189,7 +1168,7 @@ class CartController extends Controller
 			$unitPrice = $supplier->sale_price ?: $supplier->price;
 			$actualVendorId = $supplier->vendor_id;
 
-		// Calculate accessory options price
+			// Calculate accessory options price
 			$optionPrice = 0;
 			foreach ($selectedOptions as $itemId) {
 				if (isset($accessoryItems[$itemId])) {
@@ -1200,7 +1179,7 @@ class CartController extends Controller
 			$totalUnitPrice = $unitPrice + $optionPrice;
 			$amount = $quantity * $totalUnitPrice;
 
-		// Check if same product with same options exists in cart
+			// Check if same product with same options exists in cart
 			sort($selectedOptions);
 			$cartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
 			->where('product_id', $productId)

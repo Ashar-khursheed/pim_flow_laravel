@@ -366,8 +366,9 @@ class FCategoryController extends BaseController
 		->with([
 			'translations',
 			'seoUrl:id,relational_id,relational_type,url',
-			'featuredProducts' => function($query) use ($productsLimit) {
-				$query->select(['id', 'name', 'sku', 'currency_id', 'units_sold', 'alt_tags', 'quote_available'])
+
+			'featuredProducts' => function($query) use ($productsPerCategory) {
+				$query->select(['id', 'name', 'sku', 'currency_id', 'alt_tags', 'quote_available'])
 				->with([
 					'translations',
 					'seoUrl:id,relational_id,relational_type,url',
@@ -378,8 +379,7 @@ class FCategoryController extends BaseController
 				])
 				->withCount('reviews')
 				->withAvg('reviews', 'star')
-				->orderByDesc('units_sold')
-				->limit($productsLimit);
+				->limit($productsPerCategory);
 			}
 		])
 		->has('featuredProducts', '>=', $minProducts)

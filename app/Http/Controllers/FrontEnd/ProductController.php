@@ -34,7 +34,7 @@ class ProductController extends Controller
 	 *         required=false,
 	 *         @OA\Schema(type="string")
 	 *     ),
-	 *     @OA\Parameter( 
+	 *     @OA\Parameter(
 	 *         name="page",
 	 *         in="query",
 	 *         description="Page number for pagination",
@@ -78,7 +78,7 @@ class ProductController extends Controller
 	// 	// Keep existing user and wishlist logic
 	// 	$userId = Auth::id();
 	// 	$isUserLoggedIn = $userId !== null;
- 
+
 	// 	Log::info('User logged in:', ['user_id' => $userId]);
 
 	// 	$wishlistProductIds = [];
@@ -99,7 +99,7 @@ class ProductController extends Controller
 
 
 	// 	$productId = $request->input('product_id'); // numeric ID
-	 
+
 	// 	$slug = $request->input('slug');           // string slug
 	// 	if ($productId) {
 	// 		$query->where('id', $productId);
@@ -539,7 +539,7 @@ class ProductController extends Controller
 	// 	// 		->get();
 
 	// 	// 	$result = [];
- 
+
 	// 	// 	foreach ($variants as $v) {
 	// 	// 		// Get attribute name
 	// 	// 		$attributeName = Attribute::where('id', $v['attribute_id'])->value('name');
@@ -694,7 +694,7 @@ class ProductController extends Controller
 	// 			$product->category_url = null;
 	// 			$product->parent_category_url = null;
 	// 		}
-		
+
 	// 		unset($product->productVariants);
 
 	// 		return $product;
@@ -730,18 +730,18 @@ class ProductController extends Controller
 
 		// 	// ✅ OPTIMIZED: Add productVariants to initial eager loading (was missing)
 		// 	$query = Product::with([
-		// 		'categories', 
-		// 		'brand', 
-		// 		'productSuppliers', 
-		// 		'brand.products.reviews', 
-		// 		'seoUrl', 
+		// 		'categories',
+		// 		'brand',
+		// 		'productSuppliers',
+		// 		'brand.products.reviews',
+		// 		'seoUrl',
 		// 		'accessories.items',
 		// 		'productVariants' // Added - was causing N+1 queries
 		// 	])->where('status', 'published');
 
 		// 	$productId = $request->input('product_id'); // numeric ID
 		// 	$slug = $request->input('slug');           // string slug
-			
+
 		// 	if ($productId) {
 		// 		$query->where('id', $productId);
 		// 	} elseif ($slug) {
@@ -889,7 +889,7 @@ class ProductController extends Controller
 		// 		$product->images = collect(json_decode($product->images, true))->map(function ($image) {
 		// 			return $image;
 		// 		});
-				
+
 		// 		$product->alt_tags = collect(json_decode($product->alt_tags, true))->map(function ($alt_tags) {
 		// 			return $alt_tags;
 		// 		});
@@ -993,7 +993,7 @@ class ProductController extends Controller
 		// 		$product->total_reviews = $totalReviews;
 		// 		$product->avg_rating = $avgRating;
 		// 		$product->leftStock = $leftStock;
-				
+
 		// 		// ✅ OPTIMIZED: Use isset() instead of in_array() - O(1) vs O(n)
 		// 		$product->in_wishlist = isset($wishlistProductIds[$product->id]);
 
@@ -1110,7 +1110,7 @@ class ProductController extends Controller
 		// 		$product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
 		// 			$childIds = json_decode($variant->child_ids, true) ?? [];
 		// 			$variants = json_decode($variant->variants, true) ?? [];
-					
+
 		// 			// ✅ Merge current product ID with child IDs
 		// 			$childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
 
@@ -1197,21 +1197,21 @@ class ProductController extends Controller
 		// 					// Build full slug
 		// 					$parentCategoryUrl = '';
 		// 					$categoryUrl = '';
-							
+
 		// 					try {
 		// 						$tempProduct = Product::find($child->id);
 		// 						if ($tempProduct) {
-		// 							$parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
-		// 								? $tempProduct->parent_category_url() 
+		// 							$parentCategoryUrl = method_exists($tempProduct, 'parent_category_url')
+		// 								? $tempProduct->parent_category_url()
 		// 								: '';
-		// 							$categoryUrl = method_exists($tempProduct, 'category_url') 
-		// 								? $tempProduct->category_url() 
+		// 							$categoryUrl = method_exists($tempProduct, 'category_url')
+		// 								? $tempProduct->category_url()
 		// 								: '';
 		// 						}
 		// 					} catch (\Exception $e) {
 		// 						\Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
 		// 					}
-							
+
 		// 					$full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
 		// 					$full_slug = trim($full_slug, '/');
 
@@ -1270,7 +1270,7 @@ class ProductController extends Controller
 		// 		'pagination' => $pagination
 		// 	])->header('Cache-Control', 'public, max-age=86400');
 		// }
-    
+
 // 		public function getAllProducts(Request $request)
 // {
 //     // User and wishlist logic
@@ -1284,7 +1284,7 @@ class ProductController extends Controller
 //         // ✅ For single product, just check this one product
 //         $productId = $request->input('product_id');
 //         $slug = $request->input('slug');
-        
+
 //         if ($productId) {
 //             $wishlistProductIds = DB::table('ec_wish_lists')
 //                 ->where('customer_id', $userId)
@@ -1299,7 +1299,7 @@ class ProductController extends Controller
 //     // ✅ SINGLE PRODUCT QUERY - No filtering needed, direct fetch
 //     $productId = $request->input('product_id');
 //     $slug = $request->input('slug');
-    
+
 //     $query = Product::with([
 //         'categories.seoUrl', // Eager load category SEO URLs
 //         'brand.seoUrl',
@@ -1405,8 +1405,8 @@ class ProductController extends Controller
 //             ->selectRaw('COUNT(*) as review_count, AVG(star) as avg_rating')
 //             ->first();
 
-//         $product->brand_avg_rating = $brandStats->review_count > 0 
-//             ? round($brandStats->avg_rating, 1) 
+//         $product->brand_avg_rating = $brandStats->review_count > 0
+//             ? round($brandStats->avg_rating, 1)
 //             : null;
 //         $product->brand_review_count = $brandStats->review_count;
 //     }
@@ -1414,7 +1414,7 @@ class ProductController extends Controller
 //     $product->images = collect(json_decode($product->images, true))->map(function ($image) {
 //         return $image;
 //     });
-    
+
 //     $product->alt_tags = collect(json_decode($product->alt_tags, true))->map(function ($alt_tags) {
 //         return $alt_tags;
 //     });
@@ -1616,7 +1616,7 @@ class ProductController extends Controller
 //     $product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
 //         $childIds = json_decode($variant->child_ids, true) ?? [];
 //         $variants = json_decode($variant->variants, true) ?? [];
-        
+
 //         $childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
 
 //         if (empty($childIds) || empty($variants)) {
@@ -1641,7 +1641,7 @@ class ProductController extends Controller
 
 //         $attributeIds = array_column($variants, 'attribute_id');
 //         $attributes = Attribute::whereIn('id', $attributeIds)->pluck('name', 'id');
-        
+
 //         $productAttributes = ProductAttribute::whereIn('product_id', $childIds)
 //             ->whereIn('attribute_id', $attributeIds)
 //             ->get()
@@ -1659,7 +1659,7 @@ class ProductController extends Controller
 //             if (!$attributeName) {
 //                 continue;
 //             }
-            
+
 //             $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
 //             $full_slug = trim($full_slug, '/');
 
@@ -1688,21 +1688,21 @@ class ProductController extends Controller
 
 //                 $parentCategoryUrl = '';
 //                 $categoryUrl = '';
-                
+
 //                 try {
 //                     $tempProduct = Product::find($child->id);
 //                     if ($tempProduct) {
-//                         $parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
-//                             ? $tempProduct->parent_category_url() 
+//                         $parentCategoryUrl = method_exists($tempProduct, 'parent_category_url')
+//                             ? $tempProduct->parent_category_url()
 //                             : '';
-//                         $categoryUrl = method_exists($tempProduct, 'category_url') 
-//                             ? $tempProduct->category_url() 
+//                         $categoryUrl = method_exists($tempProduct, 'category_url')
+//                             ? $tempProduct->category_url()
 //                             : '';
 //                     }
 //                 } catch (\Exception $e) {
 //                     \Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
 //                 }
-                
+
 //                 $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
 //                 $full_slug = trim($full_slug, '/');
 
@@ -1778,19 +1778,19 @@ class ProductController extends Controller
 {
     $userId = Auth::id();
     $isUserLoggedIn = $userId !== null;
-    
+
     Log::info('User logged in:', ['user_id' => $userId]);
-    
+
     $productId = $request->input('product_id');
     $slug = $request->input('slug');
-    
+
     if (!$productId && !$slug) {
         return response()->json([
             'success' => false,
             'message' => 'Product ID or slug is required'
         ], 400);
     }
-    
+
     // ✅ OPTIMIZED: Single eager-loaded query with all necessary relationships
     $product = Product::with([
         'categories.seoUrl',
@@ -1807,14 +1807,14 @@ class ProductController extends Controller
     ->when($productId, fn($q) => $q->where('id', $productId))
     ->when($slug, fn($q) => $q->whereHas('seoUrl', fn($sq) => $sq->where('url', $slug)))
     ->first();
-    
+
     if (!$product) {
         return response()->json([
             'success' => false,
             'message' => 'Product not found'
         ], 404);
     }
-    
+
     // ✅ OPTIMIZED: Check wishlist ONLY for this product
     $isInWishlist = false;
     if ($isUserLoggedIn) {
@@ -1826,15 +1826,15 @@ class ProductController extends Controller
         $wishlist = session()->get('guest_wishlist', []);
         $isInWishlist = in_array($product->id, $wishlist);
     }
-    
+
     // ========================================
     // PRODUCT TRANSFORMATION STARTS HERE
     // ========================================
-    
+
     $product->benefits_features = json_decode($product->benefits_features, true);
     $product->url = $product->seoUrl->url ?? null;
     unset($product->seoUrl);
-    
+
     // Description cleanup
     if (is_string($product->description)) {
         $decoded = json_decode($product->description, true);
@@ -1853,36 +1853,36 @@ class ProductController extends Controller
             $product->description = [$product->description];
         }
     }
-    
+
     // Brand info
     if ($product->brand) {
         $product->brand_id = $product->brand->id;
         $product->brand_name = $product->brand->name;
         $product->brand_logo = $product->brand->logo;
         $product->brand_url = $product->brand->seoUrl->url ?? null;
-        
+
         // ✅ OPTIMIZED: Single aggregated query for brand stats
         $brandStats = DB::table('ec_reviews')
             ->join('ec_products', 'ec_reviews.product_id', '=', 'ec_products.id')
             ->where('ec_products.brand_id', $product->brand->id)
             ->selectRaw('COUNT(*) as review_count, AVG(star) as avg_rating')
             ->first();
-        
-        $product->brand_avg_rating = $brandStats->review_count > 0 
-            ? round($brandStats->avg_rating, 1) 
+
+        $product->brand_avg_rating = $brandStats->review_count > 0
+            ? round($brandStats->avg_rating, 1)
             : null;
         $product->brand_review_count = $brandStats->review_count;
     }
-    
+
     // Images & videos
     $product->images = collect(json_decode($product->images, true));
     $product->alt_tags = collect(json_decode($product->alt_tags, true));
-    
+
     // Documents
-    $documents = is_string($product->documents) 
-        ? json_decode($product->documents, true) 
+    $documents = is_string($product->documents)
+        ? json_decode($product->documents, true)
         : $product->documents;
-    
+
     if (is_array($documents)) {
         $desiredOrder = [
             'Technical Specification Sheet',
@@ -1894,7 +1894,7 @@ class ProductController extends Controller
             'Spare Parts List',
             'Product Brochure',
         ];
-        
+
         foreach ($documents as &$doc) {
             if (isset($doc['title'])) {
                 $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
@@ -1903,20 +1903,20 @@ class ProductController extends Controller
                 $doc['path'] = url('/media/' . basename($doc['path']));
             }
         }
-        
+
         usort($documents, function ($a, $b) use ($desiredOrder) {
             $posA = array_search($a['title'] ?? '', $desiredOrder);
             $posB = array_search($b['title'] ?? '', $desiredOrder);
             return ($posA === false ? PHP_INT_MAX : $posA) <=> ($posB === false ? PHP_INT_MAX : $posB);
         });
-        
+
         $product->documents = $documents;
     } else {
         $product->documents = [];
     }
-    
+
     $product->video_path = collect(json_decode($product->video_path, true));
-    
+
     // Selling unit attribute
     if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
         $fullValue = $product->sellingUnitAttribute->attribute_value;
@@ -1927,11 +1927,11 @@ class ProductController extends Controller
             $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
         }
     }
-    
+
     // Per unit price calculation
     $unitsPerCase = null;
     $packType = null;
-    
+
     if ($product->productAttributes) {
         foreach ($product->productAttributes as $attr) {
             if ($attr->attributeDetails && $attr->attributeDetails->name === 'Units per Case') {
@@ -1942,10 +1942,10 @@ class ProductController extends Controller
             }
         }
     }
-    
+
     $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
     $product->per_unit_price = null;
-    
+
     if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
         $unitValue = (float) $unitsPerCase->attribute_value;
         if ($unitValue > 0) {
@@ -1953,13 +1953,13 @@ class ProductController extends Controller
             $product->per_unit_price = $calculated . '/' . ($packType?->attribute_value ?? '');
         }
     }
-    
+
     // Reviews & stock
     $product->total_reviews = $product->reviews->count();
     $product->avg_rating = $product->total_reviews > 0 ? $product->reviews->avg('star') : null;
     $product->leftStock = ($product->quantity ?? 0) - ($product->units_sold ?? 0);
     $product->in_wishlist = $isInWishlist;
-    
+
     // Supplier info
     $firstSupplier = $product->productSuppliers->first();
     if ($firstSupplier) {
@@ -1995,29 +1995,29 @@ class ProductController extends Controller
         $product->min_quantity = 0;
         $product->is_fixed = 0;
     }
-    
+
     // Currency
-    $product->currency_title = $product->currency 
+    $product->currency_title = $product->currency
         ? ($product->currency->is_prefix_symbol ? $product->currency->symbol : $product->price . ' ' . $product->currency->symbol)
         : $product->price;
-    
+
     // ✅ OPTIMIZED: Category hierarchy - build it iteratively
     $allCategories = collect();
     foreach ($product->categories as $category) {
         // Build hierarchy for this category
         $hierarchy = collect([$category]);
         $current = $category;
-        
+
         while ($current->parent_id) {
             $parent = Category::with('seoUrl')->find($current->parent_id);
             if (!$parent) break;
             $hierarchy->prepend($parent);
             $current = $parent;
         }
-        
+
         $allCategories = $allCategories->merge($hierarchy);
     }
-    
+
     $product->category_list = $allCategories->unique('id')->map(function ($category) {
         return [
             'id' => $category->id,
@@ -2025,9 +2025,9 @@ class ProductController extends Controller
             'slug' => $category->seoUrl->url ?? $category->slug,
         ];
     })->values();
-    
+
     $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
-    
+
     // Accessories
     $product->accessories = $product->accessories->map(function ($accessory) {
         return [
@@ -2042,31 +2042,31 @@ class ProductController extends Controller
             ]),
         ];
     })->values();
-    
+
     if ($product->accessories->isEmpty()) {
         $product->accessories = [];
     }
-    
+
     // ✅ OPTIMIZED: Product Variants - All in one place
     if ($product->productVariants->isNotEmpty()) {
         $allVariantResults = [];
-        
+
         foreach ($product->productVariants as $variant) {
             $childIds = json_decode($variant->child_ids, true) ?? [];
             $variants = json_decode($variant->variants, true) ?? [];
-            
+
             // Merge current product ID with child IDs
             $childIds = collect($childIds)->push($product->id)->unique()->values()->toArray();
-            
+
             if (empty($childIds) || empty($variants)) {
                 continue;
             }
-            
+
             // Get current product attributes for comparison
             $currentProductAttributes = $product->productAttributes
                 ->pluck('attribute_value', 'attribute_id')
                 ->toArray();
-            
+
             // ✅ BATCH LOAD all data at once
             $children = Product::whereIn('id', $childIds)
                 ->with(['productSuppliers' => function($q) {
@@ -2075,22 +2075,22 @@ class ProductController extends Controller
                 ->select('id', 'sku', 'images')
                 ->get()
                 ->keyBy('id');
-            
+
             $attributeIds = array_column($variants, 'attribute_id');
             $attributes = Attribute::whereIn('id', $attributeIds)->pluck('name', 'id');
-            
+
             $productAttributes = ProductAttribute::whereIn('product_id', $childIds)
                 ->whereIn('attribute_id', $attributeIds)
                 ->get()
                 ->groupBy('product_id');
-            
+
             $seoUrls = SeoManagement::whereIn('relational_id', $childIds)
                 ->pluck('url', 'relational_id');
-            
+
             // ✅ Pre-fetch category URLs for ALL children at once (avoiding N+1)
             $childProducts = Product::whereIn('id', $childIds)->get();
             $categoryUrlsMap = [];
-            
+
             foreach ($childProducts as $childProduct) {
                 try {
                     $categoryUrlsMap[$childProduct->id] = [
@@ -2102,37 +2102,37 @@ class ProductController extends Controller
                     $categoryUrlsMap[$childProduct->id] = ['parent' => '', 'child' => ''];
                 }
             }
-            
+
             // Process variants
             foreach ($variants as $v) {
                 $attributeId = $v['attribute_id'];
                 $attributeName = $attributes[$attributeId] ?? null;
-                
+
                 if (!$attributeName) continue;
-                
+
                 $seenAttributeValues = [];
-                
+
                 foreach ($children as $childId => $child) {
                     $attrValue = $productAttributes->get($childId)
                         ?->firstWhere('attribute_id', $attributeId)
                         ?->attribute_value ?? null;
-                    
+
                     if (empty($attrValue) || isset($seenAttributeValues[$attrValue])) {
                         continue;
                     }
-                    
+
                     $seenAttributeValues[$attrValue] = true;
-                    
+
                     $isSelected = isset($currentProductAttributes[$attributeId])
                         && $currentProductAttributes[$attributeId] == $attrValue;
-                    
+
                     $firstSupplier = $child->productSuppliers->first();
-                    
+
                     $slug = $seoUrls[$childId] ?? null;
                     $urls = $categoryUrlsMap[$childId] ?? ['parent' => '', 'child' => ''];
-                    
+
                     $full_slug = trim($urls['parent'] . '/' . $urls['child'] . '/' . $slug, '/');
-                    
+
                     $allVariantResults[] = [
                         'product_id' => $childId,
                         'sku' => $child->sku,
@@ -2153,12 +2153,12 @@ class ProductController extends Controller
                 }
             }
         }
-        
+
         $product->productVariants = collect($allVariantResults);
     } else {
         $product->productVariants = [];
     }
-    
+
     // Category URLs
     try {
         $product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
@@ -2168,11 +2168,11 @@ class ProductController extends Controller
         $product->category_url = null;
         $product->parent_category_url = null;
     }
-    
+
     // ========================================
     // RETURN RESPONSE
     // ========================================
-    
+
     return response()->json([
         'success' => true,
         'data' => [
@@ -2231,7 +2231,7 @@ class ProductController extends Controller
 	 *     )
 	 * )
 	 */
-	
+
 	public function getAllPublicProducts(Request $request)
 	{
 		// Start building the base query
@@ -2239,7 +2239,7 @@ class ProductController extends Controller
 
 		$productId = $request->input('product_id'); // numeric ID
 		$slug = $request->input('slug');           // string slug
-		
+
 		if ($productId) {
 			$query->where('id', $productId);
 		} elseif ($slug) {
@@ -2324,7 +2324,7 @@ class ProductController extends Controller
 		$products->getCollection()->transform(function ($product) {
 
 			$product->benefits_features = json_decode($product->benefits_features, true);
-			
+
 			if ($product->seoUrl) {
 				$product->url = $product->seoUrl->url;
 				unset($product->seoUrl);
@@ -2613,7 +2613,7 @@ class ProductController extends Controller
 		$product->productVariants = $product->productVariants->map(function ($variant) use ($product) {
 			$childIds = json_decode($variant->child_ids, true) ?? [];
 			$variants = json_decode($variant->variants, true) ?? [];
-			
+
 			// ✅ Merge current product ID with child IDs (SAME AS INDEX)
 			$childIds = collect($childIds)->merge([$product->id])->unique()->values()->toArray();
 
@@ -2706,21 +2706,21 @@ class ProductController extends Controller
             // Build full slug
             $parentCategoryUrl = '';
             $categoryUrl = '';
-            
+
             try {
                 $tempProduct = Product::find($child->id);
                 if ($tempProduct) {
-                    $parentCategoryUrl = method_exists($tempProduct, 'parent_category_url') 
-                        ? $tempProduct->parent_category_url() 
+                    $parentCategoryUrl = method_exists($tempProduct, 'parent_category_url')
+                        ? $tempProduct->parent_category_url()
                         : '';
-                    $categoryUrl = method_exists($tempProduct, 'category_url') 
-                        ? $tempProduct->category_url() 
+                    $categoryUrl = method_exists($tempProduct, 'category_url')
+                        ? $tempProduct->category_url()
                         : '';
                 }
             } catch (\Exception $e) {
                 \Log::error('Error getting category URLs for product ' . $child->id . ': ' . $e->getMessage());
             }
-            
+
             $full_slug = $parentCategoryUrl . '/' . $categoryUrl . '/' . ($slug ?? '');
             $full_slug = trim($full_slug, '/');
 
@@ -3368,7 +3368,8 @@ class ProductController extends Controller
 		$productIds = Product::where('brand_id', $brand->id)->pluck('id');
 
 		// Calculate total units sold
-		$totalUnitsSold = Product::whereIn('id', $productIds)->sum('units_sold');
+		// $totalUnitsSold = Product::whereIn('id', $productIds)->sum('units_sold');
+		$totalUnitsSold = 0;
 
 		// Count total reviews
 		$totalReviews = DB::table('ec_reviews')
@@ -4214,7 +4215,7 @@ class ProductController extends Controller
 	// 		->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl']);
 
 	// 	// --- Apply Filters ---
-		
+
 	// 	/** Search by product name */
 	// 	if ($search) {
 	// 		$query->where('name', 'LIKE', "%$search%");
@@ -4483,7 +4484,7 @@ class ProductController extends Controller
 
 			$totalReviews = $product->reviews->count();
 			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-			
+
 			$quantity = $product->quantity ?? 0;
 			$unitsSold = $product->units_sold ?? 0;
 			$leftStock = $quantity - $unitsSold;
@@ -4541,8 +4542,8 @@ class ProductController extends Controller
 
 			return response()->json([
 			'success'    => true,
-			'message'    => $id 
-				? 'Sale products filtered by category' 
+			'message'    => $id
+				? 'Sale products filtered by category'
 				: 'All sale products fetched successfully',
 
 			// Pagination Meta
