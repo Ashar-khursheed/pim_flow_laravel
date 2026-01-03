@@ -451,7 +451,7 @@ class ProductSupplierController extends BaseController
 	// 		'data' => $supplier
 	// 	], 200);
 	// }
-	public function update(Request $request, $id)
+public function update(Request $request, $id)
 {
     $supplier = ProductSupplier::find($id);
 
@@ -466,42 +466,43 @@ class ProductSupplierController extends BaseController
     // Validation
     // -----------------------------
     $data = $request->validate([
-        'product_id'     => 'required|integer|exists:ec_products,id',
-        'vendor_id'      => 'required|integer|exists:vendors,id',
-        'vendor_sku'     => 'required|string',
+        'product_id'      => 'required|integer|exists:ec_products,id',
+        'vendor_id'       => 'required|integer|exists:vendors,id',
+        'vendor_sku'      => 'required|string',
 
-        'list_price'     => 'nullable|numeric|required_without:cost_per_item',
-        'multiple'       => 'nullable|numeric|min:0|max:1|required_without:cost_per_item',
-        'cost_per_item'  => 'nullable|numeric|required_without_all:list_price,multiple',
+        'list_price'      => 'nullable|numeric|required_without:cost_per_item',
+        'multiple'        => 'nullable|numeric|min:0|max:1|required_without:cost_per_item',
+        'cost_per_item'   => 'nullable|numeric|required_without_all:list_price,multiple',
 
-        'surcharge'      => 'nullable|numeric',
-        'additional_cost'=> 'nullable|numeric',
+        'surcharge'       => 'nullable|numeric',
+        'additional_cost' => 'nullable|numeric',
 
-        'map'            => 'nullable|numeric',
-        'sale_price'     => 'nullable|numeric',
-        'price'          => 'required|numeric',
+        'map'             => 'nullable|numeric',
+        'sale_price'      => 'nullable|numeric',
+        'price'           => 'required|numeric',
 
-        'inventory'      => 'nullable|integer',
+        'inventory'       => 'nullable|integer',
 
-        'in_stock'       => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
-        'min_quantity'   => 'required|integer',
-        'is_fixed'       => ['required', Rule::in(app_constants('IS_FIXED_OPTIONS'))],
-        'delivery_days'  => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
-        'return_policy'  => ['required', Rule::in(app_constants('RETURN_POLICY'))],
-        'free_shipping'  => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
-        'shipping_charge'=> 'nullable|numeric|required_if:free_shipping,No',
+        'in_stock'        => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
+        'min_quantity'    => 'required|integer',
+        'is_fixed'        => ['required', Rule::in(app_constants('IS_FIXED_OPTIONS'))],
+        'delivery_days'   => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
+        'return_policy'   => ['required', Rule::in(app_constants('RETURN_POLICY'))],
+        'free_shipping'   => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
+        'shipping_charge' => 'nullable|numeric|required_if:free_shipping,No',
         'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
 
-        'restocking_fees'=> 'nullable|numeric',
+        'restocking_fees' => 'nullable|numeric',
     ]);
 
     // -----------------------------
     // Normalize numeric values
     // -----------------------------
-    $data['multiple']   = isset($data['multiple']) ? (float)$data['multiple'] : null;
-    $data['list_price'] = isset($data['list_price']) ? (float)$data['list_price'] : null;
+    $data['multiple']    = isset($data['multiple']) ? (float)$data['multiple'] : null;
+    $data['list_price']  = isset($data['list_price']) ? (float)$data['list_price'] : null;
+    $data['cost_per_item'] = isset($data['cost_per_item']) ? (float)$data['cost_per_item'] : 0;
 
-    // Treat 0 as null (not applicable)
+    // Treat 0 as null for multiple (means not applicable)
     if ($data['multiple'] === 0.0) {
         $data['multiple'] = null;
     }
@@ -511,15 +512,15 @@ class ProductSupplierController extends BaseController
     // -----------------------------
     $rowErrors = [];
 
-    if (!empty($data['map']) && !empty($data['sale_price']) && (float)$data['map'] > (float)$data['sale_price']) {
+    if ($data['map'] !== null && $data['sale_price'] !== null && $data['map'] > $data['sale_price']) {
         $rowErrors[] = 'Sale Price cannot be less than MAP.';
     }
 
-    if (!empty($data['sale_price']) && (float)$data['price'] < (float)$data['sale_price']) {
+    if ($data['sale_price'] !== null && $data['price'] < $data['sale_price']) {
         $rowErrors[] = 'Price cannot be less than sale price.';
     }
 
-    if (!empty($data['map']) && (float)$data['price'] < (float)$data['map']) {
+    if ($data['map'] !== null && $data['price'] < $data['map']) {
         $rowErrors[] = 'Price cannot be less than MAP.';
     }
 
@@ -535,22 +536,17 @@ class ProductSupplierController extends BaseController
     // -----------------------------
     $data['cost_per_item'] = ($data['list_price'] !== null && $data['multiple'] !== null)
         ? $data['list_price'] * $data['multiple']
-        : (float)($data['cost_per_item'] ?? 0);
+        : $data['cost_per_item'];
 
-    $data['surcharge'] = !empty($data['surcharge'])
-        ? $data['cost_per_item'] * ((float)$data['surcharge'] / 100)
-        : 0;
-
-    $data['additional_cost'] = !empty($data['additional_cost'])
-        ? $data['cost_per_item'] * ((float)$data['additional_cost'] / 100)
-        : 0;
-
+    $data['surcharge'] = isset($data['surcharge']) ? $data['cost_per_item'] * ($data['surcharge'] / 100) : 0;
+    $data['additional_cost'] = isset($data['additional_cost']) ? $data['cost_per_item'] * ($data['additional_cost'] / 100) : 0;
     $data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
 
     $data['sale_price'] = isset($data['sale_price']) ? (float)$data['sale_price'] : null;
-    $data['price']      = isset($data['price']) ? (float)$data['price'] : 0;
+    $data['price'] = (float)$data['price'];
 
-    if (!empty($data['sale_price']) && $data['sale_price'] > 0) {
+    // Calculate margin
+    if ($data['sale_price'] !== null && $data['sale_price'] > 0) {
         $data['margin'] = (($data['sale_price'] - $data['total_cost_per_item']) / $data['sale_price']) * 100;
     } elseif ($data['price'] > 0) {
         $data['margin'] = (($data['price'] - $data['total_cost_per_item']) / $data['price']) * 100;
@@ -561,13 +557,15 @@ class ProductSupplierController extends BaseController
     // -----------------------------
     // Normalize boolean-like values
     // -----------------------------
-    $data['in_stock']      = ($data['inventory'] > 0) ? 1 : (!empty($data['in_stock']) && strtolower($data['in_stock']) === 'yes' ? 1 : 0);
-    $data['is_fixed']      = !empty($data['is_fixed']) && strtolower($data['is_fixed']) === 'yes' ? 1 : 0;
-    $data['free_shipping'] = !empty($data['free_shipping']) && strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
-    $data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : $data['shipping_charge'];
+    $data['in_stock'] = ($data['inventory'] > 0) ? 1 : (strtolower($data['in_stock'] ?? '') === 'yes' ? 1 : 0);
+    $data['is_fixed'] = strtolower($data['is_fixed'] ?? '') === 'yes' ? 1 : 0;
+    $data['free_shipping'] = strtolower($data['free_shipping'] ?? '') === 'yes' ? 1 : 0;
+
+    // FIXED: Provide default value for shipping_charge
+    $data['shipping_charge'] = $data['free_shipping'] ? 0 : ($data['shipping_charge'] ?? 0);
 
     // -----------------------------
-    // Save updated supplier
+    // Save
     // -----------------------------
     $data['updated_by'] = auth()->id();
     $supplier->update($data);
@@ -578,7 +576,6 @@ class ProductSupplierController extends BaseController
         'data'    => $supplier
     ], 200);
 }
-
 
 	/**
 	 * @OA\Delete(
