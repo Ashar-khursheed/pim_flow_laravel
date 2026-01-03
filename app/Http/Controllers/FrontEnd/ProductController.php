@@ -2897,10 +2897,12 @@ class ProductController extends Controller
 			$unitsSold = $product->units_sold ?? 0;
 			$leftStock = $quantity - $unitsSold;
 
-			$firstSupplier = $product->productSuppliers->with([
-				'country:id,name',
-				'city:id,name'
-			])->first();
+			$firstSupplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
 
 
 			return [
@@ -2928,10 +2930,10 @@ class ProductController extends Controller
 				: $product->price,
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 
-				'vendor_country' => $firstSupplier->country->name ?? null,
-				'vendor_city' => $firstSupplier->city->name ?? null,
-				'vendor_address' => $firstSupplier->address ?? null,
-				'vendor_zipcode' => $firstSupplier->zipcode ?? null,
+				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+				'vendor_address' => $firstSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
 
 				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 				'price' => (float) $firstSupplier->price,
