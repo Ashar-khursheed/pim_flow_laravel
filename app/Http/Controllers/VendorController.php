@@ -166,12 +166,7 @@ class VendorController extends BaseController
 	 *                     example={10, 11}
 	 *                 ),
 	 *                 @OA\Property(property="address", type="string", example="ABC STreet Houston"),
-	 *                 @OA\Property(
-	 *                     property="city_ids",
-	 *                     type="array",
-	 *                     @OA\Items(type="integer"),
-	 *                     example={1, 2, 3}
-	 *                 ),
+	 *                 @OA\Property(property="city_id", type="integer", example=1, description="City ID"),
 	 *                 @OA\Property(property="zipcode", type="string", example="11211"),
 	 *                 @OA\Property(property="dropshipping", type="boolean", example=true),
 	 *                 @OA\Property(property="website_link", type="string", example="https://example.com"),
@@ -238,10 +233,8 @@ class VendorController extends BaseController
 			'website_ids' => 'nullable|array',
 			'website_ids.*' => 'integer|exists:websites,id',
 
-			'city_ids' => 'nullable|array',
-			'city_ids.*' => 'integer|exists:cities,id',
-
 			'address' => 'nullable|string',
+			'city_id' => 'nullable|integer|exists:cities,id',
 			'zipcode' => 'nullable|string',
 
 			'dropshipping' => 'boolean',
@@ -273,7 +266,6 @@ class VendorController extends BaseController
 
 		/* Implode array fields with | */
 		$data['website_ids'] = isset($data['website_ids']) ? implode(',', $data['website_ids']) : null;
-		$data['city_ids'] = isset($data['city_ids']) ? implode(',', $data['city_ids']) : null;
 		$data['warehouse_locations'] = isset($data['warehouse_locations']) ? implode('|', $data['warehouse_locations']) : null;
 
 		$data['created_by'] = auth()->id();
@@ -311,7 +303,7 @@ class VendorController extends BaseController
 
 	private function preprocessVendorRequest(Request $request): void
 	{
-		$fieldsToExplode = ['website_ids', 'city_ids', 'warehouse_locations'];
+		$fieldsToExplode = ['website_ids', 'warehouse_locations'];
 
 		foreach ($fieldsToExplode as $field) {
 			if ($request->filled($field) && is_string($request->$field)) {
@@ -373,20 +365,16 @@ class VendorController extends BaseController
 	 */
 	public function show($id)
 	{
-		$record = Vendor::find($id);
+		$record = Vendor::with([
+			'country:id,name',
+			'city:id,name'
+		])->find($id);
 		if (!$record) {
 			return response()->json([
 				'success' => false,
 				'message' => __("err_exist")
 			]);
 		}
-
-		$record->country = Country::where('id', $record->country_id)->select('id', 'name')->first();
-		unset($record->country_id);
-
-		$record->city_ids = $record->city_ids ? explode(',', $record->city_ids) : [];
-		$record->cities = City::whereIn('id', $record->city_ids)->select('id', 'name')->get();
-		unset($record->city_ids);
 
 		$record->website_ids = $record->website_ids ? explode(',', $record->website_ids) : [];
 		$record->websites = Website::whereIn('id', $record->website_ids)->select('id', 'name')->get();
@@ -454,12 +442,7 @@ class VendorController extends BaseController
 	 *                     example={10, 11}
 	 *                 ),
 	 *                 @OA\Property(property="address", type="string", example="ABC STreet Houston"),
-	 *                 @OA\Property(
-	 *                     property="city_ids",
-	 *                     type="array",
-	 *                     @OA\Items(type="integer"),
-	 *                     example={1, 2, 3}
-	 *                 ),
+	 *                 @OA\Property(property="city_id", type="integer", example=1, description="City ID"),
 	 *                 @OA\Property(property="zipcode", type="string", example="11211"),
 	 *
 	 *                 @OA\Property(property="dropshipping", type="boolean", example=true),
@@ -535,10 +518,8 @@ class VendorController extends BaseController
 			'website_ids' => 'nullable|array',
 			'website_ids.*' => 'integer|exists:websites,id',
 
-			'city_ids' => 'nullable|array',
-			'city_ids.*' => 'integer|exists:cities,id',
-
 			'address' => 'nullable|string',
+			'city_id' => 'nullable|integer|exists:cities,id',
 			'zipcode' => 'nullable|string',
 
 			'dropshipping' => 'boolean',
@@ -574,7 +555,6 @@ class VendorController extends BaseController
 
 		/* Implode array fields with | */
 		$data['website_ids'] = isset($data['website_ids']) ? implode(',', $data['website_ids']) : null;
-		$data['city_ids'] = isset($data['city_ids']) ? implode(',', $data['city_ids']) : null;
 		$data['warehouse_locations'] = isset($data['warehouse_locations']) ? implode('|', $data['warehouse_locations']) : null;
 
 		$data['updated_by'] = auth()->id();
@@ -676,7 +656,7 @@ class VendorController extends BaseController
 				'Landline Number' => 'landline_number',
 				'Mobile Number' => 'mobile_number',
 				'Address' => 'address',
-				'Cities(Separated By |)' => 'cities',
+				'City' => 'city',
 				'Zipcode' => 'zipcode',
 				'Dropshipping' => 'dropshipping',
 				'Website Link' => 'website_link',
@@ -744,7 +724,10 @@ class VendorController extends BaseController
 		]);
 
 		/* Fetch records with related data */
-		$records = Vendor::offset($request->range_from - 1)
+		$records = Vendor::with([
+			'country:id,name',
+			'city:id,name'
+		])->offset($request->range_from - 1)
 		->limit($request->range_to - $request->range_from + 1)
 		->orderBy('id', 'asc')
 		->get();
@@ -766,7 +749,7 @@ class VendorController extends BaseController
 			'Landline Number',
 			'Mobile Number',
 			'Address',
-			'Cities(Separated By |)',
+			'City',
 			'Zipcode',
 			'Dropshipping',
 			'Website Link',
@@ -792,9 +775,6 @@ class VendorController extends BaseController
 		$rowIndex = 2;
 		foreach ($records as $record) {
 			/* Process city names from comma-separated IDs */
-			$record->city_ids = $record->city_ids ? explode(',', $record->city_ids) : [];
-			$cities = City::whereIn('id', $record->city_ids)->pluck('name')->toArray();
-			$cityNames = implode('|', $cities);
 
 			$excelRepo->writeRow($sheet, [
 				$record->id,
@@ -805,7 +785,7 @@ class VendorController extends BaseController
 				$record->landline_number,
 				$record->mobile_number,
 				$record->address,
-				$cityNames,
+				$record->city->name ?? '',
 				$record->zipcode,
 				$record->dropshipping,
 				$record->website_link,
