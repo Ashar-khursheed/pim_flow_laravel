@@ -798,6 +798,9 @@ class ProductController extends BaseController
 		$formattedProduct['delivery_days'] = $firstSupplier->delivery_days ?? null;
 		$formattedProduct['inventory'] = $firstSupplier->inventory ?? null;
 		$formattedProduct['in_stock'] = $firstSupplier->in_stock ?? null;
+		$formattedProduct['return_policy'] = $firstSupplier->return_policy ?? null;
+		$formattedProduct['is_fixed'] = $firstSupplier->is_fixed ?? null;
+		$formattedProduct['min_quantity'] = $firstSupplier->min_quantity ?? null;
 
 		// Product attributes
 		$formattedProduct['product_attributes'] = $product->productAttributes->map(function ($attr) {
@@ -822,7 +825,14 @@ class ProductController extends BaseController
 				'in_stock' => $ps->in_stock,
 				'delivery_days' => $ps->delivery_days,
 				'vendor_name' => $ps->vendor->name ?? null,
-				'dropshipping' => $ps->vendor->dropshipping ?? null,
+				'dropshipping' => $ps->dropshipping ?? null,
+				'min_quantity' => $ps->min_quantity ?? null,
+				'return_policy' => $ps->return_policy ?? null,
+				'is_fixed' => $ps->is_fixed ?? null,
+				'multiple' => $ps->multiple ?? null,
+				'map' => $ps->map ?? null,
+				'price' => $ps->price ?? null,
+				'sale_price' => $ps->sale_price ?? null,
 			];
 		});
 

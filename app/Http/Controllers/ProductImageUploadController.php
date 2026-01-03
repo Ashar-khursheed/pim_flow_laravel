@@ -915,7 +915,7 @@ class ProductImageUploadController extends Controller
     private function uploadProductImagesToS3($imagesDir, $originalSku, $sanitizedSku)
     {
         $storageEnv = env('STORAGE_ENV');
-        $s3Path = $storageEnv . '/products/images/';
+        $s3Path = $storageEnv . '/products/';
         $imageUrls = [];
         $errors = [];
 

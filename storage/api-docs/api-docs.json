@@ -47255,16 +47255,10 @@
                                         "type": "string",
                                         "example": "ABC STreet Houston"
                                     },
-                                    "city_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        },
-                                        "example": [
-                                            1,
-                                            2,
-                                            3
-                                        ]
+                                    "city_id": {
+                                        "description": "City ID",
+                                        "type": "integer",
+                                        "example": 1
                                     },
                                     "zipcode": {
                                         "type": "string",
@@ -47472,16 +47466,10 @@
                                         "type": "string",
                                         "example": "ABC STreet Houston"
                                     },
-                                    "city_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        },
-                                        "example": [
-                                            1,
-                                            2,
-                                            3
-                                        ]
+                                    "city_id": {
+                                        "description": "City ID",
+                                        "type": "integer",
+                                        "example": 1
                                     },
                                     "zipcode": {
                                         "type": "string",
