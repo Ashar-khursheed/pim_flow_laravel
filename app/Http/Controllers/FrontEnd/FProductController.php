@@ -95,6 +95,10 @@ class FProductController extends BaseController
 			'seoUrl:id,relational_id,relational_type,url',
 			'productSuppliers' => function($q) use ($priceMin, $priceMax) {
 				$q->select(['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 'sale_price', 'price', 'inventory', 'in_stock', 'min_quantity', 'is_fixed', 'delivery_days', 'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'])
+				->with([
+					'vendor.country:id,name',
+					'vendor.city:id,name'
+				])
 				->priceRange($priceMin, $priceMax)
 				->cheapest();
 			},

@@ -372,6 +372,8 @@ class FCategoryController extends BaseController
 					'translations',
 					'seoUrl:id,relational_id,relational_type,url',
 					'productSuppliers:id,product_id,vendor_id,vendor_sku,cost_per_item,sale_price,price,inventory,in_stock,min_quantity,is_fixed,delivery_days,return_policy,free_shipping,shipping_charge,warranty_information',
+					'productSuppliers.vendor.country:id,name',
+					'productSuppliers.vendor.city:id,name',
 					'reviews:id,product_id,star',
 					'currency:id,title,symbol',
 					'sellingUnitAttribute'

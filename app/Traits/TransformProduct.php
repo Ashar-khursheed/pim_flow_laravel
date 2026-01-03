@@ -57,7 +57,13 @@ trait TransformProduct
 		/* Transform product suppliers */
 		if ($product->productSuppliers) {
 			$product->productSuppliers->each(function ($productSupplier) {
+				$productSupplier->country = $productSupplier->vendor->country->name ?? null;
+				$productSupplier->city = $productSupplier->vendor->city->name ?? null;
+				$productSupplier->address = $productSupplier->vendor->address ?? null;
+				$productSupplier->zipcode = $productSupplier->vendor->zipcode ?? null;
+
 				unset($productSupplier->id);
+				unset($productSupplier->vendor);
 				unset($productSupplier->product_id);
 			});
 		}
