@@ -361,7 +361,7 @@ class ProductSupplierController extends BaseController
 			'vendor_sku' => 'required|string',
 
 			'list_price' => 'nullable|numeric|required_without:cost_per_item',
-			'multiple' => 'nullable|numeric|gt:0|lt:1|required_without:cost_per_item',
+			'multiple' => 'nullable|numeric|min:0|max:1|required_without:cost_per_item',
 			'cost_per_item' => 'nullable|numeric|required_without_all:list_price,multiple',
 
 			'surcharge' => 'nullable|numeric',
@@ -384,18 +384,13 @@ class ProductSupplierController extends BaseController
 
 			'restocking_fees' => 'nullable|numeric',
 		]);
-		$data['multiple']   = isset($data['multiple']) ? (float) $data['multiple'] : null;
-		$data['list_price'] = isset($data['list_price']) ? (float) $data['list_price'] : null;
-
-		// Treat 0 as null (means not applicable)
-		if ($data['multiple'] === 0.0) {
-			$data['multiple'] = null;
-		}
 
 		/* Business rules */
 		$rowErrors = [];
 
-	
+			$data['multiple'] = isset($data['multiple']) ? (float)$data['multiple'] : null;
+			if ($data['multiple'] === 0.0) $data['multiple'] = null;
+
 
 		if (!empty($data['map']) && !empty($data['sale_price']) && (float)$data['map'] > (float)$data['sale_price']) {
 			$rowErrors[] = 'Sale Price cannot be less than MAP.';
