@@ -23,6 +23,11 @@ class Vendor extends Model
 		return $this->belongsTo(Country::class);
 	}
 
+	public function city()
+	{
+		return $this->belongsTo(City::class);
+	}
+
 	public function vendorContacts()
 	{
 		return $this->hasMany(VendorContact::class);
