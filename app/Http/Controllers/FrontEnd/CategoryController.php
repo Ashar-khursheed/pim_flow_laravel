@@ -169,43 +169,6 @@ class CategoryController extends Controller
 		return response()->json($categoriesTree);
 	}
 
-	// /**
-	//  * @OA\Get(
-	//  *     path="/api/frontend/categories/{ashar}",
-	//  *     tags={"Frontend-Categories"},
-	//  *     summary="Get a category by ID",
-	//  *     description="Retrieve the details of a single category using its ID.",
-	//  *     @OA\Parameter(
-	//  *         name="id",
-	//  *         in="path",
-	//  *         required=true,
-	//  *         description="The ID of the category to retrieve",
-	//  *         @OA\Schema(type="integer", example=1)
-	//  *     ),
-	//  *     @OA\Response(response=200, description="Category details retrieved successfully", @OA\MediaType(mediaType="application/json"))
-	//  * )
-	//  */
-	// public function show($id)
-	// {
-	// 	// Validate that the ID is numeric
-	// 	if (!is_numeric($id)) {
-	// 		return response()->json([
-	// 			'message' => "Invalid category ID format."
-	// 		], 400);
-	// 	}
-
-	// 	$category = Category::with('translation')->find($id);
-
-	// 	if (!$category) {
-	// 		return response()->json([
-	// 			'message' => "Category with ID $id not found."
-	// 		], 404);
-	// 	}
-	// 	return response()->json([
-	// 		'category' => $category,
-	// 	])->header('Cache-Control', 'public, max-age=86400');
-	// }
-
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/categories/{categoryId}/products",
@@ -229,7 +192,6 @@ class CategoryController extends Controller
 	 *     @OA\Response(response=200, description="List of products for the category", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
-	//product name categories name brand name translation
 	public function getProductsByCategory($categoryId)
 	{
 		$category = Category::find($categoryId);
@@ -269,7 +231,6 @@ class CategoryController extends Controller
 			'products' => $products
 		])->header('Cache-Control', 'public, max-age=86400');
 	}
-
 
 	/**
 	 * @OA\Get(
@@ -386,8 +347,6 @@ class CategoryController extends Controller
 	 *     @OA\Response(response=200, description="All categories fetched successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
-
-	//categories name translation
 	public function fetchAllCategories(Request $request)
 	{
 		// Fetch published parent categories with SEO URL
@@ -453,7 +412,6 @@ class CategoryController extends Controller
 	 *     @OA\Response(response=200, description="Featured products grouped by category fetched successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
-	//product name categories name translation
 	public function getAllFeaturedProductsByCategory(Request $request)
 	{
 		$userId = auth()->id();
@@ -478,7 +436,7 @@ class CategoryController extends Controller
 				'products' => function ($query) {
 					$query->where('is_featured', 1)
 					->where('status', 'published')
-						->select('id', 'name', 'sku', 'currency_id', 'units_sold'); // Select only necessary fields
+						->select('id', 'name', 'sku', 'currency_id'); // Select only necessary fields
 					}
 				])
 			->take(5)
@@ -636,7 +594,6 @@ class CategoryController extends Controller
 	 *     @OA\Response(response=200, description="Featured products grouped by category fetched successfully for guests", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
-	//product name categories name translation
 	public function getAllGuestFeaturedProductsByCategory(Request $request)
 	{
 		$categories = Category::whereHas('products', function ($query) {
@@ -648,7 +605,7 @@ class CategoryController extends Controller
 				'products' => function ($query) {
 					$query->where('is_featured', 1)
 					->where('status', 'published')
-						->select('id', 'name', 'sku', 'currency_id', 'units_sold'); // Select only necessary fields
+						->select('id', 'name', 'sku', 'currency_id'); // Select only necessary fields
 					}
 				])
 			->take(5)
@@ -785,7 +742,6 @@ class CategoryController extends Controller
 		])->header('Cache-Control', 'public, max-age=86400');
 	}
 
-	// Recursive function to modify images for children and all sub-level categories
 	private function addImageUrlsRecursively($category)
 	{
 		// If the category has children, modify their images as well
@@ -798,7 +754,6 @@ class CategoryController extends Controller
 		}
 	}
 
-	//category name
 	private function buildTree($categories, $parentId = 0, $limit = 12)
 	{
 		$branch = [];
@@ -867,7 +822,6 @@ class CategoryController extends Controller
 	 *     )
 	 * )
 	 */
-	//product name categories name translation
 	public function saleCategories(Request $request)
 	{
 		// Fetch all last-child categories that have sale products

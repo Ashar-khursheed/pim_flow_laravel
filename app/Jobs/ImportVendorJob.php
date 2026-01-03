@@ -175,23 +175,14 @@ class ImportVendorJob implements ShouldQueue
 				}
 			}
 
-			if (!empty($cities)) {
-				$cityArray = explode('|', $cities);
-				$cityIDs = [];
+			if (!empty($city)) {
+				$city = trim($city);
+				$matchedID = array_search($city, $cityIDNames);
 
-				foreach ($cityArray as $city) {
-					$city = trim($city);
-					$matchedID = array_search($city, $cityIDNames);
-
-					if ($matchedID !== false) {
-						$cityIDs[] = $matchedID;
-					} else {
-						$rowError[] = "City \"$city\" does not exist.";
-					}
-				}
-
-				if (empty($rowError)) {
-					$city_ids = implode(',', $cityIDs);
+				if ($matchedID !== false) {
+					$city_id = $matchedID;
+				} else {
+					$rowError[] = "City \"$city\" does not exist.";
 				}
 			}
 
@@ -279,7 +270,9 @@ class ImportVendorJob implements ShouldQueue
 				$vendor->contact_person = $contact_person;
 				$vendor->landline_number = $landline_number;
 				$vendor->mobile_number = $mobile_number;
-				$vendor->city_ids = $city_ids;
+				$vendor->address = $address;
+				$vendor->city_id = $city_id;
+				$vendor->zipcode = $zipcode;
 				$vendor->dropshipping = $dropshipping;
 				$vendor->website_link = $website_link;
 				$vendor->domain = $domain;

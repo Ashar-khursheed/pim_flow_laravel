@@ -679,7 +679,6 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'fm@horecastore.ae',
 			'qa04@horecastore.ae',
 			'qa05@horecastore.ae',
-			'customerservice01@horecastore.ae',
 		];
 
 		$usTestMails = [
@@ -752,6 +751,7 @@ if (!function_exists('order_cc_mails')) {
 			'cbfb@horecastore.ae',
 			'procurement@horecastore.ae',
 			'saas@horecastore.ae',
+			'customerservice01@horecastore.ae',
 			'customerservice02@horecastore.ae',
 		];
 
