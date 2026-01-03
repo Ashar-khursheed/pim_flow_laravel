@@ -830,6 +830,7 @@ class ProductController extends BaseController
 				'return_policy' => $ps->return_policy ?? null,
 				'is_fixed' => $ps->is_fixed ?? null,
 				'multiple' => $ps->multiple ?? null,
+				'map' => $ps->map ?? null,
 			];
 		});
 
