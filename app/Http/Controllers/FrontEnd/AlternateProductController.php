@@ -85,8 +85,8 @@ class AlternateProductController extends Controller
 				}
 
 				$firstSupplier = $product->productSuppliers->with([
-					'country:id,name',
-					'city:id,name'
+					'vendor.country:id,name',
+					'vendor.city:id,name'
 				])->first();
 
 				return [
@@ -113,10 +113,10 @@ class AlternateProductController extends Controller
 					'in_wishlist' => in_array($product->id, $wishlistProductIds),
 					'selling_type' => $sellingType,
 
-					'vendor_country' => $firstSupplier->country->name ?? null,
-					'vendor_city' => $firstSupplier->city->name ?? null,
-					'vendor_address' => $firstSupplier->address ?? null,
-					'vendor_zipcode' => $firstSupplier->zipcode ?? null,
+					'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+					'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+					'vendor_address' => $firstSupplier->vendor->address ?? null,
+					'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
 
 					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 					'price' => $firstSupplier ? (float) $firstSupplier->price : null,
