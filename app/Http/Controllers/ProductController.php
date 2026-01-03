@@ -831,6 +831,8 @@ class ProductController extends BaseController
 				'is_fixed' => $ps->is_fixed ?? null,
 				'multiple' => $ps->multiple ?? null,
 				'map' => $ps->map ?? null,
+				'price' => $ps->price ?? null,
+				'sale_price' => $ps->sale_price ?? null,
 			];
 		});
 
