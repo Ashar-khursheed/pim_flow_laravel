@@ -37,7 +37,11 @@ class CustomerCartProduct extends Model
 
     public function getVendorProductSupplierAttribute()
     {
-        return ProductSupplier::where('product_id', $this->product_id)
+        return ProductSupplier::with([
+                'vendor.country:id,name',
+                'vendor.city:id,name'
+            ])
+            ->where('product_id', $this->product_id)
             ->where('vendor_id', $this->vendor_id)
             ->first();
     }

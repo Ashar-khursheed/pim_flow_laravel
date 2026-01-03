@@ -266,7 +266,12 @@ class ProductYouMayLikeController extends Controller
 						'attribute_value_unit' => $attributeUnit,
 					];
 				}
-				$firstSupplier = $product->productSuppliers->first();
+				$firstSupplier = $product->productSuppliers()
+				->with([
+					'vendor.country:id,name',
+					'vendor.city:id,name'
+				])
+				->first();
 
 				return [
 					'id' => $product->id,
@@ -292,6 +297,12 @@ class ProductYouMayLikeController extends Controller
 					'in_wishlist' => in_array($product->id, $wishlistProductIds),
 					'selling_type' => $sellingType,
 					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+					'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+					'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+					'vendor_address' => $firstSupplier->vendor->address ?? null,
+					'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 					'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 					'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
 					'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
@@ -314,7 +325,7 @@ class ProductYouMayLikeController extends Controller
 
 			});
 
-			Log::info('Returning products:', [
+			Log::info('Returning products:', [//
 				'total' => $total,
 				'page' => $page,
 				'count' => $transformedProducts->count(),
@@ -625,7 +636,12 @@ class ProductYouMayLikeController extends Controller
 					];
 				}
 
-				$firstSupplier = $product->productSuppliers->first();
+				$firstSupplier = $product->productSuppliers()
+				->with([
+					'vendor.country:id,name',
+					'vendor.city:id,name'
+				])
+				->first();
 
 				return [
 					'id' => $product->id,
@@ -650,6 +666,12 @@ class ProductYouMayLikeController extends Controller
 					: $product->price,
 					'selling_type' => $sellingType,
 					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+					'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+					'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+					'vendor_address' => $firstSupplier->vendor->address ?? null,
+					'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 					'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 					'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
 					'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
