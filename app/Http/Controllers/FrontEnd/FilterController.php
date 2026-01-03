@@ -76,12 +76,6 @@ class FilterController extends Controller
 	 */
 	public function index(Request $request)
 	{
-		// $locale = $request->input('locale', 'ar');
-		// // dd($locale);
-		// if (in_array($locale, ['ar', 'en'])) {
-		// 	App::setLocale($locale);
-		// }
-
 		/* Validate request data */
 		$request->validate([
 			'category_id' => 'required|integer|exists:categories,id',
@@ -456,7 +450,7 @@ class FilterController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
-				 'isRequired' => $product->isRequired,
+				'isRequired' => $product->isRequired,
 			];
 		}
 
