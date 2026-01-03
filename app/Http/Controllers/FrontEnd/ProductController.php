@@ -3068,10 +3068,12 @@ class ProductController extends Controller
 			$unitsSold = $product->units_sold ?? 0;
 			$leftStock = $quantity - $unitsSold;
 
-			$firstSupplier = $product->productSuppliers->with([
+			$firstSupplier = $product->productSuppliers()
+			->with([
 				'vendor.country:id,name',
 				'vendor.city:id,name'
-			])->first();
+			])
+			->first();
 
 			return [
 				'id' => $product->id,
