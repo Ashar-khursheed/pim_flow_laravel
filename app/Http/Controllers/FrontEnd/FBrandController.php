@@ -191,7 +191,7 @@ class FBrandController extends BaseController
 			'translations:id,locale,brand_id,name_tr',
 			'seoUrl:id,relational_id,relational_type,url',
 			'featuredProducts' => function($query) use ($productsLimit, $search, $minRating, $priceMin, $priceMax) {
-				$query->select(['id', 'name', 'sku', 'currency_id', 'units_sold', 'alt_tags', 'quote_available', 'brand_id'])
+				$query->select(['id', 'name', 'sku', 'currency_id', 'alt_tags', 'quote_available', 'brand_id'])
 				->search($search)
 				->minRating($minRating)
 				->priceRange($priceMin, $priceMax)
@@ -209,7 +209,6 @@ class FBrandController extends BaseController
 				])
 				->withCount('reviews')
 				->withAvg('reviews', 'star')
-				->orderByDesc('units_sold')
 				->limit($productsLimit);
 			}
 		])
