@@ -60,7 +60,7 @@ class CartController extends Controller
 			'product_id' => 'required|exists:ec_products,id',
 			'quantity' => 'required|integer|min:1',
 			'vendor_id' => 'nullable|exists:vendors,id',
-			'accessories_options' => 'nullable|array', // accessory_id => selected_item_id
+			'accessories_options' => 'nullable|array',
 			'accessories_options.*' => 'integer|exists:accessory_items,id',
 		]);
 
@@ -331,68 +331,68 @@ class CartController extends Controller
 
 				foreach ($accessoryItems as $item) {
 					$cartItem->accessories_options_details[] = [
-							'accessory_name' => $item->accessory->name ?? null, // via relation
-							'item_name'      => $item->name,
-							'item_id'      => $item->id,
-							'price'          => (float)$item->price,
-						];
-					}
+						'accessory_name' => $item->accessory->name ?? null,
+						'item_name'      => $item->name,
+						'item_id'      => $item->id,
+						'price'          => (float)$item->price,
+					];
 				}
-				$productShipping = $cartProduct->shipping_charge ?? 0;
+			}
+			$productShipping = $cartProduct->shipping_charge ?? 0;
 
-				if (in_array(config('app.website'), ['US', 'US_T'])) {
+			if (in_array(config('app.website'), ['US', 'US_T'])) {
 
-					$state = $customerCart->customerAddress->state ?? null;
+				$state = $customerCart->customerAddress->state ?? null;
 
-					if (!$customerCart->is_customer_pickup) {
-						if ($state === 'Texas') {
-							$productShipping = ($productShipping > 0) ? $productShipping : 99;
-						} else {
-							$productShipping = ($productShipping > 0) ? $productShipping : 199;
-						}
+				if (!$customerCart->is_customer_pickup) {
+					if ($state === 'Texas') {
+						$productShipping = ($productShipping > 0) ? $productShipping : 99;
 					} else {
-						$productShipping = 0;
+						$productShipping = ($productShipping > 0) ? $productShipping : 199;
 					}
+				} else {
+					$productShipping = 0;
 				}
+			}
 
-				$product->shippingCharge = $productShipping;
+			$product->shippingCharge = $productShipping;
 
 				// ------------------- SHIPPING CHARGE LOGIC FOR CUSTOMER CART -------------------
-				$cartShippingCharge = $customerCart->shipping_charge ?? 0;
+			$cartShippingCharge = $customerCart->shipping_charge ?? 0;
 
-				if (in_array(config('app.website'), ['US', 'US_T'])) {
+			if (in_array(config('app.website'), ['US', 'US_T'])) {
 
-					$state = $customerCart->customerAddress->state ?? null;
+				$state = $customerCart->customerAddress->state ?? null;
 
-					if (!$customerCart->is_customer_pickup) {
+				if (!$customerCart->is_customer_pickup) {
 
-						if ($state === 'Texas') {
-							$cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 99;
-						} else {
-							$cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 199;
-						}
-
+					if ($state === 'Texas') {
+						$cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 99;
 					} else {
-						$cartShippingCharge = 0;
+						$cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 199;
 					}
+
+				} else {
+					$cartShippingCharge = 0;
 				}
+			}
 
 				// assign final charge to customer cart model
-				$customerCart->shipping_charge = $cartShippingCharge;
+			$customerCart->shipping_charge = $cartShippingCharge;
 
 
 
-				return $cartItem;
-			});
+			return $cartItem;
+		});
 
-return response()->json([
-	'success' => true,
-	'data' => $transformedItems,
-	'cart_id' => $cartId,
-	'checkout_url' => url("/Checkout/{$cartId}"),
-	'customer_cart' => $customerCart,
-]);
-}
+		return response()->json([//
+			'success' => true,
+			'data' => $transformedItems,
+			'cart_id' => $cartId,
+			'checkout_url' => url("/Checkout/{$cartId}"),
+			'customer_cart' => $customerCart,
+		]);
+	}
 
 	/**
 	 * @OA\Delete(
@@ -521,7 +521,7 @@ return response()->json([
 		->delete();
 
 		if ($deleted > 0) {
-			// Update cart totals
+		// Update cart totals
 			$this->updateCartTotals($customerCart);
 		}
 
@@ -601,7 +601,7 @@ return response()->json([
 				return response()->json([
 					'success' => false,
 					'message' => 'Cart not found'
-				], 404);
+				]);
 			}
 
 			$accessories = $request->input('accessories_options', []);
@@ -629,20 +629,20 @@ return response()->json([
 				return response()->json([
 					'success' => true,
 					'message' => 'Product removed successfully'
-				], 200);
+				]);
 			}
 
 			return response()->json([
 				'success' => false,
 				'message' => 'Product not found in cart'
-			], 404);
+			]);
 
 		} catch (\Exception $e) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Server error while removing product from cart',
 				'error'   => $e->getMessage(),
-			], 500);
+			]);
 		}
 	}
 
@@ -939,10 +939,10 @@ return response()->json([
 			'subtotal' => (float) $customerCart->amount,
 			'tax' => (float) $customerCart->tax_amount,
 			'total_with_tax' => (float) $customerCart->total_amount,
-			'savings' => 0, // Calculate if needed
-			'item_count' => (int) $customerCart->total_products,
-			'currency_title' => $currencyTitle,
-		]);
+										'savings' => 0, // Calculate if needed
+										'item_count' => (int) $customerCart->total_products,
+										'currency_title' => $currencyTitle,
+									]);
 	}
 
 	/**
@@ -1154,7 +1154,7 @@ return response()->json([
 			$vendorId = $item['vendor_id'] ?? null;
 			$selectedOptions = $item['accessories_options'] ?? [];
 
-			sort($selectedOptions); // normalize for comparison
+			sort($selectedOptions);
 
 			$product = Product::with('currency', 'productSuppliers')->find($productId);
 			if (!$product) continue;

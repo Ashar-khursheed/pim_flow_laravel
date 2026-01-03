@@ -67,7 +67,7 @@ class BlogController extends Controller
         return response()->json($blogs);
     }
 
-    
+
     protected function formatBlog1($blog)
     {
         // Handle the description field properly
@@ -80,11 +80,11 @@ class BlogController extends Controller
             // If it's a string, try to decode it
             else if (is_string($blog->description)) {
                 $decoded = json_decode($blog->description, true);
-                
+
                 // Check if the decoded result is an array (direct array of objects)
                 if (is_array($decoded)) {
                     $description = $decoded;
-                } 
+                }
                 // Check if it's a string that contains JSON array (double encoded)
                 else if (is_string($decoded)) {
                     $secondDecode = json_decode($decoded, true);
@@ -94,7 +94,7 @@ class BlogController extends Controller
                 }
             }
         }
-    
+
         return [
             'id' => $blog->id,
             'name' => $blog->name,
@@ -121,7 +121,7 @@ class BlogController extends Controller
             ]
         ];
     }
-    
+
     // Alternative simpler approach if you're sure about the data structure
     protected function formatBlog1Alternative($blog)
     {
@@ -135,7 +135,7 @@ class BlogController extends Controller
                 $description = $firstDecode ?? [];
             }
         }
-    
+
         return [
             'id' => $blog->id,
             'name' => $blog->name,
@@ -322,11 +322,11 @@ class BlogController extends Controller
              // If it's a string, try to decode it
              else if (is_string($blog->description)) {
                  $decoded = json_decode($blog->description, true);
-                 
+
                  // Check if the decoded result is an array (direct array of objects)
                  if (is_array($decoded)) {
                      $description = $decoded;
-                 } 
+                 }
                  // Check if it's a string that contains JSON array (double encoded)
                  else if (is_string($decoded)) {
                      $secondDecode = json_decode($decoded, true);
@@ -336,7 +336,7 @@ class BlogController extends Controller
                  }
              }
          }
-     
+
          return [
              'id' => $blog->id,
              'name' => $blog->name,
@@ -347,7 +347,7 @@ class BlogController extends Controller
              'mobile_banner' => $blog->mobile_banner,
              'created_date' => $blog->created_date,
              'written_by' => $blog->written_by,
-              'author_designation' => $blog->author_designation,
+             'author_designation' => $blog->author_designation,
              'author_desc' => $blog->author_desc,
              'image' => $blog->image,
              'mobile_banner_alt' => $blog->mobile_banner_alt,
@@ -464,7 +464,7 @@ class BlogController extends Controller
         $comment = $post->comments()->create([
             'comment' => $request->comment,
             'parent_id' => $request->parent_id ?? null,
-            'created_by' => Auth::id()??1,  
+            'created_by' => Auth::id()??1,
         ]);
 
         return response()->json([
@@ -562,21 +562,21 @@ class BlogController extends Controller
     }
 
 
-    
+
     public function categoryWiseBlogs()
     {
         $categories = BlogCategory::where('status', 'published')
             ->orderBy('order', 'asc')
             ->get(['id', 'name', 'slug']);
-    
+
         $data = [];
-    
+
         foreach ($categories as $category) {
             $blogs = Blog::where('status', 'published')
                 ->where('blog_category_id', $category->id)
                 ->orderBy('created_at', 'desc')
                 ->get();
-    
+
             $data[] = [
                 'id' => $category->id,
                 'name' => $category->name,
@@ -585,10 +585,10 @@ class BlogController extends Controller
                 'blogs' => $blogs
             ];
         }
-    
+
         return response()->json($data);
     }
-    
+
 
     public function blogsByCategorySlug(Request $request, $slug)
     {

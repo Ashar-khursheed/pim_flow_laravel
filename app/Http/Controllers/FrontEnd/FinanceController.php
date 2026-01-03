@@ -53,7 +53,7 @@ class FinanceController extends Controller
      *                 @OA\Property(property="years_in_business", type="string", enum={"Less than 2 years","2 - 5 years","5 - 10 years","More than 10 years"}, example="5 – 10 years"),
      *                 @OA\Property(property="first_name", type="string", example="John"),
      *                 @OA\Property(property="last_name", type="string", example="Doe"),
-     *                 @OA\Property(property="email", type="string", example="john@gmail.com"),
+     *                 @OA\Property(property="business_email", type="string", example="john@gmail.com"),
      *                 @OA\Property(property="role_at_business", type="string", enum={"CEO","Accounts payable"}, example="Accounts payable"),
      *
      *                 @OA\Property(property="country", type="string", example="United States"),
@@ -95,6 +95,7 @@ class FinanceController extends Controller
             'legal_business_name' => 'required|string',
             'doing_business' => 'nullable|string',
             'documents' => 'nullable|file|mimes:pdf|max:10240',
+            'business_email' => 'nullable|email|string|max:255',
             'accounts_payable_email' => 'required|email|string|max:255',
             'accounts_payable_phone' => 'required|string|max:255',
             'customer_address_id' => 'required|numeric',
@@ -197,7 +198,7 @@ class FinanceController extends Controller
                 'success' => false,
                 'message' => 'No finance record found.',
                 'data' => null
-            ], 404);
+            ], 200);
         }
 
         return response()->json([
@@ -387,7 +388,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found'
-            ], 404);
+            ], 200);
         }
 
         $finance->available_credit_amount = $request->available_credit_amount;
@@ -449,7 +450,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Net Term finance is either not approved or is currently inactive'
-            ], 404);
+            ], 200);
         }
 
 
@@ -457,14 +458,15 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Net Term status fetch successfully..',
-                'accouts_status' => $finance->accounts_status
+                'accouts_status' => $finance->accounts_status,
+                'status' => $finance->status
             ], 200);
         } else {
             return response()->json([
                 'success' => false,
                 'message' => 'Net term record not found.',
                 'accoutsStatus' => null
-            ], 404);
+            ], 200);
         }
     }
 
@@ -487,7 +489,7 @@ class FinanceController extends Controller
      *     ),
      *
      *     @OA\Response(
-     *         response=404,
+     *         response=422,
      *         description="Validation error",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
@@ -514,7 +516,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found.'
-            ], 404);
+            ], 200);
         }
         $address = $finance->customerAddress;
         $financeData =  [
@@ -532,6 +534,7 @@ class FinanceController extends Controller
             'approved_amount' => number_format($finance->approved_amount, 2),
             'approval_date' => date('d-m-Y', strtotime($finance->approval_date)),
             'approvalBy' => $finance->approvalUser?->username,
+            '   ' => $finance->business_email,
             'accounts_payable_email' => $finance->accounts_payable_email,
             'accounts_payable_phone' => $finance->accounts_payable_phone,
             'used_credit_amount' => $finance->used_credit_amount,
@@ -676,7 +679,7 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Net Term credit is not active or approved.'
-                ], 404);
+                ], 200);
             }
 
             if (!$finance->approved_amount || $finance->approved_amount <= 0) {
@@ -805,7 +808,7 @@ class FinanceController extends Controller
                 'data' => [],
                 'total_pages' => 0,
                 'total_records' => 0
-            ], 404);
+            ], 200);
         }
 
         $paymentData = $paymentHistory->map(function ($payment) {
@@ -909,7 +912,7 @@ class FinanceController extends Controller
                 'data' => [],
                 'total_pages' => 0,
                 'total_records' => 0
-            ], 404);
+            ], 200);
         }
 
         $paymentData = $paymentHistory->map(function ($payment) {
@@ -1007,7 +1010,7 @@ class FinanceController extends Controller
                 'data' => [],
                 'total_pages' => 0,
                 'total_records' => 0
-            ], 404);
+            ], 200);
         }
 
         $paymentData = $paymentHistory->map(function ($payment) {

@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers\FrontEnd;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
 use App\Models\Category;
-use App\Models\Product;
 use App\Models\SeoManagement;
+use App\Models\ProductCategory;
 
-class FCategoryController extends Controller
+use App\Traits\TransformProduct;
+
+class FCategoryController extends BaseController
 {
+	use TransformProduct;
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend-categories",
@@ -20,9 +22,10 @@ class FCategoryController extends Controller
 	 *     summary="Get product categories with hierarchical structure",
 	 *     description="Retrieves published product categories in a parent-child hierarchical structure. Supports filtering by parent category (via ID or slug), limiting child categories per parent, and optionally including the parent category itself in the response. Categories are returned with translations, SEO URLs, and product counts.",
 	 *     @OA\Parameter(name="parent_id", in="query", description="Filter categories by parent ID.", @OA\Schema(type="integer", example=1)),
+	 *     @OA\Parameter(name="brand_url", in="query", description="Filter categories by brand URL.", @OA\Schema(type="string", example="hoshizaki")),
 	 *     @OA\Parameter(name="limit", in="query", description="Maximum number of child categories to load per parent category.", @OA\Schema(type="integer", example=5)),
 	 *     @OA\Parameter(name="slug", in="query", description="Filter by parent category slug instead of ID.", @OA\Schema(type="string", example="kitchen-equipment")),
-	 *     @OA\Parameter(name="with_parent", in="query", description="Whether to include the parent category details in the response along with its children", @OA\Schema(type="boolean", example=true)),
+	 *     @OA\Parameter(name="with_parent", in="query", description="Whether to include the parent category", @OA\Schema(type="boolean", example=true)),
 	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "order"})),
 	 *     @OA\Response(response=200, description="Categories retrieved successfully.", @OA\MediaType(mediaType="application/json"))
 	 * )
@@ -33,10 +36,13 @@ class FCategoryController extends Controller
 		$limit = $request->get('limit');
 		$withParent = $request->boolean('with_parent');
 		$slug = $request->get('slug');
-		$sortBy = $request->get('sort_by');
+		$brandUrl = $request->get('brand_url');
+		$sortBy = $request->get('sort_by', 'order');
 
+		/* Handle category slug */
 		if ($slug) {
 			$seoRecord = SeoManagement::where('url', $slug)->where('relational_type', 'Category')->first(['relational_id']);
+
 			if (!$seoRecord) {
 				return response()->json([
 					'success' => false,
@@ -44,8 +50,8 @@ class FCategoryController extends Controller
 				]);
 			}
 
-			/* Check if category exists and is published in one query */
 			$categoryExists = Category::where('id', $seoRecord->relational_id)->where('status', 'published')->exists();
+
 			if (!$categoryExists) {
 				return response()->json([
 					'success' => false,
@@ -56,6 +62,37 @@ class FCategoryController extends Controller
 			$parentID = $seoRecord->relational_id;
 		}
 
+		/* Handle brand filter */
+		$brandCategoryIds = [];
+		$brandId = null;
+
+		if ($brandUrl) {
+			$brandSeoRecord = SeoManagement::where('url', $brandUrl)->where('relational_type', 'Brand')->first(['relational_id']);
+			if (!$brandSeoRecord) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Brand not found'
+				]);
+			}
+
+			$brandId = $brandSeoRecord->relational_id;
+			$brandCategoryIds = ProductCategory::join('ec_products as products', 'products.id', '=', 'product_categories.product_id')
+			->where('products.brand_id', $brandId)
+			->where('products.status', 'published')
+			->distinct()
+			->pluck('product_categories.category_id')
+			->toArray();
+
+			if (empty($brandCategoryIds)) {
+				return response()->json([
+					'success' => true,
+					'message' => 'No categories found for this brand',
+					'data' => []
+				]);
+			}
+		}
+
+		/* Build categories query */
 		$records = Category::select([
 			'id', 'name', 'parent_id', 'image', 'order', 'last_child'
 		])
@@ -68,9 +105,26 @@ class FCategoryController extends Controller
 				}
 			}
 		])
-		->withCount('products')
 		->where('status', 'published');
 
+		/* Apply brand-specific product count */
+		if ($brandId) {
+			$records->withCount(['products as products_count' => function($q) use ($brandId) {
+				$q->where('brand_id', $brandId)
+				->where('status', 'published');
+			}]);
+		} else {
+			$records->withCount(['products as products_count' => function($q) {
+				$q->where('status', 'published');
+			}]);
+		}
+
+		/* Apply brand filter */
+		if (!empty($brandCategoryIds)) {
+			$records->whereIn('id', $brandCategoryIds);
+		}
+
+		/* Apply parent filter */
 		if ($parentID) {
 			$records->where(function ($query) use ($parentID, $withParent) {
 				$query->where('parent_id', $parentID);
@@ -78,16 +132,16 @@ class FCategoryController extends Controller
 					$query->orWhere('id', $parentID);
 				}
 			});
-		} else {
+		} elseif (empty($brandCategoryIds)) {
 			$records->where('parent_id', 0);
 		}
 
-		if ($sortBy) {
-			$records = $records->orderBy($sortBy);
-		}
+		/* Apply sorting */
+		$records->orderBy($sortBy);
 
 		$records = $records->get();
 
+		/* Transform categories */
 		$records->transform(function ($category) {
 			return $this->transformCategoryRecursive($category);
 		});
@@ -97,14 +151,6 @@ class FCategoryController extends Controller
 			'message' => 'Categories retrieved successfully.',
 			'data' => $records
 		]);
-
-		// $cacheKey = $parentID ? "categories_index_$parentID" : "categories_index_all";
-
-		// $categoriesMenus = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($records) {
-		// 	return $records->get();
-		// });
-
-		// return response()->json($records)->header('Cache-Control', 'public, max-age=86400');
 	}
 
 	/* Recursively transform category structure */
@@ -265,162 +311,62 @@ class FCategoryController extends Controller
 	 *     summary="Get categories with featured products",
 	 *     description="Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
 	 *     @OA\Parameter(name="products_limit", in="query", description="Maximum number of products to return per category", @OA\Schema(type="integer", example=10)),
-	 *     @OA\Parameter(name="categories_limit", in="query", description="Maximum number of categories to return", @OA\Schema(type="integer", example=5)),
+	 *     @OA\Parameter(name="limit", in="query", description="Maximum number of categories to return", @OA\Schema(type="integer", example=5)),
 	 *     @OA\Parameter(name="min_products", in="query", description="Minimum number of featured products required per category", @OA\Schema(type="integer", example=5)),
 	 *     @OA\Response(response=200, description="Featured categories retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
 	public function getFeaturedCategoryProducts(Request $request)
 	{
-		$productsPerCategory = $request->get('products_limit', 10);
-		$categoriesLimit = $request->get('categories_limit', 5);
-		$minProducts = $request->get('min_products', 5);
-
-		$featuredCategories = Category::select(['id', 'parent_id', 'name'])
-		->where('status', 'published')
-		->where('is_featured', 1)
-		->whereDoesntHave('children')
-		->with([
-			'translations',
-			'seoUrl:id,relational_id,relational_type,url',
-			'featuredProducts' => function($query) use ($productsPerCategory) {
-				$query->select(['id', 'name', 'sku', 'currency_id', 'alt_tags', 'quote_available'])
-				->with([
-					'translations',
-					'seoUrl:id,relational_id,relational_type,url',
-					'productSuppliers:id,product_id,vendor_id,vendor_sku,cost_per_item,sale_price,price,inventory,in_stock,min_quantity,is_fixed,delivery_days,return_policy,free_shipping,shipping_charge,warranty_information',
-					'reviews:id,product_id,star',
-					'currency:id,title,symbol',
-					'sellingUnitAttribute'
-				])
-				->withCount('reviews')
-				->withAvg('reviews', 'star')
-				->limit($productsPerCategory);
-			}
-		])
-		->has('featuredProducts', '>=', $minProducts)
-		->take($categoriesLimit)
-		->get();
-
-		/* Transform categories */
-		$featuredCategories->transform(function ($category) {
-			/* Transform category name to locale object */
-			$categoryLocaleNames = [];
-			if ($category->translations) {
-				foreach ($category->translations as $translation) {
-					$categoryLocaleNames[$translation->locale] = $translation->name_tr;
-				}
-			}
-			$category->name = $categoryLocaleNames;
-
-			/* Get category URLs */
-			$categoryMostParentURL = optional($category->mostParent)->seoUrl->url ?? null;
-			$categoryURL = optional($category->seoUrl)->url ?? null;
-
-			/* Transform featured products */
-			$category->featuredProducts->each(function ($product) use ($categoryMostParentURL, $categoryURL) {
-				/* Transform product name and images to locale objects */
-				$productLocaleNames = [];
-				$productLocaleImages = [];
-
-				if ($product->translations) {
-					foreach ($product->translations as $translation) {
-						$productLocaleNames[$translation->locale] = $translation->name_tr;
-						$productLocaleImages[$translation->locale] = is_array($translation->images_tr) ? $translation->images_tr : json_decode($translation->images_tr, true);
-					}
-				}
-
-				$product->name = $productLocaleNames;
-				$product->images = $productLocaleImages;
-				$product->parent_category_url = $categoryMostParentURL;
-				$product->category_url = $categoryURL;
-				$product->url = optional($product->seoUrl)->url ?? null;
-				$product->quote_available = $product->quote_available ?? 0;
-
-				/* Currency data */
-				$product->currency_name = optional($product->currency)->title ?? null;
-				$product->currency_symbol = optional($product->currency)->symbol ?? null;
-
-				/* Reviews data */
-				$product->total_reviews = $product->reviews_count ?? 0;
-				$product->avg_rating = round($product->reviews_avg_star ?? 0, 1);
-
-				/* Alt tags */
-				$product->alt_tags = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true) ?? [];
-
-				/* Selling unit data */
-				if ($product->sellingUnitAttribute) {
-					$attributeValue = $product->sellingUnitAttribute->attribute_value;
-					$product->selling_type_value = $attributeValue;
-					$product->selling_type_unit = strpos($attributeValue, '/') !== false ? trim(explode('/', $attributeValue)[1]) : $attributeValue;
-				} else {
-					$product->selling_type_value = null;
-					$product->selling_type_unit = null;
-				}
-				$product->is_required = $product->is_required;
-				/* Transform product suppliers */
-				if ($product->productSuppliers) {
-					$product->productSuppliers->each(function ($productSupplier) {
-						unset($productSupplier->id);
-						unset($productSupplier->product_id);
-					});
-				}
-
-				/* Remove unwanted attributes from product */
-				unset($product->translations);
-				unset($product->seoUrl);
-				unset($product->currency);
-				unset($product->currency_id);
-				unset($product->reviews);
-				unset($product->reviews_count);
-				unset($product->reviews_avg_star);
-				unset($product->sellingUnitAttribute);
-				unset($product->pivot);
-			});
-
-			/* Remove unwanted attributes from category */
-			unset($category->translations);
-			unset($category->seoUrl);
-			unset($category->parent);
-			unset($category->parent_id);
-
-			return $category;
-		});
+		$records = $this->getFeaturedCategoriesWithProducts($request);
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Featured categories retrieved successfully',
-			'data' => $featuredCategories
+			'data' => $records
 		]);
 	}
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/frontend-categories/user-featured-products",
+	 *     path="/api/frontend-categories/customer-featured-products",
 	 *     tags={"Frontend-Category"},
 	 *     summary="Get categories with featured products",
 	 *     description="Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
 	 *     @OA\Parameter(name="products_limit", in="query", description="Maximum number of products to return per category", @OA\Schema(type="integer", example=10)),
-	 *     @OA\Parameter(name="categories_limit", in="query", description="Maximum number of categories to return", @OA\Schema(type="integer", example=5)),
+	 *     @OA\Parameter(name="limit", in="query", description="Maximum number of categories to return", @OA\Schema(type="integer", example=5)),
 	 *     @OA\Parameter(name="min_products", in="query", description="Minimum number of featured products required per category", @OA\Schema(type="integer", example=5)),
 	 *     @OA\Response(response=200, description="Featured categories retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}},
 	 * )
 	 */
-	public function getUserFeaturedCategoryProducts(Request $request)
+	public function getCustomerFeaturedCategoryProducts(Request $request)
 	{
-		$productsPerCategory = $request->get('products_limit', 10);
-		$categoriesLimit = $request->get('categories_limit', 5);
-		$minProducts = $request->get('min_products', 5);
-		$wishlistProductIds = auth()->user()->wishlist()->pluck('product_id')->all();
+		$wishlistProductIds = auth()->user()->wishlist()->pluck('product_id')->toArray();
+		$records = $this->getFeaturedCategoriesWithProducts($request, $wishlistProductIds);
 
-		$featuredCategories = Category::select(['id', 'parent_id', 'name'])
+		return response()->json([
+			'success' => true,
+			'message' => 'Featured categories retrieved successfully',
+			'data' => $records
+		]);
+	}
+
+	private function getFeaturedCategoriesWithProducts(Request $request, ?array $wishlistProductIds = null)
+	{
+		$productsLimit = $request->get('products_limit', 10);
+		$limit = $request->get('limit', 5);
+		$minProducts = $request->get('min_products', 5);
+
+		/* Fetch categories with products */
+		$records = Category::select(['id', 'parent_id', 'name'])
 		->where('status', 'published')
 		->where('is_featured', 1)
 		->whereDoesntHave('children')
 		->with([
 			'translations',
 			'seoUrl:id,relational_id,relational_type,url',
+
 			'featuredProducts' => function($query) use ($productsPerCategory) {
 				$query->select(['id', 'name', 'sku', 'currency_id', 'alt_tags', 'quote_available'])
 				->with([
@@ -437,19 +383,13 @@ class FCategoryController extends Controller
 			}
 		])
 		->has('featuredProducts', '>=', $minProducts)
-		->take($categoriesLimit)
+		->take($limit)
 		->get();
 
 		/* Transform categories */
-		$featuredCategories->transform(function ($category) use ($wishlistProductIds) {
+		$records->transform(function ($category) use ($wishlistProductIds) {
 			/* Transform category name to locale object */
-			$categoryLocaleNames = [];
-			if ($category->translations) {
-				foreach ($category->translations as $translation) {
-					$categoryLocaleNames[$translation->locale] = $translation->name_tr;
-				}
-			}
-			$category->name = $categoryLocaleNames;
+			$category->name = $this->getLocalizedData($category->translations, 'name_tr');
 
 			/* Get category URLs */
 			$categoryMostParentURL = optional($category->mostParent)->seoUrl->url ?? null;
@@ -457,79 +397,20 @@ class FCategoryController extends Controller
 
 			/* Transform featured products */
 			$category->featuredProducts->each(function ($product) use ($categoryMostParentURL, $categoryURL, $wishlistProductIds) {
-				/* Transform product name and images to locale objects */
-				$productLocaleNames = [];
-				$productLocaleImages = [];
+				$this->transformFeaturedProduct($product, $categoryMostParentURL, $categoryURL);
 
-				if ($product->translations) {
-					foreach ($product->translations as $translation) {
-						$productLocaleNames[$translation->locale] = $translation->name_tr;
-						$productLocaleImages[$translation->locale] = is_array($translation->images_tr) ? $translation->images_tr : json_decode($translation->images_tr, true);
-					}
+				/* Add wishlist status if provided */
+				if ($wishlistProductIds !== null) {
+					$product->in_wishlist = in_array($product->id, $wishlistProductIds);
 				}
-
-				$product->name = $productLocaleNames;
-				$product->images = $productLocaleImages;
-				$product->parent_category_url = $categoryMostParentURL;
-				$product->category_url = $categoryURL;
-				$product->url = optional($product->seoUrl)->url ?? null;
-				$product->quote_available = $product->quote_available ?? 0;
-				$product->in_wishlist = in_array($product->id, $wishlistProductIds);
-
-				/* Currency data */
-				$product->currency_name = optional($product->currency)->title ?? null;
-				$product->currency_symbol = optional($product->currency)->symbol ?? null;
-
-				/* Reviews data */
-				$product->total_reviews = $product->reviews_count ?? 0;
-				$product->avg_rating = round($product->reviews_avg_star ?? 0, 1);
-
-				/* Alt tags */
-				$product->alt_tags = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true) ?? [];
-
-				/* Selling unit data */
-				if ($product->sellingUnitAttribute) {
-					$attributeValue = $product->sellingUnitAttribute->attribute_value;
-					$product->selling_type_value = $attributeValue;
-					$product->selling_type_unit = strpos($attributeValue, '/') !== false ? trim(explode('/', $attributeValue)[1]) : $attributeValue;
-				} else {
-					$product->selling_type_value = null;
-					$product->selling_type_unit = null;
-				}
-				$product->is_required = $product->is_required;
-				/* Transform product suppliers */
-				if ($product->productSuppliers) {
-					$product->productSuppliers->each(function ($productSupplier) {
-						unset($productSupplier->id);
-						unset($productSupplier->product_id);
-					});
-				}
-
-				/* Remove unwanted attributes from product */
-				unset($product->translations);
-				unset($product->seoUrl);
-				unset($product->currency);
-				unset($product->currency_id);
-				unset($product->reviews);
-				unset($product->reviews_count);
-				unset($product->reviews_avg_star);
-				unset($product->sellingUnitAttribute);
-				unset($product->pivot);
 			});
 
 			/* Remove unwanted attributes from category */
-			unset($category->translations);
-			unset($category->seoUrl);
-			unset($category->parent);
-			unset($category->parent_id);
+			unset($category->translations, $category->seoUrl, $category->parent, $category->parent_id);
 
 			return $category;
 		});
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Featured categories retrieved successfully',
-			'data' => $featuredCategories
-		]);
+		return $records;
 	}
 }

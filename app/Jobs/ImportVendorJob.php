@@ -279,7 +279,9 @@ class ImportVendorJob implements ShouldQueue
 				$vendor->contact_person = $contact_person;
 				$vendor->landline_number = $landline_number;
 				$vendor->mobile_number = $mobile_number;
+				$vendor->address = $address;
 				$vendor->city_ids = $city_ids;
+				$vendor->zipcode = $zipcode;
 				$vendor->dropshipping = $dropshipping;
 				$vendor->website_link = $website_link;
 				$vendor->domain = $domain;

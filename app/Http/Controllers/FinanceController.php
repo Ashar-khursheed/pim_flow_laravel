@@ -113,6 +113,7 @@ class FinanceController extends Controller
                 $q->where('legal_business_name', 'like', "%{$search}%")
                     ->orWhere('requested_amount', 'like', "%{$search}%")
                     ->orWhere('term_selection', 'like', "%{$search}%")
+                    ->orWhere('business_email', 'like', "%{$search}%")
                     ->orWhere('accounts_payable_email', 'like', "%{$search}%")
                     ->orWhere('accounts_payable_phone', 'like', "%{$search}%")
                     ->orWhere('status', 'like', "%{$search}%")
@@ -170,6 +171,7 @@ class FinanceController extends Controller
                 'approved_amount' => number_format($finance->approved_amount, 2),
                 'approval_date' => $finance->approval_date ? date('d-m-Y', strtotime($finance->approval_date)) : null,
                 'approvalBy' => $finance->approvalUser?->username ?? null,
+                'business_email' => $finance->business_email ?? null,
                 'accounts_payable_email' => $finance->accounts_payable_email,
                 'accounts_payable_phone' => $finance->accounts_payable_phone,
 
@@ -216,53 +218,60 @@ class FinanceController extends Controller
         ], 200);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/finances/{id}",
-     *     summary="Get finance record by ID",
-     *     tags={"Finance"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="Finance record ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Finance record retrieved successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Finance record retrieved successfully."),
-     *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="payment_selection", type="string", example="Credit"),
-     *                 @OA\Property(property="amount", type="number", format="float", example=5000.75),
-     *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd"),     *
-     *                 @OA\Property(property="documents", type="string", example="https://s3.amazonaws.com/path/to/document.pdf"),
-     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-01T10:00:00Z"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-01-02T15:30:00Z")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Finance record not found",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Finance record not found.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
-     *         )
-     *     )
-     * )
-     */
+     /**
+ * @OA\Get(
+ *     path="/api/finances/{id}",
+ *     summary="Get finance record by ID",
+ *     tags={"Finance"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="Finance record ID",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Finance record retrieved successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Finance record retrieved successfully."),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 @OA\Property(property="id", type="integer", example=1),
+ *                 @OA\Property(property="payment_selection", type="string", example="Credit"),
+ *                 @OA\Property(property="amount", type="number", format="float", example=5000.75),
+ *                 @OA\Property(property="business_name", type="string", example="ABC Pvt Ltd"),
+ *                 @OA\Property(property="documents", type="string", example="https://s3.amazonaws.com/path/to/document.pdf"),
+ *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-01T10:00:00Z"),
+ *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-01-02T15:30:00Z")
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=404,
+ *         description="Finance record not found",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Finance record not found.")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+ *         )
+ *     )
+ * )
+ */
+
     public function show($id)
     {
         $finance = Finance::with([
@@ -277,9 +286,10 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found.'
-            ], 404);
+            ], 200);
         }
         $address = $finance->customerAddress;
+        // dd($address);
         $financeData =  [
             'id' => $finance->id,
             'customer_id' => $finance->customer_id,
@@ -296,6 +306,7 @@ class FinanceController extends Controller
 
             'approval_date' => $finance->approval_date ? date('d-m-Y', strtotime($finance->approval_date)) : null,
             'approvalBy' => $finance->approvalUser?->username,
+            'business_email' => $finance->business_email ?? null,
             'accounts_payable_email' => $finance->accounts_payable_email,
             'accounts_payable_phone' => $finance->accounts_payable_phone,
 
@@ -311,7 +322,11 @@ class FinanceController extends Controller
             'business_name' => $finance->customer?->business_name,
             'customer_email' => $finance->customer?->email,
             'customer_mobile' => $finance->customer?->mobile_number,
-
+            'country' => $finance->customer?->country,
+            'state' => $finance->customer?->state,
+            'city' => $finance->customer?->city,
+            'address' => $finance->customer?->address,
+            'zip_code' => $finance->customer?->zip_code, 
             'annual_revenue' => $finance->annual_revenue,
             'years_in_business' => $finance->years_in_business,
 
@@ -413,6 +428,11 @@ class FinanceController extends Controller
      *                 ),
      *
      *                 @OA\Property(
+     *                     property="business_email",
+     *                     type="string",
+     *                     example="business@domain.com"
+     *                 ),
+     *                 @OA\Property(
      *                     property="accounts_payable_email",
      *                     type="string",
      *                     example="pay@gmail.com"
@@ -499,6 +519,7 @@ class FinanceController extends Controller
             'documents' => 'nullable|file|mimes:pdf|max:10240',
             'type_of_business' => 'nullable|string|max:255',
             'role_at_business' => 'nullable|string|max:255',
+            'business_email' => 'nullable|email|string|max:255',
             'accounts_payable_email' => 'required|email|string|max:255',
             'accounts_payable_phone' => 'required|string|max:255',
             'annual_revenue' => 'required|string',
@@ -521,7 +542,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Record not found'
-            ], 404);
+            ], 200);
         }
         $data = $validator->validated();
         $data['updated_by'] = Auth::id() ?? 1;
@@ -638,7 +659,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found.'
-            ], 404);
+            ], 200);
         }
 
         try {
@@ -755,7 +776,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found.'
-            ], 404);
+            ], 200);
         }
         if ($finance->status == 'Paid') {
             return response()->json([
@@ -846,7 +867,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found.'
-            ], 404);
+            ], 200);
         }
         if (!empty($finance->balance)) {
             return response()->json([
@@ -929,7 +950,7 @@ class FinanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Finance payment record not found or access denied.'
-                ], 404);
+                ], 200);
             }
 
             // Recalculate current remaining balance
@@ -1047,7 +1068,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'No payment history found.'
-            ], 404);
+            ], 200);
         }
 
         $paymentData = $paymentHistory->map(function ($finance) {
@@ -1153,7 +1174,7 @@ class FinanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Finance record not found'
-            ], 404);
+            ], 200);
         }
 
         // If due exists

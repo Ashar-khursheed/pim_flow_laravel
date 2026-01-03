@@ -112,7 +112,7 @@ class FilterController extends Controller
 			], 422);
 		}
 
-		$categoryIds = $category->getLeafCategories($category)->where('status', 'published')->pluck('id');
+		$categoryIds = $category->getLeafCategories()->where('status', 'published')->pluck('id');
 
 		$filters = [];
 

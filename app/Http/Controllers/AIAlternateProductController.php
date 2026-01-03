@@ -382,8 +382,7 @@ class AIAlternateProductController extends Controller
 
 		if ($request->input('category')) {
 			$category = Category::find($request->input('category'));
-			$leafCategories = Category::getLeafCategories($category);
-			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+			$leafCategoryIds = $category->getLeafCategories()->pluck('id')->toArray();
 			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
 				$q->whereIn('category_id', $leafCategoryIds);
 			});

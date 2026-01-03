@@ -10,7 +10,8 @@ class MeasurementUnit extends Model implements TranslatableContract
 {
 	use Translatable;
 
-	public $translatedAttributes = ['name_tr'];
+	public $translatedAttributes = [];
+	// public $translatedAttributes = ['name_tr'];
 
 	public function type()
 	{

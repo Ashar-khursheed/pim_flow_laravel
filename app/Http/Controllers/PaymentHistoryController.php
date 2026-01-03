@@ -211,7 +211,7 @@ class PaymentHistoryController extends Controller
 	 *                 required={"order_number", "payment_mode", "amount", "status", "payment_date"},
 	 *                 @OA\Property(property="order_number", type="integer", example=123),
 	 *                 @OA\Property(property="transaction_id", type="string", example="TXN456789"),
-	 *                 @OA\Property(property="payment_mode", type="string", enum={"Bank Transfer", "Stripe", "Razorpay", "Cash on Delivery", "CC Avenue", "Credit Card", "Debit Card", "Tabby", "Cheque","Check", "Tamara", "Paymob", "COD", "PayPal", "Stax", "Square","NetTerm","Check","Cheque"}, example="Cash on Delivery"),
+	 *                 @OA\Property(property="payment_mode", type="string", enum={"Bank Transfer", "Stripe", "Razorpay", "Cash on Delivery", "CC Avenue", "Credit Card", "Debit Card", "Tabby", "Cheque","Check", "Tamara", "Paymob", "COD", "PayPal", "Stax", "Square","NetTerm","Check","Ascentium Capital","Resolve Pay","Approve"}, example="Cash on Delivery"),
 	 *                 @OA\Property(property="amount", type="number", format="float", example=299.99),
 	 *                 @OA\Property(property="status", type="string", enum={"Pending","Completed","Failed","Cancelled","Refunded"}, example="Completed"),
 	 *                 @OA\Property(property="rider_name", type="string", example="Jon Jones"),
@@ -251,7 +251,7 @@ class PaymentHistoryController extends Controller
 			$validated = $request->validate([
 				'order_number' => 'required|integer|exists:orders,order_number',
 				'transaction_id' => 'nullable|string',
-				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,CC Avenue,Paymob,Stax,Square,Tabby,Cheque,Check,Tamara,COD,NetTerm',
+				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,CC Avenue,Paymob,Stax,Square,Tabby,Cheque,Check,Tamara,COD,NetTerm,Ascentium Capital,Resolve Pay,Approve',
 				'amount' => 'required|numeric|min:0.01|max:999999.99',
 				'status' => 'required|string|in:Pending,Completed,Failed,Cancelled,Refunded',
 				'payment_date' => 'required|date|before_or_equal:today',

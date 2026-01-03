@@ -101,10 +101,8 @@ class ProductExportController extends BaseController
 			'brand:id,name',
 			'vendors:id,name',
 			'tags:id,name',
-			// 'discounts:id,product_quantity,value,start_date,end_date',
 			'faqs:id,product_id,question,answer',
-			// 'seoManagement:id,relational_id,relational_type,meta_title,meta_description',
-			'slug:id,reference_id,key',
+			// 'seoManagement:id,relational_id,relational_type,url'
 			'latestChildCategoryRelation:id,name',
 		]);
 
@@ -121,8 +119,7 @@ class ProductExportController extends BaseController
 			});
 		} elseif ($request->type == "Category") {
 			$category = Category::find($request->relational_id);
-			$leafCategories = Category::getLeafCategories($category);
-			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+			$leafCategoryIds = $category->getLeafCategories()->pluck('id')->toArray();
 			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
 				$q->whereIn('category_id', $leafCategoryIds);
 			});
@@ -280,7 +277,7 @@ class ProductExportController extends BaseController
 					// break;
 
 					case 'url':
-					$row[] = $product->slug && $product->slug->key ? "https://thehorecastore.co/products/{$product->slug->key}" : '';
+					$row[] = "";
 					break;
 
 					// case 'buying_quantity1':

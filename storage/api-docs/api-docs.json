@@ -1631,12 +1631,12 @@
                     "Attributes"
                 ],
                 "summary": "Create a new attribute",
-                "description": "Creates a new attribute with name, code, and type.",
+                "description": "Creates a new attribute with name, code, type, and multiple images.",
                 "operationId": "48e2284fe9ed7ecdc495aa7191e74084",
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "name",
@@ -1655,6 +1655,14 @@
                                     "type": {
                                         "type": "string",
                                         "example": "text"
+                                    },
+                                    "images[]": {
+                                        "description": "Upload multiple images",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -1663,10 +1671,46 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Success",
+                    "200": {
+                        "description": "Attribute created successfully",
                         "content": {
-                            "application/json": {}
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Attribute created successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
                         }
                     }
                 },
@@ -1850,6 +1894,136 @@
                         "content": {
                             "application/json": {}
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attributes/{id}/image": {
+            "post": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Upload or update images for an existing attribute",
+                "description": "Uploads one or more images for the specified attribute and replaces any existing ones.",
+                "operationId": "updateAttributeImage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the attribute to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Multipart form data with image files",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "images[]": {
+                                        "description": "Array of image files (multiple upload)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "delete_images[]": {
+                                        "description": "List of image URLs to delete",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Images updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Attribute images updated successfully."
+                                        },
+                                        "data": {
+                                            "$ref": ""
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Insufficient permissions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "You don't have permission to update attributes."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Attribute not found"
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "example": {
+                                                "images.0": [
+                                                    "The images.0 must be an image."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error"
                     }
                 },
                 "security": [
@@ -9602,310 +9776,6 @@
                 ]
             }
         },
-        "/api/discounts": {
-            "get": {
-                "tags": [
-                    "Discounts"
-                ],
-                "summary": "Get paginated discounts",
-                "operationId": "c34129a2b20b11a1bb914f9657376fb5",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "limit",
-                        "in": "query",
-                        "description": "Number of records per page (default: 20)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 20
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of discounts with pagination",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "current_page": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "last_page": {
-                                            "type": "integer",
-                                            "example": 5
-                                        },
-                                        "per_page": {
-                                            "type": "integer",
-                                            "example": 20
-                                        },
-                                        "total": {
-                                            "type": "integer",
-                                            "example": 100
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Discount"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Discounts"
-                ],
-                "summary": "Create a new discount",
-                "operationId": "9123c70fc44b58b641612d7f6f90469e",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "title",
-                                    "value",
-                                    "type",
-                                    "type_option",
-                                    "target"
-                                ],
-                                "properties": {
-                                    "title": {
-                                        "type": "string",
-                                        "maxLength": 120
-                                    },
-                                    "code": {
-                                        "type": "string",
-                                        "maxLength": 20,
-                                        "nullable": true
-                                    },
-                                    "start_date": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "nullable": true
-                                    },
-                                    "end_date": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "nullable": true
-                                    },
-                                    "quantity": {
-                                        "type": "integer",
-                                        "nullable": true
-                                    },
-                                    "value": {
-                                        "type": "number"
-                                    },
-                                    "type": {
-                                        "type": "string"
-                                    },
-                                    "type_option": {
-                                        "type": "string"
-                                    },
-                                    "target": {
-                                        "type": "string"
-                                    },
-                                    "min_order_price": {
-                                        "type": "number",
-                                        "nullable": true
-                                    },
-                                    "apply_via_url": {
-                                        "type": "boolean",
-                                        "nullable": true
-                                    },
-                                    "display_at_checkout": {
-                                        "type": "boolean",
-                                        "nullable": true
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "nullable": true
-                                    },
-                                    "store_id": {
-                                        "type": "integer",
-                                        "nullable": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Discount created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Discount"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/discounts/{id}": {
-            "get": {
-                "tags": [
-                    "Discounts"
-                ],
-                "summary": "Get a specific discount",
-                "operationId": "fbf1f3a350b69a823f2d71699d2da78b",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Discount ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Discount details",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Discount"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Discount not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Discounts"
-                ],
-                "summary": "Update a discount",
-                "operationId": "17bf23d3850f2a65449514eb5f490fe0",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Discount ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "title": {
-                                        "type": "string",
-                                        "maxLength": 120
-                                    },
-                                    "value": {
-                                        "type": "number"
-                                    },
-                                    "type": {
-                                        "type": "string"
-                                    },
-                                    "type_option": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Discount updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Discount"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Discount not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Discounts"
-                ],
-                "summary": "Delete a discount",
-                "operationId": "cab56bd386823e47377b3584990cb58b",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Discount ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Discount deleted successfully"
-                    },
-                    "404": {
-                        "description": "Discount not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/api/product/upload-documents": {
             "post": {
                 "tags": [
@@ -11102,6 +10972,10 @@
                                         ],
                                         "example": "Accounts payable"
                                     },
+                                    "business_email": {
+                                        "type": "string",
+                                        "example": "business@domain.com"
+                                    },
                                     "accounts_payable_email": {
                                         "type": "string",
                                         "example": "pay@gmail.com"
@@ -11822,227 +11696,6 @@
                                 }
                             }
                         }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/flash-sales": {
-            "get": {
-                "tags": [
-                    "Flash Sales"
-                ],
-                "summary": "Get all flash sales",
-                "operationId": "76b86dc6acbc0efea3033d5806224b85",
-                "responses": {
-                    "200": {
-                        "description": "List of flash sales",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/FlashSale"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Flash Sales"
-                ],
-                "summary": "Create a new flash sale",
-                "operationId": "4a6b44ac63386c512154ed5a9ac2666d",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "name",
-                                    "end_date",
-                                    "status"
-                                ],
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "maxLength": 191
-                                    },
-                                    "end_date": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "status": {
-                                        "type": "string",
-                                        "enum": [
-                                            "published",
-                                            "draft"
-                                        ]
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Flash sale created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/FlashSale"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/flash-sales/{id}": {
-            "get": {
-                "tags": [
-                    "Flash Sales"
-                ],
-                "summary": "Get a specific flash sale",
-                "operationId": "dd888367b46b39ce53b6b9526820db18",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Flash Sale ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Flash sale details",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/FlashSale"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Flash Sale not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Flash Sales"
-                ],
-                "summary": "Update a flash sale",
-                "operationId": "2d818802ed1c70d352a3588ab1a712c7",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Flash Sale ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "maxLength": 191
-                                    },
-                                    "end_date": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "status": {
-                                        "type": "string",
-                                        "enum": [
-                                            "published",
-                                            "draft"
-                                        ]
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Flash sale updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/FlashSale"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Flash Sale not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Flash Sales"
-                ],
-                "summary": "Delete a flash sale",
-                "operationId": "51058bfdb1aaa67f53e989d782ad801f",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Flash Sale ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Flash Sale deleted successfully"
-                    },
-                    "404": {
-                        "description": "Flash Sale not found"
                     }
                 },
                 "security": [
@@ -12999,7 +12652,7 @@
                         "description": "Brand ID",
                         "required": true,
                         "schema": {
-                            "type": "integer",
+                            "type": "string",
                             "example": 1
                         }
                     },
@@ -17349,63 +17002,6 @@
                 }
             }
         },
-        "/api/frontend/coupons/customer": {
-            "get": {
-                "tags": [
-                    "FrontEnd-Customer"
-                ],
-                "summary": "Get customer coupons",
-                "description": "Returns all coupons related to the authenticated customer, grouped as all, available, used, and expired.",
-                "operationId": "getCustomerCoupons",
-                "responses": {
-                    "200": {
-                        "description": "List of customer coupons",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/coupons/search": {
-            "get": {
-                "tags": [
-                    "FrontEnd-Customer"
-                ],
-                "summary": "Search customer coupons",
-                "description": "Search through the customer's coupons using a query term.",
-                "operationId": "searchCustomerCoupons",
-                "parameters": [
-                    {
-                        "name": "query",
-                        "in": "query",
-                        "description": "Search term (coupon code, type, or value)",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Search results",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/api/frontend/update-profile": {
             "post": {
                 "tags": [
@@ -17877,97 +17473,226 @@
                 }
             }
         },
-        "/api/frontend/discounts": {
+        "/api/frontend-brands": {
             "get": {
                 "tags": [
-                    "Frontend-Discounts"
+                    "Frontend-Brand"
                 ],
-                "summary": "Get applicable discounts for a specific product",
-                "description": "Fetches active and available discounts for a given product based on product ID and its categories.",
-                "operationId": "4af08e705939209d8c7c110869b35fd2",
+                "summary": "Get Brand List",
+                "description": "Fetches a list of brands.",
+                "operationId": "fce107c37db633fc35f88a0f79772ea2",
                 "parameters": [
                     {
-                        "name": "product_id",
+                        "name": "category_id",
                         "in": "query",
-                        "description": "ID of the product to fetch discounts for",
-                        "required": true,
+                        "description": "Category ID",
                         "schema": {
                             "type": "integer",
-                            "example": 123
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "start_letter",
+                        "in": "query",
+                        "description": "Filter brands by starting letter (a-z)",
+                        "schema": {
+                            "type": "string",
+                            "example": "A"
+                        }
+                    },
+                    {
+                        "name": "with_logo_only",
+                        "in": "query",
+                        "description": "Show only brands with logos",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name"
+                            ]
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success response with applicable discounts or no discounts found",
+                        "description": "Brands retrieved successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "name": {
-                                                        "type": "string",
-                                                        "example": "Summer Sale"
-                                                    },
-                                                    "type": {
-                                                        "type": "string",
-                                                        "example": "percentage"
-                                                    },
-                                                    "value": {
-                                                        "type": "number",
-                                                        "format": "float",
-                                                        "example": 10
-                                                    },
-                                                    "start_date": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "end_date": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "No discounts available for this product or its categories."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend-brands/featured-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Brand"
+                ],
+                "summary": "Get featured brands with their featured products",
+                "description": "Retrieves featured and published brands that contain at least the minimum required number of featured products.",
+                "operationId": "76c52d284d7e8b7920ddaac312dc1d2f",
+                "parameters": [
+                    {
+                        "name": "products_limit",
+                        "in": "query",
+                        "description": "Maximum number of products to return per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
                         }
                     },
-                    "422": {
-                        "description": "Validation error",
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of brands to return",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "min_products",
+                        "in": "query",
+                        "description": "Minimum number of featured products required per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search products by name or SKU",
+                        "schema": {
+                            "type": "string",
+                            "example": "blender"
+                        }
+                    },
+                    {
+                        "name": "min_rating",
+                        "in": "query",
+                        "description": "Minimum average rating (1-5)",
+                        "schema": {
+                            "type": "number",
+                            "example": 4
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Minimum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Maximum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 5000
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Featured brands retrieved successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend-brands/customer-featured-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Brand"
+                ],
+                "summary": "Get featured brands with their featured products",
+                "description": "Retrieves featured and published brands that contain at least the minimum required number of featured products.",
+                "operationId": "8db51381a9942e48535c6fc442f3c732",
+                "parameters": [
+                    {
+                        "name": "products_limit",
+                        "in": "query",
+                        "description": "Maximum number of products to return per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of brands to return",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "min_products",
+                        "in": "query",
+                        "description": "Minimum number of featured products required per brand",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search products by name or SKU",
+                        "schema": {
+                            "type": "string",
+                            "example": "blender"
+                        }
+                    },
+                    {
+                        "name": "min_rating",
+                        "in": "query",
+                        "description": "Minimum average rating (1-5)",
+                        "schema": {
+                            "type": "number",
+                            "example": 4
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Minimum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Maximum price (uses sale price if available)",
+                        "schema": {
+                            "type": "number",
+                            "example": 5000
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Featured brands retrieved successfully",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 },
@@ -17997,6 +17722,15 @@
                         }
                     },
                     {
+                        "name": "brand_url",
+                        "in": "query",
+                        "description": "Filter categories by brand URL.",
+                        "schema": {
+                            "type": "string",
+                            "example": "hoshizaki"
+                        }
+                    },
+                    {
                         "name": "limit",
                         "in": "query",
                         "description": "Maximum number of child categories to load per parent category.",
@@ -18017,7 +17751,7 @@
                     {
                         "name": "with_parent",
                         "in": "query",
-                        "description": "Whether to include the parent category details in the response along with its children",
+                        "description": "Whether to include the parent category",
                         "schema": {
                             "type": "boolean",
                             "example": true
@@ -18102,7 +17836,7 @@
                         }
                     },
                     {
-                        "name": "categories_limit",
+                        "name": "limit",
                         "in": "query",
                         "description": "Maximum number of categories to return",
                         "schema": {
@@ -18130,14 +17864,14 @@
                 }
             }
         },
-        "/api/frontend-categories/user-featured-products": {
+        "/api/frontend-categories/customer-featured-products": {
             "get": {
                 "tags": [
                     "Frontend-Category"
                 ],
                 "summary": "Get categories with featured products",
                 "description": "Retrieves leaf categories (categories without children) that have at least 5 featured products. Returns up to 5 categories ordered by featured product count. Each category includes its top featured products with product details.",
-                "operationId": "e6fa157681f1d86b4f8fd65bc74709ce",
+                "operationId": "414e34bbc9aaecce79b805890e980557",
                 "parameters": [
                     {
                         "name": "products_limit",
@@ -18149,7 +17883,7 @@
                         }
                     },
                     {
-                        "name": "categories_limit",
+                        "name": "limit",
                         "in": "query",
                         "description": "Maximum number of categories to return",
                         "schema": {
@@ -18180,6 +17914,173 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/frontend-products": {
+            "get": {
+                "tags": [
+                    "Frontend FProduct"
+                ],
+                "summary": "Get products with filters",
+                "description": "Retrieves paginated products with comprehensive filtering options",
+                "operationId": "23bffee003eddbb58870d031ddb15ce2",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Items per page (1-100)",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by name/SKU",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Category ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "category_url",
+                        "in": "query",
+                        "description": "Category slug",
+                        "schema": {
+                            "type": "string",
+                            "example": "ice-bins"
+                        }
+                    },
+                    {
+                        "name": "brand_id",
+                        "in": "query",
+                        "description": "Brand ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "brand_url",
+                        "in": "query",
+                        "description": "Brand slug",
+                        "schema": {
+                            "type": "string",
+                            "example": "hoshizaki"
+                        }
+                    },
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Product ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "product_url",
+                        "in": "query",
+                        "description": "Product slug",
+                        "schema": {
+                            "type": "string",
+                            "example": "hoshizaki-ice-storage-bin-140l"
+                        }
+                    },
+                    {
+                        "name": "with_description",
+                        "in": "query",
+                        "description": "Whether to include the product description",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "with_attributes",
+                        "in": "query",
+                        "description": "Whether to include the additional attributes",
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "min_rating",
+                        "in": "query",
+                        "description": "Min rating (0-5)",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Min price",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Max price",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort field",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "code",
+                                "type",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Products retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
             }
         },
         "/api/frontend/faqs/product/{product_id}": {
@@ -18554,7 +18455,7 @@
                                         "type": "string",
                                         "example": "Doe"
                                     },
-                                    "email": {
+                                    "business_email": {
                                         "type": "string",
                                         "example": "john@gmail.com"
                                     },
@@ -18918,7 +18819,7 @@
                             }
                         }
                     },
-                    "404": {
+                    "422": {
                         "description": "Validation error",
                         "content": {
                             "application/json": {
@@ -20804,6 +20705,11 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "is_ccavenue": {
+                                        "description": "ccavenue payment",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "is_squarePayment": {
                                         "description": "Square payment",
                                         "type": "boolean",
@@ -21004,7 +20910,12 @@
                             "application/json": {}
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/compress-image-check": {
@@ -28950,14 +28861,14 @@
                                 "properties": {
                                     "carrierPriceId": {
                                         "type": "string",
-                                        "example": "000000"
+                                        "example": "180037922"
                                     },
                                     "customerEmailAddresses": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "email",
-                                            "example": "abc1234@email.com"
+                                            "example": "john.doe@company.com"
                                         },
                                         "minItems": 1
                                     },
@@ -28970,31 +28881,31 @@
                                         "properties": {
                                             "puNumber": {
                                                 "type": "string",
-                                                "example": ""
+                                                "example": "PU12345"
                                             },
                                             "stopName": {
                                                 "type": "string",
-                                                "example": "Test"
+                                                "example": "New York Warehouse"
                                             },
                                             "contactName": {
                                                 "type": "string",
-                                                "example": "Test Test"
+                                                "example": "John Smith"
                                             },
                                             "contactPhone": {
                                                 "type": "string",
-                                                "example": "5555555555"
+                                                "example": "5165557890"
                                             },
                                             "contactExtension": {
                                                 "type": "string",
-                                                "example": "12345"
+                                                "example": "101"
                                             },
                                             "address1": {
                                                 "type": "string",
-                                                "example": "123 Test Street"
+                                                "example": "250 Express Drive South"
                                             },
                                             "address2": {
                                                 "type": "string",
-                                                "nullable": true
+                                                "example": "Suite 100"
                                             },
                                             "hoursOpen": {
                                                 "type": "string",
@@ -29011,31 +28922,31 @@
                                         "properties": {
                                             "deliveryPO": {
                                                 "type": "string",
-                                                "example": ""
+                                                "example": "PO789456"
                                             },
                                             "stopName": {
                                                 "type": "string",
-                                                "example": "TestPlace"
+                                                "example": "Ohio Distribution Center"
                                             },
                                             "contactName": {
                                                 "type": "string",
-                                                "example": "Test people"
+                                                "example": "Michael Brown"
                                             },
                                             "contactPhone": {
                                                 "type": "string",
-                                                "example": "5555555555"
+                                                "example": "5135554321"
                                             },
                                             "contactExtension": {
                                                 "type": "string",
-                                                "nullable": true
+                                                "example": "202"
                                             },
                                             "address1": {
                                                 "type": "string",
-                                                "example": "1234 Test Street"
+                                                "example": "1200 Central Parkway"
                                             },
                                             "address2": {
                                                 "type": "string",
-                                                "nullable": true
+                                                "example": "Dock 4"
                                             },
                                             "hoursOpen": {
                                                 "type": "string",
@@ -29065,6 +28976,251 @@
                         "description": "Server error"
                     }
                 }
+            }
+        },
+        "/api/frontend/tql-loads-tender": {
+            "post": {
+                "tags": [
+                    "Frontend-TQL"
+                ],
+                "summary": "Request TQL loads Tendering",
+                "operationId": "60920849b0580244ce95ca35e6bd8343",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "customerEmailAddresses": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "test@tql.com"
+                                        }
+                                    },
+                                    "scac": {
+                                        "type": "string",
+                                        "example": "BBFG"
+                                    },
+                                    "serviceLevel": {
+                                        "type": "string",
+                                        "example": "Standard"
+                                    },
+                                    "customerReference": {
+                                        "type": "string",
+                                        "example": "Sample Reference"
+                                    },
+                                    "poNumber": {
+                                        "type": "string",
+                                        "example": "34996030"
+                                    },
+                                    "soNumber": {
+                                        "type": "string",
+                                        "example": "34996030"
+                                    },
+                                    "specialInstructions": {
+                                        "type": "string",
+                                        "example": "Handle with care"
+                                    },
+                                    "commodities": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "unitTypeCode": {
+                                                    "type": "string",
+                                                    "example": "PLT"
+                                                },
+                                                "freightClassCode": {
+                                                    "type": "string",
+                                                    "example": "55"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Fresh Tomatoes"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 4
+                                                },
+                                                "weight": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1200.5
+                                                },
+                                                "dimensionLength": {
+                                                    "type": "integer",
+                                                    "example": 48
+                                                },
+                                                "dimensionWidth": {
+                                                    "type": "integer",
+                                                    "example": 40
+                                                },
+                                                "dimensionHeight": {
+                                                    "type": "integer",
+                                                    "example": 60
+                                                },
+                                                "isStackable": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
+                                                "isHazmat": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "accessorials": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Liftgate Pickup"
+                                        }
+                                    },
+                                    "shipmentDate": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-01-16T00:00:00-05:00"
+                                    },
+                                    "pickupDetails": {
+                                        "properties": {
+                                            "puNumber": {
+                                                "type": "string",
+                                                "example": "PU-789456"
+                                            },
+                                            "address1": {
+                                                "type": "string",
+                                                "example": "617 Test Street"
+                                            },
+                                            "address2": {
+                                                "type": "string",
+                                                "example": "Suite 200"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Cincinnati"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "OH"
+                                            },
+                                            "postalCode": {
+                                                "type": "string",
+                                                "example": "45203"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "USA"
+                                            },
+                                            "stopName": {
+                                                "type": "string",
+                                                "example": "Cincinnati Distribution Center"
+                                            },
+                                            "locationType": {
+                                                "type": "string",
+                                                "example": "Commercial"
+                                            },
+                                            "contactName": {
+                                                "type": "string",
+                                                "example": "John Smith"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string",
+                                                "example": "2169582529"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string",
+                                                "example": "569"
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "09:30 AM"
+                                            },
+                                            "hoursClose": {
+                                                "type": "string",
+                                                "example": "09:30 PM"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "deliveryDetails": {
+                                        "properties": {
+                                            "deliveryPO": {
+                                                "type": "string",
+                                                "example": "DEL-123456"
+                                            },
+                                            "address1": {
+                                                "type": "string",
+                                                "example": "383 Test Drive"
+                                            },
+                                            "address2": {
+                                                "type": "string",
+                                                "example": "Warehouse B"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Fresno"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "CA"
+                                            },
+                                            "postalCode": {
+                                                "type": "string",
+                                                "example": "93714"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "USA"
+                                            },
+                                            "stopName": {
+                                                "type": "string",
+                                                "example": "Fresno Receiving Facility"
+                                            },
+                                            "locationType": {
+                                                "type": "string",
+                                                "example": "Commercial"
+                                            },
+                                            "contactName": {
+                                                "type": "string",
+                                                "example": "David Johnson"
+                                            },
+                                            "contactPhone": {
+                                                "type": "string",
+                                                "example": "9995771510"
+                                            },
+                                            "contactExtension": {
+                                                "type": "string",
+                                                "example": "195"
+                                            },
+                                            "hoursOpen": {
+                                                "type": "string",
+                                                "example": "11:00 AM"
+                                            },
+                                            "hoursClose": {
+                                                "type": "string",
+                                                "example": "04:00 AM"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Shipment created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/tql-getQuote/{quoteId}": {
@@ -29114,7 +29270,7 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "example": "8828101"
+                            "example": "34996030"
                         }
                     }
                 ],
@@ -33855,7 +34011,10 @@
                                             "CC Avenue",
                                             "NetTerm",
                                             "Check",
-                                            "Cheque"
+                                            "Cheque",
+                                            "Ascentium Capital",
+                                            "Resolve Pay",
+                                            "Approve"
                                         ],
                                         "example": "Credit Card"
                                     },
@@ -34318,7 +34477,9 @@
                                             "Square",
                                             "NetTerm",
                                             "Check",
-                                            "Cheque"
+                                            "Ascentium Capital",
+                                            "Resolve Pay",
+                                            "Approve"
                                         ],
                                         "example": "Cash on Delivery"
                                     },
@@ -36823,10 +36984,6 @@
                                         "type": "string",
                                         "example": "USD"
                                     },
-                                    "tax_id": {
-                                        "type": "integer",
-                                        "example": 3
-                                    },
                                     "currency_id": {
                                         "type": "integer",
                                         "example": 1
@@ -36895,10 +37052,6 @@
                                     "views": {
                                         "type": "integer",
                                         "example": 200
-                                    },
-                                    "units_sold": {
-                                        "type": "integer",
-                                        "example": 50
                                     },
                                     "order": {
                                         "type": "integer",
@@ -47098,6 +47251,10 @@
                                             11
                                         ]
                                     },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "ABC STreet Houston"
+                                    },
                                     "city_ids": {
                                         "type": "array",
                                         "items": {
@@ -47109,15 +47266,9 @@
                                             3
                                         ]
                                     },
-                                    "zipcode_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        },
-                                        "example": [
-                                            101,
-                                            102
-                                        ]
+                                    "zipcode": {
+                                        "type": "string",
+                                        "example": "11211"
                                     },
                                     "dropshipping": {
                                         "type": "boolean",
@@ -47317,6 +47468,10 @@
                                             11
                                         ]
                                     },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "ABC STreet Houston"
+                                    },
                                     "city_ids": {
                                         "type": "array",
                                         "items": {
@@ -47328,15 +47483,9 @@
                                             3
                                         ]
                                     },
-                                    "zipcode_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        },
-                                        "example": [
-                                            101,
-                                            102
-                                        ]
+                                    "zipcode": {
+                                        "type": "string",
+                                        "example": "11211"
                                     },
                                     "dropshipping": {
                                         "type": "boolean",
@@ -48367,102 +48516,6 @@
                 },
                 "type": "object"
             },
-            "Discount": {
-                "title": "Discount",
-                "description": "Discount model",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "title": {
-                        "type": "string",
-                        "example": "Black Friday Sale"
-                    },
-                    "code": {
-                        "type": "string",
-                        "example": "BLACKFRIDAY2024",
-                        "nullable": true
-                    },
-                    "start_date": {
-                        "type": "string",
-                        "format": "date",
-                        "example": "2024-11-25",
-                        "nullable": true
-                    },
-                    "end_date": {
-                        "type": "string",
-                        "format": "date",
-                        "example": "2024-11-30",
-                        "nullable": true
-                    },
-                    "quantity": {
-                        "type": "integer",
-                        "example": 100,
-                        "nullable": true
-                    },
-                    "total_used": {
-                        "type": "integer",
-                        "example": 25,
-                        "nullable": true
-                    },
-                    "value": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 15.5
-                    },
-                    "type": {
-                        "type": "string",
-                        "example": "percentage"
-                    },
-                    "can_use_with_promotion": {
-                        "type": "boolean",
-                        "example": true
-                    },
-                    "discount_on": {
-                        "type": "string",
-                        "example": "product"
-                    },
-                    "product_quantity": {
-                        "type": "integer",
-                        "example": 2,
-                        "nullable": true
-                    },
-                    "type_option": {
-                        "type": "string",
-                        "example": "fixed"
-                    },
-                    "target": {
-                        "type": "string",
-                        "example": "order"
-                    },
-                    "min_order_price": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 50,
-                        "nullable": true
-                    },
-                    "apply_via_url": {
-                        "type": "boolean",
-                        "example": false
-                    },
-                    "display_at_checkout": {
-                        "type": "boolean",
-                        "example": true
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "Get 15% off for Black Friday!",
-                        "nullable": true
-                    },
-                    "store_id": {
-                        "type": "integer",
-                        "example": 3,
-                        "nullable": true
-                    }
-                },
-                "type": "object"
-            },
             "Faq": {
                 "title": "FAQ",
                 "description": "FAQ model",
@@ -48517,36 +48570,6 @@
                     "updated_at": {
                         "type": "string",
                         "format": "date-time"
-                    }
-                },
-                "type": "object"
-            },
-            "FlashSale": {
-                "title": "Flash Sale",
-                "description": "Flash sale model",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "Summer Sale"
-                    },
-                    "end_date": {
-                        "type": "string",
-                        "format": "date",
-                        "example": "2024-08-30"
-                    },
-                    "status": {
-                        "type": "string",
-                        "example": "published"
-                    },
-                    "products": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Product"
-                        }
                     }
                 },
                 "type": "object"
@@ -48649,52 +48672,6 @@
                     "name": {
                         "type": "string",
                         "example": "United States"
-                    }
-                },
-                "type": "object"
-            },
-            "Coupon": {
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "code": {
-                        "type": "string",
-                        "example": "WELCOME10"
-                    },
-                    "value": {
-                        "type": "number",
-                        "example": 50
-                    },
-                    "type": {
-                        "type": "string",
-                        "example": "fixed"
-                    },
-                    "min_order_price": {
-                        "type": "number",
-                        "example": 100
-                    },
-                    "quantity": {
-                        "type": "integer",
-                        "example": 100
-                    },
-                    "total_used": {
-                        "type": "integer",
-                        "example": 10
-                    },
-                    "expires_at": {
-                        "type": "string",
-                        "format": "date",
-                        "example": "2025-12-31"
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time"
                     }
                 },
                 "type": "object"
@@ -49077,6 +49054,18 @@
             "description": "To generate Json Web Token"
         },
         {
+            "name": "Frontend-Category",
+            "description": "........"
+        },
+        {
+            "name": "Frontend-Brand",
+            "description": "........"
+        },
+        {
+            "name": "Frontend FProduct",
+            "description": "........"
+        },
+        {
             "name": "Attributes",
             "description": "API Endpoints for Attribute Management"
         },
@@ -49143,10 +49132,6 @@
         {
             "name": "Blogs",
             "description": "API endpoints for managing blogs"
-        },
-        {
-            "name": "Discounts",
-            "description": "API Endpoints for managing discounts"
         },
         {
             "name": "Newsletters",
@@ -49245,10 +49230,6 @@
             "description": "FAQ Categories"
         },
         {
-            "name": "Flash Sales",
-            "description": "Flash Sales"
-        },
-        {
             "name": "Frontend-Blogs",
             "description": "Frontend-Blogs"
         },
@@ -49327,14 +49308,6 @@
         {
             "name": "FrontEnd-Customer Events",
             "description": "FrontEnd-Customer Events"
-        },
-        {
-            "name": "Frontend-Discounts",
-            "description": "Frontend-Discounts"
-        },
-        {
-            "name": "Frontend-Category",
-            "description": "Frontend-Category"
         },
         {
             "name": "Frontend - FAQs",

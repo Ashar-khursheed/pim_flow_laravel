@@ -108,6 +108,8 @@ use App\Http\Controllers\FrontEnd\CartController as F_CartController;
 use App\Http\Controllers\FrontEnd\CustomerAddressController as F_CustomerAddressController;
 use App\Http\Controllers\FrontEnd\CategoryController as F_CategoryController;
 use App\Http\Controllers\FrontEnd\FCategoryController;
+use App\Http\Controllers\FrontEnd\FBrandController;
+use App\Http\Controllers\FrontEnd\FProductController;
 use App\Http\Controllers\FrontEnd\CountryController as F_CountryController;
 use App\Http\Controllers\FrontEnd\CouponController as F_CouponController;
 use App\Http\Controllers\FrontEnd\OrderController as F_OrderController;
@@ -409,7 +411,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('products/{id}/product-category-attribute-groups', [ProductAttributeController::class, 'productCategoryAttributeGroups']);
 
 	Route::post('/attributes/generate-translation', [AttributeController::class, 'generateTranslation']);
-	Route::resource('attributes', AttributeController::class);
+	Route::resource('attributes', AttributeController::class);	 
+	Route::post('attributes/{id}/image', [AttributeController::class, 'updateImageAttribute']);
 	Route::delete('attribute-groups/{id}/remove-attribute/{attribute_id}', [AttributeGroupController::class, 'removeAttribute']);
 	Route::resource('attribute-groups', AttributeGroupController::class);
 	Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);
@@ -481,6 +484,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
     Route::get('/ltl/quotes/{id}', [TqlQuoteController::class, 'get']);
     Route::post('/ltl/quotes/tender', [TenderController::class, 'tender']);
     Route::get('/tracking/{poNumber}', [TrackingController::class, 'track']);
+    Route::post('/ltl/loads/tender', [TenderController::class, 'tenderByScac']);
     Route::post('/ltl/loads/tender', [TenderController::class, 'tenderByScac']);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
@@ -849,7 +853,8 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
 	});
 
-	Route::get('/frontend-categories/user-featured-products', [FCategoryController::class, 'getUserFeaturedCategoryProducts']);
+	Route::get('/frontend-categories/customer-featured-products', [FCategoryController::class, 'getCustomerFeaturedCategoryProducts']);
+	Route::get('/frontend-brands/customer-featured-products', [FBrandController::class, 'getCustomerFeaturedBrandProducts']);
 
 });
 
@@ -874,6 +879,10 @@ Route::get('/frontend-categories/featured-products', [FCategoryController::class
 Route::get('/frontend-categories/with-parents', [FCategoryController::class, 'fetchCategoriesWithParents']);
 Route::get('/frontend-categories', [FCategoryController::class, 'index']);
 
+Route::get('/frontend-brands/featured-products', [FBrandController::class, 'getFeaturedBrandProducts']);
+Route::get('/frontend-brands', [FBrandController::class, 'index']);
+
+Route::get('/frontend-products', [FProductController::class, 'index']);
 
 Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);
 Route::get('/frontend/categories/sale', [F_CategoryController::class, 'saleCategories']);
@@ -924,9 +933,6 @@ Route::get('/frontend/brands/alphabetical', [F_BrandController::class, 'getAllBr
 Route::get('/frontend/countries', [F_CountryController::class, 'index']);
 Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
 Route::get('/frontend/country-phonecodes', [F_CountryController::class, 'getPhoneCodes']);
-
-
-
 
 Route::prefix('/frontend/blogs')->group(function () {
 	Route::get('/', [F_BlogController::class, 'index']);
@@ -1015,6 +1021,7 @@ Route::post('frontend/tql-createQuote', [TqlRateController::class, 'createQuote'
 Route::post('frontend/tql-tenderShipment', [TqlRateController::class, 'tenderShipment']);
 Route::get('frontend/tql-getQuote/{quoteId}', [TqlRateController::class, 'getQuote']);
 Route::get('frontend/tql-tracking/{poNumber}', [TqlRateController::class, 'getTracking']);
+Route::post('frontend/tql-loads-tender', [TqlRateController::class, 'tqlLoadsTender']);
 
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'paymentSuccess']);
 Route::post('/ccavenue/failed', [F_CCavenueController::class, 'paymentFailed']);
