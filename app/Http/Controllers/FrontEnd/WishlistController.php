@@ -198,10 +198,21 @@ class WishlistController extends Controller
 			// --------------------
 			// Supplier Info
 			// --------------------
-			$supplier = $product->productSuppliers->first();
+			$supplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
 
 			if ($supplier) {
 				$product->vendor_sku = $supplier->vendor_sku;
+
+				$product->vendor_country = $supplier->vendor->country->name ?? null;
+				$product->vendor_city = $supplier->vendor->city->name ?? null;
+				$product->vendor_address = $supplier->vendor->address ?? null;
+				$product->vendor_zipcode = $supplier->vendor->zipcode ?? null;
+
 				$product->price = (float) $supplier->price;
 				$product->sale_price = (float) $supplier->sale_price;
 				$product->original_price = (float) $supplier->price;

@@ -176,7 +176,12 @@ class BrandController extends Controller
 								'attribute_value_unit' => $unit,
 							];
 						}
-						$firstSupplier = $product->productSuppliers->first();
+						$firstSupplier = $product->productSuppliers()
+						->with([
+							'vendor.country:id,name',
+							'vendor.city:id,name'
+						])
+						->first();
 						// Per unit price
 						// $unitsPerCase = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
 						// $packType = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
@@ -213,6 +218,12 @@ class BrandController extends Controller
 							"selling_type" => $sellingType,
 							"per_unit_price" => $perUnitPrice,
 							'vendor_sku' => $firstSupplier?->vendor_sku ?? null,
+
+							'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+							'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+							'vendor_address' => $firstSupplier->vendor->address ?? null,
+							'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 							'price' => $firstSupplier ? (float) $firstSupplier->price : 0,
 							'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : 0,
 							'original_price'=> $firstSupplier ? (float) $firstSupplier->price : 0,
@@ -237,8 +248,8 @@ class BrandController extends Controller
 						];
 
 					})
-				];
-			}),
+				];//
+			}),//
 		])->header('Cache-Control', 'public, max-age=86400');//
 	}//
 
@@ -419,7 +430,12 @@ class BrandController extends Controller
 								'attribute_value_unit' => $attributeUnit,
 							];
 						}
-						$firstSupplier = $details->productSuppliers->first();
+						$firstSupplier = $details->productSuppliers()
+						->with([
+							'vendor.country:id,name',
+							'vendor.city:id,name'
+						])
+						->first();
 
 						// Calculate per unit price
 						// $unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
@@ -461,6 +477,12 @@ class BrandController extends Controller
 							'vendor_id' => $firstSupplier->vendor_id ?? null,
 							'per_unit_price' => $details->per_unit_price,
 							'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+							'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+							'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+							'vendor_address' => $firstSupplier->vendor->address ?? null,
+							'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 							'price' => (float) ($firstSupplier->price ?? 0),
 							'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : 0,
 							'original_price' => (float) ($firstSupplier->price ?? 0),
@@ -946,7 +968,12 @@ class BrandController extends Controller
 					];
 				}
 
-				$firstSupplier = $product->productSuppliers->first();
+				$firstSupplier = $product->productSuppliers()
+				->with([
+					'vendor.country:id,name',
+					'vendor.city:id,name'
+				])
+				->first();
 
 				return [
 					'id' => $product->id,
@@ -956,6 +983,12 @@ class BrandController extends Controller
 					'parent_category_url' => $product->parent_category_url(),
 					'url' => $product->seoUrl->url ?? null,
 					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+					'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+					'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+					'vendor_address' => $firstSupplier->vendor->address ?? null,
+					'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 					'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 					'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
 					'total_reviews' => $totalReviews,

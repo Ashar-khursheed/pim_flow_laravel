@@ -210,7 +210,12 @@ class RecentlyViewedProductController extends Controller
 						];
 					}
 
-					$firstSupplier = $product->productSuppliers->first();
+					$firstSupplier = $product->productSuppliers()
+					->with([
+						'vendor.country:id,name',
+						'vendor.city:id,name'
+					])
+					->first();
 
 					return [
 						'id' => $product->id,
@@ -229,6 +234,12 @@ class RecentlyViewedProductController extends Controller
 
 						// 🔹 Supplier-safe values
 						'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+						'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+						'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+						'vendor_address' => $firstSupplier->vendor->address ?? null,
+						'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 						'price' => (float) ($firstSupplier->price ?? 0),
 						'sale_price' => (float) ($firstSupplier->sale_price ?? 0),
 						'original_price' => (float) ($firstSupplier->price ?? 0),
@@ -438,8 +449,13 @@ class RecentlyViewedProductController extends Controller
 					'attribute_value_unit' => $attributeUnit,
 				];
 			}
-			$firstSupplier = $product->productSuppliers->first();
 
+			$firstSupplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
 
 			$data[] = [
 				'id' => $product->id,
@@ -456,6 +472,12 @@ class RecentlyViewedProductController extends Controller
 				'images' => $cleanedImages,
 				"selling_type"=> $sellingType,
 				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+				'vendor_address' => $firstSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 				'price' => (float) ($firstSupplier->price ?? 0),
 				"sale_price" => (float) ($firstSupplier->sale_price ?? 0),
 				"original_price"=> (float) ($firstSupplier->price ?? 0),

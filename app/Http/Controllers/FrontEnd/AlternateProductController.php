@@ -114,13 +114,13 @@ class AlternateProductController extends Controller
 					: $product->price,
 					'in_wishlist' => in_array($product->id, $wishlistProductIds),
 					'selling_type' => $sellingType,
+					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 
 					'vendor_country' => $firstSupplier->vendor->country->name ?? null,
 					'vendor_city' => $firstSupplier->vendor->city->name ?? null,
 					'vendor_address' => $firstSupplier->vendor->address ?? null,
 					'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
 
-					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 					'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 					'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
 					'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
@@ -256,13 +256,13 @@ class AlternateProductController extends Controller
 						: ($product->price . ' ' . $product->currency->symbol))
 					: $product->price,
 					'selling_type' => $sellingType,
+					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 
 					'vendor_country' => $firstSupplier->vendor->country->name ?? null,
 					'vendor_city' => $firstSupplier->vendor->city->name ?? null,
 					'vendor_address' => $firstSupplier->vendor->address ?? null,
 					'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
 
-					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 					'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 					'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
 					'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,

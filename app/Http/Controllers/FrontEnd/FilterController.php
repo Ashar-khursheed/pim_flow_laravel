@@ -406,7 +406,13 @@ class FilterController extends Controller
 
 		$transformedProducts = [];
 		foreach ($products as $product) {
-			$firstSupplier = $product->productSuppliers->first();
+			$firstSupplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
+
 			$fullValue = $product->sellingUnitAttribute->attribute_value ?? null;
 
 			$attributeUnit = $product->sellingUnitAttribute && strpos($fullValue, '/') !== false
@@ -425,6 +431,12 @@ class FilterController extends Controller
 				'sku' => $product->sku,
 				'url' => $product->seoProductUrl?->url ?? null,
 				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+				'vendor_address' => $firstSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 				'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 				'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
 				'total_reviews' => $product->reviews->count(),
