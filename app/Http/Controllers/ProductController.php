@@ -825,10 +825,10 @@ class ProductController extends BaseController
 				'in_stock' => $ps->in_stock,
 				'delivery_days' => $ps->delivery_days,
 				'vendor_name' => $ps->vendor->name ?? null,
-				'dropshipping' => $ps->vendor->dropshipping ?? null,
-				'min_quantity' => $ps->vendor->min_quantity ?? null,
-				'return_policy' => $ps->vendor->return_policy ?? null,
-				'is_fixed' => $ps->vendor->is_fixed ?? null,
+				'dropshipping' => $ps->dropshipping ?? null,
+				'min_quantity' => $ps->min_quantity ?? null,
+				'return_policy' => $ps->return_policy ?? null,
+				'is_fixed' => $ps->is_fixed ?? null,
 			];
 		});
 
