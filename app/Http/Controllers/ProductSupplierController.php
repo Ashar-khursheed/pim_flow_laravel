@@ -388,9 +388,9 @@ class ProductSupplierController extends BaseController
 		/* Business rules */
 		$rowErrors = [];
 
-		// if (!empty($data['multiple']) && ($data['multiple'] <= 0 || $data['multiple'] >= 1)) {
-		// 	$rowErrors[] = "'Multiple' must be greater than 0 and less than 1.";
-		// }
+		if (!empty($data['multiple']) ) {
+			$rowErrors[] = "'Multiple' must be greater than 0 and less than 1.";
+		}
 
 		if (!empty($data['map']) && !empty($data['sale_price']) && (float)$data['map'] > (float)$data['sale_price']) {
 			$rowErrors[] = 'Sale Price cannot be less than MAP.';
