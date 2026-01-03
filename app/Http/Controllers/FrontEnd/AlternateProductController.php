@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 class AlternateProductController extends Controller
 {
-
 	public function getAlternateProducts(Request $request, $productId = null)
 	{
 		try {
@@ -160,7 +159,6 @@ class AlternateProductController extends Controller
 		}
 	}
 
-
 	public function getAlternateGuestProducts(Request $request, $productId = null)
 	{
 		try {
@@ -289,6 +287,7 @@ class AlternateProductController extends Controller
 			], 500);
 		}
 	}
+
 	protected function normalizeMediaUrls($media)
 	{
 		if (empty($media)) {
