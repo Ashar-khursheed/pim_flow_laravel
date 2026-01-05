@@ -179,7 +179,7 @@ class ImportProductJob implements ShouldQueue
 				/* Description validations */
 				for ($i = 1; $i <= 4; $i++) {
 					$desc = ${"description$i"} ?? '';
-					if (!empty($desc) && strlen($desc) > 500) {
+					if (!empty($desc) && mb_strlen($desc) > 500) {
 						$rowError[] = "Maximum 500 characters allowed in Description$i";
 					}
 					if ($i === 1 && empty($desc)) {
@@ -192,10 +192,10 @@ class ImportProductJob implements ShouldQueue
 					$benefit = ${"benefit$i"} ?? '';
 					$feature = ${"feature$i"} ?? '';
 
-					if (!empty($benefit) && strlen($benefit) > 40) {
+					if (!empty($benefit) && mb_strlen($benefit) > 40) {
 						$rowError[] = "Maximum 40 characters allowed in Benefit$i";
 					}
-					if (!empty($feature) && strlen($feature) > 200) {
+					if (!empty($feature) && mb_strlen($feature) > 200) {
 						$rowError[] = "Maximum 200 characters allowed in Feature$i";
 					}
 
@@ -210,10 +210,10 @@ class ImportProductJob implements ShouldQueue
 					$faqQ = ${"faq_question$i"} ?? '';
 					$faqA = ${"faq_answer$i"} ?? '';
 
-					if (!empty($faqQ) && strlen($faqQ) > 300) {
+					if (!empty($faqQ) && mb_strlen($faqQ) > 300) {
 						$rowError[] = "Maximum 300 characters allowed in FAQ Question$i";
 					}
-					if (!empty($faqA) && strlen($faqA) > 500) {
+					if (!empty($faqA) && mb_strlen($faqA) > 500) {
 						$rowError[] = "Maximum 500 characters allowed in FAQ Answer$i";
 					}
 
