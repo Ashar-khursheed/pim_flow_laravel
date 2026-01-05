@@ -151,6 +151,19 @@ class Product extends Model implements TranslatableContract
 		return $this->hasMany(ProductAttribute::class);
 	}
 
+	public function shippingAttributes()
+	{
+		return $this->hasMany(ProductAttribute::class)
+		->whereHas('attributeDetails', function ($query) {
+			$query->whereIn('name', [
+				'Shipping Height',
+				'Shipping Length',
+				'Shipping Weight',
+				'Shipping Width'
+			]);
+		});
+	}
+
 	public function sellingUnitAttribute()
 	{
 		return $this->hasOne(ProductAttribute::class)
