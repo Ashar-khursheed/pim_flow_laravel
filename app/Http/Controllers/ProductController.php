@@ -1264,7 +1264,7 @@ class ProductController extends BaseController
 			}
 		}
 
-		
+
 		/* Handle multilingual product attributes with sync */
 		if ($request->has('product_attributes') && !empty($request->input('product_attributes')) ) {
 			$productAttributes = $request->input('product_attributes', []);
@@ -1547,7 +1547,7 @@ class ProductController extends BaseController
 						$faq = $product->faqs()->create([
 							'question' => $locale === 'en' ? $faqData['question'] : 'NA',
 							'answer' => $locale === 'en' ? $faqData['answer'] : 'NA',
-							'category_id' => $faqData['category_id'] ?? null,
+							'category_id' => $faqData['category_id'] ?? $product->latestChildCategory()?->id,
 							'status' => 'published',
 						]);
 					} else {
@@ -1583,7 +1583,7 @@ class ProductController extends BaseController
 
 		if ($canModifyImages) {
 			if ($request->has('images') && !empty(array_filter($request->images))) {
-			 
+
 				$updatedImages = [];
 				$manager = new ImageManager(new Driver()); // ✅ Initialize once
 
