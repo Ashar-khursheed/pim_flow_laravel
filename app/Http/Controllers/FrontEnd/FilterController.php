@@ -76,12 +76,6 @@ class FilterController extends Controller
 	 */
 	public function index(Request $request)
 	{
-		// $locale = $request->input('locale', 'ar');
-		// // dd($locale);
-		// if (in_array($locale, ['ar', 'en'])) {
-		// 	App::setLocale($locale);
-		// }
-
 		/* Validate request data */
 		$request->validate([
 			'category_id' => 'required|integer|exists:categories,id',
@@ -412,7 +406,13 @@ class FilterController extends Controller
 
 		$transformedProducts = [];
 		foreach ($products as $product) {
-			$firstSupplier = $product->productSuppliers->first();
+			$firstSupplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
+
 			$fullValue = $product->sellingUnitAttribute->attribute_value ?? null;
 
 			$attributeUnit = $product->sellingUnitAttribute && strpos($fullValue, '/') !== false
@@ -431,6 +431,12 @@ class FilterController extends Controller
 				'sku' => $product->sku,
 				'url' => $product->seoProductUrl?->url ?? null,
 				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+				'vendor_address' => $firstSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 				'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 				'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
 				'total_reviews' => $product->reviews->count(),
@@ -456,7 +462,7 @@ class FilterController extends Controller
 				'min_quantity' => $firstSupplier->min_quantity ?? 0,
 				'is_fixed' => $firstSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
-				 'isRequired' => $product->isRequired,
+				'isRequired' => $product->isRequired,
 			];
 		}
 
