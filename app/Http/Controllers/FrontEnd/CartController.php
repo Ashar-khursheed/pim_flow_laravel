@@ -277,20 +277,20 @@ class CartController extends Controller
 			$product->unsetRelation('currency');
 			$product->currency = $symbol;
 
-			$shippingAttributesCollection = $product->shippingAttributes()
+			$shippingAttributes = $product->shippingAttributes()
 			->with([
 				'attributeDetails:id,name',
 				'measurementUnit:id,name'
 			])
-			->get();
-
-			$shippingAttributes = [];
-
-			foreach ($shippingAttributesCollection as $attr) {
+			->get()
+			->flatMap(function ($attr) {
 				$key = strtolower(str_replace(' ', '_', $attr->attributeDetails->name));
-				$shippingAttributes[$key] = $attr->attribute_value;
-				$shippingAttributes[$key . '_unit'] = $attr->measurementUnit->name;
-			}
+				return [
+					$key => $attr->attribute_value,
+					$key . '_unit' => $attr->measurementUnit->name
+				];
+			})
+			->toArray();
 
 			$supplier = $cartProduct->vendorProductSupplier;
 			if ($supplier) {
