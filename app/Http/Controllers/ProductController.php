@@ -1281,7 +1281,7 @@ class ProductController extends BaseController
 						$faq = $product->faqs()->create([
 							'question' => $locale === 'en' ? $faqData['question'] : 'NA',
 							'answer' => $locale === 'en' ? $faqData['answer'] : 'NA',
-							'category_id' => $faqData['category_id'] ?? null,
+							'category_id' => $faqData['category_id'] ?? $product->latestChildCategory()?->id,
 							'status' => 'published',
 						]);
 					} else {
