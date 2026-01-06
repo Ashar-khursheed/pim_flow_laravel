@@ -113,7 +113,13 @@ class CompareProductController extends Controller
 					return null;
 				}
 
-				$firstSupplier = $products->productSuppliers->first();
+				$firstSupplier = $products->productSuppliers()
+				->with([
+					'vendor.country:id,name',
+					'vendor.city:id,name'
+				])
+				->first();
+
 				$product_attributes = [];
 				foreach ($products->productAttributes as $attr) {
 					$product_attributes[] = [
@@ -135,6 +141,12 @@ class CompareProductController extends Controller
 					: (is_array($decoded = json_decode($products->images, true)) ? $decoded : null),
 
 					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+					'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+					'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+					'vendor_address' => $firstSupplier->vendor->address ?? null,
+					'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 					'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 					'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
 					'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,

@@ -519,7 +519,12 @@ class CategoryController extends Controller
 						->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
 					}
 
-					$firstSupplier = $details->productSuppliers->first();
+					$firstSupplier = $details->productSuppliers()
+					->with([
+						'vendor.country:id,name',
+						'vendor.city:id,name'
+					])
+					->first();
 
 					$basePrice = null;
 					if ($firstSupplier) {
@@ -548,6 +553,12 @@ class CategoryController extends Controller
 						'sku' => $details->sku,
 						'url' => $details->seoUrl->url ?? null,
 						'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+						'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+						'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+						'vendor_address' => $firstSupplier->vendor->address ?? null,
+						'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 						'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 						'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
 						'total_reviews' => $totalReviews,
@@ -671,7 +682,13 @@ class CategoryController extends Controller
 							'attribute_value_unit' => $attributeUnit,
 						];
 					}
-					$firstSupplier = $details->productSuppliers->first();
+					$firstSupplier = $details->productSuppliers()
+					->with([
+						'vendor.country:id,name',
+						'vendor.city:id,name'
+					])
+					->first();
+
 					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
 
 					// Calculate per unit price
@@ -706,6 +723,12 @@ class CategoryController extends Controller
 						'parent_category_url' => $details->parent_category_url(),
 						'url' => $details->seoUrl->url ?? null,
 						'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+						'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+						'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+						'vendor_address' => $firstSupplier->vendor->address ?? null,
+						'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 						'price' => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
 						"sale_price" => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : null,
 						'total_reviews' => $totalReviews,

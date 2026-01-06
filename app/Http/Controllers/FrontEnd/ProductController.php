@@ -260,9 +260,21 @@ class ProductController extends Controller
 		$product->in_wishlist = $isInWishlist;
 
 		// Supplier info
-		$firstSupplier = $product->productSuppliers->first();
+		$firstSupplier = $product->productSuppliers()
+		->with([
+			'vendor.country:id,name',
+			'vendor.city:id,name'
+		])
+		->first();
+
 		if ($firstSupplier) {
 			$product->vendor_sku = $firstSupplier->vendor_sku;
+
+			$product->vendor_country = $firstSupplier->vendor->country->name ?? null;
+			$product->vendor_city = $firstSupplier->vendor->city->name ?? null;
+			$product->vendor_address = $firstSupplier->vendor->address ?? null;
+			$product->vendor_zipcode = $firstSupplier->vendor->zipcode ?? null;
+
 			$product->price = (float) $firstSupplier->price;
 			$product->sale_price = (float) $firstSupplier->sale_price;
 			$product->original_price = (float) $firstSupplier->price;
@@ -793,10 +805,21 @@ class ProductController extends Controller
 			$product->avg_rating = $avgRating;
 			$product->leftStock = $leftStock;
 
-			$firstSupplier = $product->productSuppliers->first();
+			$firstSupplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
 
 			if ($firstSupplier) {
 				$product->vendor_sku = $firstSupplier->vendor_sku;
+
+				$product->vendor_country = $firstSupplier->vendor->country->name ?? null;
+				$product->vendor_city = $firstSupplier->vendor->city->name ?? null;
+				$product->vendor_address = $firstSupplier->vendor->address ?? null;
+				$product->vendor_zipcode = $firstSupplier->vendor->zipcode ?? null;
+
 				$product->price = (float) $firstSupplier->price;
 				$product->sale_price = (float) $firstSupplier->sale_price;
 				$product->original_price = (float) $firstSupplier->price;
@@ -1203,7 +1226,6 @@ class ProductController extends Controller
 			])
 			->first();
 
-
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
@@ -1229,12 +1251,13 @@ class ProductController extends Controller
 				: $product->price,
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 
+				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
 				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
 				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
 				'vendor_address' => $firstSupplier->vendor->address ?? null,
 				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
 
-				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 				'price' => (float) $firstSupplier->price,
 				"sale_price" => (float) $firstSupplier->sale_price,
 				"original_price" => (float) $firstSupplier->price,
@@ -1400,12 +1423,13 @@ class ProductController extends Controller
 				: $product->price,
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 
+				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
 				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
 				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
 				'vendor_address' => $firstSupplier->vendor->address ?? null,
 				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
 
-				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 				'price' => (float) $firstSupplier->price,
 				"sale_price" => (float) $firstSupplier->sale_price,
 				"original_price" => (float) $firstSupplier->price,
@@ -1531,7 +1555,13 @@ class ProductController extends Controller
 			$quantity = $product->quantity ?? 0;
 			$unitsSold = $product->units_sold ?? 0;
 			$leftStock = $quantity - $unitsSold;
-			$firstSupplier = $product->productSuppliers->first();
+
+			$firstSupplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
 
 			return [
 				'id' => $product->id,
@@ -1557,6 +1587,12 @@ class ProductController extends Controller
 				: $product->price,
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+				'vendor_address' => $firstSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 				'price' => (float) $firstSupplier->price,
 				"sale_price" => (float) $firstSupplier->sale_price,
 				"original_price" => (float) $firstSupplier->price,
@@ -1832,7 +1868,12 @@ class ProductController extends Controller
 			}
 			$product->per_unit_price = $perUnitPrice;
 
-			$firstSupplier = $product->productSuppliers->first();
+			$firstSupplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
 
 			$price = $firstSupplier ? (float) $firstSupplier->price : null;
 			$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : null;
@@ -1853,6 +1894,12 @@ class ProductController extends Controller
 				"images" => $cleanedImages,
 				"alt_tags" => $cleanedAlt,
 				"vendor_sku" => $vendorSku,
+
+				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+				'vendor_address' => $firstSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 				"price" => $price ?? 0,
 				"sale_price" => $salePrice ?? 0,
 				"original_price" => $price ?? 0,
@@ -1876,7 +1923,7 @@ class ProductController extends Controller
 
 		});
 
-		return response()->json([
+		return response()->json([//
 			'success' => true,
 			'data' => $data,
 		])->header('Cache-Control', 'public, max-age=86400');
@@ -2052,7 +2099,13 @@ class ProductController extends Controller
 			}
 
 			$product->per_unit_price = $perUnitPrice;
-			$firstSupplier = $product->productSuppliers->first();
+
+			$firstSupplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
 
 			return [
 				'id' => $product->id,
@@ -2078,6 +2131,12 @@ class ProductController extends Controller
 				: $product->price,
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+				'vendor_address' => $firstSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 				'price' => (float) ($firstSupplier->price ?? $product->price ?? 0),
 				'sale_price' => (float) ($firstSupplier->sale_price ?? $product->sale_price ?? 0),
 				'original_price' => (float) ($firstSupplier->price ?? $product->price ?? 0),

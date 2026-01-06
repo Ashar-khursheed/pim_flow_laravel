@@ -125,7 +125,12 @@ class SearchController extends Controller
 
 		// Helper function for consistent product mapping
 		$mapProduct = function ($product) {
-			$firstSupplier = $product->productSuppliers->first();
+			$firstSupplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
 
 			return [
 				'id' => $product->id,
@@ -140,6 +145,12 @@ class SearchController extends Controller
 				'vendor_id' => $firstSupplier?->vendor_id,
 				'currency_title' => $product->currency->symbol ?? null,
 				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+				'vendor_address' => $firstSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 				'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 				'sale_price' => $firstSupplier->sale_price ?? null,
 				'map' => $firstSupplier->map ?? null,
@@ -582,7 +593,12 @@ class SearchController extends Controller
 
 		// Map function for product formatting
 		$mapProduct = function ($product) {
-			$firstSupplier = $product->productSuppliers->first();
+			$firstSupplier = $product->productSuppliers()
+			->with([
+				'vendor.country:id,name',
+				'vendor.city:id,name'
+			])
+			->first();
 
 			return [
 				'id' => $product->id,
@@ -597,6 +613,12 @@ class SearchController extends Controller
 				'vendor_id' => $firstSupplier?->vendor_id,
 				'currency_title' => $product->currency->symbol ?? null,
 				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+
+				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
+				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
+				'vendor_address' => $firstSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+
 				'price' => $firstSupplier ? (float) ($firstSupplier->price ?? $firstSupplier->price) : null,
 				'sale_price' =>  $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->sale_price) : null,
 				'map' => $firstSupplier->map ?? null,
