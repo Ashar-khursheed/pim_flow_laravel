@@ -238,7 +238,8 @@ class ProductExportController extends BaseController
 				$descriptiveAttributes = $product->descriptiveAttributes->pluck('attribute_value', 'attributeDetails.name')->toArray();
 			}
 
-			$url = url($product->parent_category_url() . '/' . $product->category_url() . '/' . ($product->seoProductUrl->url ?? ""));
+			$fullURL = $url . '/' . $product->parent_category_url() . '/' . $product->category_url() . '/' . ($product->seoProductUrl->url ?? "");
+
 			$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true) ?? [];
 			$descriptionData = $product->description;
 			if (!is_null($descriptionData) && is_string($descriptionData) && json_validate($descriptionData)) {
@@ -298,7 +299,7 @@ class ProductExportController extends BaseController
 					// break;
 
 					case 'url':
-					$row[] = $url;
+					$row[] = $fullURL;
 					break;
 
 					// case 'buying_quantity1':
