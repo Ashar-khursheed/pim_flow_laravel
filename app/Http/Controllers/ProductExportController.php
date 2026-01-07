@@ -238,7 +238,7 @@ class ProductExportController extends BaseController
 				$descriptiveAttributes = $product->descriptiveAttributes->pluck('attribute_value', 'attributeDetails.name')->toArray();
 			}
 
-			$fullURL = $url . '/' . $product->parent_category_url() . '/' . $product->category_url() . '/' . ($product->seoProductUrl->url ?? "");
+			$fullURL = config('app.url') . '/' . $product->parent_category_url() . '/' . $product->category_url() . '/' . ($product->seoProductUrl->url ?? "");
 
 			$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true) ?? [];
 			$descriptionData = $product->description;
