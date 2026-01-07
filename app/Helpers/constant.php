@@ -156,6 +156,11 @@ if (!function_exists('product_constants')) {
 				"start_date3" => "Start Date3",
 				"end_date3" => "End Date3",
 			],
+			'DESCRIPTIVE_SECTION' => [
+				"color" => "Color",
+				"material" => "Material",
+				"size" => "Size",
+			],
 		];
 
 		return $key ? ($constants[$key] ?? []) : $constants;
