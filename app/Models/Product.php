@@ -164,6 +164,18 @@ class Product extends Model implements TranslatableContract
 		});
 	}
 
+	public function descriptiveAttributes()
+	{
+		return $this->hasMany(ProductAttribute::class)
+		->whereHas('attributeDetails', function ($query) {
+			$query->whereIn('name', [
+				'Color',
+				'Material',
+				'Size'
+			]);
+		});
+	}
+
 	public function sellingUnitAttribute()
 	{
 		return $this->hasOne(ProductAttribute::class)
@@ -273,23 +285,12 @@ class Product extends Model implements TranslatableContract
 
 	public function category_url()
 	{
-
-		$category = $this->latestChildCategory();
-		if ($category && $category->seoUrl) {
-			return $category->seoUrl->url;
-		}
-
-		return null;
+		return $this->latestChildCategory()?->seoUrl?->url;
 	}
 
 	public function parent_category_url()
 	{
-		$category = $this->latestChildCategory();
-		$mostParent = $category?->most_parent;
-
-		return $mostParent && $mostParent->seoUrl
-		? $mostParent->seoUrl->url
-		: null;
+		return $this->latestChildCategory()?->most_parent?->seoUrl?->url;
 	}
 
 	// In Product.php

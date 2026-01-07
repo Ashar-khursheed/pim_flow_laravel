@@ -28,6 +28,7 @@ class ProductExportController extends BaseController
 	 *             @OA\Property(property="relational_id", type="integer", example=1, description="ID based on selected type (e.g., Category ID)"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting product index (must be >= 1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=1000, description="Ending product index (max range allowed: 1000 products)"),
+	 *             @OA\Property(property="include_descriptive_attributes", type="boolean", example=true, description="Include descriptive attributes (URL, material, size, color) in export"),
 	 *             @OA\Property(
 	 *                 property="selected_fields",
 	 *                 type="array",
@@ -58,6 +59,7 @@ class ProductExportController extends BaseController
 			'relational_id' => 'required|integer',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 1000),
+			'include_descriptive_attributes' => 'nullable|boolean',
 			'selected_fields' => 'nullable|array',
 			'selected_fields.*' => 'string',
 		]);
@@ -96,20 +98,26 @@ class ProductExportController extends BaseController
 			}
 		}
 
+		$includeDescriptiveAttributes = $request->boolean('include_descriptive_attributes');
+
 		$query = Product::with([
 			'categories:id,name',
 			'brand:id,name',
 			'vendors:id,name',
 			'tags:id,name',
 			'faqs:id,product_id,question,answer',
-			// 'seoManagement:id,relational_id,relational_type,url'
 			'latestChildCategoryRelation:id,name',
-		]);
-
-		/* Apply relational filters */
-		if ($request->status != "all") {
+		])
+		->when($includeDescriptiveAttributes, function($query) {
+			$query->with([
+				'descriptiveAttributes:id,product_id,attribute_id,attribute_value',
+				'descriptiveAttributes.attributeDetails:id,name',
+			]);
+		})
+		->when($request->status != "all", function($query) use ($request) {
 			$query->where('status', $request->status);
-		}
+		});
+
 
 		if ($request->type == "Brand") {
 			$query->where('brand_id', $request->relational_id);
@@ -144,6 +152,7 @@ class ProductExportController extends BaseController
 		$benifitsFeaturesColumns = product_constants('BENIFITS_FEATURES_COLUMNS');
 		$faqColumns = product_constants('FAQ_COLUMNS');
 		$headerMap2 = product_constants('HEADER_MAP2');
+		$descriptiveSection = product_constants('DESCRIPTIVE_SECTION');
 		// $discountSection = product_constants('DISCOUNT_SECTION');
 
 		/* Initialize header map */
@@ -179,6 +188,11 @@ class ProductExportController extends BaseController
 		/* Merge secondary headers */
 		$headerMap = array_merge($headerMap, $filteredHeaderMap2);
 
+		/* Transform descriptive_attributes to key-value format */
+		if ($includeDescriptiveAttributes) {
+			$headerMap = array_merge($headerMap, $descriptiveSection);
+		}
+
 		/* Discount section */
 		// if ($includeAll || in_array('discount_section', $selectedFields)) {
 		// 	$headerMap = array_merge($headerMap, $discountSection);
@@ -211,6 +225,7 @@ class ProductExportController extends BaseController
 			"faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
 			"faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
 			"faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
+			"material", "size"
 			// "meta_description"
 		];
 
@@ -218,6 +233,12 @@ class ProductExportController extends BaseController
 		foreach ($products as $product) {
 			$row = [];
 
+			$descriptiveAttributes = [];
+			if ($includeDescriptiveAttributes && $product->descriptiveAttributes) {
+				$descriptiveAttributes = $product->descriptiveAttributes->pluck('attribute_value', 'attributeDetails.name')->toArray();
+			}
+
+			$url = url($product->parent_category_url() . '/' . $product->category_url() . '/' . ($product->seoProductUrl->url ?? ""));
 			$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true) ?? [];
 			$descriptionData = $product->description;
 			if (!is_null($descriptionData) && is_string($descriptionData) && json_validate($descriptionData)) {
@@ -277,7 +298,7 @@ class ProductExportController extends BaseController
 					// break;
 
 					case 'url':
-					$row[] = "";
+					$row[] = $url;
 					break;
 
 					// case 'buying_quantity1':
@@ -309,6 +330,12 @@ class ProductExportController extends BaseController
 						$row[] = $faq->question ?? '';
 						$row[] = $faq->answer ?? '';
 					}
+					break;
+
+					case 'color':
+					$row[] = $descriptiveAttributes['Color'] ?? '';
+					$row[] = $descriptiveAttributes['Material'] ?? '';
+					$row[] = $descriptiveAttributes['Size'] ?? '';
 					break;
 
 					default:

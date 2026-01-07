@@ -37842,6 +37842,11 @@
                                         "type": "integer",
                                         "example": 1000
                                     },
+                                    "include_descriptive_attributes": {
+                                        "description": "Include descriptive attributes (URL, material, size, color) in export",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "selected_fields": {
                                         "description": "Optional list of specific fields to export. If omitted, all fields will be exported.",
                                         "type": "array",
