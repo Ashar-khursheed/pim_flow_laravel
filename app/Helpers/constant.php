@@ -682,8 +682,8 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'webdeveloper04@horecastore.ae',
 			'css01@horecastore.ae',
 			'fm@horecastore.ae',
-			'qa04@horecastore.ae',
-			'qa05@horecastore.ae',
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$usTestMails = [
