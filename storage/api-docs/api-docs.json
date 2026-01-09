@@ -33418,6 +33418,19 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "payment_mode": {
+                                        "description": "Payment mode",
+                                        "type": "string",
+                                        "enum": [
+                                            "Stripe",
+                                            "Check Payment",
+                                            "Ascentium Financing",
+                                            "Approve Financing",
+                                            "Resolve Financing",
+                                            "Net Terms"
+                                        ],
+                                        "example": "Check Payment"
+                                    },
                                     "pay_with_cheque": {
                                         "description": "Pay with cheque",
                                         "type": "boolean",
@@ -33432,6 +33445,36 @@
                                         "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
                                         "type": "string",
                                         "format": "binary"
+                                    },
+                                    "additional_discount_option": {
+                                        "description": "Additional Discount Option",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "additional_discount_reason": {
+                                        "description": "Reason for additional discount",
+                                        "type": "string",
+                                        "example": "Bulk order discount"
+                                    },
+                                    "additional_discount_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ],
+                                        "example": "percentage"
+                                    },
+                                    "additional_discount_percentage": {
+                                        "description": "Additional discount percentage",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "additional_discount_amount": {
+                                        "description": "Additional discount amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
                                     },
                                     "coupon_id": {
                                         "description": "Coupon ID",
