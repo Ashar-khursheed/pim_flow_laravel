@@ -55,7 +55,6 @@ class Order extends Model
 		'is_reserved',
 		'is_payment',
 		'is_squarePayment',
-		'is_paymob',
 		'is_ccavenue',
 		'is_customer_pickup',
 		'is_cod',
