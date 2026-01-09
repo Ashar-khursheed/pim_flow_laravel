@@ -307,7 +307,7 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="additional_discount_amount", type="number", format="float", example=50.00, description="Additional discount amount"),
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
 	 *                 @OA\Property(property="is_payment", type="boolean", example=false, description="Payment gateway"),
-	 *                 @OA\Property(property="is_paymob", type="boolean", example=false, description="Paymob payment"),
+	 *                 @OA\Property(property="is_ccavenue", type="boolean", example=false, description="Payment gateway"),
 	 *                 @OA\Property(property="is_squarePayment", type="boolean", example=false, description="Square payment"),
 	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),
 	 *                 @OA\Property(
@@ -348,7 +348,6 @@ class OrderController extends Controller
 			'additional_discount_option',
 			'is_reserved',
 			'is_payment',
-			'is_paymob',
 			'is_ccavenue',
 			'is_squarePayment',
 			'is_customer_pickup'
@@ -397,7 +396,6 @@ class OrderController extends Controller
 			'tax_percentage' => 'required|numeric|min:0',
 			'is_reserved' => 'nullable|boolean',
 			'is_payment' => 'nullable|boolean',
-			'is_paymob' => 'nullable|boolean',
 			'is_squarePayment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
@@ -566,7 +564,7 @@ class OrderController extends Controller
 				'status' => 'Pending',
 				'is_reserved' => $request->boolean('is_reserved'),
 				'is_payment' => $request->boolean('is_payment'),
-				'is_paymob' => $request->boolean('is_paymob'),
+				'is_ccavenue' => $request->boolean('is_ccavenue'),
 				'is_squarePayment' => $request->boolean('is_squarePayment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'is_cod' => $request->boolean('is_cod'),
@@ -631,26 +629,7 @@ class OrderController extends Controller
 							]);
 						}
 
-					} else if ($request->boolean('is_paymob')) {
-
-						try {
-							$paymentLink = app(\App\Http\Controllers\FrontEnd\PaymobController::class)->generatePaymobPaymentLink($order);
-
-
-							if ($paymentLink) {
-								$order = Order::find($order->id);
-								$order->payment_link = $paymentLink;
-								$order->save();
-							}
-						} catch (\Exception $e) {
-							\Log::error('Paymob Payment Link generation failed', [
-								'order_id' => $order->id,
-								'error' => $e->getMessage(),
-								'trace' => $e->getTraceAsString()
-							]);
-						}
-
-					} else {
+					} else if ($request->boolean('is_ccavenue')) {
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
 
@@ -702,35 +681,26 @@ class OrderController extends Controller
 								'trace' => $e->getTraceAsString()
 							]);
 						}
-					} else {
-
-						try {
-							$paymentLink = app(\App\Http\Controllers\FrontEnd\StaxPaymentController::class)
-							->createStaxPaymentLink($order);
-							if ($paymentLink) {
-								$order = Order::find($order->id);
-								$order->payment_link = $paymentLink;
-								$order->save();
-							}
-						} catch (\Exception $e) {
-							\Log::error('Stax Payment Link generation failed', [
-								'order_id' => $order->id,
-								'error' => $e->getMessage(),
-								'trace' => $e->getTraceAsString()
-							]);
-						}
 					}
 				}
 			}
 
 			DB::commit();
 
-			if ($request->boolean('is_reserved') && !$payWithCheque) {
-				$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
-				$batch->options['queue'] = config('app.website') . '_ORD_RES';
-				$batch->add(new OrderReservedMailJob([
-					'recordId' => $order->id
-				]));
+			if ($request->boolean('is_reserved')) {
+				if ($request->boolean('pay_with_cheque')) {
+					$batch = Bus::batch([])->name("Order Placed by Customer (CHECK) - #{$order->order_number}")->dispatch();
+					$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+					$batch->add(new OrderPlacedMailJob([
+						'recordId' => $order->id
+					]));
+				} else {
+					$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
+					$batch->options['queue'] = config('app.website') . '_ORD_RES';
+					$batch->add(new OrderReservedMailJob([
+						'recordId' => $order->id
+					]));
+				}
 			} else {
 				$batch = Bus::batch([])->name("Order Placed by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
