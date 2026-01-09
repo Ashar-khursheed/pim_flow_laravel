@@ -297,6 +297,11 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
 	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
+	 *                 @OA\Property(property="check_upload_by_customer", type="boolean", example=false, description="Check Upload By Customer"),
+	 *                 @OA\Property(property="additional_discount_reason", type="string", example="Bulk order discount", description="Reason for additional discount"),
+	 *                 @OA\Property(property="additional_discount_type", type="string", enum={"fixed", "percentage"}, example="percentage"),
+	 *                 @OA\Property(property="additional_discount_percentage", type="number", format="float", example=10.50, description="Additional discount percentage"),
+	 *                 @OA\Property(property="additional_discount_amount", type="number", format="float", example=50.00, description="Additional discount amount"),
 	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
 	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
@@ -330,6 +335,40 @@ class OrderController extends Controller
 	 */
 	public function store(Request $request)
 	{
+		/* Parse boolean strings to actual booleans */
+		$booleanFields = [
+			'is_lift_gate',
+			'is_residential_address',
+			'is_inside_delivery',
+			'ship_all_at_once',
+			'separate_deliveries',
+			'is_cod',
+			'pay_with_cheque',
+			'is_reserved',
+			'is_payment',
+			'is_paymob',
+			'is_ccavenue',
+			'is_squarePayment',
+			'is_customer_pickup'
+		];
+
+		/* Parse products JSON string to array */
+		foreach ($booleanFields as $field) {
+			if ($request->has($field)) {
+				$request->merge([
+					$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)
+				]);
+			}
+		}
+		if ($request->has('products') && is_string($request->products)) {
+			$productsString = $request->products;
+			if (strpos(trim($productsString), '{') === 0 && strpos(trim($productsString), '[') !== 0) {
+				$productsString = '[' . $productsString . ']';
+			}
+			$products = json_decode($productsString, true);
+			$request->merge(['products' => $products]);
+		}
+
 		$request->validate([
 			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
@@ -342,6 +381,12 @@ class OrderController extends Controller
 			'pay_with_cheque' => 'nullable|boolean',
 			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
 			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+
+			'check_upload_by_customer' => 'nullable|boolean',
+			'additional_discount_reason' => 'nullable|string|max:255',
+			'additional_discount_type' => 'nullable|in:fixed,percentage',
+			'additional_discount_percentage' => 'nullable|numeric|min:0|max:100|required_if:additional_discount_type,percentage',
+			'additional_discount_amount' => 'nullable|numeric|min:0|required_if:additional_discount_type,fixed',
 
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
