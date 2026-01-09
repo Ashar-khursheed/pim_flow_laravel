@@ -19,8 +19,8 @@ return new class extends Migration
 		});
 
 		Schema::table('orders', function (Blueprint $table) {
-			$table->boolean('check_upload_by_customer')->nullable()->after('cheque_img_back');
-			$table->string('additional_discount_reason', 255)->nullable()->after('check_upload_by_customer');
+			$table->string('payment_mode')->nullable()->after('cheque_img_back');
+			$table->string('additional_discount_reason', 255)->nullable()->after('payment_mode');
 			$table->string('additional_discount_type', 255)->nullable()->after('additional_discount_reason');
 			$table->decimal('additional_discount_percentage', 10, 2)->nullable()->after('additional_discount_type');
 			$table->decimal('additional_discount_amount', 10, 2)->default(0.00)->after('additional_discount_percentage')->change();
@@ -37,7 +37,7 @@ return new class extends Migration
 		Schema::table('orders', function (Blueprint $table) {
 			/* Drop new columns */
 			$table->dropColumn([
-				'check_upload_by_customer',
+				'payment_mode',
 				'additional_discount_reason',
 				'additional_discount_type',
 				'additional_discount_percentage'
