@@ -682,8 +682,8 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'webdeveloper04@horecastore.ae',
 			'css01@horecastore.ae',
 			'fm@horecastore.ae',
-			'qa04@horecastore.ae',
-			'qa05@horecastore.ae',
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$usTestMails = [
@@ -692,8 +692,8 @@ if (!function_exists('glitch_error_reporting_mails')) {
 		];
 
 		$uaeTestMails = [
-			'qa04@horecastore.ae',
-			'qa05@horecastore.ae',
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$localMails = [
@@ -766,8 +766,8 @@ if (!function_exists('order_cc_mails')) {
 		];
 
 		$uaeTestMails = [
-			'qa04@horecastore.ae',
-			'qa05@horecastore.ae',
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$localMails = [
@@ -832,8 +832,8 @@ if (!function_exists('inquiry_cc_mails')) {
 		];
 
 		$uaeTestMails = [
-			'qa04@horecastore.ae',
-			'qa05@horecastore.ae',
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$localMails = [
@@ -893,8 +893,8 @@ if (!function_exists('quote_cc_mails')) {
 		];
 
 		$uaeTestMails = [
-			'qa04@horecastore.ae',
-			'qa05@horecastore.ae',
+			'qa03@horecastore.ae',
+			'qa07@horecastore.ae',
 		];
 
 		$localMails = [
