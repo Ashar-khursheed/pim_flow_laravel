@@ -33695,6 +33695,14 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
+                                    "cheque_img_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/image.png"
+                                    },
+                                    "cheque_img_back_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/image.png"
+                                    },
                                     "coupon_id": {
                                         "description": "Coupon ID",
                                         "type": "integer",
