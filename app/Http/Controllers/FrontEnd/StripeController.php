@@ -20,7 +20,7 @@ class StripeController extends Controller
      *     description="Creates a Stripe PaymentIntent for a one-time payment.",
      *     operationId="createPaymentIntent",
      *     tags={"Stripe"},
-     *     
+     *
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -31,7 +31,7 @@ class StripeController extends Controller
      *             @OA\Property(property="customer_info", type="object", description="Customer information")
      *         )
      *     ),
-     *     
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Payment intent processed successfully",
@@ -359,7 +359,7 @@ class StripeController extends Controller
      *     description="Creates a Stripe PaymentIntent for a one-time payment.",
      *     operationId="createStripePaymentLink",
      *     tags={"Stripe"},
-     *     
+     *
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -367,10 +367,10 @@ class StripeController extends Controller
      *             @OA\Property(property="amount", type="number", format="float", example=150.0, description="Payment amount in dollars"),
      *             @OA\Property(property="order_id", type="string", example="pm_1234567890", description="Stripe Payment Method ID"),
      *             @OA\Property(property="currency", type="string", example="usd", description="Currency code"),
-     *             @OA\Property(property="itemName", type="string", example="product name", description="product name") 
+     *             @OA\Property(property="itemName", type="string", example="product name", description="product name")
      *         )
      *     ),
-     *     
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Payment intent processed successfully",
@@ -469,8 +469,7 @@ class StripeController extends Controller
         $stripeSecret = config('services.stripe.secret');
 
         // ✅ Currency based on APP_WEBSITE
-        $appWebsite = env('APP_WEBSITE', 'UAE');
-        $currency = $appWebsite === 'US' ? 'USD' : 'AED';
+        $currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : 'USD';
 
         $success_url = config('app.url') . '/thanks?session_id={CHECKOUT_SESSION_ID}';
         $cancel_url  = config('app.url') . '/failed?session_id={CHECKOUT_SESSION_ID}';
@@ -495,7 +494,7 @@ class StripeController extends Controller
         return $body['url'] ?? null;
     }
 
-    
+
 
     public function handleWebhook(Request $request)
     {
