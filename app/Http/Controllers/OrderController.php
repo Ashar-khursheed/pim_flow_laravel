@@ -494,7 +494,7 @@ class OrderController extends Controller
 			$additionalDiscountReason = null;
 			$additionalDiscountType = null;
 			$additionalDiscountPercentage = null;
-			$additionalDiscountAmount = null;
+			$additionalDiscountAmount = 0;
 		}
 
 		/* Add extra charges */
@@ -1279,7 +1279,7 @@ class OrderController extends Controller
 			$additionalDiscountReason = null;
 			$additionalDiscountType = null;
 			$additionalDiscountPercentage = null;
-			$additionalDiscountAmount = null;
+			$additionalDiscountAmount = 0;
 		}
 
 		$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
