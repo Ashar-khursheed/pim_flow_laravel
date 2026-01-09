@@ -1052,7 +1052,6 @@ class OrderController extends Controller
 			], 500);
 		}
 	}
-
 	/**
 	 * @OA\Put(
 	 *     path="/api/orders/{id}",
@@ -1080,12 +1079,13 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
 	 *                 @OA\Property(property="additional_discount_option", type="boolean", example=true, description="Additional Discount Option"),
 	 *                 @OA\Property(property="additional_discount_reason", type="string", example="Bulk order discount", description="Reason for additional discount"),
-	 *                 @OA\Property(property="additional_discount_type", type="string", enum={"fixed", "percentage"}, example="percentage"),
+	 *                 @OA\Property(property="additional_discount_type", type="string", enum={"fixed", "percentage"}, example="percentage", description="Additional discount type"),
 	 *                 @OA\Property(property="additional_discount_percentage", type="number", format="float", example=10.50, description="Additional discount percentage"),
 	 *                 @OA\Property(property="additional_discount_amount", type="number", format="float", example=50.00, description="Additional discount amount"),
-	 *                 @OA\Property(property="additional_amount_name", type="string", example="Accessory 1"),
-	 *                 @OA\Property(property="additional_amount_price", type="number", format="float", example=100),
-	 *                 @OA\Property(property="update_reason", type="string"),
+	 *                 @OA\Property(property="additional_amount_name", type="string", example="Accessory 1", description="Additional amount name"),
+	 *                 @OA\Property(property="additional_amount_price", type="number", format="float", example=100, description="Additional amount price"),
+	 *                 @OA\Property(property="update_reason", type="string", example="Customer requested changes", description="Reason for order update"),
+	 *                 @OA\Property(
 	 *                     property="products",
 	 *                     type="array",
 	 *                     description="Array of products to order",
