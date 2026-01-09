@@ -482,10 +482,10 @@ class OrderController extends Controller
 		if ($request->additional_discount_option) {
 			$additionalDiscountReason = $request->additional_discount_reason;
 			$additionalDiscountType = $request->additional_discount_type;
-			if ($additional_discount_type == 'fixed') {
+			if ($additionalDiscountType == 'fixed') {
 				$additionalDiscountPercentage = null;
 				$additionalDiscountAmount = $request->additional_discount_amount;
-			} else if ($additional_discount_type == 'percentage') {
+			} else if ($additionalDiscountType == 'percentage') {
 				$additionalDiscountPercentage = $request->additional_discount_percentage;
 				$additionalDiscountAmount = round($discountedAmount * $additionalDiscountPercentage / 100, 2);
 				$discountedAmount -= $additionalDiscountAmount;
@@ -1267,10 +1267,10 @@ class OrderController extends Controller
 		if ($request->additional_discount_option) {
 			$additionalDiscountReason = $request->additional_discount_reason;
 			$additionalDiscountType = $request->additional_discount_type;
-			if ($additional_discount_type == 'fixed') {
+			if ($additionalDiscountType == 'fixed') {
 				$additionalDiscountPercentage = null;
 				$additionalDiscountAmount = $request->additional_discount_amount;
-			} else if ($additional_discount_type == 'percentage') {
+			} else if ($additionalDiscountType == 'percentage') {
 				$additionalDiscountPercentage = $request->additional_discount_percentage;
 				$additionalDiscountAmount = round($discountedAmount * $additionalDiscountPercentage / 100, 2);
 				$discountedAmount -= (float) $additionalDiscountAmount;
