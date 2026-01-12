@@ -1234,6 +1234,7 @@ class OrderController extends Controller
 		$discountedAmount = $orderAmount - $discount;
 
 		/* Handle cheque payment discount */
+		$payWithCheque = $order->pay_with_cheque;
 		if ($payWithCheque && $request->payment_mode == 'Check Payment') {
 			if ($request->hasFile('cheque_img')) {
 				$chequeImg = uploadImageToWebpS3FromFile(
