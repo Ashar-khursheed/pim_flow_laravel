@@ -54,62 +54,6 @@ class OrderPlacedMail extends Mailable
 		$customerEmail = $order->customer->email;
 
 		$products = collect();
-
-		// foreach ($order->orderProducts as $orderProduct) {
-		// 	$productSupplierDetail = $orderProduct->vendorProductSupplier;
-		// 	$productDetail = $orderProduct->product;
-
-		// 	if ($productDetail) {
-		// 		$product = new \stdClass();
-
-		// 		$images = is_array($productDetail->images) ? $productDetail->images : (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
-		// 		$product->image = is_array($images) ? ($images[0] ?? null) : null;
-		// 		$product->name = $productDetail->name;
-		// 		$product->expectedShippingDate = $productSupplierDetail
-		// 		? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
-		// 		: null;
-
-		// 		/* Original Price (before discount) */
-		// 		$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
-
-		// 		$product->priceBeforeDiscount = $originalPrice;
-		// 		$product->unitPrice = $orderProduct->unit_price;
-
-		// 		if (
-		// 			$productSupplierDetail &&
-		// 			$productSupplierDetail->price > $orderProduct->unit_price &&
-		// 			$productSupplierDetail->price > 0 &&
-		// 			$orderProduct->unit_price > 0
-		// 		) {
-		// 			$product->discount = (($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100;
-
-		// 		} else {
-		// 			$product->discount = 0;
-		// 		}
-
-		// 		$product->quantity = (int) $orderProduct->quantity;
-		// 		$product->total = $orderProduct->amount;
-
-		// 		$product->accessories = [];
-
-		// 		$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)->where('relation_id', $orderProduct->id)->get();
-		// 		if ($accessoryCharges->isNotEmpty()) {
-		// 			$product->accessories = $accessoryCharges->map(function ($charge) {
-		// 				return [
-		// 					'id' => $charge->id,
-		// 					'accessory_item_id' => $charge->accessory_item_id,
-		// 					'accessory_item_name' => $charge->accessoryItem->name ?? null,
-		// 					'accessory_item_price' => $charge->accessoryItem->price ?? null,
-		// 					'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-		// 					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-		// 					'amount' => $charge->amount,
-		// 				];
-		// 			});
-		// 		}
-
-		// 		$products->push($product);
-		// 	}
-		// }
 		foreach ($order->orderProducts as $orderProduct) {
 			$productSupplierDetail = $orderProduct->vendorProductSupplier;
 			$productDetail = $orderProduct->product;

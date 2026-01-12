@@ -33418,6 +33418,19 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "payment_mode": {
+                                        "description": "Payment mode",
+                                        "type": "string",
+                                        "enum": [
+                                            "Stripe",
+                                            "Check Payment",
+                                            "Ascentium Financing",
+                                            "Approve Financing",
+                                            "Resolve Financing",
+                                            "Net Terms"
+                                        ],
+                                        "example": "Check Payment"
+                                    },
                                     "pay_with_cheque": {
                                         "description": "Pay with cheque",
                                         "type": "boolean",
@@ -33443,6 +33456,36 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "additional_discount_option": {
+                                        "description": "Additional Discount Option",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "additional_discount_reason": {
+                                        "description": "Reason for additional discount",
+                                        "type": "string",
+                                        "example": "Bulk order discount"
+                                    },
+                                    "additional_discount_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ],
+                                        "example": "percentage"
+                                    },
+                                    "additional_discount_percentage": {
+                                        "description": "Additional discount percentage",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "additional_discount_amount": {
+                                        "description": "Additional discount amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
                                     },
                                     "is_reserved": {
                                         "description": "Reserved order",
@@ -33579,7 +33622,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "customer_address_id",
@@ -33589,60 +33632,137 @@
                                 ],
                                 "properties": {
                                     "customer_address_id": {
+                                        "description": "Customer address ID",
                                         "type": "integer",
-                                        "example": "1"
+                                        "example": 1
                                     },
                                     "is_lift_gate": {
+                                        "description": "Lift gate required",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "is_residential_address": {
+                                        "description": "Residential address",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "is_inside_delivery": {
+                                        "description": "Inside delivery required",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "tax_percentage": {
+                                        "description": "Tax percentage",
                                         "type": "number",
+                                        "format": "float",
                                         "example": 5
                                     },
                                     "ship_all_at_once": {
+                                        "description": "Ship all items together",
                                         "type": "boolean",
                                         "example": true
                                     },
                                     "separate_deliveries": {
+                                        "description": "Separate deliveries",
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "payment_mode": {
+                                        "description": "Payment mode",
+                                        "type": "string",
+                                        "enum": [
+                                            "Stripe",
+                                            "Check Payment",
+                                            "Ascentium Financing",
+                                            "Approve Financing",
+                                            "Resolve Financing",
+                                            "Net Terms"
+                                        ],
+                                        "example": "Check Payment"
+                                    },
+                                    "pay_with_cheque": {
+                                        "description": "Pay with cheque",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "cheque_img": {
+                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "cheque_img_back": {
+                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "cheque_img_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/image.png"
+                                    },
+                                    "cheque_img_back_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/image.png"
+                                    },
                                     "coupon_id": {
+                                        "description": "Coupon ID",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "discount": {
+                                        "description": "Discount amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
                                     },
+                                    "additional_discount_option": {
+                                        "description": "Additional Discount Option",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "additional_discount_reason": {
+                                        "description": "Reason for additional discount",
+                                        "type": "string",
+                                        "example": "Bulk order discount"
+                                    },
+                                    "additional_discount_type": {
+                                        "description": "Additional discount type",
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ],
+                                        "example": "percentage"
+                                    },
+                                    "additional_discount_percentage": {
+                                        "description": "Additional discount percentage",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "additional_discount_amount": {
+                                        "description": "Additional discount amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
                                     "additional_amount_name": {
+                                        "description": "Additional amount name",
                                         "type": "string",
                                         "example": "Accessory 1"
                                     },
                                     "additional_amount_price": {
+                                        "description": "Additional amount price",
                                         "type": "number",
                                         "format": "float",
                                         "example": 100
                                     },
-                                    "additional_discount": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 200
-                                    },
                                     "update_reason": {
-                                        "type": "string"
+                                        "description": "Reason for order update",
+                                        "type": "string",
+                                        "example": "Customer requested changes"
                                     },
                                     "products": {
+                                        "description": "Array of products to order",
                                         "type": "array",
                                         "items": {
                                             "required": [
@@ -33652,21 +33772,26 @@
                                             ],
                                             "properties": {
                                                 "product_id": {
+                                                    "description": "Product ID",
                                                     "type": "integer",
                                                     "example": 101
                                                 },
                                                 "vendor_id": {
+                                                    "description": "Vendor ID",
                                                     "type": "integer",
                                                     "example": 22
                                                 },
                                                 "quantity": {
+                                                    "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
                                                 },
                                                 "accessory_item_ids": {
+                                                    "description": "Array of accessory item IDs",
                                                     "type": "array",
                                                     "items": {
-                                                        "type": "integer"
+                                                        "type": "integer",
+                                                        "example": 50
                                                     }
                                                 }
                                             },
