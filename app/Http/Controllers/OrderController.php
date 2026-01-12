@@ -1234,7 +1234,9 @@ class OrderController extends Controller
 		$discountedAmount = $orderAmount - $discount;
 
 		/* Handle cheque payment discount */
-		if ($payWithCheque && $request->payment_mode == 'Check Payment') {
+		$payWithCheque = $order->pay_with_cheque;
+		$paymentMode = $order->payment_mode;
+		if ($payWithCheque && $paymentMode == 'Check Payment') {
 			if ($request->hasFile('cheque_img')) {
 				$chequeImg = uploadImageToWebpS3FromFile(
 					$request,
@@ -1320,8 +1322,6 @@ class OrderController extends Controller
 				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
 
-				'payment_mode' => $request->payment_mode,
-				'pay_with_cheque' => $payWithCheque,
 				'cheque_discount_percentage' => $chequeDiscountPercentage,
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
