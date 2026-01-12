@@ -43,8 +43,7 @@ class OrderPlacedMail extends Mailable
 		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 		$paidAmount = $order->paid_amount ?? 0;
 		// $paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
-		$paymentMethod = $payWithCheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery');
-
+		$paymentMethod = $order->payment_mode ? $order->payment_mode : ($payWithCheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery'));
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -148,6 +147,8 @@ class OrderPlacedMail extends Mailable
 
 		$subTotal = $order->amount ?? 0;
 		$discount = $order->discount ?? 0;
+		$additionalDiscountAmount = $order->additional_discount_amount ?? 0;
+		$additionalDiscountPercentage = $order->additional_discount_percentage ?? 0;
 
 		$chequeDiscount = $order->cheque_discount ?? 0;
 		$chequeDiscountPercentage = $order->cheque_discount_percentage ?? 0;
@@ -161,7 +162,7 @@ class OrderPlacedMail extends Mailable
 
 
 		/* Amount Before Tax */
-		$amountBeforeTax = $subTotal - $discount - $chequeDiscount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+		$amountBeforeTax = $subTotal - $discount - $chequeDiscount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
 
 
 		$siteUrl = match (config('app.website')) {
@@ -212,8 +213,10 @@ class OrderPlacedMail extends Mailable
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
 			'discount' => $discount,
+			'additionalDiscountAmount' => $additionalDiscountAmount,
+			'additionalDiscountPercentage' => $additionalDiscountPercentage,
 			'total' => $total,
-  		    'amountBeforeTax' => $amountBeforeTax, // <<< ADD THIS
+  		    'amountBeforeTax' => $amountBeforeTax,
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
