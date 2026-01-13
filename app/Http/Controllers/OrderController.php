@@ -484,12 +484,12 @@ class OrderController extends Controller
 			$additionalDiscountType = $request->additional_discount_type;
 			if ($additionalDiscountType == 'fixed') {
 				$additionalDiscountPercentage = null;
-				$additionalDiscountAmount = $request->additional_discount_amount;
+				$additionalDiscountAmount = $request->additional_discount_amount ?? 0;
 			} else if ($additionalDiscountType == 'percentage') {
 				$additionalDiscountPercentage = $request->additional_discount_percentage;
 				$additionalDiscountAmount = round($discountedAmount * $additionalDiscountPercentage / 100, 2);
-				$discountedAmount -= $additionalDiscountAmount;
 			}
+			$discountedAmount -= $additionalDiscountAmount;
 		} else {
 			$additionalDiscountReason = null;
 			$additionalDiscountType = null;
@@ -1385,8 +1385,6 @@ class OrderController extends Controller
 				'created_by' => auth()->id()
 			]);
 
-			DB::commit();
-
 			if ($pendingAmount > 0) {
 				$paymentLink = null;
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
@@ -1421,6 +1419,8 @@ class OrderController extends Controller
 					}
 				}
 			}
+
+			DB::commit()
 
 			if ($originalTotalAmount != $totalAmount || $prevPendingAmount != $pendingAmount) {
 				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
