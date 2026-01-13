@@ -242,13 +242,18 @@ use Illuminate\Support\Str;
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; font-size: 15px; line-height:22px; color:black; font-size: 14px;">
-													Payment Method
+													{{ $emailType === 'pending' ? 'Payment Status' : 'Payment Method' }}
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
-													{{ $paymentMethod }}
+													@if($emailType === 'pending')
+													Pending <a href="{{ $paymentUrl }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">[Pay Now]</a>
+
+													@else
+													{{ $paymentMethod ?? 'N/A' }}
+													@endif
 												</td>
 											</tr>
 										</table>
