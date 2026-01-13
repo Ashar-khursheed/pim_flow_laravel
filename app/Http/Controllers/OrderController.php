@@ -1022,8 +1022,9 @@ class OrderController extends Controller
 			], 500);
 		}
 	}
+
 	/**
-	 * @OA\Put(
+	 * @OA\Post(
 	 *     path="/api/orders/{id}",
 	 *     summary="Update an existing order (if not yet confirmed)",
 	 *     tags={"Orders"},
@@ -1033,7 +1034,8 @@ class OrderController extends Controller
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 required={"customer_address_id", "tax_percentage", "update_reason", "products"},
+	 *                 required={"_method", "customer_address_id", "tax_percentage", "update_reason", "products"},
+	 *                 @OA\Property(property="_method", type="string", example="PUT"),
 	 *                 @OA\Property(property="customer_address_id", type="integer", example=1, description="Customer address ID"),
 	 *                 @OA\Property(property="is_lift_gate", type="boolean", example=true, description="Lift gate required"),
 	 *                 @OA\Property(property="is_residential_address", type="boolean", example=true, description="Residential address"),
@@ -1108,15 +1110,6 @@ class OrderController extends Controller
 				'message' => 'This order has already been shipped or delivered. You can no longer update it.'
 			], 400);
 		}
-
-    /* Debug logging - Remove after fixing */
-    \Log::info('Order Update Request:', [
-        'has_customer_address' => $request->has('customer_address_id'),
-        'has_tax_percentage' => $request->has('tax_percentage'),
-        'has_products' => $request->has('products'),
-        'products_raw' => $request->input('products'),
-        'all_keys' => array_keys($request->all()),
-    ]);
 
 		/* For temporary use - Later updated by user forcefully */
 		if (!$request->has('update_reason')) {
