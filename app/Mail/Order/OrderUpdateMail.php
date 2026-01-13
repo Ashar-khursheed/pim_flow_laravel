@@ -233,24 +233,23 @@ class OrderUpdateMail extends Mailable
 		/* Determine email subject and template based on pending amount */
 		if ($pendingAmount > 0) {
 			/* Customer needs to pay remaining amount */
+			$emailType = 'pending';
 			$subject = "Update on Your HorecaStore Order #{$orderNumber} – Action Required";
-			$bladeName = "order-update-pending";
 		} elseif ($pendingAmount < 0) {
 			/* Customer will receive a refund */
+			$emailType = 'refund';
 			$subject = "Update on Your HorecaStore Order #{$orderNumber} – Refund Processing";
-			$bladeName = "order-update-refund";
-		} elseif ($pendingAmount == 0 && $pricingBreakdown['additionalDiscountAmount'] > 0) {
-			/* Discount applied, no payment needed */
-			$subject = "Update on Your HorecaStore Order #{$orderNumber} – No Action Required";
-			$bladeName = "order-update";
+		// } elseif ($pendingAmount == 0 && $pricingBreakdown['additionalDiscountAmount'] > 0) {
+		// 	/* Discount applied, no payment needed */
+		// 	$subject = "Update on Your HorecaStore Order #{$orderNumber} – No Action Required";
 		} else {
 			/* Default: standard order update */
+			$emailType = 'default';
 			$subject = "Update on Your HorecaStore Order #{$orderNumber} – No Action Required";
-			$bladeName = "order-update";
 		}
 
 		return $this->subject($subject)
-		->markdown("emails.orders.{$bladeName}")
+		->markdown("emails.orders.order-update")
 		->with($params);
 	}
 }
