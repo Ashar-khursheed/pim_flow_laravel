@@ -1376,7 +1376,7 @@ class OrderController extends Controller
 				'tax_percentage' => $taxPercentage,
 				'tax_amount' => $taxAmount,
 				'shipping_charge' => $orderShipping,
-				,
+
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
