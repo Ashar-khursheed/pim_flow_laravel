@@ -103,7 +103,9 @@ class OrderReservedMail extends Mailable
 
 		$referenceNumber = $order->order_number;
 		$createdAt = Carbon::parse($order->created_at)->format('D, M d, Y');
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+
+		$paymentMethod = $order->payment_mode ? $order->payment_mode : ($payWithCheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery'));
+		$isFinanced = in_array($paymentMethod, ['Ascentium Financing', 'Approve Financing', 'Resolve Financing']);
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -198,6 +200,9 @@ class OrderReservedMail extends Mailable
 
 			'referenceNumber' => $referenceNumber,
 			'createdAt' => $createdAt,
+
+			'paymentMethod' => $paymentMethod,
+			'isFinanced' => $isFinanced,
 
 			'address' => $address,
 			'city' => $city,
