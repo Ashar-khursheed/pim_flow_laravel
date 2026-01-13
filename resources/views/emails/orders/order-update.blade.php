@@ -20,13 +20,23 @@
 	</style>
 </head>
 @php
-	use Illuminate\Support\Str;
+use Illuminate\Support\Str;
 @endphp
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: black;">
 	<!-- Preheader text: hidden but visible in email previews -->
+	@if($emailType === 'pending')
+	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+		Your order has been updated. Action required to complete payment.
+	</span>
+	@elseif($emailType === 'refund')
+	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+		Your order has been updated. A refund is being processed for the difference.
+	</span>
+	@else
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
 		Your order has been updated. No action required – your total remains the same.
 	</span>
+	@endif
 
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f8f8; font-family: 'Noto Sans', sans-serif;">
 		<tr>
@@ -49,9 +59,25 @@
 							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
 								Your order has been updated by our Order Fulfilment Team.
 							</p>
+
+							@if($emailType === 'pending')
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								Some items in your order have changed due to stock availability, updated pricing, or requested modifications. This has resulted in a small difference in your order total.
+							</p>
+
+							@elseif($emailType === 'refund')
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								Some items in your order have changed due to stock availability, updated pricing, or requested modifications. This has resulted in a lower total amount than originally charged.
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								A refund will now be processed back to your original payment method.
+							</p>
+
+							@else
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
 								We made some changes to your order due to stock availability, product updates, or special pricing. Below is a clear breakdown showing the difference.
 							</p>
+							@endif
 						</td>
 					</tr>
 
@@ -87,23 +113,43 @@
 									</td>
 								</tr>
 
+								<!-- Amount You Already Paid / Previously Paid -->
+								<tr>
+									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										Amount You {{ $emailType === 'refund' ? 'Previously' : 'Already' }} Paid
+									</td>
+									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
+										{{ $currency }} {{ number_format($paidAmount, 2, '.', ',') }}
+									</td>
+								</tr>
+
 								<!-- Discount Applied -->
+								@if ($additionalDiscountAmount > 0)
 								<tr>
 									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
 										Discount Applied
 									</td>
 									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; border-bottom: 1px solid #E2E8F0;">
-										{{ $currency }} {{ number_format($additionalDiscount, 2, '.', ',') }}
+										{{ $currency }} {{ number_format($additionalDiscountAmount ?? 0, 2, '.', ',') }}
 									</td>
 								</tr>
+								@endif
 
-								<!-- Price Difference -->
 								<tr>
 									<td style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; background: #FAFAFA;">
+										@if($emailType === 'pending')
+										Difference (Remaining to Pay)
+
+										@elseif($emailType === 'refund')
+										Refund to Be Processed
+
+										@else
 										Price Difference
+
+										@endif
 									</td>
 									<td align="right" style="padding: 12px 15px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; background: #FAFAFA;">
-										{{ $currency }} 0.00
+										{{ $currency }} {{ number_format(abs($pendingAmount), 2, '.', ',') }}
 									</td>
 								</tr>
 							</table>
@@ -113,13 +159,43 @@
 					<tr>
 						<td style="padding: 10px 0;">
 							<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 22px; font-weight: 600; margin: 0 0 8px; color: #1a1a1a;">
+								@if($emailType === 'pending')
+								Why This Change Happened
+
+								@elseif($emailType === 'refund')
+								Refund Timeline
+
+								@else
 								What This Means
+								@endif
 							</h3>
 							<p style="font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; margin: 0;">
+								@if($emailType === 'pending')
+								{{ $updateReason ?? 'Item price updated' }}
+
+								@elseif($emailType === 'refund')
+								Refunds typically take 3-7 business days depending on your bank.
+
+								@else
 								Your updated order total remains unchanged and requires no additional payment or refund.
+								@endif
 							</p>
 						</td>
 					</tr>
+
+					@if ($pendingAmount > 0)
+					<tr>
+						<td>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								To complete processing, please use the secure payment link below to pay the remaining balance.
+							</p>
+
+							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans', sans-serif;">
+								Pay Remaining Balance
+							</a>
+						</td>
+					</tr>
+					@endif
 
 					<tr>
 						<td>
@@ -242,124 +318,7 @@
 					</tr>
 
 					<tr>
-						<td>
-							<table width="100%" cellspacing="0" cellpadding="0" border="0">
-								<tr>
-									<td valign="top" width="40%" style="padding: 0;">
-										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-family: 'Noto Sans', sans-serif; background-color:#DEF9EC; font-size:14px; line-height:20px; font-weight:bold; color:#26683A;">
-											@if (floatval($totalSaved) > 0)
-											<tr>
-												<td style="font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
-													You Saved
-												</td>
-												<td align="right" style="font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
-													{{ $currency }} {{ number_format($totalSaved, 2, '.', ',') }}
-												</td>
-											</tr>
-											@endif
-										</table>
-									</td>
-
-									<td valign="top" width="60%" style="padding-left: 20px;">
-										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans', sans-serif;">
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
-											</tr>
-
-											@if ($discount > 0)
-											<tr>
-												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Coupon Discount</td>
-												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;" align="right">- {{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
-											</tr>
-
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Coupon Discount</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $discount, 2, '.', ',') }}</td>
-											</tr>
-											@endif
-
-											@if ($additionalDiscount > 0)
-											<tr>
-												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Additional Discount</td>
-												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;" align="right">- {{ $currency }} {{ number_format($additionalDiscount, 2, '.', ',') }}</td>
-											</tr>
-
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Additional Discount</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $discount - $additionalDiscount, 2, '.', ',') }}</td>
-											</tr>
-											@endif
-
-											@if ($liftGateCharge > 0)
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Lift Gate Fee</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($liftGateCharge, 2, '.', ',') }}</td>
-											</tr>
-											@endif
-
-											@if ($residentialAddressCharge > 0)
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Residential Delivery Fee</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($residentialAddressCharge, 2, '.', ',') }}</td>
-											</tr>
-											@endif
-
-											@if ($insideDeliveryCharge > 0)
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Inside Delivery Fee</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($insideDeliveryCharge, 2, '.', ',') }}</td>
-											</tr>
-											@endif
-
-											@if ($additionalAmountPrice > 0)
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">{{ $additionalAmountName }}</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($additionalAmountPrice, 2, '.', ',') }}</td>
-											</tr>
-											@endif
-
-											@if (in_array(config('app.website'), ['US', 'US_T']))
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Shipping Charge</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">
-													{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : '<span style="color: green;">Free</span>' !!}
-												</td>
-											</tr>
-											@endif
-
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 600;">Amount Before Tax</td>
-												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 600;" align="right">{{ $currency }} {{ number_format($amountBeforeTax, 2, '.', ',') }}</td>
-											</tr>
-
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
-											</tr>
-
-											@if (!in_array(config('app.website'), ['US', 'US_T']))
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Shipping Charge</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">
-													{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : '<span style="color: green;">Free</span>' !!}
-												</td>
-											</tr>
-											@endif
-
-											<tr>
-												<td colspan="2" style="border-top: 2px solid #E2E8F0;"></td>
-											</tr>
-											<tr style="font-weight: bold;">
-												<td style="font-weight: bold; font-family: 'Noto Sans', sans-serif;">Total Amount</td>
-												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans', sans-serif;">{{ $currency }} {{ number_format($total, 2, '.', ',') }}</td>
-											</tr>
-										</table>
-									</td>
-								</tr>
-							</table>
-
-						</td>
+						@include('emails.partials.pricing-breakdown')
 					</tr>
 
 					<tr>

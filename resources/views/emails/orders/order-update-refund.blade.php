@@ -20,7 +20,7 @@
 	</style>
 </head>
 @php
-	use Illuminate\Support\Str;
+use Illuminate\Support\Str;
 @endphp
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: black;">
 	<!-- Preheader text: hidden but visible in email previews -->
@@ -169,7 +169,7 @@
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; font-size: 15px; line-height:22px; color:black; font-size: 14px;">
-													Payment Method
+													{{ $emailType === 'pending' ? 'Payment Status' : 'Payment Method' }}
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
 													:

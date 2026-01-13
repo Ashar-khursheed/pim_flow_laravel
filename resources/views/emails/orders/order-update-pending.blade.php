@@ -124,18 +124,6 @@
 
 					<tr>
 						<td>
-							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
-								To complete processing, please use the secure payment link below to pay the remaining balance.
-							</p>
-
-							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans', sans-serif;">
-								Pay Remaining Balance
-							</a>
-						</td>
-					</tr>
-
-					<tr>
-						<td>
 							<table cellspacing="0" cellpadding="4" style="font-family: 'Noto Sans', sans-serif; width:100%; font-size:14px; line-height:20px; margin-top:5px;">
 								<tr>
 									<td style="font-family: 'Noto Sans', sans-serif; vertical-align:top; width:50%; border-right:1px solid #ddd;">

@@ -18,9 +18,23 @@
 
 			<td valign="top" width="60%" style="padding-left: 20px;">
 				<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans', sans-serif;">
+					@if (isset($additionalAmountName) && isset($additionalAmountPrice) && $additionalAmountPrice > 0)
+					<!-- Products Subtotal (without additional amount) -->
 					<tr>
-						<td style="font-family: 'Noto Sans', sans-serif;">Subtotal</td>
-						<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
+						<td style="font-family: 'Noto Sans', sans-serif;">Products Subtotal</td>
+						<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $additionalAmountPrice, 2, '.', ',') }}</td>
+					</tr>
+
+					<!-- Additional Amount as separate line -->
+					<tr>
+						<td style="font-family: 'Noto Sans', sans-serif;">{{ $additionalAmountName }}</td>
+						<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($additionalAmountPrice, 2, '.', ',') }}</td>
+					</tr>
+					@endif
+
+					<tr>
+						<td style="font-family: 'Noto Sans', sans-serif; {{ isset($additionalAmountPrice) && $additionalAmountPrice > 0 ? 'font-weight: 600;' : '' }}">Subtotal</td>
+						<td style="font-family: 'Noto Sans', sans-serif; {{ isset($additionalAmountPrice) && $additionalAmountPrice > 0 ? 'font-weight: 600;' : '' }}" align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
 					</tr>
 
 					@if ($discount > 0)

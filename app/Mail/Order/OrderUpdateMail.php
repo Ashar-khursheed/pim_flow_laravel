@@ -29,6 +29,70 @@ class OrderUpdateMail extends Mailable
 		$this->updateReason = $updateReason;
 	}
 
+	/**
+	 * Get pricing breakdown variables
+	 */
+	private function getPricingBreakdown($products)
+	{
+		$order = $this->order;
+
+		/* Total price before discount (raw value) */
+		$totalPriceWithoutDiscount = $products->sum(function ($p) {
+			return (float) $p->priceBeforeDiscount * $p->quantity;
+		});
+
+		/* Total saved = original total - actual subtotal */
+		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($order->amount ?? 0));
+
+		/* Charges */
+		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
+		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $order->is_inside_delivery ? 249 : 0;
+
+		/* Discounts & Amounts */
+		$subTotal = $order->amount ?? 0;
+		$discount = $order->discount ?? 0;
+		$additionalDiscountAmount = $order->additional_discount_amount ?? 0;
+		$additionalDiscountPercentage = $order->additional_discount_percentage ?? 0;
+		$chequeDiscount = $order->cheque_discount ?? 0;
+		$chequeDiscountPercentage = $order->cheque_discount_percentage ?? 0;
+
+		/* Tax */
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
+		$taxPercent = ($order->tax_percentage ?? 0) + 0;
+		$taxAmount = $order->tax_amount ?? 0;
+
+		/* Shipping & Total */
+		$shippingCharge = $order->shipping_charge ?? 0;
+		$total = $order->total_amount ?? 0;
+
+		/* Amount Before Tax */
+		$amountBeforeTax = $subTotal - $discount - $chequeDiscount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+
+		/* Currency */
+		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+
+		return [
+			'totalSaved' => $totalSaved,
+			'currency' => $currency,
+			'subTotal' => $subTotal,
+			'discount' => $discount,
+			'chequeDiscount' => $chequeDiscount,
+			'chequeDiscountPercentage' => $chequeDiscountPercentage,
+			'additionalDiscountAmount' => $additionalDiscountAmount,
+			'additionalDiscountPercentage' => $additionalDiscountPercentage,
+			'liftGateCharge' => $liftGateCharge,
+			'residentialAddressCharge' => $residentialAddressCharge,
+			'insideDeliveryCharge' => $insideDeliveryCharge,
+			'shippingCharge' => $shippingCharge,
+			'amountBeforeTax' => $amountBeforeTax,
+			'taxName' => $taxName,
+			'taxPercent' => $taxPercent,
+			'taxAmount' => $taxAmount,
+			'total' => $total,
+		];
+	}
+
 	public function build()
 	{
 		$order = $this->order;
@@ -37,9 +101,7 @@ class OrderUpdateMail extends Mailable
 		$logoUrl = $backendURL . '/logo.png';
 		$name = $order->customer->name ?? 'User';
 
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 		$originalTotalAmount = $this->originalTotalAmount;
-		$total = $order->total_amount ?? 0;
 		$paidAmount = $order->paid_amount ?? 0;
 		$pendingAmount = $order->pending_amount ?? 0;
 		$updateReason = $this->updateReason;
@@ -65,13 +127,13 @@ class OrderUpdateMail extends Mailable
 				$product = new \stdClass();
 
 				$images = is_array($productDetail->images)
-					? $productDetail->images
-					: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
+				? $productDetail->images
+				: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
 				$product->expectedShippingDate = $productSupplierDetail
-					? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
-					: null;
+				? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
+				: null;
 
 				/* Original Price (before discount) */
 				$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
@@ -95,8 +157,8 @@ class OrderUpdateMail extends Mailable
 				$product->accessories = [];
 
 				$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)
-					->where('relation_id', $orderProduct->id)
-					->get();
+				->where('relation_id', $orderProduct->id)
+				->get();
 				if ($accessoryCharges->isNotEmpty()) {
 					$product->accessories = $accessoryCharges->map(function ($charge) {
 						return [
@@ -115,30 +177,12 @@ class OrderUpdateMail extends Mailable
 			}
 		}
 
+		/* Get pricing breakdown variables */
+		$pricingBreakdown = $this->getPricingBreakdown($products);
 
-
-		/* Total price before discount (raw value) */
-		$totalPriceWithoutDiscount = $products->sum(function ($p) {
-			return (float) $p->priceBeforeDiscount * $p->quantity;
-		});
-
-		/* Total saved = original total - actual subtotal */
-		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($order->amount ?? 0));
-
-		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
-		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
-		$insideDeliveryCharge = $order->is_inside_delivery ? 249 : 0;
+		/* Additional charges (if exists) */
 		$additionalAmountName = $order->additional_amount_name;
 		$additionalAmountPrice = $order->additional_amount_price;
-
-		$subTotal = $order->amount ?? 0;
-		$shippingCharge = $order->shipping_charge ?? 0;
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
-		$taxPercent = $order->tax_percentage;
-		$taxPercent = $taxPercent + 0;
-		$taxAmount = $order->tax_amount ?? 0;
-		$discount = $order->discount ?? 0;
-		$additionalDiscount = $order->additional_discount ?? 0;
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -159,9 +203,7 @@ class OrderUpdateMail extends Mailable
 			'logoUrl' => $logoUrl,
 			'name' => $name,
 
-			'currency' => $currency,
 			'originalTotalAmount' => $originalTotalAmount,
-			'total' => $total,
 			'paidAmount' => $paidAmount,
 			'pendingAmount' => $pendingAmount,
 			'updateReason' => $updateReason,
@@ -177,21 +219,12 @@ class OrderUpdateMail extends Mailable
 			'customerEmail' => $customerEmail,
 
 			'products' => $products,
-			'totalSaved' => $totalSaved,
 
-			'liftGateCharge' => $liftGateCharge,
-			'residentialAddressCharge' => $residentialAddressCharge,
-			'insideDeliveryCharge' => $insideDeliveryCharge,
 			'additionalAmountName' => $additionalAmountName,
 			'additionalAmountPrice' => $additionalAmountPrice,
 
-			'subTotal' => $subTotal,
-			'shippingCharge' => $shippingCharge,
-			'taxName' => $taxName,
-			'taxPercent' => $taxPercent,
-			'taxAmount' => $taxAmount,
-			'discount' => $discount,
-			'additionalDiscount' => $additionalDiscount,
+			/* Merge pricing breakdown variables */
+			...$pricingBreakdown,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
@@ -206,7 +239,7 @@ class OrderUpdateMail extends Mailable
 			/* Customer will receive a refund */
 			$subject = "Update on Your HorecaStore Order #{$orderNumber} – Refund Processing";
 			$bladeName = "order-update-refund";
-		} elseif ($pendingAmount == 0 && $additionalDiscount > 0) {
+		} elseif ($pendingAmount == 0 && $pricingBreakdown['additionalDiscountAmount'] > 0) {
 			/* Discount applied, no payment needed */
 			$subject = "Update on Your HorecaStore Order #{$orderNumber} – No Action Required";
 			$bladeName = "order-update";
