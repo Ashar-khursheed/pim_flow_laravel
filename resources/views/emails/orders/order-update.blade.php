@@ -280,7 +280,6 @@ use Illuminate\Support\Str;
 									</td>
 								</tr>
 							</table>
-
 						</td>
 					</tr>
 
