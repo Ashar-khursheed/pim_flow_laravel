@@ -27,6 +27,75 @@ class CartCreationMail extends Mailable
 		$this->isNewCustomer = $isNewCustomer;
 	}
 
+	/**
+	 * Get pricing breakdown variables
+	 */
+	private function getPricingBreakdown($products)
+	{
+		$customerCart = $this->customerCart;
+
+		/* Total price before discount (raw value) */
+		$totalPriceWithoutDiscount = $products->sum(function ($p) {
+			return (float) $p->priceBeforeDiscount * $p->quantity;
+		});
+
+		/* Total saved = original total - actual subtotal */
+		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($customerCart->amount ?? 0));
+
+		/* Charges */
+		$liftGateCharge = $customerCart->is_lift_gate ? 75 : 0;
+		$residentialAddressCharge = $customerCart->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $customerCart->is_inside_delivery ? 249 : 0;
+
+		/* Discounts & Amounts */
+		$subTotal = $customerCart->amount ?? 0;
+
+		/* Not Exist */
+		$discount = $customerCart->discount ?? 0;
+		$additionalDiscountAmount = $customerCart->additional_discount_amount ?? 0;
+		$additionalDiscountReason = $order->additional_discount_reason ?? null;
+		$additionalDiscountPercentage = $customerCart->additional_discount_percentage ?? 0;
+		$chequeDiscount = $customerCart->cheque_discount ?? 0;
+		$chequeDiscountPercentage = $customerCart->cheque_discount_percentage ?? 0;
+		/* Not Exist */
+
+		/* Tax */
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
+		$taxPercent = ($customerCart->tax_percentage ?? 0) + 0;
+		$taxAmount = $customerCart->tax_amount ?? 0;
+
+		/* Shipping & Total */
+		$shippingCharge = $customerCart->shipping_charge ?? 0;
+		$total = $customerCart->total_amount ?? 0;
+
+		/* Amount Before Tax */
+		$amountBeforeTax = $subTotal - $discount - $chequeDiscount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+
+		/* Currency */
+		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+
+		return [
+			'totalSaved' => $totalSaved,
+			'currency' => $currency,
+			'subTotal' => $subTotal,
+			'discount' => $discount,
+			'chequeDiscount' => $chequeDiscount,
+			'chequeDiscountPercentage' => $chequeDiscountPercentage,
+			'additionalDiscountAmount' => $additionalDiscountAmount,
+			'additionalDiscountReason' => $additionalDiscountReason,
+			'additionalDiscountPercentage' => $additionalDiscountPercentage,
+			'liftGateCharge' => $liftGateCharge,
+			'residentialAddressCharge' => $residentialAddressCharge,
+			'insideDeliveryCharge' => $insideDeliveryCharge,
+			'shippingCharge' => $shippingCharge,
+			'amountBeforeTax' => $amountBeforeTax,
+			'taxName' => $taxName,
+			'taxPercent' => $taxPercent,
+			'taxAmount' => $taxAmount,
+			'total' => $total,
+		];
+	}
+
 	public function build()
 	{
 		$customerCart = $this->customerCart;
@@ -90,28 +159,8 @@ class CartCreationMail extends Mailable
 			}
 		}
 
-		/* Total price before discount (raw value) */
-		$totalPriceWithoutDiscount = $products->sum(function ($p) {
-			return (float) $p->priceBeforeDiscount * $p->quantity;
-		});
-
-		/* Total saved = original total - actual subtotal */
-		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($customerCart->amount ?? 0));
-
-		$liftGateCharge = $customerCart->is_lift_gate ? 75 : 0;
-		$residentialAddressCharge = $customerCart->is_residential_address ? 199 : 0;
-		$insideDeliveryCharge = $customerCart->is_inside_delivery ? 249 : 0;
-		$additionalAmountName = $customerCart->additional_amount_name;
-		$additionalAmountPrice = $customerCart->additional_amount_price;
-
-		$subTotal = $customerCart->amount ?? 0;
-		$shippingCharge = $customerCart->shipping_charge ?? 0;
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
-		$taxPercent = $customerCart->tax_percentage;
-		$taxPercent = $taxPercent + 0;
-		$taxAmount = $customerCart->tax_amount ?? 0;
-		$discount = 0;
-		$total = $customerCart->total_amount ?? 0;
+		/* Get pricing breakdown variables */
+		$pricingBreakdown = $this->getPricingBreakdown($products);
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -139,7 +188,6 @@ class CartCreationMail extends Mailable
 
 			'referenceNumber' => $referenceNumber,
 			'createdAt' => $createdAt,
-			'currency' => $currency,
 
 			'address' => $address,
 			'city' => $city,
@@ -147,20 +195,9 @@ class CartCreationMail extends Mailable
 			'zipcode' => $zipcode,
 
 			'products' => $products,
-			'totalSaved' => $totalSaved,
 
-			'liftGateCharge' => $liftGateCharge,
-			'residentialAddressCharge' => $residentialAddressCharge,
-			'insideDeliveryCharge' => $insideDeliveryCharge,
-			'additionalAmountName' => $additionalAmountName,
-			'additionalAmountPrice' => $additionalAmountPrice,
-			'subTotal' => $subTotal,
-			'shippingCharge' => $shippingCharge,
-			'taxName' => $taxName,
-			'taxPercent' => $taxPercent,
-			'taxAmount' => $taxAmount,
-			'discount' => $discount,
-			'total' => $total,
+			/* Merge pricing breakdown variables */
+			...$pricingBreakdown,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,

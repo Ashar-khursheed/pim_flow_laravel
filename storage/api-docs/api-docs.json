@@ -20659,25 +20659,16 @@
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "is_cod": {
-                                        "description": "Cash on delivery",
-                                        "type": "boolean",
-                                        "example": false
-                                    },
-                                    "pay_with_cheque": {
-                                        "description": "Pay with cheque",
-                                        "type": "boolean",
-                                        "example": false
-                                    },
-                                    "cheque_img": {
-                                        "description": "Cheque image link",
+                                    "additional_amount_name": {
+                                        "description": "Additional amount name",
                                         "type": "string",
-                                        "format": "string"
+                                        "example": "Accessory 1"
                                     },
-                                    "cheque_img_back": {
-                                        "description": "Cheque image link",
-                                        "type": "string",
-                                        "format": "string"
+                                    "additional_amount_price": {
+                                        "description": "Additional amount price",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
                                     },
                                     "coupon_id": {
                                         "description": "Coupon ID",
@@ -20689,6 +20680,69 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "additional_discount_option": {
+                                        "description": "Additional Discount Option",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "additional_discount_reason": {
+                                        "description": "Reason for additional discount",
+                                        "type": "string",
+                                        "example": "Bulk order discount"
+                                    },
+                                    "additional_discount_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ],
+                                        "example": "percentage"
+                                    },
+                                    "additional_discount_percentage": {
+                                        "description": "Additional discount percentage",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "additional_discount_amount": {
+                                        "description": "Additional discount amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
+                                    "payment_mode": {
+                                        "description": "Payment mode",
+                                        "type": "string",
+                                        "enum": [
+                                            "Stripe",
+                                            "Check Payment",
+                                            "Ascentium Financing",
+                                            "Approve Financing",
+                                            "Resolve Financing",
+                                            "Net Terms"
+                                        ],
+                                        "example": "Check Payment"
+                                    },
+                                    "pay_with_cheque": {
+                                        "description": "Pay with cheque",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "cheque_img": {
+                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "cheque_img_back": {
+                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "is_cod": {
+                                        "description": "Cash on delivery",
+                                        "type": "boolean",
+                                        "example": false
                                     },
                                     "is_reserved": {
                                         "description": "Reserved order",
@@ -33413,33 +33467,16 @@
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "payment_mode": {
-                                        "description": "Payment mode",
+                                    "additional_amount_name": {
+                                        "description": "Additional amount name",
                                         "type": "string",
-                                        "enum": [
-                                            "Stripe",
-                                            "Check Payment",
-                                            "Ascentium Financing",
-                                            "Approve Financing",
-                                            "Resolve Financing",
-                                            "Net Terms"
-                                        ],
-                                        "example": "Check Payment"
+                                        "example": "Accessory 1"
                                     },
-                                    "pay_with_cheque": {
-                                        "description": "Pay with cheque",
-                                        "type": "boolean",
-                                        "example": false
-                                    },
-                                    "cheque_img": {
-                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
-                                        "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "cheque_img_back": {
-                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
-                                        "type": "string",
-                                        "format": "binary"
+                                    "additional_amount_price": {
+                                        "description": "Additional amount price",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
                                     },
                                     "coupon_id": {
                                         "description": "Coupon ID",
@@ -33481,6 +33518,39 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 50
+                                    },
+                                    "payment_mode": {
+                                        "description": "Payment mode",
+                                        "type": "string",
+                                        "enum": [
+                                            "Stripe",
+                                            "Check Payment",
+                                            "Ascentium Financing",
+                                            "Approve Financing",
+                                            "Resolve Financing",
+                                            "Net Terms"
+                                        ],
+                                        "example": "Check Payment"
+                                    },
+                                    "pay_with_cheque": {
+                                        "description": "Pay with cheque",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "cheque_img": {
+                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "cheque_img_back": {
+                                        "description": "Cheque image (jpeg, png, webp only, max 5 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "is_cod": {
+                                        "description": "Cash on delivery",
+                                        "type": "boolean",
+                                        "example": false
                                     },
                                     "is_reserved": {
                                         "description": "Reserved order",
@@ -33667,6 +33737,58 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "additional_amount_name": {
+                                        "description": "Additional amount name",
+                                        "type": "string",
+                                        "example": "Accessory 1"
+                                    },
+                                    "additional_amount_price": {
+                                        "description": "Additional amount price",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
+                                    "coupon_id": {
+                                        "description": "Coupon ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "discount": {
+                                        "description": "Discount amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
+                                    },
+                                    "additional_discount_option": {
+                                        "description": "Additional Discount Option",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "additional_discount_reason": {
+                                        "description": "Reason for additional discount",
+                                        "type": "string",
+                                        "example": "Bulk order discount"
+                                    },
+                                    "additional_discount_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ],
+                                        "example": "percentage"
+                                    },
+                                    "additional_discount_percentage": {
+                                        "description": "Additional discount percentage",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "additional_discount_amount": {
+                                        "description": "Additional discount amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
                                     "payment_mode": {
                                         "description": "Payment mode",
                                         "type": "string",
@@ -33702,59 +33824,6 @@
                                     "cheque_img_back_url": {
                                         "type": "string",
                                         "example": "https://example.com/image.png"
-                                    },
-                                    "coupon_id": {
-                                        "description": "Coupon ID",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "discount": {
-                                        "description": "Discount amount",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 200
-                                    },
-                                    "additional_discount_option": {
-                                        "description": "Additional Discount Option",
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "additional_discount_reason": {
-                                        "description": "Reason for additional discount",
-                                        "type": "string",
-                                        "example": "Bulk order discount"
-                                    },
-                                    "additional_discount_type": {
-                                        "description": "Additional discount type",
-                                        "type": "string",
-                                        "enum": [
-                                            "fixed",
-                                            "percentage"
-                                        ],
-                                        "example": "percentage"
-                                    },
-                                    "additional_discount_percentage": {
-                                        "description": "Additional discount percentage",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 10.5
-                                    },
-                                    "additional_discount_amount": {
-                                        "description": "Additional discount amount",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 50
-                                    },
-                                    "additional_amount_name": {
-                                        "description": "Additional amount name",
-                                        "type": "string",
-                                        "example": "Accessory 1"
-                                    },
-                                    "additional_amount_price": {
-                                        "description": "Additional amount price",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 100
                                     },
                                     "update_reason": {
                                         "description": "Reason for order update",

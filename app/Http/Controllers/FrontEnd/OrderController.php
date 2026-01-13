@@ -204,12 +204,25 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="tax_percentage", type="number", format="float", example=5, description="Tax percentage"),
 	 *                 @OA\Property(property="ship_all_at_once", type="boolean", example=true, description="Ship all items together"),
 	 *                 @OA\Property(property="separate_deliveries", type="boolean", example=false, description="Separate deliveries"),
-	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
-	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
-	 *                 @OA\Property(property="cheque_img", type="string", format="string", description="Cheque image link"),
-	 *                 @OA\Property(property="cheque_img_back", type="string", format="string", description="Cheque image link"),
+	 *
+	 *                 @OA\Property(property="additional_amount_name", type="string", example="Accessory 1", description="Additional amount name"),
+	 *                 @OA\Property(property="additional_amount_price", type="number", format="float", example=100, description="Additional amount price"),
+	 *
 	 *                 @OA\Property(property="coupon_id", type="integer", example=1, description="Coupon ID"),
 	 *                 @OA\Property(property="discount", type="number", format="float", example=200, description="Discount amount"),
+	 *
+	 *                 @OA\Property(property="additional_discount_option", type="boolean", example=true, description="Additional Discount Option"),
+	 *                 @OA\Property(property="additional_discount_reason", type="string", example="Bulk order discount", description="Reason for additional discount"),
+	 *                 @OA\Property(property="additional_discount_type", type="string", enum={"fixed", "percentage"}, example="percentage"),
+	 *                 @OA\Property(property="additional_discount_percentage", type="number", format="float", example=10.50, description="Additional discount percentage"),
+	 *                 @OA\Property(property="additional_discount_amount", type="number", format="float", example=50.00, description="Additional discount amount"),
+	 *
+	 *                 @OA\Property(property="payment_mode", type="string", enum={"Stripe", "Check Payment", "Ascentium Financing", "Approve Financing", "Resolve Financing", "Net Terms"}, example="Check Payment", description="Payment mode"),
+	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
+	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
+	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
+	 *
+	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
 	 *                 @OA\Property(property="is_payment", type="boolean", example=false, description="Payment gateway"),
 	 *                 @OA\Property(property="is_ccavenue", type="boolean", example=false, description="ccavenue payment"),
@@ -250,6 +263,7 @@ class OrderController extends BaseController
 			'separate_deliveries',
 			'is_cod',
 			'pay_with_cheque',
+			'additional_discount_option',
 			'is_reserved',
 			'is_payment',
 			'is_ccavenue',
@@ -282,23 +296,31 @@ class OrderController extends BaseController
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
-			'is_cod' => 'nullable|boolean',
 
-			'pay_with_cheque' => 'nullable|boolean',
-    		'cheque_img' => 'nullable|required_if:pay_with_cheque,true|string',
-    		'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|string',
 			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
 			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
-			'additional_discount' => 'nullable|numeric|min:0',
 
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
+
+			'payment_mode' => 'nullable|in:Stripe,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
+			'pay_with_cheque' => 'nullable|boolean',
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+
+			'additional_discount_option' => 'nullable|boolean',
+			'additional_discount_reason' => 'nullable|string|max:255',
+			'additional_discount_type' => 'nullable|in:fixed,percentage',
+			'additional_discount_percentage' => 'nullable|numeric|min:0|max:100|required_if:additional_discount_type,percentage',
+			'additional_discount_amount' => 'nullable|numeric|min:0|required_if:additional_discount_type,fixed',
+
+			'is_cod' => 'nullable|boolean',
 			'is_reserved' => 'nullable|boolean',
 			'is_payment' => 'nullable|boolean',
 			'is_ccavenue' => 'nullable|boolean',
-
 			'is_squarePayment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
+
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -317,111 +339,116 @@ class OrderController extends BaseController
 				'message' => 'The selected address does not belong to the customer.'
 			], 422);
 		}
+		$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
+		/* Collect all product supplier details in one go */
+		$productDetails = [];
+		foreach ($request->products as $product) {
+			$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+			if (!$fetchedDetail) {
+				throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+			}
+			$accessoryIds = $product['accessory_item_ids'] ?? [];
+			$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
+			$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
+
+			$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+			$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
+			$productDetails[] = [
+				'product_id' => $product['product_id'],
+				'vendor_id' => $product['vendor_id'],
+				'quantity' => $product['quantity'],
+				'unit_price' => $fetchedDetail->unit_price,
+				'accessoryItems' => $accessoryItems,
+				'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
+				'shipping_charge' => $shipping,
+			];
+		}
+
+		$payWithCheque = $request->boolean('pay_with_cheque', false);
+		$discount = $request->discount ?? 0;
+		$totalProducts = 0;
+		$orderAmount = 0;
+		$orderShipping = 0;
+
+		foreach ($productDetails as $product) {
+			$totalProducts += $product['quantity'];
+			$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
+			$orderShipping += $product['shipping_charge'];
+		}
+
+		/* Handle Additional Amount Price */
+		if (!empty($request->additional_amount_price)) {
+			$orderAmount += (float) $request->additional_amount_price;
+		}
+
+		/* Handle Coupon Discount */
+		$discountedAmount = $orderAmount - $discount;
+
+		/* Handle Additional Discount */
+		if ($request->additional_discount_option) {
+			$additionalDiscountReason = $request->additional_discount_reason;
+			$additionalDiscountType = $request->additional_discount_type;
+			if ($additionalDiscountType == 'fixed') {
+				$additionalDiscountPercentage = null;
+				$additionalDiscountAmount = $request->additional_discount_amount ?? 0;
+			} else if ($additionalDiscountType == 'percentage') {
+				$additionalDiscountPercentage = $request->additional_discount_percentage;
+				$additionalDiscountAmount = round($discountedAmount * $additionalDiscountPercentage / 100, 2);
+			}
+			$discountedAmount -= $additionalDiscountAmount;
+		} else {
+			$additionalDiscountReason = null;
+			$additionalDiscountType = null;
+			$additionalDiscountPercentage = null;
+			$additionalDiscountAmount = 0;
+		}
+
+		/* Handle cheque payment discount */
+		if ($payWithCheque) {
+			$chequeImg = uploadImageToWebpS3FromFile(
+				$request,
+				'cheque_img',
+				env('STORAGE_ENV') . '/customer/orders'
+			);
+			$chequeImgBack = uploadImageToWebpS3FromFile(
+				$request,
+				'cheque_img_back',
+				env('STORAGE_ENV') . '/customer/orders'
+			);
+			$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
+			$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
+			$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
+			$discountedAmount -= $chequeDiscount;
+		} else {
+			$chequeImg = null;
+			$chequeImgBack = null;
+			$chequeDiscountPercentage = 0;
+			$chequeDiscount = 0;
+		}
+
+		/* Add extra charges */
+		$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+		$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
+		$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
+
+		/* Tax rules */
+		$customer = auth()->user();
+		$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+			$orderShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
+		} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+			$taxableAmount = $discountedAmount + $orderShipping;
+			$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+		} else {
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+		}
+		$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
 
 		DB::beginTransaction();
-
 		try {
-			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
-
-			/* Collect all product supplier details in one go */
-			$productDetails = [];
-			foreach ($request->products as $product) {
-				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
-				if (!$fetchedDetail) {
-					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
-				}
-				$accessoryIds = $product['accessory_item_ids'] ?? [];
-				$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
-				$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
-
-				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
-				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
-				$productDetails[] = [
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'unit_price' => $fetchedDetail->unit_price,
-					'accessoryItems' => $accessoryItems,
-					'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-					'shipping_charge' => $shipping,
-				];
-			}
-
-			$payWithCheque = $request->boolean('pay_with_cheque', false);
-			$discount = $request->discount ?? 0;
-			$totalProducts = 0;
-			$orderAmount = 0;
-			$orderShipping = 0;
-
-			foreach ($productDetails as $product) {
-				$totalProducts += $product['quantity'];
-				$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
-				$orderShipping += $product['shipping_charge'];
-			}
-
-			$discountedAmount = $orderAmount - $discount;
-
-			/* Handle cheque payment discount */
-			if ($payWithCheque) {
-
-
-				// $chequeImg = uploadImageToWebpS3FromFile(
-				// 	$request,
-				// 	'cheque_img',
-				// 	env('STORAGE_ENV') . '/customer/orders'
-				// );
-				// $chequeImgBack = uploadImageToWebpS3FromFile(
-				// 	$request,
-				// 	'cheque_img_back',
-				// 	env('STORAGE_ENV') . '/customer/orders'
-				// );
-				$chequeImg = $request->cheque_img;
-				$chequeImgBack = $request->cheque_img_back;
-				$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
-				$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
-				$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
-				$discountedAmount -= $chequeDiscount;
-			} else {
-				$chequeImg = null;
-				$chequeImgBack = null;
-				$chequeDiscountPercentage = 0;
-				$chequeDiscount = 0;
-			}
-
-
-			$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-			$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
-			$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
-
-			/* -----------------------------------------
-			ADDITIONAL AMOUNT & ADDITIONAL DISCOUNT
-			----------------------------------------- */
-			$additionalAmount = $request->additional_amount_price ?? 0;
-			$discountedAmount += $additionalAmount;
-
-			$extraDiscount = $request->additional_discount ?? 0;
-			$discountedAmount -= $extraDiscount;
-
-			if ($discountedAmount < 0) {
-				$discountedAmount = 0;
-			}
-			/* ----------------------------------------- */
-
-			$customer = auth()->user();
-
-			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
-
-			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-				$orderShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
-			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
-				$taxableAmount = $discountedAmount + $orderShipping;
-				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
-			} else {
-				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-			}
-			$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
-
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();
 
@@ -440,18 +467,24 @@ class OrderController extends BaseController
 				'is_residential_address' => $request->is_residential_address,
 				'is_inside_delivery' => $request->is_inside_delivery,
 				'amount' => $orderAmount,
-				'additional_amount_name' => $request->additional_amount_name,
-				'additional_amount_price' => $additionalAmount,
-				'additional_discount' => $extraDiscount,
 
+				'additional_amount_name' => $request->additional_amount_name ?? null,
+				'additional_amount_price' => $request->additional_amount_price ?? null,
+
+				'coupon_id' => $request->coupon_id ?? null,
+				'discount' => $discount,
+
+				'additional_discount_reason' => $additionalDiscountReason,
+				'additional_discount_type' => $additionalDiscountType,
+				'additional_discount_percentage' => $additionalDiscountPercentage,
+				'additional_discount_amount' => $additionalDiscountAmount,
+
+				'payment_mode' => $request->payment_mode ?? null,
 				'pay_with_cheque' => $payWithCheque,
 				'cheque_discount_percentage' => $chequeDiscountPercentage,
 				'cheque_discount' => $chequeDiscount,
 				'cheque_img' => $chequeImg,
 				'cheque_img_back' => $chequeImgBack,
-
-				'coupon_id' => $request->coupon_id ?? null,
-				'discount' => $discount,
 
 				'tax_percentage' => $taxPercentage,
 				'tax_amount' => $taxAmount,
@@ -463,13 +496,14 @@ class OrderController extends BaseController
 				'separate_deliveries' => $request->get('separate_deliveries', false),
 				'pending_amount' => $totalAmount,
 				'status' => 'Pending',
+
 				'is_reserved' => $request->boolean('is_reserved'),
 				'is_payment' => $request->boolean('is_payment'),
 				'is_ccavenue' => $request->boolean('is_ccavenue'),
-
 				'is_squarePayment' => $request->boolean('is_squarePayment'),
 				'is_customer_pickup' => $request->boolean('is_customer_pickup'),
 				'is_cod' => $request->boolean('is_cod'),
+
 				'created_by' => 0,
 				'utm_id' => $request->utm_id,
 			]);
@@ -501,7 +535,7 @@ class OrderController extends BaseController
 
 			OrderTracking::create([
 				'order_id' => $order->id,
-				'status' => 'Order Created',
+				'status' => 'Order Created By Customer',
 				'description' => 'Order has been successfully created',
 			]);
 
@@ -528,54 +562,54 @@ class OrderController extends BaseController
 			}
 
 			/* Load relationships */
-			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
-				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
-				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
-				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
-				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-				'orderProducts.product.brand:id,name',
-				'orderProducts.product.currency:id,symbol',
-				'tracking',
-				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
-			]);
+			// $order->load([
+			// 	'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+			// 	'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+			// 	'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+			// 	'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
+			// 	'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+			// 	'orderProducts.product.brand:id,name',
+			// 	'orderProducts.product.currency:id,symbol',
+			// 	'tracking',
+			// 	'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
+			// ]);
 
-			/* Mutate the data for each order product */
-			foreach ($order->orderProducts as $orderProduct) {
-				$product = $orderProduct->product;
-				if ($product) {
-					$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-					$product->brand_name = $product->brand->name ?? null;
-					$product->currency_symbol = $product->currency->symbol ?? null;
-					unset($product->brand, $product->currency);
-				}
-				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
+			// /* Mutate the data for each order product */
+			// foreach ($order->orderProducts as $orderProduct) {
+			// 	$product = $orderProduct->product;
+			// 	if ($product) {
+			// 		$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+			// 		$product->brand_name = $product->brand->name ?? null;
+			// 		$product->currency_symbol = $product->currency->symbol ?? null;
+			// 		unset($product->brand, $product->currency);
+			// 	}
+			// 	$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+			// 	$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+			// 	? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+			// 	: null;
 
-				if ($orderProduct->accessoryCharges) {
-					$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
-						return [
-							'id' => $charge->id,
-							'accessory_item_id' => $charge->accessory_item_id,
-							'accessory_item_name' => $charge->accessoryItem->name ?? null,
-							'accessory_item_price' => $charge->accessoryItem->price ?? null,
-							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-							'amount' => $charge->amount,
-						];
-					});
+			// 	if ($orderProduct->accessoryCharges) {
+			// 		$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
+			// 			return [
+			// 				'id' => $charge->id,
+			// 				'accessory_item_id' => $charge->accessory_item_id,
+			// 				'accessory_item_name' => $charge->accessoryItem->name ?? null,
+			// 				'accessory_item_price' => $charge->accessoryItem->price ?? null,
+			// 				'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+			// 				'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+			// 				'amount' => $charge->amount,
+			// 			];
+			// 		});
 
-					unset($orderProduct->accessoryCharges);
-				}
-			}
+			// 		unset($orderProduct->accessoryCharges);
+			// 	}
+			// }
 
-			foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-				if (isset($order->$key)) {
-					$order->$key = number_format($order->$key, 2, '.', '');
-				}
-			}
+			// foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			// 	if (isset($order->$key)) {
+			// 		$order->$key = number_format($order->$key, 2, '.', '');
+			// 	}
+			// }
 
 			return response()->json([
 				'success' => true,
@@ -711,179 +745,6 @@ class OrderController extends BaseController
 			'data' => $order
 		]);
 	}
-
-	// /**
-	//  * @OA\Put(
-	//  *     path="/api/frontend/orders/{id}",
-	//  *     summary="Update an existing order (if not yet confirmed)",
-	//  *     tags={"FrontEnd-Orders"},
-	//  *     @OA\Parameter(name="id", in="path", required=true, description="Order ID", @OA\Schema(type="integer")),
-	//  *     @OA\RequestBody(
-	//  *         required=true,
-	//  *         @OA\JsonContent(
-	//  *             required={"customer_address_id", "products"},
-	//  *             @OA\Property(property="customer_address_id", type="integer", example="4"),
-	//  *             @OA\Property(property="ship_all_at_once", type="boolean", example=false),
-	//  *             @OA\Property(property="separate_deliveries", type="boolean", example=true),
-	//  *             @OA\Property(
-	//  *                 property="products",
-	//  *                 type="array",
-	//  *                 @OA\Items(
-	//  *                     required={"product_id", "vendor_id", "quantity"},
-	//  *                     @OA\Property(property="product_id", type="integer", example=101),
-	//  *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	//  *                     @OA\Property(property="quantity", type="integer", example=3),
-	//  *                 )
-	//  *             )
-	//  *         )
-	//  *     ),
-	//  *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
-	//  *     security={{"bearerAuth":{}}}
-	//  * )
-	//  */
-	// public function update(Request $request, $orderId)
-	// {
-	// 	$allowedStatuses = [
-	// 		'Pending'
-	// 	];
-
-	// 	$order = Order::with('orderProducts')->find($orderId);
-
-	// 	if (!$order) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'Order not found'
-	// 		], 404);
-	// 	}
-
-	// 	if (!in_array($order->status, $allowedStatuses)) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'This order has already been confirmed or processed and cannot be updated.'
-	// 		], 400);
-	// 	}
-
-	// 	$request->validate([
-	// 		'customer_address_id' => 'required|integer|exists:customer_addresses,id',
-	// 		'shipping_charge' => 'required|numeric|min:0',
-	// 		'ship_all_at_once' => 'nullable|boolean',
-	// 		'separate_deliveries' => 'nullable|boolean',
-	// 		'products' => 'required|array|min:1',
-	// 		'products.*.product_id' => 'required|integer|exists:ec_products,id',
-	// 		'products.*.vendor_id' => 'required|integer|exists:vendors,id',
-	// 		'products.*.quantity' => 'required|integer|min:1',
-	// 	]);
-
-	// 	$customerId = auth()->id();
-
-	// 	$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
-
-	// 	if (!$address) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'The selected address does not belong to the customer.'
-	// 		], 422);
-	// 	}
-
-	// 	DB::beginTransaction();
-
-	// 	try {
-	// 		/* Collect all product supplier details in one go */
-	// 		$productDetails = [];
-	// 		foreach ($request->products as $product) {
-	// 			$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
-	// 			if (!$fetchedDetail) {
-	// 				throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
-	// 			}
-	// 			$productDetails[] = [
-	// 				'product_id' => $product['product_id'],
-	// 				'vendor_id' => $product['vendor_id'],
-	// 				'quantity' => $product['quantity'],
-	// 				'unit_price' => $fetchedDetail->unit_price,
-	// 				'shipping_charge' => $fetchedDetail->shipping_charge ?? 0,
-	// 			];
-	// 		}
-
-	// 		$totalProducts = 0;
-	// 		$totalAmount = 0;
-
-	// 		foreach ($productDetails as $product) {
-	// 			$totalProducts += $product['quantity'];
-	// 			$totalAmount += $product['quantity'] * $product['unit_price'];
-	// 		}
-
-	// 		$order->update([
-	// 			'customer_address_id' => $request->customer_address_id,
-	// 			'shipping_charge' => $request->shipping_charge,
-	// 			'total_amount' => $totalAmount,
-	// 			'total_products' => $totalProducts,
-	// 			'ship_all_at_once' => $request->get('ship_all_at_once', true),
-	// 			'separate_deliveries' => $request->get('separate_deliveries', false),
-	// 			'pending_amount' => $totalAmount,
-	// 		]);
-
-	// 		/* Delete existing products and re-insert */
-	// 		OrderProduct::where('order_id', $order->id)->delete();
-
-	// 		foreach ($productDetails as $product) {
-	// 			$total = $product['quantity'] * $product['unit_price'];
-	// 			OrderProduct::create([
-	// 				'order_id' => $order->id,
-	// 				'product_id' => $product['product_id'],
-	// 				'vendor_id' => $product['vendor_id'],
-	// 				'quantity' => $product['quantity'],
-	// 				'shipped_quantity' => 0,
-	// 				'remaining_quantity' => $product['quantity'],
-	// 				'unit_price' => $product['unit_price'],
-	// 				'total_amount' => $total,
-	// 				'status' => 'Pending',
-	// 			]);
-	// 		}
-
-	// 		OrderTracking::create([
-	// 			'order_id' => $order->id,
-	// 			'status' => 'Order Updated By Customer',
-	// 			'description' => 'Order has been successfully updated',
-	// 		]);
-
-	// 		DB::commit();
-
-	// 		/* Reload updated order data */
-	// 		$order->load([
-	// 			'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
-	// 			'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
-	// 			'orderProducts.product.brand:id,name',
-	// 			'tracking'
-	// 		]);
-
-	// 		/* Mutate */
-	// 		foreach ($order->orderProducts as $orderProduct) {
-	// 			$product = $orderProduct->product;
-
-	// 			if ($product) {
-	// 				$product->images = json_decode($product->images);
-	// 				if ($product->brand) {
-	// 					$product->brand_name = $product->brand->name;
-	// 				}
-	// 				unset($product->brand);
-	// 			}
-	// 		}
-
-	// 		return response()->json([
-	// 			'success' => true,
-	// 			'message' => 'Order updated successfully',
-	// 			'data' => $order
-	// 		], 200);
-
-	// 	} catch (\Exception $e) {
-	// 		DB::rollBack();
-
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'Failed to update order: ' . $e->getMessage()
-	// 		], 500);
-	// 	}
-	// }
 
 	/**
 	 * @OA\Put(
@@ -1049,7 +910,6 @@ class OrderController extends BaseController
 		], 200);
 	}
 
-
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/orders/tracking",
@@ -1169,54 +1029,50 @@ class OrderController extends BaseController
 		]);
 	}
 
-
-
 	/**
- * @OA\Post(
- *     path="/api/frontend/compress-image-check",
- *     summary="Upload and compress cheque images",
- *     tags={"CompressImage"},
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\MediaType(
- *             mediaType="multipart/form-data",
- *             @OA\Schema(
- *                 type="object",
- *                 required={"cheque_img","cheque_img_back"},
- *                 @OA\Property(
- *                     property="cheque_img",
- *                     type="string",
- *                     format="binary",
- *                     description="Cheque front image"
- *                 ),
- *                 @OA\Property(
- *                     property="cheque_img_back",
- *                     type="string",
- *                     format="binary",
- *                     description="Cheque back image"
- *                 )
- *             )
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="Cheque images uploaded and compressed successfully"
- *     ),
- *     @OA\Response(
- *         response=422,
- *         description="Validation failed"
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized"
- *     )
- * )
- */
-
-
+	 * @OA\Post(
+	 *     path="/api/frontend/compress-image-check",
+	 *     summary="Upload and compress cheque images",
+	 *     tags={"CompressImage"},
+	 *     security={{"bearerAuth":{}}},
+	 *
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 type="object",
+	 *                 required={"cheque_img","cheque_img_back"},
+	 *                 @OA\Property(
+	 *                     property="cheque_img",
+	 *                     type="string",
+	 *                     format="binary",
+	 *                     description="Cheque front image"
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="cheque_img_back",
+	 *                     type="string",
+	 *                     format="binary",
+	 *                     description="Cheque back image"
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Cheque images uploaded and compressed successfully"
+	 *     ),
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation failed"
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthorized"
+	 *     )
+	 * )
+	 */
 	public function compressImage(Request $request)
 	{
 
@@ -1265,8 +1121,6 @@ class OrderController extends BaseController
 			],
 		], 200);
 	}
-
-
 
 	/**
 	 * @OA\Post(
@@ -1333,7 +1187,6 @@ class OrderController extends BaseController
 	 *     )
 	 * )
 	 */
-
 	public function saveChequeUpload(Request $request)
 	{
 		$validator = Validator::make($request->all(), [
@@ -1385,7 +1238,6 @@ class OrderController extends BaseController
 			'data' => $chequeUpload,
 		], 200);
 	}
-
 
 	/**
 	 * @OA\Get(
@@ -1454,8 +1306,8 @@ class OrderController extends BaseController
 		}
 
 		$chequeUploads = ChequeUpload::where('session_id', $request->session_id)
-									->orderBy('created_at', 'desc')
-									->get();
+		->orderBy('created_at', 'desc')
+		->get();
 
 		if ($chequeUploads->isEmpty()) {
 			return response()->json([
@@ -1472,7 +1324,6 @@ class OrderController extends BaseController
 		], 200);
 	}
 
-
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/user-stats",
@@ -1480,7 +1331,7 @@ class OrderController extends BaseController
 	 *     tags={"Frontend Orders"},
 	 *     summary="Get total orders, wishlist count, and net term amount for authenticated user",
 	 *     description="Returns total orders, total wishlist items, and total net term amount for the logged-in user",
- 	 *     security={{"bearerAuth":{}}},
+	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Response(
 	 *         response=200,
 	 *         description="Successful response",
@@ -1511,13 +1362,13 @@ class OrderController extends BaseController
 
 		// Total wishlist items
 		$totalWishlist = DB::table('ec_wish_lists')
-			->where('customer_id', $userId)
-			->count();
+		->where('customer_id', $userId)
+		->count();
 
 		// Total net term amount from finances
 		$totalNetTermAmount = DB::table('finances')
-			->where('customer_id', $userId)
-			->sum('available_credit_amount');
+		->where('customer_id', $userId)
+		->sum('available_credit_amount');
 
 		return response()->json([
 			'success' => true,
@@ -1528,8 +1379,4 @@ class OrderController extends BaseController
 			]
 		]);
 	}
-
-
-
-
 }
