@@ -20,7 +20,7 @@
 	</style>
 </head>
 @php
-	use Illuminate\Support\Str;
+use Illuminate\Support\Str;
 @endphp
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: black;">
 	<!-- Preheader text: hidden but visible in email previews -->
