@@ -1458,7 +1458,7 @@ class OrderController extends Controller
 				}
 			}
 
-			DB::commit()
+			DB::commit();
 
 			if ($originalTotalAmount != $totalAmount || $prevPendingAmount != $pendingAmount) {
 				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
