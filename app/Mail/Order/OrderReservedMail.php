@@ -48,6 +48,7 @@ class OrderReservedMail extends Mailable
 		$subTotal = $order->amount ?? 0;
 		$discount = $order->discount ?? 0;
 		$additionalDiscountAmount = $order->additional_discount_amount ?? 0;
+		$additionalDiscountReason = $order->additional_discount_reason ?? null;
 		$additionalDiscountPercentage = $order->additional_discount_percentage ?? 0;
 		$chequeDiscount = $order->cheque_discount ?? 0;
 		$chequeDiscountPercentage = $order->cheque_discount_percentage ?? 0;
@@ -75,6 +76,7 @@ class OrderReservedMail extends Mailable
 			'chequeDiscount' => $chequeDiscount,
 			'chequeDiscountPercentage' => $chequeDiscountPercentage,
 			'additionalDiscountAmount' => $additionalDiscountAmount,
+			'additionalDiscountReason' => $additionalDiscountReason,
 			'additionalDiscountPercentage' => $additionalDiscountPercentage,
 			'liftGateCharge' => $liftGateCharge,
 			'residentialAddressCharge' => $residentialAddressCharge,

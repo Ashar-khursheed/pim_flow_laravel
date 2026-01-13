@@ -49,6 +49,18 @@
 					</tr>
 					@endif
 
+					@if ($additionalDiscountAmount > 0)
+					<tr>
+						<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">{{ $additionalDiscountReason }} @if($additionalDiscountPercentage) ({{ $additionalDiscountPercentage }}%) @endif</td>
+						<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;" align="right">- {{ $currency }} {{ number_format($additionalDiscountAmount, 2, '.', ',') }}</td>
+					</tr>
+
+					<tr>
+						<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Additional Discount</td>
+						<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $discount - $additionalDiscountAmount, 2, '.', ',') }}</td>
+					</tr>
+					@endif
+
 					@if ($chequeDiscount > 0)
 					<tr>
 						<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Check Payment Discount ({{ $chequeDiscountPercentage }}%)</td>
@@ -57,19 +69,7 @@
 
 					<tr>
 						<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Check Discount</td>
-						<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $discount - $chequeDiscount, 2, '.', ',') }}</td>
-					</tr>
-					@endif
-
-					@if ($additionalDiscountAmount > 0)
-					<tr>
-						<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Additional Discount @if($additionalDiscountPercentage) ({{ $additionalDiscountPercentage }}%) @endif</td>
-						<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;" align="right">- {{ $currency }} {{ number_format($additionalDiscountAmount, 2, '.', ',') }}</td>
-					</tr>
-
-					<tr>
-						<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Additional Discount</td>
-						<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $discount - $chequeDiscount - $additionalDiscountAmount, 2, '.', ',') }}</td>
+						<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $discount - $additionalDiscountAmount - $chequeDiscount, 2, '.', ',') }}</td>
 					</tr>
 					@endif
 

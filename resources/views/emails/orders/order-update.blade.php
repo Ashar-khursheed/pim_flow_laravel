@@ -322,7 +322,7 @@ use Illuminate\Support\Str;
 					</tr>
 
 					<tr>
-						@include('emails.partials.pricing-breakdown')
+						@include('emails.orders.pricing-breakdown')
 					</tr>
 
 					<tr>

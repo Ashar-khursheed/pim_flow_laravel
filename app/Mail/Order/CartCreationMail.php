@@ -53,6 +53,7 @@ class CartCreationMail extends Mailable
 		/* Not Exist */
 		$discount = $customerCart->discount ?? 0;
 		$additionalDiscountAmount = $customerCart->additional_discount_amount ?? 0;
+		$additionalDiscountReason = $order->additional_discount_reason ?? null;
 		$additionalDiscountPercentage = $customerCart->additional_discount_percentage ?? 0;
 		$chequeDiscount = $customerCart->cheque_discount ?? 0;
 		$chequeDiscountPercentage = $customerCart->cheque_discount_percentage ?? 0;
@@ -81,6 +82,7 @@ class CartCreationMail extends Mailable
 			'chequeDiscount' => $chequeDiscount,
 			'chequeDiscountPercentage' => $chequeDiscountPercentage,
 			'additionalDiscountAmount' => $additionalDiscountAmount,
+			'additionalDiscountReason' => $additionalDiscountReason,
 			'additionalDiscountPercentage' => $additionalDiscountPercentage,
 			'liftGateCharge' => $liftGateCharge,
 			'residentialAddressCharge' => $residentialAddressCharge,
