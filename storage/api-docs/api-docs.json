@@ -20700,11 +20700,6 @@
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "is_paymob": {
-                                        "description": "Paymob payment",
-                                        "type": "boolean",
-                                        "example": false
-                                    },
                                     "is_ccavenue": {
                                         "description": "ccavenue payment",
                                         "type": "boolean",
@@ -33497,8 +33492,8 @@
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "is_paymob": {
-                                        "description": "Paymob payment",
+                                    "is_ccavenue": {
+                                        "description": "Payment gateway",
                                         "type": "boolean",
                                         "example": false
                                     },
@@ -33602,12 +33597,12 @@
                     }
                 ]
             },
-            "put": {
+            "post": {
                 "tags": [
                     "Orders"
                 ],
                 "summary": "Update an existing order (if not yet confirmed)",
-                "operationId": "6a7029f5510ca08e28a2d58a5fe19439",
+                "operationId": "2037748333e2fbd39b74b448ba1da84f",
                 "parameters": [
                     {
                         "name": "id",
@@ -33625,12 +33620,17 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
+                                    "_method",
                                     "customer_address_id",
                                     "tax_percentage",
                                     "update_reason",
                                     "products"
                                 ],
                                 "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
                                     "customer_address_id": {
                                         "description": "Customer address ID",
                                         "type": "integer",
