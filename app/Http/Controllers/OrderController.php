@@ -1109,6 +1109,15 @@ class OrderController extends Controller
 			], 400);
 		}
 
+    /* Debug logging - Remove after fixing */
+    \Log::info('Order Update Request:', [
+        'has_customer_address' => $request->has('customer_address_id'),
+        'has_tax_percentage' => $request->has('tax_percentage'),
+        'has_products' => $request->has('products'),
+        'products_raw' => $request->input('products'),
+        'all_keys' => array_keys($request->all()),
+    ]);
+
 		/* For temporary use - Later updated by user forcefully */
 		if (!$request->has('update_reason')) {
 			$request->merge(['update_reason' => "Order updated by admin due to changes in order details."]);
