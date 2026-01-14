@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="UTF-8" />
-	<title>{{ $isFinanced ? 'Order Reserved - Financing in Process' : 'Payment Pending - Complete Your Order' }}</title>
+	<title>{{ ($paymentType == 'financing') ? 'Order Reserved - Financing in Process' : 'Payment Pending - Complete Your Order' }}</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<style>
 		@media only screen and (max-width: 600px) {
@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: black;">
 	<!-- Preheader text -->
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-		{{ $isFinanced ? 'Your order has been reserved under approved financing. Funding process initiated.' : 'We\'ve saved your items. Please complete payment to confirm your order.' }}
+		{{ ($paymentType == 'financing') ? 'Your order has been reserved under approved financing. Funding process initiated.' : 'We\'ve saved your items. Please complete payment to confirm your order.' }}
 	</span>
 
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f8f8; font-family: 'Noto Sans', sans-serif;">
@@ -42,13 +42,28 @@ use Illuminate\Support\Str;
 								</strong>!
 							</p>
 
-							@if($isFinanced)
+							@if ($paymentType == 'check')
+							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
+								We’ve received your check image successfully, and your order is now reserved.
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								To complete your order, we will submit your check to the bank for clearance. Bank clearance usually takes 2–3 business days.
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								Once your check is cleared, you will receive an email:<br/>
+								<strong>“Your Check Has Cleared – Order Confirmed.”</strong>
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								After check clearance, your order will immediately enter processing and delivery.
+							</p>
+
+							@elseif ($paymentType == 'financing')
 							<!-- Financing Content -->
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
 								Your order has been successfully reserved under your approved financing.
 							</p>
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
-								The financing provider {{ $paymentMethod }} will now send the payment directly to HorecaStore. This funding process typically takes 2–5 business days, depending on the provider.
+								The financing provider {{ $paymentMode }} will now send the payment directly to HorecaStore. This funding process typically takes 2–5 business days, depending on the provider.
 							</p>
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
 								Your order will be officially confirmed and released for processing only after we receive the payment from the financing company.
@@ -60,17 +75,7 @@ use Illuminate\Support\Str;
 								Until then, your inventory and pricing remain locked and reserved.
 							</p>
 
-							@if($isNewCustomer)
-							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
-								We've created an account for you. Use the details below to log in anytime:
-							</p>
-							<ul style="margin: 8px 0; padding-left: 20px;">
-								<li style="font-size:14px; line-height:20px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 4px 0;">Username: <b>{{ $username }}</b></li>
-								<li style="font-size:14px; line-height:20px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 4px 0;">Password: <b>{{ $password }}</b></li>
-							</ul>
-							@endif
-
-							@else
+							@else {{-- @elseif ($paymentType == 'online') --}}
 							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
 								Your Order Has Been Reserved Successfully
 							</p>
@@ -79,9 +84,14 @@ use Illuminate\Support\Str;
 								We're excited to prepare your order! Please complete your payment at the earliest to avoid any delay in processing and delivery.
 							</p>
 
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								To make sure your items stay reserved just for you, please complete payment within 7 days. After that, the system may automatically release the order, and we'd hate for you to miss out!
+							</p>
+							@endif
+
 							@if($isNewCustomer)
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
-								To make your payment easily, we've created an account for you. Use the details below to log in anytime:
+								To manage your order easily, we've created an account for you. Use the details below to log in anytime:
 							</p>
 							<ul style="margin: 8px 0; padding-left: 20px;">
 								<li style="font-size:14px; line-height:20px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 4px 0;">Username: <b>{{ $username }}</b></li>
@@ -89,10 +99,7 @@ use Illuminate\Support\Str;
 							</ul>
 							@endif
 
-							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
-								To make sure your items stay reserved just for you, please complete payment within 7 days. After that, the system may automatically release the order, and we'd hate for you to miss out!
-							</p>
-
+							@if ($paymentUrl)
 							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans', sans-serif;">
 								Complete Your Payment
 							</a>
@@ -152,8 +159,8 @@ use Illuminate\Support\Str;
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
-													{{ $isFinanced ? 'Financing in Process' : 'Pending' }}
-													@if(!$isFinanced)
+													{{ ($paymentType == 'financing') ? 'Financing in Process' : 'Pending' }}
+													@if($paymentUrl)
 													<a href="{{ $paymentUrl }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">[Pay Now]</a>
 													@endif
 												</td>

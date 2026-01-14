@@ -22,6 +22,7 @@ use App\Models\FrontEnd\Wishlist;
 
 
 use App\Jobs\Order\OrderPlacedMailJob;
+use App\Jobs\Order\OrderReservedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 
 class OrderController extends BaseController
@@ -549,8 +550,8 @@ class OrderController extends BaseController
 
 			if ($request->boolean('pay_with_cheque')) {
 				$batch = Bus::batch([])->name("Order Placed by Customer (CHECK) - #{$order->order_number}")->dispatch();
-				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
-				$batch->add(new OrderPlacedMailJob([
+				$batch->options['queue'] = config('app.website') . '_ORD_RES';
+				$batch->add(new OrderReservedMailJob([
 					'recordId' => $order->id
 				]));
 			} else if ($request->boolean('is_cod')) {

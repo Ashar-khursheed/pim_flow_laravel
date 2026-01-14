@@ -715,19 +715,11 @@ class OrderController extends Controller
 			DB::commit();
 
 			if ($request->boolean('is_reserved')) {
-				if ($request->boolean('pay_with_cheque')) {
-					$batch = Bus::batch([])->name("Order Placed by Backend (CHECK) - #{$order->order_number}")->dispatch();
-					$batch->options['queue'] = config('app.website') . '_ORD_PLC';
-					$batch->add(new OrderPlacedMailJob([
-						'recordId' => $order->id
-					]));
-				} else {
-					$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
-					$batch->options['queue'] = config('app.website') . '_ORD_RES';
-					$batch->add(new OrderReservedMailJob([
-						'recordId' => $order->id
-					]));
-				}
+				$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_RES';
+				$batch->add(new OrderReservedMailJob([
+					'recordId' => $order->id
+				]));
 			} else {
 				$batch = Bus::batch([])->name("Order Placed by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
@@ -1030,16 +1022,27 @@ class OrderController extends Controller
 		}
 
 		try {
-			/* Create a new batch for resending order place mail */
-			$batch = Bus::batch([])->name("Resend Order place Mail - #{$order->order_number}")->dispatch();
-			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
-			$batch->add(new OrderPlacedMailJob([
-				'recordId' => $order->id
-			]));
+			/* Check is_reserved from order */
+			$isReserved = $order->is_reserved;
+
+			/* Create batch for resending order mail */
+			if ($isReserved) {
+				$batch = Bus::batch([])->name("Resend Order Reserved Mail - #{$order->order_number}")->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_RES';
+				$batch->add(new OrderReservedMailJob([
+					'recordId' => $order->id
+				]));
+			} else {
+				$batch = Bus::batch([])->name("Resend Order Place Mail - #{$order->order_number}")->dispatch();
+				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+				$batch->add(new OrderPlacedMailJob([
+					'recordId' => $order->id
+				]));
+			}
 
 			return response()->json([
 				'success' => true,
-				'message' => "Order place mail resent successfully for Order #{$order->order_number}."
+				'message' => "Order mail resent successfully for Order #{$order->order_number}."
 			]);
 		} catch (\Throwable $e) {
 			return response()->json([
