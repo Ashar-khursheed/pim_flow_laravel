@@ -157,7 +157,7 @@ use Illuminate\Support\Str;
 					</tr>
 
 					<tr>
-						<td style="padding: 10px 0;">
+						<td>
 							<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 22px; font-weight: 600; margin: 0 0 8px; color: #1a1a1a;">
 								@if($emailType === 'pending')
 								Why This Change Happened
