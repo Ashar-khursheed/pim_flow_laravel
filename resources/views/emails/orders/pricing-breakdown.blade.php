@@ -56,7 +56,7 @@
 					</tr>
 
 					<tr>
-						<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After Additional Discount</td>
+						<td style="font-family: 'Noto Sans', sans-serif;">Subtotal After {{ $additionalDiscountReason }}</td>
 						<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal - $discount - $additionalDiscountAmount, 2, '.', ',') }}</td>
 					</tr>
 					@endif
