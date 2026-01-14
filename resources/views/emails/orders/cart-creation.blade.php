@@ -3,40 +3,36 @@
 
 <head>
 	<meta charset="UTF-8" />
-	<title>Order Placed Successfully</title>
+	<title>{{ ($paymentType == 'financing') ? 'Order Reserved - Financing in Process' : 'Payment Pending - Complete Your Order' }}</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<style>
 		@media only screen and (max-width: 600px) {
-			.container {
-				width: 100% !important;
-				padding: 20px !important;
-			}
-			.order-button {
-				display: block;
-				margin: 15px 0;
-			}
+			.container { width: 100% !important; padding: 20px !important; }
+			.order-button { display: block; margin: 15px 0; }
 		}
 	</style>
 </head>
 @php
-	use Illuminate\Support\Str;
+use Illuminate\Support\Str;
 @endphp
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: black;">
-	<!-- Preheader text: hidden but visible in email previews -->
+	<!-- Preheader text -->
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-		We’ve saved your items. Please complete payment to confirm your order.
+		{{ ($paymentType == 'financing') ? 'Your order has been reserved under approved financing. Funding process initiated.' : 'We\'ve saved your items. Please complete payment to confirm your order.' }}
 	</span>
 
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f8f8; font-family: 'Noto Sans', sans-serif;">
 		<tr>
 			<td align="center">
 				<table class="container" width="650" cellspacing="0" cellpadding="10" border="0" style="background:#ffffff; border:1px solid #eaeaea; font-family: 'Noto Sans', sans-serif;">
+					<!-- Logo -->
 					<tr>
 						<td align="left">
 							<img src="{{ $logoUrl }}" alt="Logo" width="120">
 						</td>
 					</tr>
 
+					<!-- Main Content -->
 					<tr>
 						<td>
 							<p style="font-size:16px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
@@ -45,29 +41,76 @@
 									{{ $name }}
 								</strong>!
 							</p>
+
+							@if ($paymentType == 'check')
+							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
+								We’ve received your check image successfully, and your order is now reserved.
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								To complete your order, we will submit your check to the bank for clearance. Bank clearance usually takes 2–3 business days.
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								Once your check is cleared, you will receive an email:<br/>
+								<strong>“Your Check Has Cleared – Order Confirmed.”</strong>
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								After check clearance, your order will immediately enter processing and delivery.
+							</p>
+
+							@elseif ($paymentType == 'financing')
+							<!-- Financing Content -->
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								Your order has been successfully reserved under your approved financing.
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								The financing provider {{ $paymentMode }} will now send the payment directly to HorecaStore. This funding process typically takes 2–5 business days, depending on the provider.
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								Your order will be officially confirmed and released for processing only after we receive the payment from the financing company.
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								Once funding is received, you will get a confirmation email: <strong>"Financing Funded — Order Confirmed."</strong>
+							</p>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								Until then, your inventory and pricing remain locked and reserved.
+							</p>
+
+							@else {{-- @elseif ($paymentType == 'online') --}}
 							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
 								Your Order Has Been Reserved Successfully
 							</p>
+							<!-- Regular Payment Content -->
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								We're excited to prepare your order! Please complete your payment at the earliest to avoid any delay in processing and delivery.
+							</p>
 
-							@if($isNewCustomer)
-							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
-								To make your payment easily, we’ve created an account for you. Use the details below to log in anytime:
-								<ul style="margin: 0;">
-									<li style="font-size:14px; line-height:20px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">Username: <b>{{ $username }}</b></li>
-									<li style="font-size:14px; line-height:20px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">Password: <b>{{ $password }}</b></li>
-								</ul>
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								To make sure your items stay reserved just for you, please complete payment within 7 days. After that, the system may automatically release the order, and we'd hate for you to miss out!
 							</p>
 							@endif
 
+							@if($isNewCustomer)
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
+								To manage your order easily, we've created an account for you. Use the details below to log in anytime:
+							</p>
+							<ul style="margin: 8px 0; padding-left: 20px;">
+								<li style="font-size:14px; line-height:20px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 4px 0;">Username: <b>{{ $username }}</b></li>
+								<li style="font-size:14px; line-height:20px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 4px 0;">Password: <b>{{ $password }}</b></li>
+							</ul>
+							@endif
+
+							@if ($paymentUrl)
 							<a href="{{ $paymentUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans', sans-serif;">
 								Complete Your Payment
 							</a>
+							@endif
 						</td>
 					</tr>
 
+					<!-- Order Summary & Address -->
 					<tr>
 						<td>
-							<table cellspacing="0" cellpadding="4" style="font-family: 'Noto Sans', sans-serif; width:100%; font-size:14px; line-height:20px; margin-top:20px;">
+							<table cellspacing="0" cellpadding="4" style="font-family: 'Noto Sans', sans-serif; width:100%; font-size:14px; line-height:20px; margin-top:5px;">
 								<tr>
 									<td style="font-family: 'Noto Sans', sans-serif; vertical-align:top; width:50%; border-right:1px solid #ddd;">
 										<h3 style="font-family: 'Noto Sans', sans-serif; font-size:15px; line-height:22px; font-weight: 600; margin:0 0 10px; color: #26683A; text-decoration: underline;">
@@ -88,7 +131,7 @@
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; font-size: 15px; line-height:22px; color:black; font-size: 14px;">
-													Date
+													Order Date
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
 													:
@@ -116,8 +159,10 @@
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
-													Pending
+													{{ ($paymentType == 'financing') ? 'Financing in Process' : 'Pending' }}
+													@if($paymentUrl)
 													<a href="{{ $paymentUrl }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">[Pay Now]</a>
+													@endif
 												</td>
 											</tr>
 										</table>
@@ -126,25 +171,18 @@
 										<h3 style="font-family: 'Noto Sans', sans-serif; font-size:15px; line-height:22px; margin:0 0 10px; color: #26683A; font-weight: 600;">
 											Shipping Address
 										</h3>
-										<p style="font-family: 'Noto Sans', sans-serif; margin:0; font-size:14px; line-height:20px;">
-											{{ $name }}
-										</p>
-										<p style="font-family: 'Noto Sans', sans-serif; margin:0; margin-top: 5px; font-weight: 500; color: #26683A; font-size:14px; line-height:20px;">
-											{{ $address }}
-										</p>
-										<p style="font-family: 'Noto Sans', sans-serif; margin:0; color: #26683A; font-weight: 500; font-size:14px; line-height:20px;">
-											{{ $city }}
-										</p>
-										<p style="font-family: 'Noto Sans', sans-serif; margin:0; color: #26683A; font-weight: 500; font-size:14px; line-height:20px;">
-											{{ $country }}, {{ $zipcode }}
-										</p>
+										<p style="font-family: 'Noto Sans', sans-serif; margin:0; font-size:14px; line-height:20px;">{{ $name }}</p>
+										<p style="font-family: 'Noto Sans', sans-serif; margin:0; margin-top: 5px; font-weight: 500; color: #26683A; font-size:14px; line-height:20px;">{{ $address }}</p>
+										<p style="font-family: 'Noto Sans', sans-serif; margin:0; color: #26683A; font-weight: 500; font-size:14px; line-height:20px;">{{ $city }}</p>
+										<p style="font-family: 'Noto Sans', sans-serif; margin:0; color: #26683A; font-weight: 500; font-size:14px; line-height:20px;">{{ $country }}, {{ $zipcode }}</p>
+										<p style="font-family: 'Noto Sans', sans-serif; margin:0; color: #26683A; font-weight: 500; font-size:14px; line-height:20px;">{{ $username }}</p>
 									</td>
 								</tr>
 							</table>
-
 						</td>
 					</tr>
 
+					<!-- Products Table -->
 					<tr>
 						<td>
 							<table class="product-table" width="100%" cellspacing="0" cellpadding="8" border="0" style="border-collapse:collapse; font-size:14px; line-height:20px; font-family: 'Noto Sans', sans-serif;">
@@ -152,10 +190,10 @@
 									<td colspan="2" style="font-family: 'Noto Sans', sans-serif; line-height:22px;">
 										Items Reserved
 									</td>
-										<td align="center" style="font-family: 'Noto Sans', sans-serif; line-height:22px;">
+									<td align="center" style="font-family: 'Noto Sans', sans-serif; line-height:22px;">
 										Quantity
 									</td>
-										<td align="right" style="font-family: 'Noto Sans', sans-serif; line-height:22px;">
+									<td align="right" style="font-family: 'Noto Sans', sans-serif; line-height:22px;">
 										Total
 									</td>
 								</tr>
@@ -183,94 +221,18 @@
 						</td>
 					</tr>
 
+					<!-- Pricing Breakdown -->
 					<tr>
-						<td>
-							<table width="100%" cellspacing="0" cellpadding="0" border="0">
-								<tr>
-									<td valign="top" width="50%" style="padding: 0;">
-										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-family: 'Noto Sans', sans-serif; background-color:#DEF9EC; font-size:14px; line-height:20px; font-weight:bold; color:#26683A;">
-											@if($totalSaved>0)
-											<tr>
-												<td style="font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
-													You Saved
-												</td>
-												<td align="right" style="font-weight: bold; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
-													{{ $currency }} {{ number_format($totalSaved, 2, '.', ',') }}
-												</td>
-											</tr>
-											@endif
-										</table>
-									</td>
-
-									<td valign="top" width="50%" style="padding-left: 20px;">
-										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans', sans-serif;">
-											@if ($liftGateCharge > 0)
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Lift Gate Charge</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($liftGateCharge, 2, '.', ',') }}</td>
-											</tr>
-											@endif
-
-											@if ($residentialAddressCharge > 0)
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Residential Address Charge</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($residentialAddressCharge, 2, '.', ',') }}</td>
-											</tr>
-											@endif
-
-											@if ($insideDeliveryCharge > 0)
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Inside Delivery Charge</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($insideDeliveryCharge, 2, '.', ',') }}</td>
-											</tr>
-											@endif
-											 
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Subtotal</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
-											</tr>
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">Shipping</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($shippingCharge, 2, '.', ',') }}</td>
-											</tr>
-											<tr>
-												<td style="font-family: 'Noto Sans', sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
-												<td style="font-family: 'Noto Sans', sans-serif;" align="right">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
-											</tr>
-
-											@if ($discount > 0)
-											<tr>
-												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;">Discount</td>
-												<td style="color: #15803d; font-family: 'Noto Sans', sans-serif;" align="right">- {{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
-											</tr>
-											@endif
-
-											<tr>
-												<td colspan="2" style="border-top: 2px solid #E2E8F0;"></td>
-											</tr>
-											<tr style="font-weight: bold; ">
-												<td style="font-weight: bold;font-family: 'Noto Sans', sans-serif;">Total Amount</td>
-												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans', sans-serif;">{{ $currency }} {{ number_format($total, 2, '.', ',') }}</td>
-											</tr>
-										</table>
-									</td>
-								</tr>
-							</table>
-
-						</td>
+						@include('emails.orders.pricing-breakdown')
 					</tr>
 
+					<!-- Footer -->
 					<tr>
 						<td>
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
 									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans', sans-serif">
-										We’re excited to prepare your order! Please complete your payment at the earliest to avoid any delay in processing and delivery.
-									</td>
-								</tr>
-								<tr>
-									<td style="font-size:14px;  padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans', sans-serif">
-										To make sure your items stay reserved just for you, please complete payment within 7 days. After that, the system may automatically release the order, and we’d hate for you to miss out!
+										You can view or update your order anytime by visiting the Orders section under your account profile.
 									</td>
 								</tr>
 								<tr>
@@ -290,6 +252,7 @@
 					</tr>
 				</table>
 
+				<!-- Copyright Footer -->
 				<table width="650" cellspacing="0" cellpadding="0" border="0" style="padding:10px; border-top:3px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-size:11px; color:#3F3F3F;">
 					<tr>
 						<td>
