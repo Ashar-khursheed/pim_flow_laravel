@@ -66,6 +66,13 @@ class OrderDeliveredMail extends Mailable
 		$checkoutURL = url("/view-order/{$order->id}");
 		$orderDetailUrl = url("/view-order/{$order->id}");
 
+		$siteUrl = match (config('app.website')) {
+			'US'  => 'Thehorecastore.com',
+			'UAE'  => 'HorecaStore.ae',
+			'TEST' => 'Thehorecastore.com',
+			default => 'Thehorecastore.com',
+		};
+
 		$siteEmail = match (config('app.website')) {
 			'US'  => 'sales@thehorecastore.com',
 			'UAE'  => 'hello@horecastore.ae',
@@ -85,6 +92,7 @@ class OrderDeliveredMail extends Mailable
 			'checkoutURL' => $checkoutURL,
 			'orderDetailUrl' => $orderDetailUrl,
 
+			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 
