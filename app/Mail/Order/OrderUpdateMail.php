@@ -222,11 +222,11 @@ class OrderUpdateMail extends Mailable
 
 			'products' => $products,
 
-			'additionalAmountName' => $additionalAmountName,
-			'additionalAmountPrice' => $additionalAmountPrice,
-
 			/* Merge pricing breakdown variables */
 			...$pricingBreakdown,
+
+			'additionalAmountName' => $additionalAmountName,
+			'additionalAmountPrice' => $additionalAmountPrice,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,

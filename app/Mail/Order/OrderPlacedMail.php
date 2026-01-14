@@ -178,6 +178,10 @@ class OrderPlacedMail extends Mailable
 		/* Get pricing breakdown variables */
 		$pricingBreakdown = $this->getPricingBreakdown($products);
 
+		/* Additional charges (if exists) */
+		$additionalAmountName = $order->additional_amount_name;
+		$additionalAmountPrice = $order->additional_amount_price;
+
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
 			'UAE'  => 'HorecaStore.ae',
@@ -215,6 +219,9 @@ class OrderPlacedMail extends Mailable
 
 			/* Merge pricing breakdown variables */
 			...$pricingBreakdown,
+
+			'additionalAmountName' => $additionalAmountName,
+			'additionalAmountPrice' => $additionalAmountPrice,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
