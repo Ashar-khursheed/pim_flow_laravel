@@ -47,29 +47,12 @@
 								</strong>!
 							</p>
 
-							@if ($checkIncomplete)
-							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
-								We’ve received your check image successfully, and your order is now reserved.
-							</p>
-							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
-								To complete your order, we will submit your check to the bank for clearance. Bank clearance usually takes 2–3 business days.
-							</p>
-							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
-								Once your check is cleared, you will receive an email:<br/>
-								<strong>“Your Check Has Cleared – Order Confirmed.”</strong>
-							</p>
-							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
-								After check clearance, your order will immediately enter processing and delivery.
-							</p>
-
-							@else
 							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans', sans-serif; margin: 0;">
 								Your Order Has Been Placed Successfully
 							</p>
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif;padding: 0;margin: 8px 0;">
 								You’ll receive a separate confirmation email shortly with updated delivery details and next steps. If you’d like to view the status of your order or make changes, visit
 							</p>
-							@endif
 
 							<a href="{{ $orderUrl }}" class="order-button" style="background:#26683A; color:#fff; padding:12px 24px; margin-top: 10px; font-size:14px; line-height:20px; text-decoration:none; border-radius:5px; display:inline-block; font-family: 'Noto Sans', sans-serif;">
 								Manage Your Orders
@@ -128,7 +111,7 @@
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
-													{{ $paymentMethod }}
+													{{ $paymentMode }}
 												</td>
 											</tr>
 										</table>

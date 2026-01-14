@@ -101,13 +101,10 @@ class OrderPlacedMail extends Mailable
 		$orderUrl = url("/my-order");
 
 		$orderNumber = $order->order_number;
-		$payWithCheque = $order->pay_with_cheque;
-
-		$checkIncomplete = $order->pay_with_cheque && $order->is_reserved;
 
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$paidAmount = $order->paid_amount ?? 0;
-		$paymentMethod = $order->payment_mode ? $order->payment_mode : ($payWithCheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery'));
+		$paymentMode = $order->payment_mode ? $order->payment_mode : ($order->pay_with_cheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery'));
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -125,13 +122,13 @@ class OrderPlacedMail extends Mailable
 				$product = new \stdClass();
 
 				$images = is_array($productDetail->images)
-					? $productDetail->images
-					: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
+				? $productDetail->images
+				: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
 				$product->expectedShippingDate = $productSupplierDetail
-					? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
-					: null;
+				? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
+				: null;
 
 				/* Original Price (before discount) */
 				$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
@@ -155,8 +152,8 @@ class OrderPlacedMail extends Mailable
 				$product->accessories = [];
 
 				$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)
-					->where('relation_id', $orderProduct->id)
-					->get();
+				->where('relation_id', $orderProduct->id)
+				->get();
 				if ($accessoryCharges->isNotEmpty()) {
 					$product->accessories = $accessoryCharges->map(function ($charge) {
 						return [
@@ -203,11 +200,10 @@ class OrderPlacedMail extends Mailable
 			'orderUrl' => $orderUrl,
 
 			'orderNumber' => $orderNumber,
-			'checkIncomplete' => $checkIncomplete,
 
 			'orderDate' => $orderDate,
 			'paidAmount' => $paidAmount,
-			'paymentMethod' => $paymentMethod,
+			'paymentMode' => $paymentMode,
 
 			'address' => $address,
 			'city' => $city,
@@ -227,14 +223,9 @@ class OrderPlacedMail extends Mailable
 			'siteEmail' => $siteEmail,
 		];
 
-		if ($checkIncomplete) {
-			$subject = "We Received Your Check Image – Your Order#{$orderNumber} Is Reserved";
-		} else {
-			$subject = "Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed";
-		}
-
+		$subject = "Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed";
 		return $this->subject($subject)
-			->markdown('emails.orders.order-placed')
-			->with($params);
+		->markdown('emails.orders.order-placed')
+		->with($params);
 	}
 }

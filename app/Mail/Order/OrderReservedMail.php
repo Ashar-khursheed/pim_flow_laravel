@@ -8,6 +8,7 @@ use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\AccessoryCharge;
 
 class OrderReservedMail extends Mailable
@@ -97,17 +98,22 @@ class OrderReservedMail extends Mailable
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . '/logo.png';
 		$name = $order->customer->name ?? 'User';
+
 		$username = $order->customer->email;
 		$isNewCustomer = false;
 		$password = null;
 
-		$paymentUrl = $order->payment_link ?? url("/");
+		$paymentMode = $order->payment_mode ? $order->payment_mode : ($order->pay_with_cheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery'));
+		$paymentType = match($paymentMode) {
+			'Ascentium Financing', 'Approve Financing', 'Resolve Financing' => 'financing',
+			'Check', 'Check Payment' => 'check',
+			'Stripe' => 'online',
+			default => 'cod'
+		};
+		$paymentUrl = $order->payment_link ?? null;
 
 		$referenceNumber = $order->order_number;
 		$createdAt = Carbon::parse($order->created_at)->format('D, M d, Y');
-
-		$paymentMethod = $order->payment_mode ? $order->payment_mode : ($payWithCheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery'));
-		$isFinanced = in_array($paymentMethod, ['Ascentium Financing', 'Approve Financing', 'Resolve Financing']);
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -202,13 +208,13 @@ class OrderReservedMail extends Mailable
 			'isNewCustomer' => $isNewCustomer,
 			'username' => $username,
 			'password' => $password,
+
+			'paymentMode' => $paymentMode,
+			'paymentType' => $paymentType,
 			'paymentUrl' => $paymentUrl,
 
 			'referenceNumber' => $referenceNumber,
 			'createdAt' => $createdAt,
-
-			'paymentMethod' => $paymentMethod,
-			'isFinanced' => $isFinanced,
 
 			'address' => $address,
 			'city' => $city,
@@ -227,7 +233,15 @@ class OrderReservedMail extends Mailable
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject("Your HorecaStore Order Ref {$referenceNumber} is Reserved — Awaiting Payment")
+		if ($paymentType == 'check') {
+			$subject = "We Received Your Check Image – Your HorecaStore Order #{$referenceNumber} Is Reserved";
+		} elseif ($paymentType == 'financing') {
+			$subject = "Your HorecaStore Order #{$referenceNumber} is Reserved - Financing in Process";
+		} else {
+			$subject = "Your HorecaStore Order Ref #{$referenceNumber} is Reserved — Awaiting Payment";
+		}
+
+		return $this->subject($subject)
 		->markdown('emails.orders.cart-creation')
 		->with($params);
 	}
