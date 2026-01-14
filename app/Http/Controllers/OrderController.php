@@ -1080,11 +1080,8 @@ class OrderController extends Controller
 			], 404);
 		}
 
-		/* Get order values */
-		$orderAmount = $order->amount; /* This includes products + additional_amount_price */
-		$existingDiscount = $order->discount ?? 0; /* Coupon discount */
-		$additionalDiscountAmount = $order->additional_discount_amount ?? 0;
-		$chequeDiscount = $order->cheque_discount ?? 0;
+		/* Get base order amount (products + additional amount, NO discounts) */
+		$baseOrderAmount = $order->amount; /* This is before any discounts */
 
 		/* Fees */
 		$liftGateFee = $order->is_lift_gate ? 75 : 0;
@@ -1098,21 +1095,14 @@ class OrderController extends Controller
 
 		$desiredAmount = $request->desired_amount;
 
-		/* Calculate required discount based on website */
+		/* Calculate TOTAL discount needed (ignoring any existing discounts) */
 		if (in_array(config('app.website'), ['US', 'US_T'])) {
 			/* US: Shipping is TAXABLE */
-			/* Formula: Total = (discountedAmount + shipping) × (1 + tax%) */
-			/* Reverse: discountedAmount = (Total / (1 + tax%)) - shipping */
-
 			$amountBeforeTax = $desiredAmount / (1 + $taxRate);
 			$discountedAmount = $amountBeforeTax - $shippingCharge;
 
-			/* discountedAmount = orderAmount - discount - additionalDiscount - chequeDiscount + fees */
-			/* discount = orderAmount - additionalDiscount - chequeDiscount + fees - discountedAmount */
-
-			$requiredDiscount = $orderAmount
-			- $additionalDiscountAmount
-			- $chequeDiscount
+			/* Calculate total discount from base amount */
+			$totalDiscountNeeded = $baseOrderAmount
 			+ $liftGateFee
 			+ $residentialFee
 			+ $insideDeliveryFee
@@ -1120,14 +1110,9 @@ class OrderController extends Controller
 
 		} elseif (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 			/* UAE: Shipping is NOT TAXABLE */
-			/* Formula: Total = (discountedAmount × (1 + tax%)) + shipping */
-			/* Reverse: discountedAmount = (Total - shipping) / (1 + tax%) */
-
 			$discountedAmount = ($desiredAmount - $shippingCharge) / (1 + $taxRate);
 
-			$requiredDiscount = $orderAmount
-			- $additionalDiscountAmount
-			- $chequeDiscount
+			$totalDiscountNeeded = $baseOrderAmount
 			+ $liftGateFee
 			+ $residentialFee
 			+ $insideDeliveryFee
@@ -1137,9 +1122,7 @@ class OrderController extends Controller
 			/* Default: Same as UAE */
 			$discountedAmount = ($desiredAmount - $shippingCharge) / (1 + $taxRate);
 
-			$requiredDiscount = $orderAmount
-			- $additionalDiscountAmount
-			- $chequeDiscount
+			$totalDiscountNeeded = $baseOrderAmount
 			+ $liftGateFee
 			+ $residentialFee
 			+ $insideDeliveryFee
@@ -1147,28 +1130,38 @@ class OrderController extends Controller
 		}
 
 		/* Ensure discount is not negative */
-		$requiredDiscount = max(0, $requiredDiscount);
+		$totalDiscountNeeded = max(0, $totalDiscountNeeded);
 
-		/* Calculate what the actual total would be with this discount */
-		$verificationTotal = $this->calculateTotalWithDiscount($order, $requiredDiscount);
+		/* Get existing discounts for reference */
+		$existingCouponDiscount = $order->discount ?? 0;
+		$existingAdditionalDiscount = $order->additional_discount_amount ?? 0;
+		$existingChequeDiscount = $order->cheque_discount ?? 0;
+		$totalExistingDiscounts = $existingCouponDiscount + $existingAdditionalDiscount + $existingChequeDiscount;
+
+		/* Calculate verification */
+		$verificationTotal = $this->calculateTotalWithDiscount($order, $totalDiscountNeeded);
 
 		return response()->json([
 			'success' => true,
-			'discount' => round($requiredDiscount, 2),
+			'total_discount_needed' => round($totalDiscountNeeded, 2),
+			'existing_discounts' => [
+				'coupon_discount' => round($existingCouponDiscount, 2),
+				'additional_discount' => round($existingAdditionalDiscount, 2),
+				'cheque_discount' => round($existingChequeDiscount, 2),
+				'total' => round($totalExistingDiscounts, 2)
+			],
 			'verification_total' => round($verificationTotal, 2),
 			'difference' => round(abs($desiredAmount - $verificationTotal), 2),
-			'message' => 'Discount calculated successfully'
+			'message' => 'Total discount calculated successfully (replace existing discounts with this value)'
 		]);
 	}
 
 	/**
 	 * Helper function to verify calculation
 	 */
-	private function calculateTotalWithDiscount($order, $discount)
+	private function calculateTotalWithDiscount($order, $totalDiscount)
 	{
-		$orderAmount = $order->amount;
-		$additionalDiscountAmount = $order->additional_discount_amount ?? 0;
-		$chequeDiscount = $order->cheque_discount ?? 0;
+		$baseOrderAmount = $order->amount;
 
 		$liftGateFee = $order->is_lift_gate ? 75 : 0;
 		$residentialFee = $order->is_residential_address ? 199 : 0;
@@ -1178,10 +1171,8 @@ class OrderController extends Controller
 		$shippingCharge = $order->shipping_charge ?? 0;
 
 		/* Calculate discounted amount */
-		$discountedAmount = $orderAmount
-		- $discount
-		- $additionalDiscountAmount
-		- $chequeDiscount
+		$discountedAmount = $baseOrderAmount
+		- $totalDiscount
 		+ $liftGateFee
 		+ $residentialFee
 		+ $insideDeliveryFee;
