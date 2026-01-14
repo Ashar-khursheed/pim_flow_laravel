@@ -617,6 +617,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
 	Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
 
+	Route::post('orders/calculate-discount-for-new-order', [OrderController::class, 'calculateDiscountForNewOrder']);
 	Route::post('orders/calculate-discount', [OrderController::class, 'calculateDiscountForDesiredAmount']);
 	Route::apiResource('orders', OrderController::class);
 
