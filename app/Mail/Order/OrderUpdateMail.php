@@ -247,6 +247,7 @@ class OrderUpdateMail extends Mailable
 			$emailType = 'default';
 			$subject = "Update on Your HorecaStore Order #{$orderNumber} – No Action Required";
 		}
+		$params['emailType'] = $emailType;
 
 		return $this->subject($subject)
 		->markdown("emails.orders.order-update")
