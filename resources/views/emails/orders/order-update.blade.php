@@ -158,7 +158,7 @@ use Illuminate\Support\Str;
 
 					<tr>
 						<td style="padding: 10px 0;">
-							<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 22px; font-weight: 600; margin: 0 0 8px; color: #1a1a1a;">
+							<h3 style="font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 22px; font-weight: 600; padding: 0; margin: 8px 0; color: #1a1a1a;">
 								@if($emailType === 'pending')
 								Why This Change Happened
 
@@ -169,7 +169,7 @@ use Illuminate\Support\Str;
 								What This Means
 								@endif
 							</h3>
-							<p style="font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px; margin: 0;">
+							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans', sans-serif; padding: 0; margin: 8px 0;">
 								@if($emailType === 'pending')
 								{{ $updateReason ?? 'Item price updated' }}
 
