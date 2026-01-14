@@ -33921,6 +33921,50 @@
                 ]
             }
         },
+        "/api/orders/calculate-discount": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Calculate required discount to achieve desired total amount",
+                "operationId": "cfaaafc4080c22c544fb0744d4d5ab61",
+                "parameters": [
+                    {
+                        "name": "order_id",
+                        "in": "query",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    },
+                    {
+                        "name": "desired_amount",
+                        "in": "query",
+                        "description": "Target total amount",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "example": 15000
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Discount calculated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/orders/{id}/status": {
             "put": {
                 "tags": [

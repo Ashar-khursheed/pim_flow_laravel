@@ -411,7 +411,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('products/{id}/product-category-attribute-groups', [ProductAttributeController::class, 'productCategoryAttributeGroups']);
 
 	Route::post('/attributes/generate-translation', [AttributeController::class, 'generateTranslation']);
-	Route::resource('attributes', AttributeController::class);	 
+	Route::resource('attributes', AttributeController::class);
 	Route::post('attributes/{id}/image', [AttributeController::class, 'updateImageAttribute']);
 	Route::delete('attribute-groups/{id}/remove-attribute/{attribute_id}', [AttributeGroupController::class, 'removeAttribute']);
 	Route::resource('attribute-groups', AttributeGroupController::class);
@@ -616,6 +616,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
 	Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
 	Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
+
+	Route::post('orders/calculate-discount', [OrderController::class, 'calculateDiscountForDesiredAmount']);
 	Route::apiResource('orders', OrderController::class);
 
 	Route::put('support-tickets/{id}/status', [SupportTicketController::class, 'updateStatus']);

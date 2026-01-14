@@ -1055,6 +1055,154 @@ class OrderController extends Controller
 
 	/**
 	 * @OA\Post(
+	 *     path="/api/orders/calculate-discount",
+	 *     summary="Calculate required discount to achieve desired total amount",
+	 *     tags={"Orders"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(name="order_id", in="query", description="Order ID", required=true, @OA\Schema(type="integer", example=123)),
+	 *     @OA\Parameter(name="desired_amount", in="query", description="Target total amount", required=true, @OA\Schema(type="number", example=15000.00)),
+	 *     @OA\Response(response=200, description="Discount calculated successfully", @OA\MediaType(mediaType="application/json"))
+	 * )
+	 */
+	public function calculateDiscountForDesiredAmount(Request $request)
+	{
+		$request->validate([
+			'order_id' => 'required|integer|exists:orders,id',
+			'desired_amount' => 'required|numeric|min:0'
+		]);
+
+		$order = Order::find($request->order_id);
+
+		if (!$order) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Order not found'
+			], 404);
+		}
+
+		/* Get order values */
+		$orderAmount = $order->amount; /* This includes products + additional_amount_price */
+		$existingDiscount = $order->discount ?? 0; /* Coupon discount */
+		$additionalDiscountAmount = $order->additional_discount_amount ?? 0;
+		$chequeDiscount = $order->cheque_discount ?? 0;
+
+		/* Fees */
+		$liftGateFee = $order->is_lift_gate ? 75 : 0;
+		$residentialFee = $order->is_residential_address ? 199 : 0;
+		$insideDeliveryFee = $order->is_inside_delivery ? 249 : 0;
+		$shippingCharge = $order->shipping_charge ?? 0;
+
+		/* Tax */
+		$taxPercentage = $order->tax_percentage ?? 0;
+		$taxRate = $taxPercentage / 100;
+
+		$desiredAmount = $request->desired_amount;
+
+		/* Calculate required discount based on website */
+		if (in_array(config('app.website'), ['US', 'US_T'])) {
+			/* US: Shipping is TAXABLE */
+			/* Formula: Total = (discountedAmount + shipping) × (1 + tax%) */
+			/* Reverse: discountedAmount = (Total / (1 + tax%)) - shipping */
+
+			$amountBeforeTax = $desiredAmount / (1 + $taxRate);
+			$discountedAmount = $amountBeforeTax - $shippingCharge;
+
+			/* discountedAmount = orderAmount - discount - additionalDiscount - chequeDiscount + fees */
+			/* discount = orderAmount - additionalDiscount - chequeDiscount + fees - discountedAmount */
+
+			$requiredDiscount = $orderAmount
+			- $additionalDiscountAmount
+			- $chequeDiscount
+			+ $liftGateFee
+			+ $residentialFee
+			+ $insideDeliveryFee
+			- $discountedAmount;
+
+		} elseif (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+			/* UAE: Shipping is NOT TAXABLE */
+			/* Formula: Total = (discountedAmount × (1 + tax%)) + shipping */
+			/* Reverse: discountedAmount = (Total - shipping) / (1 + tax%) */
+
+			$discountedAmount = ($desiredAmount - $shippingCharge) / (1 + $taxRate);
+
+			$requiredDiscount = $orderAmount
+			- $additionalDiscountAmount
+			- $chequeDiscount
+			+ $liftGateFee
+			+ $residentialFee
+			+ $insideDeliveryFee
+			- $discountedAmount;
+
+		} else {
+			/* Default: Same as UAE */
+			$discountedAmount = ($desiredAmount - $shippingCharge) / (1 + $taxRate);
+
+			$requiredDiscount = $orderAmount
+			- $additionalDiscountAmount
+			- $chequeDiscount
+			+ $liftGateFee
+			+ $residentialFee
+			+ $insideDeliveryFee
+			- $discountedAmount;
+		}
+
+		/* Ensure discount is not negative */
+		$requiredDiscount = max(0, $requiredDiscount);
+
+		/* Calculate what the actual total would be with this discount */
+		$verificationTotal = $this->calculateTotalWithDiscount($order, $requiredDiscount);
+
+		return response()->json([
+			'success' => true,
+			'discount' => round($requiredDiscount, 2),
+			'verification_total' => round($verificationTotal, 2),
+			'difference' => round(abs($desiredAmount - $verificationTotal), 2),
+			'message' => 'Discount calculated successfully'
+		]);
+	}
+
+	/**
+	 * Helper function to verify calculation
+	 */
+	private function calculateTotalWithDiscount($order, $discount)
+	{
+		$orderAmount = $order->amount;
+		$additionalDiscountAmount = $order->additional_discount_amount ?? 0;
+		$chequeDiscount = $order->cheque_discount ?? 0;
+
+		$liftGateFee = $order->is_lift_gate ? 75 : 0;
+		$residentialFee = $order->is_residential_address ? 199 : 0;
+		$insideDeliveryFee = $order->is_inside_delivery ? 249 : 0;
+
+		$taxPercentage = $order->tax_percentage ?? 0;
+		$shippingCharge = $order->shipping_charge ?? 0;
+
+		/* Calculate discounted amount */
+		$discountedAmount = $orderAmount
+		- $discount
+		- $additionalDiscountAmount
+		- $chequeDiscount
+		+ $liftGateFee
+		+ $residentialFee
+		+ $insideDeliveryFee;
+
+		/* Calculate total based on website */
+		if (in_array(config('app.website'), ['US', 'US_T'])) {
+			/* US: Shipping is taxable */
+			$taxableAmount = $discountedAmount + $shippingCharge;
+			$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+			$totalAmount = $discountedAmount + $taxAmount + $shippingCharge;
+		} else {
+			/* UAE: Shipping is not taxable */
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+			$totalAmount = $discountedAmount + $taxAmount + $shippingCharge;
+		}
+
+		return $totalAmount;
+	}
+
+	/**
+	 * @OA\Post(
 	 *     path="/api/orders/{id}",
 	 *     summary="Update an existing order (if not yet confirmed)",
 	 *     tags={"Orders"},
