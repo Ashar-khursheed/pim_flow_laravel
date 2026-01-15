@@ -1542,8 +1542,8 @@ class OrderController extends Controller
 			'pay_with_cheque' => 'nullable|boolean',
 			'cheque_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120',
 			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120',
-			'cheque_img_url' => 'nullable|string|url',
-			'cheque_img_back_url' => 'nullable|string|url',
+			'cheque_img_url' => 'nullable|string',
+			'cheque_img_back_url' => 'nullable|string',
 
 			'additional_discount_option' => 'nullable|boolean',
 			'additional_discount_reason' => 'nullable|string|max:255',
