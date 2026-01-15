@@ -8,6 +8,7 @@ use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\AccessoryCharge;
 
 class OrderReservedMail extends Mailable
@@ -24,6 +25,72 @@ class OrderReservedMail extends Mailable
 		$this->order = $order;
 	}
 
+	/**
+	 * Get pricing breakdown variables
+	 */
+	private function getPricingBreakdown($products)
+	{
+		$order = $this->order;
+
+		/* Total price before discount (raw value) */
+		$totalPriceWithoutDiscount = $products->sum(function ($p) {
+			return (float) $p->priceBeforeDiscount * $p->quantity;
+		});
+
+		/* Total saved = original total - actual subtotal */
+		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($order->amount ?? 0));
+
+		/* Charges */
+		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
+		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $order->is_inside_delivery ? 249 : 0;
+
+		/* Discounts & Amounts */
+		$subTotal = $order->amount ?? 0;
+		$discount = $order->discount ?? 0;
+		$additionalDiscountAmount = $order->additional_discount_amount ?? 0;
+		$additionalDiscountReason = $order->additional_discount_reason ?? null;
+		$additionalDiscountPercentage = $order->additional_discount_percentage ?? 0;
+		$chequeDiscount = $order->cheque_discount ?? 0;
+		$chequeDiscountPercentage = $order->cheque_discount_percentage ?? 0;
+
+		/* Tax */
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
+		$taxPercent = ($order->tax_percentage ?? 0) + 0;
+		$taxAmount = $order->tax_amount ?? 0;
+
+		/* Shipping & Total */
+		$shippingCharge = $order->shipping_charge ?? 0;
+		$total = $order->total_amount ?? 0;
+
+		/* Amount Before Tax */
+		$amountBeforeTax = $subTotal - $discount - $chequeDiscount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+
+		/* Currency */
+		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+
+		return [
+			'totalSaved' => $totalSaved,
+			'currency' => $currency,
+			'subTotal' => $subTotal,
+			'discount' => $discount,
+			'chequeDiscount' => $chequeDiscount,
+			'chequeDiscountPercentage' => $chequeDiscountPercentage,
+			'additionalDiscountAmount' => $additionalDiscountAmount,
+			'additionalDiscountReason' => $additionalDiscountReason,
+			'additionalDiscountPercentage' => $additionalDiscountPercentage,
+			'liftGateCharge' => $liftGateCharge,
+			'residentialAddressCharge' => $residentialAddressCharge,
+			'insideDeliveryCharge' => $insideDeliveryCharge,
+			'shippingCharge' => $shippingCharge,
+			'amountBeforeTax' => $amountBeforeTax,
+			'taxName' => $taxName,
+			'taxPercent' => $taxPercent,
+			'taxAmount' => $taxAmount,
+			'total' => $total,
+		];
+	}
+
 	public function build()
 	{
 		$order = $this->order;
@@ -31,15 +98,22 @@ class OrderReservedMail extends Mailable
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . '/logo.png';
 		$name = $order->customer->name ?? 'User';
+
 		$username = $order->customer->email;
 		$isNewCustomer = false;
 		$password = null;
 
-		$paymentUrl = $order->payment_link ?? url("/");
+		$paymentMode = $order->payment_mode ? $order->payment_mode : ($order->pay_with_cheque ? 'Check' : (optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery'));
+		$paymentType = match($paymentMode) {
+			'Ascentium Financing', 'Approve Financing', 'Resolve Financing' => 'financing',
+			'Check', 'Check Payment' => 'check',
+			'Stripe' => 'online',
+			default => 'cod'
+		};
+		$paymentUrl = $order->payment_link ?? null;
 
 		$referenceNumber = $order->order_number;
 		$createdAt = Carbon::parse($order->created_at)->format('D, M d, Y');
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -101,51 +175,16 @@ class OrderReservedMail extends Mailable
 					});
 				}
 
-				// ===========================
-				// Apply per-product Texas shipping
-				// ===========================
-				$productShipping = $orderProduct->shipping_charge ?? 0;
-
-				if (in_array(config('app.website'), ['US', 'US_T'])) {
-					$state = $order->customerAddress->state ?? null;
-
-					if (!$order->is_customer_pickup) {
-						if ($state === 'Texas') {
-							$productShipping = ($productShipping > 0) ? $productShipping : 99;
-						} else {
-							$productShipping = ($productShipping > 0) ? $productShipping : 199;
-						}
-					} else {
-						$productShipping = 0;
-					}
-				}
-
-				$product->shippingCharge = $productShipping;
-
 				$products->push($product);
 			}
 		}
 
-		/* Total price before discount (raw value) */
-		$totalPriceWithoutDiscount = $products->sum(function ($p) {
-			return (float) $p->priceBeforeDiscount * $p->quantity;
-		});
+		/* Get pricing breakdown variables */
+		$pricingBreakdown = $this->getPricingBreakdown($products);
 
-		/* Total saved = original total - actual subtotal */
-		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($order->amount ?? 0));
-
-		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
-		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
-		$insideDeliveryCharge = $order->is_inside_delivery ? 249 : 0;
-
-		$subTotal = $order->amount ?? 0;
-		$shippingCharge = $order->shipping_charge ?? 0;
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
-		$taxPercent = $order->tax_percentage;
-		$taxPercent = $taxPercent + 0;
-		$taxAmount = $order->tax_amount ?? 0;
-		$discount = $order->discount ?? 0;
-		$total = $order->total_amount ?? 0;
+		/* Additional charges (if exists) */
+		$additionalAmountName = $order->additional_amount_name;
+		$additionalAmountPrice = $order->additional_amount_price;
 
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
@@ -169,11 +208,13 @@ class OrderReservedMail extends Mailable
 			'isNewCustomer' => $isNewCustomer,
 			'username' => $username,
 			'password' => $password,
+
+			'paymentMode' => $paymentMode,
+			'paymentType' => $paymentType,
 			'paymentUrl' => $paymentUrl,
 
 			'referenceNumber' => $referenceNumber,
 			'createdAt' => $createdAt,
-			'currency' => $currency,
 
 			'address' => $address,
 			'city' => $city,
@@ -181,24 +222,26 @@ class OrderReservedMail extends Mailable
 			'zipcode' => $zipcode,
 
 			'products' => $products,
-			'totalSaved' => $totalSaved,
 
-			'liftGateCharge' => $liftGateCharge,
-			'residentialAddressCharge' => $residentialAddressCharge,
-			'insideDeliveryCharge' => $insideDeliveryCharge,
-			'subTotal' => $subTotal,
-			'shippingCharge' => $shippingCharge,
-			'taxName' => $taxName,
-			'taxPercent' => $taxPercent,
-			'taxAmount' => $taxAmount,
-			'discount' => $discount,
-			'total' => $total,
+			/* Merge pricing breakdown variables */
+			...$pricingBreakdown,
+
+			'additionalAmountName' => $additionalAmountName,
+			'additionalAmountPrice' => $additionalAmountPrice,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject("Your HorecaStore Order Ref {$referenceNumber} is Reserved — Awaiting Payment")
+		if ($paymentType == 'check') {
+			$subject = "We Received Your Check Image – Your HorecaStore Order #{$referenceNumber} Is Reserved";
+		} elseif ($paymentType == 'financing') {
+			$subject = "Your HorecaStore Order #{$referenceNumber} is Reserved - Financing in Process";
+		} else {
+			$subject = "Your HorecaStore Order Ref #{$referenceNumber} is Reserved — Awaiting Payment";
+		}
+
+		return $this->subject($subject)
 		->markdown('emails.orders.cart-creation')
 		->with($params);
 	}

@@ -214,394 +214,210 @@ class CartController extends Controller
 	 *     )
 	 * )
 	 */
-	// public function viewCart(Request $request)
-	// {
-	// 	$userId = auth()->id();
-	// 	if (!$userId) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'User not authenticated',
-	// 		], 401);
-	// 	}
-
-	// 	$cartId = $this->generateSimpleCartId($userId);
-
-	// 	$wishlistProductIds = DB::table('ec_wish_lists')
-	// 	->where('customer_id', $userId)
-	// 	->pluck('product_id')
-	// 	->map(fn($id) => (int)$id)
-	// 	->toArray();
-
-	// 	$customerCart = CustomerCart::where('customer_id', $userId)->first();
-
-	// 	if (!$customerCart) {
-	// 		return response()->json([
-	// 			'success' => true,
-	// 			'data' => [],
-	// 			'cart_id' => $cartId,
-	// 			'checkout_url' => url("review/Checkout/{$cartId}")
-	// 		]);
-	// 	}
-
-	// 	$cartItems = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
-	// 	->with([
-	// 		'product.currency',
-	// 		'product.productSuppliers',
-	// 		'product.seoUrl',
-	// 		'product.sellingUnitAttribute',
-	// 		'product.accessories.items'
-	// 	])
-	// 	->get();
-
-	// 	$transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $customerCart) {
-	// 		$product = $cartProduct->product;
-
-	// 		$cartItem = (object)[
-	// 			'id' => $cartProduct->id,
-	// 			'user_id' => $cartProduct->customerCart->customer_id,
-	// 			'product_id' => $cartProduct->product_id,
-	// 			'product_id' => $cartProduct->product_id,
-	// 			'product_id' => $cartProduct->product_id,
-	// 			'quantity' => $cartProduct->quantity,
-	// 			'product' => $product
-	// 		];
-
-	// 		$product->in_wishlist = in_array($product->id, $wishlistProductIds);
-	// 		$product->images = collect(json_decode($product->images, true) ?? []);
-	// 		$product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
-	// 		$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
-
-	// 		$product->url = $product->seoUrl->url ?? null;
-
-	// 		$symbol = optional($product->currency)->symbol;
-	// 		$product->unsetRelation('currency');
-	// 		$product->currency = $symbol;
-
-	// 		$shippingAttributes = $product->shippingAttributes()
-	// 		->with([
-	// 			'attributeDetails:id,name',
-	// 			'measurementUnit:id,name'
-	// 		])
-	// 		->get()
-	// 		->flatMap(function ($attr) {
-	// 			$key = strtolower(str_replace(' ', '_', $attr->attributeDetails->name));
-	// 			return [
-	// 				$key => $attr->attribute_value,
-	// 				$key . '_unit' => $attr->measurementUnit->name
-	// 			];
-	// 		})
-	// 		->toArray();
-
-	// 		$supplier = $cartProduct->vendorProductSupplier;
-	// 		if ($supplier) {
-	// 			$product->vendor_sku = $supplier->vendor_sku ?? null;
-
-	// 			$product->vendor_country = $supplier->vendor->country->name ?? null;
-	// 			$product->vendor_city = $supplier->vendor->city->name ?? null;
-	// 			$product->vendor_address = $supplier->vendor->address ?? null;
-	// 			$product->vendor_zipcode = $supplier->vendor->zipcode ?? null;
-
-	// 			$product->shipping_attributes = $shippingAttributes ?? null;
-
-	// 			$product->price = (float)$supplier->price;
-	// 			$product->sale_price = (float)$supplier->sale_price;
-	// 			$product->original_price = (float)$supplier->price;
-	// 			$product->front_sale_price = (float)$cartProduct->unit_price;
-	// 			$product->best_price = (float)$cartProduct->unit_price;
-	// 			$product->vendor_id = $cartProduct->vendor_id;
-	// 			$product->map = (float)$supplier->map;
-	// 			$product->inventory = $supplier->inventory;
-	// 			$product->in_stock = $supplier->in_stock;
-	// 			$product->delivery_days = $supplier->delivery_days;
-	// 			$product->return_policy = $supplier->return_policy;
-	// 			$product->free_shipping = $supplier->free_shipping;
-	// 			$product->warranty_information = $supplier->warranty_information;
-	// 		} else {
-	// 			$product->vendor_sku = null;
-	// 			$product->price = (float)$cartProduct->unit_price;
-	// 			$product->sale_price = (float)$cartProduct->unit_price;
-	// 			$product->original_price = (float)$cartProduct->unit_price;
-	// 			$product->front_sale_price = (float)$cartProduct->unit_price;
-	// 			$product->best_price = (float)$cartProduct->unit_price;
-	// 			$product->vendor_id = $cartProduct->vendor_id;
-	// 			$product->map = null;
-	// 			$product->inventory = null;
-	// 			$product->in_stock = null;
-	// 			$product->delivery_days = null;
-	// 			$product->return_policy = null;
-	// 			$product->free_shipping = null;
-	// 			$product->warranty_information = null;
-	// 		}
-
-	// 		// Add selling unit
-	// 		$sellingUnit = null;
-	// 		if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-	// 			$fullValue = $product->sellingUnitAttribute->attribute_value;
-	// 			$sellingUnit = strpos($fullValue, '/') !== false
-	// 			? trim(explode('/', $fullValue)[1])
-	// 			: $fullValue;
-	// 		}
-	// 		$product->selling_unit = $sellingUnit;
-
-	// 		// Add selected accessories details
-	// 		$cartItem->accessories_options_details = [];
-
-	// 		if ($cartProduct->accessories_options && is_array($cartProduct->accessories_options)) {
-	// 				// eager load accessory relation for efficiency
-	// 			$accessoryItems = AccessoryItem::with('accessory')
-	// 			->whereIn('id', $cartProduct->accessories_options)
-	// 			->get();
-
-	// 			foreach ($accessoryItems as $item) {
-	// 				$cartItem->accessories_options_details[] = [
-	// 					'accessory_name' => $item->accessory->name ?? null,
-	// 					'item_name'      => $item->name,
-	// 					'item_id'      => $item->id,
-	// 					'price'          => (float)$item->price,
-	// 				];
-	// 			}
-	// 		}
-	// 		$productShipping = $cartProduct->shipping_charge ?? 0;
-
-	// 		if (in_array(config('app.website'), ['US', 'US_T'])) {
-
-	// 			$state = $customerCart->customerAddress->state ?? null;
-
-	// 			if (!$customerCart->is_customer_pickup) {
-	// 				if ($state === 'Texas') {
-	// 					$productShipping = ($productShipping > 0) ? $productShipping : 99;
-	// 				} else {
-	// 					$productShipping = ($productShipping > 0) ? $productShipping : 199;
-	// 				}
-	// 			} else {
-	// 				$productShipping = 0;
-	// 			}
-	// 		}
-
-	// 		$product->shippingCharge = $productShipping;
-
-	// 			// ------------------- SHIPPING CHARGE LOGIC FOR CUSTOMER CART -------------------
-	// 		$cartShippingCharge = $customerCart->shipping_charge ?? 0;
-
-	// 		if (in_array(config('app.website'), ['US', 'US_T'])) {
-
-	// 			$state = $customerCart->customerAddress->state ?? null;
-
-	// 			if (!$customerCart->is_customer_pickup) {
-
-	// 				if ($state === 'Texas') {
-	// 					$cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 99;
-	// 				} else {
-	// 					$cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 199;
-	// 				}
-
-	// 			} else {
-	// 				$cartShippingCharge = 0;
-	// 			}
-	// 		}
-
-	// 			// assign final charge to customer cart model
-	// 		$customerCart->shipping_charge = $cartShippingCharge;
-
-
-
-	// 		return $cartItem;
-	// 	});
-
-	// 	return response()->json([//
-	// 		'success' => true,
-	// 		'data' => $transformedItems,
-	// 		'cart_id' => $cartId,
-	// 		'checkout_url' => url("/Checkout/{$cartId}"),
-	// 		'customer_cart' => $customerCart,
-	// 	]);
-	// }
-
 	public function viewCart(Request $request)
-{
-    $userId = auth()->id();
+	{
+		$userId = auth()->id();
+		if (!$userId) {
+			return response()->json([
+				'success' => false,
+				'message' => 'User not authenticated',
+			], 401);
+		}
 
-    if (!$userId) {
-        return response()->json([
-            'success' => false,
-            'message' => 'User not authenticated',
-        ], 401);
-    }
+		$cartId = $this->generateSimpleCartId($userId);
 
-    $cartId = $this->generateSimpleCartId($userId);
+		$wishlistProductIds = DB::table('ec_wish_lists')
+		->where('customer_id', $userId)
+		->pluck('product_id')
+		->map(fn($id) => (int)$id)
+		->toArray();
 
-    $wishlistProductIds = DB::table('ec_wish_lists')
-        ->where('customer_id', $userId)
-        ->pluck('product_id')
-        ->map(fn ($id) => (int) $id)
-        ->toArray();
+		$customerCart = CustomerCart::where('customer_id', $userId)->first();
 
-    $customerCart = CustomerCart::where('customer_id', $userId)->first();
+		if (!$customerCart) {
+			return response()->json([
+				'success' => true,
+				'data' => [],
+				'cart_id' => $cartId,
+				'checkout_url' => url("review/Checkout/{$cartId}")
+			]);
+		}
 
-    if (!$customerCart) {
-        return response()->json([
-            'success' => true,
-            'data' => [],
-            'cart_id' => $cartId,
-            'checkout_url' => url("review/Checkout/{$cartId}")
-        ]);
-    }
+		$cartItems = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+		->with([
+			'product.currency',
+			'product.productSuppliers',
+			'product.seoUrl',
+			'product.sellingUnitAttribute',
+			'product.accessories.items'
+		])
+		->get();
 
-    $cartItems = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
-        ->with([
-            'product.currency',
-            'product.productSuppliers',
-            'product.seoUrl',
-            'product.sellingUnitAttribute',
-            'product.accessories.items'
-        ])
-        ->get();
+		$transformedItems = $cartItems->map(function ($cartProduct) use ($wishlistProductIds, $customerCart) {
+			$product = $cartProduct->product;
 
-    $totalCartShipping = 0;
+			$cartItem = (object)[
+				'id' => $cartProduct->id,
+				'user_id' => $cartProduct->customerCart->customer_id,
+				'product_id' => $cartProduct->product_id,
+				'product_id' => $cartProduct->product_id,
+				'product_id' => $cartProduct->product_id,
+				'quantity' => $cartProduct->quantity,
+				'product' => $product
+			];
 
-    $transformedItems = $cartItems->map(function ($cartProduct) use (
-        $wishlistProductIds,
-        $customerCart,
-        &$totalCartShipping
-    ) {
+			$product->in_wishlist = in_array($product->id, $wishlistProductIds);
+			$product->images = collect(json_decode($product->images, true) ?? []);
+			$product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
+			$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
 
-        $product  = $cartProduct->product;
-        $supplier = $cartProduct->vendorProductSupplier;
+			$product->url = $product->seoUrl->url ?? null;
 
-        $cartItem = (object) [
-            'id'         => $cartProduct->id,
-            'user_id'    => $cartProduct->customerCart->customer_id,
-            'product_id' => $cartProduct->product_id,
-            'quantity'   => $cartProduct->quantity,
-            'product'    => $product
-        ];
+			$symbol = optional($product->currency)->symbol;
+			$product->unsetRelation('currency');
+			$product->currency = $symbol;
 
-        // Wishlist
-        $product->in_wishlist = in_array($product->id, $wishlistProductIds);
+			$shippingAttributes = $product->shippingAttributes()
+			->with([
+				'attributeDetails:id,name',
+				'measurementUnit:id,name'
+			])
+			->get()
+			->flatMap(function ($attr) {
+				$key = strtolower(str_replace(' ', '_', $attr->attributeDetails->name));
+				return [
+					$key => $attr->attribute_value,
+					$key . '_unit' => $attr->measurementUnit->name
+				];
+			})
+			->toArray();
 
-        // Images
-        $product->images = collect(json_decode($product->images, true) ?? []);
+			$supplier = $cartProduct->vendorProductSupplier;
+			if ($supplier) {
+				$product->vendor_sku = $supplier->vendor_sku ?? null;
 
-        // URLs
-        $product->category_url        = method_exists($product, 'category_url') ? $product->category_url() : null;
-        $product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
-        $product->url                 = $product->seoUrl->url ?? null;
+				$product->vendor_country = $supplier->vendor->country->name ?? null;
+				$product->vendor_city = $supplier->vendor->city->name ?? null;
+				$product->vendor_state_name = $supplier->vendor->city->state->name ?? null;
+				$product->vendor_state_code = $supplier->vendor->city->state->abbreviation ?? null;
+				$product->vendor_address = $supplier->vendor->address ?? null;
+				$product->vendor_zipcode = $supplier->vendor->zipcode ?? null;
 
-        // Currency
-        $symbol = optional($product->currency)->symbol;
-        $product->unsetRelation('currency');
-        $product->currency = $symbol;
+				$product->shipping_attributes = $shippingAttributes ?? null;
 
-        // Shipping attributes
-        $shippingAttributes = $product->shippingAttributes()
-            ->with([
-                'attributeDetails:id,name',
-                'measurementUnit:id,name'
-            ])
-            ->get()
-            ->flatMap(function ($attr) {
-                $key = strtolower(str_replace(' ', '_', $attr->attributeDetails->name));
-                return [
-                    $key           => $attr->attribute_value,
-                    $key . '_unit'  => $attr->measurementUnit->name
-                ];
-            })
-            ->toArray();
+				$product->price = (float)$supplier->price;
+				$product->sale_price = (float)$supplier->sale_price;
+				$product->original_price = (float)$supplier->price;
+				$product->front_sale_price = (float)$cartProduct->unit_price;
+				$product->best_price = (float)$cartProduct->unit_price;
+				$product->vendor_id = $cartProduct->vendor_id;
+				$product->map = (float)$supplier->map;
+				$product->inventory = $supplier->inventory;
+				$product->in_stock = $supplier->in_stock;
+				$product->delivery_days = $supplier->delivery_days;
+				$product->return_policy = $supplier->return_policy;
+				$product->free_shipping = $supplier->free_shipping;
+				$product->warranty_information = $supplier->warranty_information;
+			} else {
+				$product->vendor_sku = null;
+				$product->price = (float)$cartProduct->unit_price;
+				$product->sale_price = (float)$cartProduct->unit_price;
+				$product->original_price = (float)$cartProduct->unit_price;
+				$product->front_sale_price = (float)$cartProduct->unit_price;
+				$product->best_price = (float)$cartProduct->unit_price;
+				$product->vendor_id = $cartProduct->vendor_id;
+				$product->map = null;
+				$product->inventory = null;
+				$product->in_stock = null;
+				$product->delivery_days = null;
+				$product->return_policy = null;
+				$product->free_shipping = null;
+				$product->warranty_information = null;
+			}
 
-        // Supplier-based data
-        if ($supplier) {
+			// Add selling unit
+			$sellingUnit = null;
+			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+				$fullValue = $product->sellingUnitAttribute->attribute_value;
+				$sellingUnit = strpos($fullValue, '/') !== false
+				? trim(explode('/', $fullValue)[1])
+				: $fullValue;
+			}
+			$product->selling_unit = $sellingUnit;
 
-            $product->vendor_sku  = $supplier->vendor_sku ?? null;
-            $product->vendor_id   = $cartProduct->vendor_id;
-            $product->inventory   = $supplier->inventory;
-            $product->in_stock    = $supplier->in_stock;
-            $product->map         = (float) $supplier->map;
+			// Add selected accessories details
+			$cartItem->accessories_options_details = [];
 
-            $product->vendor_country = $supplier->vendor->country->name ?? null;
-            $product->vendor_city    = $supplier->vendor->city->name ?? null;
-            $product->vendor_address = $supplier->vendor->address ?? null;
-            $product->vendor_zipcode = $supplier->vendor->zipcode ?? null;
+			if ($cartProduct->accessories_options && is_array($cartProduct->accessories_options)) {
+					// eager load accessory relation for efficiency
+				$accessoryItems = AccessoryItem::with('accessory')
+				->whereIn('id', $cartProduct->accessories_options)
+				->get();
 
-            $product->shipping_attributes = $shippingAttributes;
+				foreach ($accessoryItems as $item) {
+					$cartItem->accessories_options_details[] = [
+						'accessory_name' => $item->accessory->name ?? null,
+						'item_name'      => $item->name,
+						'item_id'      => $item->id,
+						'price'          => (float)$item->price,
+					];
+				}
+			}
+			$productShipping = $cartProduct->shipping_charge ?? 0;
 
-            // Prices
-            $product->price            = (float) $supplier->price;
-            $product->sale_price       = (float) $supplier->sale_price;
-            $product->original_price   = (float) $supplier->price;
-            $product->front_sale_price = (float) $cartProduct->unit_price;
-            $product->best_price       = (float) $cartProduct->unit_price;
+			if (in_array(config('app.website'), ['US', 'US_T'])) {
 
-            // ✅ SHIPPING FROM SUPPLIER
-            $productShipping = (float) ($supplier->shipping_charge ?? 0);
+				$state = $customerCart->customerAddress->state ?? null;
 
-        } else {
+				if (!$customerCart->is_customer_pickup) {
+					if ($state === 'Texas') {
+						$productShipping = ($productShipping > 0) ? $productShipping : 99;
+					} else {
+						$productShipping = ($productShipping > 0) ? $productShipping : 199;
+					}
+				} else {
+					$productShipping = 0;
+				}
+			}
 
-            $product->vendor_sku        = null;
-            $product->vendor_id         = $cartProduct->vendor_id;
-            $product->price             = (float) $cartProduct->unit_price;
-            $product->sale_price        = (float) $cartProduct->unit_price;
-            $product->original_price    = (float) $cartProduct->unit_price;
-            $product->front_sale_price  = (float) $cartProduct->unit_price;
-            $product->best_price        = (float) $cartProduct->unit_price;
+			$product->shippingCharge = $productShipping;
 
-            $product->map               = null;
-            $product->inventory         = null;
-            $product->in_stock          = null;
-            $product->shipping_attributes = null;
+				// ------------------- SHIPPING CHARGE LOGIC FOR CUSTOMER CART -------------------
+			$cartShippingCharge = $customerCart->shipping_charge ?? 0;
 
-            $productShipping = 0;
-        }
+			if (in_array(config('app.website'), ['US', 'US_T'])) {
 
-        // Selling unit
-        $sellingUnit = null;
-        if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-            $fullValue   = $product->sellingUnitAttribute->attribute_value;
-            $sellingUnit = str_contains($fullValue, '/')
-                ? trim(explode('/', $fullValue)[1])
-                : $fullValue;
-        }
-        $product->selling_unit = $sellingUnit;
+				$state = $customerCart->customerAddress->state ?? null;
 
-        // Accessories
-        $cartItem->accessories_options_details = [];
+				if (!$customerCart->is_customer_pickup) {
 
-        if ($cartProduct->accessories_options && is_array($cartProduct->accessories_options)) {
+					if ($state === 'Texas') {
+						$cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 99;
+					} else {
+						$cartShippingCharge = ($cartShippingCharge > 0) ? $cartShippingCharge : 199;
+					}
 
-            $accessoryItems = AccessoryItem::with('accessory')
-                ->whereIn('id', $cartProduct->accessories_options)
-                ->get();
+				} else {
+					$cartShippingCharge = 0;
+				}
+			}
 
-            foreach ($accessoryItems as $item) {
-                $cartItem->accessories_options_details[] = [
-                    'accessory_name' => $item->accessory->name ?? null,
-                    'item_name'      => $item->name,
-                    'item_id'        => $item->id,
-                    'price'          => (float) $item->price,
-                ];
-            }
-        }
+				// assign final charge to customer cart model
+			$customerCart->shipping_charge = $cartShippingCharge;
 
-        // ✅ Assign product shipping
-        $product->shippingCharge = $productShipping;
 
-        // ✅ Add to cart total
-        $totalCartShipping += $productShipping;
 
-        return $cartItem;
-    });
+			return $cartItem;
+		});
 
-    // ✅ Final cart-level shipping
-    $customerCart->shipping_charge = $totalCartShipping;
-
-    return response()->json([
-        'success'       => true,
-        'data'          => $transformedItems,
-        'cart_id'       => $cartId,
-        'checkout_url'  => url("/Checkout/{$cartId}"),
-        'customer_cart' => $customerCart,
-    ]);
-}
-
+		return response()->json([//
+			'success' => true,
+			'data' => $transformedItems,
+			'cart_id' => $cartId,
+			'checkout_url' => url("/Checkout/{$cartId}"),
+			'customer_cart' => $customerCart,
+		]);
+	}
 
 	/**
 	 * @OA\Delete(

@@ -30,6 +30,7 @@ class OutDeliveryMail extends Mailable
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . '/logo.png';
 		$name = $order->customer->name ?? 'User';
+		$customerEmail = $order->customer->email ?? 'User';
 		$carrier = optional($order->shipments()->latest()->first())->carrier ?? '';
 		$orderNumber = $order->order_number;
 		$estimatedDelivery = optional($order->shipments()->latest()->first())->estimated_delivery_date;
@@ -79,6 +80,7 @@ class OutDeliveryMail extends Mailable
 			'city' => $city,
 			'country' => $country,
 			'zipcode' => $zipcode,
+			'customerEmail' => $customerEmail,
 			'orderDetailUrl' => $orderDetailUrl,
 			'rightPngURL' => $rightPngURL,
 
