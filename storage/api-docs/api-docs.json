@@ -33921,6 +33921,147 @@
                 ]
             }
         },
+        "/api/orders/calculate-discount": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Calculate required discount to achieve desired total amount",
+                "operationId": "cfaaafc4080c22c544fb0744d4d5ab61",
+                "parameters": [
+                    {
+                        "name": "order_id",
+                        "in": "query",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    },
+                    {
+                        "name": "desired_amount",
+                        "in": "query",
+                        "description": "Target total amount",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "example": 15000
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Discount calculated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/orders/calculate-discount-for-new-order": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Calculate required additional discount for a new order to achieve desired total amount",
+                "operationId": "abdd8087c915e97fce908d3d146b5a51",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "products_subtotal",
+                                    "desired_amount",
+                                    "tax_percentage",
+                                    "shipping_charge"
+                                ],
+                                "properties": {
+                                    "products_subtotal": {
+                                        "description": "Sum of all product prices",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 149.34
+                                    },
+                                    "additional_amount": {
+                                        "description": "Additional special amount (optional)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 3000
+                                    },
+                                    "coupon_discount": {
+                                        "description": "Existing coupon discount (optional)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 0
+                                    },
+                                    "cheque_discount": {
+                                        "description": "Existing cheque discount (optional)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 0
+                                    },
+                                    "is_lift_gate": {
+                                        "description": "Lift gate fee required ($75)",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "description": "Residential delivery fee required ($199)",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_inside_delivery": {
+                                        "description": "Inside delivery fee required ($249)",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "shipping_charge": {
+                                        "description": "Shipping charge amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 11343
+                                    },
+                                    "tax_percentage": {
+                                        "description": "Tax percentage (e.g., 10.25 for 10.25%)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.25
+                                    },
+                                    "desired_amount": {
+                                        "description": "Target total amount you want to achieve",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Additional discount calculated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/orders/{id}/status": {
             "put": {
                 "tags": [
