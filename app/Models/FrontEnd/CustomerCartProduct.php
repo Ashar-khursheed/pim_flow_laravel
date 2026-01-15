@@ -39,7 +39,8 @@ class CustomerCartProduct extends Model
     {
         return ProductSupplier::with([
                 'vendor.country:id,name',
-                'vendor.city:id,name'
+                'vendor.city:id,name',
+                'vendor.city.state:id,name,abbreviation'
             ])
             ->where('product_id', $this->product_id)
             ->where('vendor_id', $this->vendor_id)

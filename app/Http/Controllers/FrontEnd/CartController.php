@@ -298,6 +298,8 @@ class CartController extends Controller
 
 				$product->vendor_country = $supplier->vendor->country->name ?? null;
 				$product->vendor_city = $supplier->vendor->city->name ?? null;
+				$product->vendor_state_name = $supplier->vendor->city->state->name ?? null;
+				$product->vendor_state_code = $supplier->vendor->city->state->abbreviation ?? null;
 				$product->vendor_address = $supplier->vendor->address ?? null;
 				$product->vendor_zipcode = $supplier->vendor->zipcode ?? null;
 
