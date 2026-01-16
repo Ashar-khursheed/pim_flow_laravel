@@ -781,7 +781,7 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
 	Route::apiResource('frontend/orders', F_OrderController::class)	->names('frontend.orders');
 
-	Route::post('/frontend/compress-image-check', [F_OrderController::class, 'compressImage']);
+	// Route::post('/frontend/compress-image-check', [F_OrderController::class, 'compressImage']);
 
 	Route::get('/frontend/user-stats', [F_OrderController::class, 'userStats']);
 

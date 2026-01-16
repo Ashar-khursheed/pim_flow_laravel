@@ -38,7 +38,7 @@ class ReviewController extends Controller
      *         required=false,
      *         @OA\Schema(type="integer", example=1)
      *     ),
-     *     
+     *
      *     @OA\Parameter(
      *         name="per_page",
      *         in="query",
@@ -78,7 +78,7 @@ class ReviewController extends Controller
      *             @OA\Property(property="per_page", type="integer", example=10),
      *             @OA\Property(property="total_records", type="integer", example=45),
      *             @OA\Property(property="total_pages", type="integer", example=5),
-     *            
+     *
      *         )
      *     ),
      *
@@ -174,7 +174,7 @@ class ReviewController extends Controller
      *     path="/api/reviews",
      *     summary="Create a new review",
      *     description="Allows an authenticated user to create a product review with optional images.",
-     *     security={{"bearerAuth":{}}}, 
+     *     security={{"bearerAuth":{}}},
      *     tags={"Reviews"},
      *
      *     @OA\RequestBody(
@@ -271,11 +271,11 @@ class ReviewController extends Controller
 
         $imagePaths = [];
         $uploadedImages = [];
-        $path = env('STORAGE_ENV') . '/production/review';   
-        
+        $path = env('STORAGE_ENV') . '/production/review';
+
         // ✅ Upload & compress images
         if ($request->hasFile('images') && is_array($request->file('images'))) {
-    
+
             foreach ($request->file('images') as $key=>$imageFile) {
 
                 if (!$imageFile->isValid()) {
@@ -284,7 +284,7 @@ class ReviewController extends Controller
                 $tempRequest = new \Illuminate\Http\Request();
                 $tempRequest->files->set('review_image_single', $imageFile);
 
-                $url = compressImageToS3(
+                $url = uploadImageToWebpS3FromFile(
                     $tempRequest,
                     'review_image_single',
                     $path
@@ -297,8 +297,8 @@ class ReviewController extends Controller
         }
 
         $images = json_encode($uploadedImages);
-    
-        
+
+
         // Ensure default empty array for images
         $review = Review::create([
             'customer_name' => $request->customer_name,
@@ -334,7 +334,7 @@ class ReviewController extends Controller
      * )
      */
     public function show($id)
-    {         
+    {
         $review = Review::with('product:id,name')->find($id);
         if (!$review) {
             return response()->json(['message' => 'Review not found'], 404);
@@ -395,7 +395,7 @@ class ReviewController extends Controller
     *                     @OA\Items(type="string"),
     *                     description="List of image URLs to delete"
     *                 ),
-    *                 
+    *
     *             )
     *         )
     *     ),
@@ -456,12 +456,12 @@ class ReviewController extends Controller
                 return !in_array($image, $deleteImages);
             }));
         }
-  
-          $path = env('STORAGE_ENV') . '/production/review';   
-           
+
+          $path = env('STORAGE_ENV') . '/production/review';
+
             // Upload & compress images
            if ($request->hasFile('images') && is_array($request->file('images'))) {
-      
+
                 foreach ($request->file('images') as $key=>$imageFile) {
 
                     if (!$imageFile->isValid()) {
@@ -470,20 +470,20 @@ class ReviewController extends Controller
      	            $tempRequest = new \Illuminate\Http\Request();
 				    $tempRequest->files->set('review_image_single', $imageFile);
 
-                    $url = compressImageToS3(
+                    $url = uploadImageToWebpS3FromFile(
                         $tempRequest,
                         'review_image_single',
                         $path
                     );
- 
+
                      if ($url) {
                         $existingImages[] = $url;
                     }
                 }
             }
- 
+
             $images = json_encode($existingImages);
-        
+
 
         // Store updated images list as JSON (Fix double escaping issue)
         $review->images = $images;
@@ -515,7 +515,7 @@ class ReviewController extends Controller
      * )
      */
     public function destroy($id)
-    {        
+    {
         $review = Review::find($id);
         if (!$review) {
             return response()->json(['message' => 'Review not found'], 404);
@@ -547,7 +547,7 @@ class ReviewController extends Controller
      * )
      */
     public function import(Request $request, ExcelImporterService $excelImporter)
-    {         
+    {
         /* Validate request data */
         $request->validate([
             'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
@@ -595,7 +595,7 @@ class ReviewController extends Controller
      * @OA\Post(
      *     path="/api/reviews/export",
      *     summary="Export Excel Format",
-     *     tags={"Reviews"},    
+     *     tags={"Reviews"},
      *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
      *     security={{"bearerAuth":{}}}
      * )
@@ -737,7 +737,7 @@ class ReviewController extends Controller
      *             @OA\Property(property="per_page", type="integer", example=10),
      *             @OA\Property(property="total_records", type="integer", example=45),
      *             @OA\Property(property="total_pages", type="integer", example=5),
-     *            
+     *
      *         )
      *     ),
      *
