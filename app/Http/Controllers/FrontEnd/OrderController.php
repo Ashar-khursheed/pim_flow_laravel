@@ -562,56 +562,6 @@ class OrderController extends BaseController
 				]));
 			}
 
-			/* Load relationships */
-			// $order->load([
-			// 	'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
-			// 	'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
-			// 	'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
-			// 	'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
-			// 	'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-			// 	'orderProducts.product.brand:id,name',
-			// 	'orderProducts.product.currency:id,symbol',
-			// 	'tracking',
-			// 	'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
-			// ]);
-
-			// /* Mutate the data for each order product */
-			// foreach ($order->orderProducts as $orderProduct) {
-			// 	$product = $orderProduct->product;
-			// 	if ($product) {
-			// 		$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-			// 		$product->brand_name = $product->brand->name ?? null;
-			// 		$product->currency_symbol = $product->currency->symbol ?? null;
-			// 		unset($product->brand, $product->currency);
-			// 	}
-			// 	$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-			// 	$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-			// 	? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-			// 	: null;
-
-			// 	if ($orderProduct->accessoryCharges) {
-			// 		$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
-			// 			return [
-			// 				'id' => $charge->id,
-			// 				'accessory_item_id' => $charge->accessory_item_id,
-			// 				'accessory_item_name' => $charge->accessoryItem->name ?? null,
-			// 				'accessory_item_price' => $charge->accessoryItem->price ?? null,
-			// 				'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-			// 				'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-			// 				'amount' => $charge->amount,
-			// 			];
-			// 		});
-
-			// 		unset($orderProduct->accessoryCharges);
-			// 	}
-			// }
-
-			// foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-			// 	if (isset($order->$key)) {
-			// 		$order->$key = number_format($order->$key, 2, '.', '');
-			// 	}
-			// }
-
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
@@ -626,6 +576,7 @@ class OrderController extends BaseController
 			], 500);
 		}
 	}
+
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/orders/{id}",
@@ -1014,7 +965,6 @@ class OrderController extends BaseController
 			}
 		}
 
-
 		if (!$order) {
 			return response()->json([
 				'success' => false,
@@ -1158,98 +1108,47 @@ class OrderController extends BaseController
 	 *             )
 	 *         )
 	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Cheque uploaded successfully",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Cheque images uploaded and saved successfully"),
-	 *             @OA\Property(
-	 *                 property="data",
-	 *                 type="object",
-	 *                 @OA\Property(property="id", type="integer", example=1),
-	 *                 @OA\Property(property="cheque_img", type="string", example="s3/path/front.webp"),
-	 *                 @OA\Property(property="cheque_img_back", type="string", example="s3/path/back.webp"),
-	 *                 @OA\Property(property="session_id", type="string", example="sess_123456"),
-	 *                 @OA\Property(property="created_at", type="string", example="2025-01-01 12:00:00")
-	 *             )
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation error",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="Validation failed"),
-	 *             @OA\Property(property="errors", type="object")
-	 *         )
-	 *     )
+	 *     @OA\Response(response=200, description="Cheque uploaded successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
 	public function saveChequeUpload(Request $request)
 	{
-		$validator = Validator::make($request->all(), [
-			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-			'session_id'       => 'nullable|string|max:255',
+		$request->validate([
+			'cheque_img' => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'cheque_img_back' => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'session_id' => 'nullable|string|max:255',
 		]);
 
-		if ($validator->fails()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Validation failed',
-				'errors'  => $validator->errors(),
-			], 422);
-		}
+		$chequeImg = uploadImageToWebpS3FromFile(
+			$request,
+			'cheque_img',
+			env('STORAGE_ENV') . '/customer/orders'
+		);
 
-		$path = env('STORAGE_ENV') . '/customer/orders';
+		$chequeImgBack = uploadImageToWebpS3FromFile(
+			$request,
+			'cheque_img_back',
+			env('STORAGE_ENV') . '/customer/orders'
+		);
 
-		// $chequeFront = compressImageToS3(
-		// 	$request,
-		// 	'cheque_img',
-		// 	$path
-		// );
-
-		// $chequeBack = compressImageToS3(
-		// 	$request,
-		// 	'cheque_img_back',
-		// 	$path
-		// );
-
-
-			$chequeFront = uploadImageToWebpS3FromFile(
-				$request,
-				'cheque_img',
-				env('STORAGE_ENV') . '/customer/orders'
-			);
-			$chequeBack = uploadImageToWebpS3FromFile(
-				$request,
-				'cheque_img_back',
-				env('STORAGE_ENV') . '/customer/orders'
-			);
-
-		// Upload failed check
-		if (!$chequeFront || !$chequeBack) {
+		if ($chequeImg && $chequeImgBack) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Image upload failed',
-			], 200);
+			]);
 		}
 
-		// Save to database
-		$chequeUpload = ChequeUpload::create([
-			'cheque_img'      => $chequeFront,
-			'cheque_img_back' => $chequeBack,
-			'session_id'      => $request->session_id,
+		$data = ChequeUpload::create([
+			'cheque_img' => $chequeImg,
+			'cheque_img_back' => $chequeImgBack,
+			'session_id' => $request->session_id,
 		]);
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Cheque images uploaded and saved successfully',
-			'data' => $chequeUpload,
-		], 200);
+			'data' => $data,
+		]);
 	}
 
 	/**
@@ -1266,75 +1165,29 @@ class OrderController extends BaseController
 	 *         description="Session identifier",
 	 *         @OA\Schema(type="string", example="sess_123456")
 	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Cheque uploads retrieved successfully",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Cheque uploads retrieved successfully"),
-	 *             @OA\Property(
-	 *                 property="data",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     type="object",
-	 *                     @OA\Property(property="id", type="integer", example=1),
-	 *                     @OA\Property(property="cheque_img", type="string", example="s3/path/front.webp"),
-	 *                     @OA\Property(property="cheque_img_back", type="string", example="s3/path/back.webp"),
-	 *                     @OA\Property(property="session_id", type="string", example="sess_123456"),
-	 *                     @OA\Property(property="created_at", type="string", example="2025-01-01 12:00:00")
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="No cheque uploads found",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="No cheque uploads found for this session"),
-	 *             @OA\Property(property="data", type="array", @OA\Items())
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation error"
-	 *     )
+	 *     @OA\Response(response=200, description="Cheque uploads retrieved successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
 	public function getChequeUploadsBySession(Request $request)
 	{
-		$validator = Validator::make($request->all(), [
+		$request->validate([
 			'session_id' => 'required|string|max:255',
 		]);
 
-		if ($validator->fails()) {
+		$record = ChequeUpload::where('session_id', $request->session_id)->orderBy('created_at', 'desc')->first();
+
+		if (!$record) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Validation failed',
-				'errors'  => $validator->errors(),
-			], 422);
-		}
-
-		$chequeUploads = ChequeUpload::where('session_id', $request->session_id)
-		->orderBy('created_at', 'desc')
-		->get();
-
-		if ($chequeUploads->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No cheque uploads found for this session',
-				'data' => [],
-			], 404);
+				'message' => "No cheque uploads found for this session."
+			]);
 		}
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Cheque uploads retrieved successfully',
-			'data' => $chequeUploads,
-		], 200);
+			'data' => $record,
+		]);
 	}
 
 	/**
