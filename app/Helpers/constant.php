@@ -368,8 +368,43 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 			imagepalettetotruecolor($image);
 		}
 
+		/* Get original dimensions */
+		$originalWidth = imagesx($image);
+		$originalHeight = imagesy($image);
+
+		/* Set maximum dimensions (adjust as needed) */
+		$maxWidth = 1000;
+
+		/* Calculate new dimensions while maintaining aspect ratio */
+		if ($originalWidth > $maxWidth) {
+			$newWidth = 1000;
+			$newHeight = intval(($originalHeight / $originalWidth) * $newWidth);
+
+			/* Create resized image */
+			$resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+
+			/* Preserve transparency for PNG */
+			imagealphablending($resizedImage, false);
+			imagesavealpha($resizedImage, true);
+
+			/* Resize image */
+			imagecopyresampled(
+				$resizedImage,
+				$image,
+				0, 0, 0, 0,
+				$newWidth,
+				$newHeight,
+				$originalWidth,
+				$originalHeight
+			);
+
+			imagedestroy($image);
+			$image = $resizedImage;
+		}
+
+		/* Convert to WebP with quality setting (0-100, lower = smaller file) */
 		ob_start();
-		imagewebp($image);
+		imagewebp($image, null, 75); /* Quality: 75 for good balance */
 		$webpData = ob_get_clean();
 		imagedestroy($image);
 
