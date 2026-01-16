@@ -993,98 +993,98 @@ class OrderController extends BaseController
 		]);
 	}
 
-	/**
-	 * @OA\Post(
-	 *     path="/api/frontend/compress-image-check",
-	 *     summary="Upload and compress cheque images",
-	 *     tags={"CompressImage"},
-	 *     security={{"bearerAuth":{}}},
-	 *
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 type="object",
-	 *                 required={"cheque_img","cheque_img_back"},
-	 *                 @OA\Property(
-	 *                     property="cheque_img",
-	 *                     type="string",
-	 *                     format="binary",
-	 *                     description="Cheque front image"
-	 *                 ),
-	 *                 @OA\Property(
-	 *                     property="cheque_img_back",
-	 *                     type="string",
-	 *                     format="binary",
-	 *                     description="Cheque back image"
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Cheque images uploaded and compressed successfully"
-	 *     ),
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation failed"
-	 *     ),
-	 *     @OA\Response(
-	 *         response=401,
-	 *         description="Unauthorized"
-	 *     )
-	 * )
-	 */
-	public function compressImage(Request $request)
-	{
+	// /**
+	//  * @OA\Post(
+	//  *     path="/api/frontend/compress-image-check",
+	//  *     summary="Upload and compress cheque images",
+	//  *     tags={"CompressImage"},
+	//  *     security={{"bearerAuth":{}}},
+	//  *
+	//  *     @OA\RequestBody(
+	//  *         required=true,
+	//  *         @OA\MediaType(
+	//  *             mediaType="multipart/form-data",
+	//  *             @OA\Schema(
+	//  *                 type="object",
+	//  *                 required={"cheque_img","cheque_img_back"},
+	//  *                 @OA\Property(
+	//  *                     property="cheque_img",
+	//  *                     type="string",
+	//  *                     format="binary",
+	//  *                     description="Cheque front image"
+	//  *                 ),
+	//  *                 @OA\Property(
+	//  *                     property="cheque_img_back",
+	//  *                     type="string",
+	//  *                     format="binary",
+	//  *                     description="Cheque back image"
+	//  *                 )
+	//  *             )
+	//  *         )
+	//  *     ),
+	//  *
+	//  *     @OA\Response(
+	//  *         response=200,
+	//  *         description="Cheque images uploaded and compressed successfully"
+	//  *     ),
+	//  *     @OA\Response(
+	//  *         response=422,
+	//  *         description="Validation failed"
+	//  *     ),
+	//  *     @OA\Response(
+	//  *         response=401,
+	//  *         description="Unauthorized"
+	//  *     )
+	//  * )
+	//  */
+	// public function compressImage(Request $request)
+	// {
 
-		$validator = Validator::make($request->all(), [
-			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-		]);
+	// 	$validator = Validator::make($request->all(), [
+	// 		'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+	// 		'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+	// 	]);
 
-		if ($validator->fails()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Validation failed',
-				'errors'  => $validator->errors(),
-			], 422);
-		}
-
-
-		$path = env('STORAGE_ENV') . '/customer/orders';
-
-		$chequeFront = compressImageToS3(
-			$request,
-			'cheque_img',
-			$path
-		);
-
-		$chequeBack = compressImageToS3(
-			$request,
-			'cheque_img_back',
-			$path
-		);
-		// Upload failed check
-		if (!$chequeFront || !$chequeBack) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Image upload failed',
-			], 200);
-		}
+	// 	if ($validator->fails()) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Validation failed',
+	// 			'errors'  => $validator->errors(),
+	// 		], 422);
+	// 	}
 
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Cheque images uploaded successfully',
-			'data' => [
-				'cheque_img'      => $chequeFront,
-				'cheque_img_back' => $chequeBack,
-			],
-		], 200);
-	}
+	// 	$path = env('STORAGE_ENV') . '/customer/orders';
+
+	// 	$chequeFront = compressImageToS3(
+	// 		$request,
+	// 		'cheque_img',
+	// 		$path
+	// 	);
+
+	// 	$chequeBack = compressImageToS3(
+	// 		$request,
+	// 		'cheque_img_back',
+	// 		$path
+	// 	);
+	// 	// Upload failed check
+	// 	if (!$chequeFront || !$chequeBack) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Image upload failed',
+	// 		], 200);
+	// 	}
+
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Cheque images uploaded successfully',
+	// 		'data' => [
+	// 			'cheque_img'      => $chequeFront,
+	// 			'cheque_img_back' => $chequeBack,
+	// 		],
+	// 	], 200);
+	// }
 
 	/**
 	 * @OA\Post(

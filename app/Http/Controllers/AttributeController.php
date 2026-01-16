@@ -246,7 +246,7 @@ class AttributeController extends BaseController
 				$tempRequest = new \Illuminate\Http\Request();
 				$tempRequest->files->set('attribute_image_single', $image);
 
-				$url = compressImageToS3(
+				$url = uploadImageToWebpS3FromFile(
 					$tempRequest,
 					'attribute_image_single',
 					$path
@@ -606,7 +606,7 @@ class AttributeController extends BaseController
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 type="object",                
+	 *                 type="object",
 	 *                 @OA\Property(
 	 *                     property="images[]",
 	 *                     type="array",
@@ -621,7 +621,7 @@ class AttributeController extends BaseController
 	 *                     type="array",
 	 *                     @OA\Items(type="string"),
 	 *                     description="List of image URLs to delete"
-	 *                 ),                 
+	 *                 ),
 	 *             )
 	 *         )
 	 *     ),
@@ -721,7 +721,7 @@ class AttributeController extends BaseController
 					$tempRequest = new \Illuminate\Http\Request();
 					$tempRequest->files->set('attribute_image_single', $image);
 
-					$url = compressImageToS3(
+					$url = uploadImageToWebpS3FromFile(
 						$tempRequest,
 						'attribute_image_single',
 						$path
