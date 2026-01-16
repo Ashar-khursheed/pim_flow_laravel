@@ -1144,7 +1144,7 @@ class OrderController extends BaseController
 			env('STORAGE_ENV') . '/customer/orders'
 		);
 
-		if ($chequeImg && $chequeImgBack) {
+		if (!$chequeImg || !$chequeImgBack) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Image upload failed',
