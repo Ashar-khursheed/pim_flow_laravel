@@ -411,16 +411,25 @@ class OrderController extends BaseController
 
 		/* Handle cheque payment discount */
 		if ($payWithCheque) {
-			$chequeImg = uploadImageToWebpS3FromFile(
-				$request,
-				'cheque_img',
-				env('STORAGE_ENV') . '/customer/orders'
-			);
-			$chequeImgBack = uploadImageToWebpS3FromFile(
-				$request,
-				'cheque_img_back',
-				env('STORAGE_ENV') . '/customer/orders'
-			);
+			if ($request->hasFile('cheque_img')) {
+				$chequeImg = uploadImageToWebpS3FromFile(
+					$request,
+					'cheque_img',
+					env('STORAGE_ENV') . '/customer/orders'
+				);
+			} elseif (!empty($request->cheque_img_url)) {
+				$chequeImg = $request->cheque_img_url;
+			}
+			if ($request->hasFile('cheque_img_back')) {
+				$chequeImgBack = uploadImageToWebpS3FromFile(
+					$request,
+					'cheque_img_back',
+					env('STORAGE_ENV') . '/customer/orders'
+				);
+			} elseif (!empty($request->cheque_img_back_url)) {
+				$chequeImgBack = $request->cheque_img_back_url;
+			}
+
 			$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
 			$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
 			$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
