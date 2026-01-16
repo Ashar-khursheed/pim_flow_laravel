@@ -1206,29 +1206,29 @@ class OrderController extends BaseController
 
 		$path = env('STORAGE_ENV') . '/customer/orders';
 
-		// $chequeFront = compressImageToS3(
-		// 	$request,
-		// 	'cheque_img',
-		// 	$path
-		// );
+		$chequeFront = compressImageToS3(
+			$request,
+			'cheque_img',
+			$path
+		);
 
-		// $chequeBack = compressImageToS3(
-		// 	$request,
-		// 	'cheque_img_back',
-		// 	$path
-		// );
+		$chequeBack = compressImageToS3(
+			$request,
+			'cheque_img_back',
+			$path
+		);
 
 
-			$chequeFront = uploadImageToWebpS3FromFile(
-				$request,
-				'cheque_img',
-				env('STORAGE_ENV') . '/customer/orders'
-			);
-			$chequeBack = uploadImageToWebpS3FromFile(
-				$request,
-				'cheque_img_back',
-				env('STORAGE_ENV') . '/customer/orders'
-			);
+			// $chequeFront = uploadImageToWebpS3FromFile(
+			// 	$request,
+			// 	'cheque_img',
+			// 	env('STORAGE_ENV') . '/customer/orders'
+			// );
+			// $chequeBack = uploadImageToWebpS3FromFile(
+			// 	$request,
+			// 	'cheque_img_back',
+			// 	env('STORAGE_ENV') . '/customer/orders'
+			// );
 
 		// Upload failed check
 		if (!$chequeFront || !$chequeBack) {
