@@ -183,7 +183,7 @@ class UserReviewController extends Controller
                     $tempRequest = new \Illuminate\Http\Request();
                     $tempRequest->files->set('review_image_single', $imageFile);
 
-                    $url = compressImageToS3(
+                    $url = uploadImageToWebpS3FromFile(
                         $tempRequest,
                         'review_image_single',
                         $path
@@ -326,7 +326,7 @@ class UserReviewController extends Controller
                 $tempRequest = new \Illuminate\Http\Request();
                 $tempRequest->files->set('review_image_single', $imageFile);
 
-                $url = compressImageToS3(
+                $url = uploadImageToWebpS3FromFile(
                     $tempRequest,
                     'review_image_single',
                     $path
@@ -466,7 +466,7 @@ class UserReviewController extends Controller
      *                     description="Paginated list of reviews",
      *                     @OA\Property(property="current_page", type="integer", example=1),
      *                     @OA\Property(
-     *                         property="data", 
+     *                         property="data",
      *                         type="array",
      *                         @OA\Items(
      *                             type="object",
@@ -475,7 +475,7 @@ class UserReviewController extends Controller
      *                             @OA\Property(property="star", type="integer", example=5),
      *                             @OA\Property(property="comment", type="string", example="Great product!"),
      *                             @OA\Property(
-     *                                 property="images", 
+     *                                 property="images",
      *                                 type="array",
      *                                 @OA\Items(type="string", format="uri", example="https://example.com/image1.jpg")
      *                             ),

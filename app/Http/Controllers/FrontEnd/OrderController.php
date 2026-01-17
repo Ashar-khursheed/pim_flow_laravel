@@ -222,6 +222,8 @@ class OrderController extends BaseController
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
 	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
+	 *                 @OA\Property(property="cheque_img_url", type="string", example="https://example.com/image.png"),
+	 *                 @OA\Property(property="cheque_img_back_url", type="string", example="https://example.com/image.png"),
 	 *
 	 *                 @OA\Property(property="is_cod", type="boolean", example=false, description="Cash on delivery"),
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
@@ -306,8 +308,10 @@ class OrderController extends BaseController
 
 			'payment_mode' => 'nullable|in:Stripe,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
 			'pay_with_cheque' => 'nullable|boolean',
-			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
-			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+			'cheque_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:10240',
+			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:10240',
+			'cheque_img_url' => 'nullable|string',
+			'cheque_img_back_url' => 'nullable|string',
 
 			'additional_discount_option' => 'nullable|boolean',
 			'additional_discount_reason' => 'nullable|string|max:255',
@@ -407,16 +411,25 @@ class OrderController extends BaseController
 
 		/* Handle cheque payment discount */
 		if ($payWithCheque) {
-			$chequeImg = uploadImageToWebpS3FromFile(
-				$request,
-				'cheque_img',
-				env('STORAGE_ENV') . '/customer/orders'
-			);
-			$chequeImgBack = uploadImageToWebpS3FromFile(
-				$request,
-				'cheque_img_back',
-				env('STORAGE_ENV') . '/customer/orders'
-			);
+			if ($request->hasFile('cheque_img')) {
+				$chequeImg = uploadImageToWebpS3FromFile(
+					$request,
+					'cheque_img',
+					env('STORAGE_ENV') . '/customer/orders'
+				);
+			} elseif (!empty($request->cheque_img_url)) {
+				$chequeImg = $request->cheque_img_url;
+			}
+			if ($request->hasFile('cheque_img_back')) {
+				$chequeImgBack = uploadImageToWebpS3FromFile(
+					$request,
+					'cheque_img_back',
+					env('STORAGE_ENV') . '/customer/orders'
+				);
+			} elseif (!empty($request->cheque_img_back_url)) {
+				$chequeImgBack = $request->cheque_img_back_url;
+			}
+
 			$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
 			$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
 			$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
@@ -562,56 +575,6 @@ class OrderController extends BaseController
 				]));
 			}
 
-			/* Load relationships */
-			// $order->load([
-			// 	'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
-			// 	'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
-			// 	'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
-			// 	'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
-			// 	'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-			// 	'orderProducts.product.brand:id,name',
-			// 	'orderProducts.product.currency:id,symbol',
-			// 	'tracking',
-			// 	'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
-			// ]);
-
-			// /* Mutate the data for each order product */
-			// foreach ($order->orderProducts as $orderProduct) {
-			// 	$product = $orderProduct->product;
-			// 	if ($product) {
-			// 		$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-			// 		$product->brand_name = $product->brand->name ?? null;
-			// 		$product->currency_symbol = $product->currency->symbol ?? null;
-			// 		unset($product->brand, $product->currency);
-			// 	}
-			// 	$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-			// 	$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-			// 	? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-			// 	: null;
-
-			// 	if ($orderProduct->accessoryCharges) {
-			// 		$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
-			// 			return [
-			// 				'id' => $charge->id,
-			// 				'accessory_item_id' => $charge->accessory_item_id,
-			// 				'accessory_item_name' => $charge->accessoryItem->name ?? null,
-			// 				'accessory_item_price' => $charge->accessoryItem->price ?? null,
-			// 				'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-			// 				'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-			// 				'amount' => $charge->amount,
-			// 			];
-			// 		});
-
-			// 		unset($orderProduct->accessoryCharges);
-			// 	}
-			// }
-
-			// foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-			// 	if (isset($order->$key)) {
-			// 		$order->$key = number_format($order->$key, 2, '.', '');
-			// 	}
-			// }
-
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
@@ -626,6 +589,7 @@ class OrderController extends BaseController
 			], 500);
 		}
 	}
+
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/orders/{id}",
@@ -1014,7 +978,6 @@ class OrderController extends BaseController
 			}
 		}
 
-
 		if (!$order) {
 			return response()->json([
 				'success' => false,
@@ -1030,98 +993,98 @@ class OrderController extends BaseController
 		]);
 	}
 
-	/**
-	 * @OA\Post(
-	 *     path="/api/frontend/compress-image-check",
-	 *     summary="Upload and compress cheque images",
-	 *     tags={"CompressImage"},
-	 *     security={{"bearerAuth":{}}},
-	 *
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 type="object",
-	 *                 required={"cheque_img","cheque_img_back"},
-	 *                 @OA\Property(
-	 *                     property="cheque_img",
-	 *                     type="string",
-	 *                     format="binary",
-	 *                     description="Cheque front image"
-	 *                 ),
-	 *                 @OA\Property(
-	 *                     property="cheque_img_back",
-	 *                     type="string",
-	 *                     format="binary",
-	 *                     description="Cheque back image"
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Cheque images uploaded and compressed successfully"
-	 *     ),
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation failed"
-	 *     ),
-	 *     @OA\Response(
-	 *         response=401,
-	 *         description="Unauthorized"
-	 *     )
-	 * )
-	 */
-	public function compressImage(Request $request)
-	{
+	// /**
+	//  * @OA\Post(
+	//  *     path="/api/frontend/compress-image-check",
+	//  *     summary="Upload and compress cheque images",
+	//  *     tags={"CompressImage"},
+	//  *     security={{"bearerAuth":{}}},
+	//  *
+	//  *     @OA\RequestBody(
+	//  *         required=true,
+	//  *         @OA\MediaType(
+	//  *             mediaType="multipart/form-data",
+	//  *             @OA\Schema(
+	//  *                 type="object",
+	//  *                 required={"cheque_img","cheque_img_back"},
+	//  *                 @OA\Property(
+	//  *                     property="cheque_img",
+	//  *                     type="string",
+	//  *                     format="binary",
+	//  *                     description="Cheque front image"
+	//  *                 ),
+	//  *                 @OA\Property(
+	//  *                     property="cheque_img_back",
+	//  *                     type="string",
+	//  *                     format="binary",
+	//  *                     description="Cheque back image"
+	//  *                 )
+	//  *             )
+	//  *         )
+	//  *     ),
+	//  *
+	//  *     @OA\Response(
+	//  *         response=200,
+	//  *         description="Cheque images uploaded and compressed successfully"
+	//  *     ),
+	//  *     @OA\Response(
+	//  *         response=422,
+	//  *         description="Validation failed"
+	//  *     ),
+	//  *     @OA\Response(
+	//  *         response=401,
+	//  *         description="Unauthorized"
+	//  *     )
+	//  * )
+	//  */
+	// public function compressImage(Request $request)
+	// {
 
-		$validator = Validator::make($request->all(), [
-			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-		]);
+	// 	$validator = Validator::make($request->all(), [
+	// 		'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+	// 		'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+	// 	]);
 
-		if ($validator->fails()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Validation failed',
-				'errors'  => $validator->errors(),
-			], 422);
-		}
-
-
-		$path = env('STORAGE_ENV') . '/customer/orders';
-
-		$chequeFront = compressImageToS3(
-			$request,
-			'cheque_img',
-			$path
-		);
-
-		$chequeBack = compressImageToS3(
-			$request,
-			'cheque_img_back',
-			$path
-		);
-		// Upload failed check
-		if (!$chequeFront || !$chequeBack) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Image upload failed',
-			], 200);
-		}
+	// 	if ($validator->fails()) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Validation failed',
+	// 			'errors'  => $validator->errors(),
+	// 		], 422);
+	// 	}
 
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Cheque images uploaded successfully',
-			'data' => [
-				'cheque_img'      => $chequeFront,
-				'cheque_img_back' => $chequeBack,
-			],
-		], 200);
-	}
+	// 	$path = env('STORAGE_ENV') . '/customer/orders';
+
+	// 	$chequeFront = compressImageToS3(
+	// 		$request,
+	// 		'cheque_img',
+	// 		$path
+	// 	);
+
+	// 	$chequeBack = compressImageToS3(
+	// 		$request,
+	// 		'cheque_img_back',
+	// 		$path
+	// 	);
+	// 	// Upload failed check
+	// 	if (!$chequeFront || !$chequeBack) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Image upload failed',
+	// 		], 200);
+	// 	}
+
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Cheque images uploaded successfully',
+	// 		'data' => [
+	// 			'cheque_img'      => $chequeFront,
+	// 			'cheque_img_back' => $chequeBack,
+	// 		],
+	// 	], 200);
+	// }
 
 	/**
 	 * @OA\Post(
@@ -1158,86 +1121,47 @@ class OrderController extends BaseController
 	 *             )
 	 *         )
 	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Cheque uploaded successfully",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Cheque images uploaded and saved successfully"),
-	 *             @OA\Property(
-	 *                 property="data",
-	 *                 type="object",
-	 *                 @OA\Property(property="id", type="integer", example=1),
-	 *                 @OA\Property(property="cheque_img", type="string", example="s3/path/front.webp"),
-	 *                 @OA\Property(property="cheque_img_back", type="string", example="s3/path/back.webp"),
-	 *                 @OA\Property(property="session_id", type="string", example="sess_123456"),
-	 *                 @OA\Property(property="created_at", type="string", example="2025-01-01 12:00:00")
-	 *             )
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation error",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="Validation failed"),
-	 *             @OA\Property(property="errors", type="object")
-	 *         )
-	 *     )
+	 *     @OA\Response(response=200, description="Cheque uploaded successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
 	public function saveChequeUpload(Request $request)
 	{
-		$validator = Validator::make($request->all(), [
-			'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-			'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-			'session_id'       => 'nullable|string|max:255',
+		$request->validate([
+			'cheque_img' => 'required|image|mimes:jpg,jpeg,png,webp|max:15360',
+			'cheque_img_back' => 'required|image|mimes:jpg,jpeg,png,webp|max:15360',
+			'session_id' => 'nullable|string|max:255',
 		]);
 
-		if ($validator->fails()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Validation failed',
-				'errors'  => $validator->errors(),
-			], 422);
-		}
-
-		$path = env('STORAGE_ENV') . '/customer/orders';
-
-		$chequeFront = compressImageToS3(
+		$chequeImg = uploadImageToWebpS3FromFile(
 			$request,
 			'cheque_img',
-			$path
+			env('STORAGE_ENV') . '/customer/orders'
 		);
 
-		$chequeBack = compressImageToS3(
+		$chequeImgBack = uploadImageToWebpS3FromFile(
 			$request,
 			'cheque_img_back',
-			$path
+			env('STORAGE_ENV') . '/customer/orders'
 		);
 
-		// Upload failed check
-		if (!$chequeFront || !$chequeBack) {
+		if (!$chequeImg || !$chequeImgBack) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Image upload failed',
-			], 200);
+			]);
 		}
 
-		// Save to database
-		$chequeUpload = ChequeUpload::create([
-			'cheque_img'      => $chequeFront,
-			'cheque_img_back' => $chequeBack,
-			'session_id'      => $request->session_id,
+		$data = ChequeUpload::create([
+			'cheque_img' => $chequeImg,
+			'cheque_img_back' => $chequeImgBack,
+			'session_id' => $request->session_id,
 		]);
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Cheque images uploaded and saved successfully',
-			'data' => $chequeUpload,
-		], 200);
+			'data' => $data,
+		]);
 	}
 
 	/**
@@ -1254,75 +1178,29 @@ class OrderController extends BaseController
 	 *         description="Session identifier",
 	 *         @OA\Schema(type="string", example="sess_123456")
 	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Cheque uploads retrieved successfully",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Cheque uploads retrieved successfully"),
-	 *             @OA\Property(
-	 *                 property="data",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     type="object",
-	 *                     @OA\Property(property="id", type="integer", example=1),
-	 *                     @OA\Property(property="cheque_img", type="string", example="s3/path/front.webp"),
-	 *                     @OA\Property(property="cheque_img_back", type="string", example="s3/path/back.webp"),
-	 *                     @OA\Property(property="session_id", type="string", example="sess_123456"),
-	 *                     @OA\Property(property="created_at", type="string", example="2025-01-01 12:00:00")
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="No cheque uploads found",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="No cheque uploads found for this session"),
-	 *             @OA\Property(property="data", type="array", @OA\Items())
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation error"
-	 *     )
+	 *     @OA\Response(response=200, description="Cheque uploads retrieved successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
 	public function getChequeUploadsBySession(Request $request)
 	{
-		$validator = Validator::make($request->all(), [
+		$request->validate([
 			'session_id' => 'required|string|max:255',
 		]);
 
-		if ($validator->fails()) {
+		$record = ChequeUpload::where('session_id', $request->session_id)->orderBy('created_at', 'desc')->first();
+
+		if (!$record) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Validation failed',
-				'errors'  => $validator->errors(),
-			], 422);
-		}
-
-		$chequeUploads = ChequeUpload::where('session_id', $request->session_id)
-		->orderBy('created_at', 'desc')
-		->get();
-
-		if ($chequeUploads->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No cheque uploads found for this session',
-				'data' => [],
-			], 404);
+				'message' => "No cheque uploads found for this session."
+			]);
 		}
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Cheque uploads retrieved successfully',
-			'data' => $chequeUploads,
-		], 200);
+			'data' => $record,
+		]);
 	}
 
 	/**
