@@ -308,8 +308,8 @@ class OrderController extends BaseController
 
 			'payment_mode' => 'nullable|in:Stripe,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
 			'pay_with_cheque' => 'nullable|boolean',
-			'cheque_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120',
-			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120',
+			'cheque_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:10240',
+			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:10240',
 			'cheque_img_url' => 'nullable|string',
 			'cheque_img_back_url' => 'nullable|string',
 
@@ -1127,8 +1127,8 @@ class OrderController extends BaseController
 	public function saveChequeUpload(Request $request)
 	{
 		$request->validate([
-			'cheque_img' => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-			'cheque_img_back' => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
+			'cheque_img' => 'required|image|mimes:jpg,jpeg,png,webp|max:15360',
+			'cheque_img_back' => 'required|image|mimes:jpg,jpeg,png,webp|max:15360',
 			'session_id' => 'nullable|string|max:255',
 		]);
 
