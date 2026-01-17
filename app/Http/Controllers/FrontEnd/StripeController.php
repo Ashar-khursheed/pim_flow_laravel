@@ -183,145 +183,200 @@ class StripeController extends Controller
     //         ], 500);
     //     }
     // }
-     public function createPaymentIntent(Request $request)
-    {
-        // Validate input
-        $request->validate([
-            'amount' => 'required|numeric|min:1',
-            'payment_method_id' => 'required|string',
-            'currency' => 'sometimes|string|in:aed,usd',
-            'customer_info' => 'sometimes|array'
+    public function createPaymentIntent(Request $request)
+{
+    $request->validate([
+        'amount' => 'required|numeric|min:1',
+        'currency' => 'sometimes|in:aed,usd',
+        'customer_info.email' => 'required|email',
+        'customer_info.name' => 'required|string|min:2',
+    ]);
+
+    Stripe::setApiKey(config('services.stripe.secret'));
+
+    // 🚨 Block suspicious email domains
+    if ($this->isLowTrustEmail($request->customer_info['email'])) {
+        return response()->json([
+            'success' => false,
+            'error' => 'Unsupported email provider'
+        ], 400);
+    }
+
+    try {
+        $paymentIntent = PaymentIntent::create([
+            'amount' => (int) round($request->amount * 100),
+            'currency' => $request->currency ?? 'aed',
+
+            // 🔐 STRONG FRAUD SETTINGS
+            'automatic_payment_methods' => ['enabled' => true],
+            'payment_method_options' => [
+                'card' => [
+                    'request_three_d_secure' => 'any', // FORCE 3DS
+                ],
+            ],
+
+            'receipt_email' => $request->customer_info['email'],
+            'description' => 'Order Payment',
+
+            'metadata' => [
+                'customer_name' => $request->customer_info['name'],
+                'customer_email' => $request->customer_info['email'],
+            ],
         ]);
 
-        // Set Stripe Secret Key
-        Stripe::setApiKey(config('services.stripe.secret'));
+        return response()->json([
+            'success' => true,
+            'client_secret' => $paymentIntent->client_secret,
+            'payment_intent_id' => $paymentIntent->id
+        ]);
 
-        try {
-            // STEP 1: Create a Customer in Stripe
-            $customer = \Stripe\Customer::create([
-                'name' => $request->customer_info['name'] ?? null,
-                'email' => $request->customer_info['email'] ?? null,
-            ]);
-
-            // STEP 2: Attach Payment Method to Customer
-            \Stripe\PaymentMethod::retrieve($request->payment_method_id)
-                ->attach(['customer' => $customer->id]);
-
-            // STEP 3: Update PaymentMethod with billing details
-            \Stripe\PaymentMethod::update(
-                $request->payment_method_id,
-                [
-                    'billing_details' => [
-                        'name' => $request->customer_info['name'] ?? null,
-                        'email' => $request->customer_info['email'] ?? null,
-                    ]
-                ]
-            );
-
-            // STEP 4: Create PaymentIntent
-            $paymentIntent = PaymentIntent::create([
-                'amount' => (int) round($request->amount * 100),
-                'currency' => $request->currency ?? 'aed',
-                'payment_method' => $request->payment_method_id,
-                'customer' => $customer->id,
-                'confirmation_method' => 'manual',
-                'confirm' => true,
-                'return_url' => config('app.url') . '/payment/return',
-                'description' => 'Order Payment - ' . now()->format('Y-m-d H:i:s'),
-                'metadata' => [
-                    'customer_name' => $request->customer_info['name'] ?? '',
-                    'customer_email' => $request->customer_info['email'] ?? '',
-                    'order_timestamp' => now()->toISOString()
-                ]
-            ]);
-
-            // STEP 5: Handle PaymentIntent Status
-            $status = $paymentIntent->status;
-
-            if ($status === 'requires_action') {
-                return response()->json([
-                    'success' => true,
-                    'requires_action' => true,
-                    'status' => 'requires_action',
-                    'payment_intent_id' => $paymentIntent->id,
-                    'client_secret' => $paymentIntent->client_secret,
-                    'message' => 'Customer authentication required.'
-                ]);
-            } elseif ($status === 'succeeded') {
-                return response()->json([
-                    'success' => true,
-                    'status' => 'completed',
-                    'payment_intent_id' => $paymentIntent->id,
-                    'client_secret' => $paymentIntent->client_secret,
-                    'message' => 'Payment succeeded.'
-                ]);
-            } elseif ($status === 'requires_capture') {
-                return response()->json([
-                    'success' => true,
-                    'status' => 'requires_capture',
-                    'payment_intent_id' => $paymentIntent->id,
-                    'client_secret' => $paymentIntent->client_secret,
-                    'message' => 'Payment authorized. Capture required.'
-                ]);
-            } elseif (in_array($status, ['processing', 'pending'])) {
-                return response()->json([
-                    'success' => true,
-                    'status' => $status,
-                    'payment_intent_id' => $paymentIntent->id,
-                    'client_secret' => $paymentIntent->client_secret,
-                    'message' => 'Payment is pending. Confirm via webhook.'
-                ]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'status' => $status,
-                    'payment_intent_id' => $paymentIntent->id,
-                    'error' => 'Payment not completed.'
-                ], 400);
-            }
-
-        } catch (\Stripe\Exception\CardException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => $e->getError()->message,
-                'decline_code' => $e->getError()->decline_code ?? null
-            ], 400);
-        } catch (\Stripe\Exception\RateLimitException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Too many requests made to the API too quickly'
-            ], 429);
-        } catch (\Stripe\Exception\InvalidRequestException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Invalid parameters: ' . $e->getError()->message
-            ], 400);
-        } catch (\Stripe\Exception\AuthenticationException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Authentication with Stripe\'s API failed'
-            ], 401);
-        } catch (\Stripe\Exception\ApiConnectionException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Network communication with Stripe failed'
-            ], 500);
-        } catch (\Stripe\Exception\ApiErrorException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Stripe API error: ' . $e->getError()->message
-            ], 500);
-        } catch (\Exception $e) {
-            \Log::error('Stripe Payment Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
-            return response()->json([
-                'success' => false,
-                'error' => 'An unexpected error occurred. Please try again.'
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
+    //  public function createPaymentIntent(Request $request)
+    // {
+    //     // Validate input
+    //     $request->validate([
+    //         'amount' => 'required|numeric|min:1',
+    //         'payment_method_id' => 'required|string',
+    //         'currency' => 'sometimes|string|in:aed,usd',
+    //         'customer_info' => 'sometimes|array'
+    //     ]);
+
+    //     // Set Stripe Secret Key
+    //     Stripe::setApiKey(config('services.stripe.secret'));
+
+    //     try {
+    //         // STEP 1: Create a Customer in Stripe
+    //         $customer = \Stripe\Customer::create([
+    //             'name' => $request->customer_info['name'] ?? null,
+    //             'email' => $request->customer_info['email'] ?? null,
+    //         ]);
+
+    //         // STEP 2: Attach Payment Method to Customer
+    //         \Stripe\PaymentMethod::retrieve($request->payment_method_id)
+    //             ->attach(['customer' => $customer->id]);
+
+    //         // STEP 3: Update PaymentMethod with billing details
+    //         \Stripe\PaymentMethod::update(
+    //             $request->payment_method_id,
+    //             [
+    //                 'billing_details' => [
+    //                     'name' => $request->customer_info['name'] ?? null,
+    //                     'email' => $request->customer_info['email'] ?? null,
+    //                 ]
+    //             ]
+    //         );
+
+    //         // STEP 4: Create PaymentIntent
+    //         $paymentIntent = PaymentIntent::create([
+    //             'amount' => (int) round($request->amount * 100),
+    //             'currency' => $request->currency ?? 'aed',
+    //             'payment_method' => $request->payment_method_id,
+    //             'customer' => $customer->id,
+    //             'confirmation_method' => 'manual',
+    //             'confirm' => true,
+    //             'return_url' => config('app.url') . '/payment/return',
+    //             'description' => 'Order Payment - ' . now()->format('Y-m-d H:i:s'),
+    //             'metadata' => [
+    //                 'customer_name' => $request->customer_info['name'] ?? '',
+    //                 'customer_email' => $request->customer_info['email'] ?? '',
+    //                 'order_timestamp' => now()->toISOString()
+    //             ]
+    //         ]);
+
+    //         // STEP 5: Handle PaymentIntent Status
+    //         $status = $paymentIntent->status;
+
+    //         if ($status === 'requires_action') {
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'requires_action' => true,
+    //                 'status' => 'requires_action',
+    //                 'payment_intent_id' => $paymentIntent->id,
+    //                 'client_secret' => $paymentIntent->client_secret,
+    //                 'message' => 'Customer authentication required.'
+    //             ]);
+    //         } elseif ($status === 'succeeded') {
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'status' => 'completed',
+    //                 'payment_intent_id' => $paymentIntent->id,
+    //                 'client_secret' => $paymentIntent->client_secret,
+    //                 'message' => 'Payment succeeded.'
+    //             ]);
+    //         } elseif ($status === 'requires_capture') {
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'status' => 'requires_capture',
+    //                 'payment_intent_id' => $paymentIntent->id,
+    //                 'client_secret' => $paymentIntent->client_secret,
+    //                 'message' => 'Payment authorized. Capture required.'
+    //             ]);
+    //         } elseif (in_array($status, ['processing', 'pending'])) {
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'status' => $status,
+    //                 'payment_intent_id' => $paymentIntent->id,
+    //                 'client_secret' => $paymentIntent->client_secret,
+    //                 'message' => 'Payment is pending. Confirm via webhook.'
+    //             ]);
+    //         } else {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'status' => $status,
+    //                 'payment_intent_id' => $paymentIntent->id,
+    //                 'error' => 'Payment not completed.'
+    //             ], 400);
+    //         }
+
+    //     } catch (\Stripe\Exception\CardException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => $e->getError()->message,
+    //             'decline_code' => $e->getError()->decline_code ?? null
+    //         ], 400);
+    //     } catch (\Stripe\Exception\RateLimitException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Too many requests made to the API too quickly'
+    //         ], 429);
+    //     } catch (\Stripe\Exception\InvalidRequestException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Invalid parameters: ' . $e->getError()->message
+    //         ], 400);
+    //     } catch (\Stripe\Exception\AuthenticationException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Authentication with Stripe\'s API failed'
+    //         ], 401);
+    //     } catch (\Stripe\Exception\ApiConnectionException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Network communication with Stripe failed'
+    //         ], 500);
+    //     } catch (\Stripe\Exception\ApiErrorException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'Stripe API error: ' . $e->getError()->message
+    //         ], 500);
+    //     } catch (\Exception $e) {
+    //         \Log::error('Stripe Payment Error: ' . $e->getMessage(), [
+    //             'trace' => $e->getTraceAsString(),
+    //             'request_data' => $request->all()
+    //         ]);
+    //         return response()->json([
+    //             'success' => false,
+    //             'error' => 'An unexpected error occurred. Please try again.'
+    //         ], 500);
+    //     }
+    // }
 
 
     /**
