@@ -188,52 +188,42 @@ class StripeController extends Controller
     $request->validate([
         'amount' => 'required|numeric|min:1',
         'currency' => 'sometimes|in:aed,usd',
-        'customer_info.email' => 'required|email',
-        'customer_info.name' => 'required|string|min:2',
     ]);
 
     Stripe::setApiKey(config('services.stripe.secret'));
 
-    // 🚨 Block suspicious email domains
-    if ($this->isLowTrustEmail($request->customer_info['email'])) {
-        return response()->json([
-            'success' => false,
-            'error' => 'Unsupported email provider'
-        ], 400);
-    }
-
     try {
-        $paymentIntent = PaymentIntent::create([
+        $paymentIntent = \Stripe\PaymentIntent::create([
             'amount' => (int) round($request->amount * 100),
             'currency' => $request->currency ?? 'aed',
 
-            // 🔐 STRONG FRAUD SETTINGS
-            'automatic_payment_methods' => ['enabled' => true],
+            // 🔐 Strong fraud protection
+            'automatic_payment_methods' => [
+                'enabled' => true,
+            ],
             'payment_method_options' => [
                 'card' => [
-                    'request_three_d_secure' => 'any', // FORCE 3DS
+                    'request_three_d_secure' => 'any',
                 ],
             ],
 
-            'receipt_email' => $request->customer_info['email'],
-            'description' => 'Order Payment',
+            // ❌ No receipt_email
+            // ❌ No customer
+            // ❌ No metadata from user
 
-            'metadata' => [
-                'customer_name' => $request->customer_info['name'],
-                'customer_email' => $request->customer_info['email'],
-            ],
+            'description' => 'Order Payment',
         ]);
 
         return response()->json([
             'success' => true,
             'client_secret' => $paymentIntent->client_secret,
-            'payment_intent_id' => $paymentIntent->id
+            'payment_intent_id' => $paymentIntent->id,
         ]);
 
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
         ], 500);
     }
 }
