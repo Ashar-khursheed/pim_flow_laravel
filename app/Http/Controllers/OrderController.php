@@ -323,10 +323,11 @@ class OrderController extends Controller
 	 *                     type="array",
 	 *                     description="Array of products to order",
 	 *                     @OA\Items(
-	 *                         required={"product_id", "vendor_id", "quantity"},
+	 *                         required={"product_id", "vendor_id", "quantity", "shipping_charge"},
 	 *                         @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
 	 *                         @OA\Property(property="vendor_id", type="integer", example=22, description="Vendor ID"),
 	 *                         @OA\Property(property="quantity", type="integer", example=5, description="Product quantity"),
+	 *                         @OA\Property(property="shipping_charge", type="number", example=50.00, description="Product Shipping Charge"),
 	 *                         @OA\Property(
 	 *                             property="accessory_item_ids",
 	 *                             type="array",
@@ -416,6 +417,7 @@ class OrderController extends Controller
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.shipping_charge' => 'required|numeric|min:0',
 			'products.*.accessory_item_ids' => 'nullable|array',
 			'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
 		]);
@@ -430,7 +432,7 @@ class OrderController extends Controller
 				'message' => 'The selected address does not belong to the customer.'
 			], 422);
 		}
-		$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+		// $specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
 
 		/* Collect all product supplier details in one go */
 		$productDetails = [];
@@ -443,8 +445,8 @@ class OrderController extends Controller
 			$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 			$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
-			$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
-			$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
+			// $charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+			// $shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
 
 			$productDetails[] = [
 				'product_id' => $product['product_id'],
@@ -453,7 +455,8 @@ class OrderController extends Controller
 				'unit_price' => $fetchedDetail->unit_price,
 				'accessoryItems' => $accessoryItems,
 				'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-				'shipping_charge' => $shipping,
+				// 'shipping_charge' => $shipping,
+				'shipping_charge' => $product['shipping_charge'],
 			];
 		}
 
@@ -1443,10 +1446,11 @@ class OrderController extends Controller
 	 *                     type="array",
 	 *                     description="Array of products to order",
 	 *                     @OA\Items(
-	 *                         required={"product_id", "vendor_id", "quantity"},
+	 *                         required={"product_id", "vendor_id", "quantity", "shipping_charge"},
 	 *                         @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
 	 *                         @OA\Property(property="vendor_id", type="integer", example=22, description="Vendor ID"),
 	 *                         @OA\Property(property="quantity", type="integer", example=5, description="Product quantity"),
+	 *                         @OA\Property(property="shipping_charge", type="number", example=50.00, description="Product Shipping Charge"),
 	 *                         @OA\Property(
 	 *                             property="accessory_item_ids",
 	 *                             type="array",
@@ -1557,6 +1561,7 @@ class OrderController extends Controller
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.shipping_charge' => 'required|numeric|min:0',
 			'products.*.accessory_item_ids' => 'nullable|array',
 			'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
 		]);
@@ -1571,7 +1576,7 @@ class OrderController extends Controller
 				'message' => 'The selected address does not belong to the customer.'
 			], 422);
 		}
-		$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+		// $specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
 
 		/* Collect all product supplier details in one go */
 		$productDetails = [];
@@ -1584,8 +1589,9 @@ class OrderController extends Controller
 			$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 			$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
-			$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
-			$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
+			// $charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+			// $shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
+
 			$productDetails[] = [
 				'product_id' => $product['product_id'],
 				'vendor_id' => $product['vendor_id'],
@@ -1593,7 +1599,8 @@ class OrderController extends Controller
 				'unit_price' => $fetchedDetail->unit_price,
 				'accessoryItems' => $accessoryItems,
 				'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-				'shipping_charge' => $shipping,
+				// 'shipping_charge' => $shipping,
+				'shipping_charge' => $product['shipping_charge'],
 			];
 		}
 
