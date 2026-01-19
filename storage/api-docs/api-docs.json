@@ -20784,7 +20784,8 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -20801,6 +20802,11 @@
                                                     "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
                                                 },
                                                 "accessory_item_ids": {
                                                     "description": "Array of accessory item IDs",
@@ -33410,7 +33416,8 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -33427,6 +33434,11 @@
                                                     "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
                                                 },
                                                 "accessory_item_ids": {
                                                     "description": "Array of accessory item IDs",
@@ -33663,7 +33675,8 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -33680,6 +33693,11 @@
                                                     "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
                                                 },
                                                 "accessory_item_ids": {
                                                     "description": "Array of accessory item IDs",
