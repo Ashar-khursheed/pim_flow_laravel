@@ -30,57 +30,63 @@ class TourasPaymentController extends Controller
 	/**
 	 * Encrypt data using AES-256-CBC
 	 */
-	private function encryptData($data)
-	{
-		try {
-			$key = base64_decode($this->encryptionKey);
-			$iv = openssl_random_pseudo_bytes(16);
+private function encryptData($text)
+{
+	try {
+		$key = base64_decode($this->encryptionKey);
+		$iv = "0123456789abcdef"; // FIXED IV
+		$blockSize = 16;
 
-			$encrypted = openssl_encrypt(
-				json_encode($data),
-				'AES-256-CBC',
-				$key,
-				OPENSSL_RAW_DATA,
-				$iv
-			);
+		/* Manual padding */
+		$pad = $blockSize - (strlen($text) % $blockSize);
+		$text .= str_repeat(chr($pad), $pad);
 
-			/* Combine IV and encrypted data */
-			$result = base64_encode($iv . $encrypted);
+		$encrypted = openssl_encrypt(
+			$text,
+			"AES-256-CBC",
+			$key,
+			OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING,
+			$iv
+		);
 
-			return $result;
-		} catch (\Exception $e) {
-			Log::error('Touras Encryption Error: ' . $e->getMessage());
-			return null;
-		}
+		return base64_encode($encrypted);
+
+	} catch (\Exception $e) {
+		Log::error('Touras Encrypt Error', ['error' => $e->getMessage()]);
+		return null;
 	}
+}
+
 
 	/**
 	 * Decrypt response from Touras
 	 */
-	private function decryptData($encryptedData)
-	{
-		try {
-			$key = base64_decode($this->encryptionKey);
-			$data = base64_decode($encryptedData);
+	private function decryptData($encryptedText)
+{
+	try {
+		$key = base64_decode($this->encryptionKey);
+		$iv = "0123456789abcdef";
 
-			/* Extract IV and encrypted content */
-			$iv = substr($data, 0, 16);
-			$encrypted = substr($data, 16);
+		$decrypted = openssl_decrypt(
+			base64_decode($encryptedText),
+			"AES-256-CBC",
+			$key,
+			OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING,
+			$iv
+		);
 
-			$decrypted = openssl_decrypt(
-				$encrypted,
-				'AES-256-CBC',
-				$key,
-				OPENSSL_RAW_DATA,
-				$iv
-			);
+		/* Remove manual padding */
+		$pad = ord(substr($decrypted, -1));
+		$decrypted = substr($decrypted, 0, -1 * $pad);
 
-			return json_decode($decrypted, true);
-		} catch (\Exception $e) {
-			Log::error('Touras Decryption Error: ' . $e->getMessage());
-			return null;
-		}
+		return json_decode($decrypted, true);
+
+	} catch (\Exception $e) {
+		Log::error('Touras Decrypt Error', ['error' => $e->getMessage()]);
+		return null;
 	}
+}
+
 
 	/**
 	 * Create payment payload
@@ -124,8 +130,8 @@ class TourasPaymentController extends Controller
 				'country' => $orderData['country'] ?? 'ARE',
 				'currency' => $orderData['currency'] ?? 'AED',
 				'transactionType' => $orderData['transaction_type'] ?? 'SALE',
-				'sucessUrl' => $orderData['success_url'] ?? url(),
-				'failureUrl' => $orderData['failure_url'] ?? url(),
+				'sucessUrl' => '',
+				'failureUrl' => '',
 				// 'sucessUrl' => $orderData['success_url'] ?? $this->successUrl,
 				// 'failureUrl' => $orderData['failure_url'] ?? $this->failureUrl,
 				'channel' => $orderData['channel'] ?? 'API',
@@ -206,7 +212,7 @@ class TourasPaymentController extends Controller
 			'customer_name' => $customer->name,
 			'customer_email' => $customer->email,
 			'customer_mobile' => $customer->mobile_number ?? $customer->phone,
-			'customer_unique_id' => (string)$customer->id,
+			'customer_unique_id' => (string) $customer->id,
 			'is_logged_in' => 'Y',
 		];
 
@@ -214,28 +220,30 @@ class TourasPaymentController extends Controller
 			/* Generate unique order number */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();
 
-			/* Generate the next order number */
 			if ($latestOrder && is_numeric($latestOrder->order_number)) {
 				$orderNumber = (int) $latestOrder->order_number + 1;
 			} else {
-				$orderNumber = in_array(config('app.website'), ['US', 'US_T']) ? 10001 : (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101);
+				$orderNumber = in_array(config('app.website'), ['US', 'US_T'])
+				? 10001
+				: (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101);
 			}
 
-			$orderNo = $orderNumber. '-' . time();
+			$orderNo = $orderNumber . '-' . time();
 
-			/* Merge request data with customer data and order number */
-			$paymentData = array_merge($request->all(), $customerData, [
-				'order_no' => $orderNo,
-			]);
+			/* Merge request data */
+			$paymentData = array_merge(
+				$request->all(),
+				$customerData,
+				['order_no' => $orderNo]
+			);
 
 			/* Create payload */
 			$payload = $this->createPayload($paymentData);
 
-			/* Log payload for debugging */
-			Log::info('FrontEnd-Touras Payload', ['payload' => $payload]);
+			Log::info('Touras Payload', $payload);
 
 			/* Encrypt payload */
-			$encryptedData = $this->encryptData($payload);
+			$encryptedData = $this->encryptData(json_encode($payload));
 
 			if (!$encryptedData) {
 				return response()->json([
@@ -244,38 +252,60 @@ class TourasPaymentController extends Controller
 				], 500);
 			}
 
-			/* Send request to Touras */
-			$response = Http::asForm()->post($this->postUrl, [
-				'encData' => $encryptedData,
-				'meId' => $this->merchantId,
-			]);
+			/* Prepare final Touras request */
+			$requestBody = [
+				'merchant_request' => [
+					'merchantId' => $this->merchantId,
+					'merchantRequest' => $encryptedData,
+				],
+			];
 
-			/* Log response */
-			Log::info('FrontEnd-Touras Response', [
+			Log::info('Touras Encrypted Request', $requestBody);
+
+			/* Send request to Touras */
+			$response = Http::withHeaders([
+				'Content-Type' => 'application/json',
+			])->post($this->postUrl, $requestBody);
+
+			Log::info('Touras Raw Response', [
 				'status' => $response->status(),
 				'body' => $response->body(),
 			]);
 
-			if ($response->successful()) {
-				$responseData = $response->json();
-
+			if (!$response->successful()) {
 				return response()->json([
-					'success' => true,
-					'message' => 'Payment initiated successfully',
-					'order_no' => $orderNo,
-					'data' => $responseData,
-					'redirect_url' => $responseData['redirectUrl'] ?? null,
-				], 201);
+					'success' => false,
+					'message' => 'Payment gateway error',
+					'error' => $response->body(),
+				], $response->status());
 			}
 
+			$responseData = $response->json();
+
+			/* Decrypt Touras response */
+			$decryptedResponse = null;
+
+			if (!empty($responseData['merchantResponse'])) {
+				$decryptedResponse = $this->decryptData($responseData['merchantResponse']);
+			}
+
+			Log::info('Touras Decrypted Response', [
+				'response' => $decryptedResponse,
+			]);
+
 			return response()->json([
-				'success' => false,
-				'message' => 'Payment initiation failed',
-				'error' => $response->body(),
-			], $response->status());
+				'success' => true,
+				'message' => 'Payment initiated successfully',
+				'order_no' => $orderNo,
+				'data' => $decryptedResponse,
+				'redirect_url' => $decryptedResponse['redirectUrl'] ?? null,
+			], 201);
 
 		} catch (\Exception $e) {
-			Log::error('FrontEnd-Touras Error: ' . $e->getMessage());
+			Log::error('Touras Payment Error', [
+				'error' => $e->getMessage(),
+				'trace' => $e->getTraceAsString(),
+			]);
 
 			return response()->json([
 				'success' => false,
@@ -284,6 +314,7 @@ class TourasPaymentController extends Controller
 			], 500);
 		}
 	}
+
 
 	/**
 	 * @OA\Post(
