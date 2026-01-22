@@ -28374,13 +28374,249 @@
                 }
             }
         },
+        "/payment/touras/initiate": {
+            "post": {
+                "tags": [
+                    "Front-Touras"
+                ],
+                "summary": "Initiate Touras payment",
+                "operationId": "2c4a18722000b38a509b85d8dbc82d2b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount",
+                                    "channel"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "description": "Transaction amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150.5
+                                    },
+                                    "channel": {
+                                        "description": "Channel type (WEB or MOBILE)",
+                                        "type": "string",
+                                        "example": "WEB"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment initiated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/payment/touras/callback/success": {
+            "post": {
+                "tags": [
+                    "Front-Touras"
+                ],
+                "summary": "Handle successful payment callback from Touras",
+                "operationId": "d0d6bd98bf38826a9ed87f435f3f76d6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "properties": {
+                                    "txn_response": {
+                                        "description": "Encrypted transaction response",
+                                        "type": "string"
+                                    },
+                                    "me_id": {
+                                        "description": "Merchant ID",
+                                        "type": "string"
+                                    },
+                                    "pg_details": {
+                                        "description": "Encrypted PG details",
+                                        "type": "string"
+                                    },
+                                    "fraud_details": {
+                                        "description": "Encrypted fraud details",
+                                        "type": "string"
+                                    },
+                                    "other_details": {
+                                        "description": "Encrypted other details",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "302": {
+                        "description": "Redirect to frontend success page"
+                    }
+                }
+            }
+        },
+        "/payment/touras/callback/failure": {
+            "post": {
+                "tags": [
+                    "Front-Touras"
+                ],
+                "summary": "Handle failed payment callback from Touras",
+                "operationId": "cab796a18e6c7041cf67f5fee5c8edc4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "properties": {
+                                    "txn_response": {
+                                        "description": "Encrypted transaction response",
+                                        "type": "string"
+                                    },
+                                    "me_id": {
+                                        "description": "Merchant ID",
+                                        "type": "string"
+                                    },
+                                    "pg_details": {
+                                        "description": "Encrypted PG details",
+                                        "type": "string"
+                                    },
+                                    "fraud_details": {
+                                        "description": "Encrypted fraud details",
+                                        "type": "string"
+                                    },
+                                    "other_details": {
+                                        "description": "Encrypted other details",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "302": {
+                        "description": "Redirect to frontend failure page"
+                    }
+                }
+            }
+        },
+        "/payment/touras/status/{order_no}": {
+            "get": {
+                "tags": [
+                    "Front-Touras"
+                ],
+                "summary": "Get payment transaction status",
+                "operationId": "224d1039a2e2709cdceed644099d4277",
+                "parameters": [
+                    {
+                        "name": "order_no",
+                        "in": "path",
+                        "description": "Order number",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "ORD-12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction status retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "order_no": {
+                                                    "type": "string",
+                                                    "example": "ORD-12345"
+                                                },
+                                                "amount": {
+                                                    "type": "number",
+                                                    "example": 150.5
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "AED"
+                                                },
+                                                "payment_status": {
+                                                    "type": "string",
+                                                    "example": "completed"
+                                                },
+                                                "transaction_id": {
+                                                    "type": "string",
+                                                    "example": "2058981736486650927"
+                                                },
+                                                "bank_ref_no": {
+                                                    "type": "string",
+                                                    "example": "123456789"
+                                                },
+                                                "paid_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "payment_response": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Transaction not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/touras/initiate-payment": {
             "post": {
                 "tags": [
                     "FrontEnd-Touras"
                 ],
                 "summary": "Initiate payment with Touras gateway",
-                "operationId": "ffe1eedb8db1ca15d1aab973b79e1c2a",
+                "operationId": "066357176aa201512e56727706f60032",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -28446,7 +28682,7 @@
                     "FrontEnd-Touras"
                 ],
                 "summary": "Handle successful payment callback",
-                "operationId": "2efdaf4410aad4c5796b5f87b4623ca3",
+                "operationId": "cefda4dd3570edaae2f8346bee98d74d",
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -28463,7 +28699,7 @@
                     "FrontEnd-Touras"
                 ],
                 "summary": "Handle failed payment callback",
-                "operationId": "853e0b4633ff586d50f7f0651c6e1b19",
+                "operationId": "cbc806e42435edb49142010c45be4e7c",
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -28480,7 +28716,7 @@
                     "FrontEnd-Touras"
                 ],
                 "summary": "Verify payment status",
-                "operationId": "f2341ead96013a46e02fada65e4d9027",
+                "operationId": "5e056ec5a6f13f7bd07a081dfe3936bb",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -49786,6 +50022,10 @@
         {
             "name": "Tax",
             "description": "Tax"
+        },
+        {
+            "name": "Front-Touras",
+            "description": "Front-Touras"
         },
         {
             "name": "FrontEnd-Touras",
