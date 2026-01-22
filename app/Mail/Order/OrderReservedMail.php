@@ -119,7 +119,9 @@ class OrderReservedMail extends Mailable
 		$address = $customerAddress->address ?? '';
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
-		$zipcode = $customerAddress->zip_code ?? '';$products = collect();
+		$zipcode = $customerAddress->zip_code ?? '';
+
+		$products = collect();
 
 		foreach ($order->orderProducts as $orderProduct) {
 			$productSupplierDetail = $orderProduct->vendorProductSupplier;
