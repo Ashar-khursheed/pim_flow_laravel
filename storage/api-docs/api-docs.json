@@ -8914,7 +8914,8 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -8928,6 +8929,11 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
