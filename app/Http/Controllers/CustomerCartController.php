@@ -76,9 +76,9 @@ class CustomerCartController extends Controller
 					$q->orWhere("customer_carts.$col", 'like', '%' . $search . '%');
 				}
 
-			$q->orWhereHas('customer', function ($sub) use ($search) {
-				$sub->where('name', 'like', '%' . $search . '%')
-				->orWhere('email', 'like', '%' . $search . '%');
+				$q->orWhereHas('customer', function ($sub) use ($search) {
+					$sub->where('name', 'like', '%' . $search . '%')
+					->orWhere('email', 'like', '%' . $search . '%');
 				});
 			});
 		}
@@ -712,8 +712,8 @@ class CustomerCartController extends Controller
 			$shippingCharge = 0;
 			if ($supplier) {
 				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price'])
-					? $supplier['sale_price']
-					: $supplier['price'];
+				? $supplier['sale_price']
+				: $supplier['price'];
 
 				$shippingCharge = $supplier['shipping_charge'] ?? 0;
 			}
