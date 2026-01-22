@@ -103,14 +103,17 @@ class CartCreationMail extends Mailable
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . '/logo.png';
 		$name = $customerCart->customer->name ?? 'User';
+
 		$username = $customerCart->customer->email;
 		$isNewCustomer = $this->isNewCustomer;
 		$password = $this->randomPassword;
+
+		$paymentMode = 'online';
+		$paymentType = 'online';
 		$paymentUrl = url("/login-source");
 
 		$referenceNumber = $customerCart->reference_number;
 		$createdAt = Carbon::parse($customerCart->created_at)->format('D, M d, Y');
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 
 		$customerAddress = $customerCart->customerAddress;
 		$address = $customerAddress->address ?? '';
@@ -162,6 +165,10 @@ class CartCreationMail extends Mailable
 		/* Get pricing breakdown variables */
 		$pricingBreakdown = $this->getPricingBreakdown($products);
 
+		/* Additional charges (if exists) */
+		$additionalAmountName = $customerCart->additional_amount_name;
+		$additionalAmountPrice = $customerCart->additional_amount_price;
+
 		$siteUrl = match (config('app.website')) {
 			'US'  => 'Thehorecastore.com',
 			'UAE'  => 'HorecaStore.ae',
@@ -184,6 +191,9 @@ class CartCreationMail extends Mailable
 			'isNewCustomer' => $isNewCustomer,
 			'username' => $username,
 			'password' => $password,
+
+			'paymentMode' => $paymentMode,
+			'paymentType' => $paymentType,
 			'paymentUrl' => $paymentUrl,
 
 			'referenceNumber' => $referenceNumber,
@@ -198,6 +208,9 @@ class CartCreationMail extends Mailable
 
 			/* Merge pricing breakdown variables */
 			...$pricingBreakdown,
+
+			'additionalAmountName' => $additionalAmountName,
+			'additionalAmountPrice' => $additionalAmountPrice,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,

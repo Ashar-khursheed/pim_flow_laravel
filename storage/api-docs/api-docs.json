@@ -8914,7 +8914,8 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -8928,6 +8929,11 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -20784,7 +20790,8 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -20801,6 +20808,11 @@
                                                     "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
                                                 },
                                                 "accessory_item_ids": {
                                                     "description": "Array of accessory item IDs",
@@ -28362,6 +28374,142 @@
                 }
             }
         },
+        "/api/frontend/touras/initiate-payment": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Touras"
+                ],
+                "summary": "Initiate payment with Touras gateway",
+                "operationId": "ffe1eedb8db1ca15d1aab973b79e1c2a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount",
+                                    "card_number",
+                                    "expiry_month",
+                                    "expiry_year",
+                                    "cvv",
+                                    "card_name"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "type": "string",
+                                        "example": "100.00"
+                                    },
+                                    "card_number": {
+                                        "type": "string",
+                                        "example": "2223000000000007"
+                                    },
+                                    "expiry_month": {
+                                        "type": "string",
+                                        "example": "12"
+                                    },
+                                    "expiry_year": {
+                                        "type": "string",
+                                        "example": "2034"
+                                    },
+                                    "cvv": {
+                                        "type": "string",
+                                        "example": "123"
+                                    },
+                                    "card_name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment initiated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/touras/success": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Touras"
+                ],
+                "summary": "Handle successful payment callback",
+                "operationId": "2efdaf4410aad4c5796b5f87b4623ca3",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/touras/failure": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Touras"
+                ],
+                "summary": "Handle failed payment callback",
+                "operationId": "853e0b4633ff586d50f7f0651c6e1b19",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/touras/verify-payment": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Touras"
+                ],
+                "summary": "Verify payment status",
+                "operationId": "f2341ead96013a46e02fada65e4d9027",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "order_no"
+                                ],
+                                "properties": {
+                                    "order_no": {
+                                        "type": "string",
+                                        "example": "ORD123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/tql-token": {
             "post": {
                 "tags": [
@@ -33410,7 +33558,8 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -33427,6 +33576,11 @@
                                                     "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
                                                 },
                                                 "accessory_item_ids": {
                                                     "description": "Array of accessory item IDs",
@@ -33663,7 +33817,8 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -33680,6 +33835,11 @@
                                                     "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
                                                 },
                                                 "accessory_item_ids": {
                                                     "description": "Array of accessory item IDs",
@@ -49626,6 +49786,10 @@
         {
             "name": "Tax",
             "description": "Tax"
+        },
+        {
+            "name": "FrontEnd-Touras",
+            "description": "FrontEnd-Touras"
         },
         {
             "name": "Frontend-TQL",

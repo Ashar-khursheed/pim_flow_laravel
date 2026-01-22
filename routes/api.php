@@ -126,6 +126,7 @@ use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
 use App\Http\Controllers\FrontEnd\PaymentManagementController as F_PaymentManagementController;
 use App\Http\Controllers\FrontEnd\StripeController as F_StripeController;
+use App\Http\Controllers\FrontEnd\TourasPaymentController as F_TourasPaymentController;
 use App\Http\Controllers\FrontEnd\ProductErrorController as F_ProductErrorController;
 use App\Http\Controllers\FrontEnd\TamaraController as F_TamaraController;
 use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
@@ -858,6 +859,18 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 	Route::get('/frontend-categories/customer-featured-products', [FCategoryController::class, 'getCustomerFeaturedCategoryProducts']);
 	Route::get('/frontend-brands/customer-featured-products', [FBrandController::class, 'getCustomerFeaturedBrandProducts']);
+
+	Route::prefix('/frontend/touras')->group(function () {
+		/* Payment initiation */
+		Route::post('/initiate-payment', [F_TourasPaymentController::class, 'initiatePayment']);
+
+		/* Callbacks */
+		Route::post('/success', [F_TourasPaymentController::class, 'handleSuccess']);
+		Route::post('/failure', [F_TourasPaymentController::class, 'handleFailure']);
+
+		/* Verify payment */
+		Route::post('/verify-payment', [F_TourasPaymentController::class, 'verifyPayment']);
+	});
 
 });
 
