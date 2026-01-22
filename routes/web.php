@@ -106,3 +106,23 @@ Route::get('/frontend/llms.txt', function () {
         'Content-Type' => 'text/plain',
     ]);
 });
+
+
+// Route::get('/payment/touras/redirect/{order_no}', function($orderNo) {
+//     $transaction = DB::table('payment_transactions')
+//         ->where('order_no', $orderNo)
+//         ->first();
+
+//     if (!$transaction) {
+//         abort(404, 'Transaction not found');
+//     }
+
+//     $paymentRequest = json_decode($transaction->payment_request, true);
+
+//     return view('touras-payment-form', [
+//         'postUrl' => $paymentRequest['post_url'],
+//         'meId' => $paymentRequest['me_id'],
+//         'merchantRequest' => $paymentRequest['merchant_request'],
+//         'hash' => $paymentRequest['hash'],
+//     ]);
+// });
