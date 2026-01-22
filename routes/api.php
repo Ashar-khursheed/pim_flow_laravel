@@ -872,9 +872,9 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	// 	Route::post('/verify-payment', [F_TourasPaymentController::class, 'verifyPayment']);
 	// });
 
-	Route::prefix('payment/touras')->group(function () {
+	Route::prefix('/frontend/touras')->group(function () {
 	    // Initiate payment
-	    Route::post('/initiate', [F_TourasPaymentController::class, 'initiatePayment']);
+	    Route::post('/initiate', [F_TourasPaymentController::class, 'initiate']);
 
 	    // Callback URLs (These will receive POST from Touras)
 	    Route::post('/callback/success', [F_TourasPaymentController::class, 'handleSuccessCallback']);

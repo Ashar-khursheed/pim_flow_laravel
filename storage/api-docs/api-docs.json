@@ -28374,13 +28374,13 @@
                 }
             }
         },
-        "/payment/touras/initiate": {
+        "/api/frontend/touras/initiate": {
             "post": {
                 "tags": [
                     "Front-Touras"
                 ],
                 "summary": "Initiate Touras payment",
-                "operationId": "2c4a18722000b38a509b85d8dbc82d2b",
+                "operationId": "cfc6c4102becf1d0eafda23b948e06bc",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -28423,13 +28423,13 @@
                 ]
             }
         },
-        "/payment/touras/callback/success": {
+        "/api/frontend/touras/callback/success": {
             "post": {
                 "tags": [
                     "Front-Touras"
                 ],
                 "summary": "Handle successful payment callback from Touras",
-                "operationId": "d0d6bd98bf38826a9ed87f435f3f76d6",
+                "operationId": "3467032140eef00c1e72357e4d3a5c65",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -28469,13 +28469,13 @@
                 }
             }
         },
-        "/payment/touras/callback/failure": {
+        "/api/frontend/touras/callback/failure": {
             "post": {
                 "tags": [
                     "Front-Touras"
                 ],
                 "summary": "Handle failed payment callback from Touras",
-                "operationId": "cab796a18e6c7041cf67f5fee5c8edc4",
+                "operationId": "a8ab06c455dfd004237d9df3d2f4696c",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -28515,13 +28515,13 @@
                 }
             }
         },
-        "/payment/touras/status/{order_no}": {
+        "/api/frontend/touras/status/{order_no}": {
             "get": {
                 "tags": [
                     "Front-Touras"
                 ],
                 "summary": "Get payment transaction status",
-                "operationId": "224d1039a2e2709cdceed644099d4277",
+                "operationId": "940f2f0050dd32612f1ff2de963e2328",
                 "parameters": [
                     {
                         "name": "order_no",
