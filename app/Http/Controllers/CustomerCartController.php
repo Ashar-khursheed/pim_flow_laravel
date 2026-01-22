@@ -255,10 +255,11 @@ class CustomerCartController extends Controller
 	 *                 property="products",
 	 *                 type="array",
 	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity"},
+	 *                     required={"product_id", "vendor_id", "quantity", "shipping_charge"},
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5)
+	 *                     @OA\Property(property="quantity", type="integer", example=5),
+	 *                     @OA\Property(property="shipping_charge", type="number", example=50.00, description="Product Shipping Charge"),
 	 *                 )
 	 *             )
 	 *         )
@@ -282,6 +283,7 @@ class CustomerCartController extends Controller
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.shipping_charge' => 'required|numeric|min:0',
 			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
 			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
 		]);
@@ -297,63 +299,65 @@ class CustomerCartController extends Controller
 			], 422);
 		}
 
+		// $specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
+		/* Collect all product supplier details in one go */
+		$productDetails = [];
+		foreach ($request->products as $product) {
+			$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+			if (!$fetchedDetail) {
+				throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+			}
+
+			// $charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+			// $shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
+
+			$productDetails[] = [
+				'product_id' => $product['product_id'],
+				'vendor_id' => $product['vendor_id'],
+				'quantity' => $product['quantity'],
+				'unit_price' => $fetchedDetail->unit_price,
+				// 'shipping_charge' => $shipping,
+				'shipping_charge' => $product['shipping_charge'],
+			];
+		}
+
+		$payWithCheque = $request->boolean('pay_with_cheque', false);
+		$totalProducts = 0;
+		$cartAmount = 0;
+		$cartShipping = 0;
+		foreach ($productDetails as $product) {
+			$totalProducts += $product['quantity'];
+			$cartAmount += $product['quantity'] * $product['unit_price'];
+			$cartShipping += $product['shipping_charge'];
+		}
+
+		if (!empty($request->additional_amount_price)) {
+			$cartAmount += (float) $request->additional_amount_price;
+		}
+
+		$cartAmount += $request->boolean('is_lift_gate') ? 75 : 0;
+		$cartAmount += $request->boolean('is_residential_address') ? 199 : 0;
+		$cartAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
+
+		$customer = Customer::find($request->customer_id);
+		$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+			$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
+			$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
+		} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+			$taxableAmount = $cartAmount + $cartShipping;
+			$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+		} else {
+			$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
+		}
+		$totalAmount = $cartAmount + $taxAmount + $cartShipping;
+
+
 		DB::beginTransaction();
 
 		try {
-			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
-
-			/* Collect all product supplier details in one go */
-			$productDetails = [];
-			foreach ($request->products as $product) {
-				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
-				if (!$fetchedDetail) {
-					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
-				}
-
-				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
-				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
-
-				$productDetails[] = [
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => $shipping,
-				];
-			}
-
-			$payWithCheque = $request->boolean('pay_with_cheque', false);
-			$totalProducts = 0;
-			$cartAmount = 0;
-			$cartShipping = 0;
-			foreach ($productDetails as $product) {
-				$totalProducts += $product['quantity'];
-				$cartAmount += $product['quantity'] * $product['unit_price'];
-				$cartShipping += $product['shipping_charge'];
-			}
-
-			if (!empty($request->additional_amount_price)) {
-				$cartAmount += (float) $request->additional_amount_price;
-			}
-
-			$cartAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-			$cartAmount += $request->boolean('is_residential_address') ? 199 : 0;
-			$cartAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
-
-			$customer = Customer::find($request->customer_id);
-			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
-
-			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
-				$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
-			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
-				$taxableAmount = $cartAmount + $cartShipping;
-				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
-			} else {
-				$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
-			}
-			$totalAmount = $cartAmount + $taxAmount + $cartShipping;
-
 			/* Get the latest cart by ID (most recent) */
 			$latestCart = CustomerCart::orderBy('id', 'desc')->first();
 
@@ -419,7 +423,7 @@ class CustomerCartController extends Controller
 
 			DB::commit();
 
-			$batch = Bus::batch([])->name('Cart Creation')->dispatch();
+			$batch = Bus::batch([])->name('Cart Creation By Backend')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_CART_ADD';
 			$batch->add(new CartCreationMailJob([
