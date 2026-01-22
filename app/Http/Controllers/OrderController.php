@@ -1842,22 +1842,47 @@ class OrderController extends Controller
 							'trace' => $e->getTraceAsString()
 						]);
 					}
-				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
+				}
+				//  else if (in_array(config('app.website'), ['US', 'US_T'])) {
+				// 	try {
+				// 		$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)->generatePaymentLink($order);
+				// 		if ($paymentLink) {
+				// 			$order = Order::find($order->id);
+				// 			$order->payment_link = $paymentLink;
+				// 			$order->save();
+				// 		}
+				// 	} catch (\Exception $e) {
+				// 		\Log::error('Stax Payment Link generation failed', [
+				// 			'order_id' => $order->id,
+				// 			'error' => $e->getMessage(),
+				// 			'trace' => $e->getTraceAsString()
+				// 		]);
+				// 	}
+				// }
+				else if (in_array(config('app.website'), ['US', 'US_T'])) {
 					try {
-						$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)->generatePaymentLink($order);
+						$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
+							->createPaymentLink($order);
+				
 						if ($paymentLink) {
 							$order = Order::find($order->id);
 							$order->payment_link = $paymentLink;
 							$order->save();
+				
+							\Log::info('Square Payment Link generated successfully', [
+								'order_id'     => $order->id,
+								'payment_link' => $paymentLink,
+							]);
 						}
 					} catch (\Exception $e) {
-						\Log::error('Stax Payment Link generation failed', [
+						\Log::error('Square Payment Link generation failed', [
 							'order_id' => $order->id,
-							'error' => $e->getMessage(),
-							'trace' => $e->getTraceAsString()
+							'error'    => $e->getMessage(),
+							'trace'    => $e->getTraceAsString(),
 						]);
 					}
 				}
+				
 			}
 
 			DB::commit();
