@@ -255,7 +255,7 @@ class ReviewController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'customer_name' => 'required|string|max:191',
-            'customer_email' => 'required|email|max:191',
+            'customer_email' => 'required|email:strict|max:191',
             'product_id' => 'required|exists:ec_products,id',
             'star' => 'required|integer|min:1|max:5',
             'comment' => 'required|string',
@@ -434,7 +434,7 @@ class ReviewController extends Controller
             // 'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
 
             'customer_name' => 'nullable|string|max:191',
-            'customer_email' => 'nullable|email|max:191'
+            'customer_email' => 'nullable|email:strict|max:191'
         ]);
 
         // Update fields

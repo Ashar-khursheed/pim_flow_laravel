@@ -68,7 +68,7 @@ class MadeToOrderController extends Controller
                 'product_id' => 'required|exists:ec_products,id',
                 'quantity' => 'required|integer|min:1',
                 'name' => 'required|string|max:255',
-                'email' => 'required|email',
+                'email' => 'required|email:strict',
                 'address' => 'nullable|string',
                 'city' => 'nullable|string|max:100',
                 'state' => 'nullable|string|max:100',

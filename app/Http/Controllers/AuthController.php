@@ -46,7 +46,7 @@ class AuthController extends BaseController
 	public function store(Request $request)
 	{
 		$request->validate([
-			'email' => 'required|email',
+			'email' => 'required|email:strict',
 			'password' => 'required',
 		]);
 
@@ -181,7 +181,7 @@ class AuthController extends BaseController
 	public function sendResetLinkEmail(Request $request)
 	{
 		$request->validate([
-			'email' => 'required|email',
+			'email' => 'required|email:strict',
 			'type' => 'required|in:user,customer'
 		]);
 
@@ -230,7 +230,7 @@ class AuthController extends BaseController
 	public function resetPassword(Request $request)
 	{
 		$request->validate([
-			'email' => 'required|email',
+			'email' => 'required|email:strict',
 			'password' => 'required|confirmed|min:6',
 			'token' => 'required',
 			'type' => 'required|in:user,customer',

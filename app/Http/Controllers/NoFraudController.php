@@ -23,10 +23,10 @@ class NoFraudController extends Controller
  *         required=true,
  *         @OA\JsonContent(
  *             required={"order_id", "amount", "billing_name", "billing_email", "billing_phone", "billing_address", "billing_city", "billing_state", "billing_zip", "billing_country"},
- *             
+ *
  *             @OA\Property(property="order_id", type="string", example="ORDER123"),
  *             @OA\Property(property="amount", type="number", format="float", example=49.99),
- *             
+ *
  *             @OA\Property(property="billing_first_name", type="string", example="John"),
  *             @OA\Property(property="billing_last_name", type="string", example="Doe"),
  *             @OA\Property(property="billing_email", type="string", format="email", example="john@example.com"),
@@ -36,7 +36,7 @@ class NoFraudController extends Controller
  *             @OA\Property(property="billing_state", type="string", example="NY"),
  *             @OA\Property(property="billing_zip", type="string", example="10001"),
  *             @OA\Property(property="billing_country", type="string", example="US"),
- *             
+ *
  *             @OA\Property(property="shipping_first_name", type="string", example="John"),
  *             @OA\Property(property="shipping_last_name", type="string", example="Doe"),
  *             @OA\Property(property="shipping_address", type="string", example="123 Main St"),
@@ -44,7 +44,7 @@ class NoFraudController extends Controller
  *             @OA\Property(property="shipping_state", type="string", example="NY"),
  *             @OA\Property(property="shipping_zip", type="string", example="10001"),
  *             @OA\Property(property="shipping_country", type="string", example="US"),
- *             
+ *
  *             @OA\Property(property="card_bin", type="string", example="411111"),
  *             @OA\Property(property="card_last4", type="string", example="4242"),
  *             @OA\Property(property="card_type", type="string", example="Visa"),
@@ -85,7 +85,7 @@ public function screenTransaction(Request $request)
         'amount' => 'required|numeric|min:0.01',
         'billing_first_name' => 'required|string|max:100',
         'billing_last_name' => 'nullable|string|max:100',
-        'billing_email' => 'required|email',
+        'billing_email' => 'required|email:strict',
         'billing_phone' => 'nullable|string|max:20',
         'billing_address' => 'required|string|max:255',
         'billing_city' => 'required|string|max:100',
@@ -113,7 +113,7 @@ public function screenTransaction(Request $request)
             'amount' => number_format((float)$request->amount, 2, '.', ''),
             'currencyCode' => $request->currency_code ?? 'USD',
             'customerIP' => $request->ip(),
-            
+
             'billTo' => [
                 'firstName' => $request->billing_first_name,
                 'lastName' => $request->billing_last_name,
@@ -156,11 +156,11 @@ public function screenTransaction(Request $request)
             'customer' => [
                 'id' => $request->customer_id ?? 'guest-' . uniqid(),
                 'email' => $request->billing_email,
-                'joinedOn' => $request->customer_joined_date ? 
+                'joinedOn' => $request->customer_joined_date ?
                     date('m/d/Y', strtotime($request->customer_joined_date)) : null,
-                'lastSignIn' => $request->customer_last_signin ? 
+                'lastSignIn' => $request->customer_last_signin ?
                     date('m/d/Y', strtotime($request->customer_last_signin)) : null,
-                'lastPurchaseDate' => $request->customer_last_purchase ? 
+                'lastPurchaseDate' => $request->customer_last_purchase ?
                     date('m/d/Y', strtotime($request->customer_last_purchase)) : null,
                 'totalPreviousPurchases' => $request->customer_total_purchases ?? 0,
                 'totalPurchaseValue' => $request->customer_total_value ?? 0,
@@ -181,7 +181,7 @@ public function screenTransaction(Request $request)
 
         if ($response->successful()) {
             $result = $response->json();
-            
+
 
             // Save the response to database
             try {
@@ -204,8 +204,8 @@ public function screenTransaction(Request $request)
         // Handle API errors
         $errorMessage = 'NoFraud API request failed';
         $errorDetails = $response->body();
-        
-       
+
+
 
         return response()->json([
             'status' => 'error',
@@ -214,7 +214,7 @@ public function screenTransaction(Request $request)
         ], $response->status());
 
     } catch (\Exception $e) {
-        
+
         return response()->json([
             'status' => 'error',
             'message' => 'An unexpected error occurred while processing the transaction',
@@ -245,7 +245,7 @@ private function removeNullValues($array)
 //         'amount' => 'required|numeric|min:0.01',
 //         'billing_first_name' => 'required|string|max:100',
 //         'billing_last_name' => 'required|string|max:100',
-//         'billing_email' => 'required|email',
+//         'billing_email' => 'required|email:strict',
 //         'billing_phone' => 'required|string|max:20',
 //         'billing_address' => 'required|string|max:255',
 //         'billing_city' => 'required|string|max:100',
@@ -272,8 +272,8 @@ private function removeNullValues($array)
 //         $cvvCode = $this->normalizeCvv($request->cvv_result);
 
 //         // Get real customer IP
-//         $customerIp = $request->header('X-Forwarded-For') 
-//             ? explode(',', $request->header('X-Forwarded-For'))[0] 
+//         $customerIp = $request->header('X-Forwarded-For')
+//             ? explode(',', $request->header('X-Forwarded-For'))[0]
 //             : $request->ip();
 
 //         // Build the payload for NoFraud API
@@ -327,11 +327,11 @@ private function removeNullValues($array)
 //             'customer' => [
 //                 'id' => $request->customer_id ?? 'guest-' . uniqid(),
 //                 'email' => $request->billing_email,
-//                 'joinedOn' => $request->customer_joined_date ? 
+//                 'joinedOn' => $request->customer_joined_date ?
 //                     date('m/d/Y', strtotime($request->customer_joined_date)) : null,
-//                 'lastSignIn' => $request->customer_last_signin ? 
+//                 'lastSignIn' => $request->customer_last_signin ?
 //                     date('m/d/Y', strtotime($request->customer_last_signin)) : null,
-//                 'lastPurchaseDate' => $request->customer_last_purchase ? 
+//                 'lastPurchaseDate' => $request->customer_last_purchase ?
 //                     date('m/d/Y', strtotime($request->customer_last_purchase)) : null,
 //                 'totalPreviousPurchases' => $request->customer_total_purchases ?? 0,
 //                 'totalPurchaseValue' => $request->customer_total_value ?? 0,
@@ -434,7 +434,7 @@ private function getCardTypeFromBin($bin)
 {
     $firstDigit = substr($bin, 0, 1);
     $firstTwo = substr($bin, 0, 2);
-    
+
     if ($firstDigit == '4') {
         return 'Visa';
     } elseif (in_array($firstTwo, ['51', '52', '53', '54', '55']) || ($firstTwo >= '22' && $firstTwo <= '27')) {
@@ -444,7 +444,7 @@ private function getCardTypeFromBin($bin)
     } elseif ($firstTwo == '60') {
         return 'Discover';
     }
-    
+
     return 'Unknown';
 }
 

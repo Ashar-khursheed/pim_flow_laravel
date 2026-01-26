@@ -219,7 +219,7 @@ class VendorController extends BaseController
 		$validated = $request->validate([
 			'name' => 'required|string|unique:vendors,name',
 			'country_id' => 'required|integer|exists:countries,id',
-			// 'email' => 'required|email|unique:vendors,email',
+			// 'email' => 'required|email:strict|unique:vendors,email',
 			// 'contact_person' => 'required|string',
 			// 'landline_number' => 'nullable|string',
 			// 'mobile_number' => 'nullable|string',
@@ -228,7 +228,7 @@ class VendorController extends BaseController
 			'contacts.*.type' => 'required|string',
 			'contacts.*.name' => 'required|string',
 			'contacts.*.mobile_number' => 'nullable|string',
-			'contacts.*.email' => 'nullable|email',
+			'contacts.*.email' => 'nullable|email:strict',
 
 			'website_ids' => 'nullable|array',
 			'website_ids.*' => 'integer|exists:websites,id',
@@ -504,7 +504,7 @@ class VendorController extends BaseController
 			'name' => 'required|string|unique:vendors,name,' . $id,
 			'country_id' => 'required|integer|exists:countries,id',
 
-			// 'email' => 'required|email|unique:vendors,email,' . $id,
+			// 'email' => 'required|email:strict|unique:vendors,email,' . $id,
 			// 'contact_person' => 'required|string',
 			// 'landline_number' => 'nullable|string',
 			// 'mobile_number' => 'nullable|string',
@@ -513,7 +513,7 @@ class VendorController extends BaseController
 			'contacts.*.type' => 'required|string',
 			'contacts.*.name' => 'required|string',
 			'contacts.*.mobile_number' => 'nullable|string',
-			'contacts.*.email' => 'nullable|email',
+			'contacts.*.email' => 'nullable|email:strict',
 
 			'website_ids' => 'nullable|array',
 			'website_ids.*' => 'integer|exists:websites,id',

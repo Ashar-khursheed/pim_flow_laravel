@@ -65,7 +65,7 @@ class MadeToOrderController extends Controller
      *             @OA\Property(property="to", type="integer", example=20),
      *             @OA\Property(property="last_page", type="integer", example=5),
      *             @OA\Property(property="per_page", type="integer", example=20),
-     *             @OA\Property(property="total", type="integer", example=100)     *              
+     *             @OA\Property(property="total", type="integer", example=100)     *
      *         )
      *     ),
      *     @OA\Response(
@@ -166,7 +166,7 @@ class MadeToOrderController extends Controller
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 required={"product_id", "quantity", "name", "email","phone_number","notes"},
-     *                 
+     *
      *                 @OA\Property(property="product_id", type="integer", example=1795, description="ID of the product to order"),
      *                 @OA\Property(property="quantity", type="integer", example=2, description="Quantity of the product"),
      *                 @OA\Property(property="name", type="string", example="John Doe", description="Customer full name"),
@@ -177,8 +177,8 @@ class MadeToOrderController extends Controller
      *                 @OA\Property(property="country", type="string", example="India", description="Country name"),
      *                 @OA\Property(property="zipcode", type="string", example="110001", description="Postal or ZIP code"),
      *                 @OA\Property(property="phone_number", type="string", example="9876543210", description="Customer contact number"),
-     *                 @OA\Property(property="notes", type="string", example="Need delivery before 25th December", description="Optional order notes"),               
-     *                  
+     *                 @OA\Property(property="notes", type="string", example="Need delivery before 25th December", description="Optional order notes"),
+     *
      *             )
      *         )
      *     ),
@@ -205,7 +205,7 @@ class MadeToOrderController extends Controller
                 'product_id' => 'required|exists:ec_products,id',
                 'quantity' => 'required|integer|min:1',
                 'name' => 'required|string|max:255',
-                'email' => 'required|email',
+                'email' => 'required|email:strict',
                 'address' => 'nullable|string',
                 'city' => 'nullable|string|max:100',
                 'state' => 'nullable|string|max:100',
@@ -288,7 +288,7 @@ class MadeToOrderController extends Controller
      *     @OA\Response(
      *         response=200,
      *         description="Made-to-order retrieved successfully",
-     *          
+     *
      *     ),
      *     @OA\Response(
      *         response=401,
@@ -389,7 +389,7 @@ class MadeToOrderController extends Controller
             'product_id' => 'required|exists:ec_products,id',
             'quantity' => 'required|integer|min:1',
             'name' => 'required|string|max:255',
-            'email' => 'required|email',
+            'email' => 'required|email:strict',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
@@ -409,7 +409,7 @@ class MadeToOrderController extends Controller
 
         $data = $validator->validated();
         $order->fill($data);
-       
+
         if ($order->isDirty()) {
             $originalValues = $order->getOriginal();
             $changes = [];
