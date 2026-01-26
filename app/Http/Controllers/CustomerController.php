@@ -133,6 +133,9 @@ class CustomerController extends Controller
 	 */
 	public function store(Request $request)
 	{
+		$request->merge([
+			'is_tax_free' => filter_var($request->input('is_tax_free'), FILTER_VALIDATE_BOOLEAN)
+		]);
 		$validatedData = $request->validate([
 			'name' => 'required|string|max:255',
 
