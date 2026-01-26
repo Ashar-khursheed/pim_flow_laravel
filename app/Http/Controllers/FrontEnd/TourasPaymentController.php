@@ -26,8 +26,8 @@ class TourasPaymentController extends Controller
 		$this->postUrl = env('TOURAS_POST_URL');
 		// $this->successUrl = env('TOURAS_SUCCESS_URL');
 		// $this->failureUrl = env('TOURAS_FAILURE_URL');
-		$this->successUrl = '';
-		$this->failureUrl = '';
+		$this->successUrl = 'https://development.d28qosi1cuigvb.amplifyapp.com/';
+		$this->failureUrl = 'https://development.d28qosi1cuigvb.amplifyapp.com/';
 		// $this->frontendUrl = env('FRONTEND_URL');
 		$this->frontendUrl = '';
 	}
@@ -74,11 +74,14 @@ class TourasPaymentController extends Controller
 			$orderData['currency'] = 'AED';
 			$orderData['country'] = 'ARE';
 
-			$orderData['customer_name'] = $customer->name;
-			$orderData['customer_email'] = $customer->email;
-			$orderData['customer_mobile'] = $customer->mobile_number;
-			$orderData['customer_unique_id'] = $customer->id;
-			$orderData['is_logged_in'] = 'Y';
+			// Customer details from authenticated user
+			$orderData['customer'] = [
+				'cust_name' => $customer->name,
+				'email_id' => $customer->email,
+				'mobile_no' => $customer->mobile_number ?? '',
+				'unique_id' => (string) $customer->id,
+				'is_logged_in' => 'Y',
+			];
 
 			/* Generate unique order number */
 			$latestOrder = Order::orderBy('order_number', 'desc')->first();
@@ -115,66 +118,155 @@ class TourasPaymentController extends Controller
 	 */
 	private function preparePaymentRequest($orderData)
 	{
-		// Transaction Details (Required)
+		// Transaction Details (Required) - 10 fields
 		$txnDetails = [
-			$this->aggregatorId,
-			$this->merchantId,
-			$orderData['order_number'],
-			number_format($orderData['amount'], 2, '.', ''),
-			$orderData['country'],
-			$orderData['currency'],
-			'SALE',
-			$this->successUrl,
-			$this->failureUrl,
-			$orderData['channel'],
+			$this->aggregatorId,                                    // ag_id
+			$this->merchantId,                                      // me_id
+			$orderData['order_number'],                             // order_no
+			number_format($orderData['amount'], 2, '.', ''),        // amount
+			$orderData['country'],                                  // country
+			$orderData['currency'],                                 // currency
+			'SALE',                                                 // txn_type
+			$this->successUrl,                                      // success_url
+			$this->failureUrl,                                      // failure_url
+			$orderData['channel'],                                  // channel
 		];
 
-		// Combine all sections
-		$allValues = implode('|', $txnDetails);
-
-		// Encrypt
-		$merchantRequest = $this->encrypt($allValues);
-		$hash = $this->generateHash($merchantRequest);
-
-		return [
-			'me_id' => $this->merchantId,
-			'merchant_request' => $merchantRequest,
-			'hash' => $hash,
-			'post_url' => $this->postUrl,
-			'order_number' => $orderData['order_number'],
+		// PG Details (Optional) - 4 fields
+		$pgDetails = [
+			$orderData['pg_details']['pg_id'] ?? '',                // pg_id
+			$orderData['pg_details']['paymode'] ?? '',              // paymode
+			$orderData['pg_details']['scheme'] ?? '',               // scheme
+			$orderData['pg_details']['emi_months'] ?? '',           // emi_months
 		];
-	}
+
+		// Card Details (Optional) - 5 fields
+		$cardDetails = [
+			$orderData['card_details']['card_no'] ?? '',            // card_no
+			$orderData['card_details']['exp_month'] ?? '',          // exp_month
+			$orderData['card_details']['exp_year'] ?? '',           // exp_year
+			$orderData['card_details']['cvv2'] ?? '',               // cvv2
+			$orderData['card_details']['card_name'] ?? '',          // card_name
+		];
+
+		// Customer Details (Optional) - 5 fields
+		$custDetails = [
+			$orderData['customer']['cust_name'] ?? '',              // cust_name
+			$orderData['customer']['email_id'] ?? '',               // email_id
+			$orderData['customer']['mobile_no'] ?? '',              // mobile_no
+			$orderData['customer']['unique_id'] ?? '',              // unique_id
+			$orderData['customer']['is_logged_in'] ?? '',           // is_logged_in
+		];
+
+		// Billing Details (Optional) - 5 fields
+		$billDetails = [
+			$orderData['billing']['bill_address'] ?? '',            // bill_address
+			$orderData['billing']['bill_city'] ?? '',               // bill_city
+			$orderData['billing']['bill_state'] ?? '',              // bill_state
+			$orderData['billing']['bill_country'] ?? '',            // bill_country
+			$orderData['billing']['bill_zip'] ?? '',                // bill_zip
+		];
+
+		// Shipping Details (Optional) - 7 fields
+		$shipDetails = [
+			$orderData['shipping']['ship_address'] ?? '',           // ship_address
+			$orderData['shipping']['ship_city'] ?? '',              // ship_city
+			$orderData['shipping']['ship_state'] ?? '',             // ship_state
+			$orderData['shipping']['ship_country'] ?? '',           // ship_country
+			$orderData['shipping']['ship_zip'] ?? '',               // ship_zip
+			$orderData['shipping']['ship_days'] ?? '',              // ship_days
+			$orderData['shipping']['address_count'] ?? '',          // address_count
+		];
+
+		// Item Details (Optional) - 3 fields
+		$itemDetails = [
+			$orderData['item_details']['item_count'] ?? '',         // item_count
+			$orderData['item_details']['item_value'] ?? '',         // item_value
+			$orderData['item_details']['item_category'] ?? '',      // item_category
+		];
+
+		// UPI Details (Optional) - 1 field
+		$upiDetails = $orderData['upi_details']['upi_id'] ?? '';    // Direct string, not array
+
+		// Other Details (Optional) - 5 fields
+		$otherDetails = [
+			$orderData['other_details']['udf_1'] ?? '',             // udf_1
+			$orderData['other_details']['udf_2'] ?? '',             // udf_2
+			$orderData['other_details']['udf_3'] ?? '',             // udf_3
+			$orderData['other_details']['udf_4'] ?? '',             // udf_4
+			$orderData['other_details']['udf_5'] ?? '',             // udf_5
+		];
+
+		// Recurring Details (Optional) - 1 field
+		$recurringDetails = $orderData['recurring_details']['planId'] ?? '';  // Direct string, not array
+
+		// Combine all sections with ~ separator (EXACTLY AS PER TOURAS SOURCE CODE)
+		$allValues =
+		implode('|', $txnDetails) . '~' .
+		implode('|', $pgDetails) . '~' .
+		implode('|', $cardDetails) . '~' .
+		implode('|', $custDetails) . '~' .
+		implode('|', $billDetails) . '~' .
+		implode('|', $shipDetails) . '~' .
+		implode('|', $itemDetails) . '~' .
+			$upiDetails . '~' .                                     // Direct string
+			implode('|', $otherDetails) . '~' .
+			$recurringDetails;                                       // Direct string
+
+		// Encrypt merchant request using custom AES function
+			$merchantRequest = $this->encryptAES($allValues, $this->encryptionKey, 256);
+
+		// Generate hash as per Touras specification
+		// Hash format: merchant_id~order_no~amount~country~currency
+			$hashString = $this->merchantId . '~' .
+			$orderData['order_number'] . '~' .
+			number_format($orderData['amount'], 2, '.', '') . '~' .
+			$orderData['country'] . '~' .
+			$orderData['currency'];
+
+		// SHA256 hash WITHOUT encryption first
+			$checksum = hash("sha256", $hashString, false);
+
+		// Then encrypt the checksum
+			$hash = $this->encryptAES($checksum, $this->encryptionKey, 256);
+
+			Log::info('Touras Payment Request Created', [
+				'order_number' => $orderData['order_number'],
+				'amount' => $orderData['amount'],
+				'hash_string' => $hashString,
+				'checksum' => $checksum,
+				'raw_data' => substr($allValues, 0, 200) . '...',
+			]);
+
+			return [
+				'me_id' => $this->merchantId,
+				'merchant_request' => $merchantRequest,
+				'hash' => $hash,
+				'post_url' => $this->postUrl,
+				'order_number' => $orderData['order_number'],
+			];
+		}
 
 	/**
-	 * Encrypt data using AES-256-CBC
+	 * Encrypt data using AES-256-CBC (Touras specific implementation)
+	 * EXACT copy from Touras source code
 	 */
-	private function encrypt($data)
+	private function encryptAES($text, $key, $type)
 	{
-		$key = base64_decode($this->encryptionKey);
-		$iv = openssl_random_pseudo_bytes(16);
+		$iv = "0123456789abcdef";  // Static IV as per Touras
+		$size = 16;
+		$pad = $size - (strlen($text) % $size);
+		$padtext = $text . str_repeat(chr($pad), $pad);
 
-		$encrypted = openssl_encrypt(
-			$data,
-			'AES-256-CBC',
-			$key,
-			OPENSSL_RAW_DATA,
+		$crypt = openssl_encrypt(
+			$padtext,
+			"AES-256-CBC",
+			base64_decode($key),
+			OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING,
 			$iv
 		);
 
-		// Prepend IV to encrypted data
-		$encryptedWithIv = $iv . $encrypted;
-
-		return base64_encode($encryptedWithIv);
-	}
-
-	/**
-	 * Generate hash for validation
-	 */
-	private function generateHash($merchantRequest)
-	{
-		$key = base64_decode($this->encryptionKey);
-		$hash = hash_hmac('sha256', $merchantRequest, $key, true);
-		return base64_encode($hash);
+		return base64_encode($crypt);
 	}
 
 	/**
