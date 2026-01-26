@@ -57,7 +57,7 @@ class CustomerController extends BaseController
 		if ($request->is_guest == true) {
 			$validated = $request->validate([
 				'name' => 'required|string|max:255',
-				'email' => 'required|string|email|max:255',
+				'email' => 'required|string|email:strict|max:255',
 			]);
 
 			$existingCustomer = Customer::where('email', $validated['email'])->first();
@@ -104,7 +104,7 @@ class CustomerController extends BaseController
 
 		$validated = $request->validate([
 			'name' => 'required|string|max:255',
-			'email' => 'required|string|email|max:255|unique:customers',
+			'email' => 'required|string|email:strict|max:255|unique:customers',
 			'password' => 'required|string|min:8',
 			'mobile_number' => 'nullable|string|max:20', // 👈 ADD THIS
 			'type' => 'nullable|string',
@@ -375,7 +375,7 @@ class CustomerController extends BaseController
 	{
 		$request->validate([
 			'identity_token' => 'required|string',
-			'email' => 'nullable|email',
+			'email' => 'nullable|email:strict',
 			'name'  => 'nullable|string',
 		]);
 
@@ -565,7 +565,7 @@ class CustomerController extends BaseController
 			'trn_number'       => 'nullable|string',
 			'vat_certificate'  => 'nullable|file|mimes:pdf|max:2048',
 
-			'email'            => 'nullable|email|unique:users,email,' . $user->id,
+			'email'            => 'nullable|email:strict|unique:users,email,' . $user->id,
 			'password'         => 'nullable|string|min:6|confirmed',
 			'type'             => 'nullable|string',
 			'dob'              => 'nullable|date',
@@ -714,7 +714,7 @@ class CustomerController extends BaseController
 	{
 		$validated = $request->validate([
 			'name' => 'required|string|max:255',
-			'email' => 'required|string|email|max:255',
+			'email' => 'required|string|email:strict|max:255',
 			'mobile_number' => 'required|string|max:255',
 		]);
 
