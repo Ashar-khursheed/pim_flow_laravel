@@ -210,7 +210,7 @@ Route::post('/ccavenue/webhook', [F_CCavenueController::class, 'successhandleWeb
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::get('/ccavenue/thank', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::post('/ccavenue/dataEncodeCCavenue', action: [F_CCavenueController::class, 'dataEncodeCCavenue']);
-Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
+Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class)->names('frontend.get-in-touch');
 
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
