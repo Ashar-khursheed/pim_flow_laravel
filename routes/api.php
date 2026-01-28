@@ -1133,7 +1133,10 @@ Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/thanks', [F_PaymobController::class, 'response']);
 
 
-	Route::post('/frontend/save-cheque-upload', [ F_OrderController::class, 'saveChequeUpload']);
-	Route::get('/frontend/get-cheque-uploads', [ F_OrderController::class, 'getChequeUploadsBySession']);
+Route::post('/frontend/save-cheque-upload', [ F_OrderController::class, 'saveChequeUpload']);
+Route::get('/frontend/get-cheque-uploads', [ F_OrderController::class, 'getChequeUploadsBySession']);
 
-// test change
+use App\Http\Controllers\FrontEnd\ChatbotController as F_ChatbotController;
+
+Route::post('/frontend/chatbot/contacts/find-or-create', [F_ChatbotController::class, 'findOrCreateContact']);
+Route::post('/frontend/chatbot/chats', [F_ChatbotController::class, 'createChat']);

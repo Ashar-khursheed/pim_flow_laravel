@@ -14,7 +14,7 @@ return new class extends Migration
 			$table->longText('message');
 			$table->integer('created_by')->default(0);
 			$table->enum('created_by_type', ['user', 'customer', 'AI'])->default('customer');
-			$table->timestamps();
+			$table->timestamp('created_at')->useCurrent();
 		});
 	}
 

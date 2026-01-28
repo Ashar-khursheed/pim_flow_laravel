@@ -14699,6 +14699,107 @@
                 }
             }
         },
+        "/api/frontend/chatbot/contacts/find-or-create": {
+            "post": {
+                "tags": [
+                    "Chatbot"
+                ],
+                "summary": "Find existing contact by email or create new one",
+                "operationId": "59789c764637fcf10edc46bf0158d7a5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Noman Peera"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "noman@example.com"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "+971123456789"
+                                    },
+                                    "control": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Contact found or created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/chatbot/chats": {
+            "post": {
+                "tags": [
+                    "Chatbot"
+                ],
+                "summary": "Create a new chat message",
+                "operationId": "dd3c7a977e733ada897eb7b884468139",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "chatbot_contact_id",
+                                    "message",
+                                    "created_by_type"
+                                ],
+                                "properties": {
+                                    "chatbot_contact_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Hello, I need help with my order"
+                                    },
+                                    "created_by_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "user",
+                                            "customer",
+                                            "AI"
+                                        ],
+                                        "example": "customer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/company-profiles": {
             "get": {
                 "tags": [
@@ -49806,6 +49907,10 @@
         {
             "name": "CCAvenue",
             "description": "CCAvenue"
+        },
+        {
+            "name": "Chatbot",
+            "description": "Chatbot"
         },
         {
             "name": "Frontend Company Profiles",
