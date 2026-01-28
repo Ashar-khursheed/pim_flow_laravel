@@ -148,7 +148,7 @@ class UserController extends BaseController
 		}
 		$validatedData = $request->validate([
 			'username' => 'required|string|max:255|unique:users,username',
-			'email' => 'required|string|email|max:255|unique:users,email',
+			'email' => 'required|string|email:strict|max:255|unique:users,email',
 			'password' => 'required|string|min:8',
 			'first_name' => 'required|string|max:255',
 			'last_name' => 'required|string|max:255',
@@ -289,7 +289,7 @@ class UserController extends BaseController
 			/* Validate request data */
 			$validatedData = $request->validate([
 				'username' => 'required|string|max:255|unique:users,username,' . $userId,
-				'email' => 'required|string|email|max:255|unique:users,email,' . $userId,
+				'email' => 'required|string|email:strict|max:255|unique:users,email,' . $userId,
 				'password' => 'nullable|string|min:8',
 				'first_name' => 'required|string|max:255',
 				'last_name' => 'required|string|max:255',

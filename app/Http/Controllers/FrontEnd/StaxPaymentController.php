@@ -29,22 +29,22 @@
 //      *     summary="Process a checkout payment",
 //      *     description="Takes a Stax.js payment method ID and amount, then processes the charge via Stax API.",
 //      *     operationId="checkout",
-//      *     
+//      *
 //      *     @OA\RequestBody(
 //      *         required=true,
 //      *         @OA\JsonContent(
 //      *             required={"payment_method_id","amount"},
 //      *             @OA\Property(
-//      *                 property="payment_method_id", 
-//      *                 type="string", 
-//      *                 example="pm_abc123XYZ", 
+//      *                 property="payment_method_id",
+//      *                 type="string",
+//      *                 example="pm_abc123XYZ",
 //      *                 description="Payment method ID from Stax.js tokenization"
 //      *             ),
 //      *             @OA\Property(
-//      *                 property="amount", 
-//      *                 type="number", 
-//      *                 format="float", 
-//      *                 example=100.50, 
+//      *                 property="amount",
+//      *                 type="number",
+//      *                 format="float",
+//      *                 example=100.50,
 //      *                 description="Charge amount in USD"
 //      *             ),
 //      *             @OA\Property(
@@ -132,7 +132,7 @@
 //             'customer' => 'nullable|array',
 //             'customer.firstname' => 'nullable|string',
 //             'customer.lastname' => 'nullable|string',
-//             'customer.email' => 'nullable|email',
+//             'customer.email' => 'nullable|email:strict',
 //             'customer.phone' => 'nullable|string',
 //             'customer.address_1' => 'nullable|string',
 //             'customer.address_city' => 'nullable|string',
@@ -208,7 +208,7 @@
 //     }
 //     /**
 //      * Get transaction details
-//      * 
+//      *
 //      * @OA\Get(
 //      *     path="/api/frontend/auth/Stax/transaction/{id}",
 //      *     tags={"Payments"},
@@ -266,7 +266,7 @@
 
 //     /**
 //      * Refund a transaction
-//      * 
+//      *
 //      * @OA\Post(
 //      *     path="/api/frontend/auth/Stax/refund/{id}",
 //      *     tags={"Payments"},
@@ -367,7 +367,7 @@
 
 //     /**
 //      * Void a transaction
-//      * 
+//      *
 //      * @OA\Post(
 //      *     path="/api/frontend/auth/Stax/void/{id}",
 //      *     tags={"Payments"},
@@ -496,7 +496,7 @@
 //             'exp_month' => 'required|string',
 //             'exp_year' => 'required|string',
 //             'cvc' => 'required|string',
-//             'billing_email' => 'nullable|email',
+//             'billing_email' => 'nullable|email:strict',
 //             'billing_name' => 'nullable|string',
 //         ]);
 
@@ -586,7 +586,7 @@
 //     public function createStaxPaymentLink($order)
 //     {
 //         $baseUrl = config('services.stax.base_url', 'https://apiprod.fattlabs.com');
-//         $url = config('app.url');      
+//         $url = config('app.url');
 //         $backendUrl = config('app.backend_url');
 //         $apiKey = config('services.stax.api_key');
 //         $publickey = config('services.stax.public_key');
@@ -609,7 +609,7 @@
 //             $paydata['email'] = $customer->email;
 //             $paydata['currency'] = 'AED';
 //             $paydata['common_name'] = trim($firstname . ' ' . $lastname);
-          
+
 //             $paydata['ref'] = $paymentReference;
 //             $paydata = dataEncodeJsonBase64($paydata);
 //             $appUrl = url('');
@@ -626,7 +626,7 @@
 //                     'lastname' => $lastname,
 //                     'common_name' => trim($firstname . ' ' . $lastname),
 //                 ],
-//                 'link_meta' => [                   
+//                 'link_meta' => [
 //                     'successRedirect' => $url . '/thanks?status=complete&getStax=' . $paydata,
 //                     'redirect_failure' => $url . '/failed',
 //                     'send_email' => $customer->email,
@@ -666,7 +666,7 @@
 //             if (!empty($invoiceData['customer'])) {
 //                 $payload['customer'] = $invoiceData['customer'];
 //             }
-  
+
 //             $ch = curl_init();
 //             curl_setopt($ch, CURLOPT_URL, $baseUrl . "/query/payment-links");
 //             curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
@@ -706,7 +706,7 @@
 //                 return $data['body']['tinyurl'];
 //             }
 //             // Access values
-//             // $status = $data['status']; 
+//             // $status = $data['status'];
 //             // $message = $data['message'];
 //             // $tinyurl = $data['body']['tinyurl'];
 //             // $paymentLinkId = $data['body']['link_meta']['paymentLinkId'];
@@ -856,16 +856,16 @@
 //             $currency = $data->currency;
 //             $transactionId = $data->ref;
 //             $order_id = $data->order_id;
-          
+
 //             if ($_GET['status'] == 'complete') {
 //                 $status = "Completed";
 //             } else {
 //                 $status = "Failed";
 //             }
- 
- 
+
+
 //             $orderdetails = Order::where('id', $order_id)->where('is_paid', '0')->first();
- 
+
 //             if (!empty($orderdetails)) {
 //                 $total_amount = $orderdetails->total_amount;
 //                 $paid_amount = $orderdetails->paid_amount + $amount;
@@ -948,7 +948,7 @@
 //     public function thanks(Request $request)
 //     {
 //         $encResponse = $_GET['getStax'];
- 
+
 //         $data = dataDecodeJsonBase64($encResponse);
 
 //         if (!empty($data)) {
@@ -956,21 +956,21 @@
 //             $currency = $data->currency;
 //             $transactionId = $data->ref;
 //             $order_id = $data->order_id;
-         
+
 //             if ($_GET['status'] == 'complete') {
 //                 $status = "Completed";
 //             } else {
 //                 $status = "Failed";
 //             }
- 
- 
+
+
 //             $orderdetails = Order::where('id', $order_id)->where('is_paid', '0')->first();
- 
+
 //             if (!empty($orderdetails)) {
 //                 $total_amount = $orderdetails->total_amount;
 //                 $paid_amount = $orderdetails->paid_amount + $amount;
 //                 $pending_amount = $total_amount - $paid_amount;
- 
+
 //                 $order = Order::find($orderdetails->id);
 //                 if ($paid_amount < $total_amount) {
 //                     $order->update([
@@ -980,7 +980,7 @@
 //                         'is_reserved' => $pending_amount <= 0,
 //                     ]);
 //                 } else if ($paid_amount == $total_amount) {
- 
+
 //                     $order->update([
 //                         'paid_amount' => $paid_amount,
 //                         'pending_amount' => $pending_amount,
@@ -1020,9 +1020,9 @@
 //                 'status' => false,
 //             ]);
 //         }
- 
- 
- 
+
+
+
 //     }
 // }
 
@@ -1055,22 +1055,22 @@ class StaxPaymentController extends Controller
      *     summary="Process a checkout payment",
      *     description="Takes a Stax.js payment method ID and amount, then processes the charge via Stax API.",
      *     operationId="checkout",
-     *     
+     *
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"payment_method_id","amount"},
      *             @OA\Property(
-     *                 property="payment_method_id", 
-     *                 type="string", 
-     *                 example="pm_abc123XYZ", 
+     *                 property="payment_method_id",
+     *                 type="string",
+     *                 example="pm_abc123XYZ",
      *                 description="Payment method ID from Stax.js tokenization"
      *             ),
      *             @OA\Property(
-     *                 property="amount", 
-     *                 type="number", 
-     *                 format="float", 
-     *                 example=100.50, 
+     *                 property="amount",
+     *                 type="number",
+     *                 format="float",
+     *                 example=100.50,
      *                 description="Charge amount in USD"
      *             ),
      *             @OA\Property(
@@ -1158,7 +1158,7 @@ class StaxPaymentController extends Controller
             'customer' => 'nullable|array',
             'customer.firstname' => 'nullable|string',
             'customer.lastname' => 'nullable|string',
-            'customer.email' => 'nullable|email',
+            'customer.email' => 'nullable|email:strict',
             'customer.phone' => 'nullable|string',
             'customer.address_1' => 'nullable|string',
             'customer.address_city' => 'nullable|string',
@@ -1234,7 +1234,7 @@ class StaxPaymentController extends Controller
     }
     /**
      * Get transaction details
-     * 
+     *
      * @OA\Get(
      *     path="/api/frontend/auth/Stax/transaction/{id}",
      *     tags={"Payments"},
@@ -1292,7 +1292,7 @@ class StaxPaymentController extends Controller
 
     /**
      * Refund a transaction
-     * 
+     *
      * @OA\Post(
      *     path="/api/frontend/auth/Stax/refund/{id}",
      *     tags={"Payments"},
@@ -1393,7 +1393,7 @@ class StaxPaymentController extends Controller
 
     /**
      * Void a transaction
-     * 
+     *
      * @OA\Post(
      *     path="/api/frontend/auth/Stax/void/{id}",
      *     tags={"Payments"},
@@ -1522,7 +1522,7 @@ class StaxPaymentController extends Controller
             'exp_month' => 'required|string',
             'exp_year' => 'required|string',
             'cvc' => 'required|string',
-            'billing_email' => 'nullable|email',
+            'billing_email' => 'nullable|email:strict',
             'billing_name' => 'nullable|string',
         ]);
 
@@ -1628,7 +1628,7 @@ class StaxPaymentController extends Controller
             $firstname = $nameParts[0] ?? '';
             $lastname = $nameParts[1] ?? '';
 
-            
+
             $invoiceData = [
                 'amount' => (float) $order->total_amount * 100,
                  'description' => $firstname??"",
@@ -1649,7 +1649,7 @@ class StaxPaymentController extends Controller
                     'total' => (float) $order->total_amount,
                     'email' => $customer->email,
                     'memo' => $customerAddress->city
-                    
+
                 ],
                 'redirect_url' => 'https://development.d28qosi1cuigvb.amplifyapp.com/thanks',
 
@@ -1660,7 +1660,7 @@ class StaxPaymentController extends Controller
                 'url' => 'https://app.staxpayments.com/#/pay/'.$publickey,
 
             ];
- 
+
             $payload = [
             'amount' => (float) ($invoiceData['amount'] ?? 0),
             'description' => $invoiceData['description'] ?? 'Payment Link',
@@ -1682,20 +1682,20 @@ class StaxPaymentController extends Controller
             if (!empty($invoiceData['customer'])) {
             $payload['customer'] = $invoiceData['customer'];
             }
-             
+
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $baseUrl."/query/payment-links");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
             curl_setopt($ch, CURLOPT_HEADER, FALSE);
 
-            curl_setopt($ch, CURLOPT_POST, TRUE);           
-            
+            curl_setopt($ch, CURLOPT_POST, TRUE);
+
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
             "url" => "https://app.staxpayments.com/#/pay/".$publickey,
             "link_meta" => $payload['link_meta'],
-            "common_name" => "Sample Link", 
-            'active' => 1           
-            
+            "common_name" => "Sample Link",
+            'active' => 1
+
             ]));
 
             curl_setopt($ch, CURLOPT_HTTPHEADER, array(
@@ -1707,10 +1707,10 @@ class StaxPaymentController extends Controller
             $response = curl_exec($ch);
             curl_close($ch);
 
-        
+
                 // Convert JSON string → PHP array
             $data = json_decode($response, true);
-          
+
               \Log::info('STAX API response', [
                 'status' => $data['status'],
                 'body' => $data['body'],
@@ -1722,18 +1722,18 @@ class StaxPaymentController extends Controller
                 return $data['body']['tinyurl'];
             }
             // Access values
-            // $status = $data['status']; 
+            // $status = $data['status'];
             // $message = $data['message'];
             // $tinyurl = $data['body']['tinyurl'];
             // $paymentLinkId = $data['body']['link_meta']['paymentLinkId'];
             // $redirectSuccess = $data['body']['link_meta']['redirect_success'];
             // $total = $data['body']['link_meta']['total'];
 
-            
- 
+
+
             // Log response details for debugging
-          
-           
+
+
 
         } catch (\Exception $e) {
             \Log::error('Payment link creation failed', [
@@ -1887,29 +1887,29 @@ class StaxPaymentController extends Controller
     public function thanks(Request $request)
     {
         $encResponse = $_GET['getStax'];
- 
+
         $data = dataDecodeJsonBase64($encResponse);
-        
+
         if (!empty($data)) {
             $amount = $data->amount / 100;
             $currency = $data->currency;
             $transactionId = $data->ref;
             $order_id = $data->order_id;
-         
+
             if ($_GET['status'] == 'complete') {
                 $status = "Completed";
             } else {
                 $status = "Failed";
             }
- 
- 
+
+
             $orderdetails = Order::where('id', $order_id)->where('is_paid', '0')->first();
- 
+
             if (!empty($orderdetails)) {
                 $total_amount = $orderdetails->total_amount;
                 $paid_amount = $orderdetails->paid_amount + $amount;
                 $pending_amount = $total_amount - $paid_amount;
- 
+
                 $order = Order::find($orderdetails->id);
                 if ($paid_amount < $total_amount) {
                     $order->update([
@@ -1919,7 +1919,7 @@ class StaxPaymentController extends Controller
                         'is_reserved' => $pending_amount <= 0,
                     ]);
                 } else if ($paid_amount == $total_amount) {
- 
+
                     $order->update([
                         'paid_amount' => $paid_amount,
                         'pending_amount' => $pending_amount,
@@ -1959,8 +1959,8 @@ class StaxPaymentController extends Controller
                 'status' => false,
             ]);
         }
- 
- 
- 
+
+
+
     }
 }

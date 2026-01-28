@@ -24,20 +24,20 @@ class UserRequest extends FormRequest
     public function rules()
     {
         $rules = [
-            'email' => 'required|email|unique:users,email,' . $this->route('id'),
+            'email' => 'required|email:strict|unique:users,email,' . $this->route('id'),
             'role_id' => 'nullable|integer|exists:roles,id',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'avatar' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
-    
+
         if ($this->filled('old_password') || $this->filled('new_password')) {
             $rules['old_password'] = 'required|string';
             $rules['new_password'] = 'required|string|min:6';
             $rules['confirm_password'] = 'required|string|same:new_password';
         }
-    
+
         return $rules;
     }
-    
+
 }

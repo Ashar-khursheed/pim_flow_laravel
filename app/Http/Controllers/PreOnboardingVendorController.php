@@ -184,7 +184,7 @@ class PreOnboardingVendorController extends Controller
 		$validated = $request->validate([
 			'name' => 'required|string|max:255',
 			'contact_person' => 'required|string|max:255',
-			'email' => 'required|email',
+			'email' => 'required|email:strict',
 			'phone_number' => 'required',
 			'country_id' => 'required|integer|exists:countries,id',
 
@@ -360,7 +360,7 @@ class PreOnboardingVendorController extends Controller
 		$validated = $request->validate([
 			'name' => 'required|string|max:255',
 			'contact_person' => 'required|string|max:255',
-			'email' => 'required|email',
+			'email' => 'required|email:strict',
 			'phone_number' => 'required',
 			'country_id' => 'required|integer|exists:countries,id',
 

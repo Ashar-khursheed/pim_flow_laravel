@@ -220,7 +220,7 @@ class PaymobController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:1',
-            'email' => 'required|email',
+            'email' => 'required|email:strict',
             'first_name' => 'required|string|max:50',
             'last_name' => 'required|string|max:50',
             'phone' => 'required|string|max:20',

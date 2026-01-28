@@ -54,7 +54,7 @@ class InquiryController extends Controller
 			$validated = $request->validate([
 				'full_name' => 'required|string|max:255',
 				'phone' => 'required|string|max:50',
-				'email' => 'required|email|max:255',
+				'email' => 'required|email:strict|max:255',
 				'company_name' => 'required|string|max:255',
 				'restaurant_type' => 'required|string|max:255',
 				'lead_type' => 'required|string|max:255',

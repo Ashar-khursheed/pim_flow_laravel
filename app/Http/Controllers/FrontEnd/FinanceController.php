@@ -95,8 +95,8 @@ class FinanceController extends Controller
             'legal_business_name' => 'required|string',
             'doing_business' => 'nullable|string',
             'documents' => 'nullable|file|mimes:pdf|max:10240',
-            'business_email' => 'nullable|email|string|max:255',
-            'accounts_payable_email' => 'required|email|string|max:255',
+            'business_email' => 'nullable|email:strict|string|max:255',
+            'accounts_payable_email' => 'required|email:strict|string|max:255',
             'accounts_payable_phone' => 'required|string|max:255',
             'customer_address_id' => 'required|numeric',
             'duns_number' => 'nullable|string',
@@ -603,7 +603,7 @@ class FinanceController extends Controller
      *             ),
      *             @OA\Property(
      *                 property="order_number",
-     *                 type="string",                
+     *                 type="string",
      *                 example="575",
      *                 description="order number"
      *             ),
@@ -760,7 +760,7 @@ class FinanceController extends Controller
      *     path="/api/frontend/finances/payment-order-history",
      *     summary="Get payment history",
      *     tags={"Frontend-Finance"},
-     *     security={{"bearerAuth":{}}},     
+     *     security={{"bearerAuth":{}}},
      *     @OA\Response(
      *         response=200,
      *         description="Payment history fetched",
@@ -863,7 +863,7 @@ class FinanceController extends Controller
      *     path="/api/frontend/finances/payment-paid-invoice",
      *     summary="Get payment history",
      *     tags={"Frontend-Finance"},
-     *     security={{"bearerAuth":{}}},     
+     *     security={{"bearerAuth":{}}},
      *     @OA\Response(
      *         response=200,
      *         description="Payment history fetched",

@@ -860,16 +860,28 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	Route::get('/frontend-categories/customer-featured-products', [FCategoryController::class, 'getCustomerFeaturedCategoryProducts']);
 	Route::get('/frontend-brands/customer-featured-products', [FBrandController::class, 'getCustomerFeaturedBrandProducts']);
 
+	// Route::prefix('/frontend/touras')->group(function () {
+	// 	/* Payment initiation */
+	// 	Route::post('/initiate-payment', [F_TourasPaymentController::class, 'initiatePayment']);
+
+	// 	/* Callbacks */
+	// 	Route::post('/success', [F_TourasPaymentController::class, 'handleSuccess']);
+	// 	Route::post('/failure', [F_TourasPaymentController::class, 'handleFailure']);
+
+	// 	/* Verify payment */
+	// 	Route::post('/verify-payment', [F_TourasPaymentController::class, 'verifyPayment']);
+	// });
+
 	Route::prefix('/frontend/touras')->group(function () {
-		/* Payment initiation */
-		Route::post('/initiate-payment', [F_TourasPaymentController::class, 'initiatePayment']);
+	    // Initiate payment
+	    Route::post('/initiate', [F_TourasPaymentController::class, 'initiate']);
 
-		/* Callbacks */
-		Route::post('/success', [F_TourasPaymentController::class, 'handleSuccess']);
-		Route::post('/failure', [F_TourasPaymentController::class, 'handleFailure']);
+	    // Callback URLs (These will receive POST from Touras)
+	    Route::post('/callback/success', [F_TourasPaymentController::class, 'handleSuccessCallback']);
+	    Route::post('/callback/failure', [F_TourasPaymentController::class, 'handleFailureCallback']);
 
-		/* Verify payment */
-		Route::post('/verify-payment', [F_TourasPaymentController::class, 'verifyPayment']);
+	    // Get payment status
+	    Route::get('/status/{order_no}', [F_TourasPaymentController::class, 'getPaymentStatus']);
 	});
 
 });
@@ -1121,7 +1133,10 @@ Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/thanks', [F_PaymobController::class, 'response']);
 
 
-	Route::post('/frontend/save-cheque-upload', [ F_OrderController::class, 'saveChequeUpload']);
-	Route::get('/frontend/get-cheque-uploads', [ F_OrderController::class, 'getChequeUploadsBySession']);
+Route::post('/frontend/save-cheque-upload', [ F_OrderController::class, 'saveChequeUpload']);
+Route::get('/frontend/get-cheque-uploads', [ F_OrderController::class, 'getChequeUploadsBySession']);
 
-// test change
+use App\Http\Controllers\FrontEnd\ChatbotController as F_ChatbotController;
+
+Route::post('/frontend/chatbot/contacts/find-or-create', [F_ChatbotController::class, 'findOrCreateContact']);
+Route::post('/frontend/chatbot/chats', [F_ChatbotController::class, 'createChat']);

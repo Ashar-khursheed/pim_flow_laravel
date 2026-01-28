@@ -220,7 +220,7 @@ class PrePurchaseClaimController extends BaseController
 		$request->validate([
 			'customer_name' => 'required|string|max:255',
 			'customer_business_name' => 'nullable|string|max:255',
-			'customer_email' => 'required|email|max:255',
+			'customer_email' => 'required|email:strict|max:255',
 			'customer_country_code' => 'nullable|string|max:20',
 			'customer_mobile_number' => 'nullable|string|max:20',
 
