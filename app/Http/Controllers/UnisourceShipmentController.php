@@ -45,10 +45,10 @@ class UnisourceShipmentController extends Controller
      */
     public function debugPayload(Request $request)
     {
-        
+
         // Validate the request
         $validator = $this->validateRequest($request);
-        
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -63,7 +63,7 @@ class UnisourceShipmentController extends Controller
 
         // Transform the payload
         $payload = $this->transformPayload($request->all());
-        
+
         return response()->json([
             'success' => true,
             'original_data' => $request->all(),
@@ -185,7 +185,7 @@ class UnisourceShipmentController extends Controller
     {
         // Validate the request
         $validator = $this->validateRequest($request);
-        
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -196,9 +196,9 @@ class UnisourceShipmentController extends Controller
         try {
             // Transform the payload for Unisource API
             $payload = $this->transformPayload($request->all());
-            
 
-            
+
+
             // Create HTTP client
             $client = new Client([
                 'timeout' => 30,
@@ -216,8 +216,8 @@ class UnisourceShipmentController extends Controller
             ]);
 
             $responseData = json_decode($response->getBody(), true);
-            
-    
+
+
 
             return response()->json([
                 'success' => true,
@@ -230,8 +230,8 @@ class UnisourceShipmentController extends Controller
             if ($e->hasResponse()) {
                 $errorResponse = json_decode($e->getResponse()->getBody(), true);
             }
-            
-        
+
+
 
             return response()->json([
                 'success' => false,
@@ -241,7 +241,7 @@ class UnisourceShipmentController extends Controller
 
         } catch (Exception $e) {
             // Handle server errors and other exceptions
-           
+
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -260,7 +260,7 @@ class UnisourceShipmentController extends Controller
             'carrierSCAC' => 'required|string|max:10',
             'customerId' => 'required|integer|min:1',
             'amount' => 'required|numeric|min:0',
-            
+
             // Optional fields
             'customerStaffId' => 'nullable|integer|min:1',
             'tariffDescription' => 'nullable|string|max:100',
@@ -276,7 +276,7 @@ class UnisourceShipmentController extends Controller
             'dimensionUnits' => 'nullable|string|in:in,cm',
             'serviceLevel' => 'nullable|string|max:50',
             'importExport' => 'nullable|string|in:Import,Export',
-            
+
             // Stops validation
             'stops' => 'required|array|min:2',
             'stops.*.companyName' => 'required|string|max:100',
@@ -289,7 +289,7 @@ class UnisourceShipmentController extends Controller
             'stops.*.contactName' => 'required|string|max:100',
             'stops.*.phone' => 'required|string|max:20',
             'stops.*.fax' => 'nullable|string|max:20',
-            'stops.*.email' => 'required|email|max:100',
+            'stops.*.email' => 'required|email:strict|max:100',
             'stops.*.instructions' => 'nullable|string|max:500',
             'stops.*.notes' => 'nullable|string|max:500',
             'stops.*.referenceNumber' => 'nullable|string|max:50',
@@ -311,7 +311,7 @@ class UnisourceShipmentController extends Controller
             'stops.*.shipmentStopDeliveryCommodities.*.shipmentCommodityId' => 'required_with:stops.*.shipmentStopDeliveryCommodities|integer|min:1',
             'stops.*.shipmentStopDeliveryCommodities.*.pickupStopId' => 'required_with:stops.*.shipmentStopDeliveryCommodities|integer|min:1',
             'stops.*.shipmentStopDeliveryCommodities.*.deliveryStopId' => 'required_with:stops.*.shipmentStopDeliveryCommodities|integer|min:1',
-            
+
             // Commodities validation
             'commodities' => 'required|array|min:1',
             'commodities.*.shipmentCommodityId' => 'nullable|integer|min:1',
@@ -330,50 +330,50 @@ class UnisourceShipmentController extends Controller
         // Custom validation for stops
         $validator->after(function ($validator) use ($request) {
             $stops = $request->get('stops', []);
-            
+
             // Early return if stops is empty or null
             if (empty($stops)) {
                 $validator->errors()->add('stops', 'At least 2 stops are required.');
                 return;
             }
-           
-            
+
+
             // Check for at least one pickup and one delivery stop
             $hasPickup = false;
             $hasDelivery = false;
             $validStopTypes = ['Pickup', 'First Pickup', 'Delivery', 'Final Delivery', 'Drop', 'Stop'];
-            
+
             foreach ($stops as $index => $stop) {
                 // Check if stop is properly formatted
                 if (!is_array($stop)) {
                     $validator->errors()->add("stops.{$index}", 'Stop must be an object/array.');
                     continue;
                 }
-                
+
                 $stopType = $stop['stopType'] ?? '';
-                
-             
-                
+
+
+
                 // Validate stopType exists and is valid
                 if (empty($stopType)) {
                     $validator->errors()->add("stops.{$index}.stopType", 'Stop type is required.');
                     continue;
                 }
-                
+
                 if (!in_array($stopType, $validStopTypes)) {
                     $validator->errors()->add("stops.{$index}.stopType", 'Invalid stop type. Must be one of: ' . implode(', ', $validStopTypes));
                     continue;
                 }
-                
+
                 // Check for pickup/delivery types
                 if (in_array($stopType, ['Pickup', 'First Pickup'])) {
                     $hasPickup = true;
                 }
-                
+
                 if (in_array($stopType, ['Delivery', 'Final Delivery'])) {
                     $hasDelivery = true;
                 }
-                
+
                 // Validate zip code format (basic US zip code validation)
                 if (isset($stop['zipCode'])) {
                     $zipCode = trim($stop['zipCode']);
@@ -382,15 +382,15 @@ class UnisourceShipmentController extends Controller
                     }
                 }
             }
-            
-           
-            
+
+
+
             // Only check for pickup/delivery if we have valid stops
             if (count($stops) >= 2) {
                 if (!$hasPickup) {
                     $validator->errors()->add('stops', 'At least one pickup stop (Pickup or First Pickup) is required.');
                 }
-                
+
                 if (!$hasDelivery) {
                     $validator->errors()->add('stops', 'At least one delivery stop (Delivery or Final Delivery) is required.');
                 }
@@ -434,7 +434,7 @@ class UnisourceShipmentController extends Controller
             if (empty($stop['stopType'])) {
                 throw new \Exception("Stop {$index} is missing required stopType");
             }
-            
+
             $transformedStop = [
                 'companyName' => $stop['companyName'],
                 'streetAddress' => $stop['streetAddress'],
@@ -485,7 +485,7 @@ class UnisourceShipmentController extends Controller
             $payload['commodities'][] = $transformedCommodity;
         }
 
-       
+
         return $payload;
     }
 
@@ -574,4 +574,4 @@ class UnisourceShipmentController extends Controller
             ], 500);
         }
     }
-}   
+}

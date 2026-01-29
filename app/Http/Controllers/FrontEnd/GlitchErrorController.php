@@ -81,7 +81,7 @@ class GlitchErrorController extends BaseController
 	public function store(Request $request)
 	{
 		$request->validate([
-			'email' => 'required|string|email',
+			'email' => 'required|string|email:strict',
 			'mobile_number' => 'nullable|string',
 			'description' => 'required|string|min:10|max:250',
 			'images' => 'nullable|array',

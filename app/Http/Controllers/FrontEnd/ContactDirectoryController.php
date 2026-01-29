@@ -69,7 +69,7 @@ class ContactDirectoryController extends Controller
         $validated = $request->validate([
             'customer_id' => 'required|integer',
             'name'        => 'required|string|max:255',
-            'email'       => 'nullable|email',
+            'email'       => 'nullable|email:strict',
             'phone'       => 'nullable|string|max:20',
             'image'       => 'nullable|file|image|max:2048', // max 2MB
             'type'        => 'nullable|string|max:50',
@@ -145,7 +145,7 @@ class ContactDirectoryController extends Controller
 
         $validated = $request->validate([
             'name'  => 'sometimes|required|string|max:255',
-            'email' => 'nullable|email',
+            'email' => 'nullable|email:strict',
             'phone' => 'nullable|string|max:20',
             'image' => 'nullable|file|image|max:2048',
             'type'  => 'nullable|string|max:50',

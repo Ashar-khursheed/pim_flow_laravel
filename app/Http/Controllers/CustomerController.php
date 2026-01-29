@@ -133,6 +133,9 @@ class CustomerController extends Controller
 	 */
 	public function store(Request $request)
 	{
+		$request->merge([
+			'is_tax_free' => filter_var($request->input('is_tax_free'), FILTER_VALIDATE_BOOLEAN)
+		]);
 		$validatedData = $request->validate([
 			'name' => 'required|string|max:255',
 
@@ -141,7 +144,7 @@ class CustomerController extends Controller
 			'trn_number'       => 'nullable|string',
 			'vat_certificate'  => 'nullable|file|mimes:pdf|max:2048',
 
-			'email' => 'required|string|email|max:255|unique:customers,email',
+			'email' => 'required|string|email:strict|max:255|unique:customers,email',
 			'password' => 'required|string|min:8',
 			'type' => 'nullable|string',
 			'dob' => 'nullable|date',
@@ -300,7 +303,7 @@ class CustomerController extends Controller
 			'trn_number'       => 'nullable|string',
 			'vat_certificate'  => 'nullable|file|mimes:pdf|max:2048',
 
-			'email'            => 'string|email|max:255|unique:customers,email,' . $id,
+			'email'            => 'string|email:strict|max:255|unique:customers,email,' . $id,
 			'password'         => 'nullable|string|min:8',
 			'type'             => 'nullable|string',
 			'dob'              => 'nullable|date',

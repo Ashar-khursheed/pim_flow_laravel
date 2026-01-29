@@ -67,7 +67,7 @@ class NewsletterController extends Controller
 	public function store(Request $request)
 	{
 		$request->validate([
-			'email' => 'required|email|unique:newsletters,email',
+			'email' => 'required|email:strict|unique:newsletters,email',
 			'name' => 'nullable|string|max:120',
 			'status' => 'nullable|string|in:subscribed,unsubscribed',
 		]);
@@ -155,7 +155,7 @@ class NewsletterController extends Controller
 		}
 		$newsletter = Newsletter::findOrFail($id);
 		$request->validate([
-			'email' => 'required|email|unique:newsletters,email,' . $id,
+			'email' => 'required|email:strict|unique:newsletters,email,' . $id,
 			'name' => 'nullable|string|max:120',
 			'status' => 'nullable|string|in:subscribed,unsubscribed',
 		]);

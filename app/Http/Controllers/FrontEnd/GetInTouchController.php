@@ -45,7 +45,7 @@ class GetInTouchController extends Controller
     /* Validate request data */
     $validated = $request->validate([
         'name'          => 'required|string|max:255',
-        'email'         => 'required|email|max:255',
+        'email'         => 'required|email:strict|max:255',
         'phone'         => 'required|string|max:20',
         'topic'         => 'required|string|max:255',
         'order_number'  => 'nullable|string|max:50',

@@ -89,7 +89,7 @@ class TqlRateController extends Controller
      *                 @OA\Property(property="country", type="string", example="USA")
      *             ),
      *
-     *             
+     *
      *
      *             @OA\Property(
      *                 property="quoteCommodities",
@@ -124,10 +124,10 @@ class TqlRateController extends Controller
         // Full validation matching your Swagger schema
         $validator = Validator::make($request->all(), [
             // 'carrierPriceId' => 'required|string',
-            // 'customerEmailAddresses' => 'required|email',
+            // 'customerEmailAddresses' => 'required|email:strict',
             'pickLocationType' => 'required|string|in:Commercial,Residential',
             'dropLocationType' => 'required|string|in:Commercial,Residential',
-            // 'shipmentDate' => 'required|date_format:Y-m-d\TH:i:s.v\Z',  
+            // 'shipmentDate' => 'required|date_format:Y-m-d\TH:i:s.v\Z',
 
             'origin.postalCode' => 'required|string',
             'origin.city' => 'required|string',
@@ -284,7 +284,7 @@ class TqlRateController extends Controller
      *                 @OA\Property(property="country", type="string", example="USA")
      *             ),
      *
-     *             
+     *
      *
      *             @OA\Property(
      *                 property="quoteCommodities",
@@ -319,10 +319,10 @@ class TqlRateController extends Controller
         // Full validation matching your Swagger schema
         $validator = Validator::make($request->all(), [
             // 'carrierPriceId' => 'required|string',
-            // 'customerEmailAddresses' => 'required|email',
+            // 'customerEmailAddresses' => 'required|email:strict',
             'pickLocationType' => 'required|string|in:Commercial,Residential',
             'dropLocationType' => 'required|string|in:Commercial,Residential',
-            // 'shipmentDate' => 'required|date_format:Y-m-d\TH:i:s.v\Z',  
+            // 'shipmentDate' => 'required|date_format:Y-m-d\TH:i:s.v\Z',
 
             'origin.postalCode' => 'required|string',
             'origin.city' => 'required|string',
@@ -501,7 +501,7 @@ class TqlRateController extends Controller
             'carrierPriceId' => 'required|string',
 
             'customerEmailAddresses' => 'required|array|min:1',
-            'customerEmailAddresses.*' => 'required|email',
+            'customerEmailAddresses.*' => 'required|email:strict',
 
             'shipmentDate' => 'required|date',
 
@@ -689,7 +689,7 @@ class TqlRateController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'customerEmailAddresses' => 'required|array|min:1',
-            'customerEmailAddresses.*' => 'required|email',
+            'customerEmailAddresses.*' => 'required|email:strict',
 
             'scac' => 'required|string|max:10',
             'serviceLevel' => 'required|string|max:50',
@@ -700,7 +700,7 @@ class TqlRateController extends Controller
 
             'shipmentDate' => 'required|date',
 
-      
+
             'commodities' => 'required|array|min:1',
 
             'commodities.*.unitTypeCode' => 'required|string|max:10',
@@ -716,12 +716,12 @@ class TqlRateController extends Controller
             'commodities.*.isStackable' => 'required|boolean',
             'commodities.*.isHazmat' => 'required|boolean',
 
-         
+
 
             'accessorials' => 'nullable|array',
             'accessorials.*' => 'string|max:100',
 
-          
+
 
             'pickupDetails' => 'required|array',
             'pickupDetails.puNumber' => 'nullable|string|max:50',
@@ -739,7 +739,7 @@ class TqlRateController extends Controller
             'pickupDetails.hoursOpen' => 'required|string|max:20',
             'pickupDetails.hoursClose' => 'required|string|max:20',
 
-          
+
 
             'deliveryDetails' => 'required|array',
             'deliveryDetails.deliveryPO' => 'nullable|string|max:50',

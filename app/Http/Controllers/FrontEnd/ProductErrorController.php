@@ -51,7 +51,7 @@ class ProductErrorController extends Controller
                 'product_id' => 'required|string|max:255',
                 'problem' => 'required|string',
                 'problem_timestamp' => 'nullable|date',
-                'email' => 'nullable|email',
+                'email' => 'nullable|email:strict',
                 'created_by' => 'nullable|integer',
                 'updated_by' => 'nullable|integer',
             ]);
