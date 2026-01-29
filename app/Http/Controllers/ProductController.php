@@ -726,22 +726,22 @@ class ProductController extends BaseController
 		$attributeGroup['All'] = array_merge(...array_values(array_filter($attributeGroup, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
 
 		$relations = [
-			'General' => ['categories:id,name,parent_id'],
-			'Pricing & Sales' => ['currency:id,title'],
+			'General' => ['categories'],
+			'Pricing & Sales' => ['currency'],
 			'Shipping & Dimensions' => [],
-			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
-			'Pricing' => ['vendors:id,name,dropshipping'],
-			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
+			'Store & Vendor Information' => ['brand', 'creator'],
+			'Pricing' => ['vendors'],
+			'All' => ['categories', 'currency', 'brand', 'creator']
 		];
 
 		$attrType = $request->attr_type ?? 'All';
 		$attributes = $attributeGroup[$attrType] ?? $attributeGroup['All'];
 
 		$with = array_merge($relations[$attrType] ?? [], [
-			'categories:id,name,parent_id',
-			'categories.parent:id,name,parent_id',
-			'categories.parent.parent:id,name,parent_id',
-			'categories.children:id,name,parent_id',
+			'categories',
+			'categories.parent',
+			'categories.parent.parent',
+			'categories.children',
 			'vendors',
 			'productAttributes.attributeDetails',
 			'productAttributes.measurementUnit',
