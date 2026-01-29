@@ -8,6 +8,7 @@ use App\Services\TqlRateService;
 use Illuminate\Support\Facades\Http;
 
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
 
 class TqlRateController extends Controller
 {
@@ -382,10 +383,20 @@ class TqlRateController extends Controller
                 ], 404);
             }
 
+            $responseData = $rates->json();
+
+            if (isset($responseData['content']['carrierPrices']) && is_array($responseData['content']['carrierPrices'])) {
+                $carrierPrices = collect($responseData['content']['carrierPrices']);
+                if ($carrierPrices->isNotEmpty()) {
+                    $cheapest = $carrierPrices->sortBy('customerRate')->first();
+                    $responseData['content']['carrierPrices'] = [$cheapest];
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Rates retrieved successfully.',
-                'data' => $rates->json()
+                'data' => $responseData
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -802,31 +813,37 @@ class TqlRateController extends Controller
 
     public function getTqlToken($scope)
     {
-
-        $response = Http::withHeaders([
-            'Ocp-Apim-Subscription-Key' => config('services.tql.subscription_key'),
-            'Content-Type' => 'application/x-www-form-urlencoded',
-        ])
+        $cacheKey = 'tql_token_' . md5($scope);
+        
+        return Cache::remember($cacheKey, 3500, function () use ($scope) {
+            $response = Http::withHeaders([
+                'Ocp-Apim-Subscription-Key' => config('services.tql.subscription_key'),
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ])
             ->asForm()
             ->post(config('services.tql.token_url'), [
                 'client_id'     => config('services.tql.client_id'),
                 'client_secret' => config('services.tql.client_secret'),
                 'scope'         => $scope,
-                'grant_type' => 'password',
+                'grant_type'    => 'password',
                 'username'      => config('services.tql.username'),
                 'password'      => config('services.tql.password')
             ]);
 
+            // Debug response if needed
+            if (!$response->successful()) {
+                // If the request fails, we do NOT want to cache null/false implicitly if we were relying on return.
+                // But since original code dd(), we keep it or throw exception. 
+                // dd() in API is bad practice but requested to keep logic structure roughly same.
+                // Note: dd() will stop execution so Cache::remember won't save anything.
+                dd(
+                    $response->status(),
+                    $response->body()
+                );
+            }
 
-        // Debug response if needed
-        if (!$response->successful()) {
-            dd(
-                $response->status(),
-                $response->body()
-            );
-        }
-
-        return $response->json('access_token');
+            return $response->json('access_token');
+        });
     }
 
 
