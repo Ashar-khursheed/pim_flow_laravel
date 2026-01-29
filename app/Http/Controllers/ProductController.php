@@ -801,6 +801,7 @@ class ProductController extends BaseController
 		$formattedProduct['return_policy'] = $firstSupplier->return_policy ?? null;
 		$formattedProduct['is_fixed'] = $firstSupplier->is_fixed ?? null;
 		$formattedProduct['min_quantity'] = $firstSupplier->min_quantity ?? null;
+		$formattedProduct['dropshipping'] = $firstSupplier->vendor->dropshipping ?? null;
 
 		// Product attributes
 		$formattedProduct['product_attributes'] = $product->productAttributes->map(function ($attr) {
@@ -825,7 +826,7 @@ class ProductController extends BaseController
 				'in_stock' => $ps->in_stock,
 				'delivery_days' => $ps->delivery_days,
 				'vendor_name' => $ps->vendor->name ?? null,
-				'dropshipping' => $ps->dropshipping ?? null,
+				'dropshipping' => $ps->vendor->dropshipping ?? null,
 				'min_quantity' => $ps->min_quantity ?? null,
 				'return_policy' => $ps->return_policy ?? null,
 				'is_fixed' => $ps->is_fixed ?? null,
