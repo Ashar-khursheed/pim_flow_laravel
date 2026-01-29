@@ -164,87 +164,110 @@ class TqlRateController extends Controller
             ], 422);
         }
 
-        $scope =  'https://tqlidentity.onmicrosoft.com/services_combined/LTLQuotes.Write';
+        // Generate Cache Key based on ALL input parameters
+        // ensuring that if quantity/weight changes, the hash changes completely.
+        $cacheData = $request->only([
+             'pickLocationType', 
+             'dropLocationType', 
+             'origin', 
+             'destination', 
+             'quoteCommodities' // Includes quantity, weight, dims
+        ]);
+        
+        // Sort keys recursively to ensure consistent hashing regardless of key order
+        $recursiveSort = function (&$array) use (&$recursiveSort) {
+            foreach ($array as &$value) {
+                if (is_array($value)) $recursiveSort($value);
+            }
+            ksort($array);
+        };
+        $recursiveSort($cacheData);
 
-        $token = $this->getTqlToken($scope);
-        if (!$token) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to generate token from TQL.',
-            ], 500);
-        }
+        $cacheKey = 'tql_rates_' . md5(json_encode($cacheData));
 
-        // Pass the fully validated data directly to your service
-        $shipmentData = $request->all();
+        return Cache::remember($cacheKey, 3600, function () use ($request, $service) { // Cache for 60 minutes (3600 seconds)
 
-        try {
-            $rates = $service->getRates($shipmentData, $token);
+            $scope =  'https://tqlidentity.onmicrosoft.com/services_combined/LTLQuotes.Write';
 
-            if (!$rates || empty($rates)) {
+            $token = $this->getTqlToken($scope);
+            if (!$token) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No rates found or service unavailable.',
-                    'data' => null
-                ], 404);
+                    'message' => 'Unable to generate token from TQL.',
+                ], 500);
             }
 
+            // Pass the fully validated data directly to your service
+            $shipmentData = $request->all();
+
+            try {
+                $rates = $service->getRates($shipmentData, $token);
+
+                if (!$rates || empty($rates)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No rates found or service unavailable.',
+                        'data' => null
+                    ], 404);
+                }
+
+                $carrierPrices = collect($rates->json()['content']['carrierPrices']);
+                $content =  $rates->json()['content'];
+
+                if ($carrierPrices->isEmpty()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No carrier prices available.',
+                    ], 404);
+                }
+
+                $cheapest = $carrierPrices->sortBy('customerRate')->first();
+                $fastest = $carrierPrices
+                    ->reject(fn($c) => $c['carrierQuoteId'] === $cheapest['carrierQuoteId'])
+                    ->sortBy('transitDays')
+                    ->first();
+                $bestValue = $carrierPrices
+                    ->reject(
+                        fn($c) =>
+                        in_array($c['carrierQuoteId'], [
+                            $cheapest['carrierQuoteId'],
+                            optional($fastest)['carrierQuoteId']
+                        ])
+                    )
+                    ->map(function ($item) {
+                        $item['score'] = ($item['customerRate'] * 0.7)
+                            + ($item['transitDays'] * 0.3);
+                        return $item;
+                    })
+                    ->sortBy('score')
+                    ->first();
+                $finalCarriers = collect([
+                    'Cheapest'   => $cheapest,
+                    //  'Fastest'    => $fastest,
+                    //'Best Value' => $bestValue
+
+                ])->filter()->map(function ($carrier, $label) {
+                    $carrier['label'] = $label;
+                    return $carrier;
+                })->values();
 
 
-            $carrierPrices = collect($rates->json()['content']['carrierPrices']);
-            $content =  $rates->json()['content'];
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Rates retrieved successfully.',
+                    'data' => $finalCarriers,
+                    'quoteId' => $content['quoteId'] ?? null,
+                    'commodityId' => $content['quoteCommodities'][0]['commodityId'] ?? null,
+                ], 200);
 
-            if ($carrierPrices->isEmpty()) {
+            } catch (\Exception $e) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No carrier prices available.',
-                ], 404);
+                    'message' => 'An error occurred while fetching rates.',
+                    'error' => $e->getMessage()
+                ], 500);
             }
-
-            $cheapest = $carrierPrices->sortBy('customerRate')->first();
-            $fastest = $carrierPrices
-                ->reject(fn($c) => $c['carrierQuoteId'] === $cheapest['carrierQuoteId'])
-                ->sortBy('transitDays')
-                ->first();
-            $bestValue = $carrierPrices
-                ->reject(
-                    fn($c) =>
-                    in_array($c['carrierQuoteId'], [
-                        $cheapest['carrierQuoteId'],
-                        optional($fastest)['carrierQuoteId']
-                    ])
-                )
-                ->map(function ($item) {
-                    $item['score'] = ($item['customerRate'] * 0.7)
-                        + ($item['transitDays'] * 0.3);
-                    return $item;
-                })
-                ->sortBy('score')
-                ->first();
-            $finalCarriers = collect([
-                'Cheapest'   => $cheapest,
-                //  'Fastest'    => $fastest,
-                //'Best Value' => $bestValue
-
-            ])->filter()->map(function ($carrier, $label) {
-                $carrier['label'] = $label;
-                return $carrier;
-            })->values();
-
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Rates retrieved successfully.',
-                'data' => $finalCarriers,
-                'quoteId' => $content['quoteId'] ?? null,
-                'commodityId' => $content['quoteCommodities'][0]['commodityId'] ?? null,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while fetching rates.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        });
     }
 
     /**
