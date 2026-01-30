@@ -726,22 +726,22 @@ class ProductController extends BaseController
 		$attributeGroup['All'] = array_merge(...array_values(array_filter($attributeGroup, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
 
 		$relations = [
-			'General' => ['categories:id,name,parent_id'],
-			'Pricing & Sales' => ['currency:id,title'],
+			'General' => ['categories'],
+			'Pricing & Sales' => ['currency'],
 			'Shipping & Dimensions' => [],
-			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
-			'Pricing' => ['vendors:id,name'],
-			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
+			'Store & Vendor Information' => ['brand', 'creator'],
+			'Pricing' => ['vendors'],
+			'All' => ['categories', 'currency', 'brand', 'creator']
 		];
 
 		$attrType = $request->attr_type ?? 'All';
 		$attributes = $attributeGroup[$attrType] ?? $attributeGroup['All'];
 
 		$with = array_merge($relations[$attrType] ?? [], [
-			'categories:id,name,parent_id',
-			'categories.parent:id,name,parent_id',
-			'categories.parent.parent:id,name,parent_id',
-			'categories.children:id,name,parent_id',
+			'categories',
+			'categories.parent',
+			'categories.parent.parent',
+			'categories.children',
 			'vendors',
 			'productAttributes.attributeDetails',
 			'productAttributes.measurementUnit',
@@ -801,6 +801,7 @@ class ProductController extends BaseController
 		$formattedProduct['return_policy'] = $firstSupplier->return_policy ?? null;
 		$formattedProduct['is_fixed'] = $firstSupplier->is_fixed ?? null;
 		$formattedProduct['min_quantity'] = $firstSupplier->min_quantity ?? null;
+		$formattedProduct['dropshipping'] = $firstSupplier->vendor->dropshipping ?? null;
 
 		// Product attributes
 		$formattedProduct['product_attributes'] = $product->productAttributes->map(function ($attr) {
@@ -825,7 +826,7 @@ class ProductController extends BaseController
 				'in_stock' => $ps->in_stock,
 				'delivery_days' => $ps->delivery_days,
 				'vendor_name' => $ps->vendor->name ?? null,
-				'dropshipping' => $ps->dropshipping ?? null,
+				'dropshipping' => $ps->vendor->dropshipping ?? null,
 				'min_quantity' => $ps->min_quantity ?? null,
 				'return_policy' => $ps->return_policy ?? null,
 				'is_fixed' => $ps->is_fixed ?? null,
