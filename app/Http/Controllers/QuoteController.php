@@ -238,12 +238,12 @@ class QuoteController extends BaseController
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
 	 *                     @OA\Property(property="quantity", type="integer", example=2),
 	 *                     @OA\Property(property="shipping_charge", type="number", example=50.00, description="Product Shipping Charge"),
-     *                     @OA\Property(
-     *                         property="accessory_item_ids",
-     *                         type="array",
-     *                         description="Array of accessory item IDs",
-     *                         @OA\Items(type="integer", example=50)
-     *                     )
+	 *                     @OA\Property(
+	 *                         property="accessory_item_ids",
+	 *                         type="array",
+	 *                         description="Array of accessory item IDs",
+	 *                         @OA\Items(type="integer", example=50)
+	 *                     )
 	 *                 )
 	 *             ),
 	 *             @OA\Property(
@@ -283,24 +283,40 @@ class QuoteController extends BaseController
 			'quote_name' => 'required|string',
 			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+			'is_lift_gate' => 'nullable|boolean',
+			'is_residential_address' => 'nullable|boolean',
+			'is_inside_delivery' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
+
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
+
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
+
+			'additional_discount_option' => 'nullable|boolean',
+			'additional_discount_reason' => 'nullable|string|max:255',
+			'additional_discount_type' => 'nullable|in:fixed,percentage',
+			'additional_discount_percentage' => 'nullable|numeric|min:0|max:100|required_if:additional_discount_type,percentage',
+			'additional_discount_amount' => 'nullable|numeric|min:0|required_if:additional_discount_type,fixed',
+
 			'status' => 'required|in:Pending,Revised',
 			'expired_at' => 'nullable|date',
+
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.shipping_charge' => 'required|numeric|min:0',
+			'products.*.accessory_item_ids' => 'nullable|array',
+			'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
 			'emails' => 'array',
 			'emails.*' => 'email',
 		]);
 
 		$customerId = $request->customer_id;
 
-		$address = CustomerAddress::where('id', $request->customer_address_id)
-		->where('customer_id', $customerId)
-		->first();
+		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
 
 		if (!$address) {
 			return response()->json([
@@ -308,58 +324,57 @@ class QuoteController extends BaseController
 				'message' => 'The selected address does not belong to the customer.'
 			], 422);
 		}
+		$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
+		$productDetails = [];
+		foreach ($request->products as $product) {
+			$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+			if (!$fetchedDetail) {
+				throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+			}
+
+			$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+			$shipping = $request->boolean('pay_with_cheque', false) ? 0 : ($charge * $product['quantity']);
+
+			$productDetails[] = [
+				'product_id' => $product['product_id'],
+				'vendor_id' => $product['vendor_id'],
+				'quantity' => $product['quantity'],
+				'unit_price' => $fetchedDetail->unit_price,
+				'shipping_charge' => $shipping,
+			];
+		}
+
+		$discount = $request->discount ?? 0;
+		$totalProducts = 0;
+		$quoteAmount = 0;
+		$quoteShipping = 0;
+
+		foreach ($productDetails as $product) {
+			$totalProducts += $product['quantity'];
+			$quoteAmount += $product['quantity'] * $product['unit_price'];
+			$quoteShipping += $product['shipping_charge'];
+		}
+
+		$discountedAmount = $quoteAmount - $discount;
+
+		$customer = Customer::find($customerId);
+		$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+			$quoteShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
+		} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+			$taxableAmount = $discountedAmount + $quoteShipping;
+			$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+		} else {
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+		}
+		$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
 
 		DB::beginTransaction();
 
 		try {
-			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
-
-			$productDetails = [];
-			foreach ($request->products as $product) {
-				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
-				if (!$fetchedDetail) {
-					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
-				}
-
-				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
-				$shipping = $request->boolean('pay_with_cheque', false) ? 0 : ($charge * $product['quantity']);
-
-				$productDetails[] = [
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => $shipping,
-				];
-			}
-
-			$discount = $request->discount ?? 0;
-			$totalProducts = 0;
-			$quoteAmount = 0;
-			$quoteShipping = 0;
-
-			foreach ($productDetails as $product) {
-				$totalProducts += $product['quantity'];
-				$quoteAmount += $product['quantity'] * $product['unit_price'];
-				$quoteShipping += $product['shipping_charge'];
-			}
-
-			$discountedAmount = $quoteAmount - $discount;
-
-			$customer = Customer::find($customerId);
-			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
-
-			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-				$quoteShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
-			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
-				$taxableAmount = $discountedAmount + $quoteShipping;
-				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
-			} else {
-				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-			}
-			$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
-
 			if ($request->is_revised) {
 				if (!Str::startsWith($request->quote_number, 'QT')) {
 					throw ValidationException::withMessages([
@@ -626,58 +641,58 @@ class QuoteController extends BaseController
 			'products.*.quantity' => 'required|integer|min:1',
 		]);
 
+		$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
+
+		/* Collect all product supplier details in one go */
+		$productDetails = [];
+		foreach ($request->products as $product) {
+			$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
+			if (!$fetchedDetail) {
+				throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
+			}
+
+			$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
+			$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
+
+			$productDetails[] = [
+				'product_id' => $product['product_id'],
+				'vendor_id' => $product['vendor_id'],
+				'quantity' => $product['quantity'],
+				'unit_price' => $fetchedDetail->unit_price,
+				'shipping_charge' => $shipping,
+			];
+		}
+
+		$discount = $request->discount ?? 0;
+		$totalProducts = 0;
+		$quoteAmount = 0;
+		$quoteShipping = 0;
+
+		foreach ($productDetails as $product) {
+			$totalProducts += $product['quantity'];
+			$quoteAmount += $product['quantity'] * $product['unit_price'];
+			$quoteShipping += $product['shipping_charge'];
+		}
+
+		$discountedAmount = $quoteAmount - $discount;
+
+		$customer = $quote->customer;
+		$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+
+		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+			$quoteShipping = ($discountedAmount + $taxAmount) < 500 ? 30 : 0;
+		} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
+			$taxableAmount = $discountedAmount + $quoteShipping;
+			$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+		} else {
+			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
+		}
+		$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
+
 		DB::beginTransaction();
 
 		try {
-			$specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
-
-			/* Collect all product supplier details in one go */
-			$productDetails = [];
-			foreach ($request->products as $product) {
-				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
-				if (!$fetchedDetail) {
-					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
-				}
-
-				$charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
-				$shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
-
-				$productDetails[] = [
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => $shipping,
-				];
-			}
-
-			$discount = $request->discount ?? 0;
-			$totalProducts = 0;
-			$quoteAmount = 0;
-			$quoteShipping = 0;
-
-			foreach ($productDetails as $product) {
-				$totalProducts += $product['quantity'];
-				$quoteAmount += $product['quantity'] * $product['unit_price'];
-				$quoteShipping += $product['shipping_charge'];
-			}
-
-			$discountedAmount = $quoteAmount - $discount;
-
-			$customer = $quote->customer;
-			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
-
-			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-				$quoteShipping = ($discountedAmount + $taxAmount) < 500 ? 30 : 0;
-			} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
-				$taxableAmount = $discountedAmount + $quoteShipping;
-				$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
-			} else {
-				$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-			}
-			$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
-
 			$quote->update([
 				'shipping_charge' => $quoteShipping,
 				'amount' => $quoteAmount,
