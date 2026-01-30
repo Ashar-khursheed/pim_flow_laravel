@@ -207,9 +207,23 @@ class QuoteController extends BaseController
 	 *             @OA\Property(property="quote_name", type="string", example="Kitchen equipment quote"),
 	 *             @OA\Property(property="customer_id", type="integer", example=1),
 	 *             @OA\Property(property="customer_address_id", type="integer", example=1),
+	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true, description="Lift gate required"),
+	 *             @OA\Property(property="is_residential_address", type="boolean", example=true, description="Residential address"),
+	 *             @OA\Property(property="is_inside_delivery", type="boolean", example=true, description="Inside delivery required"),
 	 *             @OA\Property(property="tax_percentage", type="number", format="float", example=5),
+	 *
+	 *             @OA\Property(property="additional_amount_name", type="string", example="Accessory 1", description="Additional amount name"),
+	 *             @OA\Property(property="additional_amount_price", type="number", format="float", example=100, description="Additional amount price"),
+	 *
 	 *             @OA\Property(property="coupon_id", type="integer", example=1),
 	 *             @OA\Property(property="discount", type="number", format="float", example=200),
+	 *
+	 *             @OA\Property(property="additional_discount_option", type="boolean", example=true, description="Additional Discount Option"),
+	 *             @OA\Property(property="additional_discount_reason", type="string", example="Bulk order discount", description="Reason for additional discount"),
+	 *             @OA\Property(property="additional_discount_type", type="string", enum={"fixed", "percentage"}, example="percentage"),
+	 *             @OA\Property(property="additional_discount_percentage", type="number", format="float", example=10.50, description="Additional discount percentage"),
+	 *             @OA\Property(property="additional_discount_amount", type="number", format="float", example=50.00, description="Additional discount amount"),
+	 *
 	 *             @OA\Property(property="status", type="string",  example="Pending"),
 	 *             @OA\Property(property="expired_at", type="string", format="date", example="2025-08-09"),
 	 *             @OA\Property(property="payment_terms", type="string", example="Credit Card"),
@@ -219,10 +233,17 @@ class QuoteController extends BaseController
 	 *                 property="products",
 	 *                 type="array",
 	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity"},
+	 *                     required={"product_id", "vendor_id", "quantity", "shipping_charge"},
 	 *                     @OA\Property(property="product_id", type="integer", example=2001),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
 	 *                     @OA\Property(property="quantity", type="integer", example=2),
+	 *                     @OA\Property(property="shipping_charge", type="number", example=50.00, description="Product Shipping Charge"),
+     *                     @OA\Property(
+     *                         property="accessory_item_ids",
+     *                         type="array",
+     *                         description="Array of accessory item IDs",
+     *                         @OA\Items(type="integer", example=50)
+     *                     )
 	 *                 )
 	 *             ),
 	 *             @OA\Property(
@@ -238,6 +259,24 @@ class QuoteController extends BaseController
 	 */
 	public function store(Request $request)
 	{
+		/* Parse boolean strings to actual booleans */
+		$booleanFields = [
+			'is_revised',
+			'is_lift_gate',
+			'is_residential_address',
+			'is_inside_delivery',
+			'additional_discount_option',
+		];
+
+		/* Parse products JSON string to array */
+		foreach ($booleanFields as $field) {
+			if ($request->has($field)) {
+				$request->merge([
+					$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)
+				]);
+			}
+		}
+
 		$request->validate([
 			'is_revised' => 'required|boolean',
 			'quote_number' => 'required_if:is_revised,true|string|unique:quotes,quote_number',
