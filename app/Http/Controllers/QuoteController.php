@@ -907,7 +907,7 @@ class QuoteController extends BaseController
 
 			foreach ($productDetails as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
-				$quoteProduct = OrderProduct::create([
+				$quoteProduct = QuoteProduct::create([
 					'quote_id' => $quote->id,
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
