@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
 use App\Models\FrontEnd\Quote;
+use App\Models\FrontEnd\QuoteProduct;
 use App\Models\FrontEnd\CustomerAddress;
 use App\Models\FrontEnd\Customer;
 
