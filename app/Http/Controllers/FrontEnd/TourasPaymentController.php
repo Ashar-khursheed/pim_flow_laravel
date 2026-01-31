@@ -58,7 +58,11 @@ class TourasPaymentController extends Controller
 			'channel' => 'required|string|in:WEB,MOBILE',
 		]);
 
-			Log::channel('testLog')->info('check', $request->all(),$this->successUrl);
+Log::channel('testLog')->info('check123', [
+    'request_data' => $request->all(),
+    'success_url' => $this->successUrl,
+    'failure_url' => $this->failureUrl,
+]);
 		/* Get authenticated customer */
 		$customer = auth()->user();
 
