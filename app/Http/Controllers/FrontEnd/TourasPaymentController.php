@@ -100,6 +100,7 @@ class TourasPaymentController extends Controller
 			// Prepare payment request
 			$paymentData = $this->preparePaymentRequest($orderData);
 
+			Log::channel('testLog')->info('check');
 			return response()->json([
 				'success' => true,
 				'message' => 'Payment initiated successfully',
