@@ -27,8 +27,8 @@ class TourasPaymentController extends Controller
 		// $this->successUrl = env('TOURAS_SUCCESS_URL');
 		// $this->failureUrl = env('TOURAS_FAILURE_URL');
 		// $this->successUrl = url("/touras");
-		$this->successUrl = "http://localhost:3000/touras-success";
-		$this->failureUrl = "http://localhost:3000/touras-fail";
+		$this->successUrl = config('app.backend_url').'/callback/success';
+		$this->failureUrl = config('app.backend_url').'/callback/failure';
 		// $this->frontendUrl = env('FRONTEND_URL');
 		$this->frontendUrl = '';
 	}
@@ -297,7 +297,7 @@ class TourasPaymentController extends Controller
 	public function handleSuccessCallback(Request $request)
 	{
 		try {
-			Log::info('Touras Success Callback Received', $request->all());
+			Log::channel('testLog')->info('Touras Success Callback Received', $request->all());
 
 			$encryptedResponse = [
 				'txn_response' => $request->input('txn_response'),
@@ -391,37 +391,9 @@ class TourasPaymentController extends Controller
 	public function handleFailureCallback(Request $request)
 	{
 		try {
-			Log::info('Touras Failure Callback Received', $request->all());
+			Log::channel('testLog')->info('Touras Failure Callback Received', $request->all());
 
-			$encryptedResponse = [
-				'txn_response' => $request->input('txn_response'),
-				'me_id' => $request->input('me_id'),
-				'pg_details' => $request->input('pg_details'),
-				'fraud_details' => $request->input('fraud_details'),
-				'other_details' => $request->input('other_details'),
-			];
 
-			// Decrypt and parse response
-			$response = $this->parseResponse($encryptedResponse);
-
-			// Update transaction
-			DB::table('payment_transactions')
-			->where('order_no', $response['order_no'])
-			->update([
-				'payment_status' => 'failed',
-				'transaction_id' => $response['txn_id'] ?? null,
-				'payment_response' => json_encode($response),
-				'updated_at' => now(),
-			]);
-
-			Log::warning('Payment Failed', [
-				'order_no' => $response['order_no'],
-				'status' => $response['status_msg'] ?? 'Unknown',
-			]);
-
-			// Redirect to frontend failure page
-			$redirectUrl = $this->frontendUrl . '/payment/failed?order_no=' . urlencode($response['order_no']) . '&reason=' . urlencode($response['status_msg'] ?? 'Payment declined');
-			return redirect($redirectUrl);
 
 		} catch (\Exception $e) {
 			Log::error('Touras Failure Callback Error', [
