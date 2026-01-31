@@ -877,14 +877,17 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	    Route::post('/initiate', [F_TourasPaymentController::class, 'initiate']);
 
 	    // Callback URLs (These will receive POST from Touras)
-	    Route::post('/callback/success', [F_TourasPaymentController::class, 'handleSuccessCallback']);
-	    Route::post('/callback/failure', [F_TourasPaymentController::class, 'handleFailureCallback']);
+	    // Route::post('/callback/success', [F_TourasPaymentController::class, 'handleSuccessCallback']);
+	    // Route::post('/callback/failure', [F_TourasPaymentController::class, 'handleFailureCallback']);
 
 	    // Get payment status
 	    Route::get('/status/{order_no}', [F_TourasPaymentController::class, 'getPaymentStatus']);
 	});
 
 });
+
+Route::post('/frontend/touras/callback/success', [F_TourasPaymentController::class, 'handleSuccessCallback']);
+Route::post('/frontend/touras/callback/failure', [F_TourasPaymentController::class, 'handleFailureCallback']);
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
 Route::get('/frontend/guest/products/{id}/fbt', [F_FbtProductController::class, 'getFbtGuestProducts']);
