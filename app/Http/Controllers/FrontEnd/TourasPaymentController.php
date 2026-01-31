@@ -26,7 +26,8 @@ class TourasPaymentController extends Controller
 		$this->postUrl = env('TOURAS_POST_URL');
 		// $this->successUrl = env('TOURAS_SUCCESS_URL');
 		// $this->failureUrl = env('TOURAS_FAILURE_URL');
-		$this->successUrl = url("/touras");
+		// $this->successUrl = url("/touras");
+		$this->successUrl = 'localhost:3000/touras';
 		$this->failureUrl = 'https://development.d28qosi1cuigvb.amplifyapp.com/';
 		// $this->frontendUrl = env('FRONTEND_URL');
 		$this->frontendUrl = '';
