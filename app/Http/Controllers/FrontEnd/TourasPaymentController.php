@@ -300,160 +300,160 @@ Log::channel('testLog')->info('check123', [
 	 * )
 	 */
 	public function handleSuccessCallback(Request $request)
-{
-    try {
-        // Log raw encrypted data first (for debugging)
-        Log::channel('testLog')->info('=== TOURAS SUCCESS CALLBACK RECEIVED ===');
-        Log::channel('testLog')->info('Raw Encrypted Data', [
-            'me_id' => $request->input('me_id'),
-            'has_txn_response' => !empty($request->input('txn_response')),
-            'has_pg_details' => !empty($request->input('pg_details')),
-            'has_fraud_details' => !empty($request->input('fraud_details')),
-            'has_other_details' => !empty($request->input('other_details')),
-            'txn_count' => $request->input('txnCount'),
-        ]);
+	{
+	    try {
+	        // Log raw encrypted data first (for debugging)
+	        Log::channel('testLog')->info('=== TOURAS SUCCESS CALLBACK RECEIVED ===');
+	        Log::channel('testLog')->info('Raw Encrypted Data', [
+	            'me_id' => $request->input('me_id'),
+	            'has_txn_response' => !empty($request->input('txn_response')),
+	            'has_pg_details' => !empty($request->input('pg_details')),
+	            'has_fraud_details' => !empty($request->input('fraud_details')),
+	            'has_other_details' => !empty($request->input('other_details')),
+	            'txn_count' => $request->input('txnCount'),
+	        ]);
 
-        // Validate incoming request
-        if (!$request->has('txn_response') || !$request->has('me_id')) {
-            Log::channel('testLog')->error('❌ Invalid callback - Missing required fields');
+	        // Validate incoming request
+	        if (!$request->has('txn_response') || !$request->has('me_id')) {
+	            Log::channel('testLog')->error('❌ Invalid callback - Missing required fields');
 
-            return redirect($this->frontendUrl . '/touras-fail?' . http_build_query([
-                'status' => 'error',
-                'message' => 'Invalid payment response',
-            ]));
-        }
+	            return redirect($this->frontendUrl . '/touras-fail?' . http_build_query([
+	                'status' => 'error',
+	                'message' => 'Invalid payment response',
+	            ]));
+	        }
 
-        $encryptedResponse = [
-            'txn_response' => $request->input('txn_response'),
-            'me_id' => $request->input('me_id'),
-            'pg_details' => $request->input('pg_details'),
-            'fraud_details' => $request->input('fraud_details'),
-            'other_details' => $request->input('other_details'),
-        ];
+	        $encryptedResponse = [
+	            'txn_response' => $request->input('txn_response'),
+	            'me_id' => $request->input('me_id'),
+	            'pg_details' => $request->input('pg_details'),
+	            'fraud_details' => $request->input('fraud_details'),
+	            'other_details' => $request->input('other_details'),
+	        ];
 
-        // Decrypt and parse response
-        $response = $this->parseResponse($encryptedResponse);
+	        // Decrypt and parse response
+	        $response = $this->parseResponse($encryptedResponse);
 
-        // ✅ LOG MEANINGFUL DECRYPTED DATA
-        Log::channel('testLog')->info('✅ DECRYPTED PAYMENT RESPONSE', [
-            '🏪 Merchant Info' => [
-                'Aggregator ID' => $response['ag_id'],
-                'Merchant ID' => $response['me_id'],
-            ],
-            '📦 Order Details' => [
-                'Order Number' => $response['order_no'],
-                'Amount' => $response['amount'] . ' ' . ($response['currency'] ?? 'AED'),
-                'Country' => $response['country'],
-            ],
-            '💳 Transaction Info' => [
-                'Transaction ID' => $response['txn_id'],
-                'Bank Reference' => $response['bank_ref_no'],
-                'Transaction Date' => $response['txn_date'],
-                'Transaction Time' => $response['txn_time'],
-            ],
-            '✅ Payment Status' => [
-                'Status Code' => $response['status_code'],
-                'Status Message' => $response['status_msg'],
-                'Status Description' => $response['status_desc'],
-            ],
-            '🏦 Payment Gateway Details' => $response['pg_details'] ?? null,
-            '🔒 Fraud Check' => $response['fraud_details'] ?? null,
-        ]);
+	        // ✅ LOG MEANINGFUL DECRYPTED DATA
+	        Log::channel('testLog')->info('✅ DECRYPTED PAYMENT RESPONSE', [
+	            '🏪 Merchant Info' => [
+	                'Aggregator ID' => $response['ag_id'],
+	                'Merchant ID' => $response['me_id'],
+	            ],
+	            '📦 Order Details' => [
+	                'Order Number' => $response['order_no'],
+	                'Amount' => $response['amount'] . ' ' . ($response['currency'] ?? 'AED'),
+	                'Country' => $response['country'],
+	            ],
+	            '💳 Transaction Info' => [
+	                'Transaction ID' => $response['txn_id'],
+	                'Bank Reference' => $response['bank_ref_no'],
+	                'Transaction Date' => $response['txn_date'],
+	                'Transaction Time' => $response['txn_time'],
+	            ],
+	            '✅ Payment Status' => [
+	                'Status Code' => $response['status_code'],
+	                'Status Message' => $response['status_msg'],
+	                'Status Description' => $response['status_desc'],
+	            ],
+	            '🏦 Payment Gateway Details' => $response['pg_details'] ?? null,
+	            '🔒 Fraud Check' => $response['fraud_details'] ?? null,
+	        ]);
 
-        // Validate merchant ID
-        if ($response['me_id'] !== $this->merchantId) {
-            Log::channel('testLog')->error('❌ MERCHANT ID MISMATCH', [
-                'Expected' => $this->merchantId,
-                'Received' => $response['me_id'],
-            ]);
+	        // Validate merchant ID
+	        if ($response['me_id'] !== $this->merchantId) {
+	            Log::channel('testLog')->error('❌ MERCHANT ID MISMATCH', [
+	                'Expected' => $this->merchantId,
+	                'Received' => $response['me_id'],
+	            ]);
 
-            return redirect($this->frontendUrl . '/touras-fail?' . http_build_query([
-                'status' => 'error',
-                'message' => 'Invalid merchant ID',
-            ]));
-        }
+	            return redirect($this->frontendUrl . '/touras-fail?' . http_build_query([
+	                'status' => 'error',
+	                'message' => 'Invalid merchant ID',
+	            ]));
+	        }
 
-        // Check if payment is successful
-        $isSuccessful = $this->isPaymentSuccessful($response);
+	        // Check if payment is successful
+	        $isSuccessful = $this->isPaymentSuccessful($response);
 
-        if ($isSuccessful) {
-            // Update order status
-            $orderUpdated = $this->updateOrderStatus(
-                $response['order_no'],
-                'completed',
-                $response
-            );
+	        if ($isSuccessful) {
+	            // Update order status
+	            $orderUpdated = $this->updateOrderStatus(
+	                $response['order_no'],
+	                'completed',
+	                $response
+	            );
 
-            Log::channel('testLog')->info('✅ ✅ ✅ PAYMENT SUCCESSFUL ✅ ✅ ✅', [
-                'Order Number' => $response['order_no'],
-                'Transaction ID' => $response['txn_id'],
-                'Amount Paid' => $response['amount'] . ' ' . $response['currency'],
-                'Customer Email' => $response['customer_email'] ?? 'N/A',
-                'Payment Date' => $response['txn_date'] . ' ' . $response['txn_time'],
-                'Bank Reference' => $response['bank_ref_no'],
-                'Order Updated in DB' => $orderUpdated ? 'Yes' : 'No',
-            ]);
+	            Log::channel('testLog')->info('✅ ✅ ✅ PAYMENT SUCCESSFUL ✅ ✅ ✅', [
+	                'Order Number' => $response['order_no'],
+	                'Transaction ID' => $response['txn_id'],
+	                'Amount Paid' => $response['amount'] . ' ' . $response['currency'],
+	                'Customer Email' => $response['customer_email'] ?? 'N/A',
+	                'Payment Date' => $response['txn_date'] . ' ' . $response['txn_time'],
+	                'Bank Reference' => $response['bank_ref_no'],
+	                'Order Updated in DB' => $orderUpdated ? 'Yes' : 'No',
+	            ]);
 
-            // Redirect to React success page
-            $redirectUrl = $this->frontendUrl . '/touras-success?' . http_build_query([
-                'status' => 'success',
-                'order_no' => $response['order_no'],
-                'txn_id' => $response['txn_id'],
-                'amount' => $response['amount'],
-                'currency' => $response['currency'],
-                'date' => $response['txn_date'] ?? date('Y-m-d'),
-                'time' => $response['txn_time'] ?? date('H:i:s'),
-                'bank_ref' => $response['bank_ref_no'] ?? '',
-            ]);
+	            // Redirect to React success page
+	            $redirectUrl = $this->frontendUrl . '/touras-success?' . http_build_query([
+	                'status' => 'success',
+	                'order_no' => $response['order_no'],
+	                'txn_id' => $response['txn_id'],
+	                'amount' => $response['amount'],
+	                'currency' => $response['currency'],
+	                'date' => $response['txn_date'] ?? date('Y-m-d'),
+	                'time' => $response['txn_time'] ?? date('H:i:s'),
+	                'bank_ref' => $response['bank_ref_no'] ?? '',
+	            ]);
 
-            Log::channel('testLog')->info('🔄 Redirecting to Success Page', [
-                'URL' => $redirectUrl,
-            ]);
+	            Log::channel('testLog')->info('🔄 Redirecting to Success Page', [
+	                'URL' => $redirectUrl,
+	            ]);
 
-            return redirect($redirectUrl);
+	            return redirect($redirectUrl);
 
-        } else {
-            // Payment verification failed
-            $this->updateOrderStatus($response['order_no'], 'failed', $response);
+	        } else {
+	            // Payment verification failed
+	            $this->updateOrderStatus($response['order_no'], 'failed', $response);
 
-            Log::channel('testLog')->warning('❌ ❌ ❌ PAYMENT FAILED ❌ ❌ ❌', [
-                'Order Number' => $response['order_no'],
-                'Status Code' => $response['status_code'],
-                'Status Message' => $response['status_msg'],
-                'Status Description' => $response['status_desc'],
-                'Amount' => $response['amount'] . ' ' . $response['currency'],
-            ]);
+	            Log::channel('testLog')->warning('❌ ❌ ❌ PAYMENT FAILED ❌ ❌ ❌', [
+	                'Order Number' => $response['order_no'],
+	                'Status Code' => $response['status_code'],
+	                'Status Message' => $response['status_msg'],
+	                'Status Description' => $response['status_desc'],
+	                'Amount' => $response['amount'] . ' ' . $response['currency'],
+	            ]);
 
-            $redirectUrl = $this->frontendUrl . '/touras-fail?' . http_build_query([
-                'status' => 'failed',
-                'order_no' => $response['order_no'],
-                'message' => $response['status_desc'] ?? 'Payment declined',
-                'status_code' => $response['status_code'] ?? '',
-            ]);
+	            $redirectUrl = $this->frontendUrl . '/touras-fail?' . http_build_query([
+	                'status' => 'failed',
+	                'order_no' => $response['order_no'],
+	                'message' => $response['status_desc'] ?? 'Payment declined',
+	                'status_code' => $response['status_code'] ?? '',
+	            ]);
 
-            Log::channel('testLog')->info('🔄 Redirecting to Failure Page', [
-                'URL' => $redirectUrl,
-            ]);
+	            Log::channel('testLog')->info('🔄 Redirecting to Failure Page', [
+	                'URL' => $redirectUrl,
+	            ]);
 
-            return redirect($redirectUrl);
-        }
+	            return redirect($redirectUrl);
+	        }
 
-    } catch (\Exception $e) {
-        Log::channel('testLog')->error('💥 EXCEPTION IN SUCCESS CALLBACK 💥', [
-            'Error Message' => $e->getMessage(),
-            'File' => $e->getFile(),
-            'Line' => $e->getLine(),
-            'Stack Trace' => $e->getTraceAsString(),
-        ]);
+	    } catch (\Exception $e) {
+	        Log::channel('testLog')->error('💥 EXCEPTION IN SUCCESS CALLBACK 💥', [
+	            'Error Message' => $e->getMessage(),
+	            'File' => $e->getFile(),
+	            'Line' => $e->getLine(),
+	            'Stack Trace' => $e->getTraceAsString(),
+	        ]);
 
-        $redirectUrl = $this->frontendUrl . '/touras-fail?' . http_build_query([
-            'status' => 'error',
-            'message' => 'Payment processing error. Please contact support.',
-        ]);
+	        $redirectUrl = $this->frontendUrl . '/touras-fail?' . http_build_query([
+	            'status' => 'error',
+	            'message' => 'Payment processing error. Please contact support.',
+	        ]);
 
-        return redirect($redirectUrl);
-    }
-}
+	        return redirect($redirectUrl);
+	    }
+	}
 
 	/**
 	 * @OA\Post(
