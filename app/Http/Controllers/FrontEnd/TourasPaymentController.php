@@ -27,8 +27,8 @@ class TourasPaymentController extends Controller
 		// $this->successUrl = env('TOURAS_SUCCESS_URL');
 		// $this->failureUrl = env('TOURAS_FAILURE_URL');
 		// $this->successUrl = url("/touras");
-		$this->successUrl = config('app.backend_url').'/callback/success';
-		$this->failureUrl = config('app.backend_url').'/callback/failure';
+		$this->successUrl = config('app.backend_url').'/api/frontend/touras/callback/success';
+		$this->failureUrl = config('app.backend_url').'/api/frontend/touras/callback/failure';
 		// $this->frontendUrl = env('FRONTEND_URL');
 		$this->frontendUrl = '';
 	}
@@ -58,6 +58,7 @@ class TourasPaymentController extends Controller
 			'channel' => 'required|string|in:WEB,MOBILE',
 		]);
 
+			Log::channel('testLog')->info('check', $request->all(),$this->successUrl);
 		/* Get authenticated customer */
 		$customer = auth()->user();
 
