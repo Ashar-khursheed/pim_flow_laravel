@@ -28,7 +28,7 @@ class TourasPaymentController extends Controller
 		// $this->failureUrl = env('TOURAS_FAILURE_URL');
 		// $this->successUrl = url("/touras");
 		$this->successUrl = "http://localhost:3000/touras-success";
-		$this->successUrl = "http://localhost:3000/touras-fail";
+		$this->failureUrl = "http://localhost:3000/touras-fail";
 		// $this->frontendUrl = env('FRONTEND_URL');
 		$this->frontendUrl = '';
 	}
