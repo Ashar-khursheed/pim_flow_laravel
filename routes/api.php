@@ -886,6 +886,7 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 
 });
 
+Route::post('/frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback']);
 Route::post('/frontend/touras/callback/success', [F_TourasPaymentController::class, 'handleSuccessCallback']);
 Route::post('/frontend/touras/callback/failure', [F_TourasPaymentController::class, 'handleFailureCallback']);
 

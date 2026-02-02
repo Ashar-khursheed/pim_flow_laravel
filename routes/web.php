@@ -113,19 +113,8 @@ Route::get('/payment/touras/redirect/{order_no}', function($orderNo) {
     return view('touras-payment-form', [
         'postUrl' => 'https://uatcheckout.tourasuae.com/ms-transaction-core-1-0/paymentRedirection/checksumGatewayPage',
         'meId' => '202406130002',
-        'merchantRequest' => 'bpr4vcIWm8pNDVfcI7LIeJ84BX6LITmyWjrC3p6gA2spAOuswBl/MWGIkz40mdyUbp9K3HlqCDxlTsfxR962vV/mPYUjgGotDjIJpo06Ayt88Q04MdscAbxSL4yza/ZA6bvv0yChhMhlv5dMqhrqVbqp120BvJ7cIMZdtZTwq7n2x+H6mzXzm6u8vwe7/Ia1kgkj/rmvwL4dCwS0cmrJmegC2mea2jBj5BWOUyOArLpHq8KndsgouI89FL5kru7rB3WbzrOiBu05JTPsX10hSnSKZ3wlrrySjWnx+vJIMOb5LLZLhdlFVfKXMQ7p65Dr1DuzJoJNXkDBS74paJc1Mw==',
-        'hash' => 'bFN5FjHZuI2VwFEkMzZnL8/lfNrv8ixUwlRjHAXcP2XaOxF2nJ9sIilDB/5e7SMG4pWAnKiW1bY9ldiglRyUo2tSbCba5P1BPHzaLpkT8wY=',
-    ]);
-});
-
-
-Route::get('/payment/touras/redirect/{order_no}', function($orderNo) {
-//copy from api response
-    return view('touras-payment-form', [
-        'postUrl' => 'https://uatcheckout.tourasuae.com/ms-transaction-core-1-0/paymentRedirection/checksumGatewayPage',
-        'meId' => '202406130002',
-        'merchantRequest' => 'bpr4vcIWm8pNDVfcI7LIeJ84BX6LITmyWjrC3p6gA2spAOuswBl/MWGIkz40mdyUbp9K3HlqCDxlTsfxR962vV/mPYUjgGotDjIJpo06Ayt88Q04MdscAbxSL4yza/ZA6bvv0yChhMhlv5dMqhrqVbqp120BvJ7cIMZdtZTwq7n2x+H6mzXzm6u8vwe7/Ia1kgkj/rmvwL4dCwS0cmrJmegC2mea2jBj5BWOUyOArLpHq8KndsgouI89FL5kru7rB3WbzrOiBu05JTPsX10hSnSKZ3wlrrySjWnx+vJIMOb5LLZLhdlFVfKXMQ7p65Dr1DuzJoJNXkDBS74paJc1Mw==',
-        'hash' => 'bFN5FjHZuI2VwFEkMzZnL8/lfNrv8ixUwlRjHAXcP2XaOxF2nJ9sIilDB/5e7SMG4pWAnKiW1bY9ldiglRyUo2tSbCba5P1BPHzaLpkT8wY=',
+        'merchantRequest' => 'bpr4vcIWm8pNDVfcI7LIeJzXquixcT16uKZGGmmdRBBcOLdDzv9NCV5bw+oy+/yuniSNByXKfly0t0vnClLmWmM6Cj8yQwmkIezDA96vTZgd3JGKfvygUaGsCCoJwS6yfhSYsfPBD4wQlatEHZfMkSdXYF1mqx17m5bUM3mlgQT7BeEozPydIT9PIpokJNcCL5bhV6To9/9MS0sxFxYFijp9yfjwo9yNc5c5uP7igUvyvt8olj2rk2pUUI00o5fd',
+        'hash' => 'EK/i2d3ehIMwXJFsI2Nbt8b2skYdnPFDJqdZz+UHNoj2uIywi5grNeRgtJuLD75vVyF/LCrgoMjbGIFukvG/7Ia/BOgZZmOawg38Jj/gy0U=',
     ]);
 });
 
