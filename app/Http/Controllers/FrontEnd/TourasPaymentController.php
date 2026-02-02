@@ -24,14 +24,12 @@ class TourasPaymentController extends Controller
 		$this->aggregatorId = env('TOURAS_AGGREGATOR_ID');
 		$this->encryptionKey = env('TOURAS_ENCRYPTION_KEY');
 		$this->postUrl = env('TOURAS_POST_URL');
-		// $this->successUrl = config('app.backend_url').'/api/frontend/touras/callback/success';
-		// $this->failureUrl = config('app.backend_url').'/api/frontend/touras/callback/failure';
-		// $this->successUrl = 'http://pim.devs/api/frontend/touras/callback/success';
-		// $this->failureUrl = 'http://pim.devs/api/frontend/touras/callback/failure';
-		$this->successUrl = 'http://pim.devs/api/frontend/touras/callback';
-		$this->failureUrl = 'http://pim.devs/api/frontend/touras/callback';
-		$this->frontendSuccessUrl = '';
-		$this->frontendFailureURL = '';
+		$this->successUrl = config('app.backend_url').'/api/frontend/touras/callback';
+		$this->failureUrl = config('app.backend_url').'/api/frontend/touras/callback';
+
+		// $this->successUrl = 'http://pim.devs/api/frontend/touras/callback';
+		// $this->failureUrl = 'http://pim.devs/api/frontend/touras/callback';
+		$this->frontendUrl = config('app.url');
 	}
 
 	/**
