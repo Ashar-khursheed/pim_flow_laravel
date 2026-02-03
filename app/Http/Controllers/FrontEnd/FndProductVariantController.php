@@ -403,66 +403,73 @@ class FndProductVariantController extends Controller
             $attributes = $request->input('attribute', []);
             $requestedParentId = $request->parent_id; // 🔥 Changed variable name
 
-            $productIds = null;
+            // 🔥 NEW LOGIC: Best Match Strategy (Partial Matching allowed)
+            // Instead of intersection, find products matching ANY attribute and count matches.
+            $query = ProductAttribute::select('product_id', \DB::raw('count(*) as matches'))
+                ->where(function ($q) use ($attributes) {
+                    foreach ($attributes as $attr) {
+                        $q->orWhere(function ($sub) use ($attr) {
+                            $sub->where('attribute_id', $attr['attribute_id'])
+                                ->where('attribute_value', $attr['attribute_value']);
+                        });
+                    }
+                })
+                ->groupBy('product_id')
+                ->orderBy('matches', 'desc');
 
-            // For each attribute, intersect with products that have it
-            foreach ($attributes as $index => $attr) {
-                $matchingIds = ProductAttribute::where('attribute_id', $attr['attribute_id'])
-                    ->where('attribute_value', $attr['attribute_value'])
-                    ->pluck('product_id');
+            $candidates = $query->get();
 
-                if ($index === 0) {
-                    $productIds = $matchingIds;
-                } else {
-                    $productIds = $productIds->intersect($matchingIds);
-                }
-
-                if ($productIds->isEmpty()) {
-                    break;
-                }
+            if ($candidates->isEmpty()) {
+                 return response()->json([
+                    'success' => false,
+                    'message' => 'No products found matching any attributes',
+                ], 404);
             }
 
-            $productIds = $productIds ? $productIds->values()->toArray() : [];
+            // Get valid parent IDs from variants table
+            $candidateIds = $candidates->pluck('product_id')->toArray();
 
-            // Filter ONLY products that appear in product_variant table as parent_id
-            $validProductIds = \DB::table('product_variants')
-                ->whereIn('parent_id', $productIds)
-                ->pluck('parent_id')
-                ->unique()
-                ->toArray();
+            // Fetch variants info for candidates
+            $validParents = \DB::table('product_variants')
+                ->whereIn('parent_id', $candidateIds)
+                ->select('parent_id', 'child_ids')
+                ->get();
+            
+            $validParentIds = $validParents->pluck('parent_id')->unique()->toArray();
+            
+            // Filter candidates to only include valid parents
+            $sortedCandidates = $candidates->whereIn('product_id', $validParentIds)->values();
 
-            // Keep only valid products
-            $productIds = $validProductIds;
-
-            if (empty($productIds)) {
-                return response()->json([
+             if ($sortedCandidates->isEmpty()) {
+                 return response()->json([
                     'success' => false,
                     'message' => 'No products found with variants',
                 ], 404);
             }
 
-            // 🔥 NEW LOGIC: If parent_id is sent, find which product is parent of this child
+            // Find the best match score (matches count)
+            $maxScore = $sortedCandidates->first()->matches;
+            
+            // Get all parents with this max score
+            $bestMatches = $sortedCandidates->where('matches', $maxScore); 
+            $productIds = $bestMatches->pluck('product_id')->toArray();
+
+            // 🔥 Apply requestedParentId Logic as a Tie-Breaker / Content-Aware Filter
             if ($requestedParentId) {
-                // Find which parent has this child in child_ids
-                $actualParentId = \DB::table('product_variants')
-                    ->whereIn('parent_id', $productIds)
-                    ->get()
-                    ->filter(function($item) use ($requestedParentId) {
-                        $childIds = is_array($item->child_ids) ? $item->child_ids : json_decode($item->child_ids, true);
-                        return in_array($requestedParentId, $childIds ?? []);
-                    })
-                    ->pluck('parent_id')
-                    ->first();
-
-                if (!$actualParentId) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Requested parent_id is not a child of any matched product',
-                    ], 404);
+                // If one of the best matches owns the requested child, pick it.
+                $contextParent = $validParents->filter(function($row) use ($productIds, $requestedParentId) {
+                     // Check if this row is in our best matches list
+                     if (!in_array($row->parent_id, $productIds)) return false;
+                     
+                     $childIds = is_array($row->child_ids) ? $row->child_ids : json_decode($row->child_ids, true);
+                     return in_array($requestedParentId, $childIds ?? []);
+                })->first();
+                
+                if ($contextParent) {
+                     // If we found the specific parent context in the best matches, restrict to it.
+                     $productIds = [$contextParent->parent_id];
                 }
-
-                // Only show the actual parent product
-                $productIds = [$actualParentId];
+                // If not found in best matches, we simply stick to the best matches (ignoring requestedParentId context as it doesn't match attributes well enough)
             }
 
             // Fetch products
