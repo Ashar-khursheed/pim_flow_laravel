@@ -432,60 +432,6 @@ class CustomerCartController extends Controller
 				'isNewCustomer' => $isNewCustomer,
 			]));
 
-			$cartProducts = [];
-			foreach ($customerCart->customerCartProducts as $customerCartProduct) {
-				$product = $customerCartProduct->product;
-				if (!$product) continue;
-
-				/* Decode images if stored as JSON string */
-				$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-				$image = $images[0] ?? null;
-
-				$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
-
-				$unitPrice = 0;
-				$shippingCharge = 0;
-				if ($supplier) {
-					$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
-					$shippingCharge = $supplier['shipping_charge'] ?? 0;
-				}
-
-				$quantity = $customerCartProduct->quantity ?? 0;
-				$subTotal = $quantity * $unitPrice;
-
-				/* Push product data */
-				$cartProducts[] = [
-					'product_id'      => $customerCartProduct->product_id,
-					'vendor_id'       => $customerCartProduct->vendor_id,
-					'name'            => $product->name,
-					'image'           => $image,
-					'sku'             => $product->sku,
-					'currency_symbol' => $product->currency->symbol ?? null,
-					'quantity'        => $quantity,
-					'unit_price'      => number_format($unitPrice, 2, '.', ''),
-					'sub_total'       => number_format($subTotal, 2, '.', ''),
-					'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
-				];
-			}
-
-			/* Prepare cart summary */
-			$carts = [
-				'reference_number'       => $customerCart->reference_number,
-				'address'                => $customerCart->customerAddress,
-				'is_lift_gate'           => $customerCart->is_lift_gate,
-				'is_residential_address' => $customerCart->is_residential_address,
-				'additional_amount_name' => $customerCart->additional_amount_name,
-				'additional_amount_price' => $customerCart->additional_amount_price,
-				'is_inside_delivery'     => $customerCart->is_inside_delivery,
-				'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
-				'amount'                 => number_format($cartAmount, 2, '.', ''),
-				'tax_percentage'         => $taxPercentage,
-				'tax_amount'             => number_format($taxAmount, 2, '.', ''),
-				'total_amount'           => number_format($totalAmount, 2, '.', ''),
-				'total_products'         => $totalProducts,
-				'products'               => $cartProducts,
-			];
-
 			return response()->json([
 				'success' => true,
 				'message' => 'Customer cart created successfully',
