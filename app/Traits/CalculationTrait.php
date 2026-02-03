@@ -10,9 +10,10 @@ trait CalculationTrait
 	 * @param object $request Request object with all necessary data
 	 * @param bool $isTaxFree Customer tax free status
 	 * @param object|null $existingOrder For update operations
+	 * @param bool $isFrontend For frontend customer orders
 	 * @return array Calculated amounts and details
 	 */
-	protected function calculateAmount($request, $isTaxFree = false, $existingOrder = null)
+	protected function calculateAmount($request, $isTaxFree = false, $existingOrder = null, $isFrontend = false)
 	{
 		/* Collect all product supplier details in one go */
 		$productDetails = [];
@@ -77,11 +78,11 @@ trait CalculationTrait
 			$additionalDiscountAmount = 0;
 		}
 
-		/* Handle Cheque Payment Discount - Unified logic with ternary */
+		/* Handle Cheque Payment Discount - Different logic for CREATE/UPDATE/FRONTEND */
 		$payWithCheque = $existingOrder ? $existingOrder->pay_with_cheque : $request->boolean('pay_with_cheque', false);
 		$paymentMode = $existingOrder ? $existingOrder->payment_mode : $request->payment_mode;
 
-		if ($payWithCheque && $paymentMode == 'Check Payment') {
+		if ($payWithCheque && ($paymentMode == 'Check Payment' || !$paymentMode)) {
 			/* Handle cheque_img */
 			if ($request->hasFile('cheque_img')) {
 				$chequeImg = uploadImageToWebpS3FromFile($request, 'cheque_img', env('STORAGE_ENV') . '/customer/orders');
@@ -100,9 +101,20 @@ trait CalculationTrait
 				$chequeImgBack = $existingOrder ? $existingOrder->cheque_img_back : null;
 			}
 
-			/* Calculate discount percentage */
-			$createdByStaff = $existingOrder ? ($existingOrder->created_by > 0) : false;
-			$chequeDiscountPercentage = $existingOrder ? ($createdByStaff ? 0 : cheque_discount_percentage()) : 0;
+			/* Calculate discount percentage based on context */
+			if ($isFrontend) {
+				/* Frontend: Check if cart was created by staff */
+				$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
+				$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
+			} elseif ($existingOrder) {
+				/* Backend UPDATE: Check if order was created by staff */
+				$createdByStaff = $existingOrder->created_by > 0;
+				$chequeDiscountPercentage = $createdByStaff ? 0 : cheque_discount_percentage();
+			} else {
+				/* Backend CREATE: Always 0 */
+				$chequeDiscountPercentage = 0;
+			}
+
 			$chequeDiscount = round($amountAfterDiscount * $chequeDiscountPercentage / 100, 2);
 			$amountAfterDiscount -= $chequeDiscount;
 		} else {
