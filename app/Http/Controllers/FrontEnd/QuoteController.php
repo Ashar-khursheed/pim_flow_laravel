@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Traits\GeneratesQuotePdf;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
@@ -19,8 +18,12 @@ use App\Models\ProductSupplier;
 
 use App\Jobs\Quote\QuotePlacedMailJob;
 
+use App\Traits\CalculationTrait;
+use App\Traits\GeneratesQuotePdf;
+
 class QuoteController extends BaseController
 {
+	use CalculationTrait;
 	use GeneratesQuotePdf;
 
 	/**
