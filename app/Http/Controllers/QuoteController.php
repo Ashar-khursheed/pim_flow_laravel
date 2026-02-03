@@ -291,6 +291,7 @@ class QuoteController extends BaseController
 
 			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
 			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
+			'additional_amount_details' => 'nullable|string',  /* ✅ Added */
 
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
@@ -317,7 +318,9 @@ class QuoteController extends BaseController
 
 		$customerId = $request->customer_id;
 
-		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
+		$address = CustomerAddress::where('id', $request->customer_address_id)
+		->where('customer_id', $customerId)
+		->first();
 
 		if (!$address) {
 			return response()->json([
@@ -325,88 +328,10 @@ class QuoteController extends BaseController
 				'message' => 'The selected address does not belong to the customer.'
 			], 422);
 		}
-		// $specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
 
-		$productDetails = [];
-		foreach ($request->products as $product) {
-			$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
-			if (!$fetchedDetail) {
-				throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
-			}
-			$accessoryIds = $product['accessory_item_ids'] ?? [];
-			$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
-			$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
-
-			// $charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
-			// $shipping = $request->boolean('pay_with_cheque', false) ? 0 : ($charge * $product['quantity']);
-
-			$productDetails[] = [
-				'product_id' => $product['product_id'],
-				'vendor_id' => $product['vendor_id'],
-				'quantity' => $product['quantity'],
-				'unit_price' => $fetchedDetail->unit_price,
-				'accessoryItems' => $accessoryItems,
-				'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-				// 'shipping_charge' => $shipping,
-				'shipping_charge' => $product['shipping_charge'],
-			];
-		}
-
-		$discount = $request->discount ?? 0;
-		$totalProducts = 0;
-		$quoteAmount = 0;
-		$quoteShipping = 0;
-
-		foreach ($productDetails as $product) {
-			$totalProducts += $product['quantity'];
-			$quoteAmount += $product['quantity'] * $product['unit_price'];
-			$quoteShipping += $product['shipping_charge'];
-		}
-
-		/* Handle Additional Amount Price */
-		if (!empty($request->additional_amount_price)) {
-			$quoteAmount += (float) $request->additional_amount_price;
-		}
-
-		$discountedAmount = $quoteAmount - $discount;
-
-		/* Handle Additional Discount */
-		if ($request->additional_discount_option) {
-			$additionalDiscountReason = $request->additional_discount_reason;
-			$additionalDiscountType = $request->additional_discount_type;
-			if ($additionalDiscountType == 'fixed') {
-				$additionalDiscountPercentage = null;
-				$additionalDiscountAmount = $request->additional_discount_amount ?? 0;
-			} else if ($additionalDiscountType == 'percentage') {
-				$additionalDiscountPercentage = $request->additional_discount_percentage;
-				$additionalDiscountAmount = round($discountedAmount * $additionalDiscountPercentage / 100, 2);
-			}
-			$discountedAmount -= $additionalDiscountAmount;
-		} else {
-			$additionalDiscountReason = null;
-			$additionalDiscountType = null;
-			$additionalDiscountPercentage = null;
-			$additionalDiscountAmount = 0;
-		}
-
-		/* Add extra charges */
-		$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-		$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
-		$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
-
-		$customer = Customer::find($customerId);
-		$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
-
-		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-			$quoteShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
-		} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
-			$taxableAmount = $discountedAmount + $quoteShipping;
-			$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
-		} else {
-			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-		}
-		$totalAmount = $discountedAmount + $taxAmount + $quoteShipping;
+		$customer = Customer::select('is_tax_free')->find($customerId);
+		/* ✅ Use trait for calculations */
+		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free);
 
 		DB::beginTransaction();
 
@@ -438,28 +363,30 @@ class QuoteController extends BaseController
 				'quote_name' => $request->quote_name,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
-				'is_lift_gate' => $request->is_lift_gate,
-				'is_residential_address' => $request->is_residential_address,
-				'is_inside_delivery' => $request->is_inside_delivery,
-				'amount' => $quoteAmount,
+
+				'is_lift_gate' => $request->boolean('is_lift_gate'),
+				'is_residential_address' => $request->boolean('is_residential_address'),
+				'is_inside_delivery' => $request->boolean('is_inside_delivery'),
+				'amount' => $amountCalculations['subtotal'],
 
 				'additional_amount_name' => $request->additional_amount_name ?? null,
 				'additional_amount_price' => $request->additional_amount_price ?? null,
+				'additional_amount_details' => $request->additional_amount_details ?? null,  /* ✅ Added */
 
 				'coupon_id' => $request->coupon_id ?? null,
-				'discount' => $discount,
+				'discount' => $amountCalculations['discount'],
 
-				'additional_discount_reason' => $additionalDiscountReason,
-				'additional_discount_type' => $additionalDiscountType,
-				'additional_discount_percentage' => $additionalDiscountPercentage,
-				'additional_discount_amount' => $additionalDiscountAmount,
+				'additional_discount_reason' => $amountCalculations['additional_discount_reason'],
+				'additional_discount_type' => $amountCalculations['additional_discount_type'],
+				'additional_discount_percentage' => $amountCalculations['additional_discount_percentage'],
+				'additional_discount_amount' => $amountCalculations['additional_discount_amount'],
 
-				'tax_percentage' => $taxPercentage,
-				'tax_amount' => $taxAmount,
-				'shipping_charge' => $quoteShipping,
+				'tax_percentage' => $amountCalculations['tax_percentage'],
+				'tax_amount' => $amountCalculations['tax_amount'],
+				'shipping_charge' => $amountCalculations['shipping_charge'],
 
-				'total_amount' => $totalAmount,
-				'total_products' => $totalProducts,
+				'total_amount' => $amountCalculations['grand_total'],
+				'total_products' => $amountCalculations['total_products'],
 				'payment_terms' => $request->payment_terms,
 				'customer_notes' => $request->customer_notes,
 				'internal_notes' => $request->internal_notes,
@@ -468,7 +395,7 @@ class QuoteController extends BaseController
 				'created_by' => auth()->id(),
 			]);
 
-			foreach ($productDetails as $product) {
+			foreach ($amountCalculations['product_details'] as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
 				$quoteProduct = QuoteProduct::create([
 					'quote_id' => $quote->id,
@@ -481,6 +408,7 @@ class QuoteController extends BaseController
 					'shipping_charge' => $product['shipping_charge'],
 					'total_amount' => $total + $product['shipping_charge'] + $product['accessory_item_charge'],
 				]);
+
 				foreach ($product['accessoryItems'] as $accessoryItem) {
 					$quoteProduct->accessoryCharges()->create([
 						'accessory_item_id' => $accessoryItem['id'],
@@ -499,55 +427,10 @@ class QuoteController extends BaseController
 			DB::commit();
 
 			$batch = Bus::batch([])->name('Quote Mails')->dispatch();
-
 			$batch->options['queue'] = config('app.website') . '_QOT_PLC';
 			$batch->add(new QuotePlacedMailJob([
 				'recordId' => $quote->id
 			]));
-
-			// $quote->load([
-			// 	'customer:id,name,email,type,country_code,mobile_number',
-			// 	'customerAddress',
-			// 	'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-			// 	'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-			// 	'quoteProducts.product.brand:id,name',
-			// 	'quoteProducts.product.currency:id,symbol',
-			// 	'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
-			// 	'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-			// 	'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
-			// 	'quoteEmails',
-			// ]);
-
-			// foreach ($quote->quoteProducts as $quoteProduct) {
-			// 	$product = $quoteProduct->product;
-			// 	if ($product) {
-			// 		$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-			// 		$product->brand_name = $product->brand->name ?? null;
-			// 		$product->currency_symbol = $product->currency->symbol ?? null;
-			// 		$product->url = $product->seoProductUrl->url ?? null;
-			// 		$product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
-			// 		$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
-			// 		unset($product->brand, $product->currency, $product->seoProductUrl);
-			// 	}
-
-			// 	$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-			// 	$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
-			// 	? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
-			// 	: null;
-
-			// 	/* Format numeric values to 2 decimal places */
-			// 	foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-			// 		if (isset($quoteProduct->$key)) {
-			// 			$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
-			// 		}
-			// 	}
-			// }
-
-			// foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount'] as $key) {
-			// 	if (isset($quote->$key)) {
-			// 		$quote->$key = number_format($quote->$key, 2, '.', '');
-			// 	}
-			// }
 
 			return response()->json([
 				'success' => true,
