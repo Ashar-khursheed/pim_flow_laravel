@@ -538,14 +538,13 @@ class OrderController extends Controller
 				$cart->delete();
 			});
 
-			if ($request->boolean('is_reserved') && !$payWithCheque) {
+			if ($request->boolean('is_reserved') && !$amountCalculations['pay_with_cheque']) {
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					$paymentLink = null;
 					if ($request->boolean('is_payment')) {
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)->generatePaymentLink($order);
 							if ($paymentLink) {
-								$order = Order::find($order->id);
 								$order->payment_link = $paymentLink;
 								$order->save();
 							}
@@ -556,13 +555,10 @@ class OrderController extends Controller
 								'trace' => $e->getTraceAsString()
 							]);
 						}
-
 					} else if ($request->boolean('is_ccavenue')) {
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
-
 							if ($paymentLink) {
-								$order = Order::find($order->id);
 								$order->payment_link = $paymentLink;
 								$order->save();
 							}
@@ -581,7 +577,6 @@ class OrderController extends Controller
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
 							->createPaymentLink($order);
 							if ($paymentLink) {
-								$order = Order::find($order->id);
 								$order->payment_link = $paymentLink;
 								$order->save();
 								\Log::info('Square Payment Link generated successfully', [
@@ -596,12 +591,10 @@ class OrderController extends Controller
 								'trace' => $e->getTraceAsString()
 							]);
 						}
-					}
-					else if ($request->boolean('is_payment') || $request->payment_mode === 'Stripe') {
+					} else if ($request->boolean('is_payment') || $request->payment_mode === 'Stripe') {
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)->generatePaymentLink($order);
 							if ($paymentLink) {
-								$order = Order::find($order->id);
 								$order->payment_link = $paymentLink;
 								$order->save();
 								\Log::info('Stripe Payment Link generated successfully', [
