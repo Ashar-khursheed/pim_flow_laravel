@@ -113,8 +113,8 @@ Route::get('/payment/touras/redirect/{order_no}', function($orderNo) {
     return view('touras-payment-form', [
         'postUrl' => 'https://uatcheckout.tourasuae.com/ms-transaction-core-1-0/paymentRedirection/checksumGatewayPage',
         'meId' => '202406130002',
-        'merchantRequest' => 'bpr4vcIWm8pNDVfcI7LIeJzXquixcT16uKZGGmmdRBBcOLdDzv9NCV5bw+oy+/yuniSNByXKfly0t0vnClLmWmM6Cj8yQwmkIezDA96vTZgd3JGKfvygUaGsCCoJwS6yfhSYsfPBD4wQlatEHZfMkSdXYF1mqx17m5bUM3mlgQT7BeEozPydIT9PIpokJNcCL5bhV6To9/9MS0sxFxYFijp9yfjwo9yNc5c5uP7igUvyvt8olj2rk2pUUI00o5fd',
-        'hash' => 'EK/i2d3ehIMwXJFsI2Nbt8b2skYdnPFDJqdZz+UHNoj2uIywi5grNeRgtJuLD75vVyF/LCrgoMjbGIFukvG/7Ia/BOgZZmOawg38Jj/gy0U=',
+        'merchantRequest' => 'bpr4vcIWm8pNDVfcI7LIeBCpiw41Tx38u/EJc3UVDofAA9pzeM7XK4uoFW7fH9+FhTRfty7Hjo1TIYChxz3/Vtz+CYMm9EmOKmCQ1rv9ATs/yszYwMzgx+5j8nIy2p3Fbcsn6GmIZHT2EivisBr6b67xdJ9sfoAa29D89KLuWs/jYmflv1QIJ6gsfkrfvff8NtGaHG0GaX4wW/BdsXoQW3l9mA1o21mVs5B2h265HlWhck1rQXfsFO+a4Sl2NSZWGCvy4kbOuZqBQQBQdySp76zaL994Zs9eKqphSFDPDUY=',
+        'hash' => 'tnBW8NjOjZvn3JPT1nSjRxVdM+oK602gRjxoCetpGnyXgMDoluuy67JbfmTweBNVruA7H9ge8oiGjrgnm61ZSqosMUZsrIRkfbBYFTtjdL4=',
     ]);
 });
 
