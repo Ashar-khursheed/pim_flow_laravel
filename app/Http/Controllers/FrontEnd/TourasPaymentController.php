@@ -46,6 +46,7 @@ class TourasPaymentController extends Controller
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=201, description="Payment initiated successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function initiate(Request $request)
