@@ -32,8 +32,11 @@ use App\Jobs\Order\OrderCancelledMailJob;
 use App\Jobs\Order\PartialOrderCancelledMailJob;
 use App\Jobs\Order\OrderUpdateMailJob;
 
+use App\Traits\CalculationTrait;
+
 class OrderController extends Controller
 {
+	use CalculationTrait;
 	/**
 	 * @OA\Get(
 	 *     path="/api/orders",
@@ -1418,175 +1421,57 @@ class OrderController extends Controller
 				'message' => 'The selected address does not belong to the customer.'
 			], 422);
 		}
-		// $specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
-
-		/* Collect all product supplier details in one go */
-		$productDetails = [];
-		foreach ($request->products as $product) {
-			$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
-			if (!$fetchedDetail) {
-				throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
-			}
-			$accessoryIds = $product['accessory_item_ids'] ?? [];
-			$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
-			$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
-
-			// $charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
-			// $shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
-
-			$productDetails[] = [
-				'product_id' => $product['product_id'],
-				'vendor_id' => $product['vendor_id'],
-				'quantity' => $product['quantity'],
-				'unit_price' => $fetchedDetail->unit_price,
-				'accessoryItems' => $accessoryItems,
-				'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-				// 'shipping_charge' => $shipping,
-				'shipping_charge' => $product['shipping_charge'],
-			];
-		}
-
-		$discount = $request->discount ?? 0;
-		$totalProducts = 0;
-		$orderAmount = 0;
-		$orderShipping = 0;
-
-		foreach ($productDetails as $product) {
-			$totalProducts += $product['quantity'];
-			$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
-			$orderShipping += $product['shipping_charge'];
-		}
-
-		/* Handle Additional Amount Price */
-		if (!empty($request->additional_amount_price)) {
-			$orderAmount += (float) $request->additional_amount_price;
-		}
-
-		/* Handle Coupon Discount */
-		$discountedAmount = $orderAmount - $discount;
-
-		/* Handle Additional Discount */
-		if ($request->additional_discount_option) {
-			$additionalDiscountReason = $request->additional_discount_reason;
-			$additionalDiscountType = $request->additional_discount_type;
-			if ($additionalDiscountType == 'fixed') {
-				$additionalDiscountPercentage = null;
-				$additionalDiscountAmount = $request->additional_discount_amount ?? 0;
-			} else if ($additionalDiscountType == 'percentage') {
-				$additionalDiscountPercentage = $request->additional_discount_percentage;
-				$additionalDiscountAmount = round($discountedAmount * $additionalDiscountPercentage / 100, 2);
-			}
-			$discountedAmount -= $additionalDiscountAmount;
-		} else {
-			$additionalDiscountReason = null;
-			$additionalDiscountType = null;
-			$additionalDiscountPercentage = null;
-			$additionalDiscountAmount = 0;
-		}
-
-		/* Handle cheque payment discount */
-		$payWithCheque = $order->pay_with_cheque;
-		$paymentMode = $order->payment_mode;
-		if ($payWithCheque && $paymentMode == 'Check Payment') {
-			if ($request->hasFile('cheque_img')) {
-				$chequeImg = uploadImageToWebpS3FromFile(
-					$request,
-					'cheque_img',
-					env('STORAGE_ENV') . '/customer/orders'
-				);
-			} elseif (!empty($request->cheque_img_url)) {
-				$chequeImg = $request->cheque_img_url;
-			}
-			if ($request->hasFile('cheque_img_back')) {
-				$chequeImgBack = uploadImageToWebpS3FromFile(
-					$request,
-					'cheque_img_back',
-					env('STORAGE_ENV') . '/customer/orders'
-				);
-			} elseif (!empty($request->cheque_img_back_url)) {
-				$chequeImgBack = $request->cheque_img_back_url;
-			}
-			$createdByStaff = $order->created_by > 0;
-			$chequeDiscountPercentage = $createdByStaff ? 0 : cheque_discount_percentage();
-			$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
-			$discountedAmount -= $chequeDiscount;
-		} else {
-			$chequeImg = null;
-			$chequeImgBack = null;
-			$chequeDiscountPercentage = 0;
-			$chequeDiscount = 0;
-		}
-
-		/* Add extra charges */
-		$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-		$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
-		$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
-
-		/* Tax rules */
-		$customer = $order->customer;
-		$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
-
-		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-			$orderShipping = ($discountedAmount + $taxAmount) < 500 ? 30 : 0;
-		} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
-			$taxableAmount = $discountedAmount + $orderShipping;
-			$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
-		} else {
-			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-		}
-		$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
-
-		$paidAmount = $order->paid_amount ?? 0;
-		$pendingAmount = $totalAmount - $paidAmount;
 
 		/* Get original total amount before update */
 		$originalTotalAmount = $order->total_amount;
 		$prevPendingAmount = $order->pending_amount;
 
+		/* Calculate with existing order for UPDATE logic */
+		$amountCalculations = $this->calculateAmount($request, $order->customer->is_tax_free, $order);
+
 		DB::beginTransaction();
 		try {
 			$order->update([
 				'customer_address_id' => $request->customer_address_id,
-				'is_lift_gate' => $request->is_lift_gate,
-				'is_residential_address' => $request->is_residential_address,
-				'is_inside_delivery' => $request->is_inside_delivery,
-				'amount' => $orderAmount,
+				'is_lift_gate' => $request->boolean('is_lift_gate'),
+				'is_residential_address' => $request->boolean('is_residential_address'),
+				'is_inside_delivery' => $request->boolean('is_inside_delivery'),
+				'amount' => $amountCalculations['subtotal'],
 
 				'additional_amount_name' => $request->additional_amount_name ?? null,
 				'additional_amount_price' => $request->additional_amount_price ?? null,
 
 				'coupon_id' => $request->coupon_id ?? null,
-				'discount' => $discount,
+				'discount' => $amountCalculations['discount'],
 
-				'additional_discount_reason' => $additionalDiscountReason,
-				'additional_discount_type' => $additionalDiscountType,
-				'additional_discount_percentage' => $additionalDiscountPercentage,
-				'additional_discount_amount' => $additionalDiscountAmount,
+				'additional_discount_reason' => $amountCalculations['additional_discount_reason'],
+				'additional_discount_type' => $amountCalculations['additional_discount_type'],
+				'additional_discount_percentage' => $amountCalculations['additional_discount_percentage'],
+				'additional_discount_amount' => $amountCalculations['additional_discount_amount'],
 
-				'cheque_discount_percentage' => $chequeDiscountPercentage,
-				'cheque_discount' => $chequeDiscount,
-				'cheque_img' => $chequeImg,
-				'cheque_img_back' => $chequeImgBack,
+				'cheque_discount_percentage' => $amountCalculations['cheque_discount_percentage'],
+				'cheque_discount' => $amountCalculations['cheque_discount'],
+				'cheque_img' => $amountCalculations['cheque_img'],
+				'cheque_img_back' => $amountCalculations['cheque_img_back'],
 
-				'tax_percentage' => $taxPercentage,
-				'tax_amount' => $taxAmount,
-				'shipping_charge' => $orderShipping,
+				'tax_percentage' => $amountCalculations['tax_percentage'],
+				'tax_amount' => $amountCalculations['tax_amount'],
+				'shipping_charge' => $amountCalculations['shipping_charge'],
 
-				'total_amount' => $totalAmount,
-				'total_products' => $totalProducts,
+				'total_amount' => $amountCalculations['grand_total'],
+				'total_products' => $amountCalculations['total_products'],
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
 				'separate_deliveries' => $request->get('separate_deliveries', false),
-				'paid_amount' => $paidAmount,
-				'is_paid' => $pendingAmount <= 0,
-				'pending_amount' => $pendingAmount,
+				'paid_amount' => $amountCalculations['paid_amount'],
+				'is_paid' => $amountCalculations['pending_amount'] <= 0,
+				'pending_amount' => $amountCalculations['pending_amount'],
 				'updated_by' => auth()->id()
 			]);
 
 			/* Delete existing products and re-insert */
 			OrderProduct::where('order_id', $order->id)->delete();
 
-			foreach ($productDetails as $product) {
+			foreach ($amountCalculations['product_details'] as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
 				$orderProduct = OrderProduct::create([
 					'order_id' => $order->id,
@@ -1615,7 +1500,7 @@ class OrderController extends Controller
 			OrderTracking::create([
 				'order_id' => $order->id,
 				'status' => 'Order Updated By Backend Panel',
-				'description' => $originalTotalAmount != $totalAmount ? "Amount changed from {$originalTotalAmount} to {$totalAmount}. " . ($request->update_reason ?? '') : ($request->update_reason ?? ''),
+				'description' => $originalTotalAmount != $amountCalculations['grand_total'] ? "Amount changed from {$originalTotalAmount} to {$amountCalculations['grand_total']}. " . ($request->update_reason ?? '') : ($request->update_reason ?? ''),
 				'created_by' => auth()->id()
 			]);
 
@@ -1636,24 +1521,7 @@ class OrderController extends Controller
 							'trace' => $e->getTraceAsString()
 						]);
 					}
-				}
-				//  else if (in_array(config('app.website'), ['US', 'US_T'])) {
-				// 	try {
-				// 		$paymentLink = app(\App\Http\Controllers\FrontEnd\StripeController::class)->generatePaymentLink($order);
-				// 		if ($paymentLink) {
-				// 			$order = Order::find($order->id);
-				// 			$order->payment_link = $paymentLink;
-				// 			$order->save();
-				// 		}
-				// 	} catch (\Exception $e) {
-				// 		\Log::error('Stax Payment Link generation failed', [
-				// 			'order_id' => $order->id,
-				// 			'error' => $e->getMessage(),
-				// 			'trace' => $e->getTraceAsString()
-				// 		]);
-				// 	}
-				// }
-				else if (in_array(config('app.website'), ['US', 'US_T'])) {
+				} else if (in_array(config('app.website'), ['US', 'US_T'])) {
 					try {
 						$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
 						->createPaymentLink($order);
@@ -1690,79 +1558,6 @@ class OrderController extends Controller
 					'updateReason' => $request->update_reason,
 				]));
 			}
-
-			/* Load relationships */
-			// $order->load([
-			// 	'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
-			// 	'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
-			// 	'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
-			// 	'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
-			// 	'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-			// 	'orderProducts.product.brand:id,name',
-			// 	'orderProducts.product.currency:id,symbol',
-			// 	'tracking',
-			// 	'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
-			// ]);
-
-			// /* Mutate the data for each order product */
-			// foreach ($order->orderProducts as $orderProduct) {
-			// 	$product = $orderProduct->product;
-			// 	if ($product) {
-			// 		$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-			// 		$product->brand_name = $product->brand->name ?? null;
-			// 		$product->currency_symbol = $product->currency->symbol ?? null;
-			// 		unset($product->brand, $product->currency);
-			// 	}
-			// 	$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-			// 	$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-			// 	? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-			// 	: null;
-
-			// 	$shipping = $orderProduct->shipping_charge ?? 0;
-			// 	if (in_array(config('app.website'), ['US', 'US_T'])) {
-			// 		$state = $order->customerAddress->state ?? null;
-
-			// 		if (!$order->is_customer_pickup) {
-			// 			if ($state === 'Texas') {
-			// 				$shipping = ($shipping > 0) ? $shipping : 99;
-			// 			} else {
-			// 				$shipping = ($shipping > 0) ? $shipping : 199;
-			// 			}
-			// 		} else {
-			// 			$shipping = 0;
-			// 		}
-			// 	}
-			// 	$orderProduct->shipping_charge = $shipping;
-
-			// 	if ($orderProduct->accessoryCharges) {
-			// 		$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
-			// 			return [
-			// 				'id' => $charge->id,
-			// 				'accessory_item_id' => $charge->accessory_item_id,
-			// 				'accessory_item_name' => $charge->accessoryItem->name ?? null,
-			// 				'accessory_item_price' => $charge->accessoryItem->price ?? null,
-			// 				'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-			// 				'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-			// 				'amount' => $charge->amount,
-			// 			];
-			// 		});
-
-			// 		unset($orderProduct->accessoryCharges);
-			// 	}
-
-			// 	/* Format numeric values to 2 decimal places */
-			// 	foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-			// 		if (isset($quoteProduct->$key)) {
-			// 			$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
-			// 		}
-			// 	}
-			// }
-
-			// foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-			// 	if (isset($order->$key)) {
-			// 		$order->$key = number_format($order->$key, 2, '.', '');
-			// 	}
-			// }
 
 			return response()->json([
 				'success' => true,

@@ -8,10 +8,11 @@ trait CalculationTrait
 	 * Calculate totals with all charges and discounts
 	 *
 	 * @param object $request Request object with all necessary data
-	 * @param object $address Address object (optional)
+	 * @param bool $isTaxFree Customer tax free status
+	 * @param object|null $existingOrder For update operations
 	 * @return array Calculated amounts and details
 	 */
-	protected function calculateAmount($request, $isTaxFree = false)
+	protected function calculateAmount($request, $isTaxFree = false, $existingOrder = null)
 	{
 		/* Collect all product supplier details in one go */
 		$productDetails = [];
@@ -35,7 +36,6 @@ trait CalculationTrait
 			];
 		}
 
-		$payWithCheque = $request->boolean('pay_with_cheque', false);
 		$discount = $request->discount ?? 0;
 		$totalProducts = 0;
 		$subtotal = 0;
@@ -77,19 +77,32 @@ trait CalculationTrait
 			$additionalDiscountAmount = 0;
 		}
 
-		/* Handle Cheque Payment Discount */
-		if ($payWithCheque && $request->payment_mode == 'Check Payment') {
-			$chequeImg = uploadImageToWebpS3FromFile(
-				$request,
-				'cheque_img',
-				env('STORAGE_ENV') . '/customer/orders'
-			);
-			$chequeImgBack = uploadImageToWebpS3FromFile(
-				$request,
-				'cheque_img_back',
-				env('STORAGE_ENV') . '/customer/orders'
-			);
-			$chequeDiscountPercentage = 0;
+		/* Handle Cheque Payment Discount - Unified logic with ternary */
+		$payWithCheque = $existingOrder ? $existingOrder->pay_with_cheque : $request->boolean('pay_with_cheque', false);
+		$paymentMode = $existingOrder ? $existingOrder->payment_mode : $request->payment_mode;
+
+		if ($payWithCheque && $paymentMode == 'Check Payment') {
+			/* Handle cheque_img */
+			if ($request->hasFile('cheque_img')) {
+				$chequeImg = uploadImageToWebpS3FromFile($request, 'cheque_img', env('STORAGE_ENV') . '/customer/orders');
+			} elseif (!empty($request->cheque_img_url)) {
+				$chequeImg = $request->cheque_img_url;
+			} else {
+				$chequeImg = $existingOrder ? $existingOrder->cheque_img : null;
+			}
+
+			/* Handle cheque_img_back */
+			if ($request->hasFile('cheque_img_back')) {
+				$chequeImgBack = uploadImageToWebpS3FromFile($request, 'cheque_img_back', env('STORAGE_ENV') . '/customer/orders');
+			} elseif (!empty($request->cheque_img_back_url)) {
+				$chequeImgBack = $request->cheque_img_back_url;
+			} else {
+				$chequeImgBack = $existingOrder ? $existingOrder->cheque_img_back : null;
+			}
+
+			/* Calculate discount percentage */
+			$createdByStaff = $existingOrder ? ($existingOrder->created_by > 0) : false;
+			$chequeDiscountPercentage = $existingOrder ? ($createdByStaff ? 0 : cheque_discount_percentage()) : 0;
 			$chequeDiscount = round($amountAfterDiscount * $chequeDiscountPercentage / 100, 2);
 			$amountAfterDiscount -= $chequeDiscount;
 		} else {
@@ -119,18 +132,22 @@ trait CalculationTrait
 
 		$grandTotal = $amountAfterDiscount + $taxAmount + $shippingCharge;
 
+		/* Calculate pending amount */
+		$paidAmount = $existingOrder ? ($existingOrder->paid_amount ?? 0) : 0;
+		$pendingAmount = $grandTotal - $paidAmount;
+
 		/* Return all calculated data */
 		return [
 			'product_details' => $productDetails,
 			'total_products' => $totalProducts,
 			'subtotal' => $subtotal,
 			'discount' => $discount,
-			'pay_with_cheque' => $payWithCheque,
 			'amount_after_discount' => $amountAfterDiscount,
 			'additional_discount_reason' => $additionalDiscountReason,
 			'additional_discount_type' => $additionalDiscountType,
 			'additional_discount_percentage' => $additionalDiscountPercentage,
 			'additional_discount_amount' => $additionalDiscountAmount,
+			'pay_with_cheque' => $payWithCheque,
 			'cheque_img' => $chequeImg,
 			'cheque_img_back' => $chequeImgBack,
 			'cheque_discount_percentage' => $chequeDiscountPercentage,
@@ -142,6 +159,8 @@ trait CalculationTrait
 			'tax_amount' => $taxAmount,
 			'shipping_charge' => $shippingCharge,
 			'grand_total' => $grandTotal,
+			'paid_amount' => $paidAmount,
+			'pending_amount' => $pendingAmount,
 		];
 	}
 }
