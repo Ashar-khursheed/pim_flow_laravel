@@ -1383,6 +1383,7 @@ class OrderController extends Controller
 
 			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
 			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
+			'additional_amount_details' => 'nullable|string',
 
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
@@ -1422,7 +1423,7 @@ class OrderController extends Controller
 			], 422);
 		}
 
-		/* Get original total amount before update */
+		/* Get original values before update */
 		$originalTotalAmount = $order->total_amount;
 		$prevPendingAmount = $order->pending_amount;
 
@@ -1504,13 +1505,12 @@ class OrderController extends Controller
 				'created_by' => auth()->id()
 			]);
 
-			if ($pendingAmount > 0) {
+			if ($amountCalculations['pending_amount'] > 0) {
 				$paymentLink = null;
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					try {
 						$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
 						if ($paymentLink) {
-							$order = Order::find($order->id);
 							$order->payment_link = $paymentLink;
 							$order->save();
 						}
@@ -1527,29 +1527,27 @@ class OrderController extends Controller
 						->createPaymentLink($order);
 
 						if ($paymentLink) {
-							$order = Order::find($order->id);
 							$order->payment_link = $paymentLink;
 							$order->save();
 
 							\Log::info('Square Payment Link generated successfully', [
-								'order_id'     => $order->id,
+								'order_id' => $order->id,
 								'payment_link' => $paymentLink,
 							]);
 						}
 					} catch (\Exception $e) {
 						\Log::error('Square Payment Link generation failed', [
 							'order_id' => $order->id,
-							'error'    => $e->getMessage(),
-							'trace'    => $e->getTraceAsString(),
+							'error' => $e->getMessage(),
+							'trace' => $e->getTraceAsString(),
 						]);
 					}
 				}
-
 			}
 
 			DB::commit();
 
-			if ($originalTotalAmount != $totalAmount || $prevPendingAmount != $pendingAmount) {
+			if ($originalTotalAmount != $amountCalculations['grand_total'] || $prevPendingAmount != $amountCalculations['pending_amount']) {
 				$batch = Bus::batch([])->name("Order Update by Backend - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_UPDT';
 				$batch->add(new OrderUpdateMailJob([
