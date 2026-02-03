@@ -136,6 +136,7 @@ class ProductAccessoriesController extends Controller
                     return [
                         'id' => $item->id,
                         'name' => $item->name,
+                        'cost_price' => $item->cost_price,
                         'price' => $item->price,
                     ];
                 });
@@ -198,13 +199,14 @@ class ProductAccessoriesController extends Controller
      *                         type="object",
      *                         required={"name","price"},
      *                         @OA\Property(property="name", type="string", example="left"),
-     *                         @OA\Property(property="price", type="number", format="float", example=44)
+     *                         @OA\Property(property="price", type="number", format="float", example=44),
+     *                         @OA\Property(property="cost_price", type="number", format="float", example=40)
      *                     ),
      *                     example={
-     *                         {"name":"left","price":44},
-     *                         {"name":"right","price":45},
-     *                         {"name":"top","price":50},
-     *                         {"name":"button","price":52}
+     *                         {"name":"left","price":44,"cost_price":40},
+     *                         {"name":"right","price":45,"cost_price":41},
+     *                         {"name":"top","price":50,"cost_price":45},
+     *                         {"name":"button","price":52,"cost_price":48}
      *                     }
      *                 ),
      *                 @OA\Property(property="isapproved", type="boolean", example=0),
@@ -310,6 +312,7 @@ class ProductAccessoriesController extends Controller
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
+                    'cost_price' => $item->cost_price,
                     'price' => $item->price,
                 ];
             });
@@ -368,7 +371,8 @@ class ProductAccessoriesController extends Controller
      *                 @OA\Items(
      *                     type="object",
      *                     @OA\Property(property="name", type="string", example="left"),
-     *                     @OA\Property(property="price", type="integer", example=44)
+     *                     @OA\Property(property="price", type="integer", example=44),
+     *                     @OA\Property(property="cost_price", type="integer", example=40)
      *                 )
      *             ),
      *             @OA\Property(property="isapproved", type="integer", example=1),
@@ -425,13 +429,14 @@ class ProductAccessoriesController extends Controller
      *                 @OA\Items(
      *                     type="object",
      *                     @OA\Property(property="name", type="string", example="left"),
-     *                     @OA\Property(property="price", type="integer", example=44)
+     *                     @OA\Property(property="price", type="integer", example=44),
+     *                     @OA\Property(property="cost_price", type="integer", example=40)
      *                 ),
      *                 example={
-     *                     {"name":"left","price":44},
-     *                     {"name":"right","price":45},
-     *                     {"name":"top","price":50},
-     *                     {"name":"button","price":52}
+     *                     {"name":"left","price":44,"cost_price":40},
+     *                     {"name":"right","price":45,"cost_price":41},
+     *                     {"name":"top","price":50,"cost_price":45},
+     *                     {"name":"button","price":52,"cost_price":48}
      *                 }
      *             ),
      *             @OA\Property(property="isapproved", type="integer", example=1),

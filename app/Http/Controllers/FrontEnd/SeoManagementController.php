@@ -162,7 +162,7 @@ class SeoManagementController extends Controller
 
 public function getByRelationalId($identifier)
 {   
-    $seoQuery = SeoManagement::with('seo_secondary_keywords');
+    $seoQuery = SeoManagement::with('seo_secondary_keywords')->orderBy('id', 'desc');
 
     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
         // Handle full URL

@@ -345,7 +345,7 @@ class TqlRateController extends Controller
             // 'customerEmailAddresses' => 'required|email:strict',
             'pickLocationType' => 'required|string|in:Commercial,Residential',
             'dropLocationType' => 'required|string|in:Commercial,Residential',
-            // 'shipmentDate' => 'required|date_format:Y-m-d\TH:i:s.v\Z',
+            'shipmentDate' => 'required|date', // Uncommented and enforced
 
             'origin.postalCode' => 'required|string',
             'origin.city' => 'required|string',
@@ -356,8 +356,6 @@ class TqlRateController extends Controller
             'destination.city' => 'required|string',
             'destination.state' => 'required|string',
             'destination.country' => 'required|string',
-
-
 
             // 'accessorials' => 'nullable|array',
             // 'accessorials.*' => 'string',
@@ -423,6 +421,12 @@ class TqlRateController extends Controller
 
             $responseData = $rates->json();
 
+            // Check if TQL returned a logical error (even with 200 OK network status from their end, sometimes APIs behave weirdly)
+            // Or if TQL returned 400/500 code in JSON.
+            if (isset($responseData['statusCode']) && $responseData['statusCode'] >= 400) {
+                return $responseData; // Return the error response as is to be handled outside
+            }
+
             if (isset($responseData['content']['carrierPrices']) && is_array($responseData['content']['carrierPrices'])) {
                 $carrierPrices = collect($responseData['content']['carrierPrices']);
                 if ($carrierPrices->isNotEmpty()) {
@@ -442,25 +446,20 @@ class TqlRateController extends Controller
                 ], 404);
         }
 
+        // Check for TQL error in cached response
+        if (isset($cachedResponse['statusCode']) && $cachedResponse['statusCode'] >= 400) {
+            return response()->json([
+                'success' => false,
+                'message' => $cachedResponse['informationalMessage'] ?? 'TQL Error',
+                'data' => $cachedResponse
+            ], 400);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Rates retrieved successfully.',
             'data' => $cachedResponse
         ], 200);
-
-         // Catch block removed as exception handling is now implicit or can be wrapped if preferred, but Cache::remember catches exceptions? No.
-         // Let's wrap the whole thing or just the content inside? 
-         // To match previous structure: wrapping the Cache call in try/cache is safer if we want to return 500 JSON.
-         // But the instruction said replace content. I will rewrite to fit the existing try-catch structure or modify it.
-
-         // Retrying ReplacementContent to match the structure better and keep the Try-Catch if possible, or just replace the inner block.
-         // Actually, let's keep the Try-Catch and put Cache inside.
-    
-    /* 
-       Wait, the tool requires me to replace a block. 
-       The StartLine 377 (Validator fail check) to EndLine 430 (End of method) covers the whole logic.
-       I will rewrite the whole block from "if ($validator->fails())" to the end of the method.
-    */
     }
 
     /**
