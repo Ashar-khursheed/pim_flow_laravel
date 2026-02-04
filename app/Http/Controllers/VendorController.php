@@ -367,13 +367,21 @@ class VendorController extends BaseController
 	{
 		$record = Vendor::with([
 			'country:id,name',
-			'city:id,name'
+			'city:id,name,state_id',
+			'city.state:id,name',
 		])->find($id);
 		if (!$record) {
 			return response()->json([
 				'success' => false,
 				'message' => __("err_exist")
 			]);
+		}
+
+		/* Extract state from city */
+		$record->state = $record->city->state ?? null;
+		if ($record->city) {
+			unset($record->city->state);
+			unset($record->city->state_id);
 		}
 
 		$record->website_ids = $record->website_ids ? explode(',', $record->website_ids) : [];
