@@ -29,7 +29,8 @@ class TourasPaymentController extends Controller
 
 		// $this->successUrl = 'http://pim.devs/api/frontend/touras/callback';
 		// $this->failureUrl = 'http://pim.devs/api/frontend/touras/callback';
-		$this->frontendUrl = config('app.url');
+		// $this->frontendUrl = config('app.url');
+		$this->frontendUrl = 'http://localhost:3000/touras-success';
 	}
 
 	/**
