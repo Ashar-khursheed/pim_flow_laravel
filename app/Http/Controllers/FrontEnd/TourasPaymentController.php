@@ -233,7 +233,7 @@ class TourasPaymentController extends Controller
 	{
 		try {
 			if (!$request->has('txn_response') || !$request->has('me_id')) {
-				return redirect($this->frontendUrl . '/touras-fail?' . http_build_query([
+				return redirect($this->frontendUrl . '/payment/decline?' . http_build_query([
 					'success' => false,
 					'message' => 'Invalid payment response',
 				]));
@@ -255,14 +255,14 @@ class TourasPaymentController extends Controller
 
 			// Validate merchant ID
 			if ($response['me_id'] !== $this->merchantId) {
-				return redirect($this->frontendUrl . '/touras-fail?' . http_build_query([
+				return redirect($this->frontendUrl . '/payment/decline?' . http_build_query([
 					'success' => false,
 					'message' => 'Invalid merchant ID',
 				]));
 			}
 
 			if (isset($response['response_code']) && $response['response_code'] === '0' && isset($response['message']) && strtolower($response['message']) === 'successful') {
-				$redirectUrl = $this->frontendUrl . '/touras-success?' . http_build_query([
+				$redirectUrl = $this->frontendUrl . '/review-checkout?' . http_build_query([
 					'success' => true,
 					'order_no' => $response['order_no'],
 					'transaction_id' => $response['transaction_id'],
@@ -274,7 +274,7 @@ class TourasPaymentController extends Controller
 				]);
 				return redirect($redirectUrl);
 			} else {
-				$redirectUrl = $this->frontendUrl . '/touras-fail?' . http_build_query([
+				$redirectUrl = $this->frontendUrl . '/payment/decline?' . http_build_query([
 					'success' => false,
 					'order_no' => $response['order_no'],
 					'message' => $response['message'] ?? 'Payment declined',
@@ -284,7 +284,7 @@ class TourasPaymentController extends Controller
 			}
 
 		} catch (\Exception $e) {
-			$redirectUrl = $this->frontendUrl . '/touras-fail?' . http_build_query([
+			$redirectUrl = $this->frontendUrl . '/payment/decline?' . http_build_query([
 				'success' => false,
 				'message' => 'Payment processing error',
 			]);
