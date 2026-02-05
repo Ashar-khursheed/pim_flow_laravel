@@ -861,8 +861,8 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	Route::get('/frontend-brands/customer-featured-products', [FBrandController::class, 'getCustomerFeaturedBrandProducts']);
 
     Route::post('/frontend/touras/initiate', [F_TourasPaymentController::class, 'initiate']);
-	Route::post('/frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback']);
 });
+Route::post('/frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback']);
 // Route::match(['GET', 'POST'], '/frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback']);
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
