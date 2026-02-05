@@ -69,10 +69,10 @@
 
 								@foreach($products as $product)
 								<tr>
-									<td style="width: 12%">
+									<td style="width: 12%;">
 										<img src="{{ $product->image }}" alt="Product" width="54" height="54" style="display: block; width: 54px; height: 54px; border: 1px solid #DFDFDF; border-radius: 4px; object-fit: cover;">
 									</td>
-									<td style="width: 60%">
+									<td style="width: 60%;">
 										<strong style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">{{ Str::limit($product->name, 90, '...') }}</strong><br>
 										<span style="color:#26683A; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">Status:</span>
 										<span style="color:#26683A; font-style:italic; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">Delivered</span>

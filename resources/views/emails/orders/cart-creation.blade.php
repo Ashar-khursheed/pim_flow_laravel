@@ -199,11 +199,12 @@ use Illuminate\Support\Str;
 								</tr>
 
 								@foreach($products as $product)
-								<tr>
-									<td style="width: 12%">
+								<!-- Main Product Row -->
+								<tr {!! !empty($product->accessories) ? 'style="border-bottom: ' . (count($product->accessories) > 0 ? 'none' : '1px solid #eaeaea') . ';"' : '' !!}>
+									<td style="width: 12%;">
 										<img src="{{ $product->image }}" alt="Product" width="54" height="54" style="display: block; width: 54px; height: 54px; border: 1px solid #DFDFDF; border-radius: 4px; object-fit: cover;">
 									</td>
-									<td style="width: 60%">
+									<td style="width: 60%;">
 										<strong style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">{{ Str::limit($product->name, 90, '...') }}</strong><br>
 										<span style="color:#26683A; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">Usually delivered within</span>
 										<span style="color:#26683A; font-style:italic; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">{{ str_replace(['Days','Weeks'], ['Business Days','Business Weeks'], $product->delivery_days) }}</span><br>
@@ -212,10 +213,42 @@ use Illuminate\Support\Str;
 									<td align="center" style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px; width:10%;">
 										{{ $product->quantity }}
 									</td>
-									<td align="right" style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px; width:18%; ">
+									<td align="right" style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px; width:18%;">
 										{{ $currency }} {{ number_format($product->total, 2, '.', ',') }}
 									</td>
 								</tr>
+
+								<!-- Accessories Rows -->
+								@if(!empty($product->accessories) && count($product->accessories) > 0)
+									@foreach($product->accessories as $index => $accessory)
+									<tr style="background:#F9FAFB; border-bottom: {{ $loop->last ? '1px solid #eaeaea' : 'none' }};">
+										<td style="width: 12%;">
+											<!-- Empty cell for alignment -->
+										</td>
+										<td style="width: 60%;">
+											<span style="color:#666; font-family: 'Noto Sans', sans-serif; font-size:13px; line-height:18px;">
+												<strong style="color:#26683A;">{{ $accessory['product_accessory_name'] }}:</strong> {{ $accessory['accessory_item_name'] }}
+											</span>
+											@if($accessory['accessory_item_price'] > 0)
+											<br>
+											<span style="color:#BE2535; font-family: 'Noto Sans', sans-serif; font-size:13px; line-height:18px;">
+												{{ $currency }} {{ number_format($accessory['accessory_item_price'], 2, '.', ',') }} each
+											</span>
+											@endif
+										</td>
+										<td align="center" style="font-family: 'Noto Sans', sans-serif; font-size:13px; line-height:18px; width:10%;">
+											{{ $product->quantity }}
+										</td>
+										<td align="right" style="font-family: 'Noto Sans', sans-serif; font-size:13px; line-height:18px; width:18%;">
+											@if($accessory['amount'] > 0)
+											{{ $currency }} {{ number_format($accessory['amount'], 2, '.', ',') }}
+											@else
+											<span style="color:#26683A;">Included</span>
+											@endif
+										</td>
+									</tr>
+									@endforeach
+								@endif
 								@endforeach
 							</table>
 						</td>
