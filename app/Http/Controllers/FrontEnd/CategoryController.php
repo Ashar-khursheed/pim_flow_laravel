@@ -854,7 +854,8 @@ class CategoryController extends Controller
 		->whereHas('products', function ($query) {
 			$query->whereHas('productSuppliers', function ($q) {
 				$q->whereNotNull('sale_price')
-				->where('sale_price', '>', 0);
+				->where('sale_price', '>', 0)
+				->where('updated_at', '>=', '2026-02-05');
 			});
 		})
 
