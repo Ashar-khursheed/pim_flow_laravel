@@ -2545,7 +2545,9 @@ class ProductController extends Controller
 		$query = Product::query()
 		->where('status', 'published')
 		->whereHas('productSuppliers', function ($q) {
-			$q->whereNotNull('sale_price')->where('sale_price', '>', 0);
+			$q->whereNotNull('sale_price')
+			  ->where('sale_price', '>', 0)
+			  ->where('updated_at', '>=', '2026-02-05');
 		})
 		->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl']);
 
