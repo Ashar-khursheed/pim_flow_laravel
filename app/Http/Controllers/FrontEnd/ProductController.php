@@ -2592,13 +2592,13 @@ class ProductController extends Controller
 
 		if ($minPrice) {
 			$query->whereHas('productSuppliers', function ($q) use ($minPrice) {
-				$q->where('sale_price', '>=', $minPrice);
+				$q->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) >= ?', [$minPrice]);
 			});
 		}
 
 		if ($maxPrice) {
 			$query->whereHas('productSuppliers', function ($q) use ($maxPrice) {
-				$q->where('sale_price', '<=', $maxPrice);
+				$q->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) <= ?', [$maxPrice]);
 			});
 		}
 
