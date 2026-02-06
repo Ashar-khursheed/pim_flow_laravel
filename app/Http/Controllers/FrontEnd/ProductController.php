@@ -2634,7 +2634,12 @@ class ProductController extends Controller
 				$query->withAvg('reviews', 'star')->orderBy('reviews_avg_star', 'DESC');
 				break;
 			}
-		}
+		} else {
+             // Default sort: Maximum Discount First
+             // Discount = (price - sale_price) / price
+             // We order by this value DESC
+             $query->orderByRaw("(SELECT ((price - sale_price) / price) FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id AND price > 0 LIMIT 1) DESC");
+        }
 
 		// ---------------- Pagination -----------------
 
