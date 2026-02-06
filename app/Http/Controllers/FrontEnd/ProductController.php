@@ -2760,6 +2760,7 @@ class ProductController extends Controller
 			'message'    => $id
 			? 'Sale products filtered by category'
 			: 'All sale products fetched successfully',
+            'debug_updated' => true,
 
 			// Pagination Meta
 			'pagination' => [
@@ -2775,6 +2776,6 @@ class ProductController extends Controller
 
 			// Actual Product Data
 			'data' => $transformed,
-		]);
+		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
 	}
 }
