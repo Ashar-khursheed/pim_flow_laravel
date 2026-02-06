@@ -2545,9 +2545,23 @@ class ProductController extends Controller
 		$query = Product::query()
 		->where('status', 'published')
 		->whereHas('productSuppliers', function ($q) {
-			$q->whereNotNull('sale_price')->where('sale_price', '>', 0);
+			$q->whereNotNull('sale_price')
+			  ->where('sale_price', '>', 0)
+			  ->where('updated_at', '>=', '2026-02-05');
 		})
-		->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl']);
+		->with([
+			'reviews:id,product_id,star',
+			'currency',
+			'productSuppliers',
+			'seoUrl',
+			'sellingUnitAttribute',
+			'ingredientsAttribute',
+			'productAttributes' => function ($query) {
+				$query->whereHas('attributeDetails', function ($q) {
+					$q->whereIn('name', ['Units per Case', 'Pack Type']);
+				});
+			}
+		]);
 
 		// If Category ID is provided, apply category filter
 		if ($id) {
@@ -2620,7 +2634,12 @@ class ProductController extends Controller
 				$query->withAvg('reviews', 'star')->orderBy('reviews_avg_star', 'DESC');
 				break;
 			}
-		}
+		} else {
+             // Default sort: Maximum Discount First
+             // Discount = (price - sale_price) / price
+             // We order by this value DESC
+             $query->orderByRaw("(SELECT ((price - sale_price) / price) FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id AND price > 0 LIMIT 1) DESC");
+        }
 
 		// ---------------- Pagination -----------------
 
@@ -2647,7 +2666,43 @@ class ProductController extends Controller
 			$unitsSold = $product->units_sold ?? 0;
 			$leftStock = $quantity - $unitsSold;
 
+			// Selling Type Logic
+			$sellingType = null;
+			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+				$fullValue = $product->sellingUnitAttribute->attribute_value;
+				if (strpos($fullValue, '/') !== false) {
+					$parts = explode('/', $fullValue);
+					$product->sellingUnitAttribute->attribute_value_unit = trim($parts[1]);
+				} else {
+					$product->sellingUnitAttribute->attribute_value_unit = $fullValue;
+				}
+				$sellingType = $product->sellingUnitAttribute->attribute_value_unit;
+			}
+
+
+			// Per Unit Price Logic
+			$perUnitPrice = null;
+			$unitsPerCase = null;
+			$packType = null;
+
+			if ($product->productAttributes) {
+				$unitsPerCase = $product->productAttributes
+				->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
+				$packType = $product->productAttributes
+				->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+			}
+
 			$firstSupplier = $product->productSuppliers->first();
+			$currentPrice = $firstSupplier ? ($firstSupplier->sale_price > 0 ? $firstSupplier->sale_price : $firstSupplier->price) : 0;
+
+
+			if ($currentPrice > 0 && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+				$unitValue = (float) $unitsPerCase->attribute_value;
+				if ($unitValue > 0) {
+					$calculated = round($currentPrice / $unitValue, 2);
+					$perUnitPrice = $calculated . '/' . ($packType?->attribute_value ?? '');
+				}
+			}
 
 			return [
 				'id' => $product->id,
@@ -2659,6 +2714,11 @@ class ProductController extends Controller
 				'video_path' => $videoPaths,
 				'sku' => $product->sku,
 				'url' => $product->seoUrl->url ?? null,
+				'selling_type' => $sellingType,
+				'per_unit_price' => $perUnitPrice,
+                'discount_percentage' => ($firstSupplier && $firstSupplier->price > 0) ? round((($firstSupplier->price - $firstSupplier->sale_price) / $firstSupplier->price) * 100, 2) : 0,
+                'debug_attributes' => $product->productAttributes->map(fn($a) => $a->attributeDetails->name . ': ' . $a->attribute_value),
+
 				// Prices
 				'price' => (float)($firstSupplier->price ?? 0),
 				'sale_price' => (float)($firstSupplier->sale_price ?? 0),
@@ -2703,6 +2763,7 @@ class ProductController extends Controller
 			'message'    => $id
 			? 'Sale products filtered by category'
 			: 'All sale products fetched successfully',
+            'debug_updated' => true,
 
 			// Pagination Meta
 			'pagination' => [
@@ -2718,6 +2779,6 @@ class ProductController extends Controller
 
 			// Actual Product Data
 			'data' => $transformed,
-		]);
+		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
 	}
 }
