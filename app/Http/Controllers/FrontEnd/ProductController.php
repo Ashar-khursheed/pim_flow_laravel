@@ -2670,13 +2670,15 @@ class ProductController extends Controller
 			$sellingType = null;
 			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
 				$fullValue = $product->sellingUnitAttribute->attribute_value;
+				$unit = $fullValue;
 				if (strpos($fullValue, '/') !== false) {
 					$parts = explode('/', $fullValue);
-					$product->sellingUnitAttribute->attribute_value_unit = trim($parts[1]);
-				} else {
-					$product->sellingUnitAttribute->attribute_value_unit = $fullValue;
+					$unit = trim($parts[1]);
 				}
-				$sellingType = $product->sellingUnitAttribute->attribute_value_unit;
+				$sellingType = [
+					'attribute_value' => $fullValue,
+					'attribute_value_unit' => $unit
+				];
 			}
 
 
