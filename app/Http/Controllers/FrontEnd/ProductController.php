@@ -2716,6 +2716,9 @@ class ProductController extends Controller
 				'url' => $product->seoUrl->url ?? null,
 				'selling_type' => $sellingType,
 				'per_unit_price' => $perUnitPrice,
+                'discount_percentage' => $currentPrice > 0 ? round((($product->price - $product->sale_price) / $product->price) * 100, 2) : 0,
+                'debug_attributes' => $product->productAttributes->map(fn($a) => $a->attributeDetails->name . ': ' . $a->attribute_value),
+
 				// Prices
 				'price' => (float)($firstSupplier->price ?? 0),
 				'sale_price' => (float)($firstSupplier->sale_price ?? 0),
