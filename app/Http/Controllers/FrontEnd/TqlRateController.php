@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class TqlRateController extends Controller
 {
@@ -127,7 +128,16 @@ class TqlRateController extends Controller
             // 'customerEmailAddresses' => 'required|email:strict',
             'pickLocationType' => 'required|string|in:Commercial,Residential',
             'dropLocationType' => 'required|string|in:Commercial,Residential',
-            // 'shipmentDate' => 'required|date_format:Y-m-d\TH:i:s.v\Z',
+            'shipmentDate' => [
+                'required',
+                'date',
+                function ($attribute, $value, $fail) {
+                    $date = Carbon::parse($value);
+                    if ($date->isWeekend()) {
+                        $fail('The shipment date cannot be a weekend.');
+                    }
+                },
+            ],
 
             'origin.postalCode' => 'required|string',
             'origin.city' => 'required|string',
@@ -169,6 +179,7 @@ class TqlRateController extends Controller
         $cacheData = $request->only([
              'pickLocationType', 
              'dropLocationType', 
+             'shipmentDate',
              'origin', 
              'destination', 
              'quoteCommodities' // Includes quantity, weight, dims
@@ -199,6 +210,9 @@ class TqlRateController extends Controller
 
             // Pass the fully validated data directly to your service
             $shipmentData = $request->all();
+            if (isset($shipmentData['shipmentDate'])) {
+                $shipmentData['shipmentDate'] = Carbon::parse($shipmentData['shipmentDate'])->format('Y-m-d');
+            }
 
             try {
                 $rates = $service->getRates($shipmentData, $token);
@@ -345,7 +359,16 @@ class TqlRateController extends Controller
             // 'customerEmailAddresses' => 'required|email:strict',
             'pickLocationType' => 'required|string|in:Commercial,Residential',
             'dropLocationType' => 'required|string|in:Commercial,Residential',
-            'shipmentDate' => 'required|date', // Uncommented and enforced
+            'shipmentDate' => [
+                'required',
+                'date',
+                function ($attribute, $value, $fail) {
+                    $date = Carbon::parse($value);
+                    if ($date->isWeekend()) {
+                        $fail('The shipment date cannot be a weekend.');
+                    }
+                },
+            ],
 
             'origin.postalCode' => 'required|string',
             'origin.city' => 'required|string',
@@ -385,6 +408,7 @@ class TqlRateController extends Controller
         $cacheData = $request->only([
              'pickLocationType', 
              'dropLocationType', 
+             'shipmentDate',
              'origin', 
              'destination', 
              'quoteCommodities' // Includes quantity, weight, dims
@@ -412,6 +436,9 @@ class TqlRateController extends Controller
 
             // Pass the fully validated data directly to your service
             $shipmentData = $request->all();
+            if (isset($shipmentData['shipmentDate'])) {
+                $shipmentData['shipmentDate'] = Carbon::parse($shipmentData['shipmentDate'])->format('Y-m-d');
+            }
 
             $rates = $service->getRates($shipmentData, $token);
 
