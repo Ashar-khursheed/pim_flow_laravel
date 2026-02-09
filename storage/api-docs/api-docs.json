@@ -8282,6 +8282,291 @@
                 ]
             }
         },
+        "/api/chatbot_contacts": {
+            "get": {
+                "tags": [
+                    "Chatbot - Backend"
+                ],
+                "summary": "Get all contacts with unread count",
+                "operationId": "894af00648c50c9b7c5da9b63c1da9f5",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "control",
+                        "in": "query",
+                        "description": "Filter by control type (0=AI, 1=Human)",
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1
+                            ]
+                        }
+                    },
+                    {
+                        "name": "has_unread",
+                        "in": "query",
+                        "description": "Filter contacts with unread messages",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "email",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contacts retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/chatbot_contacts/{chatbot_contact_id}": {
+            "get": {
+                "tags": [
+                    "Chatbot - Backend"
+                ],
+                "summary": "Get all chats for a contact (admin view)",
+                "operationId": "c7e682cce3eee61b94ee4c4bad27e3ef",
+                "parameters": [
+                    {
+                        "name": "chatbot_contact_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chats retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Chatbot - Backend"
+                ],
+                "summary": "Switch between AI and Human control",
+                "operationId": "63afe6c134102583a5a8c97fd3c7b1e2",
+                "parameters": [
+                    {
+                        "name": "chatbot_contact_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "control"
+                                ],
+                                "properties": {
+                                    "control": {
+                                        "description": "0 for AI, 1 for Human",
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ],
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Control updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/chats": {
+            "post": {
+                "tags": [
+                    "Chatbot - Backend"
+                ],
+                "summary": "Create a chat message from support user",
+                "operationId": "96d5a681a1d91d4a207ea02f9ad7eb2c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "chatbot_contact_id",
+                                    "message"
+                                ],
+                                "properties": {
+                                    "chatbot_contact_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "How can I help you?"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Chat created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/chatbot_stats": {
+            "get": {
+                "tags": [
+                    "Chatbot - Backend"
+                ],
+                "summary": "Get chatbot statistics",
+                "operationId": "e5cf13bc1acccd6bb4f5dd3aa1128eda",
+                "responses": {
+                    "200": {
+                        "description": "Statistics retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_contacts": {
+                                                    "type": "integer",
+                                                    "example": 150
+                                                },
+                                                "ai_controlled": {
+                                                    "type": "integer",
+                                                    "example": 120
+                                                },
+                                                "human_controlled": {
+                                                    "type": "integer",
+                                                    "example": 30
+                                                },
+                                                "unread_messages": {
+                                                    "type": "integer",
+                                                    "example": 45
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/generate-reviews": {
             "post": {
                 "tags": [
@@ -14699,13 +14984,13 @@
                 }
             }
         },
-        "/api/frontend/chatbot/contacts/find-or-create": {
+        "/api/frontend/chatbot_contacts/find-or-create": {
             "post": {
                 "tags": [
-                    "Chatbot"
+                    "Chatbot - Frontend"
                 ],
                 "summary": "Find existing contact by email or create new one",
-                "operationId": "59789c764637fcf10edc46bf0158d7a5",
+                "operationId": "9afe07c752441aa60f2fe07f9a07e099",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -14728,10 +15013,6 @@
                                     "phone_number": {
                                         "type": "string",
                                         "example": "+971123456789"
-                                    },
-                                    "control": {
-                                        "type": "boolean",
-                                        "example": false
                                     }
                                 },
                                 "type": "object"
@@ -14749,13 +15030,13 @@
                 }
             }
         },
-        "/api/frontend/chatbot/chats": {
+        "/api/frontend/chats": {
             "post": {
                 "tags": [
-                    "Chatbot"
+                    "Chatbot - Frontend"
                 ],
-                "summary": "Create a new chat message",
-                "operationId": "dd3c7a977e733ada897eb7b884468139",
+                "summary": "Create a new chat message from customer or AI",
+                "operationId": "eeab11bef6dab9d82e9c3e315d18398d",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -14773,12 +15054,11 @@
                                     },
                                     "message": {
                                         "type": "string",
-                                        "example": "Hello, I need help with my order"
+                                        "example": "Hello, I need help"
                                     },
                                     "created_by_type": {
                                         "type": "string",
                                         "enum": [
-                                            "user",
                                             "customer",
                                             "AI"
                                         ],
@@ -14793,6 +15073,105 @@
                 "responses": {
                     "201": {
                         "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/chatbot_contacts/{chatbot_contact_id}/chats": {
+            "get": {
+                "tags": [
+                    "Chatbot - Frontend"
+                ],
+                "summary": "Get all chats for a contact (customer view)",
+                "operationId": "494d2f0ce222c33f8d2b362c1b6057e4",
+                "parameters": [
+                    {
+                        "name": "chatbot_contact_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chats retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/chats/mark-read": {
+            "post": {
+                "tags": [
+                    "Chatbot - Frontend"
+                ],
+                "summary": "Mark messages as read by customer",
+                "operationId": "8009c64f63be4ad2f53d4922de568833",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "chatbot_contact_id"
+                                ],
+                                "properties": {
+                                    "chatbot_contact_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Messages marked as read",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/chats/mark-read-by-ai": {
+            "post": {
+                "tags": [
+                    "Chatbot - Frontend"
+                ],
+                "summary": "Mark customer messages as read by AI",
+                "operationId": "a48d8bc692bf30a29e634978943f3d73",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "chatbot_contact_id"
+                                ],
+                                "properties": {
+                                    "chatbot_contact_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Customer messages marked as read by AI",
                         "content": {
                             "application/json": {}
                         }
@@ -36074,6 +36453,11 @@
                                                     "type": "number",
                                                     "format": "float",
                                                     "example": 44
+                                                },
+                                                "cost_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 40
                                                 }
                                             },
                                             "type": "object"
@@ -36081,19 +36465,23 @@
                                         "example": [
                                             {
                                                 "name": "left",
-                                                "price": 44
+                                                "price": 44,
+                                                "cost_price": 40
                                             },
                                             {
                                                 "name": "right",
-                                                "price": 45
+                                                "price": 45,
+                                                "cost_price": 41
                                             },
                                             {
                                                 "name": "top",
-                                                "price": 50
+                                                "price": 50,
+                                                "cost_price": 45
                                             },
                                             {
                                                 "name": "button",
-                                                "price": 52
+                                                "price": 52,
+                                                "cost_price": 48
                                             }
                                         ]
                                     },
@@ -36220,6 +36608,10 @@
                                                 "price": {
                                                     "type": "integer",
                                                     "example": 44
+                                                },
+                                                "cost_price": {
+                                                    "type": "integer",
+                                                    "example": 40
                                                 }
                                             },
                                             "type": "object"
@@ -36227,19 +36619,23 @@
                                         "example": [
                                             {
                                                 "name": "left",
-                                                "price": 44
+                                                "price": 44,
+                                                "cost_price": 40
                                             },
                                             {
                                                 "name": "right",
-                                                "price": 45
+                                                "price": 45,
+                                                "cost_price": 41
                                             },
                                             {
                                                 "name": "top",
-                                                "price": 50
+                                                "price": 50,
+                                                "cost_price": 45
                                             },
                                             {
                                                 "name": "button",
-                                                "price": 52
+                                                "price": 52,
+                                                "cost_price": 48
                                             }
                                         ]
                                     },
@@ -36395,6 +36791,10 @@
                                                     "price": {
                                                         "type": "integer",
                                                         "example": 44
+                                                    },
+                                                    "cost_price": {
+                                                        "type": "integer",
+                                                        "example": 40
                                                     }
                                                 },
                                                 "type": "object"
@@ -49813,6 +50213,10 @@
             "description": "Category Pages"
         },
         {
+            "name": "Chatbot - Backend",
+            "description": "Chatbot - Backend"
+        },
+        {
             "name": "Reviews",
             "description": "Reviews"
         },
@@ -49881,8 +50285,8 @@
             "description": "CCAvenue"
         },
         {
-            "name": "Chatbot",
-            "description": "Chatbot"
+            "name": "Chatbot - Frontend",
+            "description": "Chatbot - Frontend"
         },
         {
             "name": "Frontend Company Profiles",
