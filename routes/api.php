@@ -90,6 +90,7 @@ use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\GetInTouchController;
 use App\Http\Controllers\TrainingDataController;
 use App\Http\Controllers\ProductAttributeController;
+use App\Http\Controllers\ChatbotManagementController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -1134,4 +1135,5 @@ Route::prefix('frontend')->group(function () {
 	/* Chat Management */
 	Route::post('chats', [ChatbotController::class, 'store']);
 	Route::post('chats/mark-read', [ChatbotController::class, 'markAsRead']);
+	Route::post('chats/mark-read-by-ai', [ChatbotController::class, 'markAsReadByAI']);
 });

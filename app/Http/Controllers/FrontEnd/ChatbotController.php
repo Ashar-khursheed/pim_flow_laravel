@@ -204,11 +204,11 @@ class ChatbotController extends BaseController
 	 */
 	public function markAsRead(Request $request)
 	{
-		try {
-			$validated = $request->validate([
-				'chatbot_contact_id' => 'required|exists:chatbot_contacts,id'
-			]);
+		$validated = $request->validate([
+			'chatbot_contact_id' => 'required|exists:chatbot_contacts,id'
+		]);
 
+		try {
 			/* Mark all unread messages from user/AI as read */
 			Chat::where('chatbot_contact_id', $validated['chatbot_contact_id'])
 			->whereIn('created_by_type', ['user', 'AI'])
@@ -223,12 +223,62 @@ class ChatbotController extends BaseController
 				'message' => 'Messages marked as read'
 			]);
 
-		} catch (\Illuminate\Validation\ValidationException $e) {
+		} catch (\Exception $e) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Validation failed',
-				'errors' => $e->errors()
+				'message' => 'Failed to mark messages as read',
+				'error' => $e->getMessage()
 			]);
+		}
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/chats/mark-read-by-ai",
+	 *     summary="Mark customer messages as read by AI",
+	 *     tags={"Chatbot - Frontend"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"chatbot_contact_id"},
+	 *             @OA\Property(property="chatbot_contact_id", type="integer", example=1)
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Customer messages marked as read by AI", @OA\MediaType(mediaType="application/json"))
+	 * )
+	 */
+	public function markAsReadByAI(Request $request)
+	{
+		$validated = $request->validate([
+			'chatbot_contact_id' => 'required|exists:chatbot_contacts,id'
+		]);
+
+		try {
+			/* Verify contact is in AI mode */
+			$contact = ChatbotContact::find($validated['chatbot_contact_id']);
+
+			if ($contact && $contact->control == 1) {
+				return response()->json([
+					'success' => false,
+					'message' => 'This contact is currently handled by human support. AI cannot mark messages as read.'
+				]);
+			}
+
+			/* Mark all unread customer messages as read by AI */
+			$updatedCount = Chat::where('chatbot_contact_id', $validated['chatbot_contact_id'])
+			->where('created_by_type', 'customer')
+			->where('is_read', false)
+			->update([
+				'is_read' => true,
+				'read_at' => now()
+			]);
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Customer messages marked as read by AI',
+				'updated_count' => $updatedCount
+			]);
+
 		} catch (\Exception $e) {
 			return response()->json([
 				'success' => false,
