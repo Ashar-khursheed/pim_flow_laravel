@@ -660,6 +660,16 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('/get-in-touch', GetInTouchController::class);
 
 
+	/* Contact Management */
+	Route::get('chatbot_contacts', [ChatbotManagementController::class, 'index']);
+	Route::get('chatbot_contacts/{chatbot_contact_id}', [ChatbotManagementController::class, 'show']);
+	Route::put('chatbot_contacts/{chatbot_contact_id}', [ChatbotManagementController::class, 'update']);
+
+	/* Chat Management */
+	Route::post('chats', [ChatbotManagementController::class, 'store']);
+
+	/* Statistics */
+	Route::get('chatbot_stats', [ChatbotManagementController::class, 'stats']);
 
 });
 
@@ -1115,7 +1125,13 @@ Route::get('paymob/thanks', [F_PaymobController::class, 'response']);
 Route::post('/frontend/save-cheque-upload', [ F_OrderController::class, 'saveChequeUpload']);
 Route::get('/frontend/get-cheque-uploads', [ F_OrderController::class, 'getChequeUploadsBySession']);
 
-use App\Http\Controllers\FrontEnd\ChatbotController as F_ChatbotController;
+use App\Http\Controllers\FrontEnd\ChatbotController;
+Route::prefix('frontend')->group(function () {
+	/* Contact Management */
+	Route::post('chatbot_contacts/find-or-create', [ChatbotController::class, 'findOrCreateContact']);
+	Route::get('chatbot_contacts/{chatbot_contact_id}/chats', [ChatbotController::class, 'show']);
 
-Route::post('/frontend/chatbot/contacts/find-or-create', [F_ChatbotController::class, 'findOrCreateContact']);
-Route::post('/frontend/chatbot/chats', [F_ChatbotController::class, 'createChat']);
+	/* Chat Management */
+	Route::post('chats', [ChatbotController::class, 'store']);
+	Route::post('chats/mark-read', [ChatbotController::class, 'markAsRead']);
+});

@@ -35,23 +35,23 @@ class ChatbotManagementController extends BaseController
 
 		$recordsQuery = ChatbotContact::withCount(['chats as unread_count' => function($q) {
 			$q->where('created_by_type', 'customer')
-			->where('is_read', false);
+			  ->where('is_read', false);
 		}])->with(['chats' => function($q) {
 			$q->latest()->limit(1);
 		}]);
 
 		/* Filter by control type */
 		if ($request->has('control')) {
-			$query->where('control', $request->control);
+			$recordsQuery->where('control', $request->control);
 		}
 
 		/* Filter by unread messages */
 		if ($request->has('has_unread') && $request->has_unread) {
-			$query->has('chats', '>', 0)
-			->whereHas('chats', function($q) {
-				$q->where('created_by_type', 'customer')
-				->where('is_read', false);
-			});
+			$recordsQuery->has('chats', '>', 0)
+				->whereHas('chats', function($q) {
+					$q->where('created_by_type', 'customer')
+					  ->where('is_read', false);
+				});
 		}
 
 		/* Apply global or column-specific filters */
@@ -127,21 +127,21 @@ class ChatbotManagementController extends BaseController
 				$q->orderBy('created_at', 'asc');
 			}])->find($chatbotContactID);
 
-		if (!$contact) {
-			return response()->json([
-				'success' => false,
-				'message' => __("err_exist")
-			]);
-		}
+			if (!$contact) {
+				return response()->json([
+					'success' => false,
+					'message' => __("err_exist")
+				]);
+			}
 
 			/* Mark customer messages as read */
 			Chat::where('chatbot_contact_id', $chatbotContactID)
-			->where('created_by_type', 'customer')
-			->where('is_read', false)
-			->update([
-				'is_read' => true,
-				'read_at' => now()
-			]);
+				->where('created_by_type', 'customer')
+				->where('is_read', false)
+				->update([
+					'is_read' => true,
+					'read_at' => now()
+				]);
 
 			return response()->json([
 				'success' => true,
@@ -153,7 +153,7 @@ class ChatbotManagementController extends BaseController
 				'success' => false,
 				'message' => 'Failed to retrieve chats',
 				'error' => $e->getMessage()
-			], 500);
+			]);
 		}
 	}
 
@@ -181,11 +181,11 @@ class ChatbotManagementController extends BaseController
 	 */
 	public function update(Request $request, $contactId)
 	{
-		try {
 			$validated = $request->validate([
 				'control' => 'required|in:0,1'
 			]);
 
+		try {
 			$contact = ChatbotContact::find($contactId);
 
 			if (!$contact) {
@@ -218,7 +218,7 @@ class ChatbotManagementController extends BaseController
 				'success' => false,
 				'message' => 'Failed to update control',
 				'error' => $e->getMessage()
-			], 500);
+			]);
 		}
 	}
 
@@ -230,9 +230,9 @@ class ChatbotManagementController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"chatbot_contact_id", "message", "created_by_type"},
+	 *             required={"chatbot_contact_id", "message"},
 	 *             @OA\Property(property="chatbot_contact_id", type="integer", example=1),
-	 *             @OA\Property(property="message", type="string", example="How can I help you?"),
+	 *             @OA\Property(property="message", type="string", example="How can I help you?")
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=201, description="Chat created successfully", @OA\MediaType(mediaType="application/json")),
@@ -248,6 +248,16 @@ class ChatbotManagementController extends BaseController
 			]);
 
 			$userId = Auth::id();
+
+			/* Verify contact is in human mode (control = 1) */
+			$contact = ChatbotContact::find($validated['chatbot_contact_id']);
+
+			if ($contact && $contact->control == 0) {
+				return response()->json([
+					'success' => false,
+					'message' => 'This contact is in AI mode. Please switch to human control first.'
+				]);
+			}
 
 			$chat = Chat::create([
 				'chatbot_contact_id' => $validated['chatbot_contact_id'],
@@ -266,14 +276,62 @@ class ChatbotManagementController extends BaseController
 				'success' => true,
 				'message' => 'Chat created successfully',
 				'data' => $chat
-			], 201);
+			]);
 
 		} catch (\Exception $e) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to create chat',
 				'error' => $e->getMessage()
-			], 500);
+			]);
+		}
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/chatbot_stats",
+	 *     summary="Get chatbot statistics",
+	 *     tags={"Chatbot - Backend"},
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Statistics retrieved successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="data", type="object",
+	 *                 @OA\Property(property="total_contacts", type="integer", example=150),
+	 *                 @OA\Property(property="ai_controlled", type="integer", example=120),
+	 *                 @OA\Property(property="human_controlled", type="integer", example=30),
+	 *                 @OA\Property(property="unread_messages", type="integer", example=45)
+	 *             )
+	 *         )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function stats()
+	{
+		try {
+			$stats = [
+				'total_contacts' => ChatbotContact::count(),
+				'ai_controlled' => ChatbotContact::where('control', 0)->count(),
+				'human_controlled' => ChatbotContact::where('control', 1)->count(),
+				'unread_messages' => Chat::where('created_by_type', 'customer')
+					->where('is_read', false)
+					->count(),
+				'total_chats_today' => Chat::whereDate('created_at', today())->count()
+			];
+
+			return response()->json([
+				'success' => true,
+				'data' => $stats
+			]);
+
+		} catch (\Exception $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to retrieve stats',
+				'error' => $e->getMessage()
+			]);
 		}
 	}
 }
