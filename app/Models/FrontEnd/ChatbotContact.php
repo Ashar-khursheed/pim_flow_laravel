@@ -13,10 +13,6 @@ class ChatbotContact extends Model
 		'control'
 	];
 
-	protected $casts = [
-		'control' => 'boolean'
-	];
-
 	public function chats()
 	{
 		return $this->hasMany(Chat::class, 'chatbot_contact_id');
