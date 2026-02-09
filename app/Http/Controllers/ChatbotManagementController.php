@@ -35,7 +35,7 @@ class ChatbotManagementController extends BaseController
 
 		$recordsQuery = ChatbotContact::withCount(['chats as unread_count' => function($q) {
 			$q->where('created_by_type', 'customer')
-			  ->where('is_read', false);
+			->where('is_read', false);
 		}])->with(['chats' => function($q) {
 			$q->latest()->limit(1);
 		}]);
@@ -48,10 +48,10 @@ class ChatbotManagementController extends BaseController
 		/* Filter by unread messages */
 		if ($request->has('has_unread') && $request->has_unread) {
 			$recordsQuery->has('chats', '>', 0)
-				->whereHas('chats', function($q) {
-					$q->where('created_by_type', 'customer')
-					  ->where('is_read', false);
-				});
+			->whereHas('chats', function($q) {
+				$q->where('created_by_type', 'customer')
+				->where('is_read', false);
+			});
 		}
 
 		/* Apply global or column-specific filters */
@@ -136,12 +136,12 @@ class ChatbotManagementController extends BaseController
 
 			/* Mark customer messages as read */
 			Chat::where('chatbot_contact_id', $chatbotContactID)
-				->where('created_by_type', 'customer')
-				->where('is_read', false)
-				->update([
-					'is_read' => true,
-					'read_at' => now()
-				]);
+			->where('created_by_type', 'customer')
+			->where('is_read', false)
+			->update([
+				'is_read' => true,
+				'read_at' => now()
+			]);
 
 			return response()->json([
 				'success' => true,
@@ -181,9 +181,9 @@ class ChatbotManagementController extends BaseController
 	 */
 	public function update(Request $request, $contactId)
 	{
-			$validated = $request->validate([
-				'control' => 'required|in:0,1'
-			]);
+		$validated = $request->validate([
+			'control' => 'required|in:0,1'
+		]);
 
 		try {
 			$contact = ChatbotContact::find($contactId);
@@ -316,8 +316,8 @@ class ChatbotManagementController extends BaseController
 				'ai_controlled' => ChatbotContact::where('control', 0)->count(),
 				'human_controlled' => ChatbotContact::where('control', 1)->count(),
 				'unread_messages' => Chat::where('created_by_type', 'customer')
-					->where('is_read', false)
-					->count(),
+				->where('is_read', false)
+				->count(),
 				'total_chats_today' => Chat::whereDate('created_at', today())->count()
 			];
 
