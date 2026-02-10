@@ -2603,6 +2603,8 @@ class ProductController extends Controller
 						$brandQ->where('name', 'LIKE', "%$search%")
 							   ->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search]);
 					})
+					// Concatenated words search (e.g. "porcelainplate" matches "Porcelain Plate")
+					->orWhereRaw("REPLACE(name, ' ', '') LIKE ?", ["%{$search}%"])
 					// Match individual words in search term
 					->orWhere(function($subQ) use ($search) {
 						$words = explode(' ', $search);
@@ -2612,6 +2614,21 @@ class ProductController extends Controller
 							}
 						}
 					});
+
+					// Consonant-based fuzzy search for typos (e.g. "ballini" matches "Bellini")
+					// We only do this if the search term is reasonable length to avoid massive matches
+					if (strlen($search) >= 4) {
+						// Create a pattern where vowels are wildcards
+						// e.g. "ballini" -> "%b%l%l%n%"
+						$consonants = preg_replace('/[aeiouyAEIOUY\s]+/', '%', $search);
+						// Ensure we don't have multiple % side by side if possible (preg_replace handles it but good to be sure)
+						$fuzzyPattern = '%' . $consonants . '%';
+						
+						// Only apply if we have enough "skeleton" to match on
+						if (strlen($consonants) >= 3) {
+							$q->orWhere('name', 'LIKE', $fuzzyPattern);
+						}
+					}
 			});
 		}
 
