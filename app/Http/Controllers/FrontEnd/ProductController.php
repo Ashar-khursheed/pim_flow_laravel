@@ -2605,13 +2605,23 @@ class ProductController extends Controller
 					})
 					// Concatenated words search (e.g. "porcelainplate" matches "Porcelain Plate")
 					->orWhereRaw("REPLACE(name, ' ', '') LIKE ?", ["%{$search}%"])
-					// Match individual words in search term
+					// Word-by-word AND matching (All words must be present in Name, SKU, or Brand)
 					->orWhere(function($subQ) use ($search) {
 						$words = explode(' ', $search);
-						foreach ($words as $word) {
-							if (strlen($word) > 2) {
-								$subQ->orWhere('name', 'LIKE', "%$word%");
+						if (count($words) > 1) {
+							foreach ($words as $word) {
+								if (strlen($word) > 2) {
+									$subQ->where(function($wordQ) use ($word) {
+										$wordQ->where('name', 'LIKE', "%$word%")
+											  ->orWhere('sku', 'LIKE', "%$word%")
+											  ->orWhereHas('brand', function($bq) use ($word) {
+												  $bq->where('name', 'LIKE', "%$word%");
+											  });
+									});
+								}
 							}
+						} else {
+							$subQ->whereRaw('0 = 1'); // Only 1 word, handled by main logic
 						}
 					});
 
