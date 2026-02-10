@@ -2679,6 +2679,7 @@ class ProductController extends Controller
 
 		// Get unique brands from the filtered products
 		$brandsInResults = $query->clone()
+			->reorder()
 			->select('brand_id')
 			->distinct()
 			->whereNotNull('brand_id')
