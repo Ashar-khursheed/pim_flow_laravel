@@ -120,26 +120,7 @@
 							</p>
 						</td>
 					</tr>
-
 				</table>
-
-				<!-- Copyright Footer -->
-				<table width="650" cellspacing="0" cellpadding="0" border="0" style="padding:10px; border-top:3px solid #E2E8F0; background-color:rgba(226, 232, 240, 0.3);">
-					<tr>
-						<td style="padding:10px;">
-							<p style="margin:0; font-size:12px; font-family:'Noto Sans', sans-serif; color:black;">
-								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
-							</p>
-							<p style="margin:8px 0 0; font-size:12px; font-family:'Noto Sans', sans-serif; color:black;">
-								For support or inquiries, contact us at
-								<a href="mailto:{{ $siteEmail }}" style="color:#186737; font-family:'Noto Sans', sans-serif; font-size:12px;">
-									{{ $siteEmail }}
-								</a>.
-							</p>
-						</td>
-					</tr>
-				</table>
-
 			</td>
 		</tr>
 	</table>
