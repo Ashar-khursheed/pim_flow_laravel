@@ -8282,6 +8282,291 @@
                 ]
             }
         },
+        "/api/chatbot_contacts": {
+            "get": {
+                "tags": [
+                    "Chatbot - Backend"
+                ],
+                "summary": "Get all contacts with unread count",
+                "operationId": "894af00648c50c9b7c5da9b63c1da9f5",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "control",
+                        "in": "query",
+                        "description": "Filter by control type (0=AI, 1=Human)",
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1
+                            ]
+                        }
+                    },
+                    {
+                        "name": "has_unread",
+                        "in": "query",
+                        "description": "Filter contacts with unread messages",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "email",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contacts retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/chatbot_contacts/{chatbot_contact_id}": {
+            "get": {
+                "tags": [
+                    "Chatbot - Backend"
+                ],
+                "summary": "Get all chats for a contact (admin view)",
+                "operationId": "c7e682cce3eee61b94ee4c4bad27e3ef",
+                "parameters": [
+                    {
+                        "name": "chatbot_contact_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chats retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Chatbot - Backend"
+                ],
+                "summary": "Switch between AI and Human control",
+                "operationId": "63afe6c134102583a5a8c97fd3c7b1e2",
+                "parameters": [
+                    {
+                        "name": "chatbot_contact_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "control"
+                                ],
+                                "properties": {
+                                    "control": {
+                                        "description": "0 for AI, 1 for Human",
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ],
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Control updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/chats": {
+            "post": {
+                "tags": [
+                    "Chatbot - Backend"
+                ],
+                "summary": "Create a chat message from support user",
+                "operationId": "96d5a681a1d91d4a207ea02f9ad7eb2c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "chatbot_contact_id",
+                                    "message"
+                                ],
+                                "properties": {
+                                    "chatbot_contact_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "How can I help you?"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Chat created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/chatbot_stats": {
+            "get": {
+                "tags": [
+                    "Chatbot - Backend"
+                ],
+                "summary": "Get chatbot statistics",
+                "operationId": "e5cf13bc1acccd6bb4f5dd3aa1128eda",
+                "responses": {
+                    "200": {
+                        "description": "Statistics retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_contacts": {
+                                                    "type": "integer",
+                                                    "example": 150
+                                                },
+                                                "ai_controlled": {
+                                                    "type": "integer",
+                                                    "example": 120
+                                                },
+                                                "human_controlled": {
+                                                    "type": "integer",
+                                                    "example": 30
+                                                },
+                                                "unread_messages": {
+                                                    "type": "integer",
+                                                    "example": 45
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/generate-reviews": {
             "post": {
                 "tags": [
@@ -14695,6 +14980,201 @@
                 "responses": {
                     "200": {
                         "description": "Payment was cancelled"
+                    }
+                }
+            }
+        },
+        "/api/frontend/chatbot_contacts/find-or-create": {
+            "post": {
+                "tags": [
+                    "Chatbot - Frontend"
+                ],
+                "summary": "Find existing contact by email or create new one",
+                "operationId": "9afe07c752441aa60f2fe07f9a07e099",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Noman Peera"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "noman@example.com"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "+971123456789"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Contact found or created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/chats": {
+            "post": {
+                "tags": [
+                    "Chatbot - Frontend"
+                ],
+                "summary": "Create a new chat message from customer or AI",
+                "operationId": "eeab11bef6dab9d82e9c3e315d18398d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "chatbot_contact_id",
+                                    "message",
+                                    "created_by_type"
+                                ],
+                                "properties": {
+                                    "chatbot_contact_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Hello, I need help"
+                                    },
+                                    "created_by_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "customer",
+                                            "AI"
+                                        ],
+                                        "example": "customer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/chatbot_contacts/{chatbot_contact_id}/chats": {
+            "get": {
+                "tags": [
+                    "Chatbot - Frontend"
+                ],
+                "summary": "Get all chats for a contact (customer view)",
+                "operationId": "494d2f0ce222c33f8d2b362c1b6057e4",
+                "parameters": [
+                    {
+                        "name": "chatbot_contact_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chats retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/chats/mark-read": {
+            "post": {
+                "tags": [
+                    "Chatbot - Frontend"
+                ],
+                "summary": "Mark messages as read by customer",
+                "operationId": "8009c64f63be4ad2f53d4922de568833",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "chatbot_contact_id"
+                                ],
+                                "properties": {
+                                    "chatbot_contact_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Messages marked as read",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/chats/mark-read-by-ai": {
+            "post": {
+                "tags": [
+                    "Chatbot - Frontend"
+                ],
+                "summary": "Mark customer messages as read by AI",
+                "operationId": "a48d8bc692bf30a29e634978943f3d73",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "chatbot_contact_id"
+                                ],
+                                "properties": {
+                                    "chatbot_contact_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Customer messages marked as read by AI",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 }
             }
@@ -23890,10 +24370,36 @@
                                         "type": "integer",
                                         "example": 1
                                     },
+                                    "is_lift_gate": {
+                                        "description": "Lift gate required",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "description": "Residential address",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_inside_delivery": {
+                                        "description": "Inside delivery required",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "format": "float",
                                         "example": 5
+                                    },
+                                    "additional_amount_name": {
+                                        "description": "Additional amount name",
+                                        "type": "string",
+                                        "example": "Accessory 1"
+                                    },
+                                    "additional_amount_price": {
+                                        "description": "Additional amount price",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
                                     },
                                     "coupon_id": {
                                         "type": "integer",
@@ -23903,6 +24409,36 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "additional_discount_option": {
+                                        "description": "Additional Discount Option",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "additional_discount_reason": {
+                                        "description": "Reason for additional discount",
+                                        "type": "string",
+                                        "example": "Bulk order discount"
+                                    },
+                                    "additional_discount_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ],
+                                        "example": "percentage"
+                                    },
+                                    "additional_discount_percentage": {
+                                        "description": "Additional discount percentage",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "additional_discount_amount": {
+                                        "description": "Additional discount amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
                                     },
                                     "payment_terms": {
                                         "type": "string",
@@ -23922,7 +24458,8 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -23936,6 +24473,19 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 2
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
+                                                },
+                                                "accessory_item_ids": {
+                                                    "description": "Array of accessory item IDs",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer",
+                                                        "example": 50
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -24039,19 +24589,77 @@
                                         "type": "integer",
                                         "example": 1
                                     },
+                                    "is_lift_gate": {
+                                        "description": "Lift gate required",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "description": "Residential address",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_inside_delivery": {
+                                        "description": "Inside delivery required",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "format": "float",
                                         "example": 5
                                     },
+                                    "additional_amount_name": {
+                                        "description": "Additional amount name",
+                                        "type": "string",
+                                        "example": "Accessory 1"
+                                    },
+                                    "additional_amount_price": {
+                                        "description": "Additional amount price",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
                                     "coupon_id": {
+                                        "description": "Coupon ID",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "discount": {
+                                        "description": "Discount amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "additional_discount_option": {
+                                        "description": "Additional Discount Option",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "additional_discount_reason": {
+                                        "description": "Reason for additional discount",
+                                        "type": "string",
+                                        "example": "Bulk order discount"
+                                    },
+                                    "additional_discount_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ],
+                                        "example": "percentage"
+                                    },
+                                    "additional_discount_percentage": {
+                                        "description": "Additional discount percentage",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "additional_discount_amount": {
+                                        "description": "Additional discount amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
                                     },
                                     "payment_terms": {
                                         "type": "string",
@@ -24071,20 +24679,37 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
+                                                    "description": "Product ID",
                                                     "type": "integer",
-                                                    "example": 2001
+                                                    "example": 101
                                                 },
                                                 "vendor_id": {
+                                                    "description": "Vendor ID",
                                                     "type": "integer",
                                                     "example": 22
                                                 },
                                                 "quantity": {
+                                                    "description": "Product quantity",
                                                     "type": "integer",
-                                                    "example": 2
+                                                    "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
+                                                },
+                                                "accessory_item_ids": {
+                                                    "description": "Array of accessory item IDs",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer",
+                                                        "example": 50
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -28377,7 +29002,7 @@
         "/api/frontend/touras/initiate": {
             "post": {
                 "tags": [
-                    "Front-Touras"
+                    "FrontEnd-Touras"
                 ],
                 "summary": "Initiate Touras payment",
                 "operationId": "cfc6c4102becf1d0eafda23b948e06bc",
@@ -28421,329 +29046,6 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/frontend/touras/callback/success": {
-            "post": {
-                "tags": [
-                    "Front-Touras"
-                ],
-                "summary": "Handle successful payment callback from Touras",
-                "operationId": "3467032140eef00c1e72357e4d3a5c65",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "properties": {
-                                    "txn_response": {
-                                        "description": "Encrypted transaction response",
-                                        "type": "string"
-                                    },
-                                    "me_id": {
-                                        "description": "Merchant ID",
-                                        "type": "string"
-                                    },
-                                    "pg_details": {
-                                        "description": "Encrypted PG details",
-                                        "type": "string"
-                                    },
-                                    "fraud_details": {
-                                        "description": "Encrypted fraud details",
-                                        "type": "string"
-                                    },
-                                    "other_details": {
-                                        "description": "Encrypted other details",
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "302": {
-                        "description": "Redirect to frontend success page"
-                    }
-                }
-            }
-        },
-        "/api/frontend/touras/callback/failure": {
-            "post": {
-                "tags": [
-                    "Front-Touras"
-                ],
-                "summary": "Handle failed payment callback from Touras",
-                "operationId": "a8ab06c455dfd004237d9df3d2f4696c",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "properties": {
-                                    "txn_response": {
-                                        "description": "Encrypted transaction response",
-                                        "type": "string"
-                                    },
-                                    "me_id": {
-                                        "description": "Merchant ID",
-                                        "type": "string"
-                                    },
-                                    "pg_details": {
-                                        "description": "Encrypted PG details",
-                                        "type": "string"
-                                    },
-                                    "fraud_details": {
-                                        "description": "Encrypted fraud details",
-                                        "type": "string"
-                                    },
-                                    "other_details": {
-                                        "description": "Encrypted other details",
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "302": {
-                        "description": "Redirect to frontend failure page"
-                    }
-                }
-            }
-        },
-        "/api/frontend/touras/status/{order_no}": {
-            "get": {
-                "tags": [
-                    "Front-Touras"
-                ],
-                "summary": "Get payment transaction status",
-                "operationId": "940f2f0050dd32612f1ff2de963e2328",
-                "parameters": [
-                    {
-                        "name": "order_no",
-                        "in": "path",
-                        "description": "Order number",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "example": "ORD-12345"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Transaction status retrieved successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "order_no": {
-                                                    "type": "string",
-                                                    "example": "ORD-12345"
-                                                },
-                                                "amount": {
-                                                    "type": "number",
-                                                    "example": 150.5
-                                                },
-                                                "currency": {
-                                                    "type": "string",
-                                                    "example": "AED"
-                                                },
-                                                "payment_status": {
-                                                    "type": "string",
-                                                    "example": "completed"
-                                                },
-                                                "transaction_id": {
-                                                    "type": "string",
-                                                    "example": "2058981736486650927"
-                                                },
-                                                "bank_ref_no": {
-                                                    "type": "string",
-                                                    "example": "123456789"
-                                                },
-                                                "paid_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "payment_response": {
-                                                    "type": "object"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Transaction not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Transaction not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/frontend/touras/initiate-payment": {
-            "post": {
-                "tags": [
-                    "FrontEnd-Touras"
-                ],
-                "summary": "Initiate payment with Touras gateway",
-                "operationId": "066357176aa201512e56727706f60032",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "amount",
-                                    "card_number",
-                                    "expiry_month",
-                                    "expiry_year",
-                                    "cvv",
-                                    "card_name"
-                                ],
-                                "properties": {
-                                    "amount": {
-                                        "type": "string",
-                                        "example": "100.00"
-                                    },
-                                    "card_number": {
-                                        "type": "string",
-                                        "example": "2223000000000007"
-                                    },
-                                    "expiry_month": {
-                                        "type": "string",
-                                        "example": "12"
-                                    },
-                                    "expiry_year": {
-                                        "type": "string",
-                                        "example": "2034"
-                                    },
-                                    "cvv": {
-                                        "type": "string",
-                                        "example": "123"
-                                    },
-                                    "card_name": {
-                                        "type": "string",
-                                        "example": "John Doe"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Payment initiated successfully",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/touras/success": {
-            "post": {
-                "tags": [
-                    "FrontEnd-Touras"
-                ],
-                "summary": "Handle successful payment callback",
-                "operationId": "cefda4dd3570edaae2f8346bee98d74d",
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                }
-            }
-        },
-        "/api/frontend/touras/failure": {
-            "post": {
-                "tags": [
-                    "FrontEnd-Touras"
-                ],
-                "summary": "Handle failed payment callback",
-                "operationId": "cbc806e42435edb49142010c45be4e7c",
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                }
-            }
-        },
-        "/api/frontend/touras/verify-payment": {
-            "post": {
-                "tags": [
-                    "FrontEnd-Touras"
-                ],
-                "summary": "Verify payment status",
-                "operationId": "5e056ec5a6f13f7bd07a081dfe3936bb",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "order_no"
-                                ],
-                                "properties": {
-                                    "order_no": {
-                                        "type": "string",
-                                        "example": "ORD123456"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                }
             }
         },
         "/api/frontend/tql-token": {
@@ -36151,6 +36453,11 @@
                                                     "type": "number",
                                                     "format": "float",
                                                     "example": 44
+                                                },
+                                                "cost_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 40
                                                 }
                                             },
                                             "type": "object"
@@ -36158,19 +36465,23 @@
                                         "example": [
                                             {
                                                 "name": "left",
-                                                "price": 44
+                                                "price": 44,
+                                                "cost_price": 40
                                             },
                                             {
                                                 "name": "right",
-                                                "price": 45
+                                                "price": 45,
+                                                "cost_price": 41
                                             },
                                             {
                                                 "name": "top",
-                                                "price": 50
+                                                "price": 50,
+                                                "cost_price": 45
                                             },
                                             {
                                                 "name": "button",
-                                                "price": 52
+                                                "price": 52,
+                                                "cost_price": 48
                                             }
                                         ]
                                     },
@@ -36297,6 +36608,10 @@
                                                 "price": {
                                                     "type": "integer",
                                                     "example": 44
+                                                },
+                                                "cost_price": {
+                                                    "type": "integer",
+                                                    "example": 40
                                                 }
                                             },
                                             "type": "object"
@@ -36304,19 +36619,23 @@
                                         "example": [
                                             {
                                                 "name": "left",
-                                                "price": 44
+                                                "price": 44,
+                                                "cost_price": 40
                                             },
                                             {
                                                 "name": "right",
-                                                "price": 45
+                                                "price": 45,
+                                                "cost_price": 41
                                             },
                                             {
                                                 "name": "top",
-                                                "price": 50
+                                                "price": 50,
+                                                "cost_price": 45
                                             },
                                             {
                                                 "name": "button",
-                                                "price": 52
+                                                "price": 52,
+                                                "cost_price": 48
                                             }
                                         ]
                                     },
@@ -36472,6 +36791,10 @@
                                                     "price": {
                                                         "type": "integer",
                                                         "example": 44
+                                                    },
+                                                    "cost_price": {
+                                                        "type": "integer",
+                                                        "example": 40
                                                     }
                                                 },
                                                 "type": "object"
@@ -41713,10 +42036,36 @@
                                         "type": "integer",
                                         "example": 1
                                     },
+                                    "is_lift_gate": {
+                                        "description": "Lift gate required",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "description": "Residential address",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_inside_delivery": {
+                                        "description": "Inside delivery required",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "format": "float",
                                         "example": 5
+                                    },
+                                    "additional_amount_name": {
+                                        "description": "Additional amount name",
+                                        "type": "string",
+                                        "example": "Accessory 1"
+                                    },
+                                    "additional_amount_price": {
+                                        "description": "Additional amount price",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
                                     },
                                     "coupon_id": {
                                         "type": "integer",
@@ -41726,6 +42075,36 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "additional_discount_option": {
+                                        "description": "Additional Discount Option",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "additional_discount_reason": {
+                                        "description": "Reason for additional discount",
+                                        "type": "string",
+                                        "example": "Bulk order discount"
+                                    },
+                                    "additional_discount_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ],
+                                        "example": "percentage"
+                                    },
+                                    "additional_discount_percentage": {
+                                        "description": "Additional discount percentage",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "additional_discount_amount": {
+                                        "description": "Additional discount amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
                                     },
                                     "status": {
                                         "type": "string",
@@ -41754,7 +42133,8 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -41768,6 +42148,19 @@
                                                 "quantity": {
                                                     "type": "integer",
                                                     "example": 2
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
+                                                },
+                                                "accessory_item_ids": {
+                                                    "description": "Array of accessory item IDs",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer",
+                                                        "example": 50
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -41857,23 +42250,86 @@
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "customer_address_id",
                                     "tax_percentage",
                                     "products"
                                 ],
                                 "properties": {
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "is_lift_gate": {
+                                        "description": "Lift gate required",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "description": "Residential address",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_inside_delivery": {
+                                        "description": "Inside delivery required",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "format": "float",
                                         "example": 5
                                     },
+                                    "additional_amount_name": {
+                                        "description": "Additional amount name",
+                                        "type": "string",
+                                        "example": "Accessory 1"
+                                    },
+                                    "additional_amount_price": {
+                                        "description": "Additional amount price",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
                                     "coupon_id": {
+                                        "description": "Coupon ID",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "discount": {
+                                        "description": "Discount amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 200
+                                    },
+                                    "additional_discount_option": {
+                                        "description": "Additional Discount Option",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "additional_discount_reason": {
+                                        "description": "Reason for additional discount",
+                                        "type": "string",
+                                        "example": "Bulk order discount"
+                                    },
+                                    "additional_discount_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ],
+                                        "example": "percentage"
+                                    },
+                                    "additional_discount_percentage": {
+                                        "description": "Additional discount percentage",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "additional_discount_amount": {
+                                        "description": "Additional discount amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
                                     },
                                     "payment_terms": {
                                         "type": "string",
@@ -41902,20 +42358,37 @@
                                             "required": [
                                                 "product_id",
                                                 "vendor_id",
-                                                "quantity"
+                                                "quantity",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
+                                                    "description": "Product ID",
                                                     "type": "integer",
-                                                    "example": 2001
+                                                    "example": 101
                                                 },
                                                 "vendor_id": {
+                                                    "description": "Vendor ID",
                                                     "type": "integer",
                                                     "example": 22
                                                 },
                                                 "quantity": {
+                                                    "description": "Product quantity",
                                                     "type": "integer",
-                                                    "example": 2
+                                                    "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "description": "Product Shipping Charge",
+                                                    "type": "number",
+                                                    "example": 50
+                                                },
+                                                "accessory_item_ids": {
+                                                    "description": "Array of accessory item IDs",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer",
+                                                        "example": 50
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -41928,7 +42401,7 @@
                     }
                 },
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Updated successfully",
                         "content": {
                             "application/json": {}
@@ -49740,6 +50213,10 @@
             "description": "Category Pages"
         },
         {
+            "name": "Chatbot - Backend",
+            "description": "Chatbot - Backend"
+        },
+        {
             "name": "Reviews",
             "description": "Reviews"
         },
@@ -49806,6 +50283,10 @@
         {
             "name": "CCAvenue",
             "description": "CCAvenue"
+        },
+        {
+            "name": "Chatbot - Frontend",
+            "description": "Chatbot - Frontend"
         },
         {
             "name": "Frontend Company Profiles",
@@ -50022,10 +50503,6 @@
         {
             "name": "Tax",
             "description": "Tax"
-        },
-        {
-            "name": "Front-Touras",
-            "description": "Front-Touras"
         },
         {
             "name": "FrontEnd-Touras",

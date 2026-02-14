@@ -13,11 +13,26 @@ class Quote extends Model
 		'customer_id',
 		'customer_address_id',
 		'shipping_charge',
+
+		'is_lift_gate',
+		'is_residential_address',
+		'is_inside_delivery',
 		'amount',
+
 		'tax_percentage',
 		'tax_amount',
 		'coupon_id',
 		'discount',
+
+		'additional_amount_name',
+		'additional_amount_price',
+		'additional_amount_details',
+
+		'additional_discount_reason',
+		'additional_discount_type',
+		'additional_discount_percentage',
+		'additional_discount_amount',
+
 		'total_amount',
 		'total_products',
 		'payment_terms',
@@ -57,6 +72,11 @@ class Quote extends Model
 	public function quoteEmails()
 	{
 		return $this->hasMany(QuoteEmail::class);
+	}
+
+	public function accessoryCharges()
+	{
+		return $this->morphMany(AccessoryCharge::class, 'relation');
 	}
 
 	/**

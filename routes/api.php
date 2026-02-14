@@ -90,6 +90,7 @@ use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\GetInTouchController;
 use App\Http\Controllers\TrainingDataController;
 use App\Http\Controllers\ProductAttributeController;
+use App\Http\Controllers\ChatbotManagementController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -210,7 +211,7 @@ Route::post('/ccavenue/webhook', [F_CCavenueController::class, 'successhandleWeb
 Route::post('/payment/ccavenue/notify', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::get('/ccavenue/thank', [F_CCavenueController::class, 'successhandleWebhook']);
 Route::post('/ccavenue/dataEncodeCCavenue', action: [F_CCavenueController::class, 'dataEncodeCCavenue']);
-Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class);
+Route::apiResource('frontend/get-in-touch', F_GetInTouchController::class)->names('frontend.get-in-touch');
 
 // Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
@@ -439,9 +440,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/keywords/import', [AppKeywordController::class, 'import']);
 	Route::post('/keywords/export', [AppKeywordController::class, 'export']);
 
-    Route::post('/translations/generate-translate', [TranslationController::class, 'generateTranslate']);
-    Route::post('/translations/export', [TranslationController::class, 'export']);
-    Route::post('/translations/import', [TranslationController::class, 'import']);
+	Route::post('/translations/generate-translate', [TranslationController::class, 'generateTranslate']);
+	Route::post('/translations/export', [TranslationController::class, 'export']);
+	Route::post('/translations/import', [TranslationController::class, 'import']);
 
 
 	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
@@ -471,7 +472,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::apiResource('finances', FinanceController::class);
 	// Route::get('finances/{id}', [FinanceController::class, 'show']);
-	 Route::post('finances/{id}', [FinanceController::class, 'update']);
+	Route::post('finances/{id}', [FinanceController::class, 'update']);
 
 	Route::post('finances/{id}/account-status', [FinanceController::class, 'updateStatus']);
 
@@ -482,11 +483,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('finances/pay-full-payment/{id}', [FinanceController::class, 'payfullNetTerm']);
 
 	Route::post('/ltl/quotes', [TqlQuoteController::class, 'create']);
-    Route::get('/ltl/quotes/{id}', [TqlQuoteController::class, 'get']);
-    Route::post('/ltl/quotes/tender', [TenderController::class, 'tender']);
-    Route::get('/tracking/{poNumber}', [TrackingController::class, 'track']);
-    Route::post('/ltl/loads/tender', [TenderController::class, 'tenderByScac']);
-    Route::post('/ltl/loads/tender', [TenderController::class, 'tenderByScac']);
+	Route::get('/ltl/quotes/{id}', [TqlQuoteController::class, 'get']);
+	Route::post('/ltl/quotes/tender', [TenderController::class, 'tender']);
+	Route::get('/tracking/{poNumber}', [TrackingController::class, 'track']);
+	Route::post('/ltl/loads/tender', [TenderController::class, 'tenderByScac']);
+	Route::post('/ltl/loads/tender', [TenderController::class, 'tenderByScac']);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
@@ -601,7 +602,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/allLastChild', [CategoryController::class ,'allLastChildCategories']);
 	Route::apiResource('temporaryCategories', TemporaryCategoryController::class);
 
-    Route::get('/allTemporaryCategories', [TemporaryCategoryController::class, 'allTemporaryCategories']);
+	Route::get('/allTemporaryCategories', [TemporaryCategoryController::class, 'allTemporaryCategories']);
 	Route::post('/temporaryCategories/{id}', [TemporaryCategoryController::class, 'update']);
 
 
@@ -660,6 +661,16 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('/get-in-touch', GetInTouchController::class);
 
 
+	/* Contact Management */
+	Route::get('chatbot_contacts', [ChatbotManagementController::class, 'index']);
+	Route::get('chatbot_contacts/{chatbot_contact_id}', [ChatbotManagementController::class, 'show']);
+	Route::put('chatbot_contacts/{chatbot_contact_id}', [ChatbotManagementController::class, 'update']);
+
+	/* Chat Management */
+	Route::post('chats', [ChatbotManagementController::class, 'store']);
+
+	/* Statistics */
+	Route::get('chatbot_stats', [ChatbotManagementController::class, 'stats']);
 
 });
 
@@ -688,21 +699,21 @@ Route::Post('frontend/product-variants-by-attribute', [FndProductVariantControll
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
-Route::post('frontend/finances', [F_FinanceController::class, 'store']);
-Route::get('/frontend/finances', [F_FinanceController::class, 'index']);
-Route::put('/frontend/finances/{id}/updateCreditAmount', [F_FinanceController::class, 'updateCreditAmount']);
+	Route::post('frontend/finances', [F_FinanceController::class, 'store']);
+	Route::get('/frontend/finances', [F_FinanceController::class, 'index']);
+	Route::put('/frontend/finances/{id}/updateCreditAmount', [F_FinanceController::class, 'updateCreditAmount']);
 
-Route::get('frontend/finances/apply', [F_FinanceController::class, 'getFinance']);
-Route::post('frontend/finances/order', [F_FinanceController::class, 'financeOrder']);
-Route::get('frontend/finances/check', [F_FinanceController::class, 'financeCheck']);
-Route::get('frontend/finances/get-customer-details', [F_FinanceController::class, 'getCustomerDetails']);
-Route::get('frontend/finances/payment-history', [F_FinanceController::class, 'getPaymentHistory']);
-Route::get('frontend/finances/{id}/due', [F_FinanceController::class, 'getDueDetails']);
-Route::post('frontend/finances/pay/{id}', [F_FinanceController::class, 'payAmount']);
-Route::get('frontend/finances/get-full-due/{id}', [F_FinanceController::class, 'getFullNetTermDue']);
-Route::get('frontend/finances/payment-order-history', [F_FinanceController::class, 'getPaymentOrderHistory']);
-Route::get('frontend/finances/payment-paid-invoice', [F_FinanceController::class, 'getPaymentPaidInvoice']);
-Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::class, 'payfullNetTerm']);
+	Route::get('frontend/finances/apply', [F_FinanceController::class, 'getFinance']);
+	Route::post('frontend/finances/order', [F_FinanceController::class, 'financeOrder']);
+	Route::get('frontend/finances/check', [F_FinanceController::class, 'financeCheck']);
+	Route::get('frontend/finances/get-customer-details', [F_FinanceController::class, 'getCustomerDetails']);
+	Route::get('frontend/finances/payment-history', [F_FinanceController::class, 'getPaymentHistory']);
+	Route::get('frontend/finances/{id}/due', [F_FinanceController::class, 'getDueDetails']);
+	Route::post('frontend/finances/pay/{id}', [F_FinanceController::class, 'payAmount']);
+	Route::get('frontend/finances/get-full-due/{id}', [F_FinanceController::class, 'getFullNetTermDue']);
+	Route::get('frontend/finances/payment-order-history', [F_FinanceController::class, 'getPaymentOrderHistory']);
+	Route::get('frontend/finances/payment-paid-invoice', [F_FinanceController::class, 'getPaymentPaidInvoice']);
+	Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::class, 'payfullNetTerm']);
 
 
 
@@ -860,31 +871,10 @@ Route::post('frontend/finances/pay-full-payment/{id}', [F_FinanceController::cla
 	Route::get('/frontend-categories/customer-featured-products', [FCategoryController::class, 'getCustomerFeaturedCategoryProducts']);
 	Route::get('/frontend-brands/customer-featured-products', [FBrandController::class, 'getCustomerFeaturedBrandProducts']);
 
-	// Route::prefix('/frontend/touras')->group(function () {
-	// 	/* Payment initiation */
-	// 	Route::post('/initiate-payment', [F_TourasPaymentController::class, 'initiatePayment']);
-
-	// 	/* Callbacks */
-	// 	Route::post('/success', [F_TourasPaymentController::class, 'handleSuccess']);
-	// 	Route::post('/failure', [F_TourasPaymentController::class, 'handleFailure']);
-
-	// 	/* Verify payment */
-	// 	Route::post('/verify-payment', [F_TourasPaymentController::class, 'verifyPayment']);
-	// });
-
-	Route::prefix('/frontend/touras')->group(function () {
-	    // Initiate payment
-	    Route::post('/initiate', [F_TourasPaymentController::class, 'initiate']);
-
-	    // Callback URLs (These will receive POST from Touras)
-	    Route::post('/callback/success', [F_TourasPaymentController::class, 'handleSuccessCallback']);
-	    Route::post('/callback/failure', [F_TourasPaymentController::class, 'handleFailureCallback']);
-
-	    // Get payment status
-	    Route::get('/status/{order_no}', [F_TourasPaymentController::class, 'getPaymentStatus']);
-	});
-
+	Route::post('/frontend/touras/initiate', [F_TourasPaymentController::class, 'initiate']);
 });
+// Route::post('/frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback']);
+Route::match(['GET', 'POST'], '/frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback']);
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
 Route::get('/frontend/guest/products/{id}/fbt', [F_FbtProductController::class, 'getFbtGuestProducts']);
@@ -1133,7 +1123,17 @@ Route::get('paymob/webhook', [F_PaymobController::class, 'webhook']);
 Route::get('paymob/thanks', [F_PaymobController::class, 'response']);
 
 
-	Route::post('/frontend/save-cheque-upload', [ F_OrderController::class, 'saveChequeUpload']);
-	Route::get('/frontend/get-cheque-uploads', [ F_OrderController::class, 'getChequeUploadsBySession']);
+Route::post('/frontend/save-cheque-upload', [ F_OrderController::class, 'saveChequeUpload']);
+Route::get('/frontend/get-cheque-uploads', [ F_OrderController::class, 'getChequeUploadsBySession']);
 
-// test change
+use App\Http\Controllers\FrontEnd\ChatbotController;
+Route::prefix('frontend')->group(function () {
+	/* Contact Management */
+	Route::post('chatbot_contacts/find-or-create', [ChatbotController::class, 'findOrCreateContact']);
+	Route::get('chatbot_contacts/{chatbot_contact_id}/chats', [ChatbotController::class, 'show']);
+
+	/* Chat Management */
+	Route::post('chats', [ChatbotController::class, 'store']);
+	Route::post('chats/mark-read', [ChatbotController::class, 'markAsRead']);
+	Route::post('chats/mark-read-by-ai', [ChatbotController::class, 'markAsReadByAI']);
+});

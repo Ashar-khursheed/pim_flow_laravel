@@ -25,8 +25,11 @@ use App\Jobs\Order\OrderPlacedMailJob;
 use App\Jobs\Order\OrderReservedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 
+use App\Traits\CalculationTrait;
+
 class OrderController extends BaseController
 {
+	use CalculationTrait;
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/orders",
@@ -163,7 +166,7 @@ class OrderController extends BaseController
 						unset($orderProduct->accessoryCharges);
 					}
 				}
-				foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				foreach (['amount', 'tax_amount', 'discount', 'additional_discount_amount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -307,7 +310,7 @@ class OrderController extends BaseController
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 
-			'payment_mode' => 'nullable|in:Stripe,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
+			'payment_mode' => 'nullable|in:CCAvenue,Stripe,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
 			'pay_with_cheque' => 'nullable|boolean',
 			'cheque_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:10240',
 			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:10240',
@@ -334,7 +337,6 @@ class OrderController extends BaseController
 			'products.*.shipping_charge' => 'required|numeric|min:0',
 			'products.*.accessory_item_ids' => 'nullable|array',
 			'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
-
 		]);
 
 		$customerId = auth()->id();
@@ -346,123 +348,9 @@ class OrderController extends BaseController
 				'message' => 'The selected address does not belong to the customer.'
 			], 422);
 		}
-		// $specificShipping = in_array(config('app.website'), ['US', 'US_T']) ? ($address->state === 'Texas' ? 99 : 199) : 0;
 
-		/* Collect all product supplier details in one go */
-		$productDetails = [];
-		foreach ($request->products as $product) {
-			$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
-			if (!$fetchedDetail) {
-				throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
-			}
-			$accessoryIds = $product['accessory_item_ids'] ?? [];
-			$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
-			$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
-
-			// $charge = empty($fetchedDetail->shipping_charge) ? $specificShipping : $fetchedDetail->shipping_charge;
-			// $shipping = $request->boolean('is_customer_pickup') ? 0 : ($charge * $product['quantity']);
-			$productDetails[] = [
-				'product_id' => $product['product_id'],
-				'vendor_id' => $product['vendor_id'],
-				'quantity' => $product['quantity'],
-				'unit_price' => $fetchedDetail->unit_price,
-				'accessoryItems' => $accessoryItems,
-				'accessory_item_charge'=> $accessoryPriceSum * $product['quantity'],
-				// 'shipping_charge' => $shipping,
-				'shipping_charge' => $product['shipping_charge'],
-			];
-		}
-
-		$payWithCheque = $request->boolean('pay_with_cheque', false);
-		$discount = $request->discount ?? 0;
-		$totalProducts = 0;
-		$orderAmount = 0;
-		$orderShipping = 0;
-
-		foreach ($productDetails as $product) {
-			$totalProducts += $product['quantity'];
-			$orderAmount += ($product['quantity'] * $product['unit_price']) + $product['accessory_item_charge'];
-			$orderShipping += $product['shipping_charge'];
-		}
-
-		/* Handle Additional Amount Price */
-		if (!empty($request->additional_amount_price)) {
-			$orderAmount += (float) $request->additional_amount_price;
-		}
-
-		/* Handle Coupon Discount */
-		$discountedAmount = $orderAmount - $discount;
-
-		/* Handle Additional Discount */
-		if ($request->additional_discount_option) {
-			$additionalDiscountReason = $request->additional_discount_reason;
-			$additionalDiscountType = $request->additional_discount_type;
-			if ($additionalDiscountType == 'fixed') {
-				$additionalDiscountPercentage = null;
-				$additionalDiscountAmount = $request->additional_discount_amount ?? 0;
-			} else if ($additionalDiscountType == 'percentage') {
-				$additionalDiscountPercentage = $request->additional_discount_percentage;
-				$additionalDiscountAmount = round($discountedAmount * $additionalDiscountPercentage / 100, 2);
-			}
-			$discountedAmount -= $additionalDiscountAmount;
-		} else {
-			$additionalDiscountReason = null;
-			$additionalDiscountType = null;
-			$additionalDiscountPercentage = null;
-			$additionalDiscountAmount = 0;
-		}
-
-		/* Handle cheque payment discount */
-		if ($payWithCheque) {
-			if ($request->hasFile('cheque_img')) {
-				$chequeImg = uploadImageToWebpS3FromFile(
-					$request,
-					'cheque_img',
-					env('STORAGE_ENV') . '/customer/orders'
-				);
-			} elseif (!empty($request->cheque_img_url)) {
-				$chequeImg = $request->cheque_img_url;
-			}
-			if ($request->hasFile('cheque_img_back')) {
-				$chequeImgBack = uploadImageToWebpS3FromFile(
-					$request,
-					'cheque_img_back',
-					env('STORAGE_ENV') . '/customer/orders'
-				);
-			} elseif (!empty($request->cheque_img_back_url)) {
-				$chequeImgBack = $request->cheque_img_back_url;
-			}
-
-			$cartCreatedByStaff = auth()->user()->customerCarts()->where('created_by', '>', 0)->exists();
-			$chequeDiscountPercentage = $cartCreatedByStaff ? 0 : cheque_discount_percentage();
-			$chequeDiscount = round($discountedAmount * $chequeDiscountPercentage / 100, 2);
-			$discountedAmount -= $chequeDiscount;
-		} else {
-			$chequeImg = null;
-			$chequeImgBack = null;
-			$chequeDiscountPercentage = 0;
-			$chequeDiscount = 0;
-		}
-
-		/* Add extra charges */
-		$discountedAmount += $request->boolean('is_lift_gate') ? 75 : 0;
-		$discountedAmount += $request->boolean('is_residential_address') ? 199 : 0;
-		$discountedAmount += $request->boolean('is_inside_delivery') ? 249 : 0;
-
-		/* Tax rules */
 		$customer = auth()->user();
-		$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
-
-		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-			$orderShipping = (($discountedAmount + $taxAmount) < 500) ? 30 : 0;
-		} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
-			$taxableAmount = $discountedAmount + $orderShipping;
-			$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
-		} else {
-			$taxAmount = round($discountedAmount * ($taxPercentage / 100), 2);
-		}
-		$totalAmount = $discountedAmount + $taxAmount + $orderShipping;
+		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free, null, true);
 
 		DB::beginTransaction();
 		try {
@@ -480,38 +368,40 @@ class OrderController extends BaseController
 				'order_number' => $orderNumber,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
-				'is_lift_gate' => $request->is_lift_gate,
-				'is_residential_address' => $request->is_residential_address,
-				'is_inside_delivery' => $request->is_inside_delivery,
-				'amount' => $orderAmount,
+
+				'is_lift_gate' => $request->boolean('is_lift_gate'),
+				'is_residential_address' => $request->boolean('is_residential_address'),
+				'is_inside_delivery' => $request->boolean('is_inside_delivery'),
+				'amount' => $amountCalculations['subtotal'],
 
 				'additional_amount_name' => $request->additional_amount_name ?? null,
 				'additional_amount_price' => $request->additional_amount_price ?? null,
+				'additional_amount_details' => $request->additional_amount_details ?? null,  /* ✅ Added */
 
 				'coupon_id' => $request->coupon_id ?? null,
-				'discount' => $discount,
+				'discount' => $amountCalculations['discount'],
 
-				'additional_discount_reason' => $additionalDiscountReason,
-				'additional_discount_type' => $additionalDiscountType,
-				'additional_discount_percentage' => $additionalDiscountPercentage,
-				'additional_discount_amount' => $additionalDiscountAmount,
+				'additional_discount_reason' => $amountCalculations['additional_discount_reason'],
+				'additional_discount_type' => $amountCalculations['additional_discount_type'],
+				'additional_discount_percentage' => $amountCalculations['additional_discount_percentage'],
+				'additional_discount_amount' => $amountCalculations['additional_discount_amount'],
 
 				'payment_mode' => $request->payment_mode ?? null,
-				'pay_with_cheque' => $payWithCheque,
-				'cheque_discount_percentage' => $chequeDiscountPercentage,
-				'cheque_discount' => $chequeDiscount,
-				'cheque_img' => $chequeImg,
-				'cheque_img_back' => $chequeImgBack,
+				'pay_with_cheque' => $amountCalculations['pay_with_cheque'],
+				'cheque_discount_percentage' => $amountCalculations['cheque_discount_percentage'],
+				'cheque_discount' => $amountCalculations['cheque_discount'],
+				'cheque_img' => $amountCalculations['cheque_img'],
+				'cheque_img_back' => $amountCalculations['cheque_img_back'],
 
-				'tax_percentage' => $taxPercentage,
-				'tax_amount' => $taxAmount,
-				'shipping_charge' => $orderShipping,
+				'tax_percentage' => $amountCalculations['tax_percentage'],
+				'tax_amount' => $amountCalculations['tax_amount'],
+				'shipping_charge' => $amountCalculations['shipping_charge'],
 
-				'total_amount' => $totalAmount,
-				'total_products' => $totalProducts,
+				'total_amount' => $amountCalculations['grand_total'],
+				'total_products' => $amountCalculations['total_products'],
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
 				'separate_deliveries' => $request->get('separate_deliveries', false),
-				'pending_amount' => $totalAmount,
+				'pending_amount' => $amountCalculations['grand_total'],
 				'status' => 'Pending',
 
 				'is_reserved' => $request->boolean('is_reserved'),
@@ -525,7 +415,7 @@ class OrderController extends BaseController
 				'utm_id' => $request->utm_id,
 			]);
 
-			foreach ($productDetails as $product) {
+			foreach ($amountCalculations['product_details'] as $product) {
 				$total = $product['quantity'] * $product['unit_price'];
 				$orderProduct = OrderProduct::create([
 					'order_id' => $order->id,
@@ -541,6 +431,7 @@ class OrderController extends BaseController
 					'total_amount' => $total + $product['shipping_charge'] + $product['accessory_item_charge'],
 					'status' => 'Pending',
 				]);
+
 				foreach ($product['accessoryItems'] as $accessoryItem) {
 					$orderProduct->accessoryCharges()->create([
 						'accessory_item_id' => $accessoryItem['id'],
@@ -583,6 +474,7 @@ class OrderController extends BaseController
 				'message' => 'Order created successfully',
 				'data' => $order
 			], 201);
+
 		} catch (\Exception $e) {
 			DB::rollBack();
 
@@ -702,7 +594,7 @@ class OrderController extends BaseController
 			$orderProduct->is_returnable = 'yes';
 		}
 
-		foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+		foreach (['amount', 'tax_amount', 'discount', 'additional_discount_amount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
 				$order->$key = number_format($order->$key, 2, '.', '');
 			}
@@ -975,7 +867,7 @@ class OrderController extends BaseController
 			$orderProduct->is_returnable = 'yes';
 		}
 
-		foreach (['amount', 'tax_amount', 'discount', 'additional_discount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+		foreach (['amount', 'tax_amount', 'discount', 'additional_discount_amount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
 				$order->$key = number_format($order->$key, 2, '.', '');
 			}

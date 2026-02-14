@@ -4,7 +4,7 @@ namespace App\Models\FrontEnd;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class AlternateProduct extends Model
+class FbtProduct extends Model
 {
     protected $table = 'fbt';
 

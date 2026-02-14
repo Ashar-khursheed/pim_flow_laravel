@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use App\Models\MeasurementUnit;
 use App\Models\ProductSupplier;
 use App\Models\AccessoryItem;
+use Pusher\Pusher;
 
 if (!function_exists('app_constants')) {
 	function app_constants($key = null)
@@ -1222,4 +1223,22 @@ if (!function_exists('home_categories')) {
 		}
 		return $categories;
 	}
+}
+
+# data should be array type generally
+function callPusher($data)
+{
+	$options = array(
+		'cluster' => env('PUSHER_APP_CLUSTER'),
+		'encrypted' => true
+	);
+	$pusher = new Pusher(
+		env('PUSHER_APP_KEY'),
+		env('PUSHER_APP_SECRET'),
+		env('PUSHER_APP_ID'),
+		$options
+	);
+
+	// $data['message'] = 'Hello XpertPhp';
+	$pusher->trigger('horeca-channel', 'horeca-new-message', $data);
 }
