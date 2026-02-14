@@ -873,8 +873,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::post('/frontend/touras/initiate', [F_TourasPaymentController::class, 'initiate']);
 });
-Route::post('/frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback']);
-// Route::match(['GET', 'POST'], '/frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback']);
+// Route::post('/frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback']);
+Route::match(['GET', 'POST'], '/frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback']);
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
 Route::get('/frontend/guest/products/{id}/fbt', [F_FbtProductController::class, 'getFbtGuestProducts']);
