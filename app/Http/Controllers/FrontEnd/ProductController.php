@@ -2495,6 +2495,13 @@ class ProductController extends Controller
 	 *         required=false,
 	 *         @OA\Schema(type="string")
 	 *     ),
+	 *     @OA\Parameter(
+	 *         name="brand_id",
+	 *         in="query",
+	 *         description="Filter by brand ID (comma-separated for multiple brands)",
+	 *         required=false,
+	 *         @OA\Schema(type="string")
+	 *     ),
 	 *
 	 *     @OA\Response(
 	 *         response=200,
@@ -2534,6 +2541,7 @@ class ProductController extends Controller
 		$minRating = $request->get('min_rating');
 		$onlyInStock = $request->get('in_stock');
 		$sort = $request->get('sort');
+		$brandId = $request->get('brand_id');
 
 		// Wishlist logic
 		$userId = Auth::id();
@@ -2556,6 +2564,7 @@ class ProductController extends Controller
 			'seoUrl',
 			'sellingUnitAttribute',
 			'ingredientsAttribute',
+			'brand:id,name',
 			'productAttributes' => function ($query) {
 				$query->whereHas('attributeDetails', function ($q) {
 					$q->whereIn('name', ['Units per Case', 'Pack Type']);
@@ -2584,21 +2593,65 @@ class ProductController extends Controller
 
 		if ($search) {
 			$query->where(function($q) use ($search) {
+				// Smart search with fuzzy matching for typos
 				$q->where('name', 'LIKE', "%$search%")
-					->orWhere('sku', 'LIKE', "%$search%"); // optional: search by SKU too
-				});
+					->orWhere('sku', 'LIKE', "%$search%")
+					// Fuzzy match using SOUNDEX for phonetic similarity
+					->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search])
+					// Search in brand names
+					->orWhereHas('brand', function($brandQ) use ($search) {
+						$brandQ->where('name', 'LIKE', "%$search%")
+							   ->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search]);
+					})
+					// Concatenated words search (e.g. "porcelainplate" matches "Porcelain Plate")
+					->orWhereRaw("REPLACE(name, ' ', '') LIKE ?", ["%{$search}%"])
+					// Word-by-word AND matching (All words must be present in Name, SKU, or Brand)
+					->orWhere(function($subQ) use ($search) {
+						$words = explode(' ', $search);
+						if (count($words) > 1) {
+							foreach ($words as $word) {
+								if (strlen($word) > 2) {
+									$subQ->where(function($wordQ) use ($word) {
+										$wordQ->where('name', 'LIKE', "%$word%")
+											  ->orWhere('sku', 'LIKE', "%$word%")
+											  ->orWhereHas('brand', function($bq) use ($word) {
+												  $bq->where('name', 'LIKE', "%$word%");
+											  });
+									});
+								}
+							}
+						} else {
+							$subQ->whereRaw('0 = 1'); // Only 1 word, handled by main logic
+						}
+					});
+
+					// Consonant-based fuzzy search for typos (e.g. "ballini" matches "Bellini")
+					// We only do this if the search term is reasonable length to avoid massive matches
+					if (strlen($search) >= 4) {
+						// Create a pattern where vowels are wildcards
+						// e.g. "ballini" -> "%b%l%l%n%"
+						$consonants = preg_replace('/[aeiouyAEIOUY\s]+/', '%', $search);
+						// Ensure we don't have multiple % side by side if possible (preg_replace handles it but good to be sure)
+						$fuzzyPattern = '%' . $consonants . '%';
+						
+						// Only apply if we have enough "skeleton" to match on
+						if (strlen($consonants) >= 3) {
+							$q->orWhere('name', 'LIKE', $fuzzyPattern);
+						}
+					}
+			});
 		}
 
 
 		if ($minPrice) {
 			$query->whereHas('productSuppliers', function ($q) use ($minPrice) {
-				$q->where('sale_price', '>=', $minPrice);
+				$q->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) >= ?', [$minPrice]);
 			});
 		}
 
 		if ($maxPrice) {
 			$query->whereHas('productSuppliers', function ($q) use ($maxPrice) {
-				$q->where('sale_price', '<=', $maxPrice);
+				$q->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) <= ?', [$maxPrice]);
 			});
 		}
 
@@ -2612,6 +2665,13 @@ class ProductController extends Controller
 			$query->whereHas('productSuppliers', function ($q) {
 				$q->where('inventory', '>', 0)->where('in_stock', 1);
 			});
+		}
+
+		// Brand filter
+		if ($brandId) {
+			$brandIds = is_array($brandId) ? $brandId : explode(',', $brandId);
+			$brandIds = array_map('intval', $brandIds);
+			$query->whereIn('brand_id', $brandIds);
 		}
 
 		// ---------------- Sorting -----------------
@@ -2635,15 +2695,34 @@ class ProductController extends Controller
 				break;
 			}
 		} else {
-             // Default sort: Maximum Discount First
-             // Discount = (price - sale_price) / price
-             // We order by this value DESC
-             $query->orderByRaw("(SELECT ((price - sale_price) / price) FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id AND price > 0 LIMIT 1) DESC");
+             // Default sort: Brand-wise (products grouped by brand)
+             $query->orderBy('brand_id', 'ASC')
+                   ->orderBy('id', 'ASC');
         }
 
 		// ---------------- Pagination -----------------
 
 		$products = $query->paginate($perPage);
+
+		// Get unique brands from the filtered products
+		$brandsInResults = $query->clone()
+			->reorder()
+			->select('brand_id')
+			->distinct()
+			->whereNotNull('brand_id')
+			->pluck('brand_id')
+			->toArray();
+
+		$brands = \App\Models\Brand::whereIn('id', $brandsInResults)
+			->select('id', 'name')
+			->orderBy('name', 'ASC')
+			->get()
+			->map(function($brand) {
+				return [
+					'id' => $brand->id,
+					'name' => $brand->name,
+				];
+			});
 
 		// ---------------- Transform Response -----------------
 
@@ -2719,7 +2798,10 @@ class ProductController extends Controller
 				'selling_type' => $sellingType,
 				'per_unit_price' => $perUnitPrice,
                 'discount_percentage' => ($firstSupplier && $firstSupplier->price > 0) ? round((($firstSupplier->price - $firstSupplier->sale_price) / $firstSupplier->price) * 100, 2) : 0,
-                'debug_attributes' => $product->productAttributes->map(fn($a) => $a->attributeDetails->name . ': ' . $a->attribute_value),
+
+				// Brand info
+				'brand_id' => $product->brand_id ?? null,
+				'brand_name' => $product->brand->name ?? null,
 
 				// Prices
 				'price' => (float)($firstSupplier->price ?? 0),
@@ -2765,7 +2847,6 @@ class ProductController extends Controller
 			'message'    => $id
 			? 'Sale products filtered by category'
 			: 'All sale products fetched successfully',
-            'debug_updated' => true,
 
 			// Pagination Meta
 			'pagination' => [
@@ -2781,6 +2862,9 @@ class ProductController extends Controller
 
 			// Actual Product Data
 			'data' => $transformed,
+
+			// Available brands in these results
+			'brands' => $brands,
 		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
 	}
 }
