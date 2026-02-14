@@ -310,7 +310,7 @@ class OrderController extends BaseController
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 
-			'payment_mode' => 'nullable|in:Stripe,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
+			'payment_mode' => 'nullable|in:CCAvenueStripe,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
 			'pay_with_cheque' => 'nullable|boolean',
 			'cheque_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:10240',
 			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:10240',
