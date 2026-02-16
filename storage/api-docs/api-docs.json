@@ -31722,9 +31722,6 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "description",
-                                    "link_name",
-                                    "link_url",
                                     "banner",
                                     "categories",
                                     "products"
@@ -31736,15 +31733,18 @@
                                     },
                                     "description": {
                                         "type": "string",
-                                        "example": "Complete coffee solutions for hotels and restaurants"
+                                        "example": "Complete coffee solutions for hotels and restaurants",
+                                        "nullable": true
                                     },
                                     "link_name": {
                                         "type": "string",
-                                        "example": "View Coffee Range"
+                                        "example": "View Coffee Range",
+                                        "nullable": true
                                     },
                                     "link_url": {
                                         "type": "string",
-                                        "example": "/products/coffee"
+                                        "example": "/products/coffee",
+                                        "nullable": true
                                     },
                                     "banner": {
                                         "description": "Banner image (webp or png)",
@@ -31794,33 +31794,51 @@
                                         }
                                     },
                                     "products": {
-                                        "description": "Array of products",
+                                        "description": "Array of product groups by type",
                                         "type": "array",
                                         "items": {
                                             "required": [
-                                                "product_id",
-                                                "type"
+                                                "type",
+                                                "items"
                                             ],
                                             "properties": {
-                                                "product_id": {
-                                                    "description": "Product ID",
-                                                    "type": "integer",
-                                                    "example": 101
-                                                },
                                                 "type": {
-                                                    "description": "Product Type",
+                                                    "description": "Product type/group name",
                                                     "type": "string",
                                                     "example": "Featured"
                                                 },
                                                 "description": {
-                                                    "description": "Description",
+                                                    "description": "Common description for this type",
                                                     "type": "string",
-                                                    "example": "Our best-selling product"
+                                                    "example": "Our best-selling products",
+                                                    "nullable": true
                                                 },
                                                 "order": {
-                                                    "description": "Product order",
+                                                    "description": "Type order",
                                                     "type": "integer",
-                                                    "example": 5
+                                                    "example": 1
+                                                },
+                                                "items": {
+                                                    "description": "Products in this type",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "required": [
+                                                            "product_id"
+                                                        ],
+                                                        "properties": {
+                                                            "product_id": {
+                                                                "description": "Product ID",
+                                                                "type": "integer",
+                                                                "example": 101
+                                                            },
+                                                            "order": {
+                                                                "description": "Product order within type",
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
                                                 }
                                             },
                                             "type": "object"

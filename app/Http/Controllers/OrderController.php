@@ -365,14 +365,24 @@ class OrderController extends Controller
 			'is_customer_pickup'
 		];
 
-		/* Parse products JSON string to array */
+		// /* Laravel's boolean() method handles this better */
+		// foreach ($booleanFields as $field) {
+		// 	if ($request->has($field)) {
+		// 		$request->merge([
+		// 			$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)
+		// 		]);
+		// 	}
+		// }
+
+		/* Laravel's boolean() method handles this better */
 		foreach ($booleanFields as $field) {
 			if ($request->has($field)) {
 				$request->merge([
-					$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)
+					$field => $request->boolean($field)
 				]);
 			}
 		}
+
 		if ($request->has('products') && is_string($request->products)) {
 			$productsString = $request->products;
 			if (strpos(trim($productsString), '{') === 0 && strpos(trim($productsString), '[') !== 0) {

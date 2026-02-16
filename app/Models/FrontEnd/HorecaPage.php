@@ -33,12 +33,9 @@ class HorecaPage extends Model
 		->orderBy('horeca_page_categories.order');
 	}
 
-	public function products()
+	public function productTypes()
 	{
-		return $this->belongsToMany(Product::class, 'horeca_page_products')
-		->using(HorecaPageProduct::class)
-		->withPivot(['type', 'description', 'order'])
-		->orderBy('horeca_page_products.order');
+		return $this->hasMany(HorecaPageProductType::class, 'horeca_page_id')->orderBy('order');
 	}
 
 	public function creator()

@@ -16,9 +16,8 @@ class HorecaPageProduct extends Pivot
 	 */
 	protected $fillable = [
 		'horeca_page_id',
+		'horeca_page_product_type_id',
 		'product_id',
-		'type',
-		'description',
 		'order',
 	];
 }

@@ -19,12 +19,12 @@ class HorecaPageController extends BaseController
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 required={"name", "description", "link_name", "link_url", "banner", "categories", "products"},
+	 *                 required={"name", "banner", "categories", "products"},
 	 *                 @OA\Property(property="name", type="string", example="Premium Coffee Solutions"),
-	 *                 @OA\Property(property="description", type="string", example="Complete coffee solutions for hotels and restaurants"),
-	 *                 @OA\Property(property="link_name", type="string", example="View Coffee Range"),
-	 *                 @OA\Property(property="link_url", type="string", example="/products/coffee"),
-	 *                 @OA\Property(property="banner", type="string", format="binary", description="Banner image (webp or png)"),
+	 *                 @OA\Property(property="description", type="string", nullable=true, example="Complete coffee solutions for hotels and restaurants"),
+	 *                 @OA\Property(property="link_name", type="string", nullable=true, example="View Coffee Range"),
+	 *                 @OA\Property(property="link_url", type="string", nullable=true, example="/products/coffee"),
+	 *                 @OA\Property(property="banner", type="string", format="binary", description="Banner image (jpeg,jpg,png,webp)"),
 	 *                 @OA\Property(property="left_para_description", type="string", nullable=true, example="Left side description content"),
 	 *                 @OA\Property(property="right_para_description", type="string", nullable=true, example="Right side description content"),
 	 *                 @OA\Property(property="faqs", type="string", nullable=true, example="JSON or HTML formatted FAQs"),
@@ -37,22 +37,31 @@ class HorecaPageController extends BaseController
 	 *                     @OA\Items(
 	 *                         required={"category_id", "order"},
 	 *                         @OA\Property(property="category_id", type="integer", example=101, description="Category ID"),
-	 *                         @OA\Property(property="order", type="integer", example=5, description="Category order"),
+	 *                         @OA\Property(property="order", type="integer", example=5, description="Category order")
 	 *                     )
 	 *                 ),
 	 *
 	 *                 @OA\Property(
 	 *                     property="products",
 	 *                     type="array",
-	 *                     description="Array of products",
+	 *                     description="Array of product groups by type",
 	 *                     @OA\Items(
-	 *                         required={"product_id", "type"},
-	 *                         @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
-	 *                         @OA\Property(property="type", type="string", example="Featured", description="Product Type"),
-	 *                         @OA\Property(property="description", type="string", example="Our best-selling product", description="Description"),
-	 *                         @OA\Property(property="order", type="integer", example=5, description="Product order"),
+	 *                         required={"type", "items"},
+	 *                         @OA\Property(property="type", type="string", example="Featured", description="Product type/group name"),
+	 *                         @OA\Property(property="description", type="string", nullable=true, example="Our best-selling products", description="Common description for this type"),
+	 *                         @OA\Property(property="order", type="integer", example=1, description="Type order"),
+	 *                         @OA\Property(
+	 *                             property="items",
+	 *                             type="array",
+	 *                             description="Products in this type",
+	 *                             @OA\Items(
+	 *                                 required={"product_id"},
+	 *                                 @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
+	 *                                 @OA\Property(property="order", type="integer", example=1, description="Product order within type")
+	 *                             )
+	 *                         )
 	 *                     )
-	 *                 ),
+	 *                 )
 	 *             )
 	 *         )
 	 *     ),
@@ -62,6 +71,21 @@ class HorecaPageController extends BaseController
 	 */
 	public function store(Request $request)
 	{
+		/* Parse boolean strings to actual booleans */
+		$booleanFields = [
+			'is_active',
+		];
+
+		/* Laravel's boolean() method handles this better */
+		foreach ($booleanFields as $field) {
+			if ($request->has($field)) {
+				$request->merge([
+					$field => $request->boolean($field)
+				]);
+			}
+		}
+
+		/* Handle JSON string conversion for categories */
 		if ($request->has('categories') && is_string($request->categories)) {
 			$categoryString = $request->categories;
 			if (strpos(trim($categoryString), '{') === 0 && strpos(trim($categoryString), '[') !== 0) {
@@ -71,6 +95,7 @@ class HorecaPageController extends BaseController
 			$request->merge(['categories' => $categories]);
 		}
 
+		/* Handle JSON string conversion for products */
 		if ($request->has('products') && is_string($request->products)) {
 			$productsString = $request->products;
 			if (strpos(trim($productsString), '{') === 0 && strpos(trim($productsString), '[') !== 0) {
@@ -83,10 +108,10 @@ class HorecaPageController extends BaseController
 		/* Validate the request */
 		$data = $request->validate([
 			'name' => 'required|string|max:255',
-			'description' => 'required|string',
-			'link_name' => 'required|string|max:255',
-			'link_url' => 'required|string',
-			'banner' => 'required|file|mimes:webp,png|max:5120', /* max 5MB */
+			'description' => 'nullable|string',
+			'link_name' => 'nullable|string|max:255',
+			'link_url' => 'nullable|string',
+			'banner' => 'required|file|mimes:jpeg,jpg,png,webp|max:2048',
 			'left_para_description' => 'nullable|string',
 			'right_para_description' => 'nullable|string',
 			'faqs' => 'nullable|string',
@@ -97,13 +122,18 @@ class HorecaPageController extends BaseController
 			'categories.*.category_id' => 'required|integer|exists:categories,id',
 			'categories.*.order' => 'nullable|integer',
 
-			/* Products validation */
+			/* Products validation - grouped by type */
 			'products' => 'required|array|min:1',
-			'products.*.product_id' => 'required|integer|exists:products,id',
 			'products.*.type' => 'required|string|max:255',
 			'products.*.description' => 'nullable|string',
 			'products.*.order' => 'nullable|integer',
+			'products.*.items' => 'required|array|min:1',
+			'products.*.items.*.product_id' => 'required|integer|exists:ec_products,id',
+			'products.*.items.*.order' => 'nullable|integer',
 		]);
+
+
+		dd($data);
 
 		try {
 			DB::beginTransaction();
@@ -116,9 +146,9 @@ class HorecaPageController extends BaseController
 			$data['created_by'] = auth()->id();
 			$data['updated_by'] = auth()->id();
 
-			/* Remove categories and products from data array before creating */
+			/* Remove categories and products from data array */
 			$categories = $data['categories'];
-			$products = $data['products'];
+			$productGroups = $data['products'];
 			unset($data['categories'], $data['products']);
 
 			/* Create the horeca page */
@@ -135,23 +165,32 @@ class HorecaPageController extends BaseController
 				$horecaPage->categories()->attach($categoriesData);
 			}
 
-			/* Attach products */
-			if (!empty($products)) {
-				$productsData = [];
-				foreach ($products as $product) {
-					$productsData[$product['product_id']] = [
-						'type' => $product['type'],
-						'description' => $product['description'] ?? null,
-						'order' => $product['order'] ?? 0,
-					];
+			/* Create product types and attach products */
+			if (!empty($productGroups)) {
+				foreach ($productGroups as $group) {
+					/* Create product type */
+					$productType = $horecaPage->productTypes()->create([
+						'type' => $group['type'],
+						'description' => $group['description'] ?? null,
+						'order' => $group['order'] ?? 0,
+					]);
+
+					/* Attach products to this type */
+					$productsData = [];
+					foreach ($group['items'] as $item) {
+						$productsData[$item['product_id']] = [
+							'horeca_page_id' => $horecaPage->id,
+							'order' => $item['order'] ?? 0,
+						];
+					}
+					$productType->products()->attach($productsData);
 				}
-				$horecaPage->products()->attach($productsData);
 			}
 
 			DB::commit();
 
 			/* Load relationships */
-			$horecaPage->load(['categories', 'products']);
+			$horecaPage->load(['categories', 'productTypes.products']);
 
 			return response()->json([
 				'success' => true,
