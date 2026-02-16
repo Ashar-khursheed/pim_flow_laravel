@@ -11,18 +11,17 @@ return new class extends Migration
 	 */
 	public function up(): void
 	{
-		Schema::create('horeca_page_products', function (Blueprint $table) {
+		Schema::create('horeca_page_product_types', function (Blueprint $table) {
 			$table->id();
 			$table->integer('horeca_page_id');
-			$table->integer('horeca_page_product_type_id');
-			$table->integer('product_id');
+			$table->string('type');
+			$table->text('description')->nullable();
 			$table->integer('order')->default(0);
 			$table->timestamps();
 
 			/* Indexes */
 			$table->index('horeca_page_id');
-			$table->index('horeca_page_product_type_id');
-			$table->index('product_id');
+			$table->index('type');
 			$table->index('order');
 		});
 	}
@@ -32,6 +31,6 @@ return new class extends Migration
 	 */
 	public function down(): void
 	{
-		Schema::dropIfExists('horeca_page_products');
+		Schema::dropIfExists('horeca_page_product_types');
 	}
 };

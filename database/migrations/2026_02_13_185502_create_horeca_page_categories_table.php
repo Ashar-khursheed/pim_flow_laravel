@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+	/**
+	 * Run the migrations.
+	 */
 	public function up(): void
 	{
 		Schema::create('horeca_page_categories', function (Blueprint $table) {
@@ -15,7 +18,10 @@ return new class extends Migration
 			$table->integer('order')->default(0);
 			$table->timestamps();
 
-			/* Ensure unique combinations */
+			/* Indexes */
+			$table->index('horeca_page_id');
+			$table->index('category_id');
+			$table->index('order');
 			$table->unique(['horeca_page_id', 'category_id']);
 		});
 	}
