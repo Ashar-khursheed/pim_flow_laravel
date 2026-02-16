@@ -109,10 +109,18 @@ class CategoryController extends BaseController
 			$records->transform(function ($record) {
 
 				if ($record->image) {
-					$record->image = asset('storage/' . $record->image);
+					if (strpos($record->image, 'http') === 0) {
+						$record->image = $record->image;
+					} else {
+						$record->image = asset('storage/' . $record->image);
+					}
 				}
 				if ($record->icon_image) {
-					$record->icon_image = asset('storage/' . $record->icon_image);
+					if (strpos($record->icon_image, 'http') === 0) {
+						$record->icon_image = $record->icon_image;
+					} else {
+						$record->icon_image = asset('storage/' . $record->icon_image);
+					}
 				}
 				$lastChildIds = !empty($record->last_child)
 				? array_map('intval', explode(',', $record->last_child))
