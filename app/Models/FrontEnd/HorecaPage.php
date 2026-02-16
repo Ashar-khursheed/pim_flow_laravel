@@ -4,7 +4,6 @@ namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Category;
-use App\Models\Product;
 use App\Models\User;
 
 class HorecaPage extends Model

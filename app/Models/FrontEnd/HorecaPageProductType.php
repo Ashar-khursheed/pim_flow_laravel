@@ -3,6 +3,7 @@
 namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Product;
 
 class HorecaPageProductType extends Model
 {
