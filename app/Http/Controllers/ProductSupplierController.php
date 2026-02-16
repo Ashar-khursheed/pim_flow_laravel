@@ -34,7 +34,7 @@ class ProductSupplierController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function index(Request $request)
+public function index(Request $request)
 	{
 		$searchableColumns = ['id', 'product_name', 'vendor_name', 'vendor_sku','product_sku'];
 		$sortableColumns = array_merge(
@@ -59,6 +59,7 @@ class ProductSupplierController extends BaseController
 			'product_suppliers.*',
 			'ec_products.name as product_name',
 			 'ec_products.sku as product_sku',
+			'ec_products.status as product_status',
 			'vendors.name as vendor_name'
 		);
 
