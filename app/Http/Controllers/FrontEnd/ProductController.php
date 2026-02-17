@@ -2557,7 +2557,12 @@ class ProductController extends Controller
 		$debugFoundCategories = [];
 
 		// DEBUG: Find all categories with "China" to see what "White Chinaware" is actually named
-		$chinawareDebug = Category::where('name', 'LIKE', '%China%')->orWhere('name', 'LIKE', '%Porcelain%')->pluck('name', 'id')->toArray();
+		$keywords = ['White', 'Glass Racks', 'Salt', 'Bread', 'Pizza', 'Pastry', 'Disposable'];
+		$chinawareDebug = Category::where(function($q) use ($keywords) {
+			foreach ($keywords as $word) {
+				$q->orWhere('name', 'LIKE', '%' . $word . '%');
+			}
+		})->pluck('name', 'id')->toArray();
 
 		foreach ($categoryOrderNames as $index => $name) {
 			// Use LIKE to be more improved against spacing/case issues
