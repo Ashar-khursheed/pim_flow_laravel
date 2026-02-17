@@ -31874,6 +31874,39 @@
                 ]
             }
         },
+        "/api/horeca-pages/{id}": {
+            "get": {
+                "tags": [
+                    "Horeca Pages"
+                ],
+                "summary": "Get Horeca page details",
+                "operationId": "0c2e6c66deb10a233df78b537890fe36",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Horeca Page ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Horeca page details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/inquiries": {
             "get": {
                 "tags": [

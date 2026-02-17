@@ -310,6 +310,7 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('horeca-pages', [HorecaPageController::class, 'store']);
+	Route::get('horeca-pages/{id}', [HorecaPageController::class, 'show']);
 
 	Route::apiResource('/inquiries',  InquiryController::class);
 	Route::apiResource('training-data',TrainingDataController::class);

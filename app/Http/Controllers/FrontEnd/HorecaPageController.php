@@ -1,6 +1,7 @@
 <?php
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\FrontEnd;
 
+use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -10,7 +11,7 @@ class HorecaPageController extends BaseController
 {
 	/**
 	 * @OA\Post(
-	 *     path="/api/horeca-pages",
+	 *     path="/api/frontend/horeca-pages",
 	 *     tags={"Horeca Pages"},
 	 *     summary="Create a new horeca page",
 	 *     description="Create a new horeca page with categories and products",
@@ -231,68 +232,44 @@ class HorecaPageController extends BaseController
 	public function show($id)
 	{
 		try {
-			/* Find the horeca page with relationships */
-			$page = HorecaPage::with([
-				'categories:id,name,image',
-				'productTypes:id,horeca_page_id,type,description,order',
-				'productTypes.products' => function($query) {
-					$query->select([
+		/* Find the horeca page with relationships */
+		$page = HorecaPage::with([
+			'categories:id,name,image',
+			'categories.seoUrl:id,relational_id,relational_type,url',
+			'productTypes:id,horeca_page_id,type,description,order',
+			'productTypes.products' => function($query) {
+				$query->select([
 						'ec_products.id',
 						'ec_products.name',
 						'ec_products.sku',
 						'ec_products.currency_id',
+						'ec_products.alt_tags',
+						'ec_products.quote_available',
+						'ec_products.brand_id'
 					])
 					->with([
+						'seoUrl:id,relational_id,relational_type,url',
 						'productSuppliers' => function($q) {
-							$q->select(['id', 'product_id', 'sale_price', 'price'])
-							->cheapest();
+							$q->select(['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 'sale_price', 'price', 'inventory', 'in_stock', 'min_quantity', 'is_fixed', 'delivery_days', 'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'])
+								->cheapest();
 						},
+						'reviews:id,product_id,star',
 						'currency:id,title,symbol',
-					]);
-				}
-			])->find($id);
+						'sellingUnitAttribute',
+					])
+					->withCount('reviews')
+					->withAvg('reviews', 'star');
+			}
+		])->find($id);
 
 			/* Transform categories data */
 			if ($page->categories) {
 				$page->categories->transform(function ($category) {
 					$category->order = optional($category->pivot)->order ?? null;
+					$category->slug = optional($category->seoUrl)->url ?? null;
 					unset($category->pivot);
+					unset($category->seoUrl);
 					return $category;
-				});
-			}
-
-			/* Transform product types and their products */
-			if ($page->productTypes) {
-				$page->productTypes->transform(function ($productType) {
-					if ($productType->products) {
-						$productType->products->transform(function ($product) {
-							/* Get cheapest supplier (already filtered by cheapest() scope) */
-							$supplier = $product->productSuppliers->first();
-
-							/* Add custom attributes */
-							$product->order = $product->pivot->order ?? null;
-							$product->currency_title = $product->currency->title ?? null;
-							$product->currency_symbol = $product->currency->symbol ?? null;
-
-							/* Calculate price from cheapest supplier */
-							if ($supplier) {
-								$product->price = ($supplier->sale_price > 0 && $supplier->sale_price < $supplier->price)
-								? $supplier->sale_price
-								: $supplier->price;
-							} else {
-								$product->price = null;
-							}
-
-							/* Remove relations */
-							unset($product->pivot);
-							unset($product->currency);
-							unset($product->currency_id);
-							unset($product->productSuppliers);
-
-							return $product;
-						});
-					}
-					return $productType;
 				});
 			}
 
