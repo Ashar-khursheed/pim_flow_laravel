@@ -2553,21 +2553,49 @@ class ProductController extends Controller
 			'Bar Items', 'Child Friendly'
 		];
 
-		$categorySortIds = [];
+		$categorySortMap = [];
 		$debugFoundCategories = [];
-		foreach ($categoryOrderNames as $name) {
+
+		foreach ($categoryOrderNames as $index => $name) {
 			// Use LIKE to be more improved against spacing/case issues
 			$cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
+			
 			if ($cat) {
-				$categorySortIds[] = $cat->id;
+				// Assign the parent category ID to this index (priority)
+				$categorySortMap[$cat->id] = $index;
 				$debugFoundCategories[$name] = $cat->id;
+
+				// Also assign all DESCENDANT category IDs to this same index
+				// This ensures "Black Dinnerware" gets the same priority as "Coloured Chinaware"
+				$descendants = $cat->getLeafCategories()->pluck('id');
+				foreach ($descendants as $childId) {
+					// Only set if not already set (higher priority wins if overlap)
+					if (!isset($categorySortMap[$childId])) {
+						$categorySortMap[$childId] = $index;
+					}
+				}
+				
+				// Also get intermediate children if getLeafCategories only returns tips
+				// A safer approach for a tree is to just get all children recursive
+				$allChildren = $cat->childrenRecursive; 
+				// Flatten function to get all IDs
+				$traverse = function($categories) use (&$traverse, &$categorySortMap, $index) {
+					foreach ($categories as $category) {
+						if (!isset($categorySortMap[$category->id])) {
+							$categorySortMap[$category->id] = $index;
+						}
+						$traverse($category->childrenRecursive);
+					}
+				};
+				$traverse($allChildren);
+
 			} else {
 				$debugFoundCategories[$name] = 'NOT FOUND';
 			}
 		}
 
-		// Log the IDs found for debugging
-		Log::info('Category Sort IDs: ' . implode(',', $categorySortIds));
+		// Log the count of IDs found for debugging
+		Log::info('Category Sort Map Count: ' . count($categorySortMap));
 
 		// Wishlist logic
 		$userId = Auth::id();
@@ -2722,13 +2750,22 @@ class ProductController extends Controller
 			}
 		} else {
 			// Default sort: Category-wise (grouped by custom order)
-			if (!empty($categorySortIds)) {
-				$idsString = implode(',', $categorySortIds);
+			if (!empty($categorySortMap)) {
+				// We need to build a CASE statement for the sort map
+				// WHEN category_id = ID THEN INDEX
+				$whens = [];
+				$ids = [];
+				foreach ($categorySortMap as $catId => $index) {
+					$whens[] = "WHEN pc_sort.category_id = $catId THEN $index";
+					$ids[] = $catId;
+				}
+				$whenString = implode(' ', $whens);
+				$idsString = implode(',', $ids);
+
 				$query->leftJoin('product_categories as pc_sort', 'ec_products.id', '=', 'pc_sort.product_id')
 					->select('ec_products.*')
-				// Use MIN to pick the highest priority category (lowest index) for the product
-				// Values not in the user's list get a high value (999999) to push them to the end
-				->orderByRaw("MIN(CASE WHEN pc_sort.category_id IN ($idsString) THEN FIELD(pc_sort.category_id, $idsString) ELSE 999999 END) ASC")
+					// Use MIN to pick the highest priority category (lowest index)
+					->orderByRaw("MIN(CASE $whenString ELSE 999999 END) ASC")
 					->orderBy('brand_id', 'ASC')
 					->orderBy('ec_products.id', 'ASC')
 					->groupBy('ec_products.id');
