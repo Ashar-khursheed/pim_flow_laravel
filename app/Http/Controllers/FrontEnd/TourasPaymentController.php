@@ -351,18 +351,25 @@ class TourasPaymentController extends Controller
 				if ($order) {
 
 					// Dispatch Email using Bus::batch
-					if ($order->is_reserved) {
-						$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
-						$batch->options['queue'] = config('app.website') . '_ORD_RES';
-						$batch->add(new OrderReservedMailJob([
-							'recordId' => $order->id
-						]));
-					} else {
-						$batch = Bus::batch([])->name("Order Placed by Backend - #{$order->order_number}")->dispatch();
-						$batch->options['queue'] = config('app.website') . '_ORD_PLC';
-						$batch->add(new OrderPlacedMailJob([
-							'recordId' => $order->id
-						]));
+					try {
+						if ($request->boolean('is_reserved')) {
+							$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
+							$batch->options['queue'] = config('app.website') . '_ORD_RES';
+							$batch->add(new OrderReservedMailJob([
+								'recordId' => $order->id
+							]));
+						} else {
+							$batch = Bus::batch([])->name("Order Placed by Backend - #{$order->order_number}")->dispatch();
+							$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+							$batch->add(new OrderPlacedMailJob([
+								'recordId' => $order->id
+							]));
+						}
+					} catch (\Exception $e) {
+						Log::error('Touras Callback: Failed to dispatch email batch', [
+							'error' => $e->getMessage(),
+							'order_id' => $order->id
+						]);
 					}
 
 					// Update Order Status in Database
