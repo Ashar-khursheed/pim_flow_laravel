@@ -24,11 +24,17 @@ class HorecaPage extends Model
 		'updated_by',
 	];
 
+	public function page_categories()
+	{
+		return $this->hasMany(HorecaPageProductType::class, 'horeca_page_id')->orderBy('order');
+	}
+
 	public function categories()
 	{
 		return $this->belongsToMany(Category::class, 'horeca_page_categories')
 		->using(HorecaPageCategory::class)
 		->withPivot('order')
+		->where('categories.status', 'published')
 		->orderBy('horeca_page_categories.order');
 	}
 
