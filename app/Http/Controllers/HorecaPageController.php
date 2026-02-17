@@ -361,6 +361,7 @@ class HorecaPageController extends BaseController
 					$query->select([
 						'ec_products.id',
 						'ec_products.name',
+						'ec_products.images',
 						'ec_products.sku',
 						'ec_products.currency_id',
 					])
