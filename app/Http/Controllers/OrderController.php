@@ -310,7 +310,7 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="additional_discount_percentage", type="number", format="float", example=10.50, description="Additional discount percentage"),
 	 *                 @OA\Property(property="additional_discount_amount", type="number", format="float", example=50.00, description="Additional discount amount"),
 	 *
-	 *                 @OA\Property(property="payment_mode", type="string", enum={"Stripe", "Check Payment", "Ascentium Financing", "Approve Financing", "Resolve Financing", "Net Terms"}, example="Check Payment", description="Payment mode"),
+	 *                 @OA\Property(property="payment_mode", type="string", enum={"Touras", "CCAvenue", "Stripe", "Check Payment", "Ascentium Financing", "Approve Financing", "Resolve Financing", "Net Terms"}, example="Check Payment", description="Payment mode"),
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
 	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
@@ -319,6 +319,7 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
 	 *                 @OA\Property(property="is_payment", type="boolean", example=false, description="Payment gateway"),
 	 *                 @OA\Property(property="is_ccavenue", type="boolean", example=false, description="Payment gateway"),
+	 *                 @OA\Property(property="is_payment_touras", type="boolean", example=false, description="Payment gateway"),
 	 *                 @OA\Property(property="is_squarePayment", type="boolean", example=false, description="Square payment"),
 	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),
 	 *                 @OA\Property(
@@ -1297,7 +1298,7 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="additional_discount_percentage", type="number", format="float", example=10.50, description="Additional discount percentage"),
 	 *                 @OA\Property(property="additional_discount_amount", type="number", format="float", example=50.00, description="Additional discount amount"),
 	 *
-	 *                 @OA\Property(property="payment_mode", type="string", enum={"Stripe", "Check Payment", "Ascentium Financing", "Approve Financing", "Resolve Financing", "Net Terms"}, example="Check Payment", description="Payment mode"),
+	 *                 @OA\Property(property="payment_mode", type="string", enum={"Touras", "CCAvenue", "Stripe", "Check Payment", "Ascentium Financing", "Approve Financing", "Resolve Financing", "Net Terms"}, example="Check Payment", description="Payment mode"),
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
 	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),

@@ -23419,6 +23419,15 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "brand_id",
+                        "in": "query",
+                        "description": "Filter by brand ID (comma-separated for multiple brands)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -31747,7 +31756,7 @@
                                         "nullable": true
                                     },
                                     "banner": {
-                                        "description": "Banner image (webp or png)",
+                                        "description": "Banner image (jpeg,jpg,png,webp)",
                                         "type": "string",
                                         "format": "binary"
                                     },
@@ -34193,6 +34202,8 @@
                                         "description": "Payment mode",
                                         "type": "string",
                                         "enum": [
+                                            "Touras",
+                                            "CCAvenue",
                                             "Stripe",
                                             "Check Payment",
                                             "Ascentium Financing",
@@ -34233,6 +34244,11 @@
                                         "example": false
                                     },
                                     "is_ccavenue": {
+                                        "description": "Payment gateway",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_payment_touras": {
                                         "description": "Payment gateway",
                                         "type": "boolean",
                                         "example": false
@@ -34469,6 +34485,8 @@
                                         "description": "Payment mode",
                                         "type": "string",
                                         "enum": [
+                                            "Touras",
+                                            "CCAvenue",
                                             "Stripe",
                                             "Check Payment",
                                             "Ascentium Financing",
