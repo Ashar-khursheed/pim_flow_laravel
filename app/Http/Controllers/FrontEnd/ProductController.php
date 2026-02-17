@@ -2542,6 +2542,24 @@ class ProductController extends Controller
 		$onlyInStock = $request->get('in_stock');
 		$sort = $request->get('sort');
 		$brandId = $request->get('brand_id');
+		$categoryId = $request->get('category_id') ?? $id;
+
+		// Custom category sort sequence
+		$categoryOrderNames = [
+			'White Chinaware', 'Coloured Chinaware', 'Cutlery', 'Glassware',
+			'Glass Racks & Extenders', 'Serving & Table Accessories', 'Salt & Pepper Mills',
+			'Bread Box & Baskets', 'Kitchen Utensils & Tools', 'Pizza Utensils & Tools',
+			'Pastry & Bakery', 'Cast Iron', 'Buffetware', 'Disposable Cutlery & Napkins',
+			'Bar Items', 'Child Friendly'
+		];
+
+		$categorySortIds = Category::whereIn('name', $categoryOrderNames)
+			->get()
+			->sortBy(function($cat) use ($categoryOrderNames) {
+				return array_search($cat->name, $categoryOrderNames);
+			})
+			->pluck('id')
+			->toArray();
 
 		// Wishlist logic
 		$userId = Auth::id();
@@ -2573,8 +2591,8 @@ class ProductController extends Controller
 		]);
 
 		// If Category ID is provided, apply category filter
-		if ($id) {
-			$category = Category::find($id);
+		if ($categoryId) {
+			$category = Category::find($categoryId);
 
 			if (!$category) {
 				return response()->json([
@@ -2584,8 +2602,8 @@ class ProductController extends Controller
 			}
 
 			// Filter by category
-			$query->whereHas('categories', function ($q) use ($id) {
-				$q->where('category_id', $id);
+			$query->whereHas('categories', function ($q) use ($categoryId) {
+				$q->where('category_id', $categoryId);
 			});
 		}
 
@@ -2695,34 +2713,47 @@ class ProductController extends Controller
 				break;
 			}
 		} else {
-             // Default sort: Brand-wise (products grouped by brand)
-             $query->orderBy('brand_id', 'ASC')
-                   ->orderBy('id', 'ASC');
-        }
+			// Default sort: Category-wise (grouped by custom order)
+			if (!empty($categorySortIds)) {
+				$idsString = implode(',', $categorySortIds);
+				$query->leftJoin('product_categories as pc_sort', 'ec_products.id', '=', 'pc_sort.product_id')
+					->select('ec_products.*')
+					->orderByRaw("CASE WHEN pc_sort.category_id IN ($idsString) THEN 0 ELSE 1 END")
+					->orderByRaw("FIELD(pc_sort.category_id, $idsString)")
+					->orderBy('brand_id', 'ASC')
+					->orderBy('ec_products.id', 'ASC')
+					->groupBy('ec_products.id');
+			} else {
+				// Fallback to Brand-wise
+				$query->orderBy('brand_id', 'ASC')
+					->orderBy('id', 'ASC');
+			}
+		}
 
 		// ---------------- Pagination -----------------
 
 		$products = $query->paginate($perPage);
 
-		// Get unique brands from the filtered products
-		$brandsInResults = $query->clone()
-			->reorder()
-			->select('brand_id')
-			->distinct()
-			->whereNotNull('brand_id')
-			->pluck('brand_id')
-			->toArray();
+		// Get unique colors/categories/brands from the filtered result set
+		$allFilteredIds = $query->clone()->reorder()->groupBy('ec_products.id')->pluck('ec_products.id')->toArray();
 
-		$brands = \App\Models\Brand::whereIn('id', $brandsInResults)
+		// Get unique brands from the filtered products
+		$brands = \App\Models\Brand::whereIn('id', function($q) use ($allFilteredIds) {
+				$q->from('ec_products')->whereIn('id', $allFilteredIds)->select('brand_id')->distinct();
+			})
 			->select('id', 'name')
 			->orderBy('name', 'ASC')
 			->get()
-			->map(function($brand) {
-				return [
-					'id' => $brand->id,
-					'name' => $brand->name,
-				];
-			});
+			->values();
+
+		// Get unique categories from the filtered products
+		$categories = Category::whereIn('id', function($q) use ($allFilteredIds) {
+				$q->from('product_categories')->whereIn('product_id', $allFilteredIds)->select('category_id')->distinct();
+			})
+			->select('id', 'name')
+			->orderBy('name', 'ASC')
+			->get()
+			->values();
 
 		// ---------------- Transform Response -----------------
 
@@ -2863,8 +2894,11 @@ class ProductController extends Controller
 			// Actual Product Data
 			'data' => $transformed,
 
-			// Available brands in these results
+			// Available brands and categories in these results
 			'brands' => $brands,
+			'categories' => $categories,
 		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
 	}
+
+	
 }
