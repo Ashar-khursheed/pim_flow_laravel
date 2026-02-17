@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\FrontEnd\Order;
 use App\Jobs\Order\OrderPlacedMailJob;
+use App\Models\PaymentManagement;
 
 class TourasPaymentController extends Controller
 {
@@ -343,13 +344,24 @@ class TourasPaymentController extends Controller
 						'pending_amount' => 0,
 						'payment_link' => null,
 						'is_reserved' => false, // Set is_reserved to 0
-						'status' => 'Confirmed', // Optionally confirm the order
+						// 'status' => 'Confirmed', // Removed as per requirement
 					]);
 
 					// Dispatch Order Placed Email
 					OrderPlacedMailJob::dispatch($order);
 
-					// Create Payment Record can be added here if needed
+					// Create Payment Record
+					PaymentManagement::create([
+						'order_id' => $order->id,
+						'transaction_id' => $response['transaction_id'] ?? null,
+						'payment_mode' => 'Touras',
+						'amount' => $response['amount'],
+						'status' => 'Success',
+						'payment_date' => now(),
+						'notes' => json_encode($response),
+						'payment_method' => 'Touras',
+						'created_by' => auth()->id() ?? null,
+					]);
 				}
 
 				if ($request->query('source') === 'admin') {
