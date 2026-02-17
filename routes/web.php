@@ -12,6 +12,7 @@ use App\Models\Blog;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\DocumentUploadController;
+use App\Http\Controllers\FrontEnd\TourasPaymentController;
 
 // Route::get('/{any}', [SeoController::class, 'renderWithSeo'])
 //     ->where('any', '.*');
@@ -117,6 +118,8 @@ Route::get('/payment/touras/redirect/{order_no}', function($orderNo) {
         'hash' => 'tnBW8NjOjZvn3JPT1nSjRxVdM+oK602gRjxoCetpGnyXgMDoluuy67JbfmTweBNVruA7H9ge8oiGjrgnm61ZSqosMUZsrIRkfbBYFTtjdL4=',
     ]);
 });
+
+Route::get('payment/touras/pay/{order}', [TourasPaymentController::class, 'pay'])->name('frontend.touras.pay');
 
 Route::get('/chatbot-test', function () {
 	return view('chatbot-test');

@@ -54,6 +54,7 @@ class Order extends Model
 		'payment_link',
 		'is_reserved',
 		'is_payment',
+		'is_payment_touras',
 		'is_squarePayment',
 		'is_ccavenue',
 		'is_customer_pickup',

@@ -103,6 +103,72 @@ class TourasPaymentController extends Controller
 	}
 
 	/**
+	 * Create Touras payment link for Admin/Order
+	 */
+	public function createTourasPaymentLink(Order $order)
+	{
+		// Generate the payment link that points to our internal pay route
+		// This route will render the form and auto-submit to Touras
+		// We use the order ID to identify the order
+		return route('frontend.touras.pay', ['order' => $order->id]);
+	}
+
+	/**
+	 * Handle the payment link visit (GET request)
+	 * Renders the view that auto-submits to Touras
+	 */
+	public function pay(Request $request, $orderId)
+	{
+		$order = Order::findOrFail($orderId);
+
+		if ($order->is_paid) {
+			return "Order is already paid.";
+		}
+
+		// Prepare data for Touras
+		$orderData = [
+			'amount' => $order->pending_amount > 0 ? $order->pending_amount : $order->total_amount,
+			'order_number' => $order->order_number,
+			'country' => 'ARE', // Default to UAE as per requirement
+			'currency' => 'AED',
+			'channel' => 'WEB',
+			'customer' => [
+				'cust_name' => $order->customer->name ?? '',
+				'email_id' => $order->customer->email ?? '',
+				'mobile_no' => $order->customer->mobile_number ?? '',
+				'unique_id' => $order->customer_id ?? '',
+				'is_logged_in' => 'N',
+			],
+			'billing' => [
+				'bill_address' => $order->customerAddress->address ?? '',
+				'bill_city' => $order->customerAddress->city ?? '',
+				'bill_state' => $order->customerAddress->state ?? '',
+				'bill_country' => $order->customerAddress->country ?? '',
+				'bill_zip' => $order->customerAddress->zipcode ?? '',
+			],
+			'shipping' => [
+				'ship_address' => $order->customerAddress->address ?? '',
+				'ship_city' => $order->customerAddress->city ?? '',
+				'ship_state' => $order->customerAddress->state ?? '',
+				'ship_country' => $order->customerAddress->country ?? '',
+				'ship_zip' => $order->customerAddress->zipcode ?? '',
+				'ship_days' => $order->product_supplier['delivery_days'] ?? '2',
+				'address_count' => '1',
+			],
+		];
+
+		// Reuse the existing preparePaymentRequest logic
+		$paymentData = $this->preparePaymentRequest($orderData);
+
+		return view('touras-payment-form', [
+			'postUrl' => $paymentData['post_url'],
+			'meId' => $paymentData['me_id'],
+			'merchantRequest' => $paymentData['merchant_request'],
+			'hash' => $paymentData['hash'],
+		]);
+	}
+
+	/**
 	 * Prepare payment request with encryption
 	 */
 	private function preparePaymentRequest($orderData)
@@ -261,6 +327,24 @@ class TourasPaymentController extends Controller
 			}
 
 			if (isset($response['response_code']) && $response['response_code'] === '0' && isset($response['message']) && strtolower($response['message']) === 'successful') {
+				
+				// Update Order Status in Database
+				$orderNumber = $response['order_no'];
+				$order = Order::where('order_number', $orderNumber)->first();
+
+				if ($order) {
+					$order->update([
+						'is_paid' => true,
+						'paid_amount' => $response['amount'],
+						'pending_amount' => 0,
+						'payment_link' => null,
+						'is_reserved' => false, // Set is_reserved to 0
+						'status' => 'Confirmed', // Optionally confirm the order
+					]);
+
+					// Create Payment Record can be added here if needed
+				}
+
 				$redirectUrl = $this->frontendUrl . '/review-checkout?' . http_build_query([
 					'success' => true,
 					'order_no' => $response['order_no'],
