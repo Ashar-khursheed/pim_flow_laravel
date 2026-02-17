@@ -359,17 +359,24 @@ class TourasPaymentController extends Controller
 					OrderPlacedMailJob::dispatch($order);
 
 					// Create Payment Record
-					PaymentManagement::create([
-						'order_id' => $order->id,
-						'transaction_id' => $response['transaction_id'] ?? null,
-						'payment_mode' => 'Touras',
-						'amount' => $response['amount'],
-						'status' => 'Success',
-						'payment_date' => now(),
-						'notes' => json_encode($response),
-						'payment_method' => 'Touras',
-						'created_by' => auth()->id() ?? null,
-					]);
+					try {
+						PaymentManagement::create([
+							'order_id' => $order->id,
+							'transaction_id' => $response['transaction_id'] ?? null,
+							'payment_mode' => 'Touras',
+							'amount' => $response['amount'],
+							'status' => 'Success',
+							'payment_date' => now(),
+							'notes' => json_encode($response),
+							'payment_method' => 'Touras',
+							'created_by' => auth()->id() ?? null,
+						]);
+					} catch (\Exception $e) {
+						Log::error('Touras Callback: Failed to create payment record', [
+							'error' => $e->getMessage(),
+							'order_id' => $order->id
+						]);
+					}
 				}
 
 				if ($request->query('source') === 'admin') {
