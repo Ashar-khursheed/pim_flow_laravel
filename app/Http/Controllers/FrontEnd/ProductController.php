@@ -2765,7 +2765,8 @@ class ProductController extends Controller
 				$query->leftJoin('product_categories as pc_sort', 'ec_products.id', '=', 'pc_sort.product_id')
 					->select('ec_products.*')
 					// Use MIN to pick the highest priority category (lowest index)
-					->orderByRaw("MIN(CASE $whenString ELSE 999999 END) ASC")
+					->selectRaw("MIN(CASE $whenString ELSE 999999 END) as debug_sort_index")
+					->orderBy('debug_sort_index', 'ASC')
 					->orderBy('brand_id', 'ASC')
 					->orderBy('ec_products.id', 'ASC')
 					->groupBy('ec_products.id');
@@ -2916,7 +2917,9 @@ class ProductController extends Controller
 				// Other info
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
-				'debug_category_ids' => $product->categories->pluck('id')->toArray(),
+				// DEBUG INFO
+				'debug_sort_index' => $product->debug_sort_index ?? 'N/A',
+				'debug_category_ids' => $product->categories->map(function($c) { return $c->id . ':' . $c->name; })->toArray(),
 			];
 		});
 
