@@ -303,6 +303,10 @@ class TourasPaymentController extends Controller
 	{
 		try {
 			if (!$request->has('txn_response') || !$request->has('me_id')) {
+				Log::error('Touras Callback: Missing txn_response or me_id', $request->all());
+				if ($request->query('source') === 'admin') {
+					return view('touras-payment-decline', ['message' => 'Invalid payment response']);
+				}
 				return redirect($this->frontendUrl . '/payment/decline?' . http_build_query([
 					'success' => false,
 					'message' => 'Invalid payment response',
@@ -325,6 +329,10 @@ class TourasPaymentController extends Controller
 
 			// Validate merchant ID
 			if ($response['me_id'] !== $this->merchantId) {
+				Log::error('Touras Callback: Merchant ID Mismatch', ['expected' => $this->merchantId, 'received' => $response['me_id']]);
+				if ($request->query('source') === 'admin') {
+					return view('touras-payment-decline', ['message' => 'Invalid merchant ID']);
+				}
 				return redirect($this->frontendUrl . '/payment/decline?' . http_build_query([
 					'success' => false,
 					'message' => 'Invalid merchant ID',
@@ -380,6 +388,10 @@ class TourasPaymentController extends Controller
 				]);
 				return redirect($redirectUrl);
 			} else {
+				Log::warning('Touras Payment Failed', $response);
+				if ($request->query('source') === 'admin') {
+					return view('touras-payment-decline', ['message' => $response['message'] ?? 'Payment declined']);
+				}
 				$redirectUrl = $this->frontendUrl . '/payment/decline?' . http_build_query([
 					'success' => false,
 					'order_no' => $response['order_no'],
@@ -390,6 +402,10 @@ class TourasPaymentController extends Controller
 			}
 
 		} catch (\Exception $e) {
+			Log::error('Touras Callback Exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+			if ($request->query('source') === 'admin') {
+				return view('touras-payment-decline', ['message' => 'Payment processing error']);
+			}
 			$redirectUrl = $this->frontendUrl . '/payment/decline?' . http_build_query([
 				'success' => false,
 				'message' => 'Payment processing error',
