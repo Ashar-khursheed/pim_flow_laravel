@@ -9,6 +9,128 @@ use App\Models\FrontEnd\HorecaPage;
 class HorecaPageController extends BaseController
 {
 	/**
+	 * @OA\Get(
+	 *     path="/api/horeca-pages",
+	 *     summary="Get list of horeca pages",
+	 *     description="Get paginated list of horeca pages with search and sort functionality",
+	 *     tags={"Horeca Pages"},
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "is_active", "created_by", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *     @OA\Response(response=200, description="Horeca pages list retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function index(Request $request)
+	{
+		$searchableColumns = ['id', 'name', 'is_active', 'created_by'];
+		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
+
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+		$recordsQuery = HorecaPage::query();
+
+		if ($request->filled('page') && $request->filled('length')) {
+			/* Join users table if needed for sorting or searching by creator */
+			if ($sortBy === 'created_by' || ($request->filled('global') && in_array('created_by', $searchableColumns))) {
+				$recordsQuery->leftJoin('users as creator_user', 'horeca_pages.created_by', '=', 'creator_user.id');
+				$recordsQuery->select('horeca_pages.*');
+			}
+
+			/* Load relationships */
+			$recordsQuery->with([
+				'creator:id,first_name,last_name',
+				'updator:id,first_name,last_name',
+			]);
+
+			/* Global search */
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						if ($col === 'is_active') {
+							/* Search for 'active' or 'inactive' status */
+							$searchLower = strtolower($search);
+							if (strpos($searchLower, 'active') !== false) {
+								if (strpos($searchLower, 'inactive') !== false) {
+									$q->orWhere('horeca_pages.is_active', 0);
+								} else {
+									$q->orWhere('horeca_pages.is_active', 1);
+								}
+							}
+						} elseif ($col === 'created_by') {
+							$q->orWhereHas('creator', function ($sub) use ($search) {
+								$sub->where(function ($q2) use ($search) {
+									$q2->where('first_name', 'like', '%' . $search . '%')
+									->orWhere('last_name', 'like', '%' . $search . '%')
+									->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $search . '%']);
+								});
+							});
+						} else {
+							$q->orWhere("horeca_pages.$col", 'like', '%' . $search . '%');
+						}
+					}
+				});
+			}
+
+			/* Sorting */
+			if ($sortBy === 'created_by') {
+				$recordsQuery->orderByRaw("CONCAT(creator_user.first_name, ' ', creator_user.last_name) $sortDir");
+			} elseif ($sortBy === 'is_active') {
+				$recordsQuery->orderBy('horeca_pages.is_active', $sortDir);
+			} else {
+				$recordsQuery->orderBy("horeca_pages.$sortBy", $sortDir);
+			}
+
+			/* Pagination */
+			$length = (int) $request->input('length');
+			$page = (int) $request->input('page');
+
+			$totalRecords = (clone $recordsQuery)->count();
+			$totalPages = (int) ceil($totalRecords / $length);
+
+			if ($page > $totalPages && $totalPages > 0) {
+				$page = 1;
+			}
+
+			$records = $recordsQuery
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get(['horeca_pages.id', 'horeca_pages.name', 'horeca_pages.banner_url', 'horeca_pages.is_active', 'horeca_pages.created_by', 'horeca_pages.updated_by', 'horeca_pages.updated_at']);
+
+			/* Transform records */
+			$records->transform(function ($record) {
+				$record->created_by = $record->creator
+				? trim($record->creator->first_name . ' ' . $record->creator->last_name)
+				: null;
+				$record->updated_by = $record->updator
+				? trim($record->updator->first_name . ' ' . $record->updator->last_name)
+				: null;
+				unset($record->creator, $record->updator);
+				$record->is_active = $record->is_active == 1 ? 'Active' : 'Inactive';
+				return $record;
+			});
+
+		} else {
+			/* Simple list without pagination */
+			$records = $recordsQuery->orderBy('name', 'asc')->get(['id', 'name']);
+			$totalRecords = $records->count();
+			$totalPages = 1;
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Records retrieved successfully',
+			'data' => $records,
+			'total_pages' => $totalPages,
+			'total_records' => $totalRecords,
+		]);
+	}
+
+	/**
 	 * @OA\Post(
 	 *     path="/api/horeca-pages",
 	 *     tags={"Horeca Pages"},

@@ -20263,6 +20263,34 @@
                 }
             }
         },
+        "/api/frontend/horeca-pages/{id}": {
+            "get": {
+                "tags": [
+                    "Front"
+                ],
+                "summary": "Get Horeca page details",
+                "operationId": "64f27fcab8a2014dbcf37189c1ec4435",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Horeca Page ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Horeca page details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/inquiries": {
             "post": {
                 "tags": [
@@ -31717,6 +31745,86 @@
             }
         },
         "/api/horeca-pages": {
+            "get": {
+                "tags": [
+                    "Horeca Pages"
+                ],
+                "summary": "Get list of horeca pages",
+                "description": "Get paginated list of horeca pages with search and sort functionality",
+                "operationId": "79bbd62566867f218d33f546550324e1",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "is_active",
+                                "created_by",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Horeca pages list retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
                     "Horeca Pages"
@@ -50580,6 +50688,10 @@
         {
             "name": "Google Reviews",
             "description": "Google Reviews"
+        },
+        {
+            "name": "Front",
+            "description": "Front"
         },
         {
             "name": "FrontEnd Inquiries",

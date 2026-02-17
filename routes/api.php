@@ -309,8 +309,7 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
-	Route::post('horeca-pages', [HorecaPageController::class, 'store']);
-	Route::get('horeca-pages/{id}', [HorecaPageController::class, 'show']);
+	Route::apiResource('horeca-pages',  HorecaPageController::class);
 
 	Route::apiResource('/inquiries',  InquiryController::class);
 	Route::apiResource('training-data',TrainingDataController::class);
