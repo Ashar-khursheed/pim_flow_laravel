@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\FrontEnd\Order;
+use App\Jobs\Order\OrderPlacedMailJob;
 
 class TourasPaymentController extends Controller
 {
@@ -158,7 +159,10 @@ class TourasPaymentController extends Controller
 		];
 
 		// Reuse the existing preparePaymentRequest logic
-		$paymentData = $this->preparePaymentRequest($orderData);
+		$paymentData = $this->preparePaymentRequest($orderData, [
+			'success_url' => $this->successUrl . '?source=admin',
+			'failure_url' => $this->failureUrl . '?source=admin',
+		]);
 
 		return view('touras-payment-form', [
 			'postUrl' => $paymentData['post_url'],
@@ -171,7 +175,7 @@ class TourasPaymentController extends Controller
 	/**
 	 * Prepare payment request with encryption
 	 */
-	private function preparePaymentRequest($orderData)
+	private function preparePaymentRequest($orderData, $overrides = [])
 	{
 		// Transaction Details (Required) - 10 fields
 		$txnDetails = [
@@ -182,8 +186,8 @@ class TourasPaymentController extends Controller
 			$orderData['country'],                                  // country
 			$orderData['currency'],                                 // currency
 			'SALE',                                                 // txn_type
-			$this->successUrl,                                      // success_url
-			$this->failureUrl,                                      // failure_url
+			$overrides['success_url'] ?? $this->successUrl,         // success_url
+			$overrides['failure_url'] ?? $this->failureUrl,         // failure_url
 			$orderData['channel'],                                  // channel
 		];
 
@@ -342,7 +346,14 @@ class TourasPaymentController extends Controller
 						'status' => 'Confirmed', // Optionally confirm the order
 					]);
 
+					// Dispatch Order Placed Email
+					OrderPlacedMailJob::dispatch($order);
+
 					// Create Payment Record can be added here if needed
+				}
+
+				if ($request->query('source') === 'admin') {
+					return view('touras-payment-success');
 				}
 
 				$redirectUrl = $this->frontendUrl . '/review-checkout?' . http_build_query([
