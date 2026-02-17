@@ -582,7 +582,7 @@ class OrderController extends Controller
 								'trace' => $e->getTraceAsString()
 							]);
 						}
-					} else if ($request->boolean('is_payment_touras')) {
+					} else if ($request->boolean('is_payment_touras') || $request->payment_mode === 'ADCB Touras') {
 						try {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\TourasPaymentController::class)->createTourasPaymentLink($order);
 							if ($paymentLink) {
@@ -1529,7 +1529,7 @@ class OrderController extends Controller
 				$paymentLink = null;
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					try {
-						if ($request->payment_mode === 'Touras') {
+						if ($request->payment_mode === 'Touras' || $request->payment_mode === 'ADCB Touras') {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\TourasPaymentController::class)->createTourasPaymentLink($order);
 						} else {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
