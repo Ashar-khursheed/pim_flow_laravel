@@ -133,7 +133,7 @@ class TourasPaymentController extends Controller
 		// Prepare data for Touras
 		$orderData = [
 			'amount' => $order->pending_amount > 0 ? $order->pending_amount : $order->total_amount,
-			'order_number' => $order->order_number,
+			'order_number' => $order->order_number . 'H' . time(),
 			'country' => 'ARE', // Default to UAE as per requirement
 			'currency' => 'AED',
 			'channel' => 'WEB',
@@ -346,7 +346,18 @@ class TourasPaymentController extends Controller
 				
 				// Update Order Status in Database
 				$orderNumber = $response['order_no'];
-				$order = Order::where('order_number', $orderNumber)->first();
+				
+				/* Handle suffixed order number (e.g., 2398H1740012345 or 2398-1740012345) */
+				$baseOrderNumber = $orderNumber;
+				if (strpos($orderNumber, 'H') !== false) {
+					$parts = explode('H', $orderNumber);
+					$baseOrderNumber = $parts[0];
+				} elseif (strpos($orderNumber, '-') !== false) {
+					$parts = explode('-', $orderNumber);
+					$baseOrderNumber = $parts[0];
+				}
+
+				$order = Order::where('order_number', $baseOrderNumber)->first();
 
 				if ($order) {
 
