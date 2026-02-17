@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\FrontEnd\Order;
 use App\Jobs\Order\OrderPlacedMailJob;
+use App\Jobs\Order\OrderReservedMailJob;
 use App\Models\PaymentManagement;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Bus;
 
 class TourasPaymentController extends Controller
 {
@@ -346,30 +349,57 @@ class TourasPaymentController extends Controller
 				$order = Order::where('order_number', $orderNumber)->first();
 
 				if ($order) {
+
+					// Dispatch Email using Bus::batch
+					try {
+						if ($request->boolean('is_reserved')) {
+							$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
+							$batch->options['queue'] = config('app.website') . '_ORD_RES';
+							$batch->add(new OrderReservedMailJob([
+								'recordId' => $order->id
+							]));
+						} else {
+							$batch = Bus::batch([])->name("Order Placed by Backend - #{$order->order_number}")->dispatch();
+							$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+							$batch->add(new OrderPlacedMailJob([
+								'recordId' => $order->id
+							]));
+						}
+					} catch (\Exception $e) {
+						Log::error('Touras Callback: Failed to dispatch email batch', [
+							'error' => $e->getMessage(),
+							'order_id' => $order->id
+						]);
+					}
+
+					// Update Order Status in Database
 					$order->update([
 						'is_paid' => true,
 						'paid_amount' => $response['amount'],
 						'pending_amount' => 0,
 						'payment_link' => null,
 						'is_reserved' => false, // Set is_reserved to 0
-						// 'status' => 'Confirmed', // Removed as per requirement
 					]);
-
-					// Dispatch Order Placed Email
-					OrderPlacedMailJob::dispatch($order);
 
 					// Create Payment Record
-					PaymentManagement::create([
-						'order_id' => $order->id,
-						'transaction_id' => $response['transaction_id'] ?? null,
-						'payment_mode' => 'Touras',
-						'amount' => $response['amount'],
-						'status' => 'Success',
-						'payment_date' => now(),
-						'notes' => json_encode($response),
-						'payment_method' => 'Touras',
-						'created_by' => auth()->id() ?? null,
-					]);
+					try {
+						PaymentManagement::create([
+							'order_id' => $order->id,
+							'transaction_id' => $response['transaction_id'] ?? null,
+							'payment_mode' => 'Credit Card', // Using 'Credit Card' as it's a valid ENUM value. 
+							'amount' => $response['amount'],
+							'status' => 'Success',
+							'payment_date' => now(),
+							'notes' => json_encode(['payment_gateway' => 'Touras', 'raw_response' => $response]),
+							'payment_method' => 'Touras',
+							'created_by' => auth()->id() ?? null,
+						]);
+					} catch (\Exception $e) {
+						Log::error('Touras Callback: Failed to create payment record in payment_managements', [
+							'error' => $e->getMessage(),
+							'order_id' => $order->id
+						]);
+					}
 				}
 
 				if ($request->query('source') === 'admin') {
