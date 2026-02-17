@@ -2556,6 +2556,9 @@ class ProductController extends Controller
 		$categorySortMap = [];
 		$debugFoundCategories = [];
 
+		// DEBUG: Find all categories with "China" to see what "White Chinaware" is actually named
+		$chinawareDebug = Category::where('name', 'LIKE', '%China%')->orWhere('name', 'LIKE', '%Porcelain%')->pluck('name', 'id')->toArray();
+
 		foreach ($categoryOrderNames as $index => $name) {
 			// Use LIKE to be more improved against spacing/case issues
 			$cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
@@ -2948,6 +2951,7 @@ class ProductController extends Controller
 			'brands' => $brands,
 			'categories' => $categories,
 			'debug_sort_mapping' => $debugFoundCategories,
+			'debug_potential_categories' => $chinawareDebug, // DEBUG ADDED
 		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
 	}
 
