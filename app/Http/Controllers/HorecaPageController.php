@@ -396,7 +396,8 @@ class HorecaPageController extends BaseController
 							$product->order = $product->pivot->order ?? null;
 							$product->currency_title = $product->currency->title ?? null;
 							$product->currency_symbol = $product->currency->symbol ?? null;
-							$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+							$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+							$product->image = $images[0] ?? null;
 
 							/* Calculate price from cheapest supplier */
 							if ($supplier) {
@@ -409,6 +410,7 @@ class HorecaPageController extends BaseController
 
 							/* Remove relations */
 							unset($product->pivot);
+							unset($product->images);
 							unset($product->currency);
 							unset($product->currency_id);
 							unset($product->productSuppliers);
