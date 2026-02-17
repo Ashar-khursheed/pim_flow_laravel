@@ -653,7 +653,7 @@ class TourasPaymentController extends Controller
 		$this->successUrl = config('app.backend_url').'/api/frontend/touras/callback';
 		$this->failureUrl = config('app.backend_url').'/api/frontend/touras/callback';
 
-		// $this->successUrl = 'http://pim.devs/api/frontend/touras/callback';
+		// $this->successUrls = 'http://pim.devs/api/frontend/touras/callback';
 		// $this->failureUrl = 'http://pim.devs/api/frontend/touras/callback';
 		$this->frontendUrl = config('app.url');
 	}
