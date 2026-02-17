@@ -2546,23 +2546,14 @@ class ProductController extends Controller
 
 		// Custom category sort sequence
 		$categoryOrderNames = [
-			'White Chinaware', 'Coloured Chinaware', 'Cutlery', 'Glassware',
-			'Glass Racks & Extenders', 'Serving & Table Accessories', 'Salt & Pepper Mills',
-			'Bread Box & Baskets', 'Kitchen Utensils & Tools', 'Pizza Utensils & Tools',
-			'Pastry & Bakery', 'Cast Iron', 'Buffetware', 'Disposable Cutlery & Napkins',
+			'White Dinnerware', 'Coloured Chinaware', 'Cutlery', 'Glassware',
+			'Glass Racks', 'Serving & Table Accessories', 'Salt and Pepper Mills',
+			'Bread Baskets', 'Kitchen Utensils & Tools', 'Pizza Utensils',
+			'Pastry', 'Cast Iron', 'Buffetware', 'Disposables',
 			'Bar Items', 'Child Friendly'
 		];
 
 		$categorySortMap = [];
-		$debugFoundCategories = [];
-
-		// DEBUG: Find all categories with "China" to see what "White Chinaware" is actually named
-		$keywords = ['White', 'Glass Racks', 'Salt', 'Bread', 'Pizza', 'Pastry', 'Disposable'];
-		$chinawareDebug = Category::where(function($q) use ($keywords) {
-			foreach ($keywords as $word) {
-				$q->orWhere('name', 'LIKE', '%' . $word . '%');
-			}
-		})->pluck('name', 'id')->toArray();
 
 		foreach ($categoryOrderNames as $index => $name) {
 			// Use LIKE to be more improved against spacing/case issues
@@ -2571,7 +2562,6 @@ class ProductController extends Controller
 			if ($cat) {
 				// Assign the parent category ID to this index (priority)
 				$categorySortMap[$cat->id] = $index;
-				$debugFoundCategories[$name] = $cat->id;
 
 				// Also assign all DESCENDANT category IDs to this same index
 				// This ensures "Black Dinnerware" gets the same priority as "Coloured Chinaware"
@@ -2597,8 +2587,6 @@ class ProductController extends Controller
 				};
 				$traverse($allChildren);
 
-			} else {
-				$debugFoundCategories[$name] = 'NOT FOUND';
 			}
 		}
 
@@ -2773,8 +2761,7 @@ class ProductController extends Controller
 				$query->leftJoin('product_categories as pc_sort', 'ec_products.id', '=', 'pc_sort.product_id')
 					->select('ec_products.*')
 					// Use MIN to pick the highest priority category (lowest index)
-					->selectRaw("MIN(CASE $whenString ELSE 999999 END) as debug_sort_index")
-					->orderBy('debug_sort_index', 'ASC')
+					->orderByRaw("MIN(CASE $whenString ELSE 999999 END) ASC")
 					->orderBy('brand_id', 'ASC')
 					->orderBy('ec_products.id', 'ASC')
 					->groupBy('ec_products.id');
@@ -2925,9 +2912,6 @@ class ProductController extends Controller
 				// Other info
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
-				// DEBUG INFO
-				'debug_sort_index' => $product->debug_sort_index ?? 'N/A',
-				'debug_category_ids' => $product->categories->map(function($c) { return $c->id . ':' . $c->name; })->toArray(),
 			];
 		});
 
@@ -2955,8 +2939,6 @@ class ProductController extends Controller
 			// Available brands and categories in these results
 			'brands' => $brands,
 			'categories' => $categories,
-			'debug_sort_mapping' => $debugFoundCategories,
-			'debug_potential_categories' => $chinawareDebug, // DEBUG ADDED
 		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
 	}
 
