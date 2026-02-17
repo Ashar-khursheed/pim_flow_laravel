@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\FrontEnd\Order;
 use App\Jobs\Order\OrderPlacedMailJob;
+use App\Jobs\Order\OrderReservedMailJob;
 use App\Models\PaymentManagement;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Bus;
 
 class TourasPaymentController extends Controller
 {
@@ -347,17 +349,30 @@ class TourasPaymentController extends Controller
 				$order = Order::where('order_number', $orderNumber)->first();
 
 				if ($order) {
+
+					// Dispatch Email using Bus::batch
+					if ($order->is_reserved) {
+						$batch = Bus::batch([])->name("Order Reserved by Backend - #{$order->order_number}")->dispatch();
+						$batch->options['queue'] = config('app.website') . '_ORD_RES';
+						$batch->add(new OrderReservedMailJob([
+							'recordId' => $order->id
+						]));
+					} else {
+						$batch = Bus::batch([])->name("Order Placed by Backend - #{$order->order_number}")->dispatch();
+						$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+						$batch->add(new OrderPlacedMailJob([
+							'recordId' => $order->id
+						]));
+					}
+
+					// Update Order Status in Database
 					$order->update([
 						'is_paid' => true,
 						'paid_amount' => $response['amount'],
 						'pending_amount' => 0,
 						'payment_link' => null,
 						'is_reserved' => false, // Set is_reserved to 0
-						// 'status' => 'Confirmed', // Removed as per requirement
 					]);
-
-					// Dispatch Order Placed Email
-					OrderPlacedMailJob::dispatch($order);
 
 					// Create Payment Record
 					try {
