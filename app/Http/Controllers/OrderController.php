@@ -310,7 +310,7 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="additional_discount_percentage", type="number", format="float", example=10.50, description="Additional discount percentage"),
 	 *                 @OA\Property(property="additional_discount_amount", type="number", format="float", example=50.00, description="Additional discount amount"),
 	 *
-	 *                 @OA\Property(property="payment_mode", type="string", enum={"Stripe", "Check Payment", "Ascentium Financing", "Approve Financing", "Resolve Financing", "Net Terms"}, example="Check Payment", description="Payment mode"),
+	 *                 @OA\Property(property="payment_mode", type="string", enum={"Touras", "CCAvenue", "Stripe", "Check Payment", "Ascentium Financing", "Approve Financing", "Resolve Financing", "Net Terms"}, example="Check Payment", description="Payment mode"),
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
 	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
@@ -319,6 +319,7 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="is_reserved", type="boolean", example=false, description="Reserved order"),
 	 *                 @OA\Property(property="is_payment", type="boolean", example=false, description="Payment gateway"),
 	 *                 @OA\Property(property="is_ccavenue", type="boolean", example=false, description="Payment gateway"),
+	 *                 @OA\Property(property="is_payment_touras", type="boolean", example=false, description="Payment gateway"),
 	 *                 @OA\Property(property="is_squarePayment", type="boolean", example=false, description="Square payment"),
 	 *                 @OA\Property(property="is_customer_pickup", type="boolean", example=false, description="Customer pickup"),
 	 *                 @OA\Property(
@@ -361,6 +362,7 @@ class OrderController extends Controller
 			'is_reserved',
 			'is_payment',
 			'is_ccavenue',
+			'is_payment_touras',
 			'is_squarePayment',
 			'is_customer_pickup'
 		];
@@ -408,7 +410,7 @@ class OrderController extends Controller
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 
-			'payment_mode' => 'nullable|in:CCAvenue,Stripe,Square,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
+			'payment_mode' => 'nullable|in:ADCB Touras,CCAvenue,Stripe,Square,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
 			'pay_with_cheque' => 'nullable|boolean',
 			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
 			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
@@ -423,6 +425,7 @@ class OrderController extends Controller
 			'is_reserved' => 'nullable|boolean',
 			'is_payment' => 'nullable|boolean',
 			'is_ccavenue' => 'nullable|boolean',
+			'is_payment_touras' => 'nullable|boolean',
 			'is_squarePayment' => 'nullable|boolean',
 			'is_customer_pickup' => 'nullable|boolean',
 
@@ -574,6 +577,20 @@ class OrderController extends Controller
 							}
 						} catch (\Exception $e) {
 							\Log::error('CCAvenue Payment Link generation failed', [
+								'order_id' => $order->id,
+								'error' => $e->getMessage(),
+								'trace' => $e->getTraceAsString()
+							]);
+						}
+					} else if ($request->boolean('is_payment_touras') || $request->payment_mode === 'ADCB Touras') {
+						try {
+							$paymentLink = app(\App\Http\Controllers\FrontEnd\TourasPaymentController::class)->createTourasPaymentLink($order);
+							if ($paymentLink) {
+								$order->payment_link = $paymentLink;
+								$order->save();
+							}
+						} catch (\Exception $e) {
+							\Log::error('Touras Payment Link generation failed', [
 								'order_id' => $order->id,
 								'error' => $e->getMessage(),
 								'trace' => $e->getTraceAsString()
@@ -1281,7 +1298,7 @@ class OrderController extends Controller
 	 *                 @OA\Property(property="additional_discount_percentage", type="number", format="float", example=10.50, description="Additional discount percentage"),
 	 *                 @OA\Property(property="additional_discount_amount", type="number", format="float", example=50.00, description="Additional discount amount"),
 	 *
-	 *                 @OA\Property(property="payment_mode", type="string", enum={"Stripe", "Check Payment", "Ascentium Financing", "Approve Financing", "Resolve Financing", "Net Terms"}, example="Check Payment", description="Payment mode"),
+	 *                 @OA\Property(property="payment_mode", type="string", enum={"Touras", "CCAvenue", "Stripe", "Check Payment", "Ascentium Financing", "Approve Financing", "Resolve Financing", "Net Terms"}, example="Check Payment", description="Payment mode"),
 	 *                 @OA\Property(property="pay_with_cheque", type="boolean", example=false, description="Pay with cheque"),
 	 *                 @OA\Property(property="cheque_img", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
 	 *                 @OA\Property(property="cheque_img_back", type="string", format="binary", description="Cheque image (jpeg, png, webp only, max 5 MB)"),
@@ -1391,7 +1408,7 @@ class OrderController extends Controller
 			'coupon_id' => 'nullable|integer',
 			'discount' => 'nullable|numeric|min:0',
 
-			'payment_mode' => 'nullable|in:CCAvenue,Stripe,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
+			'payment_mode' => 'nullable|in:ADCB Touras,CCAvenue,Stripe,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
 			'pay_with_cheque' => 'nullable|boolean',
 			'cheque_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120',
 			'cheque_img_back' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120',
@@ -1512,13 +1529,18 @@ class OrderController extends Controller
 				$paymentLink = null;
 				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
 					try {
-						$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
+						if ($request->payment_mode === 'Touras' || $request->payment_mode === 'ADCB Touras') {
+							$paymentLink = app(\App\Http\Controllers\FrontEnd\TourasPaymentController::class)->createTourasPaymentLink($order);
+						} else {
+							$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
+						}
+						
 						if ($paymentLink) {
 							$order->payment_link = $paymentLink;
 							$order->save();
 						}
 					} catch (\Exception $e) {
-						\Log::error('Paymob Payment Link generation failed', [
+						\Log::error('Payment Link generation failed', [
 							'order_id' => $order->id,
 							'error' => $e->getMessage(),
 							'trace' => $e->getTraceAsString()

@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\FrontEnd\Order;
+use App\Jobs\Order\OrderPlacedMailJob;
+use App\Models\PaymentManagement;
 
 class TourasPaymentController extends Controller
 {
@@ -103,9 +105,78 @@ class TourasPaymentController extends Controller
 	}
 
 	/**
+	 * Create Touras payment link for Admin/Order
+	 */
+	public function createTourasPaymentLink(Order $order)
+	{
+		// Generate the payment link that points to our internal pay route
+		// This route will render the form and auto-submit to Touras
+		// We use the order ID to identify the order
+		return route('frontend.touras.pay', ['order' => $order->id]);
+	}
+
+	/**
+	 * Handle the payment link visit (GET request)
+	 * Renders the view that auto-submits to Touras
+	 */
+	public function pay(Request $request, $orderId)
+	{
+		$order = Order::findOrFail($orderId);
+
+		if ($order->is_paid) {
+			return "Order is already paid.";
+		}
+
+		// Prepare data for Touras
+		$orderData = [
+			'amount' => $order->pending_amount > 0 ? $order->pending_amount : $order->total_amount,
+			'order_number' => $order->order_number,
+			'country' => 'ARE', // Default to UAE as per requirement
+			'currency' => 'AED',
+			'channel' => 'WEB',
+			'customer' => [
+				'cust_name' => $order->customer->name ?? '',
+				'email_id' => $order->customer->email ?? '',
+				'mobile_no' => $order->customer->mobile_number ?? '',
+				'unique_id' => $order->customer_id ?? '',
+				'is_logged_in' => 'N',
+			],
+			'billing' => [
+				'bill_address' => $order->customerAddress->address ?? '',
+				'bill_city' => $order->customerAddress->city ?? '',
+				'bill_state' => $order->customerAddress->state ?? '',
+				'bill_country' => $order->customerAddress->country ?? '',
+				'bill_zip' => $order->customerAddress->zipcode ?? '',
+			],
+			'shipping' => [
+				'ship_address' => $order->customerAddress->address ?? '',
+				'ship_city' => $order->customerAddress->city ?? '',
+				'ship_state' => $order->customerAddress->state ?? '',
+				'ship_country' => $order->customerAddress->country ?? '',
+				'ship_zip' => $order->customerAddress->zipcode ?? '',
+				'ship_days' => $order->product_supplier['delivery_days'] ?? '2',
+				'address_count' => '1',
+			],
+		];
+
+		// Reuse the existing preparePaymentRequest logic
+		$paymentData = $this->preparePaymentRequest($orderData, [
+			'success_url' => $this->successUrl . '?source=admin',
+			'failure_url' => $this->failureUrl . '?source=admin',
+		]);
+
+		return view('touras-payment-form', [
+			'postUrl' => $paymentData['post_url'],
+			'meId' => $paymentData['me_id'],
+			'merchantRequest' => $paymentData['merchant_request'],
+			'hash' => $paymentData['hash'],
+		]);
+	}
+
+	/**
 	 * Prepare payment request with encryption
 	 */
-	private function preparePaymentRequest($orderData)
+	private function preparePaymentRequest($orderData, $overrides = [])
 	{
 		// Transaction Details (Required) - 10 fields
 		$txnDetails = [
@@ -116,8 +187,8 @@ class TourasPaymentController extends Controller
 			$orderData['country'],                                  // country
 			$orderData['currency'],                                 // currency
 			'SALE',                                                 // txn_type
-			$this->successUrl,                                      // success_url
-			$this->failureUrl,                                      // failure_url
+			$overrides['success_url'] ?? $this->successUrl,         // success_url
+			$overrides['failure_url'] ?? $this->failureUrl,         // failure_url
 			$orderData['channel'],                                  // channel
 		];
 
@@ -232,6 +303,10 @@ class TourasPaymentController extends Controller
 	{
 		try {
 			if (!$request->has('txn_response') || !$request->has('me_id')) {
+				Log::error('Touras Callback: Missing txn_response or me_id', $request->all());
+				if ($request->query('source') === 'admin') {
+					return view('touras-payment-decline', ['message' => 'Invalid payment response']);
+				}
 				return redirect($this->frontendUrl . '/payment/decline?' . http_build_query([
 					'success' => false,
 					'message' => 'Invalid payment response',
@@ -254,6 +329,10 @@ class TourasPaymentController extends Controller
 
 			// Validate merchant ID
 			if ($response['me_id'] !== $this->merchantId) {
+				Log::error('Touras Callback: Merchant ID Mismatch', ['expected' => $this->merchantId, 'received' => $response['me_id']]);
+				if ($request->query('source') === 'admin') {
+					return view('touras-payment-decline', ['message' => 'Invalid merchant ID']);
+				}
 				return redirect($this->frontendUrl . '/payment/decline?' . http_build_query([
 					'success' => false,
 					'message' => 'Invalid merchant ID',
@@ -261,6 +340,42 @@ class TourasPaymentController extends Controller
 			}
 
 			if (isset($response['response_code']) && $response['response_code'] === '0' && isset($response['message']) && strtolower($response['message']) === 'successful') {
+				
+				// Update Order Status in Database
+				$orderNumber = $response['order_no'];
+				$order = Order::where('order_number', $orderNumber)->first();
+
+				if ($order) {
+					$order->update([
+						'is_paid' => true,
+						'paid_amount' => $response['amount'],
+						'pending_amount' => 0,
+						'payment_link' => null,
+						'is_reserved' => false, // Set is_reserved to 0
+						// 'status' => 'Confirmed', // Removed as per requirement
+					]);
+
+					// Dispatch Order Placed Email
+					OrderPlacedMailJob::dispatch($order);
+
+					// Create Payment Record
+					PaymentManagement::create([
+						'order_id' => $order->id,
+						'transaction_id' => $response['transaction_id'] ?? null,
+						'payment_mode' => 'Touras',
+						'amount' => $response['amount'],
+						'status' => 'Success',
+						'payment_date' => now(),
+						'notes' => json_encode($response),
+						'payment_method' => 'Touras',
+						'created_by' => auth()->id() ?? null,
+					]);
+				}
+
+				if ($request->query('source') === 'admin') {
+					return view('touras-payment-success');
+				}
+
 				$redirectUrl = $this->frontendUrl . '/review-checkout?' . http_build_query([
 					'success' => true,
 					'order_no' => $response['order_no'],
@@ -273,6 +388,10 @@ class TourasPaymentController extends Controller
 				]);
 				return redirect($redirectUrl);
 			} else {
+				Log::warning('Touras Payment Failed', $response);
+				if ($request->query('source') === 'admin') {
+					return view('touras-payment-decline', ['message' => $response['message'] ?? 'Payment declined']);
+				}
 				$redirectUrl = $this->frontendUrl . '/payment/decline?' . http_build_query([
 					'success' => false,
 					'order_no' => $response['order_no'],
@@ -283,6 +402,10 @@ class TourasPaymentController extends Controller
 			}
 
 		} catch (\Exception $e) {
+			Log::error('Touras Callback Exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+			if ($request->query('source') === 'admin') {
+				return view('touras-payment-decline', ['message' => 'Payment processing error']);
+			}
 			$redirectUrl = $this->frontendUrl . '/payment/decline?' . http_build_query([
 				'success' => false,
 				'message' => 'Payment processing error',

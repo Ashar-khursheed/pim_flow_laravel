@@ -34235,6 +34235,8 @@
                                         "description": "Payment mode",
                                         "type": "string",
                                         "enum": [
+                                            "Touras",
+                                            "CCAvenue",
                                             "Stripe",
                                             "Check Payment",
                                             "Ascentium Financing",
@@ -34275,6 +34277,11 @@
                                         "example": false
                                     },
                                     "is_ccavenue": {
+                                        "description": "Payment gateway",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_payment_touras": {
                                         "description": "Payment gateway",
                                         "type": "boolean",
                                         "example": false
@@ -34511,6 +34518,8 @@
                                         "description": "Payment mode",
                                         "type": "string",
                                         "enum": [
+                                            "Touras",
+                                            "CCAvenue",
                                             "Stripe",
                                             "Check Payment",
                                             "Ascentium Financing",
