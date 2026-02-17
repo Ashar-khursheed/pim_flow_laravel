@@ -1141,3 +1141,5 @@ Route::prefix('frontend')->group(function () {
 	Route::post('chats/mark-read', [ChatbotController::class, 'markAsRead']);
 	Route::post('chats/mark-read-by-ai', [ChatbotController::class, 'markAsReadByAI']);
 });
+
+Route::get('frontend/touras/pay/{order}', [F_TourasPaymentController::class, 'pay'])->name('frontend.touras.pay');
