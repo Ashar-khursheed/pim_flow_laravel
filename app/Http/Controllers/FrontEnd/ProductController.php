@@ -2553,13 +2553,17 @@ class ProductController extends Controller
 			'Bar Items', 'Child Friendly'
 		];
 
-		$categorySortIds = Category::whereIn('name', $categoryOrderNames)
-			->get()
-			->sortBy(function($cat) use ($categoryOrderNames) {
-				return array_search($cat->name, $categoryOrderNames);
-			})
-			->pluck('id')
-			->toArray();
+		$categorySortIds = [];
+		foreach ($categoryOrderNames as $name) {
+			// Use LIKE to be more improved against spacing/case issues
+			$cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
+			if ($cat) {
+				$categorySortIds[] = $cat->id;
+			}
+		}
+
+		// Log the IDs found for debugging
+		Log::info('Category Sort IDs: ' . implode(',', $categorySortIds));
 
 		// Wishlist logic
 		$userId = Auth::id();
