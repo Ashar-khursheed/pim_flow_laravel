@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\FrontEnd\Order;
 use App\Jobs\Order\OrderPlacedMailJob;
 use App\Models\PaymentManagement;
+use Illuminate\Support\Facades\DB;
 
 class TourasPaymentController extends Controller
 {
@@ -372,7 +373,35 @@ class TourasPaymentController extends Controller
 							'created_by' => auth()->id() ?? null,
 						]);
 					} catch (\Exception $e) {
-						Log::error('Touras Callback: Failed to create payment record', [
+						Log::error('Touras Callback: Failed to create payment record in payment_managements', [
+							'error' => $e->getMessage(),
+							'order_id' => $order->id
+						]);
+					}
+
+					// Create/Update in 'payments' table as well (standard used by Ccavenue)
+					try {
+						DB::table('payments')->updateOrInsert(
+							['order_id' => $order->id],
+							[
+								'order_id'       => $order->id,
+								'status'         => $response['status'] ?? 'Success',
+								'amount'         => $response['amount'] ?? 0,
+								'currency'       => $response['currency'] ?? 'AED',
+								'tracking_id'    => $response['transaction_id'] ?? null,
+								'bank_ref_no'    => $response['bank_ref_no'] ?? null,
+								'payment_mode'   => 'Touras',
+								'card_brand'     => $response['card_type'] ?? null,
+								'card_number'    => $response['card_number'] ?? null,
+								'card_holder'    => $response['card_holder_name'] ?? null,
+								'trans_date'     => $response['transaction_date'] ?? date('Y-m-d'),
+								'response_raw'   => json_encode($response),
+								'updated_at'     => now(),
+								'created_at'     => now()
+							]
+						);
+					} catch (\Exception $e) {
+						Log::error('Touras Callback: Failed to update payments table', [
 							'error' => $e->getMessage(),
 							'order_id' => $order->id
 						]);
