@@ -2718,8 +2718,9 @@ class ProductController extends Controller
 				$idsString = implode(',', $categorySortIds);
 				$query->leftJoin('product_categories as pc_sort', 'ec_products.id', '=', 'pc_sort.product_id')
 					->select('ec_products.*')
-					->orderByRaw("CASE WHEN pc_sort.category_id IN ($idsString) THEN 0 ELSE 1 END")
-					->orderByRaw("FIELD(pc_sort.category_id, $idsString)")
+				// Use MIN to pick the highest priority category (lowest index) for the product
+				// Values not in the user's list get a high value (999999) to push them to the end
+				->orderByRaw("MIN(CASE WHEN pc_sort.category_id IN ($idsString) THEN FIELD(pc_sort.category_id, $idsString) ELSE 999999 END) ASC")
 					->orderBy('brand_id', 'ASC')
 					->orderBy('ec_products.id', 'ASC')
 					->groupBy('ec_products.id');
