@@ -2554,11 +2554,15 @@ class ProductController extends Controller
 		];
 
 		$categorySortIds = [];
+		$debugFoundCategories = [];
 		foreach ($categoryOrderNames as $name) {
 			// Use LIKE to be more improved against spacing/case issues
 			$cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
 			if ($cat) {
 				$categorySortIds[] = $cat->id;
+				$debugFoundCategories[$name] = $cat->id;
+			} else {
+				$debugFoundCategories[$name] = 'NOT FOUND';
 			}
 		}
 
@@ -2875,6 +2879,7 @@ class ProductController extends Controller
 				// Other info
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
+				'debug_category_ids' => $product->categories->pluck('id')->toArray(),
 			];
 		});
 
@@ -2902,6 +2907,7 @@ class ProductController extends Controller
 			// Available brands and categories in these results
 			'brands' => $brands,
 			'categories' => $categories,
+			'debug_sort_mapping' => $debugFoundCategories,
 		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
 	}
 
