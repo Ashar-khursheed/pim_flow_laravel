@@ -32013,6 +32013,185 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "post": {
+                "tags": [
+                    "Horeca Pages"
+                ],
+                "summary": "Update an existing horeca page",
+                "description": "Update horeca page details including categories and products. Use _method=PUT for proper REST compliance.",
+                "operationId": "5265a624f740ea3943f9bf357c3bd00a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Horeca Page ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "_method",
+                                    "name",
+                                    "categories",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "_method": {
+                                        "description": "HTTP method override",
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Premium Coffee Solutions"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Complete coffee solutions for hotels and restaurants",
+                                        "nullable": true
+                                    },
+                                    "link_name": {
+                                        "type": "string",
+                                        "example": "View Coffee Range",
+                                        "nullable": true
+                                    },
+                                    "link_url": {
+                                        "type": "string",
+                                        "example": "/products/coffee",
+                                        "nullable": true
+                                    },
+                                    "banner": {
+                                        "description": "New banner image (jpeg,jpg,png,webp) - optional",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "banner_url": {
+                                        "description": "Existing banner URL - optional",
+                                        "type": "string",
+                                        "example": "https://example.com/image.png",
+                                        "nullable": true
+                                    },
+                                    "left_para_description": {
+                                        "type": "string",
+                                        "example": "Left side description content",
+                                        "nullable": true
+                                    },
+                                    "right_para_description": {
+                                        "type": "string",
+                                        "example": "Right side description content",
+                                        "nullable": true
+                                    },
+                                    "faqs": {
+                                        "type": "string",
+                                        "example": "JSON or HTML formatted FAQs",
+                                        "nullable": true
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "categories": {
+                                        "description": "Array of categories",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "category_id",
+                                                "order"
+                                            ],
+                                            "properties": {
+                                                "category_id": {
+                                                    "description": "Category ID",
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "order": {
+                                                    "description": "Category order",
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "products": {
+                                        "description": "Array of product groups by type",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "type",
+                                                "items"
+                                            ],
+                                            "properties": {
+                                                "type": {
+                                                    "description": "Product type/group name",
+                                                    "type": "string",
+                                                    "example": "Featured"
+                                                },
+                                                "description": {
+                                                    "description": "Common description for this type",
+                                                    "type": "string",
+                                                    "example": "Our best-selling products",
+                                                    "nullable": true
+                                                },
+                                                "order": {
+                                                    "description": "Type order",
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "items": {
+                                                    "description": "Products in this type",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "required": [
+                                                            "product_id"
+                                                        ],
+                                                        "properties": {
+                                                            "product_id": {
+                                                                "description": "Product ID",
+                                                                "type": "integer",
+                                                                "example": 101
+                                                            },
+                                                            "order": {
+                                                                "description": "Product order within type",
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Horeca page updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/inquiries": {
