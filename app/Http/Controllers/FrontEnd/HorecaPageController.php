@@ -41,6 +41,7 @@ class HorecaPageController extends BaseController
 						'ec_products.id',
 						'ec_products.name',
 						'ec_products.sku',
+						'ec_products.images',
 						'ec_products.currency_id',
 						'ec_products.alt_tags',
 						'ec_products.quote_available',
