@@ -3474,8 +3474,8 @@ class ProductController extends Controller
 
             // Calculations
 			$totalReviews = $product->reviews->count();
-			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : 0;
-            $leftStock = ($product->quantity ?? 0) - ($product->units_sold ?? 0);
+			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
+            $leftStock = ($product->quantity ?? 0) - ($product->units_sold ?? null);
 
 			return [
 				'id' => $product->id,
