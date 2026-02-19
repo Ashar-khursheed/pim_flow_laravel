@@ -37,6 +37,23 @@ class HorecaPageController extends BaseController
 				'categories.seoUrl:id,relational_id,relational_type,url',
 				'productTypes:id,horeca_page_id,type,description,order',
 				'productTypes.products' => function($query) {
+					/* Build product relationships array */
+					$productRelationships = [
+						'seoUrl:id,relational_id,relational_type,url',
+						'productSuppliers' => function($q) {
+							$q->select(['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 'sale_price', 'price', 'inventory', 'in_stock', 'min_quantity', 'is_fixed', 'delivery_days', 'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'])
+							->cheapest();
+						},
+						'reviews:id,product_id,star',
+						'currency:id,title,symbol',
+						'sellingUnitAttribute',
+					];
+
+					/* Add translations for UAE websites only */
+					if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
+						$productRelationships[] = 'translations';
+					}
+
 					$query->select([
 						'ec_products.id',
 						'ec_products.name',
@@ -48,16 +65,7 @@ class HorecaPageController extends BaseController
 						'ec_products.brand_id'
 					])
 					->where('ec_products.status', 'published')
-					->with([
-						'seoUrl:id,relational_id,relational_type,url',
-						'productSuppliers' => function($q) {
-							$q->select(['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 'sale_price', 'price', 'inventory', 'in_stock', 'min_quantity', 'is_fixed', 'delivery_days', 'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'])
-							->cheapest();
-						},
-						'reviews:id,product_id,star',
-						'currency:id,title,symbol',
-						'sellingUnitAttribute',
-					])
+					->with($productRelationships)
 					->withCount('reviews')
 					->withAvg('reviews', 'star');
 				}
