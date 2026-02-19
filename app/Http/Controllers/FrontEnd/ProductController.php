@@ -3281,6 +3281,58 @@ class ProductController extends Controller
 
 	
 	
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/ec-products",
+	 *     summary="Get specific EC products with filters and sorting",
+	 *     tags={"Frontend-Product"},
+	 *     @OA\Parameter(
+	 *         name="search",
+	 *         in="query",
+	 *         description="Search by product name or SKU",
+	 *         required=false,
+	 *         @OA\Schema(type="string")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="min_price",
+	 *         in="query",
+	 *         description="Minimum price filter",
+	 *         required=false,
+	 *         @OA\Schema(type="number", format="float")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="max_price",
+	 *         in="query",
+	 *         description="Maximum price filter",
+	 *         required=false,
+	 *         @OA\Schema(type="number", format="float")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="sort_by",
+	 *         in="query",
+	 *         description="Sort options: price_asc, price_desc, name_asc, name_desc",
+	 *         required=false,
+	 *         @OA\Schema(type="string", enum={"price_asc", "price_desc", "name_asc", "name_desc"})
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="per_page",
+	 *         in="query",
+	 *         description="Items per page",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", default=20)
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successful operation",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="data", type="array", @OA\Items(type="object")),
+	 *             @OA\Property(property="links", type="object"),
+	 *             @OA\Property(property="meta", type="object")
+	 *         )
+	 *     )
+	 * )
+	 */
 	public function getEcProducts(Request $request)
 	{
 		$targetSkus = [
