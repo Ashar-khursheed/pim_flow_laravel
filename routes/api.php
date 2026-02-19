@@ -260,6 +260,7 @@ Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
 Route::apiResource('newsletters', NewsletterController::class);
 
 Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
+Route::get('/ec-products', [F_ProductController::class, 'getEcProducts']);
 
 Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
 

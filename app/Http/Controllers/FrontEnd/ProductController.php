@@ -3278,5 +3278,210 @@ class ProductController extends Controller
 			'brands' => $brands,
 		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
 	}
+
 	
+	
+	public function getEcProducts(Request $request)
+	{
+		$targetSkus = [
+			'QJH-X15D',
+			'RBD-400H',
+			'GES23',
+			'R301 D',
+			'CL 50 E ULTRA',
+			'BH10',
+			'MS-E686Q',
+			'R1 (ER1)',
+			'HKN-GES2M/GP',
+			'HTD-20H',
+			'HLS-1900A',
+			'FE-04S',
+			'RTW-67L'
+		];
+
+		// Start building the query
+		$query = Product::with([
+			'categories.seoUrl',
+			'brand.seoUrl',
+			'productSuppliers',
+			'seoUrl',
+			'accessories.items',
+			'productVariants',
+			'reviews:id,product_id,star',
+			'currency',
+			'productAttributes.attributeDetails',
+		])
+		->whereIn('sku', $targetSkus)
+		->where('status', 'published');
+
+		// 1. Search
+		if ($request->filled('search')) {
+			$search = $request->input('search');
+			$query->where(function ($q) use ($search) {
+				$q->where('name', 'like', '%' . $search . '%')
+				  ->orWhere('sku', 'like', '%' . $search . '%');
+			});
+		}
+
+		// 2. Price Filter
+		if ($request->filled('min_price')) {
+			$query->where('price', '>=', $request->input('min_price'));
+		}
+		if ($request->filled('max_price')) {
+			$query->where('price', '<=', $request->input('max_price'));
+		}
+
+		// 3. Sorting
+		if ($request->filled('sort_by')) {
+			$sort = $request->input('sort_by');
+			if ($sort === 'price_asc') {
+				$query->orderBy('price', 'asc');
+			} elseif ($sort === 'price_desc') {
+				$query->orderBy('price', 'desc');
+			} elseif ($sort === 'name_asc') {
+				$query->orderBy('name', 'asc');
+			} elseif ($sort === 'name_desc') {
+				$query->orderBy('name', 'desc');
+			} else {
+				$query->orderBy('created_at', 'desc');
+			}
+		} else {
+             // Default sort to keep order of SKUs if possible, or just standard sort
+              $query->orderByRaw('FIELD(sku, "' . implode('","', $targetSkus) . '")');
+        }
+
+		// Pagination
+		$perPage = $request->input('per_page', 20);
+		$products = $query->paginate($perPage);
+
+		// Transform Collection
+		$products->getCollection()->transform(function ($product) {
+
+            // Common logic (reused from existing controller logic essentially)
+			$product->images = collect(json_decode($product->images, true));
+			$imageUrls = $product->images->toArray();
+
+			$product->alt_tags = collect(json_decode($product->alt_tags, true));
+			$altTags = $product->alt_tags->toArray();
+
+			$product->video_path = collect(json_decode($product->video_path, true));
+			$videoPaths = $product->video_path->toArray();
+
+
+            // Selling Type / Unit
+			$sellingType = null;
+			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                // Simplified logic from existing code
+				$fullValue = $product->sellingUnitAttribute->attribute_value;
+                 if (strpos($fullValue, '/') !== false) {
+                     $parts = explode('/', $fullValue);
+                     $sellingType = trim($parts[1]);
+                 } else {
+                     $sellingType = $fullValue;
+                 }
+			}
+
+            // Per Unit Price
+            $unitsPerCase = null;
+            $packType = null;
+            if ($product->productAttributes) {
+                foreach ($product->productAttributes as $attr) {
+                    if ($attr->attributeDetails && $attr->attributeDetails->name === 'Units per Case') {
+                        $unitsPerCase = $attr;
+                    }
+                    if ($attr->attributeDetails && $attr->attributeDetails->name === 'Pack Type') {
+                        $packType = $attr;
+                    }
+                }
+            }
+            $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+            $perUnitPrice = null;
+            if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                $unitValue = (float) $unitsPerCase->attribute_value;
+                if ($unitValue > 0) {
+                    $calculated = round($basePrice / $unitValue, 2);
+                    $perUnitPrice = $calculated . '/' . ($packType?->attribute_value ?? '');
+                }
+            }
+
+
+			// Supplier stuff
+			$firstSupplier = $product->productSuppliers->first();
+
+            // Wishlist (Guest or Auth)
+            $userId = Auth::id();
+            $wishlistProductIds = [];
+             if ($userId) {
+                $wishlistProductIds = DB::table('ec_wish_lists')
+                    ->where('customer_id', $userId)
+                    ->pluck('product_id')->toArray();
+            } else {
+                 $wishlistProductIds = session()->get('guest_wishlist', []);
+            }
+
+
+            // Calculations
+			$totalReviews = $product->reviews->count();
+			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : 0;
+            $leftStock = ($product->quantity ?? 0) - ($product->units_sold ?? 0);
+
+			return [
+				'id' => $product->id,
+				'name' => $product->name,
+				'category_url' => method_exists($product, 'category_url') ? $product->category_url() : null,
+				'parent_category_url' => method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null,
+				'images' => $imageUrls,
+				'alt_tags' => $altTags,
+				'video_path' => $videoPaths,
+				'sku' => $product->sku,
+				'url' => $product->seoUrl->url ?? null,
+				'selling_type' => $sellingType,
+				'per_unit_price' => $perUnitPrice,
+				'discount_percentage' => ($firstSupplier && $firstSupplier->price > 0) ? round((($firstSupplier->price - $firstSupplier->sale_price) / $firstSupplier->price) * 100, 2) : 0,
+
+				// Brand info
+				'brand_id' => $product->brand_id ?? null,
+				'brand_name' => $product->brand->name ?? null,
+
+				// Prices
+				'price' => (float)($firstSupplier->price ?? 0),
+				'sale_price' => (float)($firstSupplier->sale_price ?? 0),
+				'original_price' => (float)($firstSupplier->price ?? 0),
+				'front_sale_price' => (float)($firstSupplier->sale_price ?? 0),
+				'best_price' => (float)($firstSupplier->price ?? 0),
+
+				// Currency
+				'currency' => $product->currency?->symbol,
+				'currency_title' => $product->currency?->symbol ?? null,
+
+				// Reviews
+				'total_reviews' => $totalReviews,
+				'avg_rating' => $avgRating,
+
+				// Stock
+				'leftStock' => $leftStock,
+
+				// Wishlist
+				'in_wishlist' => in_array($product->id, $wishlistProductIds),
+
+				// Supplier details
+				'vendor_id' => $firstSupplier->vendor_id ?? null,
+				'map' => (float)($firstSupplier->map ?? 0),
+				'inventory' => $firstSupplier->inventory ?? null,
+				'in_stock' => $firstSupplier->in_stock ?? null,
+				'delivery_days' => $firstSupplier->delivery_days ?? null,
+				'return_policy' => $firstSupplier->return_policy ?? null,
+				'free_shipping' => $firstSupplier->free_shipping ?? null,
+				'warranty_information' => $firstSupplier->warranty_information ?? null,
+				'min_quantity' => $firstSupplier->min_quantity ?? 0,
+				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+
+				// Other info
+				'quote_available' => $product->quote_available ?? null,
+				'isRequired' => $product->isRequired,
+			];
+		});
+
+		return response()->json($products);
+	}
 }
