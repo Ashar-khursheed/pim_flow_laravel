@@ -183,7 +183,7 @@ class StripeController extends Controller
     //         ], 500);
     //     }
     // }
-    public function createPaymentIntent(Request $request)
+public function createPaymentIntent(Request $request)
 {
     $request->validate([
         'payment_method_id' => 'required|string',   /* ✅ Add kiya */

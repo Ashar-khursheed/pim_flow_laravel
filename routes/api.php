@@ -165,6 +165,7 @@ use App\Http\Controllers\FrontEnd\StaxPaymentController as F_StaxPaymentControll
 use App\Http\Controllers\FrontEnd\PaymobController as F_PaymobController;
 use App\Http\Controllers\FrontEnd\FinanceController as F_FinanceController;
 use App\Http\Controllers\FrontEnd\TqlRateController;
+use App\Http\Controllers\FrontEnd\HorecaPageController as F_HorecaPageController;
 
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
@@ -1144,3 +1145,5 @@ Route::prefix('frontend')->group(function () {
 
 Route::get('frontend/touras/pay/{order}', [F_TourasPaymentController::class, 'pay'])->name('frontend.touras.pay');
 Route::any('frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback'])->name('frontend.touras.callback');
+
+Route::apiResource('frontend/horeca-pages',  F_HorecaPageController::class);
