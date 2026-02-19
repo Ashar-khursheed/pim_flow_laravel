@@ -20266,7 +20266,7 @@
         "/api/frontend/horeca-pages/{id}": {
             "get": {
                 "tags": [
-                    "Front"
+                    "FrontEnd-Horeca Pages"
                 ],
                 "summary": "Get Horeca page details",
                 "operationId": "64f27fcab8a2014dbcf37189c1ec4435",
@@ -50869,8 +50869,8 @@
             "description": "Google Reviews"
         },
         {
-            "name": "Front",
-            "description": "Front"
+            "name": "FrontEnd-Horeca Pages",
+            "description": "FrontEnd-Horeca Pages"
         },
         {
             "name": "FrontEnd Inquiries",

@@ -7,16 +7,17 @@ use Illuminate\Support\Facades\DB;
 
 use App\Models\FrontEnd\HorecaPage;
 
+use App\Traits\TransformProduct;
+
 class HorecaPageController extends BaseController
 {
-	 // *     tags={"Front-Horeca Pages"},
-
+	use TransformProduct;
 
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/horeca-pages/{id}",
 	 *     summary="Get Horeca page details",
-	 *     tags={"Front"},
+	 *     tags={"FrontEnd-Horeca Pages"},
 	 *     @OA\Parameter(
 	 *         name="id",
 	 *         in="path",
@@ -30,13 +31,13 @@ class HorecaPageController extends BaseController
 	public function show($id)
 	{
 		try {
-		/* Find the horeca page with relationships */
-		$page = HorecaPage::with([
-			'categories:id,name,image',
-			'categories.seoUrl:id,relational_id,relational_type,url',
-			'productTypes:id,horeca_page_id,type,description,order',
-			'productTypes.products' => function($query) {
-				$query->select([
+			/* Find the horeca page with relationships */
+			$page = HorecaPage::with([
+				'categories:id,name,image',
+				'categories.seoUrl:id,relational_id,relational_type,url',
+				'productTypes:id,horeca_page_id,type,description,order',
+				'productTypes.products' => function($query) {
+					$query->select([
 						'ec_products.id',
 						'ec_products.name',
 						'ec_products.sku',
@@ -45,11 +46,12 @@ class HorecaPageController extends BaseController
 						'ec_products.quote_available',
 						'ec_products.brand_id'
 					])
+					->where('ec_products.status', 'published')
 					->with([
 						'seoUrl:id,relational_id,relational_type,url',
 						'productSuppliers' => function($q) {
 							$q->select(['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 'sale_price', 'price', 'inventory', 'in_stock', 'min_quantity', 'is_fixed', 'delivery_days', 'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'])
-								->cheapest();
+							->cheapest();
 						},
 						'reviews:id,product_id,star',
 						'currency:id,title,symbol',
@@ -57,8 +59,8 @@ class HorecaPageController extends BaseController
 					])
 					->withCount('reviews')
 					->withAvg('reviews', 'star');
-			}
-		])->find($id);
+				}
+			])->find($id);
 
 			/* Transform categories data */
 			if ($page->categories) {
@@ -71,6 +73,17 @@ class HorecaPageController extends BaseController
 				});
 			}
 
+			/* Transform product types and their products */
+			if ($page->productTypes) {
+				$page->productTypes->transform(function ($productType) {
+					if ($productType->products) {
+						$productType->products->each(function ($product) {
+							$this->transformFeaturedProduct($product, withTranslation:(in_array(config('app.website'), ['UAE', 'UAE_T']) ? true : false));
+						});
+					}
+					return $productType;
+				});
+			}
 
 			/* Check if page exists */
 			if (!$page) {
