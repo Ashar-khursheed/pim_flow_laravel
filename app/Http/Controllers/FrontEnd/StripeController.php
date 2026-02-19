@@ -183,47 +183,103 @@ class StripeController extends Controller
     //         ], 500);
     //     }
     // }
-    public function createPaymentIntent(Request $request)
+public function createPaymentIntent(Request $request)
 {
     $request->validate([
-        'amount' => 'required|numeric|min:1',
-        'currency' => 'sometimes|in:aed,usd',
+        'payment_method_id' => 'required|string',   /* ✅ Add kiya */
+        'amount'            => 'required|numeric|min:1',
+        'currency'          => 'sometimes|in:aed,usd',
+        'customer_info'     => 'sometimes|array',
     ]);
-
+ 
     Stripe::setApiKey(config('services.stripe.secret'));
-
+ 
     try {
         $paymentIntent = \Stripe\PaymentIntent::create([
-            'amount' => (int) round($request->amount * 100),
-            'currency' => $request->currency ?? 'aed',
-
-            // 🔐 Strong fraud protection
+            'amount'         => (int) round($request->amount * 100),
+            'currency'       => $request->currency ?? 'aed',
+            'payment_method' => $request->payment_method_id, /* ✅ Attach kiya */
+            'description'    => 'Order Payment',
+            'receipt_email'  => $request->customer_info['email'] ?? null,
+ 
+            /* ✅ Confirm:true — ek hi call mein attach + confirm */
+            'confirm'        => true,
+ 
+            /* ✅ 3D Secure ke liye return_url zaroori hai */
+            'return_url'     => config('app.frontend_url') . '/review-checkout',
+ 
+            /* ✅ automatic_payment_methods ke saath allow_redirects=never
+             * warna Stripe redirect methods bhi enable karta hai (wallets etc)
+             */
             'automatic_payment_methods' => [
-                'enabled' => true,
+                'enabled'          => true,
+                'allow_redirects'  => 'never', /* ✅ Sirf card allow karo */
             ],
+ 
+            /* ✅ 3D Secure — any rakhna sahi hai fraud protection ke liye */
             'payment_method_options' => [
                 'card' => [
                     'request_three_d_secure' => 'any',
                 ],
             ],
-
-            // ❌ No receipt_email
-            // ❌ No customer
-            // ❌ No metadata from user
-
-            'description' => 'Order Payment',
         ]);
-
+ 
+        /* ─── Status ke hisaab se response ─── */
+ 
+        /* ✅ Payment succeeded — seedha */
+        if ($paymentIntent->status === 'succeeded') {
+            return response()->json([
+                'success'               => true,
+                'requires_action'       => false,
+                'payment_intent_status' => 'succeeded',
+                'payment_intent_id'     => $paymentIntent->id,
+                'client_secret'         => $paymentIntent->client_secret,
+            ]);
+        }
+ 
+        /* ✅ 3D Secure required */
+        if (
+            $paymentIntent->status === 'requires_action' ||
+            $paymentIntent->status === 'requires_source_action'
+        ) {
+            return response()->json([
+                'success'               => true,
+                'requires_action'       => true,
+                'payment_intent_status' => $paymentIntent->status,
+                'payment_intent_id'     => $paymentIntent->id,
+                'client_secret'         => $paymentIntent->client_secret,
+            ]);
+        }
+ 
+        /* ❌ Koi aur unexpected status */
         return response()->json([
-            'success' => true,
-            'client_secret' => $paymentIntent->client_secret,
-            'payment_intent_id' => $paymentIntent->id,
-        ]);
-
-    } catch (\Exception $e) {
+            'success'               => false,
+            'payment_intent_status' => $paymentIntent->status,
+            'error'                 => 'Payment could not be completed. Status: ' . $paymentIntent->status,
+        ], 400);
+ 
+    } catch (\Stripe\Exception\CardException $e) {
+        /* ✅ Card decline — clear message */
         return response()->json([
             'success' => false,
-            'error' => $e->getMessage(),
+            'error'   => $e->getError()->message ?? 'Your card was declined.',
+            'code'    => $e->getError()->code ?? 'card_declined',
+        ], 400);
+ 
+    } catch (\Stripe\Exception\InvalidRequestException $e) {
+        return response()->json([
+            'success' => false,
+            'error'   => $e->getMessage(),
+        ], 400);
+ 
+    } catch (\Exception $e) {
+        \Log::error('Stripe Payment Error: ' . $e->getMessage(), [
+            'amount'            => $request->amount,
+            'payment_method_id' => $request->payment_method_id,
+        ]);
+        return response()->json([
+            'success' => false,
+            'error'   => 'Payment processing failed. Please try again.',
         ], 500);
     }
 }

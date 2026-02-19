@@ -13,17 +13,40 @@ trait TransformProduct
 	 * @param object $product Product model instance
 	 * @param string|null $categoryMostParentURL Parent category URL
 	 * @param string|null $categoryURL Category URL
+	 * @param bool $withDescription Include description fields
+	 * @param bool $withAttributes Include all attributes
+	 * @param bool $withTranslation Use translations or direct fields
 	 * @return void
 	 */
-	public function transformFeaturedProduct($product, $categoryMostParentURL = null, $categoryURL = null, $withDescription = false, $withAttributes = false)
+	public function transformFeaturedProduct($product, $categoryMostParentURL = null, $categoryURL = null, $withDescription = false, $withAttributes = false, $withTranslation = true)
 	{
-		/* Transform product name and images to locale objects */
-		$product->name = $this->getLocalizedData($product->translations, 'name_tr');
-		$product->images = $this->getLocalizedData($product->translations, 'images_tr', true);
+		/* Transform product name and images based on translation flag */
+		if ($withTranslation) {
+			/* Use translations */
+			$product->name = $this->getLocalizedData($product->translations, 'name_tr');
+			$product->images = $this->getLocalizedData($product->translations, 'images_tr', true);
+		} else {
+			/* Use direct fields */
+			$product->name = $product->name ?? null;
+			$product->images = is_array($product->images)
+			? $product->images
+			: json_decode($product->images, true);
+		}
 
 		if ($withDescription) {
-			$product->description = $this->getLocalizedData($product->translations, 'description_tr', true);
-			$product->benefits_features_tr = $this->getLocalizedData($product->translations, 'benefits_features_tr', true);
+			if ($withTranslation) {
+				/* Use translations */
+				$product->description = $this->getLocalizedData($product->translations, 'description_tr', true);
+				$product->benefits_features_tr = $this->getLocalizedData($product->translations, 'benefits_features_tr', true);
+			} else {
+				/* Use direct fields */
+				$product->description = is_array($product->description)
+				? $product->description
+				: json_decode($product->description, true);
+				$product->benefits_features = is_array($product->benefits_features)
+				? $product->benefits_features
+				: json_decode($product->benefits_features, true);
+			}
 		}
 
 		$product->parent_category_url = $categoryMostParentURL ?? $product->parent_category_url();
@@ -63,18 +86,35 @@ trait TransformProduct
 		}
 
 		if ($withAttributes) {
-			$product->all_attributes = $product->productAttributes->map(function ($productAttribute) {
-				$attribute = [
-					'attribute_name' => $this->getLocalizedData($productAttribute->attributeDetails->translations, 'name_tr'),
-					'attribute_value' => $this->getLocalizedData($productAttribute->translations, 'attribute_value_tr')
-				];
+			if ($withTranslation) {
+				/* Use translations for attributes */
+				$product->all_attributes = $product->productAttributes->map(function ($productAttribute) {
+					$attribute = [
+						'attribute_name' => $this->getLocalizedData($productAttribute->attributeDetails->translations, 'name_tr'),
+						'attribute_value' => $this->getLocalizedData($productAttribute->translations, 'attribute_value_tr')
+					];
 
-				if ($productAttribute->measurementUnit) {
-					$attribute['measurement_unit'] = $this->getLocalizedData($productAttribute->measurementUnit->translations, 'name_tr');
-				}
+					if ($productAttribute->measurementUnit) {
+						$attribute['measurement_unit'] = $this->getLocalizedData($productAttribute->measurementUnit->translations, 'name_tr');
+					}
 
-				return $attribute;
-			});
+					return $attribute;
+				});
+			} else {
+				/* Use direct fields for attributes */
+				$product->all_attributes = $product->productAttributes->map(function ($productAttribute) {
+					$attribute = [
+						'attribute_name' => $productAttribute->attributeDetails->name ?? null,
+						'attribute_value' => $productAttribute->attribute_value ?? null
+					];
+
+					if ($productAttribute->measurementUnit) {
+						$attribute['measurement_unit'] = $productAttribute->measurementUnit->name ?? null;
+					}
+
+					return $attribute;
+				});
+			}
 		}
 
 		/* Remove unwanted attributes from product */
