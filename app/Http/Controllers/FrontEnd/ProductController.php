@@ -3479,6 +3479,13 @@ class ProductController extends Controller
 
 			return [
 				'id' => $product->id,
+				'debug_categories' => $product->categories->map(function($c) {
+					return [
+						'id' => $c->id,
+						'name' => $c->name,
+						'parent_id' => $c->parent_id,
+					];
+				}),
 				'name' => $product->name,
 				'category_url' => method_exists($product, 'category_url') ? $product->category_url() : null,
 				'parent_category_url' => method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null,

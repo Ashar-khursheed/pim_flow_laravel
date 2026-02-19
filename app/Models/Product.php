@@ -225,15 +225,8 @@ class Product extends Model implements TranslatableContract
 			return null;
 		}
 
-		// Get all category IDs that are parents to confirmed other categories in this list
-		$parentIds = $categories->pluck('parent_id')->filter()->unique();
-
-		// The most specific categories are those whose IDs are NOT in the list of parent IDs
-		// i.e., they are not parents to any other assigned category
-		$leaves = $categories->whereNotIn('id', $parentIds);
-
-		// If multiple leaves exist, order by ID descending (or created_at if available) to pick the latest
-		return $leaves->sortByDesc('id')->first();
+		// Return the category with the highest ID (latest created/assigned)
+		return $categories->sortByDesc('id')->first();
 	}
 
 	/* Get unique attributes associated with the product's latest category */
