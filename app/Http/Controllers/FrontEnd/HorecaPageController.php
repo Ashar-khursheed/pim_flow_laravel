@@ -208,7 +208,6 @@ class HorecaPageController extends BaseController
 						'ec_products.alt_tags',
 						'ec_products.quote_available',
 						'ec_products.brand_id',
-						'ec_products.quantity',
 					])
 					->where('ec_products.status', 'published')
 					->with($productRelationships)
