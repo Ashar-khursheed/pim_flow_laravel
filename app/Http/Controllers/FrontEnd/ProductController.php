@@ -3348,7 +3348,14 @@ class ProductController extends Controller
 			'HTD-20H',
 			'HLS-1900A',
 			'FE-04S',
-			'RTW-67L'
+			'RTW-67L',
+			'04873',
+			'Versatile Pro',
+			'Q90CPM/G400 9CPI/G400',
+			'ATO-4B',
+			'BS2FDUC/G-83',
+			'ICP 101E',
+			'XM-52'
 		];
 
 		// Start building the query
