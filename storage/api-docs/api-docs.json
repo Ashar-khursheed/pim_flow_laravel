@@ -20291,6 +20291,34 @@
                 }
             }
         },
+        "/api/frontend/horeca-pages-by-slug/{slug}": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Horeca Pages"
+                ],
+                "summary": "Get Horeca page details by slug",
+                "operationId": "5f53ca0f7bf56e6a68bb4185b24508ec",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Horeca Page SEO Slug",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Horeca page details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/inquiries": {
             "post": {
                 "tags": [
