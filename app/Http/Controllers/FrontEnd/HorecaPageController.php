@@ -208,8 +208,6 @@ class HorecaPageController extends BaseController
 						'ec_products.alt_tags',
 						'ec_products.quote_available',
 						'ec_products.brand_id',
-						'ec_products.video_url',
-						'ec_products.video_path',
 						'ec_products.start_date',
 						'ec_products.end_date',
 						'ec_products.quantity',
