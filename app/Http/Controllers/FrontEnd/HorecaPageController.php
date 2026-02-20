@@ -350,8 +350,6 @@ class HorecaPageController extends BaseController
 			'url' => $product->seoUrl->url ?? null,
 			'images' => $cleanedImages,
 			'alt_tags' => $cleanedAlt,
-			'video_url' => $product->video_url,
-			'video_path' => $video_path,
 			'sku' => $product->sku,
 			'start_date' => $product->start_date,
 			'end_date' => $product->end_date,
