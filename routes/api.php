@@ -1147,4 +1147,4 @@ Route::get('frontend/touras/pay/{order}', [F_TourasPaymentController::class, 'pa
 Route::any('frontend/touras/callback', [F_TourasPaymentController::class, 'handleCallback'])->name('frontend.touras.callback');
 
 Route::apiResource('frontend/horeca-pages',  F_HorecaPageController::class);
-Route::get('frontend/horeca-pages-by-slug/{slug}', [F_HorecaPageController::class, 'showBySlug']);
+Route::get('frontend/horeca-pages-by-slug/{slug}', [F_HorecaPageController::class, 'showBySlug'])->where('slug', '.*');
