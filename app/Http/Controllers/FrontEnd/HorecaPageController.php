@@ -4,7 +4,6 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 
 use App\Models\FrontEnd\HorecaPage;
 use App\Models\SeoManagement;
@@ -39,52 +38,20 @@ class HorecaPageController extends BaseController
 				'categories.seoUrl:id,relational_id,relational_type,url',
 				'productTypes:id,horeca_page_id,type,description,order',
 				'productTypes.products' => function($query) {
-					/* Build product relationships array */
-					$productRelationships = [
-						'seoUrl:id,relational_id,relational_type,url',
-						'productSuppliers' => function($q) {
-							$q->select(['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 'sale_price', 'price', 'inventory', 'in_stock', 'min_quantity', 'is_fixed', 'delivery_days', 'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information', 'map'])
-							->cheapest();
-						},
-						'productSuppliers.vendor:id,name,address,zipcode,city_id,country_id',
-						'productSuppliers.vendor.country:id,name',
-						'productSuppliers.vendor.city:id,name',
-						'reviews:id,product_id,star',
-						'currency:id,title,symbol,is_prefix_symbol',
-						'sellingUnitAttribute',
-						'ingredientsAttribute',
-						'brand.seoUrl:id,relational_id,relational_type,url',
-						'categories' => function($q) {
-							$q->select(['categories.id', 'categories.name', 'categories.image', 'categories.parent_id'])
-							->with(['seoUrl:id,relational_id,relational_type,url', 'parent:id,name,parent_id', 'parent.seoUrl:id,relational_id,relational_type,url', 'parent.parent:id,name,parent_id', 'parent.parent.seoUrl:id,relational_id,relational_type,url']);
-						}
-					];
-
-					/* Add translations for UAE websites only */
-					if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-						$productRelationships[] = 'translations';
-					}
-
-					$query->select([
-						'ec_products.id',
-						'ec_products.name',
-						'ec_products.sku',
-						'ec_products.images',
-						'ec_products.currency_id',
-						'ec_products.alt_tags',
-						'ec_products.quote_available',
-						'ec_products.brand_id',
-						'ec_products.video_url',
-						'ec_products.video_path',
-						'ec_products.start_date',
-						'ec_products.end_date',
-						'ec_products.quantity',
-						'ec_products.units_sold'
-					])
-					->where('ec_products.status', 'published')
-					->with($productRelationships)
-					->withCount('reviews')
-					->withAvg('reviews', 'star');
+					$query->where('status', 'published')
+						->with([
+							'reviews',
+							'currency',
+							'productSuppliers' => function($q) {
+								$q->cheapest();
+							},
+							'productSuppliers.vendor.country:id,name',
+							'productSuppliers.vendor.city:id,name',
+							'sellingUnitAttribute',
+							'ingredientsAttribute',
+							'seoUrl',
+							'productAttributes.attributeDetails'
+						]);
 				}
 			])->find($id);
 
@@ -107,15 +74,12 @@ class HorecaPageController extends BaseController
 				});
 			}
 
-			/* Get wishlist IDs for the current user */
-			$wishlistProductIds = $this->getWishlistProductIds();
-
 			/* Transform product types and their products */
 			if ($page->productTypes) {
-				$page->productTypes->transform(function ($productType) use ($wishlistProductIds) {
+				$page->productTypes->transform(function ($productType) {
 					if ($productType->products) {
-						$productType->products = $productType->products->map(function ($product) use ($wishlistProductIds) {
-							return $this->transformEnhancedProduct($product, $wishlistProductIds);
+						$productType->products = $productType->products->map(function ($product) {
+							return $this->transformDetailedProduct($product);
 						});
 					}
 					return $productType;
@@ -173,46 +137,20 @@ class HorecaPageController extends BaseController
 				'categories.seoUrl:id,relational_id,relational_type,url',
 				'productTypes:id,horeca_page_id,type,description,order',
 				'productTypes.products' => function($query) {
-					/* Build product relationships array */
-					$productRelationships = [
-						'seoUrl:id,relational_id,relational_type,url',
-						'productSuppliers' => function($q) {
-							$q->select(['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 'sale_price', 'price', 'inventory', 'in_stock', 'min_quantity', 'is_fixed', 'delivery_days', 'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information', 'map'])
-							->cheapest();
-						},
-						'productSuppliers.vendor:id,name,address,zipcode,city_id,country_id',
-						'productSuppliers.vendor.country:id,name',
-						'productSuppliers.vendor.city:id,name',
-						'reviews:id,product_id,star',
-						'currency:id,title,symbol,is_prefix_symbol',
-						'sellingUnitAttribute',
-						'ingredientsAttribute',
-						'brand.seoUrl:id,relational_id,relational_type,url',
-						'categories' => function($q) {
-							$q->select(['categories.id', 'categories.name', 'categories.image', 'categories.parent_id'])
-							->with(['seoUrl:id,relational_id,relational_type,url', 'parent:id,name,parent_id', 'parent.seoUrl:id,relational_id,relational_type,url', 'parent.parent:id,name,parent_id', 'parent.parent.seoUrl:id,relational_id,relational_type,url']);
-						}
-					];
-
-					/* Add translations for UAE websites only */
-					if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-						$productRelationships[] = 'translations';
-					}
-
-					$query->select([
-						'ec_products.id',
-						'ec_products.name',
-						'ec_products.sku',
-						'ec_products.images',
-						'ec_products.currency_id',
-						'ec_products.alt_tags',
-						'ec_products.quote_available',
-						'ec_products.brand_id',
-					])
-					->where('ec_products.status', 'published')
-					->with($productRelationships)
-					->withCount('reviews')
-					->withAvg('reviews', 'star');
+					$query->where('status', 'published')
+						->with([
+							'reviews',
+							'currency',
+							'productSuppliers' => function($q) {
+								$q->cheapest();
+							},
+							'productSuppliers.vendor.country:id,name',
+							'productSuppliers.vendor.city:id,name',
+							'sellingUnitAttribute',
+							'ingredientsAttribute',
+							'seoUrl',
+							'productAttributes.attributeDetails'
+						]);
 				}
 			])->find($seoRecord->relational_id);
 
@@ -235,15 +173,12 @@ class HorecaPageController extends BaseController
 				});
 			}
 
-			/* Get wishlist IDs for the current user */
-			$wishlistProductIds = $this->getWishlistProductIds();
-
 			/* Transform product types and their products */
 			if ($page->productTypes) {
-				$page->productTypes->transform(function ($productType) use ($wishlistProductIds) {
+				$page->productTypes->transform(function ($productType) {
 					if ($productType->products) {
-						$productType->products = $productType->products->map(function ($product) use ($wishlistProductIds) {
-							return $this->transformEnhancedProduct($product, $wishlistProductIds);
+						$productType->products = $productType->products->map(function ($product) {
+							return $this->transformDetailedProduct($product);
 						});
 					}
 					return $productType;
@@ -266,33 +201,11 @@ class HorecaPageController extends BaseController
 	}
 
 	/**
-	 * Get wishlist product IDs for the current user or guest session
-	 *
-	 * @return array
+	 * Transform a product into the format requested by the user, matching getCategoryWiseRandomProducts exactly.
 	 */
-	private function getWishlistProductIds()
+	private function transformDetailedProduct($product)
 	{
-		$userId = Auth::id();
-		if ($userId) {
-			return DB::table('ec_wish_lists')
-				->where('customer_id', $userId)
-				->pluck('product_id')
-				->map(fn($id) => (int) $id)
-				->toArray();
-		}
-		return session()->get('guest_wishlist', []);
-	}
-
-	/**
-	 * Transform a product into the enhanced format requested by the user
-	 *
-	 * @param object $product
-	 * @param array $wishlistProductIds
-	 * @return array
-	 */
-	private function transformEnhancedProduct($product, $wishlistProductIds)
-	{
-		// Clean images
+		// Process images
 		$imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
 		$cleanedImages = collect($imageArray)->map(function ($item) {
 			if (is_string($item) && str_starts_with($item, '[')) {
@@ -302,7 +215,7 @@ class HorecaPageController extends BaseController
 			return [$item];
 		})->flatten()->filter()->values();
 
-		// Clean alt tags
+		// Process alt tags
 		$AltArray = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true);
 		$cleanedAlt = collect($AltArray)->map(function ($item) {
 			if (is_string($item) && str_starts_with($item, '[')) {
@@ -312,15 +225,8 @@ class HorecaPageController extends BaseController
 			return [$item];
 		})->flatten()->filter()->values();
 
-		$videoPaths = json_decode($product->video_path, true);
-		$video_path = collect($videoPaths)->map(fn($video) => $video);
-
-		$totalReviews = $product->reviews_count ?? 0;
-		$avgRating = $product->reviews_avg_star ?? null;
-		$quantity = $product->quantity ?? 0;
-		$unitsSold = $product->units_sold ?? 0;
-		$leftStock = $quantity - $unitsSold;
-
+		// Selling type
+		$sellingType = null;
 		if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
 			$fullValue = $product->sellingUnitAttribute->attribute_value;
 			if (strpos($fullValue, '/') !== false) {
@@ -331,75 +237,68 @@ class HorecaPageController extends BaseController
 			}
 		}
 
+		// Calculate per unit price
+		// Using productAttributes as the source for per_unit_price_attributes
+		$unitsPerCase = collect($product->productAttributes)->first(fn($attr) => optional($attr->attributeDetails)->name === 'Units per Case');
+		$packType = collect($product->productAttributes)->first(fn($attr) => optional($attr->attributeDetails)->name === 'Pack Type');
+
+		$basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+		$perUnitPrice = null;
+		if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+			$unitValue = (float) $unitsPerCase->attribute_value;
+			if ($unitValue > 0) {
+				$calculated = round($basePrice / $unitValue, 2);
+				$perUnitPrice = $calculated . '/' . (optional($packType)->attribute_value ?? '');
+			}
+		}
+		$product->per_unit_price = $perUnitPrice;
+
 		$firstSupplier = $product->productSuppliers->first();
 
-		// Category hierarchy
-		$category = $product->categories->first();
-		$parentCategory = $category?->parent;
-		$grandparentCategory = $parentCategory?->parent;
+		$price = $firstSupplier ? (float) $firstSupplier->price : null;
+		$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : null;
+		$vendorSku = $firstSupplier?->vendor_sku;
+		$vendorId = $firstSupplier?->vendor_id;
 
 		return [
-			'id' => $product->id,
-			'name' => $product->name,
-			'url' => $product->seoUrl->url ?? null,
-			'images' => $cleanedImages,
-			'alt_tags' => $cleanedAlt,
-			'sku' => $product->sku,
-			'original_price' => (float) ($firstSupplier->price ?? 0),
-			'product_id' => $product->id,
-			'product_name' => $product->name,
-			'clicks' => 0, // Placeholder
-			'sales' => 0.0, // Placeholder
-			'views' => 0, // Placeholder
-			'sale_price' => (float) ($firstSupplier->sale_price ?? 0),
-			'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
-			'map' => (float) ($firstSupplier->map ?? null),
-			'free_shipping' => $firstSupplier->free_shipping ?? null,
-			'shipping_charge' => (float) ($firstSupplier->shipping_charge ?? 0.0),
-			'inventory' => $firstSupplier->inventory ?? null,
-			'in_stock' => $firstSupplier->in_stock ?? null,
-			'in_wishlist' => in_array($product->id, $wishlistProductIds),
-			'isRequired' => (bool) $product->getIsRequiredAttribute(),
-			'vendor_id' => $firstSupplier->vendor_id ?? null,
-			'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-			'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-			'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-			'vendor_port' => null, // Placeholder
-			'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
-			'vendor_address' => $firstSupplier->vendor->address ?? null,
-			'selling_unit' => $product->sellingUnitAttribute->attribute_value ?? null,
-			'delivery_days' => $firstSupplier->delivery_days ?? null,
-			'warranty_information' => $firstSupplier->warranty_information ?? null,
-			'return_policy' => $firstSupplier->return_policy ?? null,
-			'category_name' => $category->name ?? null,
-			'category_id' => $category->id ?? null,
-			'category_image' => $category ? (filter_var($category->image, FILTER_VALIDATE_URL) ? $category->image : url('storage/' . ltrim($category->image, '/'))) : null,
-			'category_url' => $category->seoUrl->url ?? null,
-			'category_parent_id' => $category->parent_id ?? null,
-			'parent_category_name' => $parentCategory->name ?? null,
-			'parent_category_slug' => $parentCategory->seoUrl->url ?? null,
-			'parent_category_url' => $parentCategory->seoUrl->url ?? null,
-			'grandparent_category_name' => $grandparentCategory->name ?? null,
-			'grandparent_category_slug' => $grandparentCategory->seoUrl->url ?? null,
-			'brand' => $product->brand->name ?? null,
-			'brand_id' => $product->brand_id ?? null,
-			'brand_logo' => $product->brand ? (filter_var($product->brand->logo, FILTER_VALIDATE_URL) ? $product->brand->logo : url('storage/' . ltrim($product->brand->logo, '/'))) : null,
-			'brand_seo_url' => $product->brand->seoUrl->url ?? null,
-			'product_images' => $cleanedImages->map(fn($img) => ['url' => $img]),
-			'primary_image' => $cleanedImages->first(),
-			'quote_available' => $product->quote_available,
+			"id" => $product->id,
+			"name" => $product->name,
+			'category_url' => $product->category_url(),
+			'parent_category_url' => $product->parent_category_url(),
+			"sku" => $product->sku,
+			"url" => $product->seoUrl->url ?? null,
+			"total_reviews" => $product->reviews ? $product->reviews->count() : 0,
+			"avg_rating" => ($product->reviews && $product->reviews->count() > 0) ? $product->reviews->avg('star') : null,
+			"left_stock" => $product->left_stock ?? 0,
+			"currency" => optional($product->currency)->symbol ?? '$',
+			"images" => $cleanedImages,
+			"alt_tags" => $cleanedAlt,
+			"vendor_sku" => $vendorSku,
+
+			'vendor_country' => optional(optional($firstSupplier)->vendor)->country->name ?? null,
+			'vendor_city' => optional(optional($firstSupplier)->vendor)->city->name ?? null,
+			'vendor_address' => optional(optional($firstSupplier)->vendor)->address ?? null,
+			'vendor_zipcode' => optional(optional($firstSupplier)->vendor)->zipcode ?? null,
+
+			"price" => $price ?? 0,
+			"sale_price" => $salePrice ?? 0,
+			"original_price" => $price ?? 0,
+			"front_sale_price" => $salePrice ?: $price ?? 0,
+			"best_price" => $price ?? 0,
+			"selling_type" => $sellingType,
+			"per_unit_price" => $product->per_unit_price,
+			"vendor_id" => $vendorId,
+			"map" => $firstSupplier ? (float) $firstSupplier->map : 0,
+			"inventory" => $firstSupplier->inventory ?? null,
+			"in_stock" => $firstSupplier->in_stock ?? null,
+			"delivery_days" => $firstSupplier->delivery_days ?? null,
+			"return_policy" => $firstSupplier->return_policy ?? null,
+			"free_shipping" => $firstSupplier->free_shipping ?? null,
+			"warranty_information" => $firstSupplier->warranty_information ?? null,
+			'min_quantity' => $firstSupplier->min_quantity ?? 0,
 			'is_fixed' => $firstSupplier->is_fixed ?? 0,
-			'min_quantity' => $firstSupplier->min_quantity ?? 1,
-			'currency' => $product->currency->symbol ?? null,
-			'currency_title' => $product->currency
-				? ($product->currency->is_prefix_symbol
-					? $product->currency->symbol
-					: ($product->price . ' ' . $product->currency->symbol))
-				: null,
-			'total_reviews' => $totalReviews,
-			'avg_rating' => $avgRating,
-			'leftStock' => $leftStock,
-			'best_price' => (float) ($firstSupplier->price ?? 0),
+			'quote_available' => $product->quote_available ?? null,
+			'isRequired' => (bool) $product->isRequired,
 		];
 	}
 }
