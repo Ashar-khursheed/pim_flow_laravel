@@ -60,6 +60,7 @@ class SeoManagement extends Model implements TranslatableContract
 			'Category' => \App\Models\Category::class,
 			'Brand'    => \App\Models\Brand::class,
 			'Blog'     => \App\Models\Blog::class,
+			'Page'     => \App\Models\FrontEnd\HorecaPage::class,
 		]);
 	}
 
