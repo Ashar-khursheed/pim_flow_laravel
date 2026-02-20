@@ -52,15 +52,15 @@ trait TransformProduct
 		$product->parent_category_url = $categoryMostParentURL ?? $product->parent_category_url();
 		$product->category_url = $categoryURL ?? $product->category_url();
 		$product->url = optional($product->seoUrl)->url ?? null;
-		$product->quote_available = $product->quote_available ?? 0;
+		$product->quote_available = $product->quote_available ?? null;
 
 		/* Currency data */
 		$product->currency_name = optional($product->currency)->title ?? null;
 		$product->currency_symbol = optional($product->currency)->symbol ?? null;
 
 		/* Reviews data */
-		$product->total_reviews = $product->reviews_count ?? 0;
-		$avgRating = (float) ($product->reviews_avg_star ?? 0);
+		$product->total_reviews = $product->reviews_count ?? null;
+		$avgRating = (float) ($product->reviews_avg_star ?? null);
 		$product->avg_rating = round($avgRating, 1);
 
 		/* Alt tags */
@@ -75,8 +75,8 @@ trait TransformProduct
 		$product->isRequired = $product->isRequired;
 
 		/* Stock logic */
-		$quantity = $product->quantity ?? 0;
-		$unitsSold = $product->units_sold ?? 0;
+		$quantity = $product->quantity ?? null;
+		$unitsSold = $product->units_sold ?? null;
 		$product->leftStock = $quantity - $unitsSold;
 
 		/* Wishlist logic */
@@ -106,8 +106,8 @@ trait TransformProduct
 			$product->return_policy = $firstSupplier->return_policy ?? null;
 			$product->free_shipping = $firstSupplier->free_shipping ?? null;
 			$product->warranty_information = $firstSupplier->warranty_information ?? null;
-			$product->min_quantity = $firstSupplier->min_quantity ?? 0;
-			$product->is_fixed = $firstSupplier->is_fixed ?? 0;
+			$product->min_quantity = $firstSupplier->min_quantity ?? null;
+			$product->is_fixed = $firstSupplier->is_fixed ?? null;
 		} else {
 			$product->price = (float) $product->price;
 			$product->sale_price = (float) $product->sale_price;
