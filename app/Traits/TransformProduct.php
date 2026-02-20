@@ -60,8 +60,8 @@ trait TransformProduct
 
 		/* Reviews data */
 		$product->total_reviews = $product->reviews_count ?? null;
-		$avgRating = (float) ($product->reviews_avg_star ?? null);
-		$product->avg_rating = round($avgRating, 1);
+		$avgRating = $product->reviews_avg_star !== null ? (float) $product->reviews_avg_star : null;
+		$product->avg_rating = $avgRating !== null ? round($avgRating, 1) : null;
 
 		/* Alt tags */
 		$product->alt_tags = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true) ?? [];
@@ -77,7 +77,7 @@ trait TransformProduct
 		/* Stock logic */
 		$quantity = $product->quantity ?? null;
 		$unitsSold = $product->units_sold ?? null;
-		$product->leftStock = $quantity - $unitsSold;
+		$product->leftStock = ($quantity !== null && $unitsSold !== null) ? ($quantity - $unitsSold) : null;
 
 		/* Wishlist logic */
 		$product->in_wishlist = in_array($product->id, $wishlistProductIds);
@@ -93,13 +93,13 @@ trait TransformProduct
 			$product->vendor_address = $firstSupplier->vendor->address ?? null;
 			$product->vendor_zipcode = $firstSupplier->vendor->zipcode ?? null;
 
-			$product->price = (float) $firstSupplier->price;
-			$product->sale_price = (float) $firstSupplier->sale_price;
-			$product->original_price = (float) $firstSupplier->price;
-			$product->front_sale_price = (float) ($firstSupplier->sale_price ?: $firstSupplier->price);
-			$product->best_price = (float) $firstSupplier->price;
+			$product->price = $firstSupplier->price !== null ? (float) $firstSupplier->price : null;
+			$product->sale_price = $firstSupplier->sale_price !== null ? (float) $firstSupplier->sale_price : null;
+			$product->original_price = $product->price;
+			$product->front_sale_price = $product->sale_price ?: $product->price;
+			$product->best_price = $product->price;
 
-			$product->map = (float) $firstSupplier->map ?? null;
+			$product->map = $firstSupplier->map !== null ? (float) $firstSupplier->map : null;
 			$product->inventory = $firstSupplier->inventory ?? null;
 			$product->in_stock = $firstSupplier->in_stock ?? null;
 			$product->delivery_days = $firstSupplier->delivery_days ?? null;
@@ -109,11 +109,11 @@ trait TransformProduct
 			$product->min_quantity = $firstSupplier->min_quantity ?? null;
 			$product->is_fixed = $firstSupplier->is_fixed ?? null;
 		} else {
-			$product->price = (float) $product->price;
-			$product->sale_price = (float) $product->sale_price;
-			$product->original_price = (float) $product->price;
-			$product->front_sale_price = (float) ($product->sale_price ?: $product->price);
-			$product->best_price = (float) $product->price;
+			$product->price = $product->price !== null ? (float) $product->price : null;
+			$product->sale_price = $product->sale_price !== null ? (float) $product->sale_price : null;
+			$product->original_price = $product->price;
+			$product->front_sale_price = $product->sale_price ?: $product->price;
+			$product->best_price = $product->price;
 		}
 
 		$currency = $product->currency;
