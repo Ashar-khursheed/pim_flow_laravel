@@ -3353,7 +3353,6 @@ class ProductController extends Controller
 			'Versatile Pro',
 			'Q90CPM/G400 9CPI/G400',
 			'ATO-4B',
-			'BS2FDUC/G-83',
 			'ICP 101E',
 			'XM-52'
 		];
