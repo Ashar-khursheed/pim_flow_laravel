@@ -208,10 +208,7 @@ class HorecaPageController extends BaseController
 						'ec_products.alt_tags',
 						'ec_products.quote_available',
 						'ec_products.brand_id',
-						'ec_products.start_date',
-						'ec_products.end_date',
 						'ec_products.quantity',
-						'ec_products.units_sold'
 					])
 					->where('ec_products.status', 'published')
 					->with($productRelationships)
@@ -349,8 +346,6 @@ class HorecaPageController extends BaseController
 			'images' => $cleanedImages,
 			'alt_tags' => $cleanedAlt,
 			'sku' => $product->sku,
-			'start_date' => $product->start_date,
-			'end_date' => $product->end_date,
 			'original_price' => (float) ($firstSupplier->price ?? 0),
 			'product_id' => $product->id,
 			'product_name' => $product->name,
