@@ -7023,6 +7023,15 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "only_faq",
+                        "in": "query",
+                        "description": "Return only FAQs",
+                        "schema": {
+                            "type": "boolean",
+                            "example": false
+                        }
                     }
                 ],
                 "responses": {
@@ -7030,26 +7039,6 @@
                         "description": "Successful operation",
                         "content": {
                             "application/json": {}
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Category not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
                         }
                     }
                 },
@@ -7083,16 +7072,20 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "name"
+                                    "_method"
                                 ],
                                 "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
                                     "name": {
                                         "type": "string",
                                         "example": "Electronics"
                                     },
                                     "parent_id": {
                                         "type": "integer",
-                                        "example": 0
+                                        "example": 1
                                     },
                                     "description": {
                                         "type": "string",
@@ -7128,6 +7121,36 @@
                                     "last_child": {
                                         "type": "string",
                                         "example": "635,665,686"
+                                    },
+                                    "only_faq": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "faqs": {
+                                        "description": "Array of FAQs to category",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "question",
+                                                "answer"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "description": "FAQ ID (optional for update)",
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "question": {
+                                                    "type": "string",
+                                                    "example": "What is this?"
+                                                },
+                                                "answer": {
+                                                    "type": "string",
+                                                    "example": "Answer here"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -7140,29 +7163,6 @@
                         "description": "Category updated successfully",
                         "content": {
                             "application/json": {}
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Validation error"
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
                         }
                     }
                 },

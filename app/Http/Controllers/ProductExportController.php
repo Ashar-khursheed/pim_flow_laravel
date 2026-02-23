@@ -105,7 +105,7 @@ class ProductExportController extends BaseController
 			'brand:id,name',
 			'vendors:id,name',
 			'tags:id,name',
-			'faqs:id,product_id,question,answer',
+			'faqs:id,relational_type,relational_id,question,answer',
 			'latestChildCategoryRelation:id,name',
 		])
 		->when($includeDescriptiveAttributes, function($query) {
