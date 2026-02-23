@@ -17,12 +17,12 @@ use Illuminate\Database\Eloquent\Model;
  */
 class FaqCategory extends Model
 {
-    use HasFactory;
+	use HasFactory;
 
-    protected $fillable = ['name', 'order', 'status', 'description'];
+	protected $fillable = ['name', 'order', 'status', 'description'];
 
-    public function faqs()
-    {
-        return $this->hasMany(Faq::class, 'category_id');
-    }
+	public function faqs()
+	{
+		return $this->morphMany(Faq::class, 'relational');
+	}
 }

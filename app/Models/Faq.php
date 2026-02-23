@@ -24,29 +24,31 @@ use Astrotomic\Translatable\Translatable;
  */
 class Faq extends Model implements TranslatableContract
 {
-    use Translatable;
+	use Translatable;
 
-    public $translatedAttributes = [
-        'question_tr',
-        'answer_tr',
-    ];
-    protected $fillable = ['question', 'answer', 'category_id', 'status', 'product_id'];
+	// public $translatedAttributes = [
+	// 	'question_tr',
+	// 	'answer_tr',
+	// ];
 
-    protected static function booted()
-    {
-        static::deleting(function ($faq) {
-            $faq->translations()->delete();
-        });
-    }
+	public $translatedAttributes = [];
+	protected $fillable = ['relational_id', 'relational_type', 'question', 'answer', 'status'];
 
-    public function category()
-    {
-        return $this->belongsTo(FaqCategory::class, 'category_id');
-    }
+	protected static function booted()
+	{
+		static::deleting(function ($faq) {
+			$faq->translations()->delete();
+		});
+	}
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class, 'product_id');
-    }
+	public function category()
+	{
+		return $this->belongsTo(FaqCategory::class, 'category_id');
+	}
+
+	public function product()
+	{
+		return $this->belongsTo(Product::class, 'product_id');
+	}
 }
 

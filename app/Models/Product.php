@@ -245,7 +245,7 @@ class Product extends Model implements TranslatableContract
 
 	public function faqs()
 	{
-		return $this->hasMany(Faq::class, 'product_id');
+		return $this->morphMany(Faq::class, 'relational');
 	}
 
 	public function productSuppliers()
