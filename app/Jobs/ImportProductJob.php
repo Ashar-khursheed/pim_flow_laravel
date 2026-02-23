@@ -387,15 +387,12 @@ class ImportProductJob implements ShouldQueue
 								/* Update translation (English) */
 								if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
 									$faq->translateOrNew('en')->question_tr = $faqQuestion;
-									$faq->translateOrNew('en')->answer_tr   = $faqAnswer;
+									$faq->translateOrNew('en')->answer_tr = $faqAnswer;
 								}
-
 								$faq->save();
 							} else {
-								/* Create new FAQ */
-								$faq = new Faq([
-									'product_id' => $product->id,
-									'category_id' => 4,
+								/* Create new FAQ using polymorphic relationship */
+								$faq = $product->faqs()->create([
 									'question' => $faqQuestion,
 									'answer' => $faqAnswer,
 									'status' => 'published',
@@ -405,17 +402,21 @@ class ImportProductJob implements ShouldQueue
 								if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
 									$faq->translateOrNew('en')->question_tr = $faqQuestion;
 									$faq->translateOrNew('en')->answer_tr = $faqAnswer;
+									$faq->save();
 								}
-
-								$faq->save();
 							}
 						}
 					}
 
 					/* Delete FAQs not in current submission */
-					$product->faqs()->whereNotIn('question', $submittedQuestions)->each(function ($faq) {
-						$faq->delete();
-					});
+					$product->faqs()->whereNotIn('question', $submittedQuestions)->get()->each(
+						function ($faq) {
+							if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+								$faq->translations()->delete();
+							}
+							$faq->delete();
+						}
+					);
 				} else {
 					$jsonImages = json_encode($fetchedImages);
 					$product->name = $name;

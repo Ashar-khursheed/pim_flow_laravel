@@ -1247,17 +1247,14 @@ class ProductController extends BaseController
 				}
 
 				/* Delete FAQs not in the updated list */
-				$faqsToDelete = $product->faqs()->whereNotIn('id', $updatedFaqIds)->get();
-
-				foreach ($faqsToDelete as $faq) {
-					/* Delete translations for UAE, UAE_T, SA websites before deleting FAQ */
-					if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-						$faq->translations()->delete();
+				$product->faqs()->whereNotIn('id', $updatedFaqIds)->get()->each(
+					function ($faq) {
+						if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+							$faq->translations()->delete();
+						}
+						$faq->delete();
 					}
-
-					/* Delete the FAQ itself */
-					$faq->delete();
-				}
+				);
 			}
 		}
 
