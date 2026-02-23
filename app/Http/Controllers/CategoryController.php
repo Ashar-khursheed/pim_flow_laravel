@@ -393,7 +393,7 @@ class CategoryController extends BaseController
 			return response()->json([
 				'success' => true,
 				'message' => 'Category FAQs retrieved successfully',
-				'data' => $category->faqs
+				'data' => $category->load('faqs')
 			], 200);
 		}
 

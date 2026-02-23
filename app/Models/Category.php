@@ -243,4 +243,9 @@ class Category extends Model implements TranslatableContract
 	{
 		return $this->hasOne(SubCategory::class);
 	}
+
+	public function faqs()
+	{
+		return $this->morphMany(Faq::class, 'relational');
+	}
 }
