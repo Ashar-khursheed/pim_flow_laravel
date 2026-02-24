@@ -40,15 +40,16 @@ class Faq extends Model implements TranslatableContract
 			$faq->translations()->delete();
 		});
 	}
-
-	public function category()
-	{
-		return $this->belongsTo(FaqCategory::class, 'category_id');
-	}
-
-	public function product()
-	{
-		return $this->belongsTo(Product::class, 'product_id');
-	}
 }
+
+// 	public function category()
+// 	{
+// 		return $this->belongsTo(FaqCategory::class, 'category_id');
+// 	}
+
+// 	public function product()
+// 	{
+// 		return $this->belongsTo(Product::class, 'product_id');
+// 	}
+// }
 

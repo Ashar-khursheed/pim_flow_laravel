@@ -48,7 +48,7 @@ class CategoryMenuController extends Controller
         }
 
         // Find the category using the relational_id
-        $category = Category::where('id', $seoRecord->relational_id)
+        $category = Category::with('faqs')->where('id', $seoRecord->relational_id)
             ->where('status', 'published')
             ->first();
 
@@ -59,7 +59,11 @@ class CategoryMenuController extends Controller
         // Fetch children of this category recursively
         $categoryWithChildren = $this->getCategoryWithChildren($category);
 
-        return response()->json($categoryWithChildren);
+        return response()->json([
+            'success' => true,
+            'category' => $categoryWithChildren,
+            'faq' => $category->faqs
+        ]);
     }
 
     /**
@@ -105,6 +109,7 @@ class CategoryMenuController extends Controller
             'parent_id' => $category->parent_id,
             'image' => $category->image,
             'children' => $category->children,
+
         ];
     }
 
