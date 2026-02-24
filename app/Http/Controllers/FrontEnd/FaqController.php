@@ -72,9 +72,7 @@ class FaqController extends Controller
         $productId = $product->id;
     }
 
-    $faqs = Faq::where('product_id', $productId)
-        ->where('status', 'published')
-        ->get(['id', 'question', 'answer', 'product_id']);
+    $faqs = $product->faqs;
 
     return response()->json([
         'success' => true,
