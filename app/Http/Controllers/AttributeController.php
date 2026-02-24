@@ -106,14 +106,7 @@ class AttributeController extends BaseController
 			}
 
 			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
-				'id',
-				'name',
-				'code',
-				'type',
-				'attribute_group_id',
-				'created_by',
-				'created_at',
-				'updated_at'
+				'id', 'name', 'code', 'type', 'attribute_group_id', 'created_by', 'created_at', 'updated_at'
 			]);
 
 			/* Add attribute_group_name and created_by */
@@ -131,8 +124,7 @@ class AttributeController extends BaseController
 			});
 		} else {
 			$records = $recordsQuery->orderBy('name', 'asc')->get([
-				'id',
-				'name'
+				'id', 'name'
 			]);
 			$totalRecords = $records->count();
 			$totalPages = 1;
@@ -147,75 +139,25 @@ class AttributeController extends BaseController
 		]);
 	}
 
-
 	/**
 	 * @OA\Post(
 	 *     path="/api/attributes",
 	 *     summary="Create a new attribute",
-	 *     description="Creates a new attribute with name, code, type, and multiple images.",
+	 *     description="Creates a new attribute with name, code, and type.",
 	 *     tags={"Attributes"},
-	 *     security={{"bearerAuth":{}}},
-	 *
 	 *     @OA\RequestBody(
 	 *         required=true,
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 required={"name", "code", "type"},
-	 *
-	 *                 @OA\Property(
-	 *                     property="name",
-	 *                     type="string",
-	 *                     example="Color"
-	 *                 ),
-	 *
-	 *                 @OA\Property(
-	 *                     property="code",
-	 *                     type="string",
-	 *                     example="color"
-	 *                 ),
-	 *
-	 *                 @OA\Property(
-	 *                     property="type",
-	 *                     type="string",
-	 *                     example="text"
-	 *                 ),
-	 *
-	 *                 @OA\Property(
-	 *                     property="images[]",
-	 *                     type="array",
-	 *                     description="Upload multiple images",
-	 *                     @OA\Items(
-	 *                         type="string",
-	 *                         format="binary"
-	 *                     )
-	 *                 )
-	 *             )
+	 *         @OA\JsonContent(
+	 *             required={"name", "code", "type"},
+	 *             @OA\Property(property="name", type="string", example="Color"),
+	 *             @OA\Property(property="code", type="string", example="color"),
+	 *             @OA\Property(property="type", type="string", example="text")
 	 *         )
 	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Attribute created successfully",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Attribute created successfully."),
-	 *             @OA\Property(property="data", type="object")
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation error",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="errors", type="object")
-	 *         )
-	 *     )
+	 *     @OA\Response(response=201, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
-
 	public function store(Request $request)
 	{
 		if (!auth()->user()->can('add attribute')) {
@@ -224,97 +166,35 @@ class AttributeController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-
+		/* Validate request data */
 		$request->validate([
-			'name' => 'required|unique:attributes,name',
-			'code' => 'required|unique:attributes,code',
-			'type' => 'required',
-			'images'   => 'nullable|array',
-			'images.*' => 'nullable|mimes:jpg,jpeg,png,webp|max:10240',
+			'name' => "required|unique:attributes,name",
+			'code' => "required|unique:attributes,code",
+			'type' => "required"
 		]);
 
-		$uploadedImages = [];
-		$path = env('STORAGE_ENV') . '/attribute';
-
-		if ($request->hasFile('images')) {
-			foreach ($request->file('images') as $image) {
-				if (!$image->isValid()) {
-					continue;
-				}
-
-
-				$tempRequest = new \Illuminate\Http\Request();
-				$tempRequest->files->set('attribute_image_single', $image);
-
-				$url = uploadImageToWebpS3FromFile(
-					$tempRequest,
-					'attribute_image_single',
-					$path
-				);
-
-				if ($url) {
-					$uploadedImages[] = $url;
-				}
-			}
-		}
-
-		$attribute = Attribute::create([
-			'name'       => $request->name,
-			'code'       => $request->code,
-			'type'       => $request->type,
-			'images'     => !empty($uploadedImages) ? json_encode($uploadedImages) : null,
-			'created_by' => auth()->id(),
-			'updated_by' => auth()->id(),
-		]);
+		$attribute = new Attribute();
+		$attribute->name = $request->name;
+		$attribute->code = $request->code;
+		$attribute->type = $request->type;
+		$attribute->created_by = auth()->id();
+		$attribute->updated_by = auth()->id();
+		$attribute->created_at = now();
+		$attribute->updated_at = now();
+		$attribute->save();
 
 		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
 			$attribute->translateOrNew('en')->name_tr = $request->name;
-			$attribute->save();
 		}
+
+		$attribute->save();
 
 		return response()->json([
 			'success' => true,
-			'message' => __('msg_create'),
+			'message' => __("msg_create"),
 			'data' => $attribute
-		], 200);
+		]);
 	}
-	// public function store(Request $request)
-	// {
-	// 	if (!auth()->user()->can('add attribute')) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => "You don't have permission to access this module.",
-	// 		]);
-	// 	}
-	// 	/* Validate request data */
-	// 	$request->validate([
-	// 		'name' => "required|unique:attributes,name",
-	// 		'code' => "required|unique:attributes,code",
-	// 		'type' => "required"
-	// 	]);
-
-	// 	$attribute = new Attribute();
-	// 	$attribute->name = $request->name;
-	// 	$attribute->code = $request->code;
-	// 	$attribute->type = $request->type;
-	// 	$attribute->created_by = auth()->id();
-	// 	$attribute->updated_by = auth()->id();
-	// 	$attribute->created_at = now();
-	// 	$attribute->updated_at = now();
-	// 	$attribute->save();
-
-	// 	if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-	// 		$attribute->translateOrNew('en')->name_tr = $request->name;
-	// 	}
-
-	// 	$attribute->save();
-
-	// 	return response()->json([
-	// 		'success' => true,
-	// 		'message' => __("msg_create"),
-	// 		'data' => $attribute
-	// 	]);
-	// }
 
 	/**
 	 * @OA\Get(
@@ -475,8 +355,8 @@ class AttributeController extends BaseController
 				/* Delete removed values and their translations */
 				if (!empty($valuesToDelete)) {
 					$attributeValuesToDelete = $attribute->attributeValues()
-						->whereIn('attribute_value', $valuesToDelete)
-						->get();
+					->whereIn('attribute_value', $valuesToDelete)
+					->get();
 
 					foreach ($attributeValuesToDelete as $value) {
 						/* Delete translations if available */
@@ -515,10 +395,7 @@ class AttributeController extends BaseController
 
 			/* Fill only the allowed fields */
 			$fillableFields = [
-				'name',
-				'code',
-				'type',
-				'attribute_group_id'
+				'name', 'code', 'type', 'attribute_group_id'
 			];
 			foreach ($fillableFields as $field) {
 				if (array_key_exists($field, $input)) {
@@ -562,178 +439,6 @@ class AttributeController extends BaseController
 				}
 			}
 
-			$attribute->updated_by = auth()->id();
-			$attribute->save();
-
-			DB::commit();
-
-			return response()->json([
-				'success' => true,
-				'message' => __("msg_update"),
-				'data' => $attribute
-			]);
-		} catch (\Exception $e) {
-			DB::rollBack();
-
-			return response()->json([
-				'success' => false,
-				'message' => __("err_update"),
-				'error' => $e->getMessage()
-			], 500);
-		}
-	}
-
-	/**
-	 * @OA\Post(
-	 *     path="/api/attributes/{id}/image",
-	 *     summary="Upload or update images for an existing attribute",
-	 *     description="Uploads one or more images for the specified attribute and replaces any existing ones.",
-	 *     operationId="updateAttributeImage",
-	 *     tags={"Attributes"},
-	 *     security={{"bearerAuth":{}}},
-	 *
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="ID of the attribute to update",
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
-	 *
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         description="Multipart form data with image files",
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 type="object",
-	 *                 @OA\Property(
-	 *                     property="images[]",
-	 *                     type="array",
-	 *                     description="Array of image files (multiple upload)",
-	 *                     @OA\Items(
-	 *                         type="string",
-	 *                         format="binary"
-	 *                     )
-	 *                 ),
-	 *  @OA\Property(
-	 *                     property="delete_images[]",
-	 *                     type="array",
-	 *                     @OA\Items(type="string"),
-	 *                     description="List of image URLs to delete"
-	 *                 ),
-	 *             )
-	 *         )
-	 *     ),
-	 *
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Images updated successfully",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Attribute images updated successfully."),
-	 *             @OA\Property(property="data", ref="")
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=403,
-	 *         description="Forbidden - Insufficient permissions",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="You don't have permission to update attributes.")
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="Attribute not found"
-	 *     ),
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation error",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="message", type="string", example="The given data was invalid."),
-	 *             @OA\Property(
-	 *                 property="errors",
-	 *                 type="object",
-	 *                 example={"images.0": {"The images.0 must be an image."}}
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=500,
-	 *         description="Server error"
-	 *     )
-	 * )
-	 */
-
-	public function updateImageAttribute(Request $request, $attributeId)
-	{
-		if (!auth()->user()->can('update attribute')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			], 403);
-		}
-
-		$attribute = Attribute::find($attributeId);
-		if (!$attribute) {
-			return response()->json([
-				'success' => false,
-				'message' => __("err_exist")
-			], 200);
-		}
-
-		/* Validate request data */
-		$request->validate([
-			'images'   => 'nullable|array',
-			'images.*' => 'nullable|mimes:jpg,jpeg,png,webp|max:10240',
-		]);
-
-		$input = $request->all();
-		$locale = $request->locale ?? 'en';
-
-		DB::beginTransaction();
-		try {
-
-			$existingImages = [];
-			// Ensure existing images are an array
-			$existingImages = is_string($attribute->images) ? json_decode($attribute->images, true) ?? [] : [];
-
-			// Remove selected images safely
-			if ($request->filled('delete_images')) {
-				$deleteImages = $request->input('delete_images', []);
-
-				// Remove only if they exist in the array
-				$existingImages = array_values(array_filter($existingImages, function ($image) use ($deleteImages) {
-					return !in_array($image, $deleteImages);
-				}));
-			}
-			$uploadedImages = [];
-			$path = env('STORAGE_ENV') . '/attribute';
-
-			if ($request->hasFile('images')) {
-				foreach ($request->file('images') as $image) {
-					if (!$image->isValid()) {
-						continue;
-					}
-
-
-					$tempRequest = new \Illuminate\Http\Request();
-					$tempRequest->files->set('attribute_image_single', $image);
-
-					$url = uploadImageToWebpS3FromFile(
-						$tempRequest,
-						'attribute_image_single',
-						$path
-					);
-
-					if ($url) {
-						$existingImages[] = $url;
-					}
-				}
-
-				$attribute->images = !empty($existingImages) ? json_encode($existingImages) : null;
-			}
 			$attribute->updated_by = auth()->id();
 			$attribute->save();
 
