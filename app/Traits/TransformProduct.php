@@ -18,7 +18,7 @@ trait TransformProduct
 	 * @param bool $withTranslation Use translations or direct fields
 	 * @return void
 	 */
-	public function transformFeaturedProduct($product, $categoryMostParentURL = null, $categoryURL = null, $withDescription = false, $withAttributes = false, $withTranslation = true)
+	public function transformFeaturedProduct($product, $categoryMostParentURL = null, $categoryURL = null, $withDescription = false, $withAttributes = false, $withTranslation = true, $wishlistProductIds = [])
 	{
 		/* Transform product name and images based on translation flag */
 		if ($withTranslation) {
@@ -52,30 +52,112 @@ trait TransformProduct
 		$product->parent_category_url = $categoryMostParentURL ?? $product->parent_category_url();
 		$product->category_url = $categoryURL ?? $product->category_url();
 		$product->url = optional($product->seoUrl)->url ?? null;
-		$product->quote_available = $product->quote_available ?? 0;
+		$product->quote_available = $product->quote_available ?? null;
 
 		/* Currency data */
 		$product->currency_name = optional($product->currency)->title ?? null;
 		$product->currency_symbol = optional($product->currency)->symbol ?? null;
 
 		/* Reviews data */
-		$product->total_reviews = $product->reviews_count ?? 0;
-		$product->avg_rating = round($product->reviews_avg_star ?? 0, 1);
+		$product->total_reviews = $product->reviews_count ?? null;
+		$avgRating = $product->reviews_avg_star !== null ? (float) $product->reviews_avg_star : null;
+		$product->avg_rating = $avgRating !== null ? round($avgRating, 1) : null;
 
 		/* Alt tags */
 		$product->alt_tags = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true) ?? [];
 
-		/* Selling unit data */
+		/* Basic product fields */
+		$videoPaths = is_array($product->video_path) ? $product->video_path : json_decode($product->video_path, true);
+		$product->video_path = collect($videoPaths)->map(fn($v) => $v);
+		$product->sku = $product->sku;
+		$product->start_date = $product->start_date;
+		$product->end_date = $product->end_date;
+		$product->isRequired = $product->isRequired;
+
+		/* Stock logic */
+		$quantity = $product->quantity ?? null;
+		$unitsSold = $product->units_sold ?? null;
+		$product->leftStock = ($quantity !== null && $unitsSold !== null) ? ($quantity - $unitsSold) : null;
+
+		/* Wishlist logic */
+		$product->in_wishlist = in_array($product->id, $wishlistProductIds);
+
+		/* Supplier and Price Data */
+		$firstSupplier = $product->productSuppliers ? $product->productSuppliers->first() : null;
+
+		if ($firstSupplier) {
+			$product->vendor_sku = $firstSupplier->vendor_sku ?? null;
+			$product->vendor_id = $firstSupplier->vendor_id ?? null;
+			$product->vendor_country = $firstSupplier->vendor->country->name ?? null;
+			$product->vendor_city = $firstSupplier->vendor->city->name ?? null;
+			$product->vendor_address = $firstSupplier->vendor->address ?? null;
+			$product->vendor_zipcode = $firstSupplier->vendor->zipcode ?? null;
+
+			$product->price = $firstSupplier->price !== null ? (float) $firstSupplier->price : null;
+			$product->sale_price = $firstSupplier->sale_price !== null ? (float) $firstSupplier->sale_price : null;
+			$product->original_price = $product->price;
+			$product->front_sale_price = $product->sale_price ?: $product->price;
+			$product->best_price = $product->price;
+
+			$product->map = $firstSupplier->map !== null ? (float) $firstSupplier->map : null;
+			$product->inventory = $firstSupplier->inventory ?? null;
+			$product->in_stock = $firstSupplier->in_stock ?? null;
+			$product->delivery_days = $firstSupplier->delivery_days ?? null;
+			$product->return_policy = $firstSupplier->return_policy ?? null;
+			$product->free_shipping = $firstSupplier->free_shipping ?? null;
+			$product->warranty_information = $firstSupplier->warranty_information ?? null;
+			$product->min_quantity = $firstSupplier->min_quantity ?? null;
+			$product->is_fixed = $firstSupplier->is_fixed ?? null;
+		} else {
+			$product->price = $product->price !== null ? (float) $product->price : null;
+			$product->sale_price = $product->sale_price !== null ? (float) $product->sale_price : null;
+			$product->original_price = $product->price;
+			$product->front_sale_price = $product->sale_price ?: $product->price;
+			$product->best_price = $product->price;
+		}
+
+		$currency = $product->currency;
+		$product->currency = $product->currency_symbol;
+		$product->currency_title = $currency
+		? ($currency->is_prefix_symbol
+			? $product->currency_symbol . ' ' . $product->price
+			: $product->price . ' ' . $product->currency_symbol)
+		: $product->price;
+
+		/* Selling unit and Per unit price logic */
+		$sellingType = null;
 		if ($product->sellingUnitAttribute) {
 			$attributeValue = $product->sellingUnitAttribute->attribute_value;
 			$product->selling_type_value = $attributeValue;
-			$product->selling_type_unit = strpos($attributeValue, '/') !== false
+			$unit = strpos($attributeValue, '/') !== false
 			? trim(explode('/', $attributeValue)[1])
 			: $attributeValue;
+			$product->selling_type_unit = $unit;
+			$sellingType = [
+				'attribute_value' => $attributeValue,
+				'attribute_value_unit' => $unit,
+			];
 		} else {
 			$product->selling_type_value = null;
 			$product->selling_type_unit = null;
 		}
+		$product->selling_type = $sellingType;
+
+		$perUnitPrice = null;
+		if ($product->productAttributes) {
+			$unitsPerCase = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
+			$packType = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+
+			$basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+			if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+				$unitValue = (float) $unitsPerCase->attribute_value;
+				if ($unitValue > 0) {
+					$calculated = round($basePrice / $unitValue, 2);
+					$perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
+				}
+			}
+		}
+		$product->per_unit_price = $perUnitPrice;
 
 		/* Transform product suppliers */
 		if ($product->productSuppliers) {

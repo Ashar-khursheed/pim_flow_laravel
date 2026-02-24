@@ -364,50 +364,44 @@ class CategoryController extends BaseController
 	 *     summary="Get category details",
 	 *     description="Returns details of a specific category",
 	 *     tags={"Categories"},
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="Category ID",
-	 *         @OA\Schema(
-	 *             type="integer"
-	 *         )
-	 *     ),
+	 *     @OA\Parameter(name="id", in="path", required=true, description="Category ID", @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="only_faq", in="query", description="Return only FAQs", @OA\Schema(type="boolean", example=false)),
 	 *     @OA\Response(response=200, description="Successful operation", @OA\MediaType(mediaType="application/json")),
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="Category not found",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="Category not found")
-	 *         )
-	 *     ),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function show($id): JsonResponse
+	public function show(Request $request, $id)
 	{
 		if (!auth()->user()->can('show category')) {
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",
-			]);
+			], 403);
 		}
+
+		$category = Category::find($id);
+
+		if (!$category) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Category does not exist.'
+			], 404);
+		}
+
+		/* Handle only FAQ request */
+		if ($request->boolean('only_faq')) {
+			return response()->json([
+				'success' => true,
+				'message' => 'Category FAQs retrieved successfully',
+				'data' => $category->load('faqs')
+			], 200);
+		}
+
 		try {
-			$category = Category::findOrFail($id);
+			/* Load relationships */
+			$category->load(['children', 'translations']);
 
-			// Load children if any
-			$category->load('children');
-
-			// Transform image paths to full URLs
-			if ($category->image) {
-				$category->image = $category->image;
-			}
-
-			if ($category->icon_image) {
-				$category->icon_image = $category->icon_image;
-			}
-
+			/* Parse last_child IDs and load related categories */
 			$lastChildIds = !empty($category->last_child)
 			? array_map('intval', explode(',', $category->last_child))
 			: [];
@@ -418,44 +412,38 @@ class CategoryController extends BaseController
 			} else {
 				$category->last_children = collect();
 			}
+
 			return response()->json([
 				'success' => true,
-				'category' => $category->load('translations')
-			]);
+				'message' => 'Category retrieved successfully',
+				'data' => $category
+			], 200);
 
 		} catch (\Exception $e) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Category not found'
-			], 404);
+				'message' => 'Failed to retrieve category',
+				'error' => $e->getMessage()
+			], 500);
 		}
 	}
 
 	/**
-	 * Update the specified category in storage.
-	 *
-	 * Note: Although this is an update operation, the HTTP method is POST due to multipart/form-data limitations.
-	 *
 	 * @OA\Post(
 	 *     path="/api/categories/{id}",
 	 *     summary="Update existing category (uses POST due to image upload)",
 	 *     description="Updates an existing category with the given details. Uses POST instead of PUT because of file uploads.",
 	 *     tags={"Categories"},
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         required=true,
-	 *         @OA\Schema(type="integer"),
-	 *         description="Category ID"
-	 *     ),
+	 *     @OA\Parameter(name="id", in="path", required=true, description="Category ID", @OA\Schema(type="integer")),
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 required={"name"},
+	 *                 required={"_method"},
+	 *                 @OA\Property(property="_method", type="string", example="PUT"),
 	 *                 @OA\Property(property="name", type="string", example="Electronics"),
-	 *                 @OA\Property(property="parent_id", type="integer", example=0),
+	 *                 @OA\Property(property="parent_id", type="integer", example=1),
 	 *                 @OA\Property(property="description", type="string", example="Electronic products category"),
 	 *                 @OA\Property(property="status", type="string", example="published", enum={"published", "draft", "pending"}),
 	 *                 @OA\Property(property="order", type="integer", example=0),
@@ -463,24 +451,27 @@ class CategoryController extends BaseController
 	 *                 @OA\Property(property="icon", type="string"),
 	 *                 @OA\Property(property="icon_image", type="string", format="binary"),
 	 *                 @OA\Property(property="slug", type="string", example="electronics"),
-	 *  			   @OA\Property(property="last_child", type="string", example="635,665,686"),
+	 *                 @OA\Property(property="last_child", type="string", example="635,665,686"),
+	 *                 @OA\Property(property="only_faq", type="boolean", example=false),
+	 *                 @OA\Property(
+	 *                     property="faqs",
+	 *                     type="array",
+	 *                     description="Array of FAQs to category",
+	 *                     @OA\Items(
+	 *                         required={"question", "answer"},
+	 *                         @OA\Property(property="id", type="integer", example=101, description="FAQ ID (optional for update)"),
+	 *                         @OA\Property(property="question", type="string", example="What is this?"),
+	 *                         @OA\Property(property="answer", type="string", example="Answer here")
+	 *                     )
+	 *                 )
 	 *             )
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Category updated successfully", @OA\MediaType(mediaType="application/json")),
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation error",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="Validation error"),
-	 *             @OA\Property(property="errors", type="object")
-	 *         )
-	 *     ),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function update(Request $request, $id): JsonResponse
+	public function update(Request $request, $id)
 	{
 		if (!auth()->user()->can('update category')) {
 			return response()->json([
@@ -488,19 +479,99 @@ class CategoryController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		$category = Category::findOrFail($id);
 
-		$validator = Validator::make($request->all(), [
-			'name' => 'required|string|max:191',
-			'parent_id' => [
-				'nullable',
-				'integer',
-				function ($attribute, $value, $fail) use ($id) {
-					if ($value != 0 && !Category::where('id', $value)->where('id', '!=', $id)->exists()) {
-						$fail('The selected parent category is invalid.');
+		$category = Category::find($id);
+		if (!$category) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Category does not exist.'
+			]);
+		}
+
+		/* Handle only FAQ update */
+		if ($request->boolean('only_faq')) {
+			if (is_string($request->faqs)) {
+				$faqsString = $request->faqs;
+				if (strpos(trim($faqsString), '{') === 0 && strpos(trim($faqsString), '[') !== 0) {
+					$faqsString = '[' . $faqsString . ']';
+				}
+				$faqs = json_decode($faqsString, true);
+
+				if (json_last_error() !== JSON_ERROR_NONE) {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid JSON format for FAQs.'
+					], 400);
+				}
+				$request->merge(['faqs' => $faqs]);
+			}
+
+			/* Validate FAQs */
+			$request->validate([
+				'faqs' => 'required|array|min:1',
+				'faqs.*.id' => 'nullable|integer|exists:faqs,id',
+				'faqs.*.question' => 'required|string',
+				'faqs.*.answer' => 'required|string',
+			]);
+
+			/* Get locale from request or default to 'en' */
+			$locale = 'en';
+
+			/* Get validated FAQs */
+			$faqs = $request->input('faqs');
+
+			$updatedFaqIds = [];
+
+			foreach ($faqs as $faqData) {
+				$faq = null;
+
+				/* Update existing FAQ if id provided */
+				if (!empty($faqData['id'])) {
+					$faq = $category->faqs()->where('id', $faqData['id'])->first();
+				}
+
+				/* Create new FAQ if not found */
+				if (!$faq) {
+					$faq = $category->faqs()->create([
+						'relational_type' => Category::class, /* Manually set for hasMany */
+						'question' => $locale === 'en' ? $faqData['question'] : 'NA',
+						'answer' => $locale === 'en' ? $faqData['answer'] : 'NA',
+						'status' => 'published',
+					]);
+				} else {
+					/* Update base table fields only if locale is en */
+					if ($locale === 'en') {
+						$faq->update([
+							'question' => $faqData['question'],
+							'answer' => $faqData['answer'],
+							'status' => 'published',
+						]);
 					}
 				}
-			],
+
+				/* Update translation for current locale */
+				if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+					$faq->translateOrNew($locale)->question_tr = $faqData['question'];
+					$faq->translateOrNew($locale)->answer_tr = $faqData['answer'];
+				}
+
+				$faq->save();
+				$updatedFaqIds[] = $faq->id;
+			}
+
+			/* Delete FAQs not in the updated list (translations auto-deleted via model boot) */
+			$category->faqs()->whereNotIn('id', $updatedFaqIds)->delete();
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Category FAQs updated successfully'
+			]);
+		}
+
+		/* Validate category update data */
+		$data = $request->validate([
+			'name' => 'required|string|max:191',
+			'parent_id' => 'nullable|integer|exists:categories,id',
 			'description' => 'nullable|string',
 			'status' => 'required|string|in:published,draft,pending',
 			'order' => 'nullable|integer',
@@ -515,37 +586,34 @@ class CategoryController extends BaseController
 
 		$disk = 's3';
 
-		if ($validator->fails()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Validation error',
-				'errors' => $validator->errors()
-			], 422);
-		}
-
 		try {
-			$data = $validator->validated();
-
+			/* Generate slug if not provided */
 			if (empty($data['slug'])) {
 				$data['slug'] = Str::slug($data['name']);
 			}
 
+			/* Handle category image upload */
 			if ($request->hasFile('image')) {
 				$path = $request->file('image')->store('categories', $disk);
 				$data['image'] = Storage::disk($disk)->url($path);
 			}
 
+			/* Handle icon image upload */
 			if ($request->hasFile('icon_image')) {
 				$path = $request->file('icon_image')->store('categories/icons', $disk);
 				$data['icon_image'] = Storage::disk($disk)->url($path);
 			}
 
+			/* Auto-assign order if not provided */
 			if (!isset($data['order'])) {
 				$parentId = $data['parent_id'] ?? 0;
-				$lastOrder = Category::where('parent_id', $parentId)->where('id', '!=', $category->id)->max('order');
+				$lastOrder = Category::where('parent_id', $parentId)
+				->where('id', '!=', $category->id)
+				->max('order');
 				$data['order'] = $lastOrder ? $lastOrder + 1 : 1;
 			}
 
+			/* Validate if category can be published */
 			if (
 				$data['status'] === 'published' &&
 				$category->children->isEmpty() &&
@@ -553,17 +621,20 @@ class CategoryController extends BaseController
 			) {
 				return response()->json([
 					'success' => false,
-					'message' => 'At least 1 products must be assigned to the product family before it can be published.'
-				]);
+					'message' => 'At least 1 product must be assigned to the category before it can be published.'
+				], 400);
 			}
 
+			/* Update category */
 			$category->update($data);
 
+			/* Update translation for UAE websites */
 			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
 				$category->translateOrNew('en')->name_tr = $data['name'];
 			}
 			$category->save();
 
+			/* Clear cache */
 			Cache::forget('all_categories');
 
 			return response()->json([
@@ -573,7 +644,6 @@ class CategoryController extends BaseController
 			], 200);
 
 		} catch (\Exception $e) {
-
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to update category',
