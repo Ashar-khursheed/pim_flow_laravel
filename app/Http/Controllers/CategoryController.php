@@ -533,6 +533,7 @@ class CategoryController extends BaseController
 				/* Create new FAQ if not found */
 				if (!$faq) {
 					$faq = $category->faqs()->create([
+						'relational_type' => Category::class, /* Manually set for hasMany */
 						'question' => $locale === 'en' ? $faqData['question'] : 'NA',
 						'answer' => $locale === 'en' ? $faqData['answer'] : 'NA',
 						'status' => 'published',
