@@ -943,8 +943,9 @@ Route::get('/frontend/product-group/{productId}/attributes', [F_ProductAttribute
 
 Route::get('/frontend/seo-management', [F_SeoManagementController::class, 'index']);
 Route::get('/frontend/seo-management/relational/{relational_id}', [F_SeoManagementController::class, 'getByRelationalId']);
-Route::get('/frontend/seo/paragraphs/{relational_id}', [F_SeoManagementController::class, 'getParagraphData']);
-
+// Route::get('/frontend/seo/paragraphs/{relational_id}', [F_SeoManagementController::class, 'getParagraphData']);
+Route::get('/frontend/seo/paragraphs/{identifier}', [F_SeoManagementController::class, 'getParagraphData'])
+    ->where('identifier', '.*');
 
 Route::get('/frontend/brand-page/{id}', [F_BrandPageController::class, 'show']);
 
