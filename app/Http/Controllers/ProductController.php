@@ -1063,12 +1063,13 @@ class ProductController extends BaseController
 						$imageValue = $imageData['value'];
 
 						if ($type === 'image') {
-							/* Handle new image upload */
-							if ($request->hasFile("attribute_{$attributeId}_{$index}")) {
+							$fileFieldName = "product_attributes.{$attributeId}.{$index}.value";
+
+							if ($request->hasFile($fileFieldName)) {
 								try {
 									$uploadedUrl = uploadImageToWebpS3FromFile(
 										$request,
-										"attribute_{$attributeId}_{$index}",
+										$fileFieldName,
 										env('STORAGE_ENV') . '/attribute/multiple_images'
 									);
 
