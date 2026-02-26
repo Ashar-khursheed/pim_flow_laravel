@@ -1124,15 +1124,22 @@ class ProductController extends BaseController
 				// }
 
 
+elseif ($existingAttribute->type == 'multiple_images') {
+	Log::info('Processing multiple_images attribute', [
+		'attribute_id' => $attributeId,
+		'attribute_name' => $existingAttribute->name,
+		'value_type' => gettype($attributeValue),
+		'is_array' => is_array($attributeValue),
+		'value' => is_array($attributeValue) ? 'array with ' . count($attributeValue) . ' items' : $attributeValue
+	]);
 
 
-
-				elseif ($existingAttribute->type == 'multiple_images' && is_array($attributeValue)) {
-					Log::info('Processing multiple_images attribute', [
-						'attribute_id' => $attributeId,
-						'attribute_name' => $existingAttribute->name,
-						'total_images' => count($attributeValue)
-					]);
+				// elseif ($existingAttribute->type == 'multiple_images' && is_array($attributeValue)) {
+				// 	Log::info('Processing multiple_images attribute', [
+				// 		'attribute_id' => $attributeId,
+				// 		'attribute_name' => $existingAttribute->name,
+				// 		'total_images' => count($attributeValue)
+				// 	]);
 
 					$imageUrls = [];
 
