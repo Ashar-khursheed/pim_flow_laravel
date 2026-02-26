@@ -1024,6 +1024,7 @@ class ProductController extends BaseController
 				$value = null;
 				$measurementUnitID = null;
 
+		Log::info('Processing multiple_images attribute1');
 				/* Handle measurement type attributes */
 				if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
 					$value = $attributeValue['value'] ?? null;
