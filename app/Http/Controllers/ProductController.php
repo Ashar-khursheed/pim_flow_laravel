@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Log;
 
 use App\Models\Product;
 use App\Models\Category;
@@ -849,6 +850,7 @@ class ProductController extends BaseController
 		$user = auth()->user();
 		$userRole = $user ? $user->getRoleNames()->first() : null;
 
+
 		// Restriction for approved products
 		// if ($product->approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
 		// 	return response()->json([
@@ -938,6 +940,7 @@ class ProductController extends BaseController
 			}
 		}
 
+		Log::info('Processing multiple_images attribute');
 
 		/* Handle multilingual product attributes with sync */
 		if ($request->has('product_attributes') && !empty($request->input('product_attributes'))) {
