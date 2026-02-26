@@ -940,7 +940,7 @@ class ProductController extends BaseController
 
 
 		/* Handle multilingual product attributes with sync */
-		if ($request->has('product_attributes') && !empty($request->input('product_attributes')) ) {
+		if ($request->has('product_attributes') && !empty($request->input('product_attributes'))) {
 			$productAttributes = $request->input('product_attributes', []);
 
 			/* Decode JSON if string */
@@ -965,8 +965,43 @@ class ProductController extends BaseController
 			/* Filter out null/empty values at the root level */
 			$productAttributes = array_filter($productAttributes, function ($value) {
 				if (is_array($value)) {
-					return !empty($value['value']) || !empty($value['measurement_id']);
+					/* For measurement type */
+					if (isset($value['value']) || isset($value['measurement_id'])) {
+						return !empty($value['value']) || !empty($value['measurement_id']);
+					}
+
+					/* For multiple_images type - validate structure */
+					if (!empty($value) && is_array($value)) {
+						/* Check if it's an array of image objects */
+						$isValidImageArray = true;
+
+						foreach ($value as $item) {
+							/* Each item must be an array with 'type' and 'value' keys */
+							if (!is_array($item) || !isset($item['type']) || !isset($item['value'])) {
+								$isValidImageArray = false;
+								break;
+							}
+
+							/* Validate type is either 'image' or 'url' */
+							if (!in_array($item['type'], ['image', 'url'])) {
+								$isValidImageArray = false;
+								break;
+							}
+
+							/* Validate value is not empty */
+							if (empty($item['value'])) {
+								$isValidImageArray = false;
+								break;
+							}
+						}
+
+						return $isValidImageArray;
+					}
+
+					/* For other array types */
+					return !empty($value);
 				}
+
 				return !is_null($value) && $value !== '';
 			});
 
@@ -1006,15 +1041,87 @@ class ProductController extends BaseController
 						], 400);
 					}
 
-					/* Skip if both are empty (will be deleted later in sync) */
+					/* Skip if both are empty */
 					if (empty($value) && empty($measurementUnitID)) {
 						continue;
 					}
-				} else {
-					/* Handle regular attributes */
+				}
+				/* Handle multiple_images type attributes */
+				elseif ($existingAttribute->type == 'multiple_images' && is_array($attributeValue)) {
+					$imageUrls = [];
+
+					foreach ($attributeValue as $index => $imageData) {
+						/* Validate structure */
+						if (!is_array($imageData) || !isset($imageData['type']) || !isset($imageData['value'])) {
+							return response()->json([
+								'success' => false,
+								'message' => "Invalid image data format for attribute: {$existingAttribute->name} at index $index"
+							], 400);
+						}
+
+						$type = $imageData['type'];
+						$imageValue = $imageData['value'];
+
+						if ($type === 'image') {
+							/* Handle new image upload */
+							if ($request->hasFile("attribute_{$attributeId}_{$index}")) {
+								try {
+									$uploadedUrl = uploadImageToWebpS3FromFile(
+										$request,
+										"attribute_{$attributeId}_{$index}",
+										env('STORAGE_ENV') . '/attribute/multiple_images'
+									);
+
+									if ($uploadedUrl) {
+										$imageUrls[] = $uploadedUrl;
+									}
+								} catch (\Exception $e) {
+									return response()->json([
+										'success' => false,
+										'message' => "Failed to upload image for attribute: {$existingAttribute->name} at index $index. Error: " . $e->getMessage()
+									], 500);
+								}
+							} else {
+								return response()->json([
+									'success' => false,
+									'message' => "Image file not found for attribute: {$existingAttribute->name} at index $index. Expected file field: attribute_{$attributeId}_{$index}"
+								], 400);
+							}
+						} elseif ($type === 'url') {
+							/* Handle existing URL */
+							if (!empty($imageValue) && filter_var($imageValue, FILTER_VALIDATE_URL)) {
+								$uploadedUrl = $this->getImageURL($imageValue, 'attribute/multiple_images');
+
+								if ($uploadedUrl) {
+									$imageUrls[] = $uploadedUrl;
+								} else {
+									return response()->json([
+										'success' => false,
+										'message' => "Failed to process image URL for attribute: {$existingAttribute->name} at index $index"
+									], 500);
+								}
+							} else {
+								return response()->json([
+									'success' => false,
+									'message' => "Invalid type '{$type}' for attribute: {$existingAttribute->name}. Must be 'image' or 'url'."
+								], 400);
+							}
+						}
+
+						/* Skip if no images were processed */
+						if (empty($imageUrls)) {
+							continue;
+						}
+
+						/* Store as JSON array */
+						$value = json_encode($imageUrls);
+					}
+				}
+				/* Handle regular attributes */
+				else {
 					$value = $attributeValue;
 
-					/* Skip if empty (will be deleted later in sync) */
+					/* Skip if empty */
 					if (empty($value)) {
 						continue;
 					}
@@ -1042,8 +1149,8 @@ class ProductController extends BaseController
 					}
 				}
 
-				/* Update translation for current locale */
-				if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+				/* Update translation for current locale (skip for multiple_images) */
+				if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) && $existingAttribute->type !== 'multiple_images') {
 					$productAttribute->translateOrNew('en')->attribute_value_tr = $value;
 				}
 

@@ -573,11 +573,11 @@ class ImportProductJob implements ShouldQueue
 		}
 
 		// Define sizes
-		$sizes = [
-			'thumb' => [150, 150],
-			'medium' => [300, 300],
-			'large' => [790, 510]
-		];
+		// $sizes = [
+		// 	'thumb' => [150, 150],
+		// 	'medium' => [300, 300],
+		// 	'large' => [790, 510]
+		// ];
 
 		$imageUrl = '';
 
@@ -603,19 +603,19 @@ class ImportProductJob implements ShouldQueue
 			$imageUrl = $s3Disk->url($originalPath);
 
 			// Resize and save images
-			foreach ($sizes as $sizeName => [$width, $height]) {
-				$resizedImage = $this->resizeImageGD($image, $width, $height);
-				if (!$resizedImage) {
-					continue;
-				}
+			// foreach ($sizes as $sizeName => [$width, $height]) {
+			// 	$resizedImage = $this->resizeImageGD($image, $width, $height);
+			// 	if (!$resizedImage) {
+			// 		continue;
+			// 	}
 
-				$resizedPath = env('STORAGE_ENV')."/products/{$fileBaseName}-{$width}x{$height}.{$fileExtension}";
-				ob_start();
-				imagewebp($resizedImage);
-				$resizedData = ob_get_clean();
-				$s3Disk->put($resizedPath, $resizedData);
-				// $imageUrls[$sizeName] = $s3Disk->url($resizedPath);
-			}
+			// 	$resizedPath = env('STORAGE_ENV')."/products/{$fileBaseName}-{$width}x{$height}.{$fileExtension}";
+			// 	ob_start();
+			// 	imagewebp($resizedImage);
+			// 	$resizedData = ob_get_clean();
+			// 	$s3Disk->put($resizedPath, $resizedData);
+			// 	// $imageUrls[$sizeName] = $s3Disk->url($resizedPath);
+			// }
 
 			imagedestroy($image);
 			return $imageUrl;
