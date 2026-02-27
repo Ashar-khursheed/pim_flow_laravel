@@ -1093,7 +1093,7 @@ class ProductController extends BaseController
 							}
 						} elseif ($type === 'url') {
 							/* Handle existing URL */
-							if (!empty($imageValue) && filter_var($imageValue, FILTER_VALIDATE_URL)) {
+							if (!empty($imageValue)) {
 								$uploadedUrl = $this->getImageURL($imageValue, 'attribute/multiple_images');
 
 								if ($uploadedUrl) {
