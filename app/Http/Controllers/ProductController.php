@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
-use Illuminate\Support\Facades\Log;
 
 use App\Models\Product;
 use App\Models\Category;
@@ -849,8 +848,6 @@ class ProductController extends BaseController
 
 		$user = auth()->user();
 		$userRole = $user ? $user->getRoleNames()->first() : null;
-
-
 		// Restriction for approved products
 		// if ($product->approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
 		// 	return response()->json([
@@ -884,10 +881,6 @@ class ProductController extends BaseController
 			}
 		}
 
-
-		// Get the authenticated user and their role
-		$user = auth()->user();
-		$userRole = $user ? $user->getRoleNames()->first() : null;
 		$allowedRoles = [
 			'Super Admin',
 			'Admin',
@@ -940,12 +933,9 @@ class ProductController extends BaseController
 			}
 		}
 
-		Log::info('Processing multiple_images attribute');
-
 		/* Handle multilingual product attributes with sync */
 		if ($request->has('product_attributes') && !empty($request->input('product_attributes'))) {
-			$productAttributes = $request->input('product_attributes', []);
-
+			$productAttributes = $request->all()['product_attributes'] ?? [];
 			/* Decode JSON if string */
 			if (is_string($productAttributes)) {
 				$decoded = json_decode($productAttributes, true);
@@ -1024,7 +1014,6 @@ class ProductController extends BaseController
 				$value = null;
 				$measurementUnitID = null;
 
-		Log::info('Processing multiple_images attribute1');
 				/* Handle measurement type attributes */
 				if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
 					$value = $attributeValue['value'] ?? null;
@@ -1050,109 +1039,13 @@ class ProductController extends BaseController
 						continue;
 					}
 				}
-				// /* Handle multiple_images type attributes */
-				// elseif ($existingAttribute->type == 'multiple_images' && is_array($attributeValue)) {
-				// 	$imageUrls = [];
-
-				// 	foreach ($attributeValue as $index => $imageData) {
-				// 		/* Validate structure */
-				// 		if (!is_array($imageData) || !isset($imageData['type']) || !isset($imageData['value'])) {
-				// 			return response()->json([
-				// 				'success' => false,
-				// 				'message' => "Invalid image data format for attribute: {$existingAttribute->name} at index $index"
-				// 			], 400);
-				// 		}
-
-				// 		$type = $imageData['type'];
-				// 		$imageValue = $imageData['value'];
-
-				// 		if ($type === 'image') {
-				// 			$fileFieldName = "product_attributes.{$attributeId}.{$index}.value";
-
-				// 			if ($request->hasFile($fileFieldName)) {
-				// 				try {
-				// 					$uploadedUrl = uploadImageToWebpS3FromFile(
-				// 						$request,
-				// 						$fileFieldName,
-				// 						env('STORAGE_ENV') . '/attribute/multiple_images'
-				// 					);
-
-				// 					if ($uploadedUrl) {
-				// 						$imageUrls[] = $uploadedUrl;
-				// 					}
-				// 				} catch (\Exception $e) {
-				// 					return response()->json([
-				// 						'success' => false,
-				// 						'message' => "Failed to upload image for attribute: {$existingAttribute->name} at index $index. Error: " . $e->getMessage()
-				// 					], 500);
-				// 				}
-				// 			} else {
-				// 				return response()->json([
-				// 					'success' => false,
-				// 					'message' => "Image file not found for attribute: {$existingAttribute->name} at index $index. Expected file field: attribute_{$attributeId}_{$index}"
-				// 				], 400);
-				// 			}
-				// 		} elseif ($type === 'url') {
-				// 			/* Handle existing URL */
-				// 			if (!empty($imageValue) && filter_var($imageValue, FILTER_VALIDATE_URL)) {
-				// 				$uploadedUrl = $this->getImageURL($imageValue, 'attribute/multiple_images');
-
-				// 				if ($uploadedUrl) {
-				// 					$imageUrls[] = $uploadedUrl;
-				// 				} else {
-				// 					return response()->json([
-				// 						'success' => false,
-				// 						'message' => "Failed to process image URL for attribute: {$existingAttribute->name} at index $index"
-				// 					], 500);
-				// 				}
-				// 			} else {
-				// 				return response()->json([
-				// 					'success' => false,
-				// 					'message' => "Invalid type '{$type}' for attribute: {$existingAttribute->name}. Must be 'image' or 'url'."
-				// 				], 400);
-				// 			}
-				// 		}
-
-				// 		/* Skip if no images were processed */
-				// 		if (empty($imageUrls)) {
-				// 			continue;
-				// 		}
-
-				// 		/* Store as JSON array */
-				// 		$value = json_encode($imageUrls);
-				// 	}
-				// }
-
-
-elseif ($existingAttribute->type == 'multiple_images') {
-	Log::info('Processing multiple_images attribute', [
-		'attribute_id' => $attributeId,
-		'attribute_name' => $existingAttribute->name,
-		'value_type' => gettype($attributeValue),
-		'is_array' => is_array($attributeValue),
-		'value' => is_array($attributeValue) ? 'array with ' . count($attributeValue) . ' items' : $attributeValue
-	]);
-
-
-				// elseif ($existingAttribute->type == 'multiple_images' && is_array($attributeValue)) {
-				// 	Log::info('Processing multiple_images attribute', [
-				// 		'attribute_id' => $attributeId,
-				// 		'attribute_name' => $existingAttribute->name,
-				// 		'total_images' => count($attributeValue)
-				// 	]);
-
+				/* Handle multiple_images type attributes */
+				elseif ($existingAttribute->type == 'multiple_images' && is_array($attributeValue)) {
 					$imageUrls = [];
 
 					foreach ($attributeValue as $index => $imageData) {
 						/* Validate structure */
 						if (!is_array($imageData) || !isset($imageData['type']) || !isset($imageData['value'])) {
-							Log::error('Invalid image data structure', [
-								'attribute_id' => $attributeId,
-								'attribute_name' => $existingAttribute->name,
-								'index' => $index,
-								'image_data' => $imageData
-							]);
-
 							return response()->json([
 								'success' => false,
 								'message' => "Invalid image data format for attribute: {$existingAttribute->name} at index $index"
@@ -1162,35 +1055,11 @@ elseif ($existingAttribute->type == 'multiple_images') {
 						$type = $imageData['type'];
 						$imageValue = $imageData['value'];
 
-						Log::info('Processing image item', [
-							'attribute_id' => $attributeId,
-							'index' => $index,
-							'type' => $type,
-							'has_value' => !empty($imageValue)
-						]);
-
 						if ($type === 'image') {
 							$fileFieldName = "product_attributes.{$attributeId}.{$index}.value";
 
-							Log::info('Processing image upload', [
-								'attribute_id' => $attributeId,
-								'index' => $index,
-								'field_name' => $fileFieldName,
-								'has_file' => $request->hasFile($fileFieldName)
-							]);
-
 							if ($request->hasFile($fileFieldName)) {
 								try {
-									$file = $request->file($fileFieldName);
-
-									Log::info('Uploading image file', [
-										'attribute_id' => $attributeId,
-										'index' => $index,
-										'original_name' => $file->getClientOriginalName(),
-										'mime_type' => $file->getMimeType(),
-										'size' => $file->getSize()
-									]);
-
 									$uploadedUrl = uploadImageToWebpS3FromFile(
 										$request,
 										$fileFieldName,
@@ -1199,137 +1068,49 @@ elseif ($existingAttribute->type == 'multiple_images') {
 
 									if ($uploadedUrl) {
 										$imageUrls[] = $uploadedUrl;
-
-										Log::info('Image uploaded successfully', [
-											'attribute_id' => $attributeId,
-											'index' => $index,
-											'uploaded_url' => $uploadedUrl
-										]);
-									} else {
-										Log::error('Image upload returned null', [
-											'attribute_id' => $attributeId,
-											'index' => $index,
-											'field_name' => $fileFieldName
-										]);
-
-										return response()->json([
-											'success' => false,
-											'message' => "Failed to upload image for attribute: {$existingAttribute->name} at index $index"
-										], 500);
 									}
 								} catch (\Exception $e) {
-									Log::error('Exception during image upload', [
-										'attribute_id' => $attributeId,
-										'index' => $index,
-										'error' => $e->getMessage(),
-										'trace' => $e->getTraceAsString()
-									]);
-
 									return response()->json([
 										'success' => false,
 										'message' => "Failed to upload image for attribute: {$existingAttribute->name} at index $index. Error: " . $e->getMessage()
 									], 500);
 								}
 							} else {
-								Log::warning('Image file not found in request', [
-									'attribute_id' => $attributeId,
-									'index' => $index,
-									'expected_field' => $fileFieldName,
-									'all_files' => array_keys($request->allFiles())
-								]);
-
 								return response()->json([
 									'success' => false,
-									'message' => "Image file not found for attribute: {$existingAttribute->name} at index $index. Expected file field: {$fileFieldName}"
+									'message' => "Image file not found for attribute: {$existingAttribute->name} at index $index. Expected file field: attribute_{$attributeId}_{$index}"
 								], 400);
 							}
 						} elseif ($type === 'url') {
-							Log::info('Processing image URL', [
-								'attribute_id' => $attributeId,
-								'index' => $index,
-								'url' => $imageValue,
-								'is_valid_url' => filter_var($imageValue, FILTER_VALIDATE_URL)
-							]);
-
 							/* Handle existing URL */
 							if (!empty($imageValue) && filter_var($imageValue, FILTER_VALIDATE_URL)) {
 								$uploadedUrl = $this->getImageURL($imageValue, 'attribute/multiple_images');
 
 								if ($uploadedUrl) {
 									$imageUrls[] = $uploadedUrl;
-
-									Log::info('Image URL processed successfully', [
-										'attribute_id' => $attributeId,
-										'index' => $index,
-										'original_url' => $imageValue,
-										'final_url' => $uploadedUrl
-									]);
 								} else {
-									Log::error('Failed to process image URL', [
-										'attribute_id' => $attributeId,
-										'index' => $index,
-										'url' => $imageValue
-									]);
-
 									return response()->json([
 										'success' => false,
 										'message' => "Failed to process image URL for attribute: {$existingAttribute->name} at index $index"
 									], 500);
 								}
 							} else {
-								Log::error('Invalid URL provided', [
-									'attribute_id' => $attributeId,
-									'index' => $index,
-									'url' => $imageValue
-								]);
-
 								return response()->json([
 									'success' => false,
-									'message' => "Invalid URL provided for attribute: {$existingAttribute->name} at index $index"
+									'message' => "Invalid type '{$type}' for attribute: {$existingAttribute->name}. Must be 'image' or 'url'."
 								], 400);
 							}
-						} else {
-							Log::error('Invalid image type', [
-								'attribute_id' => $attributeId,
-								'index' => $index,
-								'type' => $type,
-								'allowed_types' => ['image', 'url']
-							]);
-
-							return response()->json([
-								'success' => false,
-								'message' => "Invalid type '{$type}' for attribute: {$existingAttribute->name}. Must be 'image' or 'url'."
-							], 400);
 						}
+
+						/* Skip if no images were processed */
+						if (empty($imageUrls)) {
+							continue;
+						}
+
+						/* Store as JSON array */
+						$value = json_encode($imageUrls);
 					}
-
-					/* Check if any images were processed */
-					if (empty($imageUrls)) {
-						Log::warning('No images processed for multiple_images attribute', [
-							'attribute_id' => $attributeId,
-							'attribute_name' => $existingAttribute->name,
-							'total_items' => count($attributeValue)
-						]);
-						continue;
-					}
-
-					/* Store as JSON array */
-					$value = json_encode($imageUrls);
-
-					Log::info('Multiple images processed successfully', [
-						'attribute_id' => $attributeId,
-						'attribute_name' => $existingAttribute->name,
-						'total_images_uploaded' => count($imageUrls),
-						'image_urls' => $imageUrls
-					]);
 				}
-
-
-
-
-
-
-
 				/* Handle regular attributes */
 				else {
 					$value = $attributeValue;
@@ -1363,7 +1144,7 @@ elseif ($existingAttribute->type == 'multiple_images') {
 				}
 
 				/* Update translation for current locale (skip for multiple_images) */
-				if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA']) && $existingAttribute->type !== 'multiple_images') {
+				if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
 					$productAttribute->translateOrNew('en')->attribute_value_tr = $value;
 				}
 
