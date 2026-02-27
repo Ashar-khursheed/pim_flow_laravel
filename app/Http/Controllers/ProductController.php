@@ -26,9 +26,11 @@ use App\Services\ExcelImporterService;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\HandlesImageUpload;
 
 class ProductController extends BaseController
 {
+	use HandlesImageUpload;
 	/**
 	 * @OA\Get(
 	 *     path="/api/products",
