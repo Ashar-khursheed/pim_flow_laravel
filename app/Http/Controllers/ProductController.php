@@ -521,7 +521,15 @@ class ProductController extends BaseController
 			return [
 				'attribute_id' => $attr->attribute_id,
 				'attribute_name' => $attr->attributeDetails->name ?? null,
-				'attribute_value' => $attr->attribute_value,
+				'attribute_value' => $attr->attributeDetails->type == 'multiple_images'
+				? (is_array($attr->attribute_value)
+					? $attr->attribute_value
+					: (is_array($decoded = json_decode($attr->attribute_value, true))
+						? $decoded
+						: null
+					)
+				)
+				: $attr->attribute_value,
 				'measurement_unit_id' => $attr->measurement_unit_id,
 				'measurement_unit_name' => $attr->measurementUnit->name ?? null,
 			];
