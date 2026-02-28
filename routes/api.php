@@ -893,7 +893,7 @@ Route::get('/category-random-products/{categoryId}', [F_ProductController::class
 
 // Route::get('/frontend/sale-categories/{id}', [F_ProductController::class, 'saleProductsByCategory']);
 Route::get('/frontend/sale-categories/{id?}', [F_ProductController::class, 'saleProductsByCategory']);
-Route::get('/frontend/vendor-99-sale-products', [F_ProductController::class, 'vendor99SaleProducts']);
+Route::get('/frontend/vendor-99-sale-products ', [F_ProductController::class, 'vendor99SaleProducts']);
 
 
 
