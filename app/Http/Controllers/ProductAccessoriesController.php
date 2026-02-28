@@ -10,7 +10,10 @@ use App\Models\AccessoryItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use OpenApi\Annotations as OA;
+
+use App\Services\ExcelImporterService;
+use App\Repository\ExcelRepository;
+// use App\Jobs\ImportSeoDetailJob;
 
 class ProductAccessoriesController extends Controller
 {
@@ -826,4 +829,179 @@ class ProductAccessoriesController extends Controller
 		}
 	}
 
+	// /**
+	//  * @OA\Post(
+	//  *     path="/api/product-accessories/import",
+	//  *     summary="Import product accessories details from an Excel file",
+	//  *     tags={"Product Accessories"},
+	//  *     @OA\RequestBody(
+	//  *         required=true,
+	//  *         @OA\MediaType(
+	//  *             mediaType="multipart/form-data",
+	//  *             @OA\Schema(
+	//  *                 required={"upload_file"},
+	//  *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB"),
+	//  *             )
+	//  *         )
+	//  *     ),
+	//  *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	//  *     security={{"bearerAuth":{}}}
+	//  * )
+	//  */
+	// public function import(Request $request, ExcelImporterService $excelImporter)
+	// {
+	// 	/* Validate request data */
+	// 	$request->validate([
+	// 		'upload_file' => 'required|file|mimes:xlsx|max:2048',
+	// 	]);
+	// 	try {
+	// 		$seoFileFormatArray = seo_import_constants('ALL_FIELDS');
+
+	// 		$excelImporter->processExcelImport(
+	// 			$request->file('upload_file'),
+	// 			$seoFileFormatArray,
+	// 			'SEO Management', /* Module name */
+	// 			config('app.website') . '_SEO_MGMT', /* Job name */
+	// 			'Import SEO Management', /* Batch name */
+	// 			ImportSeoDetailJob::class
+	// 		);
+
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+	// 		]);
+	// 	} catch (\Exception $exception) {
+	// 		$error[] = 'Error: ' . $exception->getMessage();
+	// 		$error[] = 'File: ' . $exception->getFile();
+	// 		$error[] = 'Line: ' . $exception->getLine();
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => $error
+	// 		]);
+	// 	}
+	// }
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/product-accessories/export",
+	 *     summary="Export product accessories data to Excel",
+	 *     tags={"Product Accessories"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"range_from", "range_to"},
+	 *             @OA\Property(property="range_from", type="integer", minimum=1, example=1, description="Starting range (must be >= 1)"),
+	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and at most 500 more)")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Success",
+	 *         @OA\MediaType(mediaType="application/json")
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function export(Request $request, ExcelRepository $excelRepo)
+	{
+		/* Validate request data */
+		$request->validate([
+			'range_from' => 'required|integer|min:1',
+			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 500),
+		]);
+
+		/* Fetch records with related secondary keywords */
+		$records = Product::with([
+			'productAccessories:id,product_id,name,isapproved,isRequired',
+			'productAccessories.accessoryTypes:id,product_accessory_id,name,price,cost_price'
+		])
+		->whereHas('productAccessories')
+		->offset($request->range_from - 1)
+		->limit($request->range_to - $request->range_from + 1)
+		->orderBy('id', 'asc')
+		->get(['id', 'sku']);
+
+		$spreadsheet = $excelRepo->newSpreadsheet();
+		$sheet = $spreadsheet->getActiveSheet();
+		$sheet->setTitle('Product Accessories Data');
+
+		$seoFileFormatArray = accessories_import_constants('ALL_FIELDS');
+
+		/* Define headers */
+		$headers = array_values($seoFileFormatArray);
+		$excelRepo->setHeader($sheet, $headers);
+
+		$rowIndex = 2;
+		foreach ($records as $record) {
+			/* Fetch the relational name based on relational_type and relational_id */
+			$productID = $record->id;
+			$productSku = $record->sku;
+
+			/* Process secondary keywords */
+			if ($record->productAccessories->isNotEmpty()) {
+				foreach ($record->productAccessories as $productAccessory) {
+					$productAccessoryID = $productAccessory->id;
+					$accessory_name = $productAccessory->name;
+					$isApproved = $productAccessory->isapproved;
+					$isRequired = $productAccessory->isRequired;
+
+					if ($productAccessory->accessoryTypes->isNotEmpty()) {
+						foreach ($productAccessory->accessoryTypes as $accessoryType) {
+							$row = [
+								$productID,
+								$productSku,
+
+								$productAccessoryID,
+								$accessory_name,
+								$isApproved,
+								$isRequired,
+
+								$accessoryType->id,
+								$accessoryType->name,
+								$accessoryType->price,
+								$accessoryType->cost_price,
+							];
+							$excelRepo->writeRow($sheet, $row, $rowIndex++);
+						}
+					} else {
+						/* If no secondary keywords, write a single line with primary data */
+						$row = [
+							$productID,
+							$productSku,
+
+							$productAccessoryID,
+							$accessory_name,
+							$isApproved,
+							$isRequired,
+							'',
+							'',
+							'',
+							'',
+						];
+						$excelRepo->writeRow($sheet, $row, $rowIndex++);
+					}
+				}
+			} else {
+				/* If no secondary keywords, write a single line with primary data */
+				$row = [
+					$productID,
+					$productSku,
+					'',
+					'',
+					'',
+					'',
+
+					'',
+					'',
+					'',
+					'',
+				];
+				$excelRepo->writeRow($sheet, $row, $rowIndex++);
+			}
+		}
+
+		$fileName = 'product_accessories_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+		return $excelRepo->downloadFile($fileName, $spreadsheet);
+	}
 }

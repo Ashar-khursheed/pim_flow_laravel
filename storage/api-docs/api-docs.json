@@ -37560,6 +37560,55 @@
                 ]
             }
         },
+        "/api/product-accessories/export": {
+            "post": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Export product accessories data to Excel",
+                "operationId": "4e31ba8c71d06ed8a18ca7f34f58f562",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "range_from",
+                                    "range_to"
+                                ],
+                                "properties": {
+                                    "range_from": {
+                                        "description": "Starting range (must be >= 1)",
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and at most 500 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/attributes/export": {
             "post": {
                 "tags": [

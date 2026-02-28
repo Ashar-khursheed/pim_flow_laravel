@@ -306,6 +306,30 @@ if (!function_exists('seo_import_constants')) {
 	}
 }
 
+if (!function_exists('accessories_import_constants')) {
+	function accessories_import_constants($key = null)
+	{
+		$constants = [
+			'ALL_FIELDS' => [
+				'product_id' => 'Product ID',
+				'product_sku' => 'Product SKU',
+
+				'product_accessory_id' => 'Product Accessory ID',
+				'accessory_name' => 'Accessory Name',
+				'is_approved' => 'Is Approved',
+				'is_required' => 'Is Required',
+
+				'accessory_type_id' => 'Accessory Type ID',
+				'accessory_type' => 'Accessory Type',
+				'price' => 'Price',
+				'cost_price' => 'Cost Price',
+			],
+		];
+
+		return $key ? ($constants[$key] ?? []) : $constants;
+	}
+}
+
 if (!function_exists('convert_unit')) {
 	function convert_unit(string $type, float $value, string $fromUnit, string $toUnit): float|string
 	{
