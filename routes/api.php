@@ -260,6 +260,7 @@ Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
 Route::apiResource('newsletters', NewsletterController::class);
 
 Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
+Route::get('frontend/ec-products', [F_ProductController::class, 'getEcProducts']);
 
 Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
 
@@ -892,6 +893,7 @@ Route::get('/category-random-products/{categoryId}', [F_ProductController::class
 
 // Route::get('/frontend/sale-categories/{id}', [F_ProductController::class, 'saleProductsByCategory']);
 Route::get('/frontend/sale-categories/{id?}', [F_ProductController::class, 'saleProductsByCategory']);
+Route::get('/frontend/vendor-99-sale-products ', [F_ProductController::class, 'vendor99SaleProducts']);
 
 
 
@@ -942,8 +944,9 @@ Route::get('/frontend/product-group/{productId}/attributes', [F_ProductAttribute
 
 Route::get('/frontend/seo-management', [F_SeoManagementController::class, 'index']);
 Route::get('/frontend/seo-management/relational/{relational_id}', [F_SeoManagementController::class, 'getByRelationalId']);
-Route::get('/frontend/seo/paragraphs/{relational_id}', [F_SeoManagementController::class, 'getParagraphData']);
-
+// Route::get('/frontend/seo/paragraphs/{relational_id}', [F_SeoManagementController::class, 'getParagraphData']);
+Route::get('/frontend/seo/paragraphs/{identifier}', [F_SeoManagementController::class, 'getParagraphData'])
+    ->where('identifier', '.*');
 
 Route::get('/frontend/brand-page/{id}', [F_BrandPageController::class, 'show']);
 

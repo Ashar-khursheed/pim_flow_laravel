@@ -653,7 +653,7 @@ class TourasPaymentController extends Controller
 		$this->successUrl = config('app.backend_url').'/api/frontend/touras/callback';
 		$this->failureUrl = config('app.backend_url').'/api/frontend/touras/callback';
 
-		// $this->successUrl = 'http://pim.devs/api/frontend/touras/callback';
+		// $this->successUrls = 'http://pim.devs/api/frontend/touras/callback';
 		// $this->failureUrl = 'http://pim.devs/api/frontend/touras/callback';
 		$this->frontendUrl = config('app.url');
 	}
@@ -708,7 +708,7 @@ class TourasPaymentController extends Controller
 				? 10001
 				: (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101);
 			}
-			$orderData['order_number'] = $orderNumber . '-' . time();
+			$orderData['order_number'] = $orderNumber . 'H' . time();
 
 			// Prepare payment request
 			$paymentData = $this->preparePaymentRequest($orderData);
