@@ -3706,7 +3706,7 @@ class ProductController extends Controller
 
 		return response()->json([
 			'success'    => true,
-			'message'    => $id
+			'message'    => $categoryId
 			? 'Sale products filtered by category'
 			: 'All sale products fetched successfully',
 
