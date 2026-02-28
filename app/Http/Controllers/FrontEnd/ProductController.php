@@ -3281,17 +3281,10 @@ class ProductController extends Controller
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/frontend/vendor-99-sale-products/{id}",
-	 *     summary="Get Vendor 99 sale products by category",
+	 *     path="/api/frontend/vendor-99-sale-products",
+	 *     summary="Get Vendor 99 sale products",
 	 *     tags={"Frontend-Product"},
-	 *     description="Fetches sale products exclusively from Vendor 99 with custom category sorting",
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         description="Category ID (optional)",
-	 *         required=false,
-	 *         @OA\Schema(type="integer")
-	 *     ),
+	 *     description="Fetches all sale products exclusively from Vendor 99 with custom category sorting",
 	 *     @OA\Parameter(
 	 *         name="per_page",
 	 *         in="query",
@@ -3324,7 +3317,7 @@ class ProductController extends Controller
 	 *     )
 	 * )
 	 */
-	public function vendor99SaleProducts(Request $request, $id = null)
+	public function vendor99SaleProducts(Request $request)
 	{
 		$perPage = $request->get('per_page', 10);
 
@@ -3336,7 +3329,7 @@ class ProductController extends Controller
 		$onlyInStock = $request->get('in_stock');
 		$sort = $request->get('sort');
 		$brandId = $request->get('brand_id');
-		$categoryId = $request->get('category_id') ?? $id;
+		$categoryId = $request->get('category_id');
 
 		// Custom category sort sequence
 		$categoryOrderNames = [

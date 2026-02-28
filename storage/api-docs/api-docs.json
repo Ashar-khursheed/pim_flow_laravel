@@ -23558,24 +23558,15 @@
                 }
             }
         },
-        "/api/frontend/vendor-99-sale-products/{id}": {
+        "/api/frontend/vendor-99-sale-products": {
             "get": {
                 "tags": [
                     "Frontend-Product"
                 ],
-                "summary": "Get Vendor 99 sale products by category",
-                "description": "Fetches sale products exclusively from Vendor 99 with custom category sorting",
-                "operationId": "2ab2ec0440d088988415cc6e3d6c0685",
+                "summary": "Get Vendor 99 sale products",
+                "description": "Fetches all sale products exclusively from Vendor 99 with custom category sorting",
+                "operationId": "91feb5e5fecc31b6bad34d9663bbd090",
                 "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Category ID (optional)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
                     {
                         "name": "per_page",
                         "in": "query",
