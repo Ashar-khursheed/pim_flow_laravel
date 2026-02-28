@@ -2278,17 +2278,15 @@ class ProductController extends BaseController
 					if ($mainProduct->faqs) {
 						$faqs = $mainProduct->faqs;
 						// Fetch existing FAQs for comparison
-						$existingFaqs = Faq::where('product_id', $mainProduct->id)->get()->keyBy('id');
+						$existingFaqs = $mainProduct->faqs->keyBy('id');
 
-						if (!empty($faqs) && !empty($existingFaqs)) {
+						if (!empty($faqs) && $existingFaqs->isNotEmpty()) {
 							foreach ($faqs as $faqData) {
 								if (!empty($faqData['question']) && !empty($faqData['answer'])) {
 
-									Faq::create([
-										'product_id' => $product->id,
+									$product->faqs()->create([
 										'question' => $faqData['question'],
 										'answer' => $faqData['answer'],
-										'category_id' => $faqData['category_id'] ?? null,
 										'status' => 'published',
 									]);
 								}
