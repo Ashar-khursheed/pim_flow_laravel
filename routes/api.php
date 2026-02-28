@@ -1019,7 +1019,9 @@ Route::get('/frontend/products-8.xml', [SitemapController::class, 'getProductsSi
 Route::get('/frontend/products-9.xml', [SitemapController::class, 'getProductsSitemap9']);
 Route::get('/frontend/products-10.xml', [SitemapController::class, 'getProductsSitemap10']);
 
+Route::get('/frontend/pages.xml', [SitemapController::class, 'getPagesSitemap']);
 Route::get('/frontend/blog.xml', [SitemapController::class, 'getBlogSitemap']);
+Route::get('/frontend/pages.xml', [SitemapController::class, 'getPagesSitemap']);
 Route::get('/frontend/brand.xml', [SitemapController::class, 'getBrandSitemap']);
 Route::get('/frontend/image.xml', [SitemapController::class, 'getImageSitemap']);
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
