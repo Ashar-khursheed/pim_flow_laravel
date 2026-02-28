@@ -3279,457 +3279,433 @@ class ProductController extends Controller
 		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
 	}
 
-	/**
-	 * @OA\Get(
-	 *     path="/api/frontend/vendor-99-sale-products",
-	 *     summary="Get Vendor 99 sale products",
-	 *     tags={"Frontend-Product"},
-	 *     description="Fetches all sale products exclusively from Vendor 99 with custom category sorting",
-	 *     @OA\Parameter(
-	 *         name="per_page",
-	 *         in="query",
-	 *         description="Items per page",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", default=10)
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="search",
-	 *         in="query",
-	 *         description="Search by keyword",
-	 *         required=false,
-	 *         @OA\Schema(type="string")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="sort",
-	 *         in="query",
-	 *         description="Sort by (price_asc, price_desc, latest, rating_desc)",
-	 *         required=false,
-	 *         @OA\Schema(type="string")
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Successfully fetched vendor 99 products",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string"),
-	 *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
-	 *         )
-	 *     )
-	 * )
-	 */
-	public function vendor99SaleProducts(Request $request)
-	{
-		$perPage = $request->get('per_page', 10);
+/**
+ * @OA\Get(
+ *     path="/api/frontend/vendor-99-sale-products",
+ *     summary="Get Vendor 99 sale products",
+ *     tags={"Frontend-Product"},
+ *     description="Fetches all sale products exclusively from Vendor 99 with custom category sorting",
+ *     @OA\Parameter(
+ *         name="per_page",
+ *         in="query",
+ *         description="Items per page",
+ *         required=false,
+ *         @OA\Schema(type="integer", default=10)
+ *     ),
+ *     @OA\Parameter(
+ *         name="search",
+ *         in="query",
+ *         description="Search by keyword",
+ *         required=false,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort",
+ *         in="query",
+ *         description="Sort by (price_asc, price_desc, latest, rating_desc)",
+ *         required=false,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successfully fetched vendor 99 products",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string"),
+ *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+ *         )
+ *     )
+ * )
+ */
+public function vendor99SaleProducts(Request $request)
+{
+    $perPage = $request->get('per_page', 10);
 
-		// Filters
-		$minPrice = $request->get('min_price');
-		$maxPrice = $request->get('max_price');
-		$search = $request->get('search');
-		$minRating = $request->get('min_rating');
-		$onlyInStock = $request->get('in_stock');
-		$sort = $request->get('sort');
-		$brandId = $request->get('brand_id');
-		$categoryId = $request->get('category_id');
+    // Filters
+    $minPrice    = $request->get('min_price');
+    $maxPrice    = $request->get('max_price');
+    $search      = $request->get('search');
+    $minRating   = $request->get('min_rating');
+    $onlyInStock = $request->get('in_stock');
+    $sort        = $request->get('sort');
+    $brandId     = $request->get('brand_id');
+    $categoryId  = $request->get('category_id');
 
-		// Custom category sort sequence
-		$categoryOrderNames = [
-			'White Dinnerware', 'Coloured Chinaware', 'Cutlery', 'Glassware',
-			'Glass Racks', 'Serving & Table Accessories', 'Salt and Pepper Mills',
-			'Bread Baskets', 'Kitchen Utensils & Tools', 'Pizza Utensils',
-			'Pastry', 'Cast Iron', 'Buffetware', 'Disposables',
-			'Bar Items', 'Child Friendly'
-		];
+    // ── Custom category sort sequence ──────────────────────────────────────────
+    $categoryOrderNames = [
+        'White Dinnerware', 'Coloured Chinaware', 'Cutlery', 'Glassware',
+        'Glass Racks', 'Serving & Table Accessories', 'Salt and Pepper Mills',
+        'Bread Baskets', 'Kitchen Utensils & Tools', 'Pizza Utensils',
+        'Pastry', 'Cast Iron', 'Buffetware', 'Disposables',
+        'Bar Items', 'Child Friendly',
+    ];
 
-		$categorySortMap = [];
+    $categorySortMap = [];
 
-		foreach ($categoryOrderNames as $index => $name) {
-			// Use LIKE to be more improved against spacing/case issues
-			$cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
-			
-			if ($cat) {
-				// Assign the parent category ID to this index (priority)
-				$categorySortMap[$cat->id] = $index;
+    foreach ($categoryOrderNames as $index => $name) {
+        $cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
 
-				// Also assign all DESCENDANT category IDs to this same index
-				// This ensures "Black Dinnerware" gets the same priority as "Coloured Chinaware"
-				$descendants = $cat->getLeafCategories()->pluck('id');
-				foreach ($descendants as $childId) {
-					// Only set if not already set (higher priority wins if overlap)
-					if (!isset($categorySortMap[$childId])) {
-						$categorySortMap[$childId] = $index;
-					}
-				}
-				
-				// Also get intermediate children if getLeafCategories only returns tips
-				// A safer approach for a tree is to just get all children recursive
-				$allChildren = $cat->childrenRecursive; 
-				// Flatten function to get all IDs
-				$traverse = function($categories) use (&$traverse, &$categorySortMap, $index) {
-					foreach ($categories as $category) {
-						if (!isset($categorySortMap[$category->id])) {
-							$categorySortMap[$category->id] = $index;
-						}
-						$traverse($category->childrenRecursive);
-					}
-				};
-				$traverse($allChildren);
+        if ($cat) {
+            // Assign the parent category
+            $categorySortMap[$cat->id] = $index;
 
-			}
-		}
+            // Helper: recursively assign all descendant IDs the same priority
+            $traverse = function ($categories) use (&$traverse, &$categorySortMap, $index) {
+                foreach ($categories as $category) {
+                    if (!isset($categorySortMap[$category->id])) {
+                        $categorySortMap[$category->id] = $index;
+                    }
+                    if ($category->childrenRecursive->isNotEmpty()) {
+                        $traverse($category->childrenRecursive);
+                    }
+                }
+            };
 
-		// Log the count of IDs found for debugging
-		Log::info('Category Sort Map Count: ' . count($categorySortMap));
+            $traverse($cat->childrenRecursive);
+        }
+    }
 
-		// Wishlist logic
-		$userId = Auth::id();
-		$wishlistProductIds = $userId
-		? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int)$id)->toArray()
-		: session()->get('guest_wishlist', []);
+    Log::info('Category Sort Map Count: ' . count($categorySortMap));
 
-		// Base Query → No category filter by default
-		$query = Product::query()
-		->where('status', 'published')
-		->whereHas('productSuppliers', function ($q) {
-			$q->whereNotNull('sale_price')
-			  ->where('sale_price', '>', 0)
-			  ->where('vendor_id', 99);
-		})
-		->with([
-			'reviews:id,product_id,star',
-			'currency',
-			'productSuppliers' => function ($q) {
-				$q->where('vendor_id', 99);
-			},
-			'seoUrl',
-			'sellingUnitAttribute',
-			'ingredientsAttribute',
-			'brand:id,name',
-			'productAttributes' => function ($query) {
-				$query->whereHas('attributeDetails', function ($q) {
-					$q->whereIn('name', ['Units per Case', 'Pack Type']);
-				});
-			}
-		]);
+    // ── Wishlist ───────────────────────────────────────────────────────────────
+    $userId = Auth::id();
+    $wishlistProductIds = $userId
+        ? DB::table('ec_wish_lists')
+              ->where('customer_id', $userId)
+              ->pluck('product_id')
+              ->map(fn($id) => (int) $id)
+              ->toArray()
+        : session()->get('guest_wishlist', []);
 
-		// If Category ID is provided, apply category filter
-		if ($categoryId) {
-			$category = Category::find($categoryId);
+    // ── Base Query ─────────────────────────────────────────────────────────────
+    // Only published products that have a sale_price > 0 from vendor 99
+    $query = Product::query()
+        ->where('status', 'published')
+        ->whereHas('productSuppliers', function ($q) {
+            $q->where('vendor_id', 99)
+              ->whereNotNull('sale_price')
+              ->where('sale_price', '>', 0);
+        })
+        ->with([
+            'reviews:id,product_id,star',
+            'currency',
+            'productSuppliers' => function ($q) {
+                $q->where('vendor_id', 99);
+            },
+            'seoUrl',
+            'sellingUnitAttribute',
+            'ingredientsAttribute',
+            'brand:id,name',
+            'productAttributes' => function ($q) {
+                $q->whereHas('attributeDetails', function ($q2) {
+                    $q2->whereIn('name', ['Units per Case', 'Pack Type']);
+                });
+            },
+        ]);
 
-			if (!$category) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Category not found',
-				], 404);
-			}
+    // ── Category filter ────────────────────────────────────────────────────────
+    if ($categoryId) {
+        $category = Category::find($categoryId);
 
-			// Filter by category
-			$query->whereHas('categories', function ($q) use ($categoryId) {
-				$q->where('category_id', $categoryId);
-			});
-		}
+        if (!$category) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category not found',
+            ], 404);
+        }
 
-		// ---------------- Filters -----------------
+        $query->whereHas('categories', function ($q) use ($categoryId) {
+            $q->where('category_id', $categoryId);
+        });
+    }
 
-		if ($search) {
-			$query->where(function($q) use ($search) {
-				// Smart search with fuzzy matching for typos
-				$q->where('name', 'LIKE', "%$search%")
-					->orWhere('sku', 'LIKE', "%$search%")
-					// Fuzzy match using SOUNDEX for phonetic similarity
-					->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search])
-					// Search in brand names
-					->orWhereHas('brand', function($brandQ) use ($search) {
-						$brandQ->where('name', 'LIKE', "%$search%")
-							   ->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search]);
-					})
-					// Concatenated words search (e.g. "porcelainplate" matches "Porcelain Plate")
-					->orWhereRaw("REPLACE(name, ' ', '') LIKE ?", ["%{$search}%"])
-					// Word-by-word AND matching (All words must be present in Name, SKU, or Brand)
-					->orWhere(function($subQ) use ($search) {
-						$words = explode(' ', $search);
-						if (count($words) > 1) {
-							foreach ($words as $word) {
-								if (strlen($word) > 2) {
-									$subQ->where(function($wordQ) use ($word) {
-										$wordQ->where('name', 'LIKE', "%$word%")
-											  ->orWhere('sku', 'LIKE', "%$word%")
-											  ->orWhereHas('brand', function($bq) use ($word) {
-												  $bq->where('name', 'LIKE', "%$word%");
-											  });
-									});
-								}
-							}
-						} else {
-							$subQ->whereRaw('0 = 1'); // Only 1 word, handled by main logic
-						}
-					});
+    // ── Search filter ──────────────────────────────────────────────────────────
+    if ($search) {
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'LIKE', "%{$search}%")
+              ->orWhere('sku', 'LIKE', "%{$search}%")
+              ->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search])
+              ->orWhereHas('brand', function ($bq) use ($search) {
+                  $bq->where('name', 'LIKE', "%{$search}%")
+                     ->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search]);
+              })
+              ->orWhereRaw("REPLACE(name, ' ', '') LIKE ?", ["%{$search}%"]);
 
-					// Consonant-based fuzzy search for typos (e.g. "ballini" matches "Bellini")
-					// We only do this if the search term is reasonable length to avoid massive matches
-					if (strlen($search) >= 4) {
-						// Create a pattern where vowels are wildcards
-						// e.g. "ballini" -> "%b%l%l%n%"
-						$consonants = preg_replace('/[aeiouyAEIOUY\s]+/', '%', $search);
-						// Ensure we don't have multiple % side by side if possible (preg_replace handles it but good to be sure)
-						$fuzzyPattern = '%' . $consonants . '%';
-						
-						// Only apply if we have enough "skeleton" to match on
-						if (strlen($consonants) >= 3) {
-							$q->orWhere('name', 'LIKE', $fuzzyPattern);
-						}
-					}
-			});
-		}
+            // Multi-word AND matching
+            $words = array_filter(explode(' ', $search), fn($w) => strlen($w) > 2);
+            if (count($words) > 1) {
+                $q->orWhere(function ($subQ) use ($words) {
+                    foreach ($words as $word) {
+                        $subQ->where(function ($wordQ) use ($word) {
+                            $wordQ->where('name', 'LIKE', "%{$word}%")
+                                  ->orWhere('sku', 'LIKE', "%{$word}%")
+                                  ->orWhereHas('brand', function ($bq) use ($word) {
+                                      $bq->where('name', 'LIKE', "%{$word}%");
+                                  });
+                        });
+                    }
+                });
+            }
 
+            // Consonant-skeleton fuzzy match
+            if (strlen($search) >= 4) {
+                $consonants = preg_replace('/[aeiouyAEIOUY\s]+/', '%', $search);
+                if (strlen($consonants) >= 3) {
+                    $q->orWhere('name', 'LIKE', '%' . $consonants . '%');
+                }
+            }
+        });
+    }
 
-		if ($minPrice) {
-			$query->whereHas('productSuppliers', function ($q) use ($minPrice) {
-				$q->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) >= ?', [$minPrice]);
-			});
-		}
+    // ── Price filters ──────────────────────────────────────────────────────────
+    if ($minPrice) {
+        $query->whereHas('productSuppliers', function ($q) use ($minPrice) {
+            $q->where('vendor_id', 99)
+              ->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) >= ?', [$minPrice]);
+        });
+    }
 
-		if ($maxPrice) {
-			$query->whereHas('productSuppliers', function ($q) use ($maxPrice) {
-				$q->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) <= ?', [$maxPrice]);
-			});
-		}
+    if ($maxPrice) {
+        $query->whereHas('productSuppliers', function ($q) use ($maxPrice) {
+            $q->where('vendor_id', 99)
+              ->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) <= ?', [$maxPrice]);
+        });
+    }
 
-		if ($minRating) {
-			$query->whereHas('reviews', function ($r) use ($minRating) {
-				$r->havingRaw('AVG(star) >= ?', [$minRating]);
-			});
-		}
+    // ── Rating filter ──────────────────────────────────────────────────────────
+    if ($minRating) {
+        $query->withAvg('reviews', 'star')
+              ->havingRaw('reviews_avg_star >= ?', [$minRating]);
+    }
 
-		if ($onlyInStock == 1) {
-			$query->whereHas('productSuppliers', function ($q) {
-				$q->where('inventory', '>', 0)->where('in_stock', 1);
-			});
-		}
+    // ── Stock filter ───────────────────────────────────────────────────────────
+    if ($onlyInStock == 1) {
+        $query->whereHas('productSuppliers', function ($q) {
+            $q->where('vendor_id', 99)
+              ->where('inventory', '>', 0)
+              ->where('in_stock', 1);
+        });
+    }
 
-		// Brand filter
-		if ($brandId) {
-			$brandIds = is_array($brandId) ? $brandId : explode(',', $brandId);
-			$brandIds = array_map('intval', $brandIds);
-			$query->whereIn('brand_id', $brandIds);
-		}
+    // ── Brand filter ───────────────────────────────────────────────────────────
+    if ($brandId) {
+        $brandIds = array_map('intval', is_array($brandId) ? $brandId : explode(',', $brandId));
+        $query->whereIn('brand_id', $brandIds);
+    }
 
-		// ---------------- Sorting -----------------
+    // ── Sorting ────────────────────────────────────────────────────────────────
+    if ($sort) {
+        switch ($sort) {
+            case 'price_asc':
+                $query->orderByRaw("(
+                    SELECT sale_price FROM product_suppliers
+                    WHERE product_suppliers.product_id = ec_products.id
+                      AND product_suppliers.vendor_id = 99
+                    LIMIT 1
+                ) ASC");
+                break;
 
-		if ($sort) {
-			switch ($sort) {
-				case 'price_asc':
-				$query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) ASC");
-				break;
+            case 'price_desc':
+                $query->orderByRaw("(
+                    SELECT sale_price FROM product_suppliers
+                    WHERE product_suppliers.product_id = ec_products.id
+                      AND product_suppliers.vendor_id = 99
+                    LIMIT 1
+                ) DESC");
+                break;
 
-				case 'price_desc':
-				$query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) DESC");
-				break;
+            case 'latest':
+                $query->orderBy('ec_products.created_at', 'DESC');
+                break;
 
-				case 'latest':
-				$query->orderBy('created_at', 'DESC');
-				break;
+            case 'rating_desc':
+                $query->withAvg('reviews', 'star')
+                      ->orderBy('reviews_avg_star', 'DESC');
+                break;
+        }
+    } else {
+        // Default: custom category-wise sort
+        if (!empty($categorySortMap)) {
+            $whens = [];
+            foreach ($categorySortMap as $catId => $index) {
+                $catId = (int) $catId;
+                $index = (int) $index;
+                $whens[] = "WHEN pc_sort.category_id = {$catId} THEN {$index}";
+            }
+            $whenString = implode(' ', $whens);
 
-				case 'rating_desc':
-				$query->withAvg('reviews', 'star')->orderBy('reviews_avg_star', 'DESC');
-				break;
-			}
-		} else {
-			// Default sort: Category-wise (grouped by custom order)
-			if (!empty($categorySortMap)) {
-				// We need to build a CASE statement for the sort map
-				// WHEN category_id = ID THEN INDEX
-				$whens = [];
-				$ids = [];
-				foreach ($categorySortMap as $catId => $index) {
-					$whens[] = "WHEN pc_sort.category_id = $catId THEN $index";
-					$ids[] = $catId;
-				}
-				$whenString = implode(' ', $whens);
-				$idsString = implode(',', $ids);
+            $query->leftJoin('product_categories as pc_sort', 'ec_products.id', '=', 'pc_sort.product_id')
+                  ->select('ec_products.*')
+                  ->groupBy('ec_products.id')
+                  ->orderByRaw("MIN(CASE {$whenString} ELSE 999999 END) ASC")
+                  ->orderBy('ec_products.brand_id', 'ASC')
+                  ->orderBy('ec_products.id', 'ASC');
+        } else {
+            // Fallback
+            $query->orderBy('ec_products.brand_id', 'ASC')
+                  ->orderBy('ec_products.id', 'ASC');
+        }
+    }
 
-				$query->leftJoin('product_categories as pc_sort', 'ec_products.id', '=', 'pc_sort.product_id')
-					->select('ec_products.*')
-					// Use MIN to pick the highest priority category (lowest index)
-					->orderByRaw("MIN(CASE $whenString ELSE 999999 END) ASC")
-					->orderBy('brand_id', 'ASC')
-					->orderBy('ec_products.id', 'ASC')
-					->groupBy('ec_products.id');
-			} else {
-				// Fallback to Brand-wise
-				$query->orderBy('brand_id', 'ASC')
-					->orderBy('id', 'ASC');
-			}
-		}
+    // ── Pagination ─────────────────────────────────────────────────────────────
+    $products = $query->paginate($perPage);
 
-		// ---------------- Pagination -----------------
+    // Collect all filtered IDs for sidebar aggregates (brands / categories)
+    $allFilteredIds = (clone $query)->reorder()->groupBy('ec_products.id')->pluck('ec_products.id')->toArray();
 
-		$products = $query->paginate($perPage);
+    $brands = \App\Models\Brand::whereIn('id', function ($q) use ($allFilteredIds) {
+        $q->from('ec_products')
+          ->whereIn('id', $allFilteredIds)
+          ->select('brand_id')
+          ->distinct();
+    })->select('id', 'name')->orderBy('name')->get()->values();
 
-		// Get unique colors/categories/brands from the filtered result set
-		$allFilteredIds = $query->clone()->reorder()->groupBy('ec_products.id')->pluck('ec_products.id')->toArray();
+    $categories = Category::whereIn('id', function ($q) use ($allFilteredIds) {
+        $q->from('product_categories')
+          ->whereIn('product_id', $allFilteredIds)
+          ->select('category_id')
+          ->distinct();
+    })->select('id', 'name')->orderBy('name')->get()->values();
 
-		// Get unique brands from the filtered products
-		$brands = \App\Models\Brand::whereIn('id', function($q) use ($allFilteredIds) {
-				$q->from('ec_products')->whereIn('id', $allFilteredIds)->select('brand_id')->distinct();
-			})
-			->select('id', 'name')
-			->orderBy('name', 'ASC')
-			->get()
-			->values();
+    // ── Transform ──────────────────────────────────────────────────────────────
+    $transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
 
-		// Get unique categories from the filtered products
-		$categories = Category::whereIn('id', function($q) use ($allFilteredIds) {
-				$q->from('product_categories')->whereIn('product_id', $allFilteredIds)->select('category_id')->distinct();
-			})
-			->select('id', 'name')
-			->orderBy('name', 'ASC')
-			->get()
-			->values();
+        $imageUrls = is_string($product->images)
+            ? json_decode($product->images, true)
+            : (array) $product->images;
 
-		// ---------------- Transform Response -----------------
+        $altTags = is_string($product->alt_tags)
+            ? json_decode($product->alt_tags, true)
+            : (array) $product->alt_tags;
 
-		$transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
+        $videoPaths = collect(json_decode($product->video_path ?? '[]', true));
 
-			$imageUrls = is_string($product->images)
-			? json_decode($product->images, true)
-			: (array) $product->images;
+        $totalReviews = $product->reviews->count();
+        $avgRating    = $totalReviews > 0 ? $product->reviews->avg('star') : null;
 
-			$altTags = is_string($product->alt_tags)
-			? json_decode($product->alt_tags, true)
-			: (array) $product->alt_tags;
+        $leftStock = ($product->quantity ?? 0) - ($product->units_sold ?? 0);
 
-			$videoPaths = collect(json_decode($product->video_path ?? '[]', true));
+        // Selling Type
+        $sellingType = null;
+        if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+            $fullValue = $product->sellingUnitAttribute->attribute_value;
+            $unit = strpos($fullValue, '/') !== false
+                ? trim(explode('/', $fullValue)[1])
+                : $fullValue;
+            $sellingType = [
+                'attribute_value'      => $fullValue,
+                'attribute_value_unit' => $unit,
+            ];
+        }
 
-			$totalReviews = $product->reviews->count();
-			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
+        // Per Unit Price
+        $perUnitPrice = null;
+        $unitsPerCase = null;
+        $packType     = null;
 
-			$quantity = $product->quantity ?? 0;
-			$unitsSold = $product->units_sold ?? 0;
-			$leftStock = $quantity - $unitsSold;
+        if ($product->productAttributes) {
+            $unitsPerCase = $product->productAttributes
+                ->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
+            $packType = $product->productAttributes
+                ->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+        }
 
-			// Selling Type Logic
-			$sellingType = null;
-			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-				$fullValue = $product->sellingUnitAttribute->attribute_value;
-				$unit = $fullValue;
-				if (strpos($fullValue, '/') !== false) {
-					$parts = explode('/', $fullValue);
-					$unit = trim($parts[1]);
-				}
-				$sellingType = [
-					'attribute_value' => $fullValue,
-					'attribute_value_unit' => $unit
-				];
-			}
+        $firstSupplier = $product->productSuppliers->first();
+        $currentPrice  = $firstSupplier
+            ? ($firstSupplier->sale_price > 0 ? $firstSupplier->sale_price : $firstSupplier->price)
+            : 0;
 
+        if ($currentPrice > 0 && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+            $unitValue = (float) $unitsPerCase->attribute_value;
+            if ($unitValue > 0) {
+                $perUnitPrice = round($currentPrice / $unitValue, 2) . '/' . ($packType?->attribute_value ?? '');
+            }
+        }
 
-			// Per Unit Price Logic
-			$perUnitPrice = null;
-			$unitsPerCase = null;
-			$packType = null;
+        $discountPercentage = ($firstSupplier && $firstSupplier->price > 0)
+            ? round((($firstSupplier->price - $firstSupplier->sale_price) / $firstSupplier->price) * 100, 2)
+            : 0;
 
-			if ($product->productAttributes) {
-				$unitsPerCase = $product->productAttributes
-				->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
-				$packType = $product->productAttributes
-				->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
-			}
+        return [
+            'id'                    => $product->id,
+            'name'                  => $product->name,
+            'category_url'          => $product->category_url(),
+            'parent_category_url'   => $product->parent_category_url(),
+            'images'                => $imageUrls,
+            'alt_tags'              => $altTags,
+            'video_path'            => $videoPaths,
+            'sku'                   => $product->sku,
+            'url'                   => $product->seoUrl->url ?? null,
+            'selling_type'          => $sellingType,
+            'per_unit_price'        => $perUnitPrice,
+            'discount_percentage'   => $discountPercentage,
 
-			$firstSupplier = $product->productSuppliers->first();
-			$currentPrice = $firstSupplier ? ($firstSupplier->sale_price > 0 ? $firstSupplier->sale_price : $firstSupplier->price) : 0;
+            // Brand
+            'brand_id'              => $product->brand_id ?? null,
+            'brand_name'            => $product->brand->name ?? null,
 
+            // Prices
+            'price'                 => (float) ($firstSupplier->price ?? 0),
+            'sale_price'            => (float) ($firstSupplier->sale_price ?? 0),
+            'original_price'        => (float) ($firstSupplier->price ?? 0),
+            'front_sale_price'      => (float) ($firstSupplier->sale_price ?? 0),
+            'best_price'            => (float) ($firstSupplier->sale_price > 0 ? $firstSupplier->sale_price : ($firstSupplier->price ?? 0)),
 
-			if ($currentPrice > 0 && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-				$unitValue = (float) $unitsPerCase->attribute_value;
-				if ($unitValue > 0) {
-					$calculated = round($currentPrice / $unitValue, 2);
-					$perUnitPrice = $calculated . '/' . ($packType?->attribute_value ?? '');
-				}
-			}
+            // Currency
+            'currency'              => $product->currency?->symbol,
+            'currency_title'        => $product->currency?->symbol ?? null,
 
-			return [
-				'id' => $product->id,
-				'name' => $product->name,
-				'category_url' => $product->category_url(),
-				'parent_category_url' => $product->parent_category_url(),
-				'images' => $imageUrls,          // ✅ Proper array of URLs
-				'alt_tags' => $altTags,
-				'video_path' => $videoPaths,
-				'sku' => $product->sku,
-				'url' => $product->seoUrl->url ?? null,
-				'selling_type' => $sellingType,
-				'per_unit_price' => $perUnitPrice,
-                'discount_percentage' => ($firstSupplier && $firstSupplier->price > 0) ? round((($firstSupplier->price - $firstSupplier->sale_price) / $firstSupplier->price) * 100, 2) : 0,
+            // Reviews
+            'total_reviews'         => $totalReviews,
+            'avg_rating'            => $avgRating,
 
-				// Brand info
-				'brand_id' => $product->brand_id ?? null,
-				'brand_name' => $product->brand->name ?? null,
+            // Stock
+            'leftStock'             => $leftStock,
 
-				// Prices
-				'price' => (float)($firstSupplier->price ?? 0),
-				'sale_price' => (float)($firstSupplier->sale_price ?? 0),
-				'original_price' => (float)($firstSupplier->price ?? 0),
-				'front_sale_price' => (float)($firstSupplier->sale_price ?? 0),
-				'best_price' => (float)($firstSupplier->price ?? 0),
+            // Wishlist
+            'in_wishlist'           => in_array($product->id, $wishlistProductIds),
 
-				// Currency
-				'currency' => $product->currency?->symbol,
-				'currency_title' => $product->currency?->symbol ?? null,
+            // Supplier details
+            'vendor_id'             => $firstSupplier->vendor_id ?? null,
+            'map'                   => (float) ($firstSupplier->map ?? 0),
+            'inventory'             => $firstSupplier->inventory ?? null,
+            'in_stock'              => $firstSupplier->in_stock ?? null,
+            'delivery_days'         => $firstSupplier->delivery_days ?? null,
+            'return_policy'         => $firstSupplier->return_policy ?? null,
+            'free_shipping'         => $firstSupplier->free_shipping ?? null,
+            'warranty_information'  => $firstSupplier->warranty_information ?? null,
+            'min_quantity'          => $firstSupplier->min_quantity ?? 0,
+            'is_fixed'              => $firstSupplier->is_fixed ?? 0,
 
-				// Reviews
-				'total_reviews' => $totalReviews,
-				'avg_rating' => $avgRating,
+            // Other
+            'quote_available'       => $product->quote_available ?? null,
+            'isRequired'            => $product->isRequired,
+        ];
+    });
 
-				// Stock
-				'leftStock' => $leftStock,
+    // ── Response ───────────────────────────────────────────────────────────────
+    return response()->json([
+        'success'    => true,
+        'message'    => $categoryId
+            ? 'Sale products filtered by category'
+            : 'All sale products fetched successfully',
 
-				// Wishlist
-				'in_wishlist' => in_array($product->id, $wishlistProductIds),
+        'pagination' => [
+            'current_page'  => $products->currentPage(),
+            'last_page'     => $products->lastPage(),
+            'per_page'      => $products->perPage(),
+            'total'         => $products->total(),
+            'next_page_url' => $products->nextPageUrl(),
+            'prev_page_url' => $products->previousPageUrl(),
+            'has_more'      => $products->hasMorePages(),
+            'links'         => $products->linkCollection(),
+        ],
 
-				// Supplier details
-				'vendor_id' => $firstSupplier->vendor_id ?? null,
-				'map' => (float)($firstSupplier->map ?? 0),
-				'inventory' => $firstSupplier->inventory ?? null,
-				'in_stock' => $firstSupplier->in_stock ?? null,
-				'delivery_days' => $firstSupplier->delivery_days ?? null,
-				'return_policy' => $firstSupplier->return_policy ?? null,
-				'free_shipping' => $firstSupplier->free_shipping ?? null,
-				'warranty_information' => $firstSupplier->warranty_information ?? null,
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
-
-				// Other info
-				'quote_available' => $product->quote_available ?? null,
-				'isRequired' => $product->isRequired,
-			];
-		});
-
-		return response()->json([
-			'success'    => true,
-			'message'    => $categoryId
-			? 'Sale products filtered by category'
-			: 'All sale products fetched successfully',
-
-			// Pagination Meta
-			'pagination' => [
-				'current_page'   => $products->currentPage(),
-				'last_page'      => $products->lastPage(),
-				'per_page'       => $products->perPage(),
-				'total'          => $products->total(),
-				'next_page_url'  => $products->nextPageUrl(),
-				'prev_page_url'  => $products->previousPageUrl(),
-				'has_more'       => $products->hasMorePages(),
-				'links'          => $products->linkCollection(), // Full Laravel links
-			],
-
-			// Actual Product Data
-			'data' => $transformed,
-
-			// Available brands and categories in these results
-			'brands' => $brands,
-			'categories' => $categories,
-		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
-	}
+        'data'       => $transformed,
+        'brands'     => $brands,
+        'categories' => $categories,
+    ])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+}
 
 	
 	
