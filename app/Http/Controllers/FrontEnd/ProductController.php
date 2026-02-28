@@ -3553,7 +3553,7 @@ class ProductController extends Controller
 			$products = $query->paginate($perPage);
 
 			// ─────────────────────────────────────────────────────────────────────────
-			// 9. Sidebar aggregates — built from ALL 1097 products, not just page 1
+				// 9. Sidebar aggregates
 			// ─────────────────────────────────────────────────────────────────────────
 			$brands = \App\Models\Brand::whereIn('id', function ($q) use ($allFilteredIds) {
 				$q->from('ec_products')
@@ -3562,18 +3562,44 @@ class ProductController extends Controller
 				->distinct();
 			})->select('id', 'name')->orderBy('name')->get()->values();
 
-			$allowedCategoryIds = array_keys($categorySortMap);
+			// ✅ Build ONLY the top-level 16 category IDs (not their children)
+			$topLevelCategoryIds = [];
+			foreach ($categoryOrderNames as $priority => $name) {
+				$cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
+				if ($cat) {
+					$topLevelCategoryIds[$cat->id] = $priority;
+				}
+			}
 
-			$categories = Category::whereIn('id', function ($q) use ($allFilteredIds, $allowedCategoryIds) {
-				$q->from('product_categories')
+			// Only show these exact 16 categories in the sidebar filter
+			// and only if at least one filtered product belongs to them OR their children
+			$productCategoryIds = DB::table('product_categories')
 				->whereIn('product_id', $allFilteredIds)
-				->whereIn('category_id', $allowedCategoryIds)   // ← KEY FIX
-				->select('category_id')
-				->distinct();
-			})->select('id', 'name')
-			->get()
-			->sortBy(fn($cat) => $categorySortMap[$cat->id] ?? 999)  // ← sort by your defined order
-			->values();
+				->whereIn('category_id', array_keys($categorySortMap)) // children + parents
+				->pluck('category_id')
+				->unique()
+				->toArray();
+
+			// Map child category IDs back to their top-level parent priority
+			$matchedTopLevelIds = [];
+			foreach ($productCategoryIds as $catId) {
+				if (isset($categorySortMap[$catId])) {
+					$priority = $categorySortMap[$catId];
+					// Find the top-level category that has this priority
+					foreach ($topLevelCategoryIds as $topId => $topPriority) {
+						if ($topPriority === $priority) {
+							$matchedTopLevelIds[$topId] = $priority;
+							break;
+						}
+					}
+				}
+			}
+
+			$categories = Category::whereIn('id', array_keys($matchedTopLevelIds))
+				->select('id', 'name')
+				->get()
+				->sortBy(fn($cat) => $matchedTopLevelIds[$cat->id] ?? 999)
+				->values();
 
 			// ─────────────────────────────────────────────────────────────────────────
 			// 10. Transform
@@ -3684,7 +3710,8 @@ class ProductController extends Controller
 
 	
 	
-	/**
+	
+		/**
 	 * @OA\Get(
 	 *     path="/api/frontend/ec-products",
 	 *     summary="Get specific EC products with filters and sorting",
