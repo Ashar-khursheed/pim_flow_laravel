@@ -985,7 +985,7 @@ private function generateProductsSitemap($offset, $limit)
             ->get()
             ->map(function ($page) {
                 return [
-                    'loc' => 'pages/' . $page->url,
+                    'loc' => $page->url,
                     'lastmod' => $page->updated_at
                         ? \Carbon\Carbon::parse($page->updated_at)->toAtomString()
                         : now()->toAtomString(),
