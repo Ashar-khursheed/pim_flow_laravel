@@ -311,18 +311,18 @@ if (!function_exists('accessories_import_constants')) {
 	{
 		$constants = [
 			'ALL_FIELDS' => [
-				'product_id' => 'Product ID',
-				'product_sku' => 'Product SKU',
+				'Product ID' => 'product_id',
+				'Product SKU' => 'product_sku',
 
-				'product_accessory_id' => 'Product Accessory ID',
-				'accessory_name' => 'Accessory Name',
-				'is_approved' => 'Is Approved',
-				'is_required' => 'Is Required',
+				'Product Accessory ID' => 'product_accessory_id',
+				'Accessory Name' => 'accessory_name',
+				'Is Approved' => 'is_approved',
+				'Is Required' => 'is_required',
 
-				'accessory_type_id' => 'Accessory Type ID',
-				'accessory_type' => 'Accessory Type',
-				'price' => 'Price',
-				'cost_price' => 'Cost Price',
+				'Accessory Type ID' => 'accessory_type_id',
+				'Accessory Type' => 'accessory_type',
+				'Price' => 'price',
+				'Cost Price' => 'cost_price',
 			],
 		];
 

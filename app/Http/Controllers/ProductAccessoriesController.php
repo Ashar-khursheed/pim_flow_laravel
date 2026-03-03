@@ -928,7 +928,7 @@ class ProductAccessoriesController extends Controller
 		$accessoriesFileFormatArray = accessories_import_constants('ALL_FIELDS');
 
 		/* Define headers */
-		$headers = array_values($accessoriesFileFormatArray);
+		$headers = array_keys($accessoriesFileFormatArray);
 		$excelRepo->setHeader($sheet, $headers);
 
 		$rowIndex = 2;
