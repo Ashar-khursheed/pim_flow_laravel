@@ -70,10 +70,13 @@ class ImportProductAccessoryJob implements ShouldQueue
 		$failed = 0;
 		$groupedAccessory = [];
 
+		/* Track processed data for cleanup */
+		$processedProductAccessoryIds = [];
+		$processedAccessoryTypeIds = [];
+
 		/* Pre-load data for validation - BATCH OPTIMIZATION */
-		$productIds = array_unique(array_filter(array_column($this->chunk, 0))); /* Assuming first column is product_id */
+		$productIds = array_unique(array_filter(array_column($this->chunk, 0)));
 		$productAccessoryIds = array_unique(array_filter(array_map(function($row) {
-			/* Extract product_accessory_id from row based on header index */
 			$accessoryIdIndex = array_search('product_accessory_id', $this->header);
 			return $accessoryIdIndex !== false ? ($row[$accessoryIdIndex] ?? null) : null;
 		}, $this->chunk)));
@@ -261,9 +264,10 @@ class ImportProductAccessoryJob implements ShouldQueue
 					]);
 				}
 
-				/* Process accessory types */
-				$updatedTypeIds = [];
+				/* Track this product_accessory_id for cleanup */
+				$processedProductAccessoryIds[] = $productAccessory->id;
 
+				/* Process accessory types */
 				foreach ($accessoryTypes as $typeData) {
 					$accessoryTypeId = $typeData['accessory_type_id'];
 
@@ -278,7 +282,7 @@ class ImportProductAccessoryJob implements ShouldQueue
 								'updated_at' => $now,
 							]);
 
-						$updatedTypeIds[] = $accessoryTypeId;
+						$processedAccessoryTypeIds[] = $accessoryTypeId;
 					} else {
 						/* Create new type */
 						$newType = AccessoryItem::create([
@@ -290,17 +294,24 @@ class ImportProductAccessoryJob implements ShouldQueue
 							'updated_at' => $now,
 						]);
 
-						$updatedTypeIds[] = $newType->id;
+						$processedAccessoryTypeIds[] = $newType->id;
 					}
 				}
-
-				/* Delete accessory types not in the import (optional - uncomment if needed) */
-				if (!empty($updatedTypeIds)) {
-					AccessoryItem::where('product_accessory_id', $productAccessory->id)
-						->whereNotIn('id', $updatedTypeIds)
-						->delete();
-				}
 			}
+
+			/* Store processed IDs in change_obj for cleanup after batch completes */
+			$changeObj = json_decode($log->change_obj, true) ?? [];
+
+			/* Merge with existing data from other chunks */
+			$changeObj['processed_product_accessory_ids'] = array_unique(array_merge(
+				$changeObj['processed_product_accessory_ids'] ?? [],
+				$processedProductAccessoryIds
+			));
+
+			$changeObj['processed_accessory_type_ids'] = array_unique(array_merge(
+				$changeObj['processed_accessory_type_ids'] ?? [],
+				$processedAccessoryTypeIds
+			));
 
 			/* Update transaction log */
 			$descArray["Success Count"] += $success;
@@ -309,10 +320,10 @@ class ImportProductAccessoryJob implements ShouldQueue
 
 			$log->update([
 				'description' => json_encode($descArray),
+				'change_obj' => json_encode($changeObj),
 			]);
 
 			DB::commit();
-
 		} catch (\Throwable $e) {
 			DB::rollBack();
 
