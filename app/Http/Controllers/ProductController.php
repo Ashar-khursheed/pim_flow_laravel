@@ -290,6 +290,7 @@ class ProductController extends BaseController
 		]);
 	}
 
+
 	/**
 	 * @OA\Post(
 	 *     path="/api/products",
