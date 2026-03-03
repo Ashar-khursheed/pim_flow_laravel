@@ -523,7 +523,7 @@ class ProductController extends BaseController
 			return [
 				'attribute_id' => $attr->attribute_id,
 				'attribute_name' => $attr->attributeDetails->name ?? null,
-				'attribute_value' => $attr->attributeDetails->type == 'multiple_images'
+				'attribute_value' => ($attr->attributeDetails->type ?? null) == 'multiple_images'
 				? (is_array($attr->attribute_value)
 					? $attr->attribute_value
 					: (is_array($decoded = json_decode($attr->attribute_value, true))
