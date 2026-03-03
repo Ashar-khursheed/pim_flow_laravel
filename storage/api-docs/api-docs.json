@@ -37560,6 +37560,48 @@
                 ]
             }
         },
+        "/api/product-accessories/import": {
+            "post": {
+                "tags": [
+                    "Product Accessories"
+                ],
+                "summary": "Import product accessories details from an Excel file",
+                "operationId": "28a0f733fb6a3f24783dc20409d0a98b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "upload_file": {
+                                        "description": "xlsx file (.xlsx) max 2MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/product-accessories/export": {
             "post": {
                 "tags": [

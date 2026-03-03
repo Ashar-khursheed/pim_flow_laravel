@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Validator;
 
 use App\Services\ExcelImporterService;
 use App\Repository\ExcelRepository;
-// use App\Jobs\ImportSeoDetailJob;
+use App\Jobs\ImportProductAccessoryJob;
 
 class ProductAccessoriesController extends Controller
 {
@@ -829,57 +829,57 @@ class ProductAccessoriesController extends Controller
 		}
 	}
 
-	// /**
-	//  * @OA\Post(
-	//  *     path="/api/product-accessories/import",
-	//  *     summary="Import product accessories details from an Excel file",
-	//  *     tags={"Product Accessories"},
-	//  *     @OA\RequestBody(
-	//  *         required=true,
-	//  *         @OA\MediaType(
-	//  *             mediaType="multipart/form-data",
-	//  *             @OA\Schema(
-	//  *                 required={"upload_file"},
-	//  *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB"),
-	//  *             )
-	//  *         )
-	//  *     ),
-	//  *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
-	//  *     security={{"bearerAuth":{}}}
-	//  * )
-	//  */
-	// public function import(Request $request, ExcelImporterService $excelImporter)
-	// {
-	// 	/* Validate request data */
-	// 	$request->validate([
-	// 		'upload_file' => 'required|file|mimes:xlsx|max:2048',
-	// 	]);
-	// 	try {
-	// 		$seoFileFormatArray = seo_import_constants('ALL_FIELDS');
+	/**
+	 * @OA\Post(
+	 *     path="/api/product-accessories/import",
+	 *     summary="Import product accessories details from an Excel file",
+	 *     tags={"Product Accessories"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"upload_file"},
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB"),
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function import(Request $request, ExcelImporterService $excelImporter)
+	{
+		/* Validate request data */
+		$request->validate([
+			'upload_file' => 'required|file|mimes:xlsx|max:2048',
+		]);
+		try {
+			$accessoriesFileFormatArray = accessories_import_constants('ALL_FIELDS');
 
-	// 		$excelImporter->processExcelImport(
-	// 			$request->file('upload_file'),
-	// 			$seoFileFormatArray,
-	// 			'SEO Management', /* Module name */
-	// 			config('app.website') . '_SEO_MGMT', /* Job name */
-	// 			'Import SEO Management', /* Batch name */
-	// 			ImportSeoDetailJob::class
-	// 		);
+			$excelImporter->processExcelImport(
+				$request->file('upload_file'),
+				$accessoriesFileFormatArray,
+				'Product Accessory', /* Module name */
+				config('app.website') . '_ACCSRY', /* Job name */
+				'Import Product Accessory', /* Batch name */
+				ImportProductAccessoryJob::class
+			);
 
-	// 		return response()->json([
-	// 			'success' => true,
-	// 			'message' => 'The import process has been scheduled successfully. Please track it under import log.'
-	// 		]);
-	// 	} catch (\Exception $exception) {
-	// 		$error[] = 'Error: ' . $exception->getMessage();
-	// 		$error[] = 'File: ' . $exception->getFile();
-	// 		$error[] = 'Line: ' . $exception->getLine();
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => $error
-	// 		]);
-	// 	}
-	// }
+			return response()->json([
+				'success' => true,
+				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+			]);
+		} catch (\Exception $exception) {
+			$error[] = 'Error: ' . $exception->getMessage();
+			$error[] = 'File: ' . $exception->getFile();
+			$error[] = 'Line: ' . $exception->getLine();
+			return response()->json([
+				'success' => false,
+				'message' => $error
+			]);
+		}
+	}
 
 	/**
 	 * @OA\Post(
@@ -925,10 +925,10 @@ class ProductAccessoriesController extends Controller
 		$sheet = $spreadsheet->getActiveSheet();
 		$sheet->setTitle('Product Accessories Data');
 
-		$seoFileFormatArray = accessories_import_constants('ALL_FIELDS');
+		$accessoriesFileFormatArray = accessories_import_constants('ALL_FIELDS');
 
 		/* Define headers */
-		$headers = array_values($seoFileFormatArray);
+		$headers = array_values($accessoriesFileFormatArray);
 		$excelRepo->setHeader($sheet, $headers);
 
 		$rowIndex = 2;
