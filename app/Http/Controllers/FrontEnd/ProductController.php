@@ -3450,7 +3450,22 @@ class ProductController extends Controller
 			if (!$category) {
 				return response()->json(['success' => false, 'message' => 'Category not found'], 404);
 			}
-			$query->whereHas('categories', fn($q) => $q->where('category_id', $categoryId));
+
+			$categoryIds = [$categoryId];
+			$getDescendantIds = function ($categories) use (&$getDescendantIds, &$categoryIds) {
+				foreach ($categories as $cat) {
+					$categoryIds[] = $cat->id;
+					if ($cat->childrenRecursive->isNotEmpty()) {
+						$getDescendantIds($cat->childrenRecursive);
+					}
+				}
+			};
+
+			if ($category->childrenRecursive->isNotEmpty()) {
+				$getDescendantIds($category->childrenRecursive);
+			}
+
+			$query->whereHas('categories', fn($q) => $q->whereIn('category_id', $categoryIds));
 		}
 
 		if ($search) {
