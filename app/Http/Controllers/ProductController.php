@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
@@ -459,6 +459,9 @@ class ProductController extends BaseController
 			'categories.parent.parent',
 			'categories.children',
 			'vendors',
+			'productAttributes' => function ($query) {
+				$query->whereHas('attributeDetails');
+			},
 			'productAttributes.attributeDetails',
 			'productAttributes.measurementUnit',
 			'productSuppliers.vendor'
@@ -521,24 +524,21 @@ class ProductController extends BaseController
 
 		// Product attributes
 		$formattedProduct['product_attributes'] = $product->productAttributes->map(function ($attr) {
-			/* Log if attributeDetails is missing */
-			if ($attr->attributeDetails) {
-				return [
-					'attribute_id' => $attr->attribute_id,
-					'attribute_name' => $attr->attributeDetails->name,
-					'attribute_value' => ($attr->attributeDetails->type == 'multiple_images')
-					? (is_array($attr->attribute_value)
-						? $attr->attribute_value
-						: (is_array($decoded = json_decode($attr->attribute_value, true))
-							? $decoded
-							: null
-						)
+			return [
+				'attribute_id' => $attr->attribute_id,
+				'attribute_name' => $attr->attributeDetails->name,
+				'attribute_value' => ($attr->attributeDetails->type == 'multiple_images')
+				? (is_array($attr->attribute_value)
+					? $attr->attribute_value
+					: (is_array($decoded = json_decode($attr->attribute_value, true))
+						? $decoded
+						: null
 					)
-					: $attr->attribute_value,
-					'measurement_unit_id' => $attr->measurement_unit_id,
-					'measurement_unit_name' => $attr->measurementUnit->name ?? null,
-				];
-			}
+				)
+				: $attr->attribute_value,
+				'measurement_unit_id' => $attr->measurement_unit_id,
+				'measurement_unit_name' => $attr->measurementUnit->name ?? null,
+			];
 		});
 
 		// Product suppliers
