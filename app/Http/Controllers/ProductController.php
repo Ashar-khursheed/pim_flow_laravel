@@ -522,30 +522,23 @@ class ProductController extends BaseController
 		// Product attributes
 		$formattedProduct['product_attributes'] = $product->productAttributes->map(function ($attr) {
 			/* Log if attributeDetails is missing */
-			if (!$attr->attributeDetails) {
-				Log::warning('Product attribute missing attributeDetails', [
-					'product_attribute_id' => $attr->id,
+			if ($attr->attributeDetails) {
+				return [
 					'attribute_id' => $attr->attribute_id,
-					'product_id' => $attr->product_id,
-					'attribute_value' => $attr->attribute_value,
-					'measurement_unit_id' => $attr->measurement_unit_id
-				]);
-			}
-			return [
-				'attribute_id' => $attr->attribute_id,
-				'attribute_name' => $attr->attributeDetails->name ?? null,
-				'attribute_value' => (($attr->attributeDetails->type ?? null) == 'multiple_images')
-				? (is_array($attr->attribute_value)
-					? $attr->attribute_value
-					: (is_array($decoded = json_decode($attr->attribute_value, true))
-						? $decoded
-						: null
+					'attribute_name' => $attr->attributeDetails->name ?? null,
+					'attribute_value' => (($attr->attributeDetails->type ?? null) == 'multiple_images')
+					? (is_array($attr->attribute_value)
+						? $attr->attribute_value
+						: (is_array($decoded = json_decode($attr->attribute_value, true))
+							? $decoded
+							: null
+						)
 					)
-				)
-				: $attr->attribute_value,
-				'measurement_unit_id' => $attr->measurement_unit_id,
-				'measurement_unit_name' => $attr->measurementUnit->name ?? null,
-			];
+					: $attr->attribute_value,
+					'measurement_unit_id' => $attr->measurement_unit_id,
+					'measurement_unit_name' => $attr->measurementUnit->name ?? null,
+				];
+			}
 		});
 
 		// Product suppliers
