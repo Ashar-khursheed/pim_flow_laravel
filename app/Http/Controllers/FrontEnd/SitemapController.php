@@ -188,6 +188,12 @@ class SitemapController extends Controller
                 'priority' => '0.5',
             ],
             [
+                'loc' => 'pages.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
                 'loc' => 'blog.xml',
                 'lastmod' => $now,
                 'changefreq' => 'weekly',
@@ -341,6 +347,12 @@ class SitemapController extends Controller
             [
 
                 'loc' => 'products.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+            [
+                'loc' => 'pages.xml',
                 'lastmod' => $now,
                 'changefreq' => 'weekly',
                 'priority' => '0.5',
@@ -945,8 +957,60 @@ private function generateProductsSitemap($offset, $limit)
 
         return response($xml, 200)->header('Content-Type', 'application/xml');
 
-
     }
+
+    /**
+     * Get XML Pages Sitemap.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/pages.xml",
+     *     summary="Get pages.xml",
+     *     description="Returns the XML sitemap containing public Pages URLs.",
+     *     tags={"Sitemap"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sitemap XML generated successfully"
+     *     )
+     * )
+     */
+    public function getPagesSitemap()
+    {
+        $sitemaps = \Illuminate\Support\Facades\DB::table('pages')
+            ->join('seo_management', function ($join) {
+                $join->on('pages.id', '=', 'seo_management.relational_id')
+                     ->where('seo_management.relational_type', '=', 'Page');
+            })
+            ->where('pages.status', 'published')
+            ->select('seo_management.url', 'pages.updated_at')
+            ->get()
+            ->map(function ($page) {
+                return [
+                    'loc' => $page->url,
+                    'lastmod' => $page->updated_at
+                        ? \Carbon\Carbon::parse($page->updated_at)->toAtomString()
+                        : now()->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.8',
+                ];
+            });
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+        foreach ($sitemaps as $sitemap) {
+            $xml .= '<url>';
+            $xml .= '<loc>' . rtrim($this->baseUrl, '/') . '/' . htmlspecialchars($sitemap['loc']) . '</loc>';
+            $xml .= '<lastmod>' . $sitemap['lastmod'] . '</lastmod>';
+            $xml .= '<changefreq>' . $sitemap['changefreq'] . '</changefreq>';
+            $xml .= '<priority>' . $sitemap['priority'] . '</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'application/xml');
+    }
+
 
     /**
      * Get XML Image Sitemap.

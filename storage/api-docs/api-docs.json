@@ -27208,6 +27208,21 @@
                 }
             }
         },
+        "/api/frontend/pages.xml": {
+            "get": {
+                "tags": [
+                    "Sitemap"
+                ],
+                "summary": "Get pages.xml",
+                "description": "Returns the XML sitemap containing public Pages URLs.",
+                "operationId": "a064f57a96473ce7e4dac34d5e225f9a",
+                "responses": {
+                    "200": {
+                        "description": "Sitemap XML generated successfully"
+                    }
+                }
+            }
+        },
         "/api/frontend/image.xml": {
             "get": {
                 "tags": [
