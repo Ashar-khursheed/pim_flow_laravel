@@ -314,6 +314,11 @@ class Product extends Model implements TranslatableContract
 		return $this->hasMany(ProductAccessory::class, 'product_id')->approved();
 	}
 
+	public function productAccessories()
+	{
+		return $this->hasMany(ProductAccessory::class, 'product_id');
+	}
+
 	public function getIsRequiredAttribute()
 	{
 		return $this->accessories()->where('isRequired', 1)->exists();

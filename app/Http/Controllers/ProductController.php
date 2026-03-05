@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+// use Illuminate\Support\Facades\Log;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
@@ -459,6 +460,9 @@ class ProductController extends BaseController
 			'categories.parent.parent',
 			'categories.children',
 			'vendors',
+			'productAttributes' => function ($query) {
+				$query->whereHas('attributeDetails');
+			},
 			'productAttributes.attributeDetails',
 			'productAttributes.measurementUnit',
 			'productSuppliers.vendor'
@@ -523,8 +527,8 @@ class ProductController extends BaseController
 		$formattedProduct['product_attributes'] = $product->productAttributes->map(function ($attr) {
 			return [
 				'attribute_id' => $attr->attribute_id,
-				'attribute_name' => $attr->attributeDetails->name ?? null,
-				'attribute_value' => ($attr->attributeDetails->type ?? null) == 'multiple_images'
+				'attribute_name' => $attr->attributeDetails->name,
+				'attribute_value' => ($attr->attributeDetails->type == 'multiple_images')
 				? (is_array($attr->attribute_value)
 					? $attr->attribute_value
 					: (is_array($decoded = json_decode($attr->attribute_value, true))
