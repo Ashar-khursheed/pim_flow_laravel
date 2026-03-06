@@ -132,12 +132,12 @@ $pageNumber = 1;
 				<thead>
 					<tr style="background-color:#d9d9d9;">
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:5%; font-family: 'Inter', sans-serif;">S.No</th>
-						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:35%; font-family: 'Inter', sans-serif;">Description</th>
+						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:38%; font-family: 'Inter', sans-serif;">Description</th>
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:10%; font-family: 'Inter', sans-serif;">Image</th>
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:8%; font-family: 'Inter', sans-serif;">Quantity</th>
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:7%; font-family: 'Inter', sans-serif;">Unit</th>
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:10%; font-family: 'Inter', sans-serif;">Unit Price</th>
-						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:13%; font-family: 'Inter', sans-serif;">Acc. Chg.</th>
+						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:10%; font-family: 'Inter', sans-serif;">Acc. Chg.</th>
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:12% ; font-family: 'Inter', sans-serif;">Total</th>
 					</tr>
 				</thead>
