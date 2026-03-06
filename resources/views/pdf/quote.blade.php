@@ -137,6 +137,7 @@ $pageNumber = 1;
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:8%; font-family: 'Inter', sans-serif;">Quantity</th>
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:8%; font-family: 'Inter', sans-serif;">UNIT</th>
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:10%; font-family: 'Inter', sans-serif;">Unit Price</th>
+						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:10%; font-family: 'Inter', sans-serif;">Accessory Charge</th>
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:12% ; font-family: 'Inter', sans-serif;">Total</th>
 					</tr>
 				</thead>
@@ -180,8 +181,14 @@ $pageNumber = 1;
 						</td>
 
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->quantity }}</td>
+
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->sellingType }}</td>
+
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($product->unitPrice, 2, '.', ',') }}</td>
+
+
+						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->accessoryCharge }}</td>
+
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($product->total, 2, '.', ',') }}</td>
 					</tr>
 					@endforeach

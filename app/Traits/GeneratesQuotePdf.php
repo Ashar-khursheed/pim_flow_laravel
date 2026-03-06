@@ -100,8 +100,9 @@ trait GeneratesQuotePdf
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 
 				$product->base64_image = getBase64Image($product->image);
-
 				$product->quantity = (int) $quoteProduct->quantity;
+
+				$product->accessoryCharge = (int) $quoteProduct->accessoryCharges->sum('amount');
 
 				$fullValue = $productDetail->sellingUnitAttribute->attribute_value ?? '';
 				$product->sellingType = $productDetail->sellingUnitAttribute && $fullValue
@@ -111,7 +112,8 @@ trait GeneratesQuotePdf
 				: '';
 
 				$product->unitPrice = $quoteProduct->unit_price;
-				$product->total = $quoteProduct->amount;
+				// $product->total = $quoteProduct->amount;
+				$product->total = $quoteProduct->amount + $product->accessoryCharge;
 
 				$products->push($product);
 			}
