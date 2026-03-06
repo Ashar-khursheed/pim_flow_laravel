@@ -244,7 +244,7 @@ $pageNumber = 1;
 
 			<table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; font-family: 'Inter', sans-serif;">
 				<tr>
-					<td style="width: 60%; vertical-align: top; border: 1px solid black; padding: 10px; background-color: #ffffff; font-family: 'Inter', sans-serif;">
+					<td style="width: 50%; vertical-align: top; border: 1px solid black; padding: 10px; background-color: #ffffff; font-family: 'Inter', sans-serif;">
 						<p style="font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif; margin-top: 0px;">TERMS OF SALE</p>
 						<ul style="font-size: 12px; list-style: none; padding: 0; font-family: 'Inter', sans-serif;">
 							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
@@ -276,7 +276,7 @@ $pageNumber = 1;
 
 
 					<!-- Invoice Summary Column -->
-					<td style="width: 40%; vertical-align: top; border: 1px solid black; background-color: #ffffff; font-family: 'Inter', sans-serif;">
+					<td style="width: 50%; vertical-align: top; border: 1px solid black; background-color: #ffffff; font-family: 'Inter', sans-serif;">
 						<div style="padding: 10px; font-family: 'Inter', sans-serif;">
 							<table style="width: 100%; font-size: 12px; font-family: 'Inter', sans-serif;">
 								<tbody>
