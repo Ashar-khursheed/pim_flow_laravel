@@ -213,7 +213,7 @@ $pageNumber = 1;
 			@endforeach
 
 
-			@if(($index === 0 && in_array(count($chunk), [3, 4, 5])) || ($index > 0 && count($chunk) == 6) || ($index != 0 && $index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
+			@if(($index === 0 && in_array(count($chunk), [4, 5])) || ($index > 0 && count($chunk) == 6) || ($index != 0 && $index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
 			@if(($index === 0 && count($chunk) == 4) || ($index === count($chunks)-1 && in_array(count($chunk), [5])))
 			<div style="page-break-before: always;"></div>
 			@endif
