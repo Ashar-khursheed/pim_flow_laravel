@@ -280,23 +280,95 @@ $pageNumber = 1;
 						<div style="padding: 10px; font-family: 'Inter', sans-serif;">
 							<table style="width: 100%; font-size: 12px; font-family: 'Inter', sans-serif;">
 								<tbody>
+									@if (isset($additionalAmountName) && isset($additionalAmountPrice) && $additionalAmountPrice > 0)
+									<!-- Products Subtotal (without additional amount) -->
 									<tr>
-										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">INVOICE SUBTOTAL</td>
-										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">Products Subtotal</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($subTotal - $additionalAmountPrice, 2, '.', ',') }}</td>
 									</tr>
 									<tr>
-										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">Shipping Charge</td>
-										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($shippingCharge, 2, '.', ',') }}</td>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $additionalAmountName }}</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($additionalAmountPrice, 2, '.', ',') }}</td>
 									</tr>
+									@endif
+
+
 									<tr>
-										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
-										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif; {{ isset($additionalAmountPrice) && $additionalAmountPrice > 0 ? 'font-weight: 600;' : '' }}">Invoice Subtotal</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif; {{ isset($additionalAmountPrice) && $additionalAmountPrice > 0 ? 'font-weight: 600;' : '' }}">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
 									</tr>
+
 
 									@if ($discount > 0)
 									<tr>
-										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">Discount</td>
-										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
+										<td style="color: #15803d; text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">Coupon Discount</td>
+										<td style="color: #15803d; text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">- {{ $currency }} {{ number_format($discount, 2, '.', ',') }}</td>
+									</tr>
+									<tr>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">Subtotal After Coupon Discount</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($subTotal - $discount, 2, '.', ',') }}</td>
+									</tr>
+									@endif
+
+
+									@if ($additionalDiscountAmount > 0)
+									<tr>
+										<td style="color: #15803d; text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $additionalDiscountReason }} @if($additionalDiscountPercentage) ({{ $additionalDiscountPercentage }}%) @endif</td>
+										<td style="color: #15803d; text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">- {{ $currency }} {{ number_format($additionalDiscountAmount, 2, '.', ',') }}</td>
+									</tr>
+									<tr>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">Subtotal After {{ $additionalDiscountReason }}</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($subTotal - $discount - $additionalDiscountAmount, 2, '.', ',') }}</td>
+									</tr>
+									@endif
+
+
+									@if ($liftGateCharge > 0)
+									<tr>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">Lift Gate Fee</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($liftGateCharge, 2, '.', ',') }}</td>
+									</tr>
+									@endif
+
+									@if ($residentialAddressCharge > 0)
+									<tr>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">Residential Delivery Fee</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($residentialAddressCharge, 2, '.', ',') }}</td>
+									</tr>
+									@endif
+
+									@if ($insideDeliveryCharge > 0)
+									<tr>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">Inside Delivery Fee</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($insideDeliveryCharge, 2, '.', ',') }}</td>
+									</tr>
+									@endif
+
+									@if (in_array(config('app.website'), ['US', 'US_T']))
+									<tr>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">Shipping Charge</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">
+											{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : '<span style="color: green;">Free</span>' !!}
+										</td>
+									</tr>
+									@endif
+
+									<tr>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif; font-weight: 600;">Amount Before Tax</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif; font-weight: 600;">{{ $currency }} {{ number_format($amountBeforeTax, 2, '.', ',') }}</td>
+									</tr>
+
+									<tr>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
+									</tr>
+
+									@if (!in_array(config('app.website'), ['US', 'US_T']))
+									<tr>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">Shipping Charge</td>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">
+											{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : '<span style="color: green;">Free</span>' !!}
+										</td>
 									</tr>
 									@endif
 								</tbody>
@@ -306,7 +378,7 @@ $pageNumber = 1;
 						<!-- Net Total Row -->
 						<table width="100%" style="color: #FF0000; background-color: #E7E7E7; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; border-collapse: collapse; margin: 0;">
 							<tr>
-								<td style="text-align: left;">NET TOTAL INCL.{{ $taxName }}</td>
+								<td style="text-align: left;">Net Total Inclusive {{ $taxName }}</td>
 								<td style="text-align: right;">{{ $currency }} {{ number_format($total, 2, '.', ',') }}</td>
 							</tr>
 						</table>
@@ -324,8 +396,7 @@ $pageNumber = 1;
 						<table width="100%" style="border-collapse: collapse; margin: 0; font-family: 'Inter', sans-serif;">
 							<tr>
 								<td style="text-align: right; padding: 8px 8px 8px 16px;">
-									<a href="{{ $payNowUrl }}" target="_blank" rel="noopener noreferrer"
-									   style="background-color: #26683a; color: #ffffff; padding: 10px 20px; text-decoration: none; font-size: 14px; border-radius: 5px; display: inline-block; font-family: 'Noto Sans', sans-serif;">
+									<a href="{{ $payNowUrl }}" target="_blank" rel="noopener noreferrer" style="background-color: #26683a; color: #ffffff; padding: 10px 20px; text-decoration: none; font-size: 14px; border-radius: 5px; display: inline-block; font-family: 'Noto Sans', sans-serif;">
 										Pay Now
 									</a>
 								</td>

@@ -131,13 +131,28 @@ trait GeneratesQuotePdf
 			}
 		}
 
+		$additionalAmountName = $quote->additional_amount_name;
+		$additionalAmountPrice = $quote->additional_amount_price;
+
 		$subTotal = $quote->amount ?? 0;
-		$shippingCharge = $quote->shipping_charge ?? 0;
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'Sales Tax';
-		$taxPercent = $quote->tax_percentage;
-		$taxPercent = $taxPercent + 0;
-		$taxAmount = $quote->tax_amount ?? 0;
 		$discount = $quote->discount ?? 0;
+		$additionalDiscountAmount = $quote->additional_discount_amount ?? 0;
+		$additionalDiscountReason = $quote->additional_discount_reason ?? null;
+		$additionalDiscountPercentage = $quote->additional_discount_percentage ?? 0;
+
+		/* Charges */
+		$liftGateCharge = $quote->is_lift_gate ? 75 : 0;
+		$residentialAddressCharge = $quote->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $quote->is_inside_delivery ? 249 : 0;
+
+		$shippingCharge = $quote->shipping_charge ?? 0;
+
+		/* Amount Before Tax */
+		$amountBeforeTax = $subTotal - $discount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'Sales Tax';
+		$taxPercent = ($quote->tax_percentage ?? 0) + 0;
+		$taxAmount = $quote->tax_amount ?? 0;
 		$total = $quote->total_amount ?? 0;
 
 		$totalInWords = in_array(config('app.website'), ['UAE', 'UAE_T'])
@@ -183,12 +198,21 @@ trait GeneratesQuotePdf
 
 			'products' => $products,
 
+			'additionalAmountName' => $additionalAmountName,
+			'additionalAmountPrice' => $additionalAmountPrice,
 			'subTotal' => $subTotal,
+			'discount' => $discount,
+			'additionalDiscountAmount' => $additionalDiscountAmount,
+			'additionalDiscountReason' => $additionalDiscountReason,
+			'additionalDiscountPercentage' => $additionalDiscountPercentage,
+			'liftGateCharge' => $liftGateCharge,
+			'residentialAddressCharge' => $residentialAddressCharge,
+			'insideDeliveryCharge' => $insideDeliveryCharge,
 			'shippingCharge' => $shippingCharge,
+			'amountBeforeTax' => $amountBeforeTax,
 			'taxName' => $taxName,
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
-			'discount' => $discount,
 			'total' => $total,
 			'totalInWords' => $totalInWords,
 			'payNowUrl' => $payNowUrl,
