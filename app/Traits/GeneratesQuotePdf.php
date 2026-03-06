@@ -115,7 +115,8 @@ trait GeneratesQuotePdf
 
 				/* Get accessory charge from pre-loaded array (NO database query) */
 				// $product->accessoryCharge = $accessoryCharges[$quoteProduct->id] ?? 0;
-				$product->accessoryCharge = 0;
+
+				$product->accessoryCharge = (int) $quoteProduct->accessoryCharges->sum('amount');
 
 				$fullValue = $productDetail->sellingUnitAttribute->attribute_value ?? '';
 				$product->sellingType = $productDetail->sellingUnitAttribute && $fullValue
