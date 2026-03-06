@@ -3,6 +3,8 @@
 namespace App\Traits;
 
 use App\Models\FrontEnd\Quote;
+use App\Models\FrontEnd\QuoteProduct;
+use App\Models\FrontEnd\AccessoryCharge;
 use Carbon\Carbon;
 
 trait GeneratesQuotePdf
@@ -102,7 +104,9 @@ trait GeneratesQuotePdf
 				$product->base64_image = getBase64Image($product->image);
 				$product->quantity = (int) $quoteProduct->quantity;
 
-				$product->accessoryCharge = (int) $quoteProduct->accessoryCharges->sum('amount');
+				$product->accessoryCharge = AccessoryCharge::where('relation_type', QuoteProduct::class)
+				->where('relation_id', $quoteProduct->id)
+				->sum('amount');
 
 				$fullValue = $productDetail->sellingUnitAttribute->attribute_value ?? '';
 				$product->sellingType = $productDetail->sellingUnitAttribute && $fullValue
