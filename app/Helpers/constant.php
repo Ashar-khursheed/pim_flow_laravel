@@ -951,6 +951,7 @@ if (!function_exists('quote_cc_mails')) {
 		$usTestMails = [
 			'qa03@horecastore.ae',
 			'qa07@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
 		];
 
 		$uaeTestMails = [
