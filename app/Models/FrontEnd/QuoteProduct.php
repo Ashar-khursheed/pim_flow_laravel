@@ -36,10 +36,10 @@ class QuoteProduct extends Model
 		->first();
 	}
 
-	// public function accessoryCharges()
-	// {
-	// 	return $this->morphMany(AccessoryCharge::class, 'relation');
-	// }
+	public function accessoryCharges()
+	{
+		return $this->morphMany(AccessoryCharge::class, 'relation');
+	}
 
 	/**
 	 * Prepare a date for array / JSON serialization.

@@ -74,11 +74,6 @@ class Quote extends Model
 		return $this->hasMany(QuoteEmail::class);
 	}
 
-	public function accessoryCharges()
-	{
-		return $this->morphMany(AccessoryCharge::class, 'relation');
-	}
-
 	/**
 	 * Prepare a date for array / JSON serialization.
 	 *
