@@ -35,6 +35,18 @@ trait GeneratesQuotePdf
 
 		$customer = $quote->customer;
 
+		/* PRE-LOAD all accessory charges in ONE query */
+		$quoteProductIds = $quote->quoteProducts->pluck('id')->toArray();
+
+		$accessoryCharges = AccessoryCharge::where('relation_type', QuoteProduct::class)
+		->whereIn('relation_id', $quoteProductIds)
+		->select('relation_id', \DB::raw('SUM(amount) as total_amount'))
+		->groupBy('relation_id')
+		->pluck('total_amount', 'relation_id')
+		->toArray();
+
+		/* ... company info setup ... */
+
 		$backendURL = config('app.backend_url');
 		$pdfLogoUrl = public_path('logo.png');
 
@@ -87,9 +99,6 @@ trait GeneratesQuotePdf
 				$product->brandName = $productDetail->brand->name ?? null;
 				$product->sku = $productDetail->sku;
 				$product->warrantyInfo = $productDetail->warrantyAttribute->attribute_value ?? '';
-				// $product->shippingCharge = $quoteProduct->shipping_charge == 0
-				// ? 'FREE SHIPPING'
-				// : $currency . ' ' . number_format($quoteProduct->shipping_charge, 2, '.', ',');
 
 				$product->deliveryDays = $productSupplierDetail->delivery_days ?? null;
 
@@ -104,9 +113,8 @@ trait GeneratesQuotePdf
 				$product->base64_image = getBase64Image($product->image);
 				$product->quantity = (int) $quoteProduct->quantity;
 
-				$product->accessoryCharge = AccessoryCharge::where('relation_type', QuoteProduct::class)
-				->where('relation_id', $quoteProduct->id)
-				->sum('amount');
+				/* Get accessory charge from pre-loaded array (NO database query) */
+				$product->accessoryCharge = $accessoryCharges[$quoteProduct->id] ?? 0;
 
 				$fullValue = $productDetail->sellingUnitAttribute->attribute_value ?? '';
 				$product->sellingType = $productDetail->sellingUnitAttribute && $fullValue
