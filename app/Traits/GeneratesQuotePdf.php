@@ -38,12 +38,12 @@ trait GeneratesQuotePdf
 		/* PRE-LOAD all accessory charges in ONE query */
 		$quoteProductIds = $quote->quoteProducts->pluck('id')->toArray();
 
-		// $accessoryCharges = AccessoryCharge::where('relation_type', QuoteProduct::class)
-		// ->whereIn('relation_id', $quoteProductIds)
-		// ->select('relation_id', \DB::raw('SUM(amount) as total_amount'))
-		// ->groupBy('relation_id')
-		// ->pluck('total_amount', 'relation_id')
-		// ->toArray();
+		$accessoryCharges = AccessoryCharge::where('relation_type', QuoteProduct::class)
+		->whereIn('relation_id', $quoteProductIds)
+		->select('relation_id', \DB::raw('SUM(amount) as total_amount'))
+		->groupBy('relation_id')
+		->pluck('total_amount', 'relation_id')
+		->toArray();
 
 		/* ... company info setup ... */
 
@@ -114,9 +114,7 @@ trait GeneratesQuotePdf
 				$product->quantity = (int) $quoteProduct->quantity;
 
 				/* Get accessory charge from pre-loaded array (NO database query) */
-				// $product->accessoryCharge = $accessoryCharges[$quoteProduct->id] ?? 0;
-
-				$product->accessoryCharge = (int) $quoteProduct->accessoryCharges->sum('amount');
+				$product->accessoryCharge = $accessoryCharges[$quoteProduct->id] ?? 0;
 
 				$fullValue = $productDetail->sellingUnitAttribute->attribute_value ?? '';
 				$product->sellingType = $productDetail->sellingUnitAttribute && $fullValue
