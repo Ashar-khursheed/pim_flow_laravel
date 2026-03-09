@@ -259,19 +259,24 @@ public function showBySlug($slug)
 
             // Single query: join seo + page together to avoid 2 round trips
             $page = HorecaPage::select([
-                    'horeca_pages.id',
-                    'horeca_pages.name',
-                    'horeca_pages.description',
-                    'horeca_pages.image',
-                    'horeca_pages.status',
-                    'horeca_pages.created_at',
-                ])
-                ->join('seo_management', function ($join) use ($slug) {
-                    $join->on('seo_management.relational_id', '=', 'horeca_pages.id')
-                        ->where('seo_management.relational_type', 'Page')
-                        ->where('seo_management.url', $slug);
-                })
-                ->first();
+        'horeca_pages.id',
+        'horeca_pages.name',
+        'horeca_pages.description',
+        'horeca_pages.link_name',
+        'horeca_pages.link_url',
+        'horeca_pages.banner_url',
+        'horeca_pages.left_para_description',
+        'horeca_pages.right_para_description',
+        'horeca_pages.faqs',
+        'horeca_pages.is_active',
+        'horeca_pages.created_at',
+    ])
+    ->join('seo_management', function ($join) use ($slug) {
+        $join->on('seo_management.relational_id', '=', 'horeca_pages.id')
+            ->where('seo_management.relational_type', 'Page')
+            ->where('seo_management.url', $slug);
+    })
+    ->first();
 
             if (!$page) {
                 return null;
