@@ -37,6 +37,7 @@ $pageNumber = 1;
 			<div style="page-break-before: always;"></div>
 			@endif
 
+			{{-- Header --}}
 			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
 				<tr>
 					<td style="width: 33.33%; padding: 0.2rem 0.5rem ; vertical-align: top;">
@@ -60,6 +61,7 @@ $pageNumber = 1;
 				</tr>
 			</table>
 
+			{{-- Customer details for first page--}}
 			@if($index === 0)
 			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px; font-family: 'Inter', sans-serif;">
 				<tr>
@@ -195,6 +197,7 @@ $pageNumber = 1;
 				</tbody>
 			</table>
 
+			{{-- Footer --}}
 			@if(($index === 0 && in_array(count($chunk), [3, 4, 5])) || ($index > 0 && count($chunk) == 6) || ($index === count($chunks)-1 && in_array(count($chunk), [4, 5, 6])))
 			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif; position: absolute; bottom: 70px;">
 				<tr>
@@ -213,11 +216,12 @@ $pageNumber = 1;
 			@endforeach
 
 
-			@if(($index === 0 && in_array(count($chunk), [4, 5])) || ($index > 0 && count($chunk) == 6) || ($index != 0 && $index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
-			@if(($index === 0 && count($chunk) == 4) || ($index === count($chunks)-1 && in_array(count($chunk), [5])))
+			@if(($index === 0 && in_array(count($chunk), [4, 5])) || ($index > 0 && count($chunk) == 6) || ($index > 0 && $index === count($chunks)-1 && in_array(count($chunk), [4, 5, 6])))
+			@if(($index === 0 && count($chunk) == 4) || ($index === count($chunks)-1 && in_array(count($chunk), [4, 5])))
 			<div style="page-break-before: always;"></div>
 			@endif
 
+			{{-- Header --}}
 			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
 				<tr>
 					<td style="width: 33.33%; padding: 0.2rem 0.5rem ; vertical-align: top;">
@@ -242,6 +246,7 @@ $pageNumber = 1;
 			</table>
 			@endif
 
+			{{-- Amount Details --}}
 			<table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; font-family: 'Inter', sans-serif;">
 				<tr>
 					<td style="width: 50%; vertical-align: top; border: 1px solid black; padding: 10px; background-color: #ffffff; font-family: 'Inter', sans-serif;">
@@ -406,7 +411,7 @@ $pageNumber = 1;
 				</tr>
 			</table>
 
-			@if(($index === 0 && in_array(count($chunk), [1, 2])) || ($index != 0 && $index === count($chunks)-1 && in_array(count($chunk), [2, 3, 4])))
+			@if(($index === 0 && in_array(count($chunk), [1, 2])) || ($index > 0 && $index === count($chunks)-1 && in_array(count($chunk), [1, 2, 3])))
 			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif; position: absolute; bottom: 70px;">
 				<tr>
 					<td style="text-align: left;">
@@ -420,6 +425,8 @@ $pageNumber = 1;
 			</table>
 
 			<div style="page-break-before: always;"></div>
+
+			{{-- Header --}}
 			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
 				<tr>
 					<td style="width: 33.33%; padding: 0.2rem 0.5rem ; vertical-align: top;">
@@ -444,6 +451,7 @@ $pageNumber = 1;
 			</table>
 			@endif
 
+			{{-- Bank Details --}}
 			<table style="width: 100%; border-spacing: 0; margin-top: 0px; font-family: 'Inter', sans-serif;">
 				<tr>
 					<!-- Bank Details Table Cell -->
