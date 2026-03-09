@@ -4,7 +4,7 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Cache;
 use App\Models\FrontEnd\HorecaPage;
 use App\Models\SeoManagement;
 
