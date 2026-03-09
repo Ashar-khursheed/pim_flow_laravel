@@ -251,7 +251,7 @@ class HorecaPageController extends BaseController
  */
 public function showBySlug($slug)
 {
-	\DB::enableQueryLog();
+	
 
     try {
         $isUae = in_array(config('app.website'), ['UAE', 'UAE_T']);
@@ -371,10 +371,7 @@ public function showBySlug($slug)
         });
 
         if (!$result) {
-			$queries = \DB::getQueryLog();
-			\Log::info('Total queries: ' . count($queries));
-			\Log::info('Slow queries: ', array_filter($queries, fn($q) => $q['time'] > 100));
-			\Log::info('ALL QUERIES:', $queries);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Horeca page not found'
