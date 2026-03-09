@@ -283,22 +283,26 @@ public function showBySlug($slug)
             }
 
             // Build product eager-load relationships once
-            $productRelationships = [
-                'seoUrl:id,relational_id,relational_type,url',
-                // Use a single optimized subquery for cheapest supplier only
-                'productSuppliers' => function ($q) {
-                    $q->select([
-                        'id', 'product_id', 'vendor_id', 'vendor_sku',
-                        'cost_per_item', 'sale_price', 'price', 'inventory',
-                        'in_stock', 'min_quantity', 'is_fixed', 'delivery_days',
-                        'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'
-                    ])->cheapest();
-                },
-                // reviews: only fetch what's needed for avg+count (avoid star column scan on large tables)
-                'reviews:id,product_id,star',
-                'currency:id,title,symbol',
-                'sellingUnitAttribute',
-            ];
+           $productRelationships = [
+					'seoUrl:id,relational_id,relational_type,url',
+					'productSuppliers' => function ($q) {
+						$q->select([
+							'id', 'product_id', 'vendor_id', 'vendor_sku',
+							'cost_per_item', 'sale_price', 'price', 'inventory',
+							'in_stock', 'min_quantity', 'is_fixed', 'delivery_days',
+							'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'
+						])
+						->cheapest()
+						->with([
+							'vendor:id,address,zipcode,city_id,country_id',
+							'vendor.country:id,name',
+							'vendor.city:id,name',
+						]);
+					},
+					'reviews:id,product_id,star',
+					'currency:id,title,symbol',
+					'sellingUnitAttribute',
+				];
 
             if ($isUae) {
                 $productRelationships[] = 'translations';
@@ -318,22 +322,22 @@ public function showBySlug($slug)
                     $q->select('id', 'horeca_page_id', 'type', 'description', 'order')
                       ->orderBy('order');
                 },
-                'productTypes.products' => function ($query) use ($productRelationships) {
-                    $query->select([
-                        'ec_products.id',
-                        'ec_products.name',
-                        'ec_products.sku',
-                        'ec_products.images',
-                        'ec_products.currency_id',
-                        'ec_products.alt_tags',
-                        'ec_products.quote_available',
-                        'ec_products.brand_id',
-                    ])
-                    ->where('ec_products.status', 'published')
-                    ->with($productRelationships)
-                    ->withCount('reviews')
-                    ->withAvg('reviews', 'star');
-                },
+				'productTypes.products' => function ($query) use ($productRelationships) {
+					$query->select([
+						'ec_products.id',
+						'ec_products.name',
+						'ec_products.sku',
+						'ec_products.images',
+						'ec_products.currency_id',
+						'ec_products.alt_tags',
+						'ec_products.quote_available',
+						'ec_products.brand_id',
+					])
+					->where('ec_products.status', 'published')
+					->with($productRelationships)
+					->withCount('reviews')
+					->withAvg('reviews', 'star');
+				},
             ]);
 
             // --- Transform in-memory (no extra queries) ---
@@ -350,11 +354,16 @@ public function showBySlug($slug)
             })->values());
 
             // Product types + products
-            $page->productTypes->each(function ($productType) use ($isUae) {
-                $productType->products->each(function ($product) use ($isUae) {
-                    $this->transformFeaturedProduct($product, withTranslation: $isUae);
-                });
-            });
+				$page->productTypes->each(function ($productType) use ($isUae) {
+					$productType->products->each(function ($product) use ($isUae) {
+						$this->transformFeaturedProduct(
+							$product,
+							categoryMostParentURL: '',  // skip parent_category_url() DB call
+							categoryURL: '',            // skip category_url() DB call
+							withTranslation: $isUae
+				);
+			});
+		});
 
             return $page;
         });
