@@ -308,7 +308,7 @@ public function showBySlug($slug)
             $page->load([
                 // Categories: select only needed columns + seo in one eager load
                 'categories' => function ($q) {
-                    $q->select('ec_categories.id', 'ec_categories.name', 'ec_categories.image')
+                    $q->select('categories.id', 'categories.name', 'categories.image')
                       ->orderByPivot('order'); // avoids in-memory sorting later
                 },
                 'categories.seoUrl:id,relational_id,relational_type,url',
