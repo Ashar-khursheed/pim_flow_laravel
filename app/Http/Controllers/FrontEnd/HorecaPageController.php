@@ -266,10 +266,10 @@ public function showBySlug($slug)
                     'horeca_pages.status',
                     'horeca_pages.created_at',
                 ])
-                ->join('seo_managements', function ($join) use ($slug) {
-                    $join->on('seo_managements.relational_id', '=', 'horeca_pages.id')
-                        ->where('seo_managements.relational_type', 'Page')
-                        ->where('seo_managements.url', $slug);
+                ->join('seo_management', function ($join) use ($slug) {
+                    $join->on('seo_management.relational_id', '=', 'horeca_pages.id')
+                        ->where('seo_management.relational_type', 'Page')
+                        ->where('seo_management.url', $slug);
                 })
                 ->first();
 
