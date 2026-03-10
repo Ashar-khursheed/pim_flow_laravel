@@ -10,41 +10,41 @@ use App\Models\Zipcode;
 
 class LocationController extends BaseController
 {
-    /**
-     * @OA\Get(
-     *     path="/api/countries",
-     *     summary="Get country List",
-     *     description="Fetches a list of all countries.",
-     *     tags={"Locations"},
-     *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
-     *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
-     *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json"))
-     * )
-     */
-    public function getCountryList(Request $request)
-    {
-        $records = Country::query();
+    // /**
+    //  * @OA\Get(
+    //  *     path="/api/countries",
+    //  *     summary="Get country List",
+    //  *     description="Fetches a list of all countries.",
+    //  *     tags={"Locations"},
+    //  *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+    //  *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+    //  *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json"))
+    //  * )
+    //  */
+    // public function getCountryList(Request $request)
+    // {
+    //     $records = Country::query();
 
-        /* Pagination */
-        if ($request->filled('page') && $request->filled('length')) {
-            $page = (int) $request->input('page');
-            $length = (int) $request->input('length');
-            $totalRecords = $records->count();
-            $totalPages = ceil($totalRecords / $length);
+    //     /* Pagination */
+    //     if ($request->filled('page') && $request->filled('length')) {
+    //         $page = (int) $request->input('page');
+    //         $length = (int) $request->input('length');
+    //         $totalRecords = $records->count();
+    //         $totalPages = ceil($totalRecords / $length);
 
-            $records = $records->offset(($page - 1) * $length)->limit($length)->get();
-        } else {
-            $records = $records->get(['id', 'name']);
-            $totalRecords = $records->count();
-        }
+    //         $records = $records->offset(($page - 1) * $length)->limit($length)->get();
+    //     } else {
+    //         $records = $records->get(['id', 'name']);
+    //         $totalRecords = $records->count();
+    //     }
 
-        return response()->json([
-            'message' => __("msg_rec_list"),
-            'data' => $records,
-            'total_pages' => $totalPages ?? 1,
-            'total_records' => $totalRecords,
-        ]);
-    }
+    //     return response()->json([
+    //         'message' => __("msg_rec_list"),
+    //         'data' => $records,
+    //         'total_pages' => $totalPages ?? 1,
+    //         'total_records' => $totalRecords,
+    //     ]);
+    // }
 
     /**
      * @OA\Get(
