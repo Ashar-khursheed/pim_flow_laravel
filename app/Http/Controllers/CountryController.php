@@ -248,7 +248,7 @@ class CountryController extends Controller
 		if (!$country) {
 			return response()->json([
 				'success' => false,
-				'message' => __('msg_not_found')
+				'message' => __('err_exist')
 			], 404);
 		}
 
@@ -264,7 +264,24 @@ class CountryController extends Controller
 
 		/* Handle icon upload/update */
 		if ($request->hasFile('icon')) {
+			/* Upload new icon */
 			$icon = uploadImageToWebpS3FromFile($request, 'icon', env('STORAGE_ENV') . '/country/icon');
+
+			$oldIcon = $country->icon;
+			/* Delete old icon from S3 if exists and new upload successful */
+			if ($icon && $oldIcon && str_contains($oldIcon, env('STORAGE_ENV'))) {
+				try {
+					/* Simply replace AWS URL to get S3 path */
+					$oldPath = str_replace(env('AWS_URL') . '/', '', $oldIcon);
+					Storage::disk('s3')->delete($oldPath);
+				} catch (\Exception $e) {
+					Log::warning('Failed to delete old icon', [
+						'country_id' => $id,
+						'old_icon' => $oldIcon,
+						'error' => $e->getMessage()
+					]);
+				}
+			}
 		} elseif (!empty($request->icon_url)) {
 			$icon = $request->icon_url;
 		} else {
@@ -305,29 +322,34 @@ class CountryController extends Controller
 	 */
 	public function destroy($id)
 	{
-		try {
-			$country = Country::find($id);
+		$country = Country::find($id);
 
-			if (!$country) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Country not found'
-				], 404);
-			}
-
-			$country->delete();
-
-			return response()->json([
-				'success' => true,
-				'message' => 'Country deleted successfully'
-			], 200);
-
-		} catch (\Exception $e) {
+		if (!$country) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Failed to delete country',
-				'error' => $e->getMessage()
-			], 500);
+				'message' => __('err_exist')
+			], 404);
 		}
+
+		/* Delete icon from S3 */
+		if ($country->icon && str_contains($country->icon, env('STORAGE_ENV'))) {
+			try {
+				$iconPath = str_replace(env('AWS_URL') . '/', '', $country->icon);
+				Storage::disk('s3')->delete($iconPath);
+			} catch (\Exception $e) {
+				Log::warning('Failed to delete country icon', [
+					'country_id' => $id,
+					'icon' => $country->icon,
+					'error' => $e->getMessage()
+				]);
+			}
+		}
+
+		$country->delete();
+
+		return response()->json([
+			'success' => true,
+			'message' => __('msg_dlt')
+		], 200);
 	}
 }
