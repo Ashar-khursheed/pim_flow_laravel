@@ -980,7 +980,7 @@ private function generateProductsSitemap($offset, $limit)
                 $join->on('horeca_pages.id', '=', 'seo_management.relational_id')
                      ->where('seo_management.relational_type', '=', 'HorecaPage');
             })
-            ->where('horeca_pages.status', 'published')
+            ->where('horeca_pages.is_active', '1')
             ->select('seo_management.url', 'horeca_pages.updated_at')
             ->get()
             ->map(function ($page) {
