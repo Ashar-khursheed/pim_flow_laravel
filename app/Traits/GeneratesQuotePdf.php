@@ -3,6 +3,8 @@
 namespace App\Traits;
 
 use App\Models\FrontEnd\Quote;
+use App\Models\FrontEnd\QuoteProduct;
+use App\Models\FrontEnd\AccessoryCharge;
 use Carbon\Carbon;
 
 trait GeneratesQuotePdf
@@ -32,6 +34,18 @@ trait GeneratesQuotePdf
 		]);
 
 		$customer = $quote->customer;
+
+		/* PRE-LOAD all accessory charges in ONE query */
+		$quoteProductIds = $quote->quoteProducts->pluck('id')->toArray();
+
+		$accessoryCharges = AccessoryCharge::where('relation_type', QuoteProduct::class)
+		->whereIn('relation_id', $quoteProductIds)
+		->select('relation_id', \DB::raw('SUM(amount) as total_amount'))
+		->groupBy('relation_id')
+		->pluck('total_amount', 'relation_id')
+		->toArray();
+
+		/* ... company info setup ... */
 
 		$backendURL = config('app.backend_url');
 		$pdfLogoUrl = public_path('logo.png');
@@ -85,9 +99,6 @@ trait GeneratesQuotePdf
 				$product->brandName = $productDetail->brand->name ?? null;
 				$product->sku = $productDetail->sku;
 				$product->warrantyInfo = $productDetail->warrantyAttribute->attribute_value ?? '';
-				// $product->shippingCharge = $quoteProduct->shipping_charge == 0
-				// ? 'FREE SHIPPING'
-				// : $currency . ' ' . number_format($quoteProduct->shipping_charge, 2, '.', ',');
 
 				$product->deliveryDays = $productSupplierDetail->delivery_days ?? null;
 
@@ -100,8 +111,10 @@ trait GeneratesQuotePdf
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 
 				$product->base64_image = getBase64Image($product->image);
-
 				$product->quantity = (int) $quoteProduct->quantity;
+
+				/* Get accessory charge from pre-loaded array (NO database query) */
+				$product->accessoryCharge = $accessoryCharges[$quoteProduct->id] ?? 0;
 
 				$fullValue = $productDetail->sellingUnitAttribute->attribute_value ?? '';
 				$product->sellingType = $productDetail->sellingUnitAttribute && $fullValue
@@ -111,19 +124,35 @@ trait GeneratesQuotePdf
 				: '';
 
 				$product->unitPrice = $quoteProduct->unit_price;
-				$product->total = $quoteProduct->amount;
+				// $product->total = $quoteProduct->amount;
+				$product->total = $quoteProduct->amount + $product->accessoryCharge;
 
 				$products->push($product);
 			}
 		}
 
+		$additionalAmountName = $quote->additional_amount_name;
+		$additionalAmountPrice = $quote->additional_amount_price;
+
 		$subTotal = $quote->amount ?? 0;
-		$shippingCharge = $quote->shipping_charge ?? 0;
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'Sales Tax';
-		$taxPercent = $quote->tax_percentage;
-		$taxPercent = $taxPercent + 0;
-		$taxAmount = $quote->tax_amount ?? 0;
 		$discount = $quote->discount ?? 0;
+		$additionalDiscountAmount = $quote->additional_discount_amount ?? 0;
+		$additionalDiscountReason = $quote->additional_discount_reason ?? null;
+		$additionalDiscountPercentage = $quote->additional_discount_percentage ?? 0;
+
+		/* Charges */
+		$liftGateCharge = $quote->is_lift_gate ? 75 : 0;
+		$residentialAddressCharge = $quote->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $quote->is_inside_delivery ? 249 : 0;
+
+		$shippingCharge = $quote->shipping_charge ?? 0;
+
+		/* Amount Before Tax */
+		$amountBeforeTax = $subTotal - $discount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+
+		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'Sales Tax';
+		$taxPercent = ($quote->tax_percentage ?? 0) + 0;
+		$taxAmount = $quote->tax_amount ?? 0;
 		$total = $quote->total_amount ?? 0;
 
 		$totalInWords = in_array(config('app.website'), ['UAE', 'UAE_T'])
@@ -169,12 +198,21 @@ trait GeneratesQuotePdf
 
 			'products' => $products,
 
+			'additionalAmountName' => $additionalAmountName,
+			'additionalAmountPrice' => $additionalAmountPrice,
 			'subTotal' => $subTotal,
+			'discount' => $discount,
+			'additionalDiscountAmount' => $additionalDiscountAmount,
+			'additionalDiscountReason' => $additionalDiscountReason,
+			'additionalDiscountPercentage' => $additionalDiscountPercentage,
+			'liftGateCharge' => $liftGateCharge,
+			'residentialAddressCharge' => $residentialAddressCharge,
+			'insideDeliveryCharge' => $insideDeliveryCharge,
 			'shippingCharge' => $shippingCharge,
+			'amountBeforeTax' => $amountBeforeTax,
 			'taxName' => $taxName,
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
-			'discount' => $discount,
 			'total' => $total,
 			'totalInWords' => $totalInWords,
 			'payNowUrl' => $payNowUrl,
