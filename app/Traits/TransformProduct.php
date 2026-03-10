@@ -49,8 +49,8 @@ trait TransformProduct
 			}
 		}
 
-		$product->parent_category_url = $categoryMostParentURL ?? $product->parent_category_url();
-		$product->category_url = $categoryURL ?? $product->category_url();
+		$product->parent_category_url = ($categoryMostParentURL !== null) ? $categoryMostParentURL : $product->parent_category_url();
+$product->category_url = ($categoryURL !== null) ? $categoryURL : $product->category_url();
 		$product->url = optional($product->seoUrl)->url ?? null;
 		$product->quote_available = $product->quote_available ?? null;
 
