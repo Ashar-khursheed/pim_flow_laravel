@@ -978,7 +978,7 @@ private function generateProductsSitemap($offset, $limit)
         $sitemaps = \Illuminate\Support\Facades\DB::table('horeca_pages')
             ->join('seo_management', function ($join) {
                 $join->on('horeca_pages.id', '=', 'seo_management.relational_id')
-                     ->where('seo_management.relational_type', '=', 'HorecaPage');
+                     ->where('seo_management.relational_type', '=', 'Page');
             })
             ->where('horeca_pages.is_active', '1')
             ->select('seo_management.url', 'horeca_pages.updated_at')
