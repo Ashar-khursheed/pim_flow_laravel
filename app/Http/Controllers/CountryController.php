@@ -136,7 +136,7 @@ class CountryController extends Controller
 			'name' => 'required|string|max:191|unique:countries,name',
 			'phone_code' => 'required|string|max:10',
 			'icon' => 'nullable|file|mimes:webp,png|max:2048', /* Max 2MB */
-			'currency_id' => 'required|integer|exists:currencies,id',
+			'currency_id' => 'required|integer|exists:ec_currencies,id',
 			'margin' => 'nullable|numeric|min:0',
 		]);
 

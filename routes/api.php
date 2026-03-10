@@ -92,6 +92,7 @@ use App\Http\Controllers\TrainingDataController;
 use App\Http\Controllers\ProductAttributeController;
 use App\Http\Controllers\ChatbotManagementController;
 use App\Http\Controllers\HorecaPageController;
+use App\Http\Controllers\CountryController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -310,7 +311,7 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
-
+	Route::apiResource('countries', CountryController::class);
 	Route::apiResource('horeca-pages',  HorecaPageController::class);
 
 	Route::apiResource('/inquiries',  InquiryController::class);
