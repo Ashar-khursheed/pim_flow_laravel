@@ -8584,6 +8584,294 @@
                 ]
             }
         },
+        "/api/countries": {
+            "get": {
+                "tags": [
+                    "Countries"
+                ],
+                "summary": "Get list of countries",
+                "description": "Fetches a list of all countries.",
+                "operationId": "edaabf3348bf71d9cf65b87f44ec29ce",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "phone_code",
+                                "margin",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Countries retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Countries"
+                ],
+                "summary": "Create a new country",
+                "operationId": "f709f3add391d9d07db00fffe3b55c7c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "phone_code",
+                                    "currency_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "United Arab Emirates"
+                                    },
+                                    "phone_code": {
+                                        "type": "string",
+                                        "example": "+971"
+                                    },
+                                    "icon": {
+                                        "description": "Country icon (.webp, .png)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "currency_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "margin": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Country created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/countries/{id}": {
+            "get": {
+                "tags": [
+                    "Countries"
+                ],
+                "summary": "Get a specific country",
+                "operationId": "da4b3e218be51657a5a434a108b06d04",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Country ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Country retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Countries"
+                ],
+                "summary": "Update a country",
+                "operationId": "7982dd6e171c77b5db788675b39774f9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Country ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "_method",
+                                    "name",
+                                    "phone_code",
+                                    "currency_id"
+                                ],
+                                "properties": {
+                                    "_method": {
+                                        "description": "HTTP method override",
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "United Arab Emirates"
+                                    },
+                                    "phone_code": {
+                                        "type": "string",
+                                        "example": "+971"
+                                    },
+                                    "icon": {
+                                        "description": "Country icon (.webp, .png)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "icon_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/image.png"
+                                    },
+                                    "currency_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "margin": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Country updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Countries"
+                ],
+                "summary": "Delete a country",
+                "operationId": "fc0ed07f9911273bec16c6d86184b795",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Country ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Country deleted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customers/{customer_id}/addresses": {
             "get": {
                 "tags": [
@@ -32747,46 +33035,6 @@
                 ]
             }
         },
-        "/api/countries": {
-            "get": {
-                "tags": [
-                    "Locations"
-                ],
-                "summary": "Get country List",
-                "description": "Fetches a list of all countries.",
-                "operationId": "9f425d32238205bd00106e8ee7ce4aed",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number for pagination",
-                        "schema": {
-                            "type": "integer",
-                            "minimum": 1
-                        },
-                        "example": 1
-                    },
-                    {
-                        "name": "length",
-                        "in": "query",
-                        "description": "Number of records per page.",
-                        "schema": {
-                            "type": "integer",
-                            "minimum": 1
-                        },
-                        "example": 20
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List retrieved successfully",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                }
-            }
-        },
         "/api/states/{country_id}": {
             "get": {
                 "tags": [
@@ -50861,6 +51109,10 @@
         {
             "name": "Benefits & Features",
             "description": "Benefits & Features"
+        },
+        {
+            "name": "Countries",
+            "description": "Countries"
         },
         {
             "name": "Customer-Address",
