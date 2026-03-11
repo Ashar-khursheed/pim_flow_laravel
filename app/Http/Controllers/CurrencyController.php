@@ -7,59 +7,72 @@ use Illuminate\Http\Request;
 
 class CurrencyController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
+	/**
+	 * @OA\Get(
+	 *     path="/api/currencies",
+	 *     summary="Get list of currencies",
+	 *     description="Fetches a list of all currencies.",
+	 *     tags={"Currencies"},
+	 *     @OA\Response(response=200, description="Currencies retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function index()
+	{
+		/* Return all records with minimal fields (for dropdowns) */
+		$records = Currency::query()->get(['id', 'title', 'symbol']);
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+		return response()->json([
+			'message' => __("msg_rec_list"),
+			'data' => $records
+		], 200);
+	}
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+	/**
+	 * Show the form for creating a new resource.
+	 */
+	public function create()
+	{
+		//
+	}
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Currency $currency)
-    {
-        //
-    }
+	/**
+	 * Store a newly created resource in storage.
+	 */
+	public function store(Request $request)
+	{
+		//
+	}
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Currency $currency)
-    {
-        //
-    }
+	/**
+	 * Display the specified resource.
+	 */
+	public function show(Currency $currency)
+	{
+		//
+	}
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Currency $currency)
-    {
-        //
-    }
+	/**
+	 * Show the form for editing the specified resource.
+	 */
+	public function edit(Currency $currency)
+	{
+		//
+	}
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Currency $currency)
-    {
-        //
-    }
+	/**
+	 * Update the specified resource in storage.
+	 */
+	public function update(Request $request, Currency $currency)
+	{
+		//
+	}
+
+	/**
+	 * Remove the specified resource from storage.
+	 */
+	public function destroy(Currency $currency)
+	{
+		//
+	}
 }

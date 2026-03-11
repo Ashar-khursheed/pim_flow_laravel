@@ -8872,6 +8872,29 @@
                 ]
             }
         },
+        "/api/currencies": {
+            "get": {
+                "tags": [
+                    "Currencies"
+                ],
+                "summary": "Get list of currencies",
+                "description": "Fetches a list of all currencies.",
+                "operationId": "73e0a13248f9f6aea618716227eab68a",
+                "responses": {
+                    "200": {
+                        "description": "Currencies retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customers/{customer_id}/addresses": {
             "get": {
                 "tags": [
@@ -51113,6 +51136,10 @@
         {
             "name": "Countries",
             "description": "Countries"
+        },
+        {
+            "name": "Currencies",
+            "description": "Currencies"
         },
         {
             "name": "Customer-Address",
