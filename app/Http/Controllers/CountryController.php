@@ -171,7 +171,7 @@ class CountryController extends Controller
 	 *         in="path",
 	 *         description="Country ID",
 	 *         required=true,
-	 *         @OA\Schema(type="integer", example=1)
+	 *         @OA\Schema(type="string", example="1")
 	 *     ),
 	 *     @OA\Response(response=200, description="Country retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
@@ -179,8 +179,13 @@ class CountryController extends Controller
 	 */
 	public function show($id)
 	{
-		$country = Country::with(['currency:id,title,symbol', 'creator:id,first_name,last_name', 'updater:id,first_name,last_name'])
-		->find($id);
+		$query = Country::with(['currency:id,title,symbol', 'creator:id,first_name,last_name', 'updater:id,first_name,last_name']);
+		/* Fetch by ID or Name */
+		if (is_numeric($id)) {
+			$country = $query->find($id);
+		} else {
+			$country = $query->where('name', $id)->first();
+		}
 
 		if (!$country) {
 			return response()->json([

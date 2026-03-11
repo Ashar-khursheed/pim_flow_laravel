@@ -8739,8 +8739,8 @@
                         "description": "Country ID",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "string",
+                            "example": "1"
                         }
                     }
                 ],
