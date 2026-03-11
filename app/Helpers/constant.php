@@ -458,7 +458,7 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 		$path = "{$pathPrefix}/{$uniqueName}";
 
 		/* Upload to S3 */
-		Storage::disk('s3')->put($path, $webpData, 'public'); /* Make publicly accessible */
+		Storage::disk('s3')->put($path, $webpData); /* Make publicly accessible */
 
 		return Storage::disk('s3')->url($path);
 
