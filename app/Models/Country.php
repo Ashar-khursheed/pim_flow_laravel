@@ -13,7 +13,7 @@ class Country extends Model
 		'phone_code',
 		'icon',
 		'currency_id',
-		'percentage',
+		'margin',
 		'created_by',
 		'updated_by',
 	];
