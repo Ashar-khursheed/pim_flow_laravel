@@ -95,7 +95,7 @@ class CountryController extends Controller
 
 		} else {
 			/* Return all records with minimal fields (for dropdowns) */
-			$records = $recordsQuery->get(['id', 'name']);
+			$records = $recordsQuery->get(['id', 'name', 'phone_code', 'icon']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}
