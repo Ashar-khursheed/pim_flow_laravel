@@ -13,7 +13,7 @@ trait CalculationTrait
 	 * @param bool $isFrontend For frontend customer orders
 	 * @return array Calculated amounts and details
 	 */
-	protected function calculateAmount($request, $isTaxFree = false, $existingOrder = null, $isFrontend = false)
+	protected function calculateAmount($request, $isTaxFree = false, $existingOrder = null, $isFrontend = false, $margin = 0)
 	{
 		/* Collect all product supplier details in one go */
 		$productDetails = [];
@@ -26,11 +26,12 @@ trait CalculationTrait
 			$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 			$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
+			$unitPrice = $fetchedDetail->unit_price + (in_array(config('app.website'), ['UAE', 'UAE_T', 'US_T'])  ? ($fetchedDetail->unit_price * ($margin / 100)) : 0);
 			$productDetails[] = [
 				'product_id' => $product['product_id'],
 				'vendor_id' => $product['vendor_id'],
 				'quantity' => $product['quantity'],
-				'unit_price' => $fetchedDetail->unit_price,
+				'unit_price' => $unitPrice,
 				'accessoryItems' => $accessoryItems,
 				'accessory_item_charge' => $accessoryPriceSum * $product['quantity'],
 				'shipping_charge' => $product['shipping_charge'],

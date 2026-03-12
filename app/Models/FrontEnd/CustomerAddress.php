@@ -34,10 +34,10 @@ class CustomerAddress extends Model
 		return $this->belongsTo(User::class, 'created_by');
 	}
 
-	// public function country()
-	// {
-	// 	return $this->belongsTo(Country::class, 'country_id');
-	// }
+	public function country()
+	{
+		return $this->belongsTo(Country::class, 'country', 'name');
+	}
 
 	// public function state()
 	// {

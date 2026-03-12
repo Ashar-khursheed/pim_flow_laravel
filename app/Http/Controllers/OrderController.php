@@ -438,9 +438,10 @@ class OrderController extends Controller
 			'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
 		]);
 
-		$address = CustomerAddress::where('id', $request->customer_address_id)
+		$address = CustomerAddress::with('country:id,name,margin')
+		->select(['id', 'customer_id', 'country'])
 		->where('customer_id', $request->customer_id)
-		->first();
+		->find($request->customer_address_id);
 
 		if (!$address) {
 			return response()->json([
@@ -449,8 +450,10 @@ class OrderController extends Controller
 			], 422);
 		}
 
+		$margin = $address->country->margin ?? 0;
+
 		$customer = Customer::select('is_tax_free')->find($request->customer_id);
-		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free);
+		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free, margin: $margin);
 
 		DB::beginTransaction();
 		try {
@@ -1434,7 +1437,10 @@ class OrderController extends Controller
 
 		$customerId = $order->customer_id;
 
-		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
+		$address = CustomerAddress::with('country:id,name,margin')
+		->select(['id', 'customer_id', 'country'])
+		->where('customer_id', $customerId)
+		->find($request->customer_address_id);
 
 		if (!$address) {
 			return response()->json([
@@ -1443,12 +1449,14 @@ class OrderController extends Controller
 			], 422);
 		}
 
+		$margin = $address->country->margin ?? 0;
+
 		/* Get original values before update */
 		$originalTotalAmount = $order->total_amount;
 		$prevPendingAmount = $order->pending_amount;
 
 		/* Calculate with existing order for UPDATE logic */
-		$amountCalculations = $this->calculateAmount($request, $order->customer->is_tax_free, $order);
+		$amountCalculations = $this->calculateAmount($request, $order->customer->is_tax_free, $order, $margin);
 
 		DB::beginTransaction();
 		try {
@@ -1534,7 +1542,7 @@ class OrderController extends Controller
 						} else {
 							$paymentLink = app(\App\Http\Controllers\FrontEnd\CcavenueController::class)->createCCavenuePaymentLink($order);
 						}
-						
+
 						if ($paymentLink) {
 							$order->payment_link = $paymentLink;
 							$order->save();
