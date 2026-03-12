@@ -321,9 +321,10 @@ class QuoteController extends BaseController
 
 		$customerId = $request->customer_id;
 
-		$address = CustomerAddress::where('id', $request->customer_address_id)
-		->where('customer_id', $customerId)
-		->first();
+		$address = CustomerAddress::with('relatedCountry:id,name,margin')
+		->select(['id', 'customer_id', 'country'])
+		->where('customer_id', $request->customer_id)
+		->find($request->customer_address_id);
 
 		if (!$address) {
 			return response()->json([
@@ -332,9 +333,11 @@ class QuoteController extends BaseController
 			]);
 		}
 
+		$margin = $address->relatedCountry->margin ?? 0;
+
 		$customer = Customer::select('is_tax_free')->find($customerId);
 		/* ✅ Use trait for calculations */
-		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free);
+		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free, margin: $margin);
 
 		DB::beginTransaction();
 
@@ -631,18 +634,6 @@ class QuoteController extends BaseController
 			}
 		}
 
-		$customerId = $quote->customer_id;
-		$address = CustomerAddress::where('id', $request->customer_address_id)
-		->where('customer_id', $customerId)
-		->first();
-
-		if (!$address) {
-			return response()->json([
-				'success' => false,
-				'message' => 'The selected address does not belong to the customer.'
-			]);
-		}
-
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'is_lift_gate' => 'nullable|boolean',
@@ -675,8 +666,24 @@ class QuoteController extends BaseController
 			'expired_at' => 'nullable|date',
 		]);
 
+		$customerId = $quote->customer_id;
+
+		$address = CustomerAddress::with('relatedCountry:id,name,margin')
+		->select(['id', 'customer_id', 'country'])
+		->where('customer_id', $customerId)
+		->find($request->customer_address_id);
+
+		if (!$address) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The selected address does not belong to the customer.'
+			]);
+		}
+
+		$margin = $address->relatedCountry->margin ?? 0;
+
 		/* ✅ Use trait for calculations */
-		$amountCalculations = $this->calculateAmount($request, $quote->customer->is_tax_free);
+		$amountCalculations = $this->calculateAmount($request, $quote->customer->is_tax_free, margin: $margin);
 
 		DB::beginTransaction();
 

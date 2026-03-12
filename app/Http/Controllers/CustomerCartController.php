@@ -295,9 +295,10 @@ class CustomerCartController extends Controller
 			'additional_amount_details' => 'nullable|string',
 		]);
 
-		$address = CustomerAddress::where('id', $request->customer_address_id)
+		$address = CustomerAddress::with('relatedCountry:id,name,margin')
+		->select(['id', 'customer_id', 'country'])
 		->where('customer_id', $request->customer_id)
-		->first();
+		->find($request->customer_address_id);
 
 		if (!$address) {
 			return response()->json([

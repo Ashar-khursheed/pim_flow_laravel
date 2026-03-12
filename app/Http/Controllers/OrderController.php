@@ -662,6 +662,7 @@ class OrderController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
+				'data' => $order->id,
 			], 201);
 
 		} catch (\Exception $e) {
@@ -1592,6 +1593,7 @@ class OrderController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Order updated successfully',
+				'data' => $order->id,
 			], 200);
 
 		} catch (\Exception $e) {
