@@ -350,93 +350,93 @@ class OrderController extends Controller
 	public function store(Request $request)
 	{
 		/* Parse boolean strings to actual booleans */
-		// $booleanFields = [
-		// 	'is_lift_gate',
-		// 	'is_residential_address',
-		// 	'is_inside_delivery',
-		// 	'ship_all_at_once',
-		// 	'separate_deliveries',
-		// 	'is_cod',
-		// 	'pay_with_cheque',
-		// 	'additional_discount_option',
-		// 	'is_reserved',
-		// 	'is_payment',
-		// 	'is_ccavenue',
-		// 	'is_payment_touras',
-		// 	'is_squarePayment',
-		// 	'is_customer_pickup'
-		// ];
-
-		// // /* Laravel's boolean() method handles this better */
-		// // foreach ($booleanFields as $field) {
-		// // 	if ($request->has($field)) {
-		// // 		$request->merge([
-		// // 			$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)
-		// // 		]);
-		// // 	}
-		// // }
+		$booleanFields = [
+			'is_lift_gate',
+			'is_residential_address',
+			'is_inside_delivery',
+			'ship_all_at_once',
+			'separate_deliveries',
+			'is_cod',
+			'pay_with_cheque',
+			'additional_discount_option',
+			'is_reserved',
+			'is_payment',
+			'is_ccavenue',
+			'is_payment_touras',
+			'is_squarePayment',
+			'is_customer_pickup'
+		];
 
 		// /* Laravel's boolean() method handles this better */
 		// foreach ($booleanFields as $field) {
 		// 	if ($request->has($field)) {
 		// 		$request->merge([
-		// 			$field => $request->boolean($field)
+		// 			$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)
 		// 		]);
 		// 	}
 		// }
 
-		// if ($request->has('products') && is_string($request->products)) {
-		// 	$productsString = $request->products;
-		// 	if (strpos(trim($productsString), '{') === 0 && strpos(trim($productsString), '[') !== 0) {
-		// 		$productsString = '[' . $productsString . ']';
-		// 	}
-		// 	$products = json_decode($productsString, true);
-		// 	$request->merge(['products' => $products]);
-		// }
+		/* Laravel's boolean() method handles this better */
+		foreach ($booleanFields as $field) {
+			if ($request->has($field)) {
+				$request->merge([
+					$field => $request->boolean($field)
+				]);
+			}
+		}
 
-		// $request->validate([
-		// 	'customer_id' => 'required|integer|exists:customers,id',
-		// 	'customer_address_id' => 'required|integer|exists:customer_addresses,id',
-		// 	'is_lift_gate' => 'nullable|boolean',
-		// 	'is_residential_address' => 'nullable|boolean',
-		// 	'is_inside_delivery' => 'nullable|boolean',
-		// 	'tax_percentage' => 'required|numeric|min:0',
-		// 	'ship_all_at_once' => 'nullable|boolean',
-		// 	'separate_deliveries' => 'nullable|boolean',
+		if ($request->has('products') && is_string($request->products)) {
+			$productsString = $request->products;
+			if (strpos(trim($productsString), '{') === 0 && strpos(trim($productsString), '[') !== 0) {
+				$productsString = '[' . $productsString . ']';
+			}
+			$products = json_decode($productsString, true);
+			$request->merge(['products' => $products]);
+		}
 
-		// 	'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
-		// 	'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
+		$request->validate([
+			'customer_id' => 'required|integer|exists:customers,id',
+			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+			'is_lift_gate' => 'nullable|boolean',
+			'is_residential_address' => 'nullable|boolean',
+			'is_inside_delivery' => 'nullable|boolean',
+			'tax_percentage' => 'required|numeric|min:0',
+			'ship_all_at_once' => 'nullable|boolean',
+			'separate_deliveries' => 'nullable|boolean',
 
-		// 	'coupon_id' => 'nullable|integer',
-		// 	'discount' => 'nullable|numeric|min:0',
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
 
-		// 	'payment_mode' => 'nullable|in:ADCB Touras,CCAvenue,Stripe,Square,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
-		// 	'pay_with_cheque' => 'nullable|boolean',
-		// 	'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
-		// 	'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+			'coupon_id' => 'nullable|integer',
+			'discount' => 'nullable|numeric|min:0',
 
-		// 	'additional_discount_option' => 'nullable|boolean',
-		// 	'additional_discount_reason' => 'nullable|string|max:255',
-		// 	'additional_discount_type' => 'nullable|in:fixed,percentage',
-		// 	'additional_discount_percentage' => 'nullable|numeric|min:0|max:100|required_if:additional_discount_type,percentage',
-		// 	'additional_discount_amount' => 'nullable|numeric|min:0|required_if:additional_discount_type,fixed',
+			'payment_mode' => 'nullable|in:ADCB Touras,CCAvenue,Stripe,Square,Check Payment,Ascentium Financing,Approve Financing,Resolve Financing,Net Terms',
+			'pay_with_cheque' => 'nullable|boolean',
+			'cheque_img' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
+			'cheque_img_back' => 'nullable|required_if:pay_with_cheque,true|file|mimes:jpeg,jpg,png,webp|max:5120',
 
-		// 	'is_cod' => 'nullable|boolean',
-		// 	'is_reserved' => 'nullable|boolean',
-		// 	'is_payment' => 'nullable|boolean',
-		// 	'is_ccavenue' => 'nullable|boolean',
-		// 	'is_payment_touras' => 'nullable|boolean',
-		// 	'is_squarePayment' => 'nullable|boolean',
-		// 	'is_customer_pickup' => 'nullable|boolean',
+			'additional_discount_option' => 'nullable|boolean',
+			'additional_discount_reason' => 'nullable|string|max:255',
+			'additional_discount_type' => 'nullable|in:fixed,percentage',
+			'additional_discount_percentage' => 'nullable|numeric|min:0|max:100|required_if:additional_discount_type,percentage',
+			'additional_discount_amount' => 'nullable|numeric|min:0|required_if:additional_discount_type,fixed',
 
-		// 	'products' => 'required|array|min:1',
-		// 	'products.*.product_id' => 'required|integer|exists:ec_products,id',
-		// 	'products.*.vendor_id' => 'required|integer|exists:vendors,id',
-		// 	'products.*.quantity' => 'required|integer|min:1',
-		// 	'products.*.shipping_charge' => 'required|numeric|min:0',
-		// 	'products.*.accessory_item_ids' => 'nullable|array',
-		// 	'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
-		// ]);
+			'is_cod' => 'nullable|boolean',
+			'is_reserved' => 'nullable|boolean',
+			'is_payment' => 'nullable|boolean',
+			'is_ccavenue' => 'nullable|boolean',
+			'is_payment_touras' => 'nullable|boolean',
+			'is_squarePayment' => 'nullable|boolean',
+			'is_customer_pickup' => 'nullable|boolean',
+
+			'products' => 'required|array|min:1',
+			'products.*.product_id' => 'required|integer|exists:ec_products,id',
+			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
+			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.shipping_charge' => 'required|numeric|min:0',
+			'products.*.accessory_item_ids' => 'nullable|array',
+			'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
+		]);
 
 		$address = CustomerAddress::with('relatedCountry:id,name,margin')
 		->select(['id', 'customer_id', 'country'])
@@ -451,8 +451,6 @@ class OrderController extends Controller
 		}
 
 		$margin = $address->relatedCountry->margin ?? 0;
-
-		dd($address->toArray(), $address->country, $margin);
 
 		$customer = Customer::select('is_tax_free')->find($request->customer_id);
 		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free, margin: $margin);
@@ -1439,7 +1437,7 @@ class OrderController extends Controller
 
 		$customerId = $order->customer_id;
 
-		$address = CustomerAddress::with('country:id,name,margin')
+		$address = CustomerAddress::with('relatedCountry:id,name,margin')
 		->select(['id', 'customer_id', 'country'])
 		->where('customer_id', $customerId)
 		->find($request->customer_address_id);
@@ -1451,7 +1449,7 @@ class OrderController extends Controller
 			], 422);
 		}
 
-		$margin = $address->country->margin ?? 0;
+		$margin = $address->relatedCountry->margin ?? 0;
 
 		/* Get original values before update */
 		$originalTotalAmount = $order->total_amount;
