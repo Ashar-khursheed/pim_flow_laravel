@@ -452,7 +452,7 @@ class OrderController extends Controller
 
 		$margin = $address->country->margin ?? 0;
 
-		dd($address->toArray(), $margin);
+		dd($address->toArray(), $address->country, $margin);
 
 		$customer = Customer::select('is_tax_free')->find($request->customer_id);
 		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free, margin: $margin);
