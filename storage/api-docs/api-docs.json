@@ -15882,21 +15882,14 @@
                 "tags": [
                     "Frontend-Countries"
                 ],
-                "summary": "Get all countries",
-                "description": "Returns a list of all countries",
-                "operationId": "getAllCountries",
+                "summary": "Get list of countries",
+                "description": "Fetches a list of all countries.",
+                "operationId": "c62c7e30bf70789cdde60a65a88b927d",
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "Countries retrieved successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Country"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 }
@@ -15905,77 +15898,28 @@
         "/api/frontend/countries/{id}": {
             "get": {
                 "tags": [
-                    "Frontend-Countries"
+                    "Countries"
                 ],
-                "summary": "Get a country by ID",
-                "description": "Returns a single country",
-                "operationId": "getCountryById",
+                "summary": "Get a specific country",
+                "operationId": "01d48db682221e04929d847b1097edcc",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID of country to return",
+                        "description": "Country ID",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "string",
+                            "example": "1"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "Country retrieved successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Country"
-                                }
-                            }
+                            "application/json": {}
                         }
-                    },
-                    "404": {
-                        "description": "Country not found"
-                    }
-                }
-            }
-        },
-        "/api/frontend/country-phonecodes": {
-            "get": {
-                "tags": [
-                    "Country"
-                ],
-                "summary": "Get all country phone codes",
-                "description": "Returns a list of all country phone codes from the countries table.",
-                "operationId": "getCountryPhoneCodes",
-                "responses": {
-                    "200": {
-                        "description": "List of country phone codes",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "iso3": {
-                                                "type": "string",
-                                                "example": "Pak"
-                                            },
-                                            "phonecode": {
-                                                "type": "integer",
-                                                "example": 92
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error"
                     }
                 }
             }
@@ -51220,10 +51164,6 @@
         {
             "name": "Frontend-Countries",
             "description": "Frontend-Countries"
-        },
-        {
-            "name": "Country",
-            "description": "Country"
         },
         {
             "name": "Coupons",
