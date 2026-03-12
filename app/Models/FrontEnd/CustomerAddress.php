@@ -34,7 +34,7 @@ class CustomerAddress extends Model
 		return $this->belongsTo(User::class, 'created_by');
 	}
 
-	public function country()
+	public function relatedCountry()
 	{
 		return $this->belongsTo(Country::class, 'country', 'name');
 	}

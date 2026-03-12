@@ -438,7 +438,7 @@ class OrderController extends Controller
 		// 	'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
 		// ]);
 
-		$address = CustomerAddress::with('country:id,name,margin')
+		$address = CustomerAddress::with('relatedCountry:id,name,margin')
 		->select(['id', 'customer_id', 'country'])
 		->where('customer_id', $request->customer_id)
 		->find($request->customer_address_id);
@@ -450,7 +450,7 @@ class OrderController extends Controller
 			], 422);
 		}
 
-		$margin = $address->country->margin ?? 0;
+		$margin = $address->relatedCountry->margin ?? 0;
 
 		dd($address->toArray(), $address->country, $margin);
 
