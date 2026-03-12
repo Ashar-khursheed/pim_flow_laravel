@@ -307,9 +307,11 @@ class CustomerCartController extends Controller
 			], 422);
 		}
 
+		$margin = $address->relatedCountry->margin ?? 0;
+
 		$customer = Customer::find($request->customer_id);
 		/* ✅ Use trait for calculations */
-		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free);
+		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free, margin: $margin);
 
 		DB::beginTransaction();
 
