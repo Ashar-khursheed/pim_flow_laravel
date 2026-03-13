@@ -113,7 +113,7 @@ trait GeneratesQuotePdf
 			/* Parse images once */
 			$images = is_array($productDetail->images)
 			? $productDetail->images
-			: (json_decode($productDetail->images, true) ?: []);
+			: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
 
 			$imageUrl = $images[0] ?? null;
 
