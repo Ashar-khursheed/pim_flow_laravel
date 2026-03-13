@@ -21,7 +21,7 @@ trait GeneratesQuotePdf
 		/* Load quote with ALL relationships in single optimized query */
 		$quote = Quote::with([
 			'customer:id,name,business_name,email,type,country_code,mobile_number',
-			'customerAddress:id,quote_id,address,city,country',
+			'customerAddress:id,address,city,country',
 			'customerAddress.relatedCountry:id,name,currency_id',
 			'customerAddress.relatedCountry.currency:id,symbol',
 			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
