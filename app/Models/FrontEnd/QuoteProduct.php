@@ -35,14 +35,10 @@ class QuoteProduct extends Model
 	// 	->where('vendor_id', $this->vendor_id)
 	// 	->first();
 	// }
-
 	public function vendorProductSupplier()
 	{
-		return $this->hasOne(ProductSupplier::class)
-			->where(function($query) {
-				$query->where('product_id', $this->product_id)
-					->where('vendor_id', $this->vendor_id);
-			});
+		return $this->hasOne(ProductSupplier::class, 'product_id', 'product_id')
+			->whereColumn('product_suppliers.vendor_id', 'quote_products.vendor_id');
 	}
 
 	public function accessoryCharges()
