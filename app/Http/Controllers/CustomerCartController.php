@@ -53,6 +53,9 @@ class CustomerCartController extends Controller
 		/* Eager load relationships */
 		$recordsQuery->with([
 			'customer:id,name,email,country_code,mobile_number',
+			'customerAddress:id,address,city,country',
+			'customerAddress.relatedCountry:id,name,currency_id',
+			'customerAddress.relatedCountry.currency:id,symbol',
 			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
 			'customerCartProducts.product:id,name,images,sku,currency_id,barcode',
 			'customerCartProducts.product.currency:id,symbol',
@@ -436,7 +439,9 @@ class CustomerCartController extends Controller
 	{
 		$record = CustomerCart::with([
 			'customer:id,name,email,country_code,mobile_number',
-			'customerAddress',
+			'customerAddress:id,address,city,country',
+			'customerAddress.relatedCountry:id,name,currency_id',
+			'customerAddress.relatedCountry.currency:id,symbol',
 			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
 			'customerCartProducts.product:id,name,images,sku,currency_id,barcode',
 			'customerCartProducts.product.currency:id,symbol',
@@ -559,7 +564,9 @@ class CustomerCartController extends Controller
 	{
 		$customerCart = CustomerCart::where('customer_id', $customer_id)
 		->with([
-			'customerAddress',
+			'customerAddress:id,address,city,country',
+			'customerAddress.relatedCountry:id,name,currency_id',
+			'customerAddress.relatedCountry.currency:id,symbol',
 			'customerCartProducts.product.currency:id,symbol',
 		])
 		->first();

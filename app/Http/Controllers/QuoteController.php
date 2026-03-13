@@ -78,7 +78,9 @@ class QuoteController extends BaseController
 			/* Eager load relationships */
 			$recordsQuery->with([
 				'customer:id,name,email,type,country_code,mobile_number',
-				'customerAddress',
+				'customerAddress:id,address,city,country',
+				'customerAddress.relatedCountry:id,name,currency_id',
+				'customerAddress.relatedCountry.currency:id,symbol',
 				'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'quoteProducts.product.brand:id,name',
@@ -483,7 +485,9 @@ class QuoteController extends BaseController
 		/* Load relationships */
 		$quote->load([
 			'customer:id,name,email,type,country_code,mobile_number',
-			'customerAddress',
+			'customerAddress:id,address,city,country',
+			'customerAddress.relatedCountry:id,name,currency_id',
+			'customerAddress.relatedCountry.currency:id,symbol',
 			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 			'quoteProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 			'quoteProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
