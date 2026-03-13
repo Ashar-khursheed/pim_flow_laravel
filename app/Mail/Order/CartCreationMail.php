@@ -71,12 +71,8 @@ class CartCreationMail extends Mailable
 		/* Amount Before Tax */
 		$amountBeforeTax = $subTotal - $discount - $chequeDiscount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
 
-		/* Currency */
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
-
 		return [
 			'totalSaved' => $totalSaved,
-			'currency' => $currency,
 			'subTotal' => $subTotal,
 			'discount' => $discount,
 			'chequeDiscount' => $chequeDiscount,
@@ -120,6 +116,10 @@ class CartCreationMail extends Mailable
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
 		$zipcode = $customerAddress->zip_code ?? '';
+
+		/* Currency */
+		$baseCurrency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+		$currency = $customerAddress->relatedCountry->currency->symbol ?? $baseCurrency;
 
 		$products = collect();
 
@@ -207,6 +207,7 @@ class CartCreationMail extends Mailable
 			'products' => $products,
 
 			/* Merge pricing breakdown variables */
+			'currency' => $currency,
 			...$pricingBreakdown,
 
 			'additionalAmountName' => $additionalAmountName,

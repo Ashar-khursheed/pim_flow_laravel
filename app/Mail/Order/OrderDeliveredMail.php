@@ -31,7 +31,10 @@ class OrderDeliveredMail extends Mailable
 
 		$name = $order->customer->name ?? 'User';
 		$orderNumber = $order->order_number;
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+
+		/* Currency */
+		$baseCurrency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+		$currency = $order->customerAddress->relatedCountry->currency->symbol ?? $baseCurrency;
 
 		$products = collect();
 		foreach ($order->orderProducts as $orderProduct) {

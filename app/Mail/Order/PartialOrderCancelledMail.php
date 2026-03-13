@@ -36,9 +36,12 @@ class PartialOrderCancelledMail extends Mailable
 		$name = $notifiable->name ?? 'User';
 		$orderNumber = $order->order_number;
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 		$paidAmount = $order->paid_amount ?? 0;
 		$paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
+
+		/* Currency */
+		$baseCurrency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+		$currency = $order->customerAddress->relatedCountry->currency->symbol ?? $baseCurrency;
 
 		$cancelledItems = collect();
 

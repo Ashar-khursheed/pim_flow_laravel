@@ -18,51 +18,60 @@ trait GeneratesQuotePdf
 	 */
 	public function generateQuotePdfParams($quoteId)
 	{
-		$quote = Quote::find($quoteId);
-
-		/* Load relationships */
-		$quote->load([
+		/* Load quote with ALL relationships in single optimized query */
+		$quote = Quote::with([
 			'customer:id,name,business_name,email,type,country_code,mobile_number',
-			'customerAddress',
+			'customerAddress:id,quote_id,address,city,country',
+			'customerAddress.relatedCountry:id,name,currency_id',
+			'customerAddress.relatedCountry.currency:id,symbol',
 			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 			'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'quoteProducts.product.brand:id,name',
 			'quoteProducts.product.currency:id,symbol',
 			'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
 			'quoteProducts.product.seoProductUrl:id,relational_id,url',
+			'quoteProducts.vendorProductSupplier:id,product_id,vendor_id,delivery_days',
 			'quoteEmails',
-		]);
+		])->find($quoteId);
 
-		$customer = $quote->customer;
+		if (!$quote) {
+			throw new \Exception('Quote not found');
+		}
+
+		/* Cache commonly used values */
+		$isUAE = in_array(config('app.website'), ['UAE', 'UAE_T']);
+		$appUrl = config('app.url');
+		$website = config('app.website');
 
 		/* PRE-LOAD all accessory charges in ONE query */
 		$quoteProductIds = $quote->quoteProducts->pluck('id')->toArray();
 
-		$accessoryCharges = AccessoryCharge::where('relation_type', QuoteProduct::class)
-		->whereIn('relation_id', $quoteProductIds)
-		->select('relation_id', \DB::raw('SUM(amount) as total_amount'))
-		->groupBy('relation_id')
-		->pluck('total_amount', 'relation_id')
-		->toArray();
+		$accessoryCharges = [];
+		if (!empty($quoteProductIds)) {
+			$accessoryCharges = AccessoryCharge::where('relation_type', QuoteProduct::class)
+			->whereIn('relation_id', $quoteProductIds)
+			->select('relation_id', \DB::raw('SUM(amount) as total_amount'))
+			->groupBy('relation_id')
+			->pluck('total_amount', 'relation_id')
+			->toArray();
+		}
 
-		/* ... company info setup ... */
-
-		$backendURL = config('app.backend_url');
+		/* Company Info */
 		$pdfLogoUrl = public_path('logo.png');
+		$companyName = $isUAE ? 'HORECA TRADING CO LLC.' : 'THE HORECA STORE INC';
+		$companyStreet = $isUAE ? 'Showroom 01 - Building No 9 19th Street' : '8800 Bissonnet Street, Ste A,';
+		$companyCity = $isUAE ? 'Dubai - United Arab Emirates' : 'Houston, Texas 77074';
+		$companyPhone = $isUAE ? '800-467-322' : '1 (866) 446-7322';
 
-		$companyName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'HORECA TRADING CO LLC.' : 'THE HORECA STORE INC';
-		$companyStreet = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'Showroom 01 - Building No 9 19th Street' : '8800 Bissonnet Street, Ste A,';
-		$companyCity = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'Dubai - United Arab Emirates' : 'Houston, Texas 77074';
-		$companyPhone = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '800-467-322' : '1 (866) 446-7322';
-
-		$siteUrl = match (config('app.website')) {
+		$siteUrl = match ($website) {
 			'US'  => 'Thehorecastore.com',
 			'UAE'  => 'HorecaStore.ae',
 			'TEST' => 'Thehorecastore.com',
 			default => 'Thehorecastore.com',
 		};
 
-		$siteEmail = match (config('app.website')) {
+		$siteEmail = match ($website) {
 			'US'  => 'sales@thehorecastore.com',
 			'UAE'  => 'hello@horecastore.ae',
 			'US_T' => 'test_us@thehorecastore.co',
@@ -70,106 +79,126 @@ trait GeneratesQuotePdf
 			default => 'test@thehorecastore.co',
 		};
 
+		/* Customer Info */
+		$customer = $quote->customer;
+		$customerAddress = $quote->customerAddress;
+
 		$customerType = $customer->type;
 		$customerBusinessName = $customer->business_name;
 		$customerName = $customer->name;
-		$customerAddressDetail = $quote->customerAddress;
-		$customerAddress = $customerAddressDetail->address ?? '';
-		$customerCity = $customerAddressDetail->city ?? '';
-		$customerCountry = $customerAddressDetail->country ?? '';
-		$customerPhone = ($customer->country_code && $customer->mobile_number) ? $customer->country_code . ' ' . $customer->mobile_number : '';
+		$customerAddressLine = $customerAddress->address ?? '';
+		$customerCity = $customerAddress->city ?? '';
+		$customerCountry = $customerAddress->country ?? '';
+		$customerPhone = ($customer->country_code && $customer->mobile_number)
+		? $customer->country_code . ' ' . $customer->mobile_number
+		: '';
 		$customerEmail = $customer->email ?? '';
 
+		/* Quote Info */
 		$createdAt = $quote->created_at->format('M d Y');
 		$expiredAt = Carbon::parse($quote->expired_at)->format('M d Y');
 		$quoteNumber = $quote->quote_number;
 		$paymentMode = $quote->payment_terms;
 		$quoteType = 'Online';
-		$currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 
-		$products = collect();
-		foreach ($quote->quoteProducts as $index => $quoteProduct) {
-			$productSupplierDetail = $quoteProduct->vendorProductSupplier;
+		/* Currency */
+		$baseCurrency = $isUAE ? 'AED' : '$';
+		$currency = $customerAddress->relatedCountry->currency->symbol ?? $baseCurrency;
+
+		/* Process Products (optimized loop) */
+		$products = $quote->quoteProducts->filter(function($quoteProduct) {
+			return $quoteProduct->product !== null;
+		})->map(function($quoteProduct, $index) use ($accessoryCharges, $appUrl) {
 			$productDetail = $quoteProduct->product;
 
-			if ($productDetail) {
-				$product = new \stdClass();
-				$product->count = $index + 1;
-				$product->name = $productDetail->name;
-				$product->brandName = $productDetail->brand->name ?? null;
-				$product->sku = $productDetail->sku;
-				$product->warrantyInfo = $productDetail->warrantyAttribute->attribute_value ?? '';
+			/* Parse images once */
+			$images = is_array($productDetail->images)
+			? $productDetail->images
+			: (json_decode($productDetail->images, true) ?: []);
 
-				$product->deliveryDays = $productSupplierDetail->delivery_days ?? null;
+			$imageUrl = $images[0] ?? null;
 
-				$product->productURL = config('app.url') . '/' . $productDetail->parent_category_url() . '/' . $productDetail->category_url() . '/' . ($productDetail->seoProductUrl->url ?? $productDetail->id);
-
-				$images = is_array($productDetail->images)
-				? $productDetail->images
-				: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
-
-				$product->image = is_array($images) ? ($images[0] ?? null) : null;
-
-				$product->base64_image = getBase64Image($product->image);
-				$product->quantity = (int) $quoteProduct->quantity;
-
-				/* Get accessory charge from pre-loaded array (NO database query) */
-				$product->accessoryCharge = $accessoryCharges[$quoteProduct->id] ?? 0;
-
-				$fullValue = $productDetail->sellingUnitAttribute->attribute_value ?? '';
-				$product->sellingType = $productDetail->sellingUnitAttribute && $fullValue
-				? (strpos($fullValue, '/') !== false
-					? trim(explode('/', $fullValue)[1])
-					: trim($fullValue))
-				: '';
-
-				$product->unitPrice = $quoteProduct->unit_price;
-				// $product->total = $quoteProduct->amount;
-				$product->total = $quoteProduct->amount + $product->accessoryCharge;
-
-				$products->push($product);
+			/* Selling unit */
+			$fullValue = $productDetail->sellingUnitAttribute->attribute_value ?? '';
+			$sellingType = '';
+			if ($fullValue) {
+				$sellingType = strpos($fullValue, '/') !== false
+				? trim(explode('/', $fullValue)[1])
+				: trim($fullValue);
 			}
-		}
 
+			/* Build product URL */
+			$productUrl = $appUrl . '/' .
+			$productDetail->parent_category_url() . '/' .
+			$productDetail->category_url() . '/' .
+			($productDetail->seoProductUrl->url ?? $productDetail->id);
+
+			return (object) [
+				'count' => $index + 1,
+				'name' => $productDetail->name,
+				'brandName' => $productDetail->brand->name ?? null,
+				'sku' => $productDetail->sku,
+				'warrantyInfo' => $productDetail->warrantyAttribute->attribute_value ?? '',
+				'deliveryDays' => $quoteProduct->vendorProductSupplier->delivery_days ?? null,
+				'productURL' => $productUrl,
+				'image' => $imageUrl,
+				'base64_image' => getBase64Image($imageUrl),
+				'quantity' => (int) $quoteProduct->quantity,
+				'accessoryCharge' => $accessoryCharges[$quoteProduct->id] ?? 0,
+				'sellingType' => $sellingType,
+				'unitPrice' => $quoteProduct->unit_price,
+				'total' => $quoteProduct->amount + ($accessoryCharges[$quoteProduct->id] ?? 0),
+			];
+		})->values();
+
+		/* Additional amounts and discounts */
 		$additionalAmountName = $quote->additional_amount_name;
 		$additionalAmountPrice = $quote->additional_amount_price;
-
 		$subTotal = $quote->amount ?? 0;
 		$discount = $quote->discount ?? 0;
 		$additionalDiscountAmount = $quote->additional_discount_amount ?? 0;
 		$additionalDiscountReason = $quote->additional_discount_reason ?? null;
 		$additionalDiscountPercentage = $quote->additional_discount_percentage ?? 0;
 
-		/* Charges */
+		/* Charges (use ternary for clarity) */
 		$liftGateCharge = $quote->is_lift_gate ? 75 : 0;
 		$residentialAddressCharge = $quote->is_residential_address ? 199 : 0;
 		$insideDeliveryCharge = $quote->is_inside_delivery ? 249 : 0;
-
 		$shippingCharge = $quote->shipping_charge ?? 0;
 
-		/* Amount Before Tax */
-		$amountBeforeTax = $subTotal - $discount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+		/* Calculate amount before tax */
+		$amountBeforeTax = $subTotal
+		- $discount
+		- $additionalDiscountAmount
+		+ $liftGateCharge
+		+ $residentialAddressCharge
+		+ $insideDeliveryCharge
+		+ ($isUAE ? 0 : $shippingCharge);
 
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'Sales Tax';
+		/* Tax info */
+		$taxName = $isUAE ? 'VAT' : 'Sales Tax';
 		$taxPercent = ($quote->tax_percentage ?? 0) + 0;
 		$taxAmount = $quote->tax_amount ?? 0;
 		$total = $quote->total_amount ?? 0;
 
-		$totalInWords = in_array(config('app.website'), ['UAE', 'UAE_T'])
+		/* Total in words */
+		$totalInWords = $isUAE
 		? convertNumberToWords($total, "AED", "Fils")
 		: convertNumberToWords($total, "U.S. Dollars", "Cents");
 
-		$payNowUrl = config('app.url') . '/download-quotation/' . $quote->id;
-		$siteName = config('app.website');
+		/* URLs and payment info */
+		$payNowUrl = $appUrl . '/download-quotation/' . $quote->id;
 
-		$beneficiaryAddress = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '' : '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435';
-		$accountNo = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '1015 9086 9400 1' : '6130 9953 3';
-		$bankName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'Emirates NBD' : 'JP Morgan Chase Bank';
-		$routingCode = in_array(config('app.website'), ['UAE', 'UAE_T']) ? '' : '1110 0061 4';
-		$ibanNumber = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AE48 0260 0010 1590 8694 001' : '';
-		$swiftCode = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'EBILAEADXX' : '';
+		/* Banking details */
+		$beneficiaryAddress = $isUAE ? '' : '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435';
+		$accountNo = $isUAE ? '1015 9086 9400 1' : '6130 9953 3';
+		$bankName = $isUAE ? 'Emirates NBD' : 'JP Morgan Chase Bank';
+		$routingCode = $isUAE ? '' : '1110 0061 4';
+		$ibanNumber = $isUAE ? 'AE48 0260 0010 1590 8694 001' : '';
+		$swiftCode = $isUAE ? 'EBILAEADXX' : '';
 
-		$pdfParams = [
+		/* Return all parameters */
+		return [
 			'pdfLogoUrl' => $pdfLogoUrl,
 
 			'companyName' => $companyName,
@@ -183,7 +212,7 @@ trait GeneratesQuotePdf
 			'customerType' => $customerType,
 			'customerBusinessName' => $customerBusinessName,
 			'customerName' => $customerName,
-			'customerAddress' => $customerAddress,
+			'customerAddress' => $customerAddressLine,
 			'customerCity' => $customerCity,
 			'customerCountry' => $customerCountry,
 			'customerPhone' => $customerPhone,
@@ -217,7 +246,7 @@ trait GeneratesQuotePdf
 			'totalInWords' => $totalInWords,
 			'payNowUrl' => $payNowUrl,
 
-			'siteName' => $siteName,
+			'siteName' => $website,
 			'beneficiaryAddress' => $beneficiaryAddress,
 			'accountNo' => $accountNo,
 			'bankName' => $bankName,
@@ -225,7 +254,5 @@ trait GeneratesQuotePdf
 			'ibanNumber' => $ibanNumber,
 			'swiftCode' => $swiftCode,
 		];
-
-		return $pdfParams;
 	}
 }
