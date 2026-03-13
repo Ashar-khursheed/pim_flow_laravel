@@ -29,11 +29,20 @@ class QuoteProduct extends Model
 		return $this->belongsTo(Product::class);
 	}
 
-	public function getVendorProductSupplierAttribute()
+	// public function getVendorProductSupplierAttribute()
+	// {
+	// 	return ProductSupplier::where('product_id', $this->product_id)
+	// 	->where('vendor_id', $this->vendor_id)
+	// 	->first();
+	// }
+
+	public function vendorProductSupplier()
 	{
-		return ProductSupplier::where('product_id', $this->product_id)
-		->where('vendor_id', $this->vendor_id)
-		->first();
+		return $this->hasOne(ProductSupplier::class)
+			->where(function($query) {
+				$query->where('product_id', $this->product_id)
+					->where('vendor_id', $this->vendor_id);
+			});
 	}
 
 	public function accessoryCharges()
