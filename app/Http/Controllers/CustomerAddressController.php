@@ -71,7 +71,7 @@ class CustomerAddressController extends Controller
 			'customer_id' => 'required|exists:customers,id',
 			'type' => 'nullable',
 			'address' => 'required|string',
-			'country' => 'nullable|string',
+			'country' => 'nullable|string|exists:countries,name',
 			'state' => 'nullable|string',
 			'city' => 'nullable|string',
 			'zip_code' => 'nullable|string|max:20',
@@ -167,7 +167,7 @@ class CustomerAddressController extends Controller
 		$validated = $request->validate([
 			'type' => 'nullable',
 			'address' => 'nullable|string|max:191',
-			'country' => 'nullable|string',
+			'country' => 'nullable|string|exists:countries,name',
 			'state' => 'nullable|string',
 			'city' => 'nullable|string',
 			'zip_code' => 'nullable|string|max:20',

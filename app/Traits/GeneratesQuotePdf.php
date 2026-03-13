@@ -23,7 +23,7 @@ trait GeneratesQuotePdf
 			'customer:id,name,business_name,email,type,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
 			'customerAddress.relatedCountry:id,name,currency_id',
-			'customerAddress.relatedCountry.currency:id,symbol',
+			'customerAddress.relatedCountry.currency:id,symbol,major_unit_name,minor_unit_name',
 			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 			'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'quoteProducts.product.brand:id,name',
@@ -102,7 +102,8 @@ trait GeneratesQuotePdf
 
 		/* Currency */
 		$baseCurrency = $isUAE ? 'AED' : '$';
-		$currency = $customerAddress->relatedCountry->currency->symbol ?? $baseCurrency;
+		$currencyModel = $customerAddress->relatedCountry->currency ?? null;
+		$currency = $currencyModel->symbol ?? $baseCurrency;
 
 		/* Process Products (optimized loop) */
 		$products = $quote->quoteProducts->filter(function($quoteProduct) {
@@ -180,10 +181,16 @@ trait GeneratesQuotePdf
 		$taxAmount = $quote->tax_amount ?? 0;
 		$total = $quote->total_amount ?? 0;
 
-		/* Total in words */
-		$totalInWords = $isUAE
-		? convertNumberToWords($total, "AED", "Fils")
-		: convertNumberToWords($total, "U.S. Dollars", "Cents");
+		/* Get major and minor unit names from currency */
+		$baseMajorUnitName = $currencyModel->major_unit_name ?? null;
+		$baseMinorUnitName = $currencyModel->minor_unit_name ?? null;
+
+		/* Calculate total in words only if both unit names are present */
+		if ($baseMajorUnitName && $baseMinorUnitName) {
+			$totalInWords = convertNumberToWords($total, $baseMajorUnitName, $baseMinorUnitName);
+		} else {
+			$totalInWords = '';
+		}
 
 		/* URLs and payment info */
 		$payNowUrl = $appUrl . '/download-quotation/' . $quote->id;

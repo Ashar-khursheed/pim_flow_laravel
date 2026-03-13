@@ -138,7 +138,7 @@ class CountryController extends Controller
 			'name' => 'required|string|max:191|unique:countries,name',
 			'phone_code' => 'required|string|max:10',
 			'icon' => 'nullable|file|mimes:webp,png|max:2048', /* Max 2MB */
-			'currency_id' => 'required|integer|exists:ec_currencies,id',
+			'currency_id' => 'required|integer|exists:currencies,id',
 			'margin' => 'nullable|numeric|min:0',
 		]);
 
@@ -265,7 +265,7 @@ class CountryController extends Controller
 			'phone_code' => 'required|string|max:10',
 			'icon' => 'nullable|file|mimes:webp,png|max:2048',
 			'icon_url' => 'nullable|string|url',
-			'currency_id' => 'required|integer|exists:ec_currencies,id',
+			'currency_id' => 'required|integer|exists:currencies,id',
 			'margin' => 'nullable|numeric|min:0',
 		]);
 
