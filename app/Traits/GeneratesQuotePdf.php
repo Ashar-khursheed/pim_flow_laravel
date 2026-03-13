@@ -31,7 +31,6 @@ trait GeneratesQuotePdf
 			'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
 			'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
 			'quoteProducts.product.seoProductUrl:id,relational_id,url',
-			'quoteProducts.vendorProductSupplier:id,product_id,vendor_id,delivery_days',
 			'quoteEmails',
 		])->find($quoteId);
 
