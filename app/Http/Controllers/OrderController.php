@@ -104,6 +104,9 @@ class OrderController extends Controller
 
 			$recordsQuery->with([
 				'customer:id,name',
+				'customerAddress:id,address,city,country',
+				'customerAddress.relatedCountry:id,name,currency_id',
+				'customerAddress.relatedCountry.currency:id,symbol',
 				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
 				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
