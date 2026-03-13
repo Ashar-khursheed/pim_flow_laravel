@@ -8880,9 +8880,258 @@
                 "summary": "Get list of currencies",
                 "description": "Fetches a list of all currencies.",
                 "operationId": "73e0a13248f9f6aea618716227eab68a",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "title",
+                                "symbol",
+                                "is_default",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Currencies retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Currencies"
+                ],
+                "summary": "Create a new currency",
+                "operationId": "57e1c3f26ae9c82bd5996ac5bb738c5b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "symbol"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "USD"
+                                    },
+                                    "symbol": {
+                                        "type": "string",
+                                        "example": "$"
+                                    },
+                                    "major_unit_name": {
+                                        "type": "string",
+                                        "example": "U.S. Dollars"
+                                    },
+                                    "minor_unit_name": {
+                                        "type": "string",
+                                        "example": "Cents"
+                                    },
+                                    "is_default": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Currency created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/currencies/{id}": {
+            "get": {
+                "tags": [
+                    "Currencies"
+                ],
+                "summary": "Get a specific currency",
+                "operationId": "23440d4caad0c601f680b655f9c907f4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Currency ID or title",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Currency retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Currencies"
+                ],
+                "summary": "Update a currency",
+                "operationId": "8a397517013e49ac5bf2db204caaa130",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Currency ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "symbol"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "USD"
+                                    },
+                                    "symbol": {
+                                        "type": "string",
+                                        "example": "$"
+                                    },
+                                    "major_unit_name": {
+                                        "type": "string",
+                                        "example": "U.S. Dollars"
+                                    },
+                                    "minor_unit_name": {
+                                        "type": "string",
+                                        "example": "Cents"
+                                    },
+                                    "is_default": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Currency updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Currencies"
+                ],
+                "summary": "Delete a currency",
+                "operationId": "c5d45f11f33d23039acf71db15a4cf31",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Currency ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Currency deleted successfully",
                         "content": {
                             "application/json": {}
                         }
