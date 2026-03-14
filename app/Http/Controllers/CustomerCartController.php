@@ -354,7 +354,6 @@ class CustomerCartController extends Controller
 			$customerCart->updated_by = auth()->id();
 			$customerCart->additional_amount_name = $request->additional_amount_name ?? null;
 			$customerCart->additional_amount_price = $request->additional_amount_price ?? null;
-			$customerCart->additional_amount_details = $request->additional_amount_details ?? null;  /* ✅ Added */
 
 			$customerCart->save();
 
