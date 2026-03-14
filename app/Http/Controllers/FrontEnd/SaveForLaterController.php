@@ -12,6 +12,7 @@ use App\Models\FrontEnd\CustomerCartProduct;
 use App\Models\FrontEnd\Wishlist;
 use App\Models\FrontEnd\SaveForLater;
 use App\Models\Product;
+use App\Helpers\PriceHelper;
 
 
 class SaveForLaterController extends Controller
@@ -265,7 +266,8 @@ class SaveForLaterController extends Controller
 				'total_reviews' => $totalReviews,
 				'avg_rating' => $avgRating,
 				'left_stock' => ($product->quantity ?? 0) - ($product->units_sold ?? 0),
-				'currency' => $product->currency->symbol ?? null,
+				// 'currency' => $product->currency->symbol ?? null,
+				'currency' => PriceHelper::symbol(),
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 				'images' => $imageUrls,
 				'selling_type' => $sellingType,

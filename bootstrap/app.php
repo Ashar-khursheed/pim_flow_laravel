@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\EnsureUserGuard;
 use App\Http\Middleware\EnsureCustomerGuard;
 use Illuminate\Auth\AuthenticationException;
+use App\Http\Middleware\CurrencyMiddleware; 
 
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -23,6 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'customer.guard' => EnsureCustomerGuard::class,
         
         ]);
+       $middleware->appendToGroup('api', CurrencyMiddleware::class);
+
 
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -31,5 +34,6 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => 'Unauthenticated'
             ], 401);
         });
+
     })
     ->create();
