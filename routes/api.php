@@ -313,7 +313,7 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('countries', CountryController::class);
-	Route::apiResource('currencies', CurrencyController::class)->only('index');
+	Route::apiResource('currencies', CurrencyController::class);
 	Route::apiResource('horeca-pages',  HorecaPageController::class);
 
 	Route::apiResource('/inquiries',  InquiryController::class);
