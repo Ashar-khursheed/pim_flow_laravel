@@ -340,7 +340,11 @@ class OrderController extends BaseController
 		]);
 
 		$customerId = auth()->id();
-		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
+
+		$address = CustomerAddress::with('relatedCountry:id,name,margin')
+		->select(['id', 'customer_id', 'country'])
+		->where('customer_id', $customerId)
+		->find($request->customer_address_id);
 
 		if (!$address) {
 			return response()->json([
@@ -349,8 +353,10 @@ class OrderController extends BaseController
 			], 422);
 		}
 
+		$margin = $address->relatedCountry->margin ?? 0;
+
 		$customer = auth()->user();
-		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free, null, true);
+		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free, isFrontend: true, margin: $margin);
 
 		DB::beginTransaction();
 		try {
@@ -887,99 +893,6 @@ class OrderController extends BaseController
 			'data' => $order,
 		]);
 	}
-
-	// /**
-	//  * @OA\Post(
-	//  *     path="/api/frontend/compress-image-check",
-	//  *     summary="Upload and compress cheque images",
-	//  *     tags={"CompressImage"},
-	//  *     security={{"bearerAuth":{}}},
-	//  *
-	//  *     @OA\RequestBody(
-	//  *         required=true,
-	//  *         @OA\MediaType(
-	//  *             mediaType="multipart/form-data",
-	//  *             @OA\Schema(
-	//  *                 type="object",
-	//  *                 required={"cheque_img","cheque_img_back"},
-	//  *                 @OA\Property(
-	//  *                     property="cheque_img",
-	//  *                     type="string",
-	//  *                     format="binary",
-	//  *                     description="Cheque front image"
-	//  *                 ),
-	//  *                 @OA\Property(
-	//  *                     property="cheque_img_back",
-	//  *                     type="string",
-	//  *                     format="binary",
-	//  *                     description="Cheque back image"
-	//  *                 )
-	//  *             )
-	//  *         )
-	//  *     ),
-	//  *
-	//  *     @OA\Response(
-	//  *         response=200,
-	//  *         description="Cheque images uploaded and compressed successfully"
-	//  *     ),
-	//  *     @OA\Response(
-	//  *         response=422,
-	//  *         description="Validation failed"
-	//  *     ),
-	//  *     @OA\Response(
-	//  *         response=401,
-	//  *         description="Unauthorized"
-	//  *     )
-	//  * )
-	//  */
-	// public function compressImage(Request $request)
-	// {
-
-	// 	$validator = Validator::make($request->all(), [
-	// 		'cheque_img'       => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-	// 		'cheque_img_back'  => 'required|image|mimes:jpg,jpeg,png,webp|max:12240',
-	// 	]);
-
-	// 	if ($validator->fails()) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'Validation failed',
-	// 			'errors'  => $validator->errors(),
-	// 		], 422);
-	// 	}
-
-
-	// 	$path = env('STORAGE_ENV') . '/customer/orders';
-
-	// 	$chequeFront = compressImageToS3(
-	// 		$request,
-	// 		'cheque_img',
-	// 		$path
-	// 	);
-
-	// 	$chequeBack = compressImageToS3(
-	// 		$request,
-	// 		'cheque_img_back',
-	// 		$path
-	// 	);
-	// 	// Upload failed check
-	// 	if (!$chequeFront || !$chequeBack) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'Image upload failed',
-	// 		], 200);
-	// 	}
-
-
-	// 	return response()->json([
-	// 		'success' => true,
-	// 		'message' => 'Cheque images uploaded successfully',
-	// 		'data' => [
-	// 			'cheque_img'      => $chequeFront,
-	// 			'cheque_img_back' => $chequeBack,
-	// 		],
-	// 	], 200);
-	// }
 
 	/**
 	 * @OA\Post(
