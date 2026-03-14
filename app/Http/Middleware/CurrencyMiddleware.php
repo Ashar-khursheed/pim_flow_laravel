@@ -21,16 +21,35 @@ class CurrencyMiddleware
 
     public function handle(Request $request, Closure $next)
     {
-        \Log::info('CURRENCY_MW_FIRED', ['ip' => $request->ip()]);
+        // Real client IP — AWS Load Balancer ke peeche X-Forwarded-For mein hoti hai
+        $ip = $request->header('X-Forwarded-For')
+            ?? $request->header('CF-Connecting-IP')
+            ?? $request->ip();
 
-        $ip = $request->ip();
-        if (in_array($ip, ['127.0.0.1', '::1'])) {
+        // Multiple IPs comma separated hoti hain — pehli real client IP hai
+        if (str_contains($ip, ',')) {
+            $ip = trim(explode(',', $ip)[0]);
+        }
+
+        // Internal/private IPs ko fallback karo
+        if (
+            empty($ip) ||
+            $ip === '127.0.0.1' ||
+            $ip === '::1' ||
+            str_starts_with($ip, '172.') ||
+            str_starts_with($ip, '10.') ||
+            str_starts_with($ip, '192.168.')
+        ) {
             $ip = '8.8.8.8';
         }
+
+        \Log::info('CURRENCY_MW_FIRED', ['ip' => $ip]);
 
         $ctx = Cache::remember('currency_ctx_' . $ip, now()->addHours(6), function () use ($ip) {
             $geoData     = $this->geoService->getLocation($ip);
             $countryName = $geoData['country'] ?? null;
+
+            \Log::info('CURRENCY_GEO', ['ip' => $ip, 'country' => $countryName]);
 
             if ($countryName) {
                 $country = Country::with('currency')
@@ -52,14 +71,14 @@ class CurrencyMiddleware
 
         app()->instance('currency.context', $ctx);
 
-        // ---- Response intercept ----
+        // Response intercept
         $response = $next($request);
 
         if (!$response instanceof JsonResponse) {
             return $response;
         }
 
-        // Default + no margin = kuch mat karo
+        // Default currency + no margin = kuch mat karo
         if ($ctx['is_default'] && $ctx['margin'] == 0) {
             return $response;
         }
