@@ -405,7 +405,7 @@ class CustomerCartController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Customer cart created successfully',
-				'data' => $carts,
+				'data' => $customerCart,
 			], 201);
 
 		} catch (\Exception $e) {
