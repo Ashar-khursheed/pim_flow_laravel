@@ -90,22 +90,53 @@ class CurrencyMiddleware
         return $response;
     }
 
+    // private function transform(mixed $data, array $ctx): mixed
+    // {
+    //     if (!is_array($data)) return $data;
+
+    //     foreach ($data as $key => &$value) {
+    //         if (in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
+    //             $value = $this->convertPrice((float) $value, $ctx);
+    //         } elseif ($key === 'currency' && is_string($value) && strlen($value) <= 5) {
+    //             $value = $ctx['symbol'];
+    //         } elseif (is_array($value)) {
+    //             $value = $this->transform($value, $ctx);
+    //         }
+    //     }
+
+    //     return $data;
+    // }
     private function transform(mixed $data, array $ctx): mixed
-    {
-        if (!is_array($data)) return $data;
+{
+    if (!is_array($data)) return $data;
 
-        foreach ($data as $key => &$value) {
-            if (in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
-                $value = $this->convertPrice((float) $value, $ctx);
-            } elseif ($key === 'currency' && is_string($value) && strlen($value) <= 5) {
+    foreach ($data as $key => &$value) {
+        if (in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
+            $value = $this->convertPrice((float) $value, $ctx);
+
+        } elseif ($key === 'currency') {
+            if (is_string($value) && strlen($value) <= 10) {
+                // String currency — simple replace
                 $value = $ctx['symbol'];
-            } elseif (is_array($value)) {
-                $value = $this->transform($value, $ctx);
+            } elseif (is_array($value) && isset($value['symbol'])) {
+                // Object currency — symbol override karo
+                $value['symbol'] = $ctx['symbol'];
+                $value['title']  = $ctx['currency_title'];
             }
-        }
+            // Array ho toh recursion mat karo — already handled above
 
-        return $data;
+        } elseif ($key === 'currency_title' && is_string($value)) {
+            // "2945.05 $" jaisi string — price + symbol wali
+            // Replace karo symbol part
+            $value = preg_replace('/[A-Z]{2,}|\$|AED|SAR|KWD|BHD|QAR/', $ctx['symbol'], $value);
+
+        } elseif (is_array($value)) {
+            $value = $this->transform($value, $ctx);
+        }
     }
+
+    return $data;
+}
 
     private function convertPrice(float $price, array $ctx): float
     {
