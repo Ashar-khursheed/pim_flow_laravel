@@ -21,6 +21,8 @@ class CurrencyMiddleware
 
     public function handle(Request $request, Closure $next)
     {
+        \Log::info('CURRENCY_MW_FIRED', ['ip' => $request->ip()]);
+
         $ip = $request->ip();
         if (in_array($ip, ['127.0.0.1', '::1'])) {
             $ip = '8.8.8.8';
