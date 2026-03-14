@@ -6,9 +6,17 @@ use App\Services\GeoLocationService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class CurrencyMiddleware
 {
+    private const PRICE_FIELDS = [
+        'price', 'sale_price', 'list_price', 'cost_per_item',
+        'total_cost_per_item', 'map', 'surcharge', 'additional_cost',
+        'shipping_charge', 'restocking_fees', 'original_price',
+        'front_sale_price', 'best_price',
+    ];
+
     public function __construct(protected GeoLocationService $geoService) {}
 
     public function handle(Request $request, Closure $next)
@@ -42,7 +50,47 @@ class CurrencyMiddleware
 
         app()->instance('currency.context', $ctx);
 
-        return $next($request);
+        // ---- Response intercept ----
+        $response = $next($request);
+
+        if (!$response instanceof JsonResponse) {
+            return $response;
+        }
+
+        // Default + no margin = kuch mat karo
+        if ($ctx['is_default'] && $ctx['margin'] == 0) {
+            return $response;
+        }
+
+        $data = $response->getData(true);
+        $data = $this->transform($data, $ctx);
+        $response->setData($data);
+
+        return $response;
+    }
+
+    private function transform(mixed $data, array $ctx): mixed
+    {
+        if (!is_array($data)) return $data;
+
+        foreach ($data as $key => &$value) {
+            if (in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
+                $value = $this->convertPrice((float) $value, $ctx);
+            } elseif ($key === 'currency' && is_string($value) && strlen($value) <= 5) {
+                $value = $ctx['symbol'];
+            } elseif (is_array($value)) {
+                $value = $this->transform($value, $ctx);
+            }
+        }
+
+        return $data;
+    }
+
+    private function convertPrice(float $price, array $ctx): float
+    {
+        $margin = $ctx['margin'] ?? 0;
+        if ($margin == 0) return round($price, 2);
+        return round($price * (1 + $margin / 100), 2);
     }
 
     private function defaultContext(): array

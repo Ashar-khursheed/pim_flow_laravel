@@ -24,7 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'customer.guard' => EnsureCustomerGuard::class,
         
         ]);
-       $middleware->appendToGroup('api', CurrencyMiddleware::class);
+          $middleware->append(CurrencyMiddleware::class);
 
 
     })
