@@ -9590,14 +9590,17 @@
                                             ],
                                             "properties": {
                                                 "product_id": {
+                                                    "description": "Product ID",
                                                     "type": "integer",
                                                     "example": 101
                                                 },
                                                 "vendor_id": {
+                                                    "description": "Vendor ID",
                                                     "type": "integer",
                                                     "example": 22
                                                 },
                                                 "quantity": {
+                                                    "description": "Product quantity",
                                                     "type": "integer",
                                                     "example": 5
                                                 },
@@ -9605,6 +9608,14 @@
                                                     "description": "Product Shipping Charge",
                                                     "type": "number",
                                                     "example": 50
+                                                },
+                                                "accessory_item_ids": {
+                                                    "description": "Array of accessory item IDs",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer",
+                                                        "example": 50
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -9631,13 +9642,13 @@
                 ]
             }
         },
-        "/api/carts/fetch/{id}": {
+        "/api/carts/{id}": {
             "get": {
                 "tags": [
                     "Carts"
                 ],
-                "summary": "Get cart details by id",
-                "operationId": "c8403b1d21c990a2be9ea070efd9469d",
+                "summary": "Get cart details by cart id",
+                "operationId": "9d678efe34a8a30237b9259db1890073",
                 "parameters": [
                     {
                         "name": "id",
@@ -9651,7 +9662,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Retrieved successfully",
+                        "description": "Cart details retrieved successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -9664,13 +9675,13 @@
                 ]
             }
         },
-        "/api/carts/{customer_id}": {
+        "/api/carts/customer/{customer_id}": {
             "get": {
                 "tags": [
                     "Carts"
                 ],
                 "summary": "Get cart details by customer id",
-                "operationId": "01177ba8293c42dbae683f65ccc6e655",
+                "operationId": "10fce739cdc1f3485a5de547d2a84975",
                 "parameters": [
                     {
                         "name": "customer_id",
@@ -9684,7 +9695,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Retrieved successfully",
+                        "description": "Cart details retrieved successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -9695,16 +9706,18 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/customer-carts/{id}": {
             "delete": {
                 "tags": [
                     "Carts"
                 ],
                 "summary": "Delete a cart",
-                "operationId": "3c567fd7af0ef9f7b15249a15a03e4af",
+                "operationId": "853b8de466041cab1a07d55a639f657d",
                 "parameters": [
                     {
-                        "name": "customer_id",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
