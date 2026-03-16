@@ -262,10 +262,16 @@ class CustomerCartController extends Controller
 	 *                 type="array",
 	 *                 @OA\Items(
 	 *                     required={"product_id", "vendor_id", "quantity", "shipping_charge"},
-	 *                     @OA\Property(property="product_id", type="integer", example=101),
-	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5),
+	 *                     @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
+	 *                     @OA\Property(property="vendor_id", type="integer", example=22, description="Vendor ID"),
+	 *                     @OA\Property(property="quantity", type="integer", example=5, description="Product quantity"),
 	 *                     @OA\Property(property="shipping_charge", type="number", example=50.00, description="Product Shipping Charge"),
+	 *                     @OA\Property(
+	 *                         property="accessory_item_ids",
+	 *                         type="array",
+	 *                         description="Array of accessory item IDs",
+	 *                         @OA\Items(type="integer", example=50)
+	 *                     ),
 	 *                 )
 	 *             )
 	 *         )
@@ -276,6 +282,33 @@ class CustomerCartController extends Controller
 	 */
 	public function store(Request $request)
 	{
+		/* Parse boolean strings to actual booleans */
+		$booleanFields = [
+			'is_lift_gate',
+			'is_residential_address',
+			'is_inside_delivery',
+			'is_new_customer',
+			'pay_with_cheque',
+		];
+
+		/* Parse products JSON string to array */
+		foreach ($booleanFields as $field) {
+			if ($request->has($field)) {
+				$request->merge([
+					$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)
+				]);
+			}
+		}
+
+		if ($request->has('products') && is_string($request->products)) {
+			$productsString = $request->products;
+			if (strpos(trim($productsString), '{') === 0 && strpos(trim($productsString), '[') !== 0) {
+				$productsString = '[' . $productsString . ']';
+			}
+			$products = json_decode($productsString, true);
+			$request->merge(['products' => $products]);
+		}
+
 		$request->validate([
 			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
@@ -286,16 +319,16 @@ class CustomerCartController extends Controller
 
 			'pay_with_cheque' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
+			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
+			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
 			'products.*.shipping_charge' => 'required|numeric|min:0',
+
 			'products.*.accessory_item_ids' => 'nullable|array',
 			'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
-			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
-			'additional_amount_price' => 'nullable|required_with:additional_amount_name|numeric|min:0',
-			'additional_amount_details' => 'nullable|string',
 		]);
 
 		$address = CustomerAddress::with('relatedCountry:id,name,margin')
@@ -313,49 +346,50 @@ class CustomerCartController extends Controller
 		$margin = $address->relatedCountry->margin ?? 0;
 
 		$customer = Customer::find($request->customer_id);
-		/* ✅ Use trait for calculations */
 		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free, margin: $margin);
 
 		DB::beginTransaction();
 
 		try {
-			/* Get the latest cart by ID (most recent) */
-			$latestCart = CustomerCart::orderBy('id', 'desc')->first();
+			/* Get existing cart */
+			$customerCart = CustomerCart::where('customer_id', $request->customer_id)->first();
 
-			/* Get or create customer cart */
-			$customerCart = CustomerCart::firstOrNew([
-				'customer_id' => $request->customer_id
-			]);
+			/* Prepare common data */
+			$cartData = [
+				'customer_address_id' => $request->customer_address_id,
+				'additional_amount_name' => $request->additional_amount_name,
+				'additional_amount_price' => $request->additional_amount_price,
+				'amount' => $amountCalculations['subtotal'],
+				'pay_with_cheque' => $amountCalculations['pay_with_cheque'],
+				'is_lift_gate' => $request->boolean('is_lift_gate'),
+				'is_residential_address' => $request->boolean('is_residential_address'),
+				'is_inside_delivery' => $request->boolean('is_inside_delivery'),
+				'tax_percentage' => $amountCalculations['tax_percentage'],
+				'tax_amount' => $amountCalculations['tax_amount'],
+				'shipping_charge' => $amountCalculations['shipping_charge'],
+				'total_amount' => $amountCalculations['grand_total'],
+				'total_products' => $amountCalculations['total_products'],
+				'updated_by' => auth()->id(),
+			];
 
-			if (!$customerCart->exists) {
-				/* New record → generate reference number */
-				if ($latestCart && is_numeric($latestCart->reference_number)) {
-					$referenceNumber = (int) $latestCart->reference_number + 1;
-				} else {
-					$referenceNumber = in_array(config('app.website'), ['US', 'US_T']) ? 10001 : (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101);
-				}
+			if ($customerCart) {
+				/* Update existing cart */
+				$customerCart->update($cartData);
+			} else {
+				/* Generate reference number for new cart */
+				$latestReferenceNumber = CustomerCart::orderBy('id', 'desc')->value('reference_number');
 
-				$customerCart->reference_number = $referenceNumber;
-				$customerCart->created_by = auth()->id();
+				$referenceNumber = $latestReferenceNumber && is_numeric($latestReferenceNumber)
+				? (int) $latestReferenceNumber + 1
+				: (in_array(config('app.website'), ['US', 'US_T']) ? 10001 : (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101));
+
+				/* Create new cart */
+				$customerCart = CustomerCart::create(array_merge($cartData, [
+					'customer_id' => $request->customer_id,
+					'reference_number' => $referenceNumber,
+					'created_by' => auth()->id(),
+				]));
 			}
-
-			/* Always update these fields */
-			$customerCart->customer_address_id = $request->customer_address_id;
-			$customerCart->shipping_charge = $amountCalculations['shipping_charge'];
-			$customerCart->is_lift_gate = $request->boolean('is_lift_gate');
-			$customerCart->is_residential_address = $request->boolean('is_residential_address');
-			$customerCart->is_inside_delivery = $request->boolean('is_inside_delivery');
-			$customerCart->pay_with_cheque = $amountCalculations['pay_with_cheque'];
-			$customerCart->amount = $amountCalculations['subtotal'];
-			$customerCart->tax_percentage = $amountCalculations['tax_percentage'];
-			$customerCart->tax_amount = $amountCalculations['tax_amount'];
-			$customerCart->total_amount = $amountCalculations['grand_total'];
-			$customerCart->total_products = $amountCalculations['total_products'];
-			$customerCart->updated_by = auth()->id();
-			$customerCart->additional_amount_name = $request->additional_amount_name ?? null;
-			$customerCart->additional_amount_price = $request->additional_amount_price ?? null;
-
-			$customerCart->save();
 
 			/* Delete existing products and re-insert */
 			CustomerCartProduct::where('customer_cart_id', $customerCart->id)->delete();
@@ -369,7 +403,7 @@ class CustomerCartController extends Controller
 					'quantity' => $product['quantity'],
 					'unit_price' => $product['unit_price'],
 					'amount' => $total,
-					// 'accessory_item_charge' => $product['accessory_item_charge'],  /* ✅ Added */
+					'accessory_item_charge' => $product['accessory_item_charge'],  /* ✅ Added */
 					'shipping_charge' => $product['shipping_charge'],
 					'total_amount' => $total + $product['shipping_charge'] + $product['accessory_item_charge'],  /* ✅ Updated */
 				]);
