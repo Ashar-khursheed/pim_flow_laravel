@@ -9673,6 +9673,36 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "delete": {
+                "tags": [
+                    "Carts"
+                ],
+                "summary": "Delete a cart",
+                "operationId": "94edba2e35d86637902c45b8505b8957",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/carts/customer/{customer_id}": {
@@ -9696,38 +9726,6 @@
                 "responses": {
                     "200": {
                         "description": "Cart details retrieved successfully",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/customer-carts/{id}": {
-            "delete": {
-                "tags": [
-                    "Carts"
-                ],
-                "summary": "Delete a cart",
-                "operationId": "853b8de466041cab1a07d55a639f657d",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Deleted successfully",
                         "content": {
                             "application/json": {}
                         }
