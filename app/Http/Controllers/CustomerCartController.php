@@ -674,6 +674,8 @@ class CustomerCartController extends Controller
 		$cart->tax_amount = $taxAmount;
 		$cart->total_amount = $totalAmount;
 		$cart->additional_amount_price = $additionalAmount;
+
+		return $cart;
 	}
 
 	/**
