@@ -282,33 +282,26 @@ class CustomerCartController extends Controller
 	 */
 	public function store(Request $request)
 	{
-		/* Parse boolean strings to actual booleans */
-		$booleanFields = [
-			'is_lift_gate',
-			'is_residential_address',
-			'is_inside_delivery',
-			'is_new_customer',
-			'pay_with_cheque',
-		];
+		/* Parse boolean fields */
+		$booleanFields = ['is_lift_gate', 'is_residential_address', 'is_inside_delivery', 'is_new_customer', 'pay_with_cheque'];
 
-		/* Parse products JSON string to array */
 		foreach ($booleanFields as $field) {
 			if ($request->has($field)) {
-				$request->merge([
-					$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)
-				]);
+				$request->merge([$field => filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN)]);
 			}
 		}
 
+		/* Parse products JSON string to array if needed */
 		if ($request->has('products') && is_string($request->products)) {
-			$productsString = $request->products;
-			if (strpos(trim($productsString), '{') === 0 && strpos(trim($productsString), '[') !== 0) {
+			$productsString = trim($request->products);
+			/* Wrap single object in array brackets */
+			if (strpos($productsString, '{') === 0 && strpos($productsString, '[') !== 0) {
 				$productsString = '[' . $productsString . ']';
 			}
-			$products = json_decode($productsString, true);
-			$request->merge(['products' => $products]);
+			$request->merge(['products' => json_decode($productsString, true)]);
 		}
 
+		/* Validate request */
 		$request->validate([
 			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
@@ -316,7 +309,6 @@ class CustomerCartController extends Controller
 			'is_residential_address' => 'nullable|boolean',
 			'is_inside_delivery' => 'nullable|boolean',
 			'is_new_customer' => 'nullable|boolean',
-
 			'pay_with_cheque' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'additional_amount_name' => 'nullable|required_with:additional_amount_price|string|max:255',
@@ -326,13 +318,12 @@ class CustomerCartController extends Controller
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
 			'products.*.shipping_charge' => 'required|numeric|min:0',
-
 			'products.*.accessory_item_ids' => 'nullable|array',
 			'products.*.accessory_item_ids.*' => 'integer|exists:accessory_items,id',
 		]);
 
+		/* Verify address belongs to customer and get country margin */
 		$address = CustomerAddress::with('relatedCountry:id,name,margin')
-		->select(['id', 'customer_id', 'country'])
 		->where('customer_id', $request->customer_id)
 		->find($request->customer_address_id);
 
@@ -345,16 +336,17 @@ class CustomerCartController extends Controller
 
 		$margin = $address->relatedCountry->margin ?? 0;
 
+		/* Get customer and calculate amounts */
 		$customer = Customer::find($request->customer_id);
 		$amountCalculations = $this->calculateAmount($request, $customer->is_tax_free, margin: $margin);
 
 		DB::beginTransaction();
 
 		try {
-			/* Get existing cart */
+			/* Get existing cart or prepare for new one */
 			$customerCart = CustomerCart::where('customer_id', $request->customer_id)->first();
 
-			/* Prepare common data */
+			/* Prepare cart data */
 			$cartData = [
 				'customer_address_id' => $request->customer_address_id,
 				'additional_amount_name' => $request->additional_amount_name,
@@ -364,9 +356,9 @@ class CustomerCartController extends Controller
 				'is_lift_gate' => $request->boolean('is_lift_gate'),
 				'is_residential_address' => $request->boolean('is_residential_address'),
 				'is_inside_delivery' => $request->boolean('is_inside_delivery'),
+				'shipping_charge' => $amountCalculations['shipping_charge'],
 				'tax_percentage' => $amountCalculations['tax_percentage'],
 				'tax_amount' => $amountCalculations['tax_amount'],
-				'shipping_charge' => $amountCalculations['shipping_charge'],
 				'total_amount' => $amountCalculations['grand_total'],
 				'total_products' => $amountCalculations['total_products'],
 				'updated_by' => auth()->id(),
@@ -391,43 +383,38 @@ class CustomerCartController extends Controller
 				]));
 			}
 
-			/* Delete existing products and re-insert */
+			/* Delete existing cart products and re-insert */
 			CustomerCartProduct::where('customer_cart_id', $customerCart->id)->delete();
 
+			/* Insert cart products */
 			foreach ($amountCalculations['product_details'] as $product) {
-				$total = $product['quantity'] * $product['unit_price'];
-				$cartProduct = CustomerCartProduct::create([
+				$productAmount = $product['quantity'] * $product['unit_price'];
+
+				CustomerCartProduct::create([
 					'customer_cart_id' => $customerCart->id,
 					'product_id' => $product['product_id'],
 					'vendor_id' => $product['vendor_id'],
 					'quantity' => $product['quantity'],
 					'unit_price' => $product['unit_price'],
-					'amount' => $total,
-					'accessory_item_charge' => $product['accessory_item_charge'],  /* ✅ Added */
+					'amount' => $productAmount,
+					'accessory_item_charge' => $product['accessory_item_charge'],
 					'shipping_charge' => $product['shipping_charge'],
-					'total_amount' => $total + $product['shipping_charge'] + $product['accessory_item_charge'],  /* ✅ Updated */
+					'total_amount' => $productAmount + $product['shipping_charge'] + $product['accessory_item_charge'],
 				]);
-
-				/* ✅ Save accessory charges if present */
-				// foreach ($product['accessoryItems'] as $accessoryItem) {
-				// 	$cartProduct->accessoryCharges()->create([
-				// 		'accessory_item_id' => $accessoryItem['id'],
-				// 		'amount' => $accessoryItem['price'] * $product['quantity'],
-				// 		'created_at' => now(),
-				// 	]);
-				// }
 			}
 
+			/* Handle new customer password generation */
 			$isNewCustomer = $request->boolean('is_new_customer');
 			$randomPassword = null;
+
 			if ($isNewCustomer) {
 				$randomPassword = Str::random(8);
-				$hashedPassword = Hash::make($randomPassword);
-				$customerCart->customer->update(['password' => $hashedPassword]);
+				$customer->update(['password' => Hash::make($randomPassword)]);
 			}
 
 			DB::commit();
 
+			/* Dispatch cart creation email job */
 			$batch = Bus::batch([])->name('Cart Creation By Backend')->dispatch();
 			$batch->options['queue'] = config('app.website') . '_CART_ADD';
 			$batch->add(new CartCreationMailJob([
