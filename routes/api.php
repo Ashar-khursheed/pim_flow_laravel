@@ -665,7 +665,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
 	Route::post('/unisource/authenticate', [UnisourceShipmentController::class, 'authenticateWithUnisource']);
 
-	Route::get('/carts/fetch/{id}', [CustomerCartController::class, 'fetchByID']);
+	Route::get('/api/carts/customer/{customer_id}', [CustomerCartController::class, 'fetchByCustomerId']);
 	Route::apiResource('carts', CustomerCartController::class);
 
 	Route::post('/nofraud/process/{order_id}', [NoFraudController::class, 'processNoFraud']);
