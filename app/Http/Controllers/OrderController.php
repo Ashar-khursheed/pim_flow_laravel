@@ -1463,7 +1463,7 @@ class OrderController extends Controller
 		$prevPendingAmount = $order->pending_amount;
 
 		/* Calculate with existing order for UPDATE logic */
-		$amountCalculations = $this->calculateAmount($request, $order->customer->is_tax_free, $order, $margin);
+		$amountCalculations = $this->calculateAmount($request, $order->customer->is_tax_free, existingOrder: $order, margin: $margin);
 
 		DB::beginTransaction();
 		try {
