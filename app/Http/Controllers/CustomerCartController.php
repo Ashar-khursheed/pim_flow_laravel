@@ -678,7 +678,7 @@ class CustomerCartController extends Controller
 
 	/**
 	 * @OA\Delete(
-	 *     path="/api/customer-carts/{id}",
+	 *     path="/api/carts/{id}",
 	 *     summary="Delete a cart",
 	 *     tags={"Carts"},
 	 *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
