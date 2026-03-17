@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
-use App\Models\AccessoryCharge;
+use App\Models\FrontEnd\AccessoryCharge;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
