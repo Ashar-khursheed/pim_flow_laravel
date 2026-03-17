@@ -39,6 +39,11 @@ class CustomerAddress extends Model
 		return $this->belongsTo(Country::class, 'country', 'name');
 	}
 
+	public function scopeDefault($query)
+	{
+		return $query->where('is_default', 1);
+	}
+
 	// public function state()
 	// {
 	// 	return $this->belongsTo(State::class, 'state_id');

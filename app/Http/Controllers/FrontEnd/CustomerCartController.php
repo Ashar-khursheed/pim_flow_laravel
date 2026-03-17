@@ -22,381 +22,698 @@ class CustomerCartController extends Controller
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/carts",
-	 *     summary="Get all carts with pagination and filters",
+	 *     summary="Get authenticated customer's cart",
 	 *     tags={"Frontend-Carts"},
-	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", @OA\Schema(type="integer", minimum=1)),
-	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", @OA\Schema(type="integer", minimum=1)),
-	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
-	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "reference_number", "shipping_charge", "total_amount", "total_products", "created_at", "updated_at"})),
-	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", @OA\Schema(type="string", enum={"asc", "desc"})),
-	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Parameter(name="country", in="query", description=".....", example="United States", @OA\Schema(type="string")),
+	 *     @OA\Response(response=200, description="Cart retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function index(Request $request)
 	{
-		$searchableColumns = ['id', 'reference_number'];
-		$sortableColumns = array_merge($searchableColumns, ['shipping_charge', 'total_amount', 'total_products', 'created_at', 'updated_at']);
+		/* Get authenticated customer's cart */
+		$cart = CustomerCart::with([
+			'customerAddress:id,address,city,country',
+			'customerAddress.relatedCountry:id,name,currency_id',
+			'customerAddress.relatedCountry.currency:id,symbol',
+			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,accessory_item_charge,shipping_charge,total_amount',
+			'customerCartProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+			'customerCartProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+			'customerCartProducts.accessoryCharges.accessoryItem.accessory:id,name',
+			'customerCartProducts.product:id,name,images,sku,barcode',
+			'customerCartProducts.product.seoUrl:id,relational_id,relational_type,url',
+			'customerCartProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+		])
+		->where('customer_id', auth()->id())
+		->first();
 
-		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
-		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
-
-		$recordsQuery = CustomerCart::where('customer_id', auth()->id());
-
-		/* Eager load relationships */
-		$recordsQuery->with([
-			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
-			'customerCartProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-			'customerCartProducts.product.brand:id,name',
-			'customerCartProducts.product.currency:id,symbol',
-		]);
-
-		/* Global search */
-		if ($request->filled('global')) {
-			$search = $request->input('global');
-			$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
-				foreach ($searchableColumns as $col) {
-					$q->orWhere("customer_carts.$col", 'like', '%' . $search . '%');
-				}
-			});
+		if (!$cart) {
+			return response()->json([
+				'success' => true,
+				'message' => 'No cart found',
+				'data' => null
+			], 200);
 		}
 
-		/* Sorting */
-		$recordsQuery->orderBy($sortBy, $sortDir);
+		/* Get default customer address for currency */
+		$defaultAddress = $cart->customerAddress ?? auth()->user()->customerAddress()
+		->with('relatedCountry.currency:id,symbol')
+		->where('is_default', 1)
+		->first(['id', 'country']);
 
-		/* Check if pagination requested */
-		$page = 1;
-		$totalPages = 1;
-		$length = $totalRecords = (clone $recordsQuery)->count();
-		if ($request->filled('page') && $request->filled('length')) {
+		$currency = $defaultAddress->relatedCountry->currency ?? null;
 
-			/* Pagination */
-			$length = (int) $request->input('length');
-			$page = (int) $request->input('page');
 
-			$totalPages = (int) ceil($totalRecords / $length);
+		$cartSubtotal = 0;
+		$cartTotalShipping = 0;
+		$cartTotalAccessories = 0;
 
-			if ($page > $totalPages && $totalPages > 0) {
-				$page = 1;
+		/* Process each cart product */
+		foreach ($cart->customerCartProducts as $cartProduct) {
+			$product = $cartProduct->product;
+
+			if ($product) {
+				/* Parse and set product data */
+				$images = is_array($product->images)
+				? $product->images
+				: (json_decode($product->images, true) ?: []);
+
+				$product->image = $images[0] ?? null;
+				$product->currency_symbol = $currency->symbol ?? null;
+				$product->category_url = $product->category_url() ?? null;
+				$product->parent_category_url = $product->parent_category_url() ?? null;
+				$product->url = $product->seoUrl->url ?? null;
+
+				/* Extract selling unit type */
+				$fullValue = $product->sellingUnitAttribute->attribute_value ?? '';
+				$product->selling_type = $fullValue && strpos($fullValue, '/') !== false
+				? trim(explode('/', $fullValue)[1])
+				: trim($fullValue);
+
+				/* Remove unnecessary fields */
+				unset($product->images, $product->seoUrl, $product->categories, $product->sellingUnitAttribute);
 			}
-		}
 
-		$records = $recordsQuery
-		->offset(($page - 1) * $length)
-		->limit($length)
-		->get(['id', 'reference_number', 'customer_id', 'created_at']);
+			/* Get vendor supplier and calculate prices */
+			$supplier = optional($cartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 
-		/* Transform results */
-		$records->transform(function ($record) {
-			/* Process each product in customer cart products */
+			if ($supplier && isset($supplier['price'])) {
+				/* Calculate unit price (use sale price if available and lower) */
+				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price'])
+				? $supplier['sale_price']
+				: $supplier['price'];
 
-			$totalProducts = 0;
-			$cartAmount = 0;
-			$cartShipping = 0;
-			$cartProducts = [];
+				$amount = $cartProduct->quantity * $unitPrice;
+				$shippingCharge = $supplier['shipping_charge'] ?? 0;
+				$accessoryCharge = $cartProduct->accessory_item_charge ?? 0;
 
-			foreach ($record->customerCartProducts as $customerCartProduct) {
-				$product = $customerCartProduct->product;
-				if (!$product) continue;
+				/* Update cart product */
+				$cartProduct->unit_price = number_format($unitPrice, 2, '.', '');
+				$cartProduct->amount = number_format($amount, 2, '.', '');
+				$cartProduct->shipping_charge = number_format($shippingCharge, 2, '.', '');
+				$cartProduct->accessory_item_charge = number_format($accessoryCharge, 2, '.', '');
+				$cartProduct->total_amount = number_format($amount + $shippingCharge + $accessoryCharge, 2, '.', '');
 
-				/* Decode images if stored as JSON string */
-				$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-				$image = $images[0] ?? null;
+				/* Accumulate totals */
+				$cartSubtotal += $amount;
+				$cartTotalShipping += $shippingCharge;
+				$cartTotalAccessories += $accessoryCharge;
+			} else {
+				/* Use stored values */
+				$cartSubtotal += $cartProduct->amount;
+				$cartTotalShipping += $cartProduct->shipping_charge;
+				$cartTotalAccessories += $cartProduct->accessory_item_charge ?? 0;
 
-				$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days']);
+				/* Format stored values */
+				$cartProduct->unit_price = number_format($cartProduct->unit_price, 2, '.', '');
+				$cartProduct->amount = number_format($cartProduct->amount, 2, '.', '');
+				$cartProduct->shipping_charge = number_format($cartProduct->shipping_charge, 2, '.', '');
+				$cartProduct->accessory_item_charge = number_format($cartProduct->accessory_item_charge ?? 0, 2, '.', '');
+				$cartProduct->total_amount = number_format($cartProduct->total_amount, 2, '.', '');
+			}
 
-				$unitPrice = 0;
-				$shippingCharge = 0;
-				if ($supplier) {
-					$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
-					$shippingCharge = $supplier['shipping_charge'] ?? 0;
-
-					$expectedShippingDate = getDateRange($record->created_at, $supplier['delivery_days']);
-				}
-
-				$quantity = $customerCartProduct->quantity ?? 0;
-				$subTotal = $quantity * $unitPrice;
-
-				$totalProducts += $quantity;
-				$cartAmount += $subTotal;
-				$cartShipping += $shippingCharge;
-
-				/* Push product data */
-				$cartProducts[] = [
-					'product_id'      		=> $customerCartProduct->product_id,
-					'vendor_id'       		=> $customerCartProduct->vendor_id,
-					'image'           		=> $image,
-					'name'            		=> $product->name,
-					'url'            		=> config('app.url') . '/products/' . $product->seoProductUrl->url ?? $product->id,
-					'currency_symbol' 		=> $product->currency->symbol ?? null,
-					'unit_price'      		=> number_format($unitPrice, 2, '.', ''),
-					'quantity'        		=> $quantity,
-					'expectedShippingDate'  => $expectedShippingDate,
-					'sub_total'       		=> number_format($subTotal, 2, '.', ''),
-					'shipping_charge' 		=> number_format($shippingCharge, 2, '.', ''),
+			/* Format accessory charges */
+			$cartProduct->accessory_charges = $cartProduct->accessoryCharges->map(function ($charge) {
+				return [
+					'id' => $charge->id,
+					'accessory_item_id' => $charge->accessory_item_id,
+					'accessory_item_name' => $charge->accessoryItem->name ?? null,
+					'accessory_item_price' => number_format($charge->accessoryItem->price ?? 0, 2, '.', ''),
+					'product_accessory_id' => $charge->accessoryItem->product_accessory_id ?? null,
+					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+					'amount' => number_format($charge->amount, 2, '.', ''),
 				];
-			}
+			})->toArray();
 
+			/* Remove unnecessary cart product fields */
+			unset(
+				$cartProduct->accessoryCharges,
+				$cartProduct->customer_cart_id,
+				$cartProduct->product_id,
+				$cartProduct->vendor_id
+			);
+		}
 
-			/* Tax calculations */
-			$taxPercentage = $record->tax_percentage ?? 0;
-			$taxAmount = round(($cartAmount * $taxPercentage) / 100, 2);
+		/* Calculate cart totals */
+		$liftGateCharge = $cart->is_lift_gate ? 75 : 0;
+		$residentialCharge = $cart->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $cart->is_inside_delivery ? 249 : 0;
+		$additionalAmount = $cart->additional_amount_price ?? 0;
 
-			/* Website-specific shipping rules */
-			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
-			}
+		$amountBeforeTax = $cartSubtotal + $cartTotalShipping + $cartTotalAccessories + $liftGateCharge + $residentialCharge + $insideDeliveryCharge + $additionalAmount;
+		$taxPercentage = $cart->tax_percentage ?? 0;
+		$taxAmount = ($amountBeforeTax * $taxPercentage) / 100;
+		$totalAmount = $amountBeforeTax + $taxAmount;
 
-			$totalAmount = $cartAmount + $taxAmount + $cartShipping;
+		/* Update cart with calculated values */
+		$cart->amount = number_format($cartSubtotal, 2, '.', '');
+		$cart->shipping_charge = number_format($cartTotalShipping, 2, '.', '');
+		$cart->tax_percentage = number_format($taxPercentage, 4, '.', '');
+		$cart->tax_amount = number_format($taxAmount, 2, '.', '');
+		$cart->total_amount = number_format($totalAmount, 2, '.', '');
+		$cart->additional_amount_price = number_format($additionalAmount, 2, '.', '');
 
-			/* Prepare cart summary */
-			$record = [
-				'amount'                 => number_format($cartAmount, 2, '.', ''),
-				'tax_amount'             => number_format($taxAmount, 2, '.', ''),
-				'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
-				'total_amount'           => number_format($totalAmount, 2, '.', ''),
-				'total_products'         => $totalProducts,
-				'products'               => $cartProducts,
-			];
-
-			return $record;
-		});
+		/* Remove unnecessary cart fields */
+		unset(
+			$cart->reference_number,
+			$cart->created_by,
+			$cart->updated_by,
+			$cart->created_at,
+			$cart->updated_at
+		);
 
 		return response()->json([
 			'success' => true,
-			'message' => __('msg_rec_list'),
-			'data' => $records,
-			'total_pages' => $totalPages,
-			'total_records' => $totalRecords,
-		]);
+			'message' => 'Cart retrieved successfully',
+			'data' => $cart
+		], 200);
 	}
 
 	/**
 	 * @OA\Post(
-	 *     path="/api/frontend/carts",
-	 *     summary="Create a new cart",
+	 *     path="/api/frontend/carts/add",
+	 *     summary="Add product to cart (create or update)",
 	 *     tags={"Frontend-Carts"},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"products"},
-	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
-	 *             @OA\Property(property="tax_percentage", type="number", example=5),
+	 *             required={"product_id", "vendor_id", "quantity", "shipping_charge"},
+	 *             @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
+	 *             @OA\Property(property="vendor_id", type="integer", example=22, description="Vendor ID"),
+	 *             @OA\Property(property="quantity", type="integer", example=5, description="Product quantity"),
+	 *             @OA\Property(property="shipping_charge", type="number", example=50.00, description="Product Shipping Charge"),
 	 *             @OA\Property(
-	 *                 property="products",
+	 *                 property="accessory_item_ids",
 	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity"},
-	 *                     @OA\Property(property="product_id", type="integer", example=101),
-	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
-	 *                     @OA\Property(property="quantity", type="integer", example=5)
-	 *                 )
+	 *                 description="Array of accessory item IDs",
+	 *                 @OA\Items(type="integer", example=50)
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Response(response=201, description="Product added to cart successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function store(Request $request)
+	public function addToCart(Request $request)
 	{
+		/* Validate request */
 		$request->validate([
-			'customer_address_id' => 'nullable|integer|exists:customer_addresses,id',
-			'tax_percentage' => 'required|numeric|min:0',
-			'products' => 'required|array|min:1',
-			'products.*.product_id' => 'required|integer|exists:ec_products,id',
-			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
-			'products.*.quantity' => 'required|integer|min:1',
+			'product_id' => 'required|integer|exists:ec_products,id',
+			'vendor_id' => 'required|integer|exists:vendors,id',
+			'quantity' => 'required|integer|min:1',
+			'shipping_charge' => 'required|numeric|min:0',
+			'accessory_item_ids' => 'nullable|array',
+			'accessory_item_ids.*' => 'integer|exists:accessory_items,id',
 		]);
 
-		if ($request->customer_address_id) {
-			$address = CustomerAddress::where('id', $request->customer_address_id)
-			->where('customer_id', auth()->id())
-			->first();
+		$customerId = auth()->id();
 
-			if (!$address) {
-				return response()->json([
-					'success' => false,
-					'message' => 'The selected address does not belong to the customer.'
-				], 422);
-			}
+		/* Get customer and default address */
+		$customer = Customer::find($customerId);
+		$defaultAddress = $customer->customerAddresses()->where('is_default', 1)->first();
+
+		if (!$defaultAddress) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Please add a default address first.'
+			], 422);
 		}
+
+		/* Get country margin */
+		$margin = $defaultAddress->relatedCountry->margin ?? 0;
+
+		/* Prepare product data for calculation */
+		$productData = [[
+			'product_id' => $request->product_id,
+			'vendor_id' => $request->vendor_id,
+			'quantity' => $request->quantity,
+			'shipping_charge' => $request->shipping_charge,
+			'accessory_item_ids' => $request->accessory_item_ids ?? [],
+		]];
+
+		/* Create temporary request for calculation */
+		$tempRequest = new \Illuminate\Http\Request();
+		$tempRequest->merge([
+			'products' => $productData,
+			'tax_percentage' => 0, // Will be calculated based on address
+		]);
+
+		/* Calculate amounts */
+		$amountCalculations = $this->calculateAmount($tempRequest, $customer->is_tax_free, margin: $margin);
 
 		DB::beginTransaction();
 
 		try {
-			/* Collect all product supplier details in one go */
-			$productDetails = [];
-			foreach ($request->products as $product) {
-				$fetchedDetail = productSupplierDetail($product['product_id'], $product['vendor_id']);
-				if (!$fetchedDetail) {
-					throw new \Exception("Product supplier not found for Product {$product['product_id']} & Vendor {$product['vendor_id']}");
-				}
-				$productDetails[] = [
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'unit_price' => $fetchedDetail->unit_price,
-					'shipping_charge' => $request->boolean('is_customer_pickup') ? 0 : ($fetchedDetail->shipping_charge ?? 0),
-				];
+			/* Check if customer already has a cart */
+			$customerCart = CustomerCart::where('customer_id', $customerId)->first();
+
+			/* Prepare cart data */
+			$cartData = [
+				'customer_address_id' => $defaultAddress->id,
+				'amount' => $amountCalculations['subtotal'],
+				'shipping_charge' => $amountCalculations['shipping_charge'],
+				'tax_percentage' => $amountCalculations['tax_percentage'],
+				'tax_amount' => $amountCalculations['tax_amount'],
+				'total_amount' => $amountCalculations['grand_total'],
+				'total_products' => $amountCalculations['total_products'],
+				'updated_by' => $customerId,
+			];
+
+			if ($customerCart) {
+				/* Update existing cart */
+				$customerCart->update($cartData);
+				$message = 'Product added to cart successfully';
+			} else {
+				/* Generate reference number for new cart */
+				$latestReferenceNumber = CustomerCart::orderBy('id', 'desc')->value('reference_number');
+
+				$referenceNumber = $latestReferenceNumber && is_numeric($latestReferenceNumber)
+					? (int) $latestReferenceNumber + 1
+					: (in_array(config('app.website'), ['US', 'US_T']) ? 10001 : (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101));
+
+				/* Create new cart */
+				$customerCart = CustomerCart::create(array_merge($cartData, [
+					'customer_id' => $customerId,
+					'reference_number' => $referenceNumber,
+					'created_by' => $customerId,
+				]));
+
+				$message = 'Cart created and product added successfully';
 			}
 
-			$totalProducts = 0;
-			$cartAmount = 0;
-			$cartShipping = 0;
-			foreach ($productDetails as $product) {
-				$totalProducts += $product['quantity'];
-				$cartAmount += $product['quantity'] * $product['unit_price'];
-				$cartShipping += $product['shipping_charge'];
-			}
+			/* Check if product already exists in cart */
+			$existingCartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
+				->where('product_id', $request->product_id)
+				->where('vendor_id', $request->vendor_id)
+				->first();
 
-			$customer = auth()->user();
-			$taxPercentage = $customer->is_tax_free ? 0 : $request->tax_percentage;
+			$productDetails = $amountCalculations['product_details'][0];
+			$productAmount = $productDetails['quantity'] * $productDetails['unit_price'];
 
-			$taxAmount = round($cartAmount * ($taxPercentage / 100), 2);
+			if ($existingCartProduct) {
+				/* Update existing product - increase quantity */
+				$newQuantity = $existingCartProduct->quantity + $request->quantity;
+				$newAmount = $newQuantity * $productDetails['unit_price'];
 
-			if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-				$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
-			}
+				/* Delete old accessory charges */
+				AccessoryCharge::where('relation_type', CustomerCartProduct::class)
+					->where('relation_id', $existingCartProduct->id)
+					->delete();
 
-			$totalAmount = $cartAmount + $taxAmount + $cartShipping;
-
-			/* Get the latest cart by ID (most recent) */
-			$latestCart = CustomerCart::orderBy('id', 'desc')->first();
-
-			/* Get the latest cart by ID (most recent) */
-			$customerCart = CustomerCart::firstOrNew([
-				'customer_id' => auth()->id()
-			]);
-
-			if (!$customerCart->exists) {
-				/* New record → generate reference number */
-				if ($latestCart && is_numeric($latestCart->reference_number)) {
-					$referenceNumber = (int) $latestCart->reference_number + 1;
-				} else {
-					$website = config('app.website');
-					$referenceNumber = in_array(config('app.website'), ['US', 'US_T']) ? 10001 : (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101);
-				}
-
-				$customerCart->reference_number = $referenceNumber;
-				$customerCart->created_by = 0;
-			}
-
-			/* Always update these fields */
-			$customerCart->customer_address_id    = $request->customer_address_id ?? 0;
-			$customerCart->shipping_charge        = $cartShipping;
-			$customerCart->is_lift_gate           = $request->is_lift_gate ?? null;
-			$customerCart->is_residential_address = $request->is_residential_address ?? null;
-			$customerCart->is_inside_delivery     = $request->is_inside_delivery ?? null;
-			$customerCart->amount                 = $cartAmount;
-			$customerCart->tax_percentage         = $taxPercentage;
-			$customerCart->tax_amount             = $taxAmount;
-			$customerCart->total_amount           = $totalAmount;
-			$customerCart->total_products         = $totalProducts;
-			$customerCart->updated_by             = 0;
-
-			$customerCart->save();
-
-			/* Delete existing products and re-insert */
-			CustomerCartProduct::where('customer_cart_id', $customerCart->id)->delete();
-
-			foreach ($productDetails as $product) {
-				$total = $product['quantity'] * $product['unit_price'];
-				CustomerCartProduct::create([
-					'customer_cart_id' => $customerCart->id,
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'unit_price' => $product['unit_price'],
-					'amount' => $total,
-					'shipping_charge' => $product['shipping_charge'],
-					'total_amount' => $total + $product['shipping_charge'],
+				/* Update cart product */
+				$existingCartProduct->update([
+					'quantity' => $newQuantity,
+					'amount' => $newAmount,
+					'accessory_item_charge' => $productDetails['accessory_item_charge'],
+					'shipping_charge' => $productDetails['shipping_charge'],
+					'total_amount' => $newAmount + $productDetails['shipping_charge'] + $productDetails['accessory_item_charge'],
 				]);
+
+				$cartProduct = $existingCartProduct;
+			} else {
+				/* Add new product to cart */
+				$cartProduct = CustomerCartProduct::create([
+					'customer_cart_id' => $customerCart->id,
+					'product_id' => $productDetails['product_id'],
+					'vendor_id' => $productDetails['vendor_id'],
+					'quantity' => $productDetails['quantity'],
+					'unit_price' => $productDetails['unit_price'],
+					'amount' => $productAmount,
+					'accessory_item_charge' => $productDetails['accessory_item_charge'],
+					'shipping_charge' => $productDetails['shipping_charge'],
+					'total_amount' => $productAmount + $productDetails['shipping_charge'] + $productDetails['accessory_item_charge'],
+				]);
+			}
+
+			/* Save accessory charges if present */
+			if (!empty($productDetails['accessoryItems'])) {
+				foreach ($productDetails['accessoryItems'] as $accessoryItem) {
+					$cartProduct->accessoryCharges()->create([
+						'accessory_item_id' => $accessoryItem['id'],
+						'amount' => $accessoryItem['price'] * $productDetails['quantity'],
+					]);
+				}
 			}
 
 			DB::commit();
 
-			$cartProducts = [];
-			foreach ($customerCart->customerCartProducts as $customerCartProduct) {
-				$product = $customerCartProduct->product;
-				if (!$product) continue;
-
-				/* Decode images if stored as JSON string */
-				$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-				$image = $images[0] ?? null;
-
-				$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
-
-				$unitPrice = 0;
-				$shippingCharge = 0;
-				if ($supplier) {
-					$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
-					$shippingCharge = $supplier['shipping_charge'] ?? 0;
-				}
-
-				$quantity = $customerCartProduct->quantity ?? 0;
-				$subTotal = $quantity * $unitPrice;
-
-				/* Push product data */
-				$cartProducts[] = [
-					'name'            => $product->name,
-					'image'           => $image,
-					'sku'             => $product->sku,
-					'currency_symbol' => $product->currency->symbol ?? null,
-					'quantity'        => $quantity,
-					'unit_price'      => number_format($unitPrice, 2, '.', ''),
-					'sub_total'       => number_format($subTotal, 2, '.', ''),
-					'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
-				];
-			}
-
-			/* Prepare cart summary */
-			$carts = [
-				'reference_number'       => $customerCart->reference_number,
-				'address'                => $customerCart->customerAddress,
-				'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
-				'amount'                 => number_format($cartAmount, 2, '.', ''),
-				'tax_percentage'         => $taxPercentage,
-				'tax_amount'             => number_format($taxAmount, 2, '.', ''),
-				'total_amount'           => number_format($totalAmount, 2, '.', ''),
-				'total_products'         => $totalProducts,
-				'products'               => $cartProducts,
-			];
-
 			return response()->json([
 				'success' => true,
-				'message' => 'Customer cart created successfully',
-				'data' => $carts,
+				'message' => $message,
+				'data' => [
+					'cart_id' => $customerCart->id,
+					'total_products' => $customerCart->total_products,
+					'total_amount' => number_format($customerCart->total_amount, 2, '.', ''),
+				]
 			], 201);
+
 		} catch (\Exception $e) {
 			DB::rollBack();
 
 			return response()->json([
 				'success' => false,
-				'message' => 'Failed to create customer cart: ' . $e->getMessage()
+				'message' => 'Failed to add product to cart: ' . $e->getMessage()
+			], 500);
+		}
+	}
+
+	/**
+	 * @OA\Put(
+	 *     path="/api/frontend/carts/update-quantity/{cart_product_id}",
+	 *     summary="Update cart product quantity",
+	 *     tags={"Frontend-Carts"},
+	 *     @OA\Parameter(
+	 *         name="cart_product_id",
+	 *         in="path",
+	 *         description="Cart Product ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"quantity"},
+	 *             @OA\Property(property="quantity", type="integer", example=3, description="New quantity")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Quantity updated successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function updateQuantity(Request $request, $cart_product_id)
+	{
+		/* Validate request */
+		$request->validate([
+			'quantity' => 'required|integer|min:1',
+		]);
+
+		$customerId = auth()->id();
+
+		/* Get cart product and verify ownership */
+		$cartProduct = CustomerCartProduct::with('customerCart')
+			->whereHas('customerCart', function($query) use ($customerId) {
+				$query->where('customer_id', $customerId);
+			})
+			->find($cart_product_id);
+
+		if (!$cartProduct) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Cart product not found or does not belong to you.'
+			], 404);
+		}
+
+		$customerCart = $cartProduct->customerCart;
+		$customer = Customer::find($customerId);
+
+		/* Get margin from cart address */
+		$address = CustomerAddress::with('relatedCountry:id,name,margin')
+			->find($customerCart->customer_address_id);
+
+		$margin = $address->relatedCountry->margin ?? 0;
+
+		/* Get product supplier for price calculation */
+		$supplier = ProductSupplier::where('product_id', $cartProduct->product_id)
+			->where('vendor_id', $cartProduct->vendor_id)
+			->first(['price', 'sale_price', 'shipping_charge']);
+
+		if (!$supplier) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product supplier not found.'
+			], 404);
+		}
+
+		/* Calculate unit price with margin */
+		$baseUnitPrice = ($supplier->sale_price > 0 && $supplier->sale_price < $supplier->price)
+			? $supplier->sale_price
+			: $supplier->price;
+
+		$unitPrice = $baseUnitPrice + (in_array(config('app.website'), ['UAE', 'UAE_T'])
+			? ($baseUnitPrice * ($margin / 100))
+			: 0);
+
+		DB::beginTransaction();
+
+		try {
+			/* Recalculate accessory charges based on new quantity */
+			$accessoryCharges = AccessoryCharge::where('relation_type', CustomerCartProduct::class)
+				->where('relation_id', $cartProduct->id)
+				->with('accessoryItem:id,price')
+				->get();
+
+			$totalAccessoryCharge = 0;
+
+			foreach ($accessoryCharges as $charge) {
+				$newAmount = ($charge->accessoryItem->price ?? 0) * $request->quantity;
+				$charge->update(['amount' => $newAmount]);
+				$totalAccessoryCharge += $newAmount;
+			}
+
+			/* Update cart product */
+			$amount = $request->quantity * $unitPrice;
+			$shippingCharge = $supplier->shipping_charge ?? 0;
+			$totalAmount = $amount + $shippingCharge + $totalAccessoryCharge;
+
+			$cartProduct->update([
+				'quantity' => $request->quantity,
+				'unit_price' => $unitPrice,
+				'amount' => $amount,
+				'accessory_item_charge' => $totalAccessoryCharge,
+				'shipping_charge' => $shippingCharge,
+				'total_amount' => $totalAmount,
+			]);
+
+			/* Recalculate cart totals */
+			$this->recalculateCartTotals($customerCart->id, $customer->is_tax_free);
+
+			DB::commit();
+
+			/* Get updated cart */
+			$updatedCart = CustomerCart::find($customerCart->id);
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Quantity updated successfully',
+				'data' => [
+					'cart_product_id' => $cartProduct->id,
+					'quantity' => $cartProduct->quantity,
+					'unit_price' => number_format($cartProduct->unit_price, 2, '.', ''),
+					'amount' => number_format($cartProduct->amount, 2, '.', ''),
+					'total_amount' => number_format($cartProduct->total_amount, 2, '.', ''),
+					'cart_total' => number_format($updatedCart->total_amount, 2, '.', ''),
+				]
+			], 200);
+
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to update quantity: ' . $e->getMessage()
+			], 500);
+		}
+	}
+
+	/**
+	 * Recalculate cart totals after product changes
+	 *
+	 * @param int $cartId
+	 * @param bool $isTaxFree
+	 * @return void
+	 */
+	private function recalculateCartTotals($cartId, $isTaxFree = false)
+	{
+		$cart = CustomerCart::with('customerCartProducts')->find($cartId);
+
+		/* Calculate totals */
+		$subtotal = $cart->customerCartProducts->sum('amount');
+		$totalShipping = $cart->customerCartProducts->sum('shipping_charge');
+		$totalAccessories = $cart->customerCartProducts->sum('accessory_item_charge');
+		$totalProducts = $cart->customerCartProducts->count();
+
+		/* Calculate charges */
+		$liftGateCharge = $cart->is_lift_gate ? 75 : 0;
+		$residentialCharge = $cart->is_residential_address ? 199 : 0;
+		$insideDeliveryCharge = $cart->is_inside_delivery ? 249 : 0;
+		$additionalAmount = $cart->additional_amount_price ?? 0;
+
+		/* Calculate amount before tax */
+		$amountBeforeTax = $subtotal + $totalShipping + $totalAccessories + $liftGateCharge + $residentialCharge + $insideDeliveryCharge + $additionalAmount;
+
+		/* Calculate tax */
+		$taxPercentage = $isTaxFree ? 0 : ($cart->tax_percentage ?? 0);
+		$taxAmount = ($amountBeforeTax * $taxPercentage) / 100;
+
+		/* Calculate final total */
+		$totalAmount = $amountBeforeTax + $taxAmount;
+
+		/* Update cart */
+		$cart->update([
+			'amount' => $subtotal,
+			'shipping_charge' => $totalShipping,
+			'tax_percentage' => $taxPercentage,
+			'tax_amount' => $taxAmount,
+			'total_amount' => $totalAmount,
+			'total_products' => $totalProducts,
+			'updated_by' => auth()->id(),
+		]);
+	}
+
+	/**
+	 * @OA\Delete(
+	 *     path="/api/frontend/carts/remove/{cart_product_id}",
+	 *     summary="Remove product from cart (deletes cart if empty)",
+	 *     tags={"Frontend-Carts"},
+	 *     @OA\Parameter(
+	 *         name="cart_product_id",
+	 *         in="path",
+	 *         description="Cart Product ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Product removed successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function removeProduct($cart_product_id)
+	{
+		$customerId = auth()->id();
+
+		/* Get cart product and verify ownership */
+		$cartProduct = CustomerCartProduct::with('customerCart')
+			->whereHas('customerCart', function($query) use ($customerId) {
+				$query->where('customer_id', $customerId);
+			})
+			->find($cart_product_id);
+
+		if (!$cartProduct) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Cart product not found.'
+			], 404);
+		}
+
+		$cartId = $cartProduct->customer_cart_id;
+
+		DB::beginTransaction();
+
+		try {
+			/* Delete accessory charges first */
+			AccessoryCharge::where('relation_type', CustomerCartProduct::class)
+				->where('relation_id', $cartProduct->id)
+				->delete();
+
+			/* Delete cart product */
+			$cartProduct->delete();
+
+			/* Check if cart is now empty */
+			$remainingProducts = CustomerCartProduct::where('customer_cart_id', $cartId)->count();
+
+			if ($remainingProducts === 0) {
+				/* No products left - delete the cart */
+				CustomerCart::find($cartId)->delete();
+
+				DB::commit();
+
+				return response()->json([
+					'success' => true,
+					'message' => 'Product removed and cart deleted (no products left)',
+					'data' => [
+						'cart_exists' => false,
+						'remaining_products' => 0,
+						'cart_total' => '0.00'
+					]
+				], 200);
+			}
+
+			/* Cart still has products - recalculate totals */
+			$customer = Customer::find($customerId);
+			$this->recalculateCartTotals($cartId, $customer->is_tax_free);
+
+			DB::commit();
+
+			/* Get updated cart */
+			$updatedCart = CustomerCart::find($cartId);
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Product removed successfully',
+				'data' => [
+					'cart_exists' => true,
+					'remaining_products' => $updatedCart->total_products,
+					'cart_total' => number_format($updatedCart->total_amount, 2, '.', '')
+				]
+			], 200);
+
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to remove product: ' . $e->getMessage()
 			], 500);
 		}
 	}
 
 	/**
 	 * @OA\Delete(
-	 *     path="/api/frontend/carts",
-	 *     summary="Delete a cart",
+	 *     path="/api/frontend/carts/empty",
+	 *     summary="Empty cart - Remove all products and delete cart",
 	 *     tags={"Frontend-Carts"},
-	 *     @OA\Response(response=200, description="Deleted successfully", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Response(response=200, description="Cart emptied successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function destroyAll()
+	public function emptyCart()
 	{
-		auth()->user()->customerCarts->each(function ($cart) {
-			$cart->customerCartProducts()->delete();
-			$cart->delete();
-		});
+		$customerId = auth()->id();
 
-		return response()->json([
-			'success' => true,
-			'message' => 'All carts deleted successfully for customer',
-		]);
+		/* Get customer's cart */
+		$cart = CustomerCart::where('customer_id', $customerId)->first();
+
+		if (!$cart) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No cart found.'
+			], 404);
+		}
+
+		DB::beginTransaction();
+
+		try {
+			/* Get all cart product IDs */
+			$cartProductIds = CustomerCartProduct::where('customer_cart_id', $cart->id)
+				->pluck('id')
+				->toArray();
+
+			if (!empty($cartProductIds)) {
+				/* Delete all accessory charges */
+				AccessoryCharge::where('relation_type', CustomerCartProduct::class)
+					->whereIn('relation_id', $cartProductIds)
+					->delete();
+			}
+
+			/* Delete all cart products */
+			CustomerCartProduct::where('customer_cart_id', $cart->id)->delete();
+
+			/* Delete the cart */
+			$cart->delete();
+
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Cart emptied successfully'
+			], 200);
+
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to empty cart: ' . $e->getMessage()
+			], 500);
+		}
 	}
 }
