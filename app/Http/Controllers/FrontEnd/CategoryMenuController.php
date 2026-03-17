@@ -186,7 +186,7 @@ class CategoryMenuController extends Controller
             ->with(['seoUrl'])
             ->where('status', 'published')
             ->where('id', '!=', 960)           // 👈 exclude category 960
-    ->where('parent_id', '!=', 960)    // 👈 exclude direct children
+            ->where('parent_id', '!=', 960)    // 👈 exclude direct children
             ->orderByRaw('`order` ASC'); // 👈 escape reserved column
 
         if ($filterId) {
