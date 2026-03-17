@@ -105,7 +105,7 @@ class CustomerCartController extends Controller
 		}
 
 		/* Sorting */
-		$recordsQuery->cartBy($sortBy, $sortDir);
+		$recordsQuery->orderBy($sortBy, $sortDir);
 
 		$onlyTotalAmount = $request->has('only_total_amount') && $request->boolean('only_total_amount');
 		$onlyID = $request->has('only_id') && $request->boolean('only_id');
