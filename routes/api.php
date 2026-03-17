@@ -729,8 +729,15 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 
 
-	Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
-	Route::apiResource('frontend/carts', F_CustomerCartController::class)->names('frontend.carts');;
+	// Route::delete('frontend/carts', [F_CustomerCartController::class, 'destroyAll']);
+	// Route::apiResource('frontend/carts', F_CustomerCartController::class)->names('frontend.carts');;
+	Route::get('frontend/carts', [F_CustomerCartController::class, 'index']);
+	Route::post('frontend/carts/add', [F_CustomerCartController::class, 'addToCart']);
+	Route::put('frontend/carts/update-quantity/{cart_product_id}', [F_CustomerCartController::class, 'updateQuantity']);
+	Route::delete('frontend/carts/remove/{cart_product_id}', [F_CustomerCartController::class, 'removeProduct']);
+	Route::delete('frontend/carts/empty', [F_CustomerCartController::class, 'emptyCart']);
+
+
 
 
 	Route::post('/coupons/apply', [F_CouponController::class, 'apply']);

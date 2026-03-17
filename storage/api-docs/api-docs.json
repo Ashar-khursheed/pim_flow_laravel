@@ -17596,6 +17596,18 @@
                 ],
                 "summary": "Get authenticated customer's cart",
                 "operationId": "08b8882c9037f2236e7cb3990e7a3213",
+                "parameters": [
+                    {
+                        "name": "country",
+                        "in": "query",
+                        "description": "Country name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "United States"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Cart retrieved successfully",
@@ -17609,53 +17621,58 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/frontend/carts/add": {
             "post": {
                 "tags": [
                     "Frontend-Carts"
                 ],
-                "summary": "Create a new cart",
-                "operationId": "3a5860c524752bdace4ec3bc6ca0657b",
+                "summary": "Add product to cart (create or update)",
+                "operationId": "410fed0429f6f545a086760294e4c241",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "products"
+                                    "product_id",
+                                    "vendor_id",
+                                    "quantity",
+                                    "shipping_charge"
                                 ],
                                 "properties": {
-                                    "customer_address_id": {
-                                        "type": "integer",
-                                        "example": "1"
+                                    "country": {
+                                        "description": "Country name",
+                                        "type": "string",
+                                        "example": "United States"
                                     },
-                                    "tax_percentage": {
-                                        "type": "number",
+                                    "product_id": {
+                                        "description": "Product ID",
+                                        "type": "integer",
+                                        "example": 101
+                                    },
+                                    "vendor_id": {
+                                        "description": "Vendor ID",
+                                        "type": "integer",
+                                        "example": 22
+                                    },
+                                    "quantity": {
+                                        "description": "Product quantity",
+                                        "type": "integer",
                                         "example": 5
                                     },
-                                    "products": {
+                                    "shipping_charge": {
+                                        "description": "Product Shipping Charge",
+                                        "type": "number",
+                                        "example": 50
+                                    },
+                                    "accessory_item_ids": {
+                                        "description": "Array of accessory item IDs",
                                         "type": "array",
                                         "items": {
-                                            "required": [
-                                                "product_id",
-                                                "vendor_id",
-                                                "quantity"
-                                            ],
-                                            "properties": {
-                                                "product_id": {
-                                                    "type": "integer",
-                                                    "example": 101
-                                                },
-                                                "vendor_id": {
-                                                    "type": "integer",
-                                                    "example": 22
-                                                },
-                                                "quantity": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                }
-                                            },
-                                            "type": "object"
+                                            "type": "integer",
+                                            "example": 50
                                         }
                                     }
                                 },
@@ -17666,7 +17683,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Created successfully",
+                        "description": "Product added to cart successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -17677,16 +17694,104 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/frontend/carts/update-quantity/{cart_product_id}": {
+            "put": {
+                "tags": [
+                    "Frontend-Carts"
+                ],
+                "summary": "Update cart product quantity",
+                "operationId": "acc879c29d8083a865893b2f382ed0ff",
+                "parameters": [
+                    {
+                        "name": "cart_product_id",
+                        "in": "path",
+                        "description": "Cart Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "quantity"
+                                ],
+                                "properties": {
+                                    "quantity": {
+                                        "description": "New quantity",
+                                        "type": "integer",
+                                        "example": 3
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Quantity updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/carts/remove/{cart_product_id}": {
             "delete": {
                 "tags": [
                     "Frontend-Carts"
                 ],
-                "summary": "Delete a cart",
-                "operationId": "3ccda7fc95ca66fb597e2a6388e6456b",
+                "summary": "Remove product from cart (deletes cart if empty)",
+                "operationId": "1f33c7ed43cff823ac14d44449c38b1a",
+                "parameters": [
+                    {
+                        "name": "cart_product_id",
+                        "in": "path",
+                        "description": "Cart Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Deleted successfully",
+                        "description": "Product removed successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/carts/empty": {
+            "delete": {
+                "tags": [
+                    "Frontend-Carts"
+                ],
+                "summary": "Empty cart - Remove all products and delete cart",
+                "operationId": "331692ea2e5453b1932e4ac62e3098b5",
+                "responses": {
+                    "200": {
+                        "description": "Cart emptied successfully",
                         "content": {
                             "application/json": {}
                         }

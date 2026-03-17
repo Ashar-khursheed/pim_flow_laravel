@@ -24,18 +24,26 @@ class CustomerCartController extends Controller
 	 *     path="/api/frontend/carts",
 	 *     summary="Get authenticated customer's cart",
 	 *     tags={"Frontend-Carts"},
-	 *     @OA\Parameter(name="country", in="query", description=".....", example="United States", @OA\Schema(type="string")),
+	 *     @OA\Parameter(
+	 *         name="country",
+	 *         in="query",
+	 *         description="Country name",
+	 *         required=false,
+	 *         @OA\Schema(type="string", example="United States")
+	 *     ),
 	 *     @OA\Response(response=200, description="Cart retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function index(Request $request)
 	{
+		/* Validate country parameter if provided */
+		$request->validate([
+			'country' => 'nullable|string|exists:countries,name',
+		]);
+
 		/* Get authenticated customer's cart */
 		$cart = CustomerCart::with([
-			'customerAddress:id,address,city,country',
-			'customerAddress.relatedCountry:id,name,currency_id',
-			'customerAddress.relatedCountry.currency:id,symbol',
 			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,accessory_item_charge,shipping_charge,total_amount',
 			'customerCartProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 			'customerCartProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
@@ -55,14 +63,26 @@ class CustomerCartController extends Controller
 			], 200);
 		}
 
-		/* Get default customer address for currency */
-		$defaultAddress = $cart->customerAddress ?? auth()->user()->customerAddress()
-		->with('relatedCountry.currency:id,symbol')
-		->where('is_default', 1)
-		->first(['id', 'country']);
+		/* Get country and currency based on query parameter or default address */
+		if ($request->filled('country')) {
+			/* Use country from query parameter */
+			$country = Country::with('currency:id,symbol')
+			->where('name', $request->country)
+			->first(['id', 'name', 'currency_id', 'margin']);
 
-		$currency = $defaultAddress->relatedCountry->currency ?? null;
+			$margin = $country->margin ?? 0;
+			$currency = $country->currency ?? null;
+		} else {
+			/* Use default customer address */
+			$defaultAddress = auth()->user()->customerAddresses()
+			->with('relatedCountry.currency:id,symbol')
+			->where('is_default', 1)
+			->first(['id', 'country']);
 
+			$countryData = $defaultAddress->relatedCountry ?? null;
+			$margin = $countryData->margin ?? 0;
+			$currency = $countryData->currency ?? null;
+		}
 
 		$cartSubtotal = 0;
 		$cartTotalShipping = 0;
@@ -98,10 +118,15 @@ class CustomerCartController extends Controller
 			$supplier = optional($cartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 
 			if ($supplier && isset($supplier['price'])) {
-				/* Calculate unit price (use sale price if available and lower) */
-				$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price'])
+				/* Calculate base unit price (use sale price if available and lower) */
+				$baseUnitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price'])
 				? $supplier['sale_price']
 				: $supplier['price'];
+
+				/* Apply margin based on website */
+				$unitPrice = $baseUnitPrice + (in_array(config('app.website'), ['UAE', 'UAE_T'])
+					? ($baseUnitPrice * ($margin / 100))
+					: 0);
 
 				$amount = $cartProduct->quantity * $unitPrice;
 				$shippingCharge = $supplier['shipping_charge'] ?? 0;
@@ -198,6 +223,7 @@ class CustomerCartController extends Controller
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             required={"product_id", "vendor_id", "quantity", "shipping_charge"},
+	 *             @OA\Property(property="country", type="string", example="United States", description="Country name"),
 	 *             @OA\Property(property="product_id", type="integer", example=101, description="Product ID"),
 	 *             @OA\Property(property="vendor_id", type="integer", example=22, description="Vendor ID"),
 	 *             @OA\Property(property="quantity", type="integer", example=5, description="Product quantity"),
@@ -218,6 +244,7 @@ class CustomerCartController extends Controller
 	{
 		/* Validate request */
 		$request->validate([
+			'country' => 'nullable|string|exists:countries,name',
 			'product_id' => 'required|integer|exists:ec_products,id',
 			'vendor_id' => 'required|integer|exists:vendors,id',
 			'quantity' => 'required|integer|min:1',
@@ -230,17 +257,25 @@ class CustomerCartController extends Controller
 
 		/* Get customer and default address */
 		$customer = Customer::find($customerId);
-		$defaultAddress = $customer->customerAddresses()->where('is_default', 1)->first();
 
-		if (!$defaultAddress) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Please add a default address first.'
-			], 422);
+		/* Get country and currency based on query parameter or default address */
+		if ($request->filled('country')) {
+			/* Use country from query parameter */
+			$country = Country::with('currency:id,symbol')
+			->where('name', $request->country)
+			->first(['id', 'name', 'currency_id', 'margin']);
+
+			$margin = $country->margin ?? 0;
+		} else {
+			/* Use default customer address */
+			$defaultAddress = auth()->user()->customerAddresses()
+			->with('relatedCountry.currency:id,symbol')
+			->where('is_default', 1)
+			->first(['id', 'country']);
+
+			$countryData = $defaultAddress->relatedCountry ?? null;
+			$margin = $countryData->margin ?? 0;
 		}
-
-		/* Get country margin */
-		$margin = $defaultAddress->relatedCountry->margin ?? 0;
 
 		/* Prepare product data for calculation */
 		$productData = [[
@@ -252,10 +287,10 @@ class CustomerCartController extends Controller
 		]];
 
 		/* Create temporary request for calculation */
-		$tempRequest = new \Illuminate\Http\Request();
+		$tempRequest = new Request();
 		$tempRequest->merge([
 			'products' => $productData,
-			'tax_percentage' => 0, // Will be calculated based on address
+			'tax_percentage' => 0,
 		]);
 
 		/* Calculate amounts */
@@ -288,8 +323,8 @@ class CustomerCartController extends Controller
 				$latestReferenceNumber = CustomerCart::orderBy('id', 'desc')->value('reference_number');
 
 				$referenceNumber = $latestReferenceNumber && is_numeric($latestReferenceNumber)
-					? (int) $latestReferenceNumber + 1
-					: (in_array(config('app.website'), ['US', 'US_T']) ? 10001 : (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101));
+				? (int) $latestReferenceNumber + 1
+				: (in_array(config('app.website'), ['US', 'US_T']) ? 10001 : (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 1001 : 101));
 
 				/* Create new cart */
 				$customerCart = CustomerCart::create(array_merge($cartData, [
@@ -303,9 +338,9 @@ class CustomerCartController extends Controller
 
 			/* Check if product already exists in cart */
 			$existingCartProduct = CustomerCartProduct::where('customer_cart_id', $customerCart->id)
-				->where('product_id', $request->product_id)
-				->where('vendor_id', $request->vendor_id)
-				->first();
+			->where('product_id', $request->product_id)
+			->where('vendor_id', $request->vendor_id)
+			->first();
 
 			$productDetails = $amountCalculations['product_details'][0];
 			$productAmount = $productDetails['quantity'] * $productDetails['unit_price'];
@@ -317,8 +352,8 @@ class CustomerCartController extends Controller
 
 				/* Delete old accessory charges */
 				AccessoryCharge::where('relation_type', CustomerCartProduct::class)
-					->where('relation_id', $existingCartProduct->id)
-					->delete();
+				->where('relation_id', $existingCartProduct->id)
+				->delete();
 
 				/* Update cart product */
 				$existingCartProduct->update([
@@ -411,10 +446,10 @@ class CustomerCartController extends Controller
 
 		/* Get cart product and verify ownership */
 		$cartProduct = CustomerCartProduct::with('customerCart')
-			->whereHas('customerCart', function($query) use ($customerId) {
-				$query->where('customer_id', $customerId);
-			})
-			->find($cart_product_id);
+		->whereHas('customerCart', function($query) use ($customerId) {
+			$query->where('customer_id', $customerId);
+		})
+		->find($cart_product_id);
 
 		if (!$cartProduct) {
 			return response()->json([
@@ -428,14 +463,14 @@ class CustomerCartController extends Controller
 
 		/* Get margin from cart address */
 		$address = CustomerAddress::with('relatedCountry:id,name,margin')
-			->find($customerCart->customer_address_id);
+		->find($customerCart->customer_address_id);
 
 		$margin = $address->relatedCountry->margin ?? 0;
 
 		/* Get product supplier for price calculation */
 		$supplier = ProductSupplier::where('product_id', $cartProduct->product_id)
-			->where('vendor_id', $cartProduct->vendor_id)
-			->first(['price', 'sale_price', 'shipping_charge']);
+		->where('vendor_id', $cartProduct->vendor_id)
+		->first(['price', 'sale_price', 'shipping_charge']);
 
 		if (!$supplier) {
 			return response()->json([
@@ -446,8 +481,8 @@ class CustomerCartController extends Controller
 
 		/* Calculate unit price with margin */
 		$baseUnitPrice = ($supplier->sale_price > 0 && $supplier->sale_price < $supplier->price)
-			? $supplier->sale_price
-			: $supplier->price;
+		? $supplier->sale_price
+		: $supplier->price;
 
 		$unitPrice = $baseUnitPrice + (in_array(config('app.website'), ['UAE', 'UAE_T'])
 			? ($baseUnitPrice * ($margin / 100))
@@ -458,9 +493,9 @@ class CustomerCartController extends Controller
 		try {
 			/* Recalculate accessory charges based on new quantity */
 			$accessoryCharges = AccessoryCharge::where('relation_type', CustomerCartProduct::class)
-				->where('relation_id', $cartProduct->id)
-				->with('accessoryItem:id,price')
-				->get();
+			->where('relation_id', $cartProduct->id)
+			->with('accessoryItem:id,price')
+			->get();
 
 			$totalAccessoryCharge = 0;
 
@@ -582,10 +617,10 @@ class CustomerCartController extends Controller
 
 		/* Get cart product and verify ownership */
 		$cartProduct = CustomerCartProduct::with('customerCart')
-			->whereHas('customerCart', function($query) use ($customerId) {
-				$query->where('customer_id', $customerId);
-			})
-			->find($cart_product_id);
+		->whereHas('customerCart', function($query) use ($customerId) {
+			$query->where('customer_id', $customerId);
+		})
+		->find($cart_product_id);
 
 		if (!$cartProduct) {
 			return response()->json([
@@ -601,8 +636,8 @@ class CustomerCartController extends Controller
 		try {
 			/* Delete accessory charges first */
 			AccessoryCharge::where('relation_type', CustomerCartProduct::class)
-				->where('relation_id', $cartProduct->id)
-				->delete();
+			->where('relation_id', $cartProduct->id)
+			->delete();
 
 			/* Delete cart product */
 			$cartProduct->delete();
@@ -684,14 +719,14 @@ class CustomerCartController extends Controller
 		try {
 			/* Get all cart product IDs */
 			$cartProductIds = CustomerCartProduct::where('customer_cart_id', $cart->id)
-				->pluck('id')
-				->toArray();
+			->pluck('id')
+			->toArray();
 
 			if (!empty($cartProductIds)) {
 				/* Delete all accessory charges */
 				AccessoryCharge::where('relation_type', CustomerCartProduct::class)
-					->whereIn('relation_id', $cartProductIds)
-					->delete();
+				->whereIn('relation_id', $cartProductIds)
+				->delete();
 			}
 
 			/* Delete all cart products */
