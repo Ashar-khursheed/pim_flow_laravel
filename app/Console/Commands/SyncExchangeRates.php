@@ -13,7 +13,7 @@ class SyncExchangeRates extends Command
     protected $signature   = 'currency:sync-rates';
     protected $description = 'Sync exchange rates from moneyconvert API into ec_currencies table';
 
-    private const API_URL = 'https://cdn.moneyconvert.net/api/latest.json';
+    private const API_URL = 'https://open.er-api.com/v6/latest/USD';
 
     // ec_currencies table mein symbol → API currency code mapping
     // symbol column se API ka key match karo
