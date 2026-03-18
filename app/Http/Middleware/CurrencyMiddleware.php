@@ -19,148 +19,148 @@ class CurrencyMiddleware
 
     public function __construct(protected GeoLocationService $geoService) {}
 
-    // public function handle(Request $request, Closure $next)
-    // {
-    //     // Real client IP — AWS Load Balancer ke peeche X-Forwarded-For mein hoti hai
-    //     $ip = $request->header('X-Forwarded-For')
-    //         ?? $request->header('CF-Connecting-IP')
-    //         ?? $request->ip();
-
-    //     // Multiple IPs comma separated hoti hain — pehli real client IP hai
-    //     if (str_contains($ip, ',')) {
-    //         $ip = trim(explode(',', $ip)[0]);
-    //     }
-
-    //     // Internal/private IPs ko fallback karo
-    //     if (
-    //         empty($ip) ||
-    //         $ip === '127.0.0.1' ||
-    //         $ip === '::1' ||
-    //         str_starts_with($ip, '172.') ||
-    //         str_starts_with($ip, '10.') ||
-    //         str_starts_with($ip, '192.168.')
-    //     ) {
-    //         $ip = '8.8.8.8';
-    //     }
-
-    //     \Log::info('CURRENCY_MW_FIRED', ['ip' => $ip]);
-
-    //     $ctx = Cache::remember('currency_ctx_' . $ip, now()->addHours(6), function () use ($ip) {
-    //         $geoData     = $this->geoService->getLocation($ip);
-    //         $countryName = $geoData['country'] ?? null;
-
-    //         \Log::info('CURRENCY_GEO', ['ip' => $ip, 'country' => $countryName]);
-
-    //         if ($countryName) {
-    //             $country = Country::with('currency')
-    //                 ->where('name', $countryName)
-    //                 ->first();
-
-    //             if ($country && $country->currency) {
-    //                 return [
-    //                     'symbol'         => $country->currency->symbol,
-    //                     'margin'         => (float) $country->margin,
-    //                     'currency_title' => $country->currency->title,
-    //                     'is_default'     => (bool) $country->currency->is_default,
-    //                 ];
-    //             }
-    //         }
-
-    //         return $this->defaultContext();
-    //     });
-
-    //     app()->instance('currency.context', $ctx);
-
-    //     // Response intercept
-    //     $response = $next($request);
-
-    //     if (!$response instanceof JsonResponse) {
-    //         return $response;
-    //     }
-
-    //     // Default currency + no margin = kuch mat karo
-    //     if ($ctx['is_default'] && $ctx['margin'] == 0) {
-    //         return $response;
-    //     }
-
-    //     $data = $response->getData(true);
-    //     $data = $this->transform($data, $ctx);
-    //     $response->setData($data);
-
-    //     return $response;
-    // }
     public function handle(Request $request, Closure $next)
-{
-    // Sirf FrontEnd controllers pe apply karo
-    $controller = $request->route()?->getControllerClass();
+    {
+        // Real client IP — AWS Load Balancer ke peeche X-Forwarded-For mein hoti hai
+        $ip = $request->header('X-Forwarded-For')
+            ?? $request->header('CF-Connecting-IP')
+            ?? $request->ip();
 
-    // if (!$controller || !str_starts_with($controller, 'App\\Http\\Controllers\\FrontEnd\\')) {
-    //     return $next($request);
-    // }
-
-    // Real client IP — AWS Load Balancer ke peeche X-Forwarded-For mein hoti hai
-    $ip = $request->header('X-Forwarded-For')
-        ?? $request->header('CF-Connecting-IP')
-        ?? $request->ip();
-
-    // Multiple IPs comma separated hoti hain — pehli real client IP hai
-    if (str_contains($ip, ',')) {
-        $ip = trim(explode(',', $ip)[0]);
-    }
-
-    // Internal/private IPs ko fallback karo
-    if (
-        empty($ip) ||
-        $ip === '127.0.0.1' ||
-        $ip === '::1' ||
-        str_starts_with($ip, '172.') ||
-        str_starts_with($ip, '10.') ||
-        str_starts_with($ip, '192.168.')
-    ) {
-        $ip = '8.8.8.8';
-    }
-
-    $ctx = Cache::remember('currency_ctx_' . $ip, now()->addHours(6), function () use ($ip) {
-        $geoData     = $this->geoService->getLocation($ip);
-        $countryName = $geoData['country'] ?? null;
-
-        if ($countryName) {
-            $country = Country::with('currency')
-                ->where('name', $countryName)
-                ->first();
-
-            if ($country && $country->currency) {
-                return [
-                    'symbol'         => $country->currency->symbol,
-                    'margin'         => (float) $country->margin,
-                    'currency_title' => $country->currency->title,
-                    'is_default'     => (bool) $country->currency->is_default,
-                ];
-            }
+        // Multiple IPs comma separated hoti hain — pehli real client IP hai
+        if (str_contains($ip, ',')) {
+            $ip = trim(explode(',', $ip)[0]);
         }
 
-        return $this->defaultContext();
-    });
+        // Internal/private IPs ko fallback karo
+        if (
+            empty($ip) ||
+            $ip === '127.0.0.1' ||
+            $ip === '::1' ||
+            str_starts_with($ip, '172.') ||
+            str_starts_with($ip, '10.') ||
+            str_starts_with($ip, '192.168.')
+        ) {
+            $ip = '8.8.8.8';
+        }
 
-    app()->instance('currency.context', $ctx);
+        \Log::info('CURRENCY_MW_FIRED', ['ip' => $ip]);
 
-    $response = $next($request);
+        $ctx = Cache::remember('currency_ctx_' . $ip, now()->addHours(6), function () use ($ip) {
+            $geoData     = $this->geoService->getLocation($ip);
+            $countryName = $geoData['country'] ?? null;
 
-    if (!$response instanceof JsonResponse) {
+            \Log::info('CURRENCY_GEO', ['ip' => $ip, 'country' => $countryName]);
+
+            if ($countryName) {
+                $country = Country::with('currency')
+                    ->where('name', $countryName)
+                    ->first();
+
+                if ($country && $country->currency) {
+                    return [
+                        'symbol'         => $country->currency->symbol,
+                        'margin'         => (float) $country->margin,
+                        'currency_title' => $country->currency->title,
+                        'is_default'     => (bool) $country->currency->is_default,
+                    ];
+                }
+            }
+
+            return $this->defaultContext();
+        });
+
+        app()->instance('currency.context', $ctx);
+
+        // Response intercept
+        $response = $next($request);
+
+        if (!$response instanceof JsonResponse) {
+            return $response;
+        }
+
+        // Default currency + no margin = kuch mat karo
+        if ($ctx['is_default'] && $ctx['margin'] == 0) {
+            return $response;
+        }
+
+        $data = $response->getData(true);
+        $data = $this->transform($data, $ctx);
+        $response->setData($data);
+
         return $response;
     }
+//     public function handle(Request $request, Closure $next)
+// {
+//     // Sirf FrontEnd controllers pe apply karo
+//     $controller = $request->route()?->getControllerClass();
 
-    // Default currency + no margin = kuch mat karo
-    if ($ctx['is_default'] && $ctx['margin'] == 0) {
-        return $response;
-    }
+//     // if (!$controller || !str_starts_with($controller, 'App\\Http\\Controllers\\FrontEnd\\')) {
+//     //     return $next($request);
+//     // }
 
-    $data = $response->getData(true);
-    $data = $this->transform($data, $ctx);
-    $response->setData($data);
+//     // Real client IP — AWS Load Balancer ke peeche X-Forwarded-For mein hoti hai
+//     $ip = $request->header('X-Forwarded-For')
+//         ?? $request->header('CF-Connecting-IP')
+//         ?? $request->ip();
 
-    return $response;
-}
+//     // Multiple IPs comma separated hoti hain — pehli real client IP hai
+//     if (str_contains($ip, ',')) {
+//         $ip = trim(explode(',', $ip)[0]);
+//     }
+
+//     // Internal/private IPs ko fallback karo
+//     if (
+//         empty($ip) ||
+//         $ip === '127.0.0.1' ||
+//         $ip === '::1' ||
+//         str_starts_with($ip, '172.') ||
+//         str_starts_with($ip, '10.') ||
+//         str_starts_with($ip, '192.168.')
+//     ) {
+//         $ip = '8.8.8.8';
+//     }
+
+//     $ctx = Cache::remember('currency_ctx_' . $ip, now()->addHours(6), function () use ($ip) {
+//         $geoData     = $this->geoService->getLocation($ip);
+//         $countryName = $geoData['country'] ?? null;
+
+//         if ($countryName) {
+//             $country = Country::with('currency')
+//                 ->where('name', $countryName)
+//                 ->first();
+
+//             if ($country && $country->currency) {
+//                 return [
+//                     'symbol'         => $country->currency->symbol,
+//                     'margin'         => (float) $country->margin,
+//                     'currency_title' => $country->currency->title,
+//                     'is_default'     => (bool) $country->currency->is_default,
+//                 ];
+//             }
+//         }
+
+//         return $this->defaultContext();
+//     });
+
+//     app()->instance('currency.context', $ctx);
+
+//     $response = $next($request);
+
+//     if (!$response instanceof JsonResponse) {
+//         return $response;
+//     }
+
+//     // Default currency + no margin = kuch mat karo
+//     if ($ctx['is_default'] && $ctx['margin'] == 0) {
+//         return $response;
+//     }
+
+//     $data = $response->getData(true);
+//     $data = $this->transform($data, $ctx);
+//     $response->setData($data);
+
+//     return $response;
+// }
 
     // private function transform(mixed $data, array $ctx): mixed
     // {
