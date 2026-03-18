@@ -94,9 +94,9 @@ class CurrencyMiddleware
     // Sirf FrontEnd controllers pe apply karo
     $controller = $request->route()?->getControllerClass();
 
-    if (!$controller || !str_starts_with($controller, 'App\\Http\\Controllers\\FrontEnd\\')) {
-        return $next($request);
-    }
+    // if (!$controller || !str_starts_with($controller, 'App\\Http\\Controllers\\FrontEnd\\')) {
+    //     return $next($request);
+    // }
 
     // Real client IP — AWS Load Balancer ke peeche X-Forwarded-For mein hoti hai
     $ip = $request->header('X-Forwarded-For')
