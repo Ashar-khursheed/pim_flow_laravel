@@ -284,6 +284,11 @@ class CurrencyMiddleware
 
     public function handle(Request $request, Closure $next)
     {
+            $controller = $request->route()?->getControllerClass();
+
+        if (!$controller || !str_starts_with($controller, 'App\\Http\\Controllers\\FrontEnd\\')) {
+            return $next($request);
+        }
         // Optional: force a country for testing (?force_country=Pakistan)
         $forceCountry = $request->query('force_country');
 
