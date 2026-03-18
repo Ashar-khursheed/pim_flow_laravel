@@ -286,9 +286,9 @@ class CurrencyMiddleware
     {
             $controller = $request->route()?->getControllerClass();
 
-        if (!$controller || !str_starts_with($controller, 'App\\Http\\Controllers\\FrontEnd\\')) {
-            return $next($request);
-        }
+                if (!str_starts_with($request->path(), 'api/frontend')) {
+                return $next($request);
+            }
         // Optional: force a country for testing (?force_country=Pakistan)
         $forceCountry = $request->query('force_country');
 
