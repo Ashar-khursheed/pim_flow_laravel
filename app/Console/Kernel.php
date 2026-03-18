@@ -27,6 +27,5 @@ class Kernel extends ConsoleKernel
         $schedule->command('seo:dailyUpdateLlmsSeo')->dailyAt('00:00');
         $schedule->command('ccavenue:cancelled72-ccavenue')->dailyAt('00:00');
         $schedule->command('finance:overdue-status')->dailyAt('00:00');
-        $schedule->command('currency:sync-rates')->everySixHours();
     }
 }
