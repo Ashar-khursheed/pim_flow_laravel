@@ -21,7 +21,7 @@ class CartCreationMail extends Mailable
 	/**
 	 * Create a new message instance.
 	 */
-	public function __construct(CustomerCart $customerCart, $randomPassword, $isNewCustomer)
+	public function __construct(CustomerCart $customerCart, $randomPassword, $isNewCustomer, $currencyConversionRate)
 	{
 		$this->customerCart = $customerCart;
 		$this->randomPassword = $randomPassword;
