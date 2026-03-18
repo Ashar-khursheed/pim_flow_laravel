@@ -229,7 +229,6 @@
 //     }
 // }
 
-
 namespace App\Http\Middleware;
 
 use App\Models\Country;
@@ -265,23 +264,19 @@ class CurrencyMiddleware
 
     public function handle(Request $request, Closure $next)
     {
-        // Sirf FrontEnd controllers pe apply karo
-        $controller = $request->route()?->getControllerClass();
-
-        if (!$controller || !str_starts_with($controller, 'App\\Http\\Controllers\\FrontEnd\\')) {
-            return $next($request);
-        }
-
-        // Real client IP
+        // Real client IP — AWS Load Balancer ke peeche X-Forwarded-For mein hoti hai
         $ip = $request->header('X-Forwarded-For')
             ?? $request->header('CF-Connecting-IP')
             ?? $request->ip();
 
+        // Multiple IPs comma separated hoti hain — pehli real client IP hai
         if (str_contains($ip, ',')) {
             $ip = trim(explode(',', $ip)[0]);
         }
 
-        // Private/internal IP → default context use karo, geo skip karo
+        Log::info('CURRENCY_MW_FIRED', ['ip' => $ip]);
+
+        // Private/internal IP → default context (AED), geo skip karo
         if (
             empty($ip) ||
             $ip === '127.0.0.1' ||
@@ -290,8 +285,7 @@ class CurrencyMiddleware
             str_starts_with($ip, '10.') ||
             str_starts_with($ip, '192.168.')
         ) {
-            Log::info('CURRENCY_MW: private IP detected, using default context', ['ip' => $ip]);
-
+            Log::info('CURRENCY_MW: private IP, using default AED', ['ip' => $ip]);
             $ctx = $this->defaultContext();
             app()->instance('currency.context', $ctx);
             return $next($request);
@@ -302,7 +296,7 @@ class CurrencyMiddleware
             $geoData     = $this->geoService->getLocation($ip);
             $countryName = $geoData['country'] ?? null;
 
-            Log::info('CURRENCY_MW: geo detected', ['ip' => $ip, 'country' => $countryName]);
+            Log::info('CURRENCY_GEO', ['ip' => $ip, 'country' => $countryName]);
 
             if ($countryName) {
                 $country = Country::with('currency')
@@ -324,12 +318,11 @@ class CurrencyMiddleware
                 }
             }
 
-            // Country match nahi hui → default
-            Log::info('CURRENCY_MW: no country match, using default', ['ip' => $ip]);
+            Log::info('CURRENCY_MW: no country match, using default AED', ['ip' => $ip]);
             return $this->defaultContext();
         });
 
-        Log::info('CURRENCY_MW: context', ['ip' => $ip, 'ctx' => $ctx]);
+        Log::info('CURRENCY_MW_CTX', ['ip' => $ip, 'ctx' => $ctx]);
 
         app()->instance('currency.context', $ctx);
 
@@ -382,8 +375,7 @@ class CurrencyMiddleware
     }
 
     // ─────────────────────────────────────────────
-    // Price conversion
-    // Formula: (aed_price * margin_factor) / AED_rate * target_rate
+    // Price: AED → margin → exchange rate → target
     // ─────────────────────────────────────────────
     private function convertPrice(float $price, array $ctx): float
     {
@@ -391,7 +383,7 @@ class CurrencyMiddleware
         $targetCode = $ctx['currency_code'] ?? 'AED';
         $decimals   = $ctx['decimals'] ?? 2;
 
-        // Step 1: margin apply (AED price pe)
+        // Step 1: margin apply
         $priceAfterMargin = $margin != 0
             ? $price * (1 + $margin / 100)
             : $price;
@@ -401,12 +393,12 @@ class CurrencyMiddleware
             return round($priceAfterMargin, $decimals);
         }
 
-        // Step 3: exchange rate fetch (cached, no DB)
+        // Step 3: exchange rates fetch (cached, no DB)
         $rates      = $this->getExchangeRates();
         $targetRate = $rates[$targetCode] ?? null;
 
         if (!$targetRate) {
-            Log::warning('CurrencyMiddleware: unknown currency code', ['code' => $targetCode]);
+            Log::warning('CURRENCY_MW: unknown code', ['code' => $targetCode]);
             return round($priceAfterMargin, $decimals);
         }
 
@@ -418,7 +410,6 @@ class CurrencyMiddleware
 
     // ─────────────────────────────────────────────
     // Exchange rates — open.er-api.com, 6 hours cache
-    // Koi DB column nahi chahiye
     // ─────────────────────────────────────────────
     private function getExchangeRates(): array
     {
@@ -427,15 +418,14 @@ class CurrencyMiddleware
                 $response = Http::timeout(5)->get('https://open.er-api.com/v6/latest/USD');
 
                 if ($response->successful()) {
-                    Log::info('CurrencyMiddleware: exchange rates refreshed from API');
+                    Log::info('CURRENCY_MW: exchange rates refreshed from API');
                     return $response->json('rates', []);
                 }
             } catch (\Throwable $e) {
-                Log::error('CurrencyMiddleware: rates fetch failed', ['error' => $e->getMessage()]);
+                Log::error('CURRENCY_MW: rates fetch failed', ['error' => $e->getMessage()]);
             }
 
-            // Hardcoded GCC fallback
-            Log::warning('CurrencyMiddleware: using hardcoded fallback rates');
+            Log::warning('CURRENCY_MW: using hardcoded fallback rates');
             return [
                 'AED' => 3.6725, 'USD' => 1.0,
                 'SAR' => 3.75,   'KWD' => 0.3066,
