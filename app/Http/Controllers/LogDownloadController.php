@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\Request;
-use App\Helpers\CurrencyConverter;
 
 class LogDownloadController extends Controller
 {
@@ -20,9 +19,6 @@ class LogDownloadController extends Controller
 	 */
 	public function downloadLog(Request $request)
 	{
-
-$result = CurrencyConverter::getRate('USD', 'INR');
-dd($result); // 92.88073257
 		$name = $request->query('name');
 
 		/* Validate log name is provided */

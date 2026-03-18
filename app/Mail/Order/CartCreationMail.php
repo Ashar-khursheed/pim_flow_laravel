@@ -21,7 +21,7 @@ class CartCreationMail extends Mailable
 	/**
 	 * Create a new message instance.
 	 */
-	public function __construct(CustomerCart $customerCart, $randomPassword, $isNewCustomer, $currencyConversionRate)
+	public function __construct(CustomerCart $customerCart, $randomPassword, $isNewCustomer)
 	{
 		$this->customerCart = $customerCart;
 		$this->randomPassword = $randomPassword;
@@ -126,14 +126,6 @@ class CartCreationMail extends Mailable
 		$targetCurrencyTitle = $customerAddress->relatedCountry->currency->title ?? $sourceCurrencyTitle;
 
 		$currencyConversionRate = CurrencyConverter::getRate($sourceCurrencyTitle, $targetCurrencyTitle);
-
-		\Log::info('Currency Variables', [
-    'sourceCurrencySymbol'  => $sourceCurrencySymbol,
-    'sourceCurrencyTitle'   => $sourceCurrencyTitle,
-    'currency'              => $currency,
-    'targetCurrencyTitle'   => $targetCurrencyTitle,
-    'currencyConversionRate'=> $currencyConversionRate,
-]);
 
 		$products = collect();
 
