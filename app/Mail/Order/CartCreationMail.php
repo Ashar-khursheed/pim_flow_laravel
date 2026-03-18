@@ -26,7 +26,6 @@ class CartCreationMail extends Mailable
 		$this->customerCart = $customerCart;
 		$this->randomPassword = $randomPassword;
 		$this->isNewCustomer = $isNewCustomer;
-		$this->getConversionRate =
 	}
 
 	/**
