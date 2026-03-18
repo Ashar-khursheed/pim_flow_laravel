@@ -366,18 +366,15 @@ class CurrencyMiddleware
         return $this->processJsonResponse($next($request), $ctx);
     }
 
-    // ─── FIX #1: Remove hardcoded 'AED' check — use is_default flag ──────────
+    
     private function processJsonResponse($response, array $ctx)
     {
         if (!$response instanceof JsonResponse) {
             return $response;
         }
 
-        // Base currency (AED) with no margin → nothing to convert, return as-is
-        if ($ctx['is_default'] && $ctx['margin'] == 0) {
-            return $response;
-        }
-
+        // ALWAYS transform — even for default AED context
+        // Because ec_products may have USD symbol stored — we must override it
         $data = $response->getData(true);
         $data = $this->transform($data, $ctx);
         $response->setData($data);
@@ -389,9 +386,10 @@ class CurrencyMiddleware
     {
         if (!is_array($data)) return $data;
 
-        // Pass 1: convert numeric price fields
+        // Pass 1: convert numeric price fields (skip if default + no margin = no conversion needed)
+        $needsPriceConversion = !($ctx['is_default'] && $ctx['margin'] == 0);
         foreach ($data as $key => &$value) {
-            if (in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
+            if ($needsPriceConversion && in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
                 $value = $this->convertPrice((float) $value, $ctx);
             } elseif (is_array($value)) {
                 $value = $this->transform($value, $ctx);
