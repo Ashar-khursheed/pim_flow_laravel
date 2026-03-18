@@ -127,6 +127,14 @@ class CartCreationMail extends Mailable
 
 		$currencyConversionRate = CurrencyConverter::getRate($sourceCurrencyTitle, $targetCurrencyTitle);
 
+		\Log::info('Currency Variables', [
+    'sourceCurrencySymbol'  => $sourceCurrencySymbol,
+    'sourceCurrencyTitle'   => $sourceCurrencyTitle,
+    'currency'              => $currency,
+    'targetCurrencyTitle'   => $targetCurrencyTitle,
+    'currencyConversionRate'=> $currencyConversionRate,
+]);
+
 		$products = collect();
 
 		foreach ($customerCart->customerCartProducts as $customerCartProduct) {
