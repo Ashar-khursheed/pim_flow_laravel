@@ -229,6 +229,7 @@
 //     }
 // }
 
+
 namespace App\Http\Middleware;
 
 use App\Models\Country;
@@ -249,7 +250,6 @@ class CurrencyMiddleware
         'front_sale_price', 'best_price',
     ];
 
-
     private const SYMBOL_TO_CODE = [
         'AED' => 'AED', 'SAR' => 'SAR', 'KWD' => 'KWD',
         'BHD' => 'BHD', 'QAR' => 'QAR', 'OMR' => 'OMR',
@@ -259,61 +259,76 @@ class CurrencyMiddleware
         'PKR' => 'PKR', 'Rs'  => 'PKR', 'Rs.' => 'PKR',
     ];
 
-    private const AED_RATE = 3.6725;
+    // ─── FIX #5: ip-api returns full country names — map them to DB names ─────
+    private const COUNTRY_NAME_MAP = [
+        'United Arab Emirates' => 'UAE',
+        'UAE'                  => 'UAE',
+        'Kingdom of Saudi Arabia' => 'Saudi Arabia',
+        'KSA'                  => 'Saudi Arabia',
+        'Pakistan'             => 'Pakistan',
+        'India'                => 'India',
+        'United Kingdom'       => 'United Kingdom',
+        'United States'        => 'United States',
+        'Bahrain'              => 'Bahrain',
+        'Kuwait'               => 'Kuwait',
+        'Qatar'                => 'Qatar',
+        'Oman'                 => 'Oman',
+    ];
+
+    // Base currency — prices in DB are stored in AED
+    private const BASE_CURRENCY_CODE   = 'AED';
+    private const BASE_CURRENCY_SYMBOL = 'AED';
+    private const BASE_AED_RATE        = 3.6725;
 
     public function __construct(protected GeoLocationService $geoService) {}
 
     public function handle(Request $request, Closure $next)
     {
-        // Debugging / Testing force country
+        // Optional: force a country for testing (?force_country=Pakistan)
         $forceCountry = $request->query('force_country');
-        
-        // Real client IP
+
+        // Resolve real client IP
         $ip = $request->header('X-Forwarded-For')
             ?? $request->header('CF-Connecting-IP')
             ?? $request->ip();
 
-        if (str_contains($ip, ',')) {
+        if (str_contains((string) $ip, ',')) {
             $ip = trim(explode(',', $ip)[0]);
         }
 
-        // Private/internal IP → default context, geo skip karo (unless forced)
-        if (
-            !$forceCountry && (
+        $isPrivateIp = (
             empty($ip) ||
             $ip === '127.0.0.1' ||
             $ip === '::1' ||
             str_starts_with($ip, '172.') ||
             str_starts_with($ip, '10.') ||
             str_starts_with($ip, '192.168.')
-            )
-        ) {
+        );
+
+        // ─── FIX #3: Private IP without force → skip geo, return AED default ──
+        if ($isPrivateIp && !$forceCountry) {
             $ctx = $this->defaultContext();
             app()->instance('currency.context', $ctx);
             return $this->processJsonResponse($next($request), $ctx);
         }
 
-        // Cache key includes forceCountry to avoid cache pollution during testing
-        $cacheKey = 'currency_ctx_' . ($forceCountry ? 'forced_' . $forceCountry : $ip);
+        $cacheKey = 'currency_ctx_v2_' . ($forceCountry ? 'forced_' . $forceCountry : $ip);
 
-        $ctx = Cache::remember($cacheKey, now()->addHours(6), function () use ($ip, $forceCountry) {
+        $ctx = Cache::remember($cacheKey, now()->addHours(6), function () use ($ip, $forceCountry, $isPrivateIp) {
             $countryName = $forceCountry;
-            
-            if (!$countryName) {
+
+            if (!$countryName && !$isPrivateIp) {
                 $geoData     = $this->geoService->getLocation($ip);
                 $countryName = $geoData['country'] ?? null;
-                Log::info('CURRENCY_GEO', ['ip' => $ip, 'country' => $countryName]);
-            } else {
-                Log::info('CURRENCY_FORCED', ['country' => $countryName]);
+                Log::info('CURRENCY_GEO', ['ip' => $ip, 'geo_country' => $countryName]);
             }
 
             if ($countryName) {
-                // Handle common variations
-                $searchName = $countryName;
-                if ($countryName === 'United Arab Emirates') $searchName = 'UAE';
+                // ─── FIX #5: Normalize country name to match DB ────────────────
+                $dbName = self::COUNTRY_NAME_MAP[$countryName] ?? $countryName;
 
                 $country = Country::with('currency')
-                    ->where('name', $searchName)
+                    ->whereRaw('LOWER(name) = ?', [strtolower($dbName)])
                     ->first();
 
                 if ($country && $country->currency) {
@@ -321,9 +336,10 @@ class CurrencyMiddleware
                     $code   = self::SYMBOL_TO_CODE[$symbol] ?? $symbol;
 
                     Log::info('CURRENCY_MW: country matched', [
-                        'country' => $searchName,
-                        'symbol' => $symbol,
-                        'code' => $code
+                        'country' => $dbName,
+                        'symbol'  => $symbol,
+                        'code'    => $code,
+                        'margin'  => $country->margin,
                     ]);
 
                     return [
@@ -331,12 +347,15 @@ class CurrencyMiddleware
                         'margin'         => (float) $country->margin,
                         'currency_title' => $country->currency->title,
                         'currency_code'  => $code,
-                        'is_default'     => (bool) $country->currency->is_default,
+                        'is_default'     => ($code === self::BASE_CURRENCY_CODE),
                         'decimals'       => (int) ($country->currency->decimals ?? 2),
                     ];
-                } else {
-                    Log::warning('CURRENCY_MW: country not in DB', ['country' => $searchName]);
                 }
+
+                Log::warning('CURRENCY_MW: country not found in DB', [
+                    'geo_name' => $countryName,
+                    'db_name'  => $dbName,
+                ]);
             }
 
             return $this->defaultContext();
@@ -347,14 +366,15 @@ class CurrencyMiddleware
         return $this->processJsonResponse($next($request), $ctx);
     }
 
+    // ─── FIX #1: Remove hardcoded 'AED' check — use is_default flag ──────────
     private function processJsonResponse($response, array $ctx)
     {
         if (!$response instanceof JsonResponse) {
             return $response;
         }
 
-        // If default and no conversion needed, skip
-        if ($ctx['is_default'] && $ctx['margin'] == 0 && $ctx['currency_code'] === 'AED') {
+        // Base currency (AED) with no margin → nothing to convert, return as-is
+        if ($ctx['is_default'] && $ctx['margin'] == 0) {
             return $response;
         }
 
@@ -369,7 +389,7 @@ class CurrencyMiddleware
     {
         if (!is_array($data)) return $data;
 
-        // Pass 1: Convert numeric prices first so they are ready for string reconstruction
+        // Pass 1: convert numeric price fields
         foreach ($data as $key => &$value) {
             if (in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
                 $value = $this->convertPrice((float) $value, $ctx);
@@ -378,7 +398,7 @@ class CurrencyMiddleware
             }
         }
 
-        // Pass 2: Update derived string fields
+        // Pass 2: update currency symbol/title string fields
         foreach ($data as $key => &$value) {
             if ($key === 'currency') {
                 if (is_string($value) && strlen($value) <= 10) {
@@ -386,19 +406,18 @@ class CurrencyMiddleware
                 } elseif (is_array($value) && isset($value['symbol'])) {
                     $value['symbol'] = $ctx['symbol'];
                     $value['title']  = $ctx['currency_title'];
-                    unset($value['major_unit_name']);
-                    unset($value['minor_unit_name']);
                 }
-            }
-            elseif (($key === 'currency_title' || $key === 'price_with_symbol') && is_string($value)) {
-                // If we have a price field in the same object, use it for reconstruction
+            } elseif (($key === 'currency_title' || $key === 'price_with_symbol') && is_string($value)) {
                 if (isset($data['price'])) {
                     $value = $ctx['symbol'] . ' ' . $data['price'];
                 } elseif (isset($data['sale_price'])) {
                     $value = $ctx['symbol'] . ' ' . $data['sale_price'];
                 } else {
-                    // Fallback to regex replacement of symbols
-                    $value = preg_replace('/[A-Z]{2,}|\$|AED|SAR|KWD|BHD|QAR|PKR|Rs|₨/', $ctx['symbol'], $value);
+                    $value = preg_replace(
+                        '/\b(AED|USD|SAR|KWD|BHD|QAR|OMR|PKR|INR|EUR|GBP|Rs\.?)\b|\$/',
+                        $ctx['symbol'],
+                        $value
+                    );
                 }
             }
         }
@@ -409,59 +428,64 @@ class CurrencyMiddleware
     private function convertPrice(float $price, array $ctx): float
     {
         $margin     = $ctx['margin'] ?? 0;
-        $targetCode = $ctx['currency_code'] ?? 'AED';
+        $targetCode = $ctx['currency_code'] ?? self::BASE_CURRENCY_CODE;
         $decimals   = $ctx['decimals'] ?? 2;
 
         $priceAfterMargin = $margin != 0 ? $price * (1 + $margin / 100) : $price;
 
-        if ($targetCode === 'AED') {
+        // AED → AED, no FX needed
+        if ($targetCode === self::BASE_CURRENCY_CODE) {
             return round($priceAfterMargin, $decimals);
         }
 
+        // AED → USD (using fixed peg) → target currency
         $rates      = $this->getExchangeRates();
         $targetRate = $rates[$targetCode] ?? null;
 
         if (!$targetRate) {
+            Log::warning('CURRENCY_MW: no exchange rate for', ['code' => $targetCode]);
             return round($priceAfterMargin, $decimals);
         }
 
-        $converted = ($priceAfterMargin / self::AED_RATE) * $targetRate;
+        $converted = ($priceAfterMargin / self::BASE_AED_RATE) * $targetRate;
         return round($converted, $decimals);
     }
 
     private function getExchangeRates(): array
     {
-        return Cache::remember('exchange_rates', now()->addHours(6), function () {
+        return Cache::remember('exchange_rates_v2', now()->addHours(6), function () {
             try {
                 $response = Http::timeout(5)->get('https://open.er-api.com/v6/latest/USD');
                 if ($response->successful()) {
-                    return $response->json('rates', []);
+                    $rates = $response->json('rates', []);
+                    if (!empty($rates)) {
+                        return $rates;
+                    }
                 }
             } catch (\Throwable $e) {
-                Log::error('CURRENCY_MW: rates fetch failed', ['error' => $e->getMessage()]);
+                Log::error('CURRENCY_MW: exchange rate fetch failed', ['error' => $e->getMessage()]);
             }
 
+            // Fallback static rates (relative to USD)
             return [
-                'AED' => 3.6725, 'USD' => 1.0, 'SAR' => 3.75, 'KWD' => 0.3066,
-                'BHD' => 0.376, 'QAR' => 3.64, 'OMR' => 0.3847, 'EUR' => 0.866,
-                'GBP' => 0.748, 'INR' => 82.71, 'PKR' => 278.47,
+                'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
+                'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
+                'OMR' => 0.3847, 'EUR' => 0.92,   'GBP' => 0.79,
+                'INR' => 83.5,   'PKR' => 278.47,
             ];
         });
     }
 
+    // ─── FIX #2: Always return AED as base (prices stored in AED) ─────────────
     private function defaultContext(): array
     {
-        $default = Cache::remember('default_currency', now()->addDay(), function() {
-            return \App\Models\Currency::where('is_default', 1)->first();
-        });
-
         return [
-            'symbol'         => $default?->symbol ?? 'AED',
+            'symbol'         => self::BASE_CURRENCY_SYMBOL,
             'margin'         => 0.0,
-            'currency_title' => $default?->title ?? 'UAE Dirham',
-            'currency_code'  => ($default?->symbol === '$' || $default?->title === 'US Dollar') ? 'USD' : (self::SYMBOL_TO_CODE[$default?->symbol] ?? 'AED'),
+            'currency_title' => 'UAE Dirham',
+            'currency_code'  => self::BASE_CURRENCY_CODE,
             'is_default'     => true,
-            'decimals'       => (int) ($default?->decimals ?? 2),
+            'decimals'       => 2,
         ];
     }
 }
