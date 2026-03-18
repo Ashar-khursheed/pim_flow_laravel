@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class CurrencyConverter
 {
-	private const API_URL = 'https://cdn.moneyconvert.net/api/latest.json';
+	private const API_URL = 'https://open.er-api.com/v6/latest/USD';
 	private const CACHE_KEY = 'currency_exchange_rates';
 	private const CACHE_DURATION = 3600; // 1 hour in seconds
 
