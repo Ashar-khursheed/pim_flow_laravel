@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
+use App\Helpers\CurrencyConverter;
 
 use App\Models\FrontEnd\CustomerCart;
 
@@ -25,13 +26,15 @@ class CartCreationMail extends Mailable
 		$this->customerCart = $customerCart;
 		$this->randomPassword = $randomPassword;
 		$this->isNewCustomer = $isNewCustomer;
+		$this->getConversionRate =
 	}
 
 	/**
 	 * Get pricing breakdown variables
 	 */
-	private function getPricingBreakdown($products)
+	private function getPricingBreakdown($products, $currencyConversionRate)
 	{
+		$sourceCurrencyTitle = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : 'USD';
 		$customerCart = $this->customerCart;
 
 		/* Total price before discount (raw value) */
@@ -72,23 +75,23 @@ class CartCreationMail extends Mailable
 		$amountBeforeTax = $subTotal - $discount - $chequeDiscount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
 
 		return [
-			'totalSaved' => $totalSaved,
-			'subTotal' => $subTotal,
-			'discount' => $discount,
+			'totalSaved' => $totalSaved * $currencyConversionRate,
+			'subTotal' => $subTotal * $currencyConversionRate,
+			'discount' => $discount * $currencyConversionRate,
 			'chequeDiscount' => $chequeDiscount,
 			'chequeDiscountPercentage' => $chequeDiscountPercentage,
-			'additionalDiscountAmount' => $additionalDiscountAmount,
+			'additionalDiscountAmount' => $additionalDiscountAmount * $currencyConversionRate,
 			'additionalDiscountReason' => $additionalDiscountReason,
 			'additionalDiscountPercentage' => $additionalDiscountPercentage,
-			'liftGateCharge' => $liftGateCharge,
-			'residentialAddressCharge' => $residentialAddressCharge,
-			'insideDeliveryCharge' => $insideDeliveryCharge,
-			'shippingCharge' => $shippingCharge,
-			'amountBeforeTax' => $amountBeforeTax,
+			'liftGateCharge' => $liftGateCharge * $currencyConversionRate,
+			'residentialAddressCharge' => $residentialAddressCharge * $currencyConversionRate,
+			'insideDeliveryCharge' => $insideDeliveryCharge * $currencyConversionRate,
+			'shippingCharge' => $shippingCharge * $currencyConversionRate,
+			'amountBeforeTax' => $amountBeforeTax * $currencyConversionRate,
 			'taxName' => $taxName,
 			'taxPercent' => $taxPercent,
-			'taxAmount' => $taxAmount,
-			'total' => $total,
+			'taxAmount' => $taxAmount * $currencyConversionRate,
+			'total' => $total * $currencyConversionRate,
 		];
 	}
 
@@ -118,8 +121,12 @@ class CartCreationMail extends Mailable
 		$zipcode = $customerAddress->zip_code ?? '';
 
 		/* Currency */
-		$baseCurrency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
-		$currency = $customerAddress->relatedCountry->currency->symbol ?? $baseCurrency;
+		$sourceCurrencySymbol = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+		$sourceCurrencyTitle = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : 'USD';
+		$currency = $customerAddress->relatedCountry->currency->symbol ?? $sourceCurrencySymbol;
+		$targetCurrencyTitle = $customerAddress->relatedCountry->currency->title ?? $sourceCurrencyTitle;
+
+		$currencyConversionRate = CurrencyConverter::convertCurrency($sourceCurrencyTitle, $targetCurrencyTitle);
 
 		$products = collect();
 
@@ -138,10 +145,10 @@ class CartCreationMail extends Mailable
 				: null;
 
 				/* Original Price (before discount) */
-				$originalPrice = $productSupplierDetail->price ?? $customerCartProduct->unit_price;
+				$originalPrice = ($productSupplierDetail->price ?? $customerCartProduct->unit_price) * $currencyConversionRate;
 
 				$product->priceBeforeDiscount = $originalPrice;
-				$product->unitPrice = $customerCartProduct->unit_price;
+				$product->unitPrice = $customerCartProduct->unit_price * $currencyConversionRate;
 
 				if (
 					$productSupplierDetail &&
@@ -149,21 +156,21 @@ class CartCreationMail extends Mailable
 					$productSupplierDetail->price > 0 &&
 					$customerCartProduct->unit_price > 0
 				) {
-					$product->discount = (($productSupplierDetail->price - $customerCartProduct->unit_price) / $productSupplierDetail->price) * 100;
+					$product->discount = ((($productSupplierDetail->price - $customerCartProduct->unit_price) / $productSupplierDetail->price) * 100) * $currencyConversionRate;
 
 				} else {
 					$product->discount = 0;
 				}
 
 				$product->quantity = (int) $customerCartProduct->quantity;
-				$product->total = $customerCartProduct->amount;
+				$product->total = $customerCartProduct->amount * $currencyConversionRate;
 
 				$products->push($product);
 			}
 		}
 
 		/* Get pricing breakdown variables */
-		$pricingBreakdown = $this->getPricingBreakdown($products);
+		$pricingBreakdown = $this->getPricingBreakdown($products, $currencyConversionRate);
 
 		/* Additional charges (if exists) */
 		$additionalAmountName = $customerCart->additional_amount_name;
@@ -211,7 +218,7 @@ class CartCreationMail extends Mailable
 			...$pricingBreakdown,
 
 			'additionalAmountName' => $additionalAmountName,
-			'additionalAmountPrice' => $additionalAmountPrice,
+			'additionalAmountPrice' => $additionalAmountPrice * $currencyConversionRate,
 
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,

@@ -89,11 +89,9 @@ class CurrencyConverter
 		 * 100 * (1 / 3.6725) = 27.23 USD
 		 */
 
-		return $sourceAmount * ($targetRate / $sourceRate);
-		// return round($sourceAmount * ($targetRate / $sourceRate), 2);
+		// return $sourceAmount * ($targetRate / $sourceRate);
+		return round($sourceAmount * ($targetRate / $sourceRate), 2);
 	}
-
-	additional function for return ($targetRate / $sourceRate)
 
 	/**
 	 * Get exchange rate from source to target currency
