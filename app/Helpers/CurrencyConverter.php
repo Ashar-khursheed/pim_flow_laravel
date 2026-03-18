@@ -88,32 +88,12 @@ class CurrencyConverter
 		 * AED rate = 3.6725, USD rate = 1
 		 * 100 * (1 / 3.6725) = 27.23 USD
 		 */
+
 		return $sourceAmount * ($targetRate / $sourceRate);
+		// return round($sourceAmount * ($targetRate / $sourceRate), 2);
 	}
 
-	/**
-	 * Convert amount from AED to target currency
-	 *
-	 * @param float $amount Amount in AED
-	 * @param string $toCurrency Target currency code (e.g., 'USD', 'EUR')
-	 * @return float|null Converted amount or null if conversion fails
-	 */
-	public static function convertFromAED($amount, $toCurrency)
-	{
-		return self::convertCurrency('AED', $toCurrency, $amount);
-	}
-
-	/**
-	 * Convert amount from any currency to AED
-	 *
-	 * @param float $amount Amount in source currency
-	 * @param string $fromCurrency Source currency code
-	 * @return float|null Converted amount or null if conversion fails
-	 */
-	public static function convertToAED($amount, $fromCurrency)
-	{
-		return self::convertCurrency($fromCurrency, 'AED', $amount);
-	}
+	additional function for return ($targetRate / $sourceRate)
 
 	/**
 	 * Get exchange rate from source to target currency
