@@ -14,6 +14,7 @@ use Illuminate\Bus\Batch;
 use App\Models\FrontEnd\Quote;
 use App\Models\FrontEnd\QuoteProduct;
 use App\Models\FrontEnd\CustomerAddress;
+use App\Models\FrontEnd\AccessoryCharge;
 use App\Models\ProductSupplier;
 
 use App\Jobs\Quote\QuotePlacedMailJob;
@@ -448,8 +449,18 @@ class QuoteController extends BaseController
 			'quoteEmails',
 		]);
 
+		/* Get all quote product IDs for batch accessory charge query */
+		$quoteProductIds = $quote->quoteProducts->pluck('id')->toArray();
+
+		/* Fetch all accessory charges in one query to avoid N+1 */
+		$accessoryCharges = AccessoryCharge::where('relation_type', QuoteProduct::class)->whereIn('relation_id', $quoteProductIds)->with([
+			'accessoryItem.accessory'
+		])->get()->groupBy('relation_id');
+
 		/* Mutate the data for each quote product */
 		foreach ($quote->quoteProducts as $quoteProduct) {
+
+			/* Product mutations */
 			$product = $quoteProduct->product;
 			if ($product) {
 				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
@@ -460,28 +471,26 @@ class QuoteController extends BaseController
 				$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
 				unset($product->brand, $product->currency, $product->seoProductUrl);
 			}
+
+			/* Vendor product supplier */
 			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-			$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
-			? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
-			: null;
+			$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier ? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days']) : null;
 
-			if ($quoteProduct->accessoryCharges) {
-				$quoteProduct->accessory_charges = $quoteProduct->accessoryCharges->map(function ($charge) {
-					return [
-						'id' => $charge->id,
-						'accessory_item_id' => $charge->accessory_item_id,
-						'accessory_item_name' => $charge->accessoryItem->name ?? null,
-						'accessory_item_price' => $charge->accessoryItem->price ?? null,
-						'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-						'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-						'amount' => $charge->amount,
-					];
-				});
+			/* Accessory charges — uses pre-fetched grouped collection, no extra queries */
+			$charges = $accessoryCharges->get($quoteProduct->id, collect());
+			$quoteProduct->accessory_charges = $charges->map(function ($charge) {
+				return [
+					'id' => $charge->id,
+					'accessory_item_id' => $charge->accessory_item_id,
+					'accessory_item_name' => $charge->accessoryItem->name ?? null,
+					'accessory_item_price' => $charge->accessoryItem->price ?? null,
+					'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+					'amount' => $charge->amount,
+				];
+			})->values();
 
-				unset($quoteProduct->accessoryCharges);
-			}
-
-			/* Format numeric values to 2 decimal places */
+			/* Format quote product numeric values to 2 decimal places */
 			foreach (['unit_price', 'amount', 'accessory_item_charge', 'shipping_charge', 'total_amount'] as $key) {
 				if (isset($quoteProduct->$key)) {
 					$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
@@ -489,6 +498,7 @@ class QuoteController extends BaseController
 			}
 		}
 
+		/* Format quote numeric values to 2 decimal places */
 		foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_amount_price', 'additional_discount_amount', 'total_amount'] as $key) {
 			if (isset($quote->$key)) {
 				$quote->$key = number_format($quote->$key, 2, '.', '');

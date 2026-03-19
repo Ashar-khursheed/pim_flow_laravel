@@ -74,7 +74,7 @@ class CustomerCartController extends Controller
 			$currency = $country->currency ?? null;
 		} else {
 			/* Use default customer address */
-			$defaultAddress = auth()->user()->customerAddresses()
+			$defaultAddress = auth()->user()->customerAddress()
 			->with('relatedCountry.currency:id,symbol')
 			->where('is_default', 1)
 			->first(['id', 'country']);
@@ -268,7 +268,7 @@ class CustomerCartController extends Controller
 			$margin = $country->margin ?? 0;
 		} else {
 			/* Use default customer address */
-			$defaultAddress = auth()->user()->customerAddresses()
+			$defaultAddress = auth()->user()->customerAddress()
 			->with('relatedCountry.currency:id,symbol')
 			->where('is_default', 1)
 			->first(['id', 'country']);
