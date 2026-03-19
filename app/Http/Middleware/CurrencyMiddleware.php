@@ -237,7 +237,6 @@ use App\Services\GeoLocationService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use App\Helpers\CurrencyConverter;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -455,48 +454,48 @@ class CurrencyMiddleware
         return round($converted, $decimals);
     }
 
-    // private function getExchangeRates(): array
-    // {
-    //     return Cache::remember('exchange_rates_v2', now()->addHours(6), function () {
-    //         try {
-    //             $response = Http::timeout(5)->get('https://open.er-api.com/v6/latest/USD');
-    //             if ($response->successful()) {
-    //                 $rates = $response->json('rates', []);
-    //                 if (!empty($rates)) {
-    //                     return $rates;
-    //                 }
-    //             }
-    //         } catch (\Throwable $e) {
-    //             Log::error('CURRENCY_MW: exchange rate fetch failed', ['error' => $e->getMessage()]);
-    //         }
-
-    //         // Fallback static rates (relative to USD)
-    //         return [
-    //             'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
-    //             'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
-    //             'OMR' => 0.3847, 'EUR' => 0.92,   'GBP' => 0.79,
-    //             'INR' => 83.5,   'PKR' => 278.47,
-    //         ];
-    //     });
-    // }
-    // CurrencyMiddleware.php
-        // Replace the entire getExchangeRates() method with this:
-        private function getExchangeRates(): array
-        {
-            $rates = CurrencyConverter::getRates();
-
-            if (!$rates) {
-                // Fallback static rates
-                return [
-                    'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
-                    'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
-                    'OMR' => 0.3847, 'EUR' => 0.92,   'GBP' => 0.79,
-                    'INR' => 83.5,   'PKR' => 278.47,
-                ];
+    private function getExchangeRates(): array
+    {
+        return Cache::remember('exchange_rates_v2', now()->addHours(6), function () {
+            try {
+                $response = Http::timeout(5)->get('https://open.er-api.com/v6/latest/USD');
+                if ($response->successful()) {
+                    $rates = $response->json('rates', []);
+                    if (!empty($rates)) {
+                        return $rates;
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::error('CURRENCY_MW: exchange rate fetch failed', ['error' => $e->getMessage()]);
             }
 
-            return $rates;
-        }
+            // Fallback static rates (relative to USD)
+            return [
+                'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
+                'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
+                'OMR' => 0.3847, 'EUR' => 0.92,   'GBP' => 0.79,
+                'INR' => 83.5,   'PKR' => 278.47,
+            ];
+        });
+    }
+    // CurrencyMiddleware.php
+        // Replace the entire getExchangeRates() method with this:
+        // private function getExchangeRates(): array
+        // {
+        //     $rates = CurrencyConverter::getRates();
+
+        //     if (!$rates) {
+        //         // Fallback static rates
+        //         return [
+        //             'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
+        //             'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
+        //             'OMR' => 0.3847, 'EUR' => 0.92,   'GBP' => 0.79,
+        //             'INR' => 83.5,   'PKR' => 278.47,
+        //         ];
+        //     }
+
+        //     return $rates;
+        // }
 
     // ─── FIX #2: Always return AED as base (prices stored in AED) ─────────────
     private function defaultContext(): array
