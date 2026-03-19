@@ -267,7 +267,7 @@ class CustomerCartController extends Controller
 
 		/* Get customer and default address */
 		$customer = Customer::find($customerId);
-
+		$defaultAddress = auth()->user()->customerAddress()->with('relatedCountry.currency:id,symbol')->where('is_default', 1)->first(['id', 'country']);
 		/* Get country and currency based on query parameter or default address */
 		if ($request->filled('country')) {
 			/* Use country from query parameter */
@@ -275,7 +275,7 @@ class CustomerCartController extends Controller
 			$margin = $country->margin ?? 0;
 		} else {
 			/* Use default customer address */
-			$defaultAddress = auth()->user()->customerAddress()->with('relatedCountry.currency:id,symbol')->where('is_default', 1)->first(['id', 'country']);
+			
 			$countryData = $defaultAddress->relatedCountry ?? null;
 			$margin = $countryData->margin ?? 0;
 		}
