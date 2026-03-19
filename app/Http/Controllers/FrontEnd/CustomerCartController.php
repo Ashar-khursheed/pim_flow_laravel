@@ -17,8 +17,11 @@ use App\Models\FrontEnd\CustomerAddress;
 use App\Models\FrontEnd\Customer;
 use App\Jobs\Order\CartCreationMailJob;
 
+use App\Traits\CalculationTrait;
+
 class CustomerCartController extends Controller
 {
+	use CalculationTrait;
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/carts",
