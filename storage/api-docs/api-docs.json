@@ -17628,7 +17628,7 @@
                 "tags": [
                     "Frontend-Carts"
                 ],
-                "summary": "Add product to cart (create or update)",
+                "summary": "Add multiple products to cart (create or update)",
                 "operationId": "410fed0429f6f545a086760294e4c241",
                 "requestBody": {
                     "required": true,
@@ -17636,10 +17636,7 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "product_id",
-                                    "vendor_id",
-                                    "quantity",
-                                    "shipping_charge"
+                                    "products"
                                 ],
                                 "properties": {
                                     "country": {
@@ -17647,32 +17644,36 @@
                                         "type": "string",
                                         "example": "United States"
                                     },
-                                    "product_id": {
-                                        "description": "Product ID",
-                                        "type": "integer",
-                                        "example": 101
-                                    },
-                                    "vendor_id": {
-                                        "description": "Vendor ID",
-                                        "type": "integer",
-                                        "example": 22
-                                    },
-                                    "quantity": {
-                                        "description": "Product quantity",
-                                        "type": "integer",
-                                        "example": 5
-                                    },
-                                    "shipping_charge": {
-                                        "description": "Product Shipping Charge",
-                                        "type": "number",
-                                        "example": 50
-                                    },
-                                    "accessory_item_ids": {
-                                        "description": "Array of accessory item IDs",
+                                    "products": {
+                                        "description": "Array of products",
                                         "type": "array",
                                         "items": {
-                                            "type": "integer",
-                                            "example": 50
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "example": 50
+                                                },
+                                                "accessory_item_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer",
+                                                        "example": 50
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     }
                                 },
@@ -17683,7 +17684,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Product added to cart successfully",
+                        "description": "Products added to cart successfully",
                         "content": {
                             "application/json": {}
                         }
