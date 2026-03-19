@@ -141,6 +141,8 @@ class CustomerCartController extends Controller
 				$cartProduct->shipping_charge = number_format($shippingCharge, 2, '.', '');
 				$cartProduct->accessory_item_charge = number_format($accessoryCharge, 2, '.', '');
 				$cartProduct->total_amount = number_format($amount + $shippingCharge + $accessoryCharge, 2, '.', '');
+				$cartProduct->delivery_days = $supplier['delivery_days'];
+				$cartProduct->return_policy = $supplier['return_policy'];
 
 				/* Accumulate totals */
 				$cartSubtotal += $amount;
