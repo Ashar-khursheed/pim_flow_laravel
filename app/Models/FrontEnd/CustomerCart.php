@@ -11,6 +11,7 @@ class CustomerCart extends Model
 		'reference_number',
 		'customer_id',
 		'customer_address_id',
+		'currency_id',
 		'shipping_charge',
 		'is_lift_gate',
 		'is_residential_address',

@@ -44,7 +44,7 @@ class CustomerCartController extends Controller
 	{
 		/* Validate country parameter if provided */
 		$request->validate([
-			'country' => 'nullable|string|exists:countries,name',
+			'country' => 'required|string|exists:countries,name',
 		]);
 
 		/* Get authenticated customer's cart */
@@ -77,16 +77,6 @@ class CustomerCartController extends Controller
 
 			$margin = $country->margin ?? 0;
 			$currency = $country->currency ?? null;
-		} else {
-			/* Use default customer address */
-			$defaultAddress = auth()->user()->customerAddress()
-			->with('relatedCountry.currency:id,symbol')
-			->where('is_default', 1)
-			->first(['id', 'country']);
-
-			$countryData = $defaultAddress->relatedCountry ?? null;
-			$margin = $countryData->margin ?? 0;
-			$currency = $countryData->currency ?? null;
 		}
 
 		$cartSubtotal = 0;
@@ -253,7 +243,7 @@ class CustomerCartController extends Controller
 	{
 		/* Validate request */
 		$request->validate([
-			'country' => 'nullable|string|exists:countries,name',
+			'country' => 'required|string|exists:countries,name',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -267,18 +257,12 @@ class CustomerCartController extends Controller
 
 		/* Get customer and default address */
 		$customer = Customer::find($customerId);
+		$country = Country::where('name', $request->country)->first(['id', 'name', 'currency_id', 'margin']);
+
+		$margin = $country->margin ?? 0;
+		$currencyID = $country->currency_id ?? 0;
+
 		$defaultAddress = auth()->user()->customerAddress()->with('relatedCountry.currency:id,symbol')->where('is_default', 1)->first(['id', 'country']);
-		/* Get country and currency based on query parameter or default address */
-		if ($request->filled('country')) {
-			/* Use country from query parameter */
-			$country = Country::where('name', $request->country)->first(['id', 'name', 'currency_id', 'margin']);
-			$margin = $country->margin ?? 0;
-		} else {
-			/* Use default customer address */
-			
-			$countryData = $defaultAddress->relatedCountry ?? null;
-			$margin = $countryData->margin ?? 0;
-		}
 
 		/* Prepare products data for calculation */
 		$productData = collect($request->products)->map(function ($product) {
@@ -309,7 +293,8 @@ class CustomerCartController extends Controller
 
 			/* Prepare cart data */
 			$cartData = [
-				'customer_address_id' => $defaultAddress->id,
+				'customer_address_id' => $defaultAddress->id ?? 0,
+				'currency_id' => $currencyID,
 				'amount' => $amountCalculations['subtotal'],
 				'shipping_charge' => $amountCalculations['shipping_charge'],
 				'tax_percentage' => $amountCalculations['tax_percentage'],
