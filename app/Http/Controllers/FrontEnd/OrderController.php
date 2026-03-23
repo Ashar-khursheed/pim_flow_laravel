@@ -3,30 +3,29 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\BaseController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
 
-use App\Models\FrontEnd\Order;
+use App\Helpers\CurrencyConverter;
+
+use App\Models\Utm;
 use App\Models\ChequeUpload;
+use App\Models\ProductSupplier;
+use App\Models\FrontEnd\Wishlist;
+use App\Models\FrontEnd\Order;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 use App\Models\FrontEnd\CustomerAddress;
 use App\Models\FrontEnd\Finance;
 use App\Models\FrontEnd\FinancesPayment;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use App\Models\Utm;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Bus\Batch;
-use App\Models\FrontEnd\Wishlist;
-
 
 use App\Jobs\Order\OrderPlacedMailJob;
 use App\Jobs\Order\OrderReservedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 
 use App\Traits\CalculationTrait;
-use App\Helpers\CurrencyConverter;
 
 class OrderController extends BaseController
 {
@@ -58,52 +57,38 @@ class OrderController extends BaseController
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
 		$recordsQuery = Order::where('customer_id', auth()->id());
+
 		/* Check if pagination requested */
 		if ($request->filled('page') && $request->filled('length')) {
-			/* Eager load relationships */
-			$recordsQuery->with([
-				'customerAddress:id,address,city,country',
-				'customerAddress.relatedCountry:id,name,currency_id',
-				'customerAddress.relatedCountry.currency:id,title,symbol',
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
-				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
-				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
-				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
-				'orderProducts.product:id,name,images,sku,brand_id,barcode',
-				'orderProducts.product.brand:id,name',
-				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
-				'shipments',
-			]);
-
 			/* Filter by status */
-			if ($request->has('status')) {
-				$recordsQuery->where('orders.status', $request->status);
+			if ($request->filled('status')) {
+				$recordsQuery->where('status', $request->status);
 			}
 
-			if ($request->has('from_date') && $request->has('to_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->whereBetween('orders.created_at', [$from, $to]);
-			} elseif ($request->has('from_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$recordsQuery->where('orders.created_at', '>=', $from);
-			} elseif ($request->has('to_date')) {
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->where('orders.created_at', '<=', $to);
+			/* Date range filter */
+			if ($request->filled('from_date') && $request->filled('to_date')) {
+				$recordsQuery->whereBetween('created_at', [
+					$request->from_date . ' 00:00:00',
+					$request->to_date . ' 23:59:59'
+				]);
+			} elseif ($request->filled('from_date')) {
+				$recordsQuery->where('created_at', '>=', $request->from_date . ' 00:00:00');
+			} elseif ($request->filled('to_date')) {
+				$recordsQuery->where('created_at', '<=', $request->to_date . ' 23:59:59');
 			}
 
 			/* Filter by payment status */
-			if ($request->has('payment_status')) {
+			if ($request->filled('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+					$recordsQuery->whereColumn('paid_amount', '>=', 'total_amount');
 					break;
 					case 'Unpaid':
-					$recordsQuery->where('orders.paid_amount', 0);
+					$recordsQuery->where('paid_amount', 0);
 					break;
 					case 'Partially Paid':
-					$recordsQuery->where('orders.paid_amount', '>', 0)
-					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+					$recordsQuery->where('paid_amount', '>', 0)
+					->whereColumn('paid_amount', '<', 'total_amount');
 					break;
 				}
 			}
@@ -113,7 +98,7 @@ class OrderController extends BaseController
 				$search = $request->input('global');
 				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
 					foreach ($searchableColumns as $col) {
-						$q->orWhere("orders.$col", 'like', '%' . $search . '%');
+						$q->orWhere($col, 'like', '%' . $search . '%');
 					}
 				});
 			}
@@ -121,98 +106,214 @@ class OrderController extends BaseController
 			/* Sorting */
 			$recordsQuery->orderBy($sortBy, $sortDir);
 
+			/* Count BEFORE eager loading */
+			$totalRecords = $recordsQuery->count();
+
 			/* Pagination */
 			$length = (int) $request->input('length');
 			$page = (int) $request->input('page');
-
-			$totalRecords = (clone $recordsQuery)->count();
 			$totalPages = (int) ceil($totalRecords / $length);
 
 			if ($page > $totalPages && $totalPages > 0) {
 				$page = 1;
 			}
 
+			/* Eager load relationships */
+			$recordsQuery->with([
+				'customerAddress:id,address,city,country',
+				'customerAddress.relatedCountry:id,name,currency_id',
+				'customerAddress.relatedCountry.currency:id,title,symbol',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
+				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
+				'orderProducts.product:id,name,images,sku,brand_id',
+				'orderProducts.product.brand:id,name',
+				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
+				'shipments',
+			]);
+
 			$records = $recordsQuery
 			->offset(($page - 1) * $length)
 			->limit($length)
 			->get();
 
+			/* Pre-load vendor product suppliers to avoid N+1 */
+			$this->preloadVendorProductSuppliers($records);
+
+			/* Cache source currency */
+			$isUAE = in_array(config('app.website'), ['UAE', 'UAE_T']);
+			$sourceCurrencySymbol = $isUAE ? 'AED' : '$';
+			$sourceCurrencyTitle = $isUAE ? 'AED' : 'USD';
+
 			/* Transform results */
-			$records->transform(function ($record) {
+			$records->transform(function ($record) use ($sourceCurrencySymbol, $sourceCurrencyTitle) {
+				/* Get target currency and conversion rate */
+				$targetCurrency = $record->customerAddress->relatedCountry->currency ?? null;
+				$targetCurrencySymbol = $targetCurrency->symbol ?? $sourceCurrencySymbol;
+				$targetCurrencyTitle = $targetCurrency->title ?? $sourceCurrencyTitle;
+				$conversionRate = CurrencyConverter::getRate($sourceCurrencyTitle, $targetCurrencyTitle) ?? 1;
 
-				$sourceCurrencySymbol = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
-				$sourceCurrencyTitle = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : 'USD';
-				$targetCurrencySymbol = $record->customerAddress->relatedCountry->currency->symbol ?? $sourceCurrencySymbol;
-				$targetCurrencyTitle = $record->customerAddress->relatedCountry->currency->title ?? $sourceCurrencyTitle;
-				$currencyConversionRate = CurrencyConverter::getRate($sourceCurrencyTitle, $targetCurrencyTitle);
-
-				/* Process each product in order products */
+				/* Process order products */
 				foreach ($record->orderProducts as $orderProduct) {
-					$product = $orderProduct->product;
-					if ($product) {
-						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-						$product->brand_name = $product->brand->name ?? null;
-						unset($product->brand);
-					}
-					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
-
-					if ($orderProduct->accessoryCharges) {
-						$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) {
-							return [
-								'id' => $charge->id,
-								'accessory_item_id' => $charge->accessory_item_id,
-								'accessory_item_name' => $charge->accessoryItem->name ?? null,
-								'accessory_item_price' => ($charge->accessoryItem->price * $currencyConversionRate) ?? null,
-								'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-								'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-								'amount' => ($charge->amount * $currencyConversionRate),
-							];
-						});
-
-						unset($orderProduct->accessoryCharges);
-					}
-
-					$updatedSuppliers = [];
-					foreach ($orderProduct->product_supplier as $key => $value) {
-						if (in_array($key, ['price', 'sale_price', 'shipping_charge'])) {
-							$updatedSuppliers[$key] = number_format(($value * $currencyConversionRate), 2, '.', '');
-						} else {
-							$updatedSuppliers[$key] = $value;
-						}
-					}
-					$orderProduct->product_supplier = $updatedSuppliers;
-
-					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount', 'accessory_item_charge'] as $key) {
-						if (isset($orderProduct->$key)) {
-							$orderProduct->$key = number_format(($orderProduct->$key * $currencyConversionRate), 2, '.', '');
-						}
-					}
+					$this->processOrderProduct($orderProduct, $record->created_at, $conversionRate);
 				}
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_amount_price', 'cheque_discount', 'additional_discount_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-					if (isset($record->$key)) {
-						$record->$key = number_format(($record->$key * $currencyConversionRate), 2, '.', '');
-					}
-				}
+
+				/* Format order amounts */
+				$this->formatOrderAmounts($record, $conversionRate);
 
 				return $record;
 			});
 		} else {
 			/* No pagination: just fetch id and order_number */
-			$records = Order::orderBy('order_number', 'asc')->get(['id', 'order_number']);
+			$records = $recordsQuery->orderBy('order_number', 'asc')->get(['id', 'order_number']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}
 
 		return response()->json([
 			'success' => true,
-			'message' => __('msg_rec_list'),
+			'message' => 'Orders retrieved successfully',
 			'data' => $records,
 			'total_pages' => $totalPages,
 			'total_records' => $totalRecords,
 		]);
+	}
+
+	/**
+	 * Pre-load vendor product suppliers to avoid N+1 queries
+	 *
+	 * @param \Illuminate\Support\Collection $records
+	 * @return void
+	 */
+	private function preloadVendorProductSuppliers($records)
+	{
+		/* Collect all order products */
+		$allOrderProducts = $records->flatMap(fn($order) => $order->orderProducts);
+
+		if ($allOrderProducts->isEmpty()) {
+			return;
+		}
+
+		/* Build query to fetch all vendor suppliers at once */
+		$vendorSuppliers = ProductSupplier::where(function($query) use ($allOrderProducts) {
+			foreach ($allOrderProducts as $orderProduct) {
+				$query->orWhere(function($q) use ($orderProduct) {
+					$q->where('product_id', $orderProduct->product_id)
+					->where('vendor_id', $orderProduct->vendor_id);
+				});
+			}
+		})
+		->select('id', 'product_id', 'vendor_id', 'price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy')
+		->get()
+		->keyBy(fn($item) => $item->product_id . '_' . $item->vendor_id);
+
+		/* Attach suppliers to order products */
+		foreach ($allOrderProducts as $orderProduct) {
+			$key = $orderProduct->product_id . '_' . $orderProduct->vendor_id;
+			$orderProduct->setRelation('vendorProductSupplier', $vendorSuppliers->get($key));
+		}
+	}
+
+	/**
+	 * Process individual order product
+	 *
+	 * @param \App\Models\FrontEnd\OrderProduct $orderProduct
+	 * @param string $orderCreatedAt
+	 * @param float $conversionRate
+	 * @return void
+	 */
+	private function processOrderProduct($orderProduct, $orderCreatedAt, $conversionRate)
+	{
+		/* Process product data */
+		$product = $orderProduct->product;
+		if ($product) {
+			$product->images = is_array($product->images)
+			? $product->images
+			: (json_decode($product->images, true) ?: []);
+
+			$product->brand_name = $product->brand->name ?? null;
+			unset($product->brand);
+		}
+
+		/* Get vendor product supplier */
+		$supplier = $orderProduct->vendorProductSupplier;
+		$orderProduct->product_supplier = $supplier
+		? $supplier->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy'])
+		: null;
+		unset($orderProduct->vendorProductSupplier);
+
+		/* Calculate expected shipping date */
+		$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+		? getDateRange($orderCreatedAt, $orderProduct->product_supplier['delivery_days'])
+		: null;
+
+		/* Process accessory charges */
+		if ($orderProduct->accessoryCharges) {
+			$orderProduct->accessory_charges = $orderProduct->accessoryCharges->map(function ($charge) use ($conversionRate) {
+				return [
+					'id' => $charge->id,
+					'accessory_item_id' => $charge->accessory_item_id,
+					'accessory_item_name' => $charge->accessoryItem->name ?? null,
+					'accessory_item_price' => number_format(($charge->accessoryItem->price ?? 0) * $conversionRate, 2, '.', ''),
+					'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+					'amount' => number_format($charge->amount * $conversionRate, 2, '.', ''),
+				];
+			})->toArray();
+
+			unset($orderProduct->accessoryCharges);
+		}
+
+		/* Convert supplier prices */
+		if ($orderProduct->product_supplier) {
+			$productSupplier = $orderProduct->product_supplier;
+			foreach (['price', 'sale_price', 'shipping_charge'] as $key) {
+				if (isset($productSupplier[$key])) {
+					$productSupplier[$key] = number_format(
+						$productSupplier[$key] * $conversionRate,
+						2, '.', ''
+					);
+				}
+			}
+			$orderProduct->product_supplier = $productSupplier;
+		}
+
+		/* Convert order product amounts */
+		foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount', 'accessory_item_charge'] as $key) {
+			if (isset($orderProduct->$key)) {
+				$orderProduct->$key = number_format($orderProduct->$key * $conversionRate, 2, '.', '');
+			}
+		}
+	}
+
+	/**
+	 * Format order amounts with currency conversion
+	 *
+	 * @param \App\Models\FrontEnd\Order $record
+	 * @param float $conversionRate
+	 * @return void
+	 */
+	private function formatOrderAmounts($record, $conversionRate)
+	{
+		$amountFields = [
+			'shipping_charge',
+			'amount',
+			'tax_amount',
+			'discount',
+			'additional_amount_price',
+			'cheque_discount',
+			'additional_discount_amount',
+			'total_amount',
+			'paid_amount',
+			'pending_amount'
+		];
+
+		foreach ($amountFields as $key) {
+			if (isset($record->$key)) {
+				$record->$key = number_format($record->$key * $conversionRate, 2, '.', '');
+			}
+		}
 	}
 
 	/**
