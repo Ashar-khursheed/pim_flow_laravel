@@ -26,6 +26,7 @@ use App\Jobs\Order\OrderReservedMailJob;
 use App\Jobs\Order\OrderCancelledMailJob;
 
 use App\Traits\CalculationTrait;
+use App\Helpers\CurrencyConverter;
 
 class OrderController extends BaseController
 {
@@ -61,13 +62,15 @@ class OrderController extends BaseController
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Eager load relationships */
 			$recordsQuery->with([
+				'customerAddress:id,address,city,country',
+				'customerAddress.relatedCountry:id,name,currency_id',
+				'customerAddress.relatedCountry.currency:id,title,symbol',
 				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
 				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
 				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
-				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+				'orderProducts.product:id,name,images,sku,brand_id,barcode',
 				'orderProducts.product.brand:id,name',
-				'orderProducts.product.currency:id,symbol',
 				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
 				'shipments',
 			]);
@@ -136,14 +139,20 @@ class OrderController extends BaseController
 
 			/* Transform results */
 			$records->transform(function ($record) {
+
+				$sourceCurrencySymbol = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+				$sourceCurrencyTitle = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : 'USD';
+				$targetCurrencySymbol = $record->customerAddress->relatedCountry->currency->symbol ?? $sourceCurrencySymbol;
+				$targetCurrencyTitle = $record->customerAddress->relatedCountry->currency->title ?? $sourceCurrencyTitle;
+				$currencyConversionRate = CurrencyConverter::getRate($sourceCurrencyTitle, $targetCurrencyTitle);
+
 				/* Process each product in order products */
 				foreach ($record->orderProducts as $orderProduct) {
 					$product = $orderProduct->product;
 					if ($product) {
 						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 						$product->brand_name = $product->brand->name ?? null;
-						$product->currency_symbol = $product->currency->symbol ?? null;
-						unset($product->brand, $product->currency);
+						unset($product->brand);
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
@@ -156,19 +165,35 @@ class OrderController extends BaseController
 								'id' => $charge->id,
 								'accessory_item_id' => $charge->accessory_item_id,
 								'accessory_item_name' => $charge->accessoryItem->name ?? null,
-								'accessory_item_price' => $charge->accessoryItem->price ?? null,
+								'accessory_item_price' => ($charge->accessoryItem->price * $currencyConversionRate) ?? null,
 								'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
 								'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-								'amount' => $charge->amount,
+								'amount' => ($charge->amount * $currencyConversionRate),
 							];
 						});
 
 						unset($orderProduct->accessoryCharges);
 					}
+
+					$updatedSuppliers = [];
+					foreach ($orderProduct->product_supplier as $key => $value) {
+						if (in_array($key, ['price', 'sale_price', 'shipping_charge'])) {
+							$updatedSuppliers[$key] = number_format(($value * $currencyConversionRate), 2, '.', '');
+						} else {
+							$updatedSuppliers[$key] = $value;
+						}
+					}
+					$orderProduct->product_supplier = $updatedSuppliers;
+
+					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount', 'accessory_item_charge'] as $key) {
+						if (isset($orderProduct->$key)) {
+							$orderProduct->$key = number_format(($orderProduct->$key * $currencyConversionRate), 2, '.', '');
+						}
+					}
 				}
-				foreach (['amount', 'tax_amount', 'discount', 'additional_discount_amount', 'cheque_discount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_amount_price', 'cheque_discount', 'additional_discount_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
-						$record->$key = number_format($record->$key, 2, '.', '');
+						$record->$key = number_format(($record->$key * $currencyConversionRate), 2, '.', '');
 					}
 				}
 

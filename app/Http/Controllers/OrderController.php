@@ -113,7 +113,6 @@ class OrderController extends Controller
 				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
-				'orderProducts.product.currency:id,symbol',
 				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
 				'shipments',
 				'creator',
@@ -227,8 +226,7 @@ class OrderController extends Controller
 					if ($product) {
 						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 						$product->brand_name = $product->brand->name ?? null;
-						$product->currency_symbol = $product->currency->symbol ?? null;
-						unset($product->brand, $product->currency);
+						unset($product->brand);
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
