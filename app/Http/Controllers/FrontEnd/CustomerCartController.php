@@ -20,6 +20,7 @@ use App\Models\ProductSupplier;
 use App\Jobs\Order\CartCreationMailJob;
 
 use App\Traits\CalculationTrait;
+use App\Helpers\CurrencyConverter;
 
 class CustomerCartController extends Controller
 {
@@ -68,16 +69,19 @@ class CustomerCartController extends Controller
 			], 200);
 		}
 
-		/* Get country and currency based on query parameter or default address */
-		if ($request->filled('country')) {
-			/* Use country from query parameter */
-			$country = Country::with('currency:id,symbol')
-			->where('name', $request->country)
-			->first(['id', 'name', 'currency_id', 'margin']);
+		/* Use country from query parameter */
+		$country = Country::with('currency:id,title,symbol')
+		->where('name', $request->country)
+		->first(['id', 'name', 'currency_id', 'margin']);
 
-			$margin = $country->margin ?? 0;
-			$currency = $country->currency ?? null;
-		}
+		$margin = $country->margin ?? 0;
+
+		$sourceCurrencySymbol = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
+		$sourceCurrencyTitle = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : 'USD';
+		$targetCurrencySymbol = $country->currency->symbol ?? $sourceCurrencySymbol;
+		$targetCurrencyTitle = $country->currency->title ?? $sourceCurrencyTitle;
+
+		$currencyConversionRate = CurrencyConverter::getRate($sourceCurrencyTitle, $targetCurrencyTitle);
 
 		$cartSubtotal = 0;
 		$cartTotalShipping = 0;
@@ -94,7 +98,7 @@ class CustomerCartController extends Controller
 				: (json_decode($product->images, true) ?: []);
 
 				$product->image = $images[0] ?? null;
-				$product->currency_symbol = $currency->symbol ?? null;
+				$product->currency_symbol = $targetCurrencySymbol ?? $sourceCurrencySymbol;
 				$product->category_url = $product->category_url() ?? null;
 				$product->parent_category_url = $product->parent_category_url() ?? null;
 				$product->url = $product->seoUrl->url ?? null;
@@ -128,11 +132,11 @@ class CustomerCartController extends Controller
 				$accessoryCharge = $cartProduct->accessory_item_charge ?? 0;
 
 				/* Update cart product */
-				$cartProduct->unit_price = number_format($unitPrice, 2, '.', '');
-				$cartProduct->amount = number_format($amount, 2, '.', '');
-				$cartProduct->shipping_charge = number_format($shippingCharge, 2, '.', '');
-				$cartProduct->accessory_item_charge = number_format($accessoryCharge, 2, '.', '');
-				$cartProduct->total_amount = number_format($amount + $shippingCharge + $accessoryCharge, 2, '.', '');
+				$cartProduct->unit_price = number_format(($unitPrice * $currencyConversionRate), 2, '.', '');
+				$cartProduct->amount = number_format(($amount * $currencyConversionRate), 2, '.', '');
+				$cartProduct->shipping_charge = number_format(($shippingCharge * $currencyConversionRate), 2, '.', '');
+				$cartProduct->accessory_item_charge = number_format(($accessoryCharge * $currencyConversionRate), 2, '.', '');
+				$cartProduct->total_amount = number_format((($amount + $shippingCharge + $accessoryCharge) * $currencyConversionRate), 2, '.', '');
 				$cartProduct->delivery_days = $supplier['delivery_days'];
 				$cartProduct->return_policy = $supplier['return_policy'];
 
@@ -147,11 +151,11 @@ class CustomerCartController extends Controller
 				$cartTotalAccessories += $cartProduct->accessory_item_charge ?? 0;
 
 				/* Format stored values */
-				$cartProduct->unit_price = number_format($cartProduct->unit_price, 2, '.', '');
-				$cartProduct->amount = number_format($cartProduct->amount, 2, '.', '');
-				$cartProduct->shipping_charge = number_format($cartProduct->shipping_charge, 2, '.', '');
-				$cartProduct->accessory_item_charge = number_format($cartProduct->accessory_item_charge ?? 0, 2, '.', '');
-				$cartProduct->total_amount = number_format($cartProduct->total_amount, 2, '.', '');
+				$cartProduct->unit_price = number_format(($cartProduct->unit_price * $currencyConversionRate), 2, '.', '');
+				$cartProduct->amount = number_format(($cartProduct->amount * $currencyConversionRate), 2, '.', '');
+				$cartProduct->shipping_charge = number_format(($cartProduct->shipping_charge * $currencyConversionRate), 2, '.', '');
+				$cartProduct->accessory_item_charge = number_format(($cartProduct->accessory_item_charge * $currencyConversionRate) ?? 0, 2, '.', '');
+				$cartProduct->total_amount = number_format(($cartProduct->total_amount * $currencyConversionRate), 2, '.', '');
 			}
 
 			/* Format accessory charges */
@@ -160,10 +164,10 @@ class CustomerCartController extends Controller
 					'id' => $charge->id,
 					'accessory_item_id' => $charge->accessory_item_id,
 					'accessory_item_name' => $charge->accessoryItem->name ?? null,
-					'accessory_item_price' => number_format($charge->accessoryItem->price ?? 0, 2, '.', ''),
+					'accessory_item_price' => number_format(($charge->accessoryItem->price * $currencyConversionRate) ?? 0, 2, '.', ''),
 					'product_accessory_id' => $charge->accessoryItem->product_accessory_id ?? null,
 					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-					'amount' => number_format($charge->amount, 2, '.', ''),
+					'amount' => number_format(($charge->amount * $currencyConversionRate), 2, '.', ''),
 				];
 			})->toArray();
 
@@ -188,12 +192,12 @@ class CustomerCartController extends Controller
 		$totalAmount = $amountBeforeTax + $taxAmount;
 
 		/* Update cart with calculated values */
-		$cart->amount = number_format($cartSubtotal, 2, '.', '');
-		$cart->shipping_charge = number_format($cartTotalShipping, 2, '.', '');
-		$cart->tax_percentage = number_format($taxPercentage, 4, '.', '');
-		$cart->tax_amount = number_format($taxAmount, 2, '.', '');
-		$cart->total_amount = number_format($totalAmount, 2, '.', '');
-		$cart->additional_amount_price = number_format($additionalAmount, 2, '.', '');
+		$cart->amount = number_format(($cartSubtotal * $currencyConversionRate), 2, '.', '');
+		$cart->shipping_charge = number_format(($cartTotalShipping * $currencyConversionRate), 2, '.', '');
+		$cart->tax_percentage = number_format(($taxPercentage * $currencyConversionRate), 4, '.', '');
+		$cart->tax_amount = number_format(($taxAmount * $currencyConversionRate), 2, '.', '');
+		$cart->total_amount = number_format(($totalAmount * $currencyConversionRate), 2, '.', '');
+		$cart->additional_amount_price = number_format(($additionalAmount * $currencyConversionRate), 2, '.', '');
 
 		/* Remove unnecessary cart fields */
 		unset(
