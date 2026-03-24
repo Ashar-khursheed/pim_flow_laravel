@@ -631,7 +631,7 @@ class CustomerCartController extends Controller
 				? $supplier['sale_price']
 				: $supplier['price'];
 
-				$unitPriceWithMargin = $unit_price + (in_array(config('app.website'), ['UAE', 'UAE_T', 'US_T'])  ? ($unit_price * ($margin / 100)) : 0);
+				$unitPriceWithMargin = $unitPrice + (in_array(config('app.website'), ['UAE', 'UAE_T', 'US_T'])  ? ($unitPrice * ($margin / 100)) : 0);
 
 				/* Recalculate amounts based on current supplier prices */
 				$amount = $cartProduct->quantity * $unitPriceWithMargin;
