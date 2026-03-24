@@ -367,6 +367,7 @@ class CustomerCartController extends Controller
 			/* Prepare cart data */
 			$cartData = [
 				'customer_address_id' => $request->customer_address_id,
+				'country' => $address->relatedCountry->name ?? null,
 				'additional_amount_name' => $request->additional_amount_name,
 				'additional_amount_price' => $request->additional_amount_price,
 				'amount' => $amountCalculations['subtotal'],
@@ -559,7 +560,7 @@ class CustomerCartController extends Controller
 		return [
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
-			'customerAddress.relatedCountry:id,name,margin',
+			'countryRelation:id,name,margin',
 			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,accessory_item_charge,shipping_charge,total_amount',
 			'customerCartProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 			'customerCartProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
@@ -596,7 +597,7 @@ class CustomerCartController extends Controller
 		// }
 
 		/* Add created/updated by names */
-		$margin = $cart->customerAddress->relatedCountry->margin ?? 0;
+		$margin = $cart->countryRelation->margin ?? 0;
 
 		$cart->base_currency = (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$');
 		$cart->created_by_name = $cart->creator->name ?? null;

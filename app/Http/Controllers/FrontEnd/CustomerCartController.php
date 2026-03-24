@@ -201,6 +201,7 @@ class CustomerCartController extends Controller
 
 		/* Remove unnecessary cart fields */
 		unset(
+			$cart->country,
 			$cart->reference_number,
 			$cart->created_by,
 			$cart->updated_by,
@@ -264,7 +265,6 @@ class CustomerCartController extends Controller
 		$country = Country::where('name', $request->country)->first(['id', 'name', 'currency_id', 'margin']);
 
 		$margin = $country->margin ?? 0;
-		$currencyID = $country->currency_id ?? 0;
 
 		$defaultAddress = auth()->user()->customerAddress()->with('relatedCountry.currency:id,symbol')->where('is_default', 1)->first(['id', 'country']);
 
@@ -298,7 +298,7 @@ class CustomerCartController extends Controller
 			/* Prepare cart data */
 			$cartData = [
 				'customer_address_id' => $defaultAddress->id ?? 0,
-				'currency_id' => $currencyID,
+				'country' => $request->country,
 				'amount' => $amountCalculations['subtotal'],
 				'shipping_charge' => $amountCalculations['shipping_charge'],
 				'tax_percentage' => $amountCalculations['tax_percentage'],
