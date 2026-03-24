@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
+use App\Models\ProductSupplier;
 use App\Models\FrontEnd\AccessoryCharge;
 use App\Models\FrontEnd\CustomerCart;
 use App\Models\FrontEnd\CustomerCartProduct;
