@@ -180,6 +180,7 @@ class OrderController extends Controller
 				$record->customer_name = $record->customer->name ?? null;
 				$record->created_by = $record->creator->name ?? null;
 				$record->updated_by = $record->updator->name ?? null;
+				unset($record->creator, $record->updator);
 
 				$response = $record->nofraudResponse->response ?? null;
 
@@ -216,8 +217,6 @@ class OrderController extends Controller
 						'updated_at' => null
 					];
 				}
-
-				unset($record->creator, $record->updator);
 
 				foreach ($record->orderProducts as $orderProduct) {
 					$product = $orderProduct->product;
