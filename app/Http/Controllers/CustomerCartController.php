@@ -559,6 +559,7 @@ class CustomerCartController extends Controller
 		return [
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
+			'customerAddress.relatedCountry:id,name,margin',
 			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,accessory_item_charge,shipping_charge,total_amount',
 			'customerCartProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 			'customerCartProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
@@ -595,6 +596,8 @@ class CustomerCartController extends Controller
 		// }
 
 		/* Add created/updated by names */
+		$margin = $cart->customerAddress->relatedCountry->margin ?? 0;
+
 		$cart->base_currency = (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$');
 		$cart->created_by_name = $cart->creator->name ?? null;
 		$cart->updated_by_name = $cart->updator->name ?? null;
@@ -628,12 +631,14 @@ class CustomerCartController extends Controller
 				? $supplier['sale_price']
 				: $supplier['price'];
 
+				$unitPriceWithMargin = $unit_price + (in_array(config('app.website'), ['UAE', 'UAE_T', 'US_T'])  ? ($unit_price * ($margin / 100)) : 0);
+
 				/* Recalculate amounts based on current supplier prices */
-				$amount = $cartProduct->quantity * $unitPrice;
+				$amount = $cartProduct->quantity * $unitPriceWithMargin;
 				$totalAmount = $amount + $cartProduct->shipping_charge + ($cartProduct->accessory_item_charge ?? 0);
 
 				/* Update cart product with calculated values */
-				$cartProduct->unit_price = $unitPrice;
+				$cartProduct->unit_price = $unitPriceWithMargin;
 				$cartProduct->amount = $amount;
 				$cartProduct->total_amount = number_format($totalAmount, 2, '.', '');
 
