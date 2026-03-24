@@ -774,8 +774,6 @@ class OrderController extends Controller
 		$order->load([
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
-			'customerAddress.relatedCountry:id,name,currency_id,margin',
-			'customerAddress.relatedCountry.currency:id,symbol',
 			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
 			'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 			'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
@@ -807,6 +805,7 @@ class OrderController extends Controller
 		}
 
 		/* Mutate the data for each order product */
+		$order->base_currency = (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$');
 		$order->created_by = $order->creator->name ?? null;
 		$order->updated_by = $order->updator->name ?? null;
 		unset($record->creator, $record->updator);
