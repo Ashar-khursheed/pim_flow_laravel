@@ -179,7 +179,7 @@ class ImportProductAttributeJob implements ShouldQueue
 						} else if (in_array($categoryAttribute->type, ['image', 'video', 'file'])) {
 							if (Str::startsWith($attributeValue, ['http://', 'https://'])) {
 								/* If the file is already on the HorecaStore S3, use it directly */
-								if (Str::startsWith($attributeValue, env('AWS_URL'))) {
+								if (Str::startsWith($attributeValue, [env('AWS_URL'), env('AWS_CACHE_URL')])) {
 									$uploadedUrl = $attributeValue;
 								} else {
 									$uploadedUrl = null;

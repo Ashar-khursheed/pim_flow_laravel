@@ -392,70 +392,22 @@ class BrandController extends BaseController
 				$updateData['is_featured'] = (bool)$validated['is_featured'];
 			}
 
+			/* Handle logo upload */
 			if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
-				// Import Storage facade
-				$storage = app('Illuminate\Support\Facades\Storage');
-
-				// If there's an existing logo stored in S3, attempt to delete it
-				if ($brand->logo && strpos($brand->logo, env('AWS_URL')) !== false) {
-					// Extract the path from the full URL
-					$existingPath = str_replace(env('AWS_URL').'/', '', $brand->logo);
-					try {
-						$storage::disk('s3')->delete($existingPath);
-					} catch (\Exception $e) {
-						// Log error but continue with the update
-						\Log::warning("Failed to delete old logo: {$e->getMessage()}");
-					}
-				}
-
-				// Process file upload
-				$folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
-				$logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
-				$updateData['logo'] = $storage::disk('s3')->url($logoPath);
+				deleteS3FileFromUrl($brand->logo);
+				$updateData['logo'] = uploadImageToWebpS3FromFile($request, 'logo', env('STORAGE_ENV', 'default') . '/brands');
 			}
 
+			/* Handle thumbnail upload */
 			if ($request->hasFile('thumbnail') && $request->file('thumbnail')->isValid()) {
-				// Import Storage facade
-				$storage = app('Illuminate\Support\Facades\Storage');
-
-				// If there's an existing logo stored in S3, attempt to delete it
-				if ($brand->thumbnail && strpos($brand->thumbnail, env('AWS_URL')) !== false) {
-					// Extract the path from the full URL
-					$existingPath = str_replace(env('AWS_URL').'/', '', $brand->thumbnail);
-					try {
-						$storage::disk('s3')->delete($existingPath);
-					} catch (\Exception $e) {
-						// Log error but continue with the update
-						\Log::warning("Failed to delete old thumbnail: {$e->getMessage()}");
-					}
-				}
-
-				// Process file upload
-				$folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
-				$logoPath = $request->file('thumbnail')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
-				$updateData['thumbnail'] = $storage::disk('s3')->url($logoPath);
+				deleteS3FileFromUrl($brand->thumbnail);
+				$updateData['thumbnail'] = uploadImageToWebpS3FromFile($request, 'thumbnail', env('STORAGE_ENV', 'default') . '/brands');
 			}
 
+			/* Handle arabic thumbnail upload */
 			if ($request->hasFile('ar_thumbnail') && $request->file('ar_thumbnail')->isValid()) {
-				// Import Storage facade
-				$storage = app('Illuminate\Support\Facades\Storage');
-
-				// If there's an existing logo stored in S3, attempt to delete it
-				if ($brand->ar_thumbnail && strpos($brand->ar_thumbnail, env('AWS_URL')) !== false) {
-					// Extract the path from the full URL
-					$existingPath = str_replace(env('AWS_URL').'/', '', $brand->ar_thumbnail);
-					try {
-						$storage::disk('s3')->delete($existingPath);
-					} catch (\Exception $e) {
-						// Log error but continue with the update
-						\Log::warning("Failed to delete old arabic thumbnail: {$e->getMessage()}");
-					}
-				}
-
-				// Process file upload
-				$folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
-				$logoPath = $request->file('ar_thumbnail')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
-				$updateData['ar_thumbnail'] = $storage::disk('s3')->url($logoPath);
+				deleteS3FileFromUrl($brand->ar_thumbnail);
+				$updateData['ar_thumbnail'] = uploadImageToWebpS3FromFile($request, 'ar_thumbnail', env('STORAGE_ENV', 'default') . '/brands');
 			}
 
 			// Update the brand
@@ -888,18 +840,14 @@ class BrandController extends BaseController
 							$url = $doc['path'];
 							$title = $doc['title'];
 
-							if (Str::startsWith($url, env('AWS_URL'))) {
-								$filePath = str_replace(env('AWS_URL') . '/', '', $url);
+							$filePath = $this->extractS3PathFromUrl($url);
 
-								if (Storage::disk('s3')->exists($filePath)) {
-									$extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
-									$filename = basename(parse_url($url, PHP_URL_PATH));
-									$zipPath = $typeKey . '/' . $title . '/' . $filename;
-
-									$stream = Storage::disk('s3')->readStream($filePath);
-									$zip->addFromString($zipPath, stream_get_contents($stream));
-									fclose($stream);
-								}
+							if ($filePath && Storage::disk('s3')->exists($filePath)) {
+								$filename = basename(parse_url($url, PHP_URL_PATH));
+								$zipPath = $typeKey . '/' . $title . '/' . $filename;
+								$stream = Storage::disk('s3')->readStream($filePath);
+								$zip->addFromString($zipPath, stream_get_contents($stream));
+								fclose($stream);
 							}
 						} catch (\Exception $e) {
 							return response()->json([
@@ -911,17 +859,14 @@ class BrandController extends BaseController
 				} else {
 					foreach ($items as $index => $url) {
 						try {
-							if (Str::startsWith($url, env('AWS_URL'))) {
-								$filePath = str_replace(env('AWS_URL') . '/', '', $url);
+							$filePath = $this->extractS3PathFromUrl($url);
 
-								if (Storage::disk('s3')->exists($filePath)) {
-									$extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
-									$filename = $typeKey . '/' . $typeKey . '_' . ($index + 1) . '.' . $extension;
-
-									$stream = Storage::disk('s3')->readStream($filePath);
-									$zip->addFromString($filename, stream_get_contents($stream));
-									fclose($stream);
-								}
+							if ($filePath && Storage::disk('s3')->exists($filePath)) {
+								$extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+								$filename = $typeKey . '/' . $typeKey . '_' . ($index + 1) . '.' . $extension;
+								$stream = Storage::disk('s3')->readStream($filePath);
+								$zip->addFromString($filename, stream_get_contents($stream));
+								fclose($stream);
 							}
 						} catch (\Exception $e) {
 							return response()->json([
@@ -940,6 +885,27 @@ class BrandController extends BaseController
 			], 500);
 		}
 		return response()->download($zipFilePath)->deleteFileAfterSend(true);
+	}
+
+	/**
+	 * Extract S3 file path from full URL
+	 *
+	 * @param string $url
+	 * @return string|null
+	 */
+	private function extractS3PathFromUrl($url)
+	{
+		if (!$url || !Str::startsWith($url, [env('AWS_URL'), env('AWS_CACHE_URL')])) {
+			return null;
+		}
+
+		$filePath = Str::after($url, env('AWS_URL') . '/');
+
+		if ($filePath === $url) {
+			$filePath = Str::after($url, env('AWS_CACHE_URL') . '/');
+		}
+
+		return $filePath !== $url ? $filePath : null;
 	}
 
 	/**

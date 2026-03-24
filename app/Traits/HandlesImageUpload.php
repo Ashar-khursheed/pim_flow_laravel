@@ -22,7 +22,7 @@ trait HandlesImageUpload
 		}
 
 		/* If already on our AWS S3, return as-is */
-		if (Str::startsWith($image, env('AWS_URL'))) {
+		if (Str::startsWith($image, [env('AWS_URL'), env('AWS_CACHE_URL')])) {
 			return $image;
 		}
 
