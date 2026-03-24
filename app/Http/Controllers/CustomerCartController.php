@@ -150,7 +150,7 @@ class CustomerCartController extends Controller
 		$records = $recordsQuery
 		->offset(($page - 1) * $length)
 		->limit($length)
-		->get(['id', 'reference_number', 'customer_id', 'is_lift_gate', 'is_residential_address', 'is_inside_delivery', 'tax_percentage', 'total_amount', 'total_products', 'created_by', 'created_at']);
+		->get(['id', 'reference_number', 'customer_id', 'customer_address_id', 'is_lift_gate', 'is_residential_address', 'is_inside_delivery', 'tax_percentage', 'total_amount', 'total_products', 'created_by', 'created_at']);
 
 		/* Batch-fetch vendor product suppliers to avoid N+1 — not a relation, so with() cannot be used */
 		$allCartProducts = $records->flatMap(fn($cart) => $cart->customerCartProducts);
