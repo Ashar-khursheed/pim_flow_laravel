@@ -180,12 +180,6 @@ class OrderController extends BaseController
 		]);
 	}
 
-	/**
-	 * Pre-load vendor product suppliers to avoid N+1 queries
-	 *
-	 * @param \Illuminate\Support\Collection $records
-	 * @return void
-	 */
 	private function preloadVendorProductSuppliers($records)
 	{
 		/* Collect all order products */
@@ -215,14 +209,6 @@ class OrderController extends BaseController
 		}
 	}
 
-	/**
-	 * Process individual order product
-	 *
-	 * @param \App\Models\FrontEnd\OrderProduct $orderProduct
-	 * @param string $orderCreatedAt
-	 * @param float $conversionRate
-	 * @return void
-	 */
 	private function processOrderProduct($orderProduct, $orderCreatedAt, $conversionRate)
 	{
 		/* Process product data */
@@ -287,13 +273,6 @@ class OrderController extends BaseController
 		}
 	}
 
-	/**
-	 * Format order amounts with currency conversion
-	 *
-	 * @param \App\Models\FrontEnd\Order $record
-	 * @param float $conversionRate
-	 * @return void
-	 */
 	private function formatOrderAmounts($record, $conversionRate)
 	{
 		$amountFields = [
