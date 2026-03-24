@@ -54,11 +54,8 @@ class CustomerCartController extends Controller
 		$recordsQuery->with([
 			'customer:id,name,email,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
-			'customerAddress.relatedCountry:id,name,currency_id',
-			'customerAddress.relatedCountry.currency:id,symbol',
 			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
-			'customerCartProducts.product:id,name,images,sku,currency_id,barcode',
-			'customerCartProducts.product.currency:id,symbol',
+			'customerCartProducts.product:id,name,images,sku,barcode',
 			'creator:id,username',
 		]);
 
@@ -177,7 +174,6 @@ class CustomerCartController extends Controller
 						'vendor_id'       => $customerCartProduct->vendor_id,
 						'image'           => $image,
 						'name'            => $product->name,
-						'currency_symbol' => $product->currency->symbol ?? null,
 						'unit_price'      => number_format($unitPrice, 2, '.', ''),
 						'quantity'        => $quantity,
 						'sub_total'       => number_format($subTotal, 2, '.', ''),
@@ -541,8 +537,6 @@ class CustomerCartController extends Controller
 		return [
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
-			'customerAddress.relatedCountry:id,name,currency_id',
-			'customerAddress.relatedCountry.currency:id,symbol',
 			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,accessory_item_charge,shipping_charge,total_amount',
 			'customerCartProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 			'customerCartProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
@@ -578,10 +572,8 @@ class CustomerCartController extends Controller
 		// 	}
 		// }
 
-		/* Get customer address and currency */
-		$currency = $cart->customerAddress->relatedCountry->currency ?? null;
-
 		/* Add created/updated by names */
+		$cart->base_currency = (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$');
 		$cart->created_by_name = $cart->creator->name ?? null;
 		$cart->updated_by_name = $cart->updator->name ?? null;
 		unset($cart->creator, $cart->updator);
@@ -602,7 +594,6 @@ class CustomerCartController extends Controller
 				: (json_decode($product->images, true) ?: []);
 
 				$product->brand_name = $product->brand->name ?? null;
-				$product->currency_symbol = $currency->symbol ?? null;
 				unset($product->brand);
 			}
 

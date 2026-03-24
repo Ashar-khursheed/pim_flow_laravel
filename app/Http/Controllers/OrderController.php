@@ -105,13 +105,11 @@ class OrderController extends Controller
 			$recordsQuery->with([
 				'customer:id,name',
 				'customerAddress:id,address,city,country',
-				'customerAddress.relatedCountry:id,name,currency_id',
-				'customerAddress.relatedCountry.currency:id,symbol',
 				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status,accessory_item_charge',
 				'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 				'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
 				'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
-				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+				'orderProducts.product:id,name,images,sku,brand_id,barcode',
 				'orderProducts.product.brand:id,name',
 				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
 				'shipments',
@@ -778,9 +776,8 @@ class OrderController extends Controller
 			'orderProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 			'orderProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
 			'orderProducts.accessoryCharges.accessoryItem.accessory:id,name',
-			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+			'orderProducts.product:id,name,images,sku,brand_id,barcode',
 			'orderProducts.product.brand:id,name',
-			'orderProducts.product.currency:id,symbol',
 			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at,payment_method',
 			'shipments',
@@ -815,8 +812,7 @@ class OrderController extends Controller
 			if ($product) {
 				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 				$product->brand_name = $product->brand->name ?? null;
-				$product->currency_symbol = $product->currency->symbol ?? null;
-				unset($product->brand, $product->currency);
+				unset($product->brand);
 			}
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
