@@ -439,8 +439,16 @@ class CurrencyMiddleware
 
         $response->headers->set('Vary', 'Accept-Encoding, X-Forced-Country, CF-IPCountry');
 
-        if (!$ctx['is_default'] || request()->has('force_country')) {
+        $isDefault = ($ctx['is_default'] ?? false) && ($ctx['margin'] ?? 0) == 0;
+        $isForced  = request()->has('force_country');
+
+        if (!$isDefault || $isForced) {
             $response->headers->set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+        }
+
+        // FAST PATH: If already default currency with no margin, skip the expensive transform
+        if ($isDefault && !$isForced) {
+            return $response;
         }
 
         $data = $response->getData(true);
@@ -452,8 +460,8 @@ class CurrencyMiddleware
             'data_keys'  => is_array($data) ? array_keys($data) : 'not_array',
         ]);
 
-        $data = $this->transform($data, $ctx);
-        $response->setData($data);
+        $transformedData = $this->transform($data, $ctx);
+        $response->setData($transformedData);
 
         return $response;
     }
