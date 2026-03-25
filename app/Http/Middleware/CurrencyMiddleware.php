@@ -290,6 +290,12 @@ class CurrencyMiddleware
             'ip'   => $request->ip()
         ]);
 
+         \Log::info('IP_DEBUG', [
+        'request_ip'      => $request->ip(),
+        'x_forwarded_for' => $request->header('X-Forwarded-For'),
+        'cf_connecting'   => $request->header('CF-Connecting-IP'),
+    ]);
+
         if (!str_contains($request->path(), 'frontend')) {
             return $next($request);
         }
