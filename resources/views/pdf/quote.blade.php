@@ -186,7 +186,7 @@ $pageNumber = 1;
 
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->sellingType }}</td>
 
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center;">{{ $currency }} {{ number_format($product->unitPrice, 2, '.', ',') }}</td>
+						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center;">{{ $currency }} ₹ {{ number_format($product->unitPrice, 2, '.', ',') }}</td>
 
 
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center;">{{ $currency }} {{ number_format($product->accessoryCharge, 2, '.', ',') }}</td>
