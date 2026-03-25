@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Currency;
 use Illuminate\Http\Request;
 
+use App\Helpers\CurrencyConverter;
+
 class CurrencyController extends Controller
 {
 	/**
