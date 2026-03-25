@@ -9144,6 +9144,62 @@
                 ]
             }
         },
+        "/api/currencies/convert": {
+            "get": {
+                "tags": [
+                    "Currencies"
+                ],
+                "summary": "Convert currency",
+                "description": "Convert amount from source currency to all currencies or a specific target currency.",
+                "operationId": "aa36b5067e0cd6de1e9d4f0c4e80e8ee",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Source currency code",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "AED"
+                    },
+                    {
+                        "name": "amount",
+                        "in": "query",
+                        "description": "Amount to convert",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "minimum": 0
+                        },
+                        "example": 100
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "Target currency code",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "INR"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Currency converted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customers/{customer_id}/addresses": {
             "get": {
                 "tags": [

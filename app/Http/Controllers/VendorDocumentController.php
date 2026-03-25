@@ -249,8 +249,13 @@ class VendorDocumentController extends Controller
 					$filename = basename(parse_url($url, PHP_URL_PATH));
 					$typeDir = $doc->type;
 
-					if (Str::startsWith($url, env('AWS_URL'))) {
-						$filePath = str_replace(env('AWS_URL') . '/', '', $url);
+					if (Str::startsWith($url, [env('AWS_URL'), env('AWS_CACHE_URL')])) {
+
+						$filePath = Str::after($url, env('AWS_URL') . '/');
+
+						if ($filePath === $url) {
+							$filePath = Str::after($url, env('AWS_CACHE_URL') . '/');
+						}
 
 						if (Storage::disk('s3')->exists($filePath)) {
 							$stream = Storage::disk('s3')->readStream($filePath);

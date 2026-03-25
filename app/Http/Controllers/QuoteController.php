@@ -79,12 +79,9 @@ class QuoteController extends BaseController
 			$recordsQuery->with([
 				'customer:id,name,email,type,country_code,mobile_number',
 				'customerAddress:id,address,city,country',
-				'customerAddress.relatedCountry:id,name,currency_id',
-				'customerAddress.relatedCountry.currency:id,symbol',
 				'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+				'quoteProducts.product:id,name,images,sku,brand_id,barcode',
 				'quoteProducts.product.brand:id,name',
-				'quoteProducts.product.currency:id,symbol',
 				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
 				'quoteEmails',
 			]);
@@ -159,8 +156,7 @@ class QuoteController extends BaseController
 					if ($product) {
 						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 						$product->brand_name = $product->brand->name ?? null;
-						$product->currency_symbol = $product->currency->symbol ?? null;
-						unset($product->brand, $product->currency);
+						unset($product->brand);
 					}
 					$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'shipping_charge', 'delivery_days', 'return_policy']);
 					$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
@@ -486,15 +482,12 @@ class QuoteController extends BaseController
 		$quote->load([
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
-			'customerAddress.relatedCountry:id,name,currency_id',
-			'customerAddress.relatedCountry.currency:id,symbol',
 			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 			'quoteProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 			'quoteProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
 			'quoteProducts.accessoryCharges.accessoryItem.accessory:id,name',
-			'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+			'quoteProducts.product:id,name,images,sku,brand_id,barcode',
 			'quoteProducts.product.brand:id,name',
-			'quoteProducts.product.currency:id,symbol',
 			'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
 			'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
 			'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
@@ -507,11 +500,10 @@ class QuoteController extends BaseController
 			if ($product) {
 				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 				$product->brand_name = $product->brand->name ?? null;
-				$product->currency_symbol = $product->currency->symbol ?? null;
 				$product->url = $product->seoProductUrl->url ?? null;
 				$product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
 				$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
-				unset($product->brand, $product->currency, $product->seoProductUrl);
+				unset($product->brand, $product->seoProductUrl);
 			}
 
 			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
@@ -548,6 +540,8 @@ class QuoteController extends BaseController
 				$quote->$key = number_format($quote->$key, 2, '.', '');
 			}
 		}
+
+		$quote->base_currency = (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$');
 
 		return response()->json([
 			'success' => true,

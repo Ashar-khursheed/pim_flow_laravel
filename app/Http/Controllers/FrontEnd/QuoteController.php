@@ -21,6 +21,7 @@ use App\Jobs\Quote\QuotePlacedMailJob;
 
 use App\Traits\CalculationTrait;
 use App\Traits\GeneratesQuotePdf;
+use App\Helpers\CurrencyConverter;
 
 class QuoteController extends BaseController
 {
@@ -54,117 +55,141 @@ class QuoteController extends BaseController
 
 		$recordsQuery = Quote::where('customer_id', auth()->id());
 
-		/* Check if pagination requested */
-		if ($request->filled('page') && $request->filled('length')) {
-			/* Eager load relationships */
-			$recordsQuery->with([
-				'customer:id,name,email,type,country_code,mobile_number',
-				'customerAddress:id,address,city,country',
-				'customerAddress.relatedCountry:id,name,currency_id',
-				'customerAddress.relatedCountry.currency:id,symbol',
-				'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-				'quoteProducts.product.brand:id,name',
-				'quoteProducts.product.currency:id,symbol',
-				'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
-				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-				'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
-				'quoteEmails',
+		/* No pagination — return only id and quote_number */
+		if (!$request->filled('page') || !$request->filled('length')) {
+			$records = $recordsQuery->orderBy('quote_number', 'asc')->get(['id', 'quote_number']);
+
+			return response()->json([
+				'success' => true,
+				'message' => __('msg_rec_list'),
+				'data' => $records,
+				'total_pages' => 1,
+				'total_records' => $records->count(),
 			]);
-
-			/* Filter by status */
-			if ($request->has('status')) {
-				$recordsQuery->where('quotes.status', $request->status);
-			}
-
-			if ($request->has('from_date') && $request->has('to_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->whereBetween('quotes.created_at', [$from, $to]);
-			} elseif ($request->has('from_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$recordsQuery->where('quotes.created_at', '>=', $from);
-			} elseif ($request->has('to_date')) {
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->where('quotes.created_at', '<=', $to);
-			}
-
-			/* Global search */
-			if ($request->filled('global')) {
-				$search = $request->input('global');
-				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
-					foreach ($searchableColumns as $col) {
-						$q->orWhere("quotes.$col", 'like', '%' . $search . '%');
-					}
-				});
-			}
-
-			/* Sorting */
-			$recordsQuery->orderBy($sortBy, $sortDir);
-
-			/* Pagination */
-			$length = (int) $request->input('length');
-			$page = (int) $request->input('page');
-
-			$totalRecords = (clone $recordsQuery)->count();
-			$totalPages = (int) ceil($totalRecords / $length);
-
-			if ($page > $totalPages && $totalPages > 0) {
-				$page = 1;
-			}
-
-			$records = $recordsQuery
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get();
-
-			/* Transform results */
-			$records->transform(function ($record) {
-				/* Process each product in record products */
-				foreach ($record->quoteProducts as $quoteProduct) {
-					$product = $quoteProduct->product;
-					if ($product) {
-						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-						$product->brand_name = $product->brand->name ?? null;
-						$product->currency_symbol = $product->currency->symbol ?? null;
-						$product->url = $product->seoProductUrl->url ?? null;
-						$product->category_url = method_exists($product, 'category_url')
-						? $product->category_url()
-						: null;
-
-						$product->parent_category_url = method_exists($product, 'parent_category_url')
-						? $product->parent_category_url()
-						: null;
-						unset($product->brand, $product->currency, $product->seoProductUrl);
-					}
-					$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
-					$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
-					? getDateRange($record->created_at, $quoteProduct->product_supplier['delivery_days'])
-					: null;
-
-					/* Format numeric values to 2 decimal places */
-					/* Format numeric values to 2 decimal places */
-					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-						if (isset($quoteProduct->$key)) {
-							$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
-						}
-					}
-				}
-
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount'] as $key) {
-					if (isset($record->$key)) {
-						$record->$key = number_format($record->$key, 2, '.', '');
-					}
-				}
-
-				return $record;
-			});
-		} else {
-			/* No pagination: just fetch id and quote_number */
-			$records = Quote::orderBy('quote_number', 'asc')->get(['id', 'quote_number']);
-			$totalRecords = $records->count();
-			$totalPages = 1;
 		}
+
+		/* Eager load relationships */
+		$recordsQuery->with([
+			'customer:id,name,email,type,country_code,mobile_number',
+			'customerAddress:id,address,city,country',
+			'customerAddress.relatedCountry:id,name,currency_id',
+			'customerAddress.relatedCountry.currency:id,title,symbol',
+			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+			'quoteProducts.product:id,name,images,sku,brand_id,barcode',
+			'quoteProducts.product.brand:id,name',
+			'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
+			'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
+			'quoteEmails',
+		]);
+
+		/* Status filter */
+		if ($request->filled('status')) {
+			$recordsQuery->where('quotes.status', $request->status);
+		}
+
+		/* Date range filter */
+		if ($request->filled('from_date') && $request->filled('to_date')) {
+			$recordsQuery->whereBetween('quotes.created_at', [
+				$request->from_date . ' 00:00:00',
+				$request->to_date . ' 23:59:59',
+			]);
+		} elseif ($request->filled('from_date')) {
+			$recordsQuery->where('quotes.created_at', '>=', $request->from_date . ' 00:00:00');
+		} elseif ($request->filled('to_date')) {
+			$recordsQuery->where('quotes.created_at', '<=', $request->to_date . ' 23:59:59');
+		}
+
+		/* Global search */
+		if ($request->filled('global')) {
+			$search = $request->input('global');
+			$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+				foreach ($searchableColumns as $col) {
+					$q->orWhere("quotes.$col", 'like', '%' . $search . '%');
+				}
+			});
+		}
+
+		/* Sorting */
+		$recordsQuery->orderBy($sortBy, $sortDir);
+
+		/* Count before pagination */
+		$totalRecords = (clone $recordsQuery)->count();
+
+		/* Pagination calculation */
+		$length = (int) $request->input('length');
+		$page = (int) $request->input('page');
+		$totalPages = (int) ceil($totalRecords / $length);
+		$page = ($page > $totalPages && $totalPages > 0) ? 1 : $page;
+
+		/* Fetch paginated records */
+		$records = $recordsQuery
+		->offset(($page - 1) * $length)
+		->limit($length)
+		->get();
+
+		/* Batch-fetch vendor product suppliers — not a relation, so with() cannot be used */
+		$allQuoteProducts = $records->flatMap(fn($quote) => $quote->quoteProducts);
+
+		if ($allQuoteProducts->isNotEmpty()) {
+			$vendorSuppliers = ProductSupplier::where(function ($query) use ($allQuoteProducts) {
+				foreach ($allQuoteProducts as $quoteProduct) {
+					$query->orWhere(function ($q) use ($quoteProduct) {
+						$q->where('product_id', $quoteProduct->product_id)
+						->where('vendor_id', $quoteProduct->vendor_id);
+					});
+				}
+			})
+			->select('id', 'product_id', 'vendor_id', 'price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy')
+			->get()
+			->keyBy(fn($item) => $item->product_id . '_' . $item->vendor_id);
+
+			/* Attach supplier as dynamic attribute on each quote product */
+			foreach ($allQuoteProducts as $quoteProduct) {
+				$key = $quoteProduct->product_id . '_' . $quoteProduct->vendor_id;
+				$quoteProduct->vendor_product_supplier = $vendorSuppliers->get($key);
+			}
+		}
+
+		/* Transform records */
+		$records->transform(function ($record) {
+			foreach ($record->quoteProducts as $quoteProduct) {
+				/* Decode product images and flatten relations */
+				$product = $quoteProduct->product;
+				if ($product) {
+					$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+					$product->brand_name = $product->brand->name ?? null;
+					$product->url = $product->seoProductUrl->url ?? null;
+					$product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
+					$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
+					unset($product->brand, $product->seoProductUrl, $product->categories);
+				}
+
+				/* Attach supplier data from pre-fetched dynamic attribute */
+				$supplier = $quoteProduct->vendor_product_supplier;
+				$quoteProduct->product_supplier = $supplier ? $supplier->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']) : null;
+				unset($quoteProduct->vendor_product_supplier);
+
+				/* Expected shipping date based on supplier delivery days */
+				$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier ? getDateRange($record->created_at, $quoteProduct->product_supplier['delivery_days']) : null;
+
+				/* Convert quote product amount fields */
+				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+					if (isset($quoteProduct->$key)) {
+						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+					}
+				}
+			}
+
+			/* Convert quote-level amount fields */
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'total_amount'] as $key) {
+				if (isset($record->$key)) {
+					$record->$key = number_format($record->$key, 2, '.', '');
+				}
+			}
+
+			return $record;
+		});
 
 		return response()->json([
 			'success' => true,
@@ -428,17 +453,20 @@ class QuoteController extends BaseController
 	public function show($id)
 	{
 		$quote = Quote::where('customer_id', auth()->id())->where('id', $id)->first();
+
 		if (!$quote) {
 			return response()->json([
 				'success' => false,
-				'message' => "Quote not found."
+				'message' => 'Quote not found.',
 			]);
 		}
 
 		/* Load relationships */
 		$quote->load([
 			'customer:id,name,email,type,country_code,mobile_number',
-			'customerAddress',
+			'customerAddress:id,address,city,country',
+			'customerAddress.relatedCountry:id,name,currency_id',
+			'customerAddress.relatedCountry.currency:id,title,symbol',
 			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 			'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'quoteProducts.product.brand:id,name',
@@ -449,18 +477,53 @@ class QuoteController extends BaseController
 			'quoteEmails',
 		]);
 
-		/* Get all quote product IDs for batch accessory charge query */
-		$quoteProductIds = $quote->quoteProducts->pluck('id')->toArray();
+		/* Batch-fetch vendor product suppliers — not a relation, so with() cannot be used */
+		$allQuoteProducts = $quote->quoteProducts;
 
-		/* Fetch all accessory charges in one query to avoid N+1 */
-		$accessoryCharges = AccessoryCharge::where('relation_type', QuoteProduct::class)->whereIn('relation_id', $quoteProductIds)->with([
-			'accessoryItem.accessory'
-		])->get()->groupBy('relation_id');
+		if ($allQuoteProducts->isNotEmpty()) {
+			$vendorSuppliers = ProductSupplier::where(function ($query) use ($allQuoteProducts) {
+				foreach ($allQuoteProducts as $quoteProduct) {
+					$query->orWhere(function ($q) use ($quoteProduct) {
+						$q->where('product_id', $quoteProduct->product_id)
+						->where('vendor_id', $quoteProduct->vendor_id);
+					});
+				}
+			})
+			->select('id', 'product_id', 'vendor_id', 'price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy')
+			->get()
+			->keyBy(fn($item) => $item->product_id . '_' . $item->vendor_id);
 
-		/* Mutate the data for each quote product */
+			/* Attach supplier as dynamic attribute on each quote product */
+			foreach ($allQuoteProducts as $quoteProduct) {
+				$key = $quoteProduct->product_id . '_' . $quoteProduct->vendor_id;
+				$quoteProduct->vendor_product_supplier = $vendorSuppliers->get($key);
+			}
+		}
+
+		/* Batch-fetch accessory charges grouped by quote product id */
+		$quoteProductIds = $allQuoteProducts->pluck('id')->toArray();
+		$accessoryCharges = AccessoryCharge::where('relation_type', QuoteProduct::class)
+		->whereIn('relation_id', $quoteProductIds)
+		->with([
+			'accessoryItem.accessory',
+		])
+		->get()
+		->groupBy('relation_id');
+
+		/* Resolve source currency based on deployment */
+		$isUAE = in_array(config('app.website'), ['UAE', 'UAE_T']);
+		$sourceCurrencyTitle = $isUAE ? 'AED' : 'USD';
+		$sourceCurrencySymbol = $isUAE ? 'AED' : '$';
+
+		/* Resolve target currency and conversion rate from customer address */
+		$targetCurrency = $quote->customerAddress->relatedCountry->currency ?? null;
+		$targetCurrencyTitle = $targetCurrency->title ?? $sourceCurrencyTitle;
+		$targetCurrencySymbol = $targetCurrency->symbol ?? $sourceCurrencySymbol;
+		$conversionRate = CurrencyConverter::getRate($sourceCurrencyTitle, $targetCurrencyTitle) ?? 1;
+
+		/* Process each quote product */
 		foreach ($quote->quoteProducts as $quoteProduct) {
-
-			/* Product mutations */
+			/* Decode product images and flatten relations */
 			$product = $quoteProduct->product;
 			if ($product) {
 				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
@@ -472,42 +535,57 @@ class QuoteController extends BaseController
 				unset($product->brand, $product->currency, $product->seoProductUrl);
 			}
 
-			/* Vendor product supplier */
-			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+			/* Attach supplier data from pre-fetched dynamic attribute */
+			$supplier = $quoteProduct->vendor_product_supplier;
+			$quoteProduct->product_supplier = $supplier ? $supplier->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']) : null;
+			unset($quoteProduct->vendor_product_supplier);
+
+			/* Expected shipping date based on supplier delivery days */
 			$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier ? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days']) : null;
 
-			/* Accessory charges — uses pre-fetched grouped collection, no extra queries */
+			/* Map accessory charges with currency conversion */
 			$charges = $accessoryCharges->get($quoteProduct->id, collect());
-			$quoteProduct->accessory_charges = $charges->map(function ($charge) {
+			$quoteProduct->accessory_charges = $charges->map(function ($charge) use ($conversionRate) {
 				return [
 					'id' => $charge->id,
 					'accessory_item_id' => $charge->accessory_item_id,
 					'accessory_item_name' => $charge->accessoryItem->name ?? null,
-					'accessory_item_price' => $charge->accessoryItem->price ?? null,
+					'accessory_item_price' => number_format(($charge->accessoryItem->price ?? 0) * $conversionRate, 2, '.', ''),
 					'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
 					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-					'amount' => $charge->amount,
+					'amount' => number_format($charge->amount * $conversionRate, 2, '.', ''),
 				];
 			})->values();
 
-			/* Format quote product numeric values to 2 decimal places */
+			/* Convert supplier price fields */
+			if ($quoteProduct->product_supplier) {
+				$productSupplier = $quoteProduct->product_supplier;
+				foreach (['price', 'sale_price', 'shipping_charge'] as $key) {
+					if (isset($productSupplier[$key])) {
+						$productSupplier[$key] = number_format($productSupplier[$key] * $conversionRate, 2, '.', '');
+					}
+				}
+				$quoteProduct->product_supplier = $productSupplier;
+			}
+
+			/* Convert quote product amount fields */
 			foreach (['unit_price', 'amount', 'accessory_item_charge', 'shipping_charge', 'total_amount'] as $key) {
 				if (isset($quoteProduct->$key)) {
-					$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+					$quoteProduct->$key = number_format($quoteProduct->$key * $conversionRate, 2, '.', '');
 				}
 			}
 		}
 
-		/* Format quote numeric values to 2 decimal places */
+		/* Convert quote-level amount fields */
 		foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_amount_price', 'additional_discount_amount', 'total_amount'] as $key) {
 			if (isset($quote->$key)) {
-				$quote->$key = number_format($quote->$key, 2, '.', '');
+				$quote->$key = number_format($quote->$key * $conversionRate, 2, '.', '');
 			}
 		}
 
 		return response()->json([
 			'success' => true,
-			'data' => $quote
+			'data' => $quote,
 		]);
 	}
 

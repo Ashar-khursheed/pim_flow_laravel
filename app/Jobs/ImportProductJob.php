@@ -527,7 +527,7 @@ class ImportProductJob implements ShouldQueue
 		));
 
 		foreach ($images as $key => $image) {
-			if (Str::startsWith($image, env('AWS_URL'))) {
+			if (Str::startsWith($image, [env('AWS_URL'), env('AWS_CACHE_URL')])) {
 				$images[$key] = $image;
 			} else {
 				if (Str::startsWith($image, ['http://', 'https://'])) {

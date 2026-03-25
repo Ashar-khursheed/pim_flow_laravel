@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
+use App\Models\ProductSupplier;
 use App\Models\FrontEnd\AccessoryCharge;
 use App\Models\FrontEnd\CustomerCart;
 use App\Models\FrontEnd\CustomerCartProduct;
@@ -50,28 +51,26 @@ class CustomerCartController extends Controller
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
 		$recordsQuery = CustomerCart::query();
+
 		/* Eager load relationships */
 		$recordsQuery->with([
 			'customer:id,name,email,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
-			'customerAddress.relatedCountry:id,name,currency_id',
-			'customerAddress.relatedCountry.currency:id,symbol',
 			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity',
-			'customerCartProducts.product:id,name,images,sku,currency_id,barcode',
-			'customerCartProducts.product.currency:id,symbol',
+			'customerCartProducts.product:id,name,images,sku,barcode',
 			'creator:id,username',
 		]);
 
+		/* Date range filter */
 		if ($request->has('from_date') && $request->has('to_date')) {
-			$from = $request->from_date . ' 00:00:00';
-			$to = $request->to_date . ' 23:59:59';
-			$recordsQuery->whereBetween('customer_carts.created_at', [$from, $to]);
+			$recordsQuery->whereBetween('customer_carts.created_at', [
+				$request->from_date . ' 00:00:00',
+				$request->to_date . ' 23:59:59',
+			]);
 		} elseif ($request->has('from_date')) {
-			$from = $request->from_date . ' 00:00:00';
-			$recordsQuery->where('customer_carts.created_at', '>=', $from);
+			$recordsQuery->where('customer_carts.created_at', '>=', $request->from_date . ' 00:00:00');
 		} elseif ($request->has('to_date')) {
-			$to = $request->to_date . ' 23:59:59';
-			$recordsQuery->where('customer_carts.created_at', '<=', $to);
+			$recordsQuery->where('customer_carts.created_at', '<=', $request->to_date . ' 23:59:59');
 		}
 
 		/* Global search */
@@ -81,7 +80,6 @@ class CustomerCartController extends Controller
 				foreach ($searchableColumns as $col) {
 					$q->orWhere("customer_carts.$col", 'like', '%' . $search . '%');
 				}
-
 				$q->orWhereHas('customer', function ($sub) use ($search) {
 					$sub->where('name', 'like', '%' . $search . '%')
 					->orWhere('email', 'like', '%' . $search . '%');
@@ -89,14 +87,12 @@ class CustomerCartController extends Controller
 			});
 		}
 
-		if ($request->has('from_admin_panel')) {
-			$fromAdminPanel = $request->boolean('from_admin_panel');
-
-			if ($fromAdminPanel) {
-				$recordsQuery->where("customer_carts.created_by", ">", 0);
-			}
+		/* Admin panel filter */
+		if ($request->has('from_admin_panel') && $request->boolean('from_admin_panel')) {
+			$recordsQuery->where('customer_carts.created_by', '>', 0);
 		}
 
+		/* Creator username filter */
 		if ($request->filled('username')) {
 			$username = $request->input('username');
 			$recordsQuery->orWhereHas('creator', function ($sub) use ($username) {
@@ -111,127 +107,149 @@ class CustomerCartController extends Controller
 		$onlyID = $request->has('only_id') && $request->boolean('only_id');
 
 		$totalRecords = (clone $recordsQuery)->count();
+		$totalPages = 1;
 
-		/* Check if pagination requested */
+		/* Pagination setup */
 		if ($request->filled('page') && $request->filled('length')) {
-			/* Pagination */
 			$length = (int) $request->input('length');
 			$page = (int) $request->input('page');
 			$totalPages = (int) ceil($totalRecords / $length);
-
-			if ($page > $totalPages && $totalPages > 0) {
-				$page = 1;
-			}
+			$page = ($page > $totalPages && $totalPages > 0) ? 1 : $page;
 		} else {
-			/* No pagination: just fetch id and reference number */
 			$page = 1;
 			$length = $totalRecords;
-			$totalPages = 1;
 		}
 
+		/* Return only total amount sum */
 		if ($onlyTotalAmount) {
-			$records =(clone $recordsQuery)->sum('total_amount');
-		} elseif ($onlyID) {
-			$records =(clone $recordsQuery)->pluck('id');
-		} else {
-			$records = $recordsQuery
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get(['id', 'reference_number', 'customer_id', 'is_lift_gate', 'is_residential_address', 'is_inside_delivery', 'total_amount', 'total_products', 'created_by', 'created_at']);
+			$records = (clone $recordsQuery)->sum('total_amount');
 
-			/* Transform results */
-			$records->transform(function ($record) {
-				/* Process each product in customer cart products */
-				$totalProducts = 0;
-				$cartAmount = 0;
-				$cartShipping = 0;
-				$cartProducts = [];
-
-				foreach ($record->customerCartProducts as $customerCartProduct) {
-					$product = $customerCartProduct->product;
-					if (!$product) continue;
-
-					/* Decode images if stored as JSON string */
-					$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-					$image = $images[0] ?? null;
-
-					$supplier = optional($customerCartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
-
-					$unitPrice = 0;
-					$shippingCharge = 0;
-					if ($supplier) {
-						$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
-						$shippingCharge = $supplier['shipping_charge'] ?? 0;
-					}
-
-					$quantity = $customerCartProduct->quantity ?? 0;
-					$subTotal = $quantity * $unitPrice;
-
-					$totalProducts += $quantity;
-					$cartAmount += $subTotal;
-					$cartShipping += $shippingCharge;
-
-					/* Push product data */
-					$cartProducts[] = [
-						'product_id'      => $customerCartProduct->product_id,
-						'vendor_id'       => $customerCartProduct->vendor_id,
-						'image'           => $image,
-						'name'            => $product->name,
-						'currency_symbol' => $product->currency->symbol ?? null,
-						'unit_price'      => number_format($unitPrice, 2, '.', ''),
-						'quantity'        => $quantity,
-						'sub_total'       => number_format($subTotal, 2, '.', ''),
-						'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
-					];
-				}
-
-				/* Add surcharges */
-				if ($record->is_lift_gate) {
-					$cartAmount += 75;
-				}
-				if ($record->is_residential_address) {
-					$cartAmount += 199;
-				}
-				if ($record->is_inside_delivery) {
-					$cartAmount += 249;
-				}
-
-				/* Tax calculations */
-				$taxPercentage = $record->tax_percentage ?? 0;
-				$taxAmount = round(($cartAmount * $taxPercentage) / 100, 2);
-
-				/* Website-specific shipping rules */
-				if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-					$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
-				}
-
-				$totalAmount = $cartAmount + $taxAmount + $cartShipping;
-
-				/* Prepare cart summary */
-				$record = [
-					'id'                     => $record->id,
-					'reference_number'       => $record->reference_number,
-					'customer'               => $record->customer,
-					'is_lift_gate'           => $record->is_lift_gate,
-					'is_residential_address' => $record->is_residential_address,
-					'is_inside_delivery'     => $record->is_inside_delivery,
-					'amount'                 => number_format($cartAmount, 2, '.', ''),
-					'tax_amount'             => number_format($taxAmount, 2, '.', ''),
-					'shipping_charge'        => number_format($cartShipping, 2, '.', ''),
-					'total_amount'           => number_format($totalAmount, 2, '.', ''),
-					'total_products'         => $totalProducts,
-					'products'               => $cartProducts,
-					'creator'                => $record->creator,
-					'created_at'             => $record->created_at,
-				];
-
-				return $record;
-			});
+			return response()->json([
+				'success' => true,
+				'message' => 'Total amount',
+				'data' => $records,
+				'total_pages' => $totalPages,
+				'total_records' => $totalRecords,
+			]);
 		}
+
+		/* Return only IDs */
+		if ($onlyID) {
+			$records = (clone $recordsQuery)->pluck('id');
+
+			return response()->json([
+				'success' => true,
+				'message' => __('msg_rec_list'),
+				'data' => $records,
+				'total_pages' => $totalPages,
+				'total_records' => $totalRecords,
+			]);
+		}
+
+		/* Fetch paginated records */
+		$records = $recordsQuery
+		->offset(($page - 1) * $length)
+		->limit($length)
+		->get(['id', 'reference_number', 'customer_id', 'customer_address_id', 'is_lift_gate', 'is_residential_address', 'is_inside_delivery', 'tax_percentage', 'total_amount', 'total_products', 'created_by', 'created_at']);
+
+		/* Batch-fetch vendor product suppliers to avoid N+1 — not a relation, so with() cannot be used */
+		$allCartProducts = $records->flatMap(fn($cart) => $cart->customerCartProducts);
+
+		if ($allCartProducts->isNotEmpty()) {
+			$vendorSuppliers = ProductSupplier::where(function ($query) use ($allCartProducts) {
+				foreach ($allCartProducts as $cartProduct) {
+					$query->orWhere(function ($q) use ($cartProduct) {
+						$q->where('product_id', $cartProduct->product_id)
+						->where('vendor_id', $cartProduct->vendor_id);
+					});
+				}
+			})
+			->select('id', 'product_id', 'vendor_id', 'price', 'sale_price', 'shipping_charge')
+			->get()
+			->keyBy(fn($item) => $item->product_id . '_' . $item->vendor_id);
+
+			/* Attach supplier as dynamic attribute on each cart product */
+			foreach ($allCartProducts as $cartProduct) {
+				$key = $cartProduct->product_id . '_' . $cartProduct->vendor_id;
+				$cartProduct->vendor_product_supplier = $vendorSuppliers->get($key);
+			}
+		}
+
+		$isUAE = in_array(config('app.website'), ['UAE', 'UAE_T']);
+
+		/* Transform records — mutate model directly to preserve relation serialization */
+		$records->transform(function ($record) use ($isUAE) {
+			$totalProducts = 0;
+			$cartAmount = 0;
+			$cartShipping = 0;
+
+			/* Map cart products with already-attached vendor_product_supplier attribute */
+			$record->products = $record->customerCartProducts->map(function ($cartProduct) use (&$totalProducts, &$cartAmount, &$cartShipping) {
+				$product = $cartProduct->product;
+				if (!$product) return null;
+
+				/* Decode images */
+				$images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+
+				$supplier = optional($cartProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge']);
+
+				$unitPrice = 0;
+				$shippingCharge = 0;
+
+				if ($supplier) {
+					$unitPrice = ($supplier['sale_price'] > 0 && $supplier['sale_price'] < $supplier['price']) ? $supplier['sale_price'] : $supplier['price'];
+					$shippingCharge = $supplier['shipping_charge'] ?? 0;
+				}
+
+				$quantity = $cartProduct->quantity ?? 0;
+				$subTotal = $quantity * $unitPrice;
+
+				$totalProducts += $quantity;
+				$cartAmount += $subTotal;
+				$cartShipping += $shippingCharge;
+
+				return [
+					'product_id'      => $cartProduct->product_id,
+					'vendor_id'       => $cartProduct->vendor_id,
+					'image'           => $images[0] ?? null,
+					'name'            => $product->name,
+					'unit_price'      => number_format($unitPrice, 2, '.', ''),
+					'quantity'        => $quantity,
+					'sub_total'       => number_format($subTotal, 2, '.', ''),
+					'shipping_charge' => number_format($shippingCharge, 2, '.', ''),
+				];
+			})->filter()->values();
+
+			/* Add US surcharges */
+			if ($record->is_lift_gate) $cartAmount += 75;
+			if ($record->is_residential_address) $cartAmount += 199;
+			if ($record->is_inside_delivery) $cartAmount += 249;
+
+			/* Tax calculation */
+			$taxPercentage = $record->tax_percentage ?? 0;
+			$taxAmount = round(($cartAmount * $taxPercentage) / 100, 2);
+
+			/* UAE shipping rule */
+			if ($isUAE) {
+				$cartShipping = ($cartAmount + $taxAmount) < 500 ? 30 : 0;
+			}
+
+			/* Mutate model attributes directly — keeps relations intact for serialization */
+			$record->amount = number_format($cartAmount, 2, '.', '');
+			$record->tax_amount = number_format($taxAmount, 2, '.', '');
+			$record->shipping_charge = number_format($cartShipping, 2, '.', '');
+			$record->total_amount = number_format($cartAmount + $taxAmount + $cartShipping, 2, '.', '');
+			$record->total_products = $totalProducts;
+
+			/* Remove raw relation from output */
+			unset($record->customerCartProducts);
+
+			return $record;
+		});
 
 		return response()->json([
 			'success' => true,
-			'message' => $onlyTotalAmount ? 'Total amount' : __('msg_rec_list'),
+			'message' => __('msg_rec_list'),
 			'data' => $records,
 			'total_pages' => $totalPages,
 			'total_records' => $totalRecords,
@@ -349,6 +367,7 @@ class CustomerCartController extends Controller
 			/* Prepare cart data */
 			$cartData = [
 				'customer_address_id' => $request->customer_address_id,
+				'country' => $address->relatedCountry->name ?? null,
 				'additional_amount_name' => $request->additional_amount_name,
 				'additional_amount_price' => $request->additional_amount_price,
 				'amount' => $amountCalculations['subtotal'],
@@ -541,8 +560,7 @@ class CustomerCartController extends Controller
 		return [
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
-			'customerAddress.relatedCountry:id,name,currency_id',
-			'customerAddress.relatedCountry.currency:id,symbol',
+			'countryRelation:id,name,margin',
 			'customerCartProducts:id,customer_cart_id,product_id,vendor_id,quantity,unit_price,amount,accessory_item_charge,shipping_charge,total_amount',
 			'customerCartProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 			'customerCartProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
@@ -578,10 +596,10 @@ class CustomerCartController extends Controller
 		// 	}
 		// }
 
-		/* Get customer address and currency */
-		$currency = $cart->customerAddress->relatedCountry->currency ?? null;
-
 		/* Add created/updated by names */
+		$margin = $cart->countryRelation->margin ?? 0;
+
+		$cart->base_currency = (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$');
 		$cart->created_by_name = $cart->creator->name ?? null;
 		$cart->updated_by_name = $cart->updator->name ?? null;
 		unset($cart->creator, $cart->updator);
@@ -602,7 +620,6 @@ class CustomerCartController extends Controller
 				: (json_decode($product->images, true) ?: []);
 
 				$product->brand_name = $product->brand->name ?? null;
-				$product->currency_symbol = $currency->symbol ?? null;
 				unset($product->brand);
 			}
 
@@ -615,12 +632,14 @@ class CustomerCartController extends Controller
 				? $supplier['sale_price']
 				: $supplier['price'];
 
+				$unitPriceWithMargin = $unitPrice + (in_array(config('app.website'), ['UAE', 'UAE_T', 'US_T'])  ? ($unitPrice * ($margin / 100)) : 0);
+
 				/* Recalculate amounts based on current supplier prices */
-				$amount = $cartProduct->quantity * $unitPrice;
+				$amount = $cartProduct->quantity * $unitPriceWithMargin;
 				$totalAmount = $amount + $cartProduct->shipping_charge + ($cartProduct->accessory_item_charge ?? 0);
 
 				/* Update cart product with calculated values */
-				$cartProduct->unit_price = $unitPrice;
+				$cartProduct->unit_price = $unitPriceWithMargin;
 				$cartProduct->amount = $amount;
 				$cartProduct->total_amount = number_format($totalAmount, 2, '.', '');
 

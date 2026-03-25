@@ -214,7 +214,7 @@ class ImportVendorJob implements ShouldQueue
 					if (!empty($fieldValue) && Str::startsWith($fieldValue, ['http://', 'https://'])) {
 						/* Skip if already on HorecaStore S3 */
 						$uploadedUrl = $fieldValue;
-						if (!Str::startsWith($fieldValue, env('AWS_URL'))) {
+						if (!Str::startsWith($fieldValue, [env('AWS_URL'), env('AWS_CACHE_URL')])) {
 							$fileExtension = strtolower(pathinfo(parse_url($fieldValue, PHP_URL_PATH), PATHINFO_EXTENSION));
 
 							if ($fieldName === 'Logo URL') {

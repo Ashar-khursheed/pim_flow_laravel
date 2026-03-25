@@ -4,6 +4,7 @@ namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use App\Models\Country;
 
 class CustomerCart extends Model
 {
@@ -11,6 +12,7 @@ class CustomerCart extends Model
 		'reference_number',
 		'customer_id',
 		'customer_address_id',
+		'country',
 		'shipping_charge',
 		'is_lift_gate',
 		'is_residential_address',
@@ -44,6 +46,11 @@ class CustomerCart extends Model
 	public function customerAddress()
 	{
 		return $this->belongsTo(CustomerAddress::class);
+	}
+
+	public function countryRelation()
+	{
+		return $this->belongsTo(Country::class, 'country', 'name');
 	}
 
 	public function customerCartProducts()

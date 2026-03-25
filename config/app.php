@@ -15,12 +15,12 @@ switch ($website) {
 
 	case 'UAE_T':
 		$url = 'https://www.uae.thehorecastore.co';
-		$backendUrl = 'https://testpim.thehorecastore.co';
+		$backendUrl = 'https://test-uae.thehorecastore.co';
 		break;
 
 	case 'US_T':
 		$url = 'https://development.d28qosi1cuigvb.amplifyapp.com';
-		$backendUrl = 'https://developmentcalifornia.thehorecastore.co';
+		$backendUrl = 'https://test-us.thehorecastore.co';
 		break;
 
 	default:
