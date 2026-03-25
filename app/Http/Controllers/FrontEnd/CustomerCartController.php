@@ -175,8 +175,6 @@ class CustomerCartController extends Controller
 			unset(
 				$cartProduct->accessoryCharges,
 				$cartProduct->customer_cart_id,
-				$cartProduct->product_id,
-				$cartProduct->vendor_id
 			);
 		}
 
