@@ -284,11 +284,15 @@ class CurrencyMiddleware
 
     public function handle(Request $request, Closure $next)
     {
-            $controller = $request->route()?->getControllerClass();
+        // Debug log
+        \Log::info('CURRENCY_MW_INIT', [
+            'path' => $request->path(),
+            'ip'   => $request->ip()
+        ]);
 
-                if (!str_starts_with($request->path(), 'api/frontend')) {
-                return $next($request);
-            }
+        if (!str_contains($request->path(), 'frontend')) {
+            return $next($request);
+        }
         // Optional: force a country for testing (?force_country=Pakistan)
         $forceCountry = $request->query('force_country');
 
@@ -340,11 +344,10 @@ class CurrencyMiddleware
                     $symbol = $country->currency->symbol;
                     $code   = self::SYMBOL_TO_CODE[$symbol] ?? $symbol;
 
-                    Log::info('CURRENCY_MW: country matched', [
+                    Log::info('CURRENCY_MW: Found country in DB', [
                         'country' => $dbName,
                         'symbol'  => $symbol,
                         'code'    => $code,
-                        'margin'  => $country->margin,
                     ]);
 
                     return [
@@ -357,18 +360,21 @@ class CurrencyMiddleware
                     ];
                 }
 
-                Log::warning('CURRENCY_MW: country not found in DB', [
+                Log::warning('CURRENCY_MW: Country not found in DB or missing currency', [
                     'geo_name' => $countryName,
                     'db_name'  => $dbName,
                 ]);
             }
-
+            
+            Log::info('CURRENCY_MW: Falling back to default AED context');
             return $this->defaultContext();
         });
 
         app()->instance('currency.context', $ctx);
 
-        return $this->processJsonResponse($next($request), $ctx);
+        $response = $next($request);
+
+        return $this->processJsonResponse($response, $ctx);
     }
 
     
@@ -378,9 +384,24 @@ class CurrencyMiddleware
             return $response;
         }
 
-        // ALWAYS transform — even for default AED context
-        // Because ec_products may have USD symbol stored — we must override it
+        // Add Vary header to help partition cache
+        $response->headers->set('Vary', 'Accept-Encoding, X-Forced-Country, CF-IPCountry');
+
+        // If not default AED or if using forced country, prevent public caching
+        // This is critical to prevent UAE users from seeing Pakistan prices and vice-versa
+        if (!$ctx['is_default'] || request()->has('force_country')) {
+            $response->headers->set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+        }
+
         $data = $response->getData(true);
+        
+        Log::info('CURRENCY_MW_TRANSFORM', [
+            'currency' => $ctx['currency_code'] ?? 'AED',
+            'symbol'   => $ctx['symbol'] ?? 'AED',
+            'is_default' => $ctx['is_default'] ?? false,
+            'data_keys' => is_array($data) ? array_keys($data) : 'not_array'
+        ]);
+
         $data = $this->transform($data, $ctx);
         $response->setData($data);
 
