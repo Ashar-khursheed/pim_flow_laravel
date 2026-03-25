@@ -18,7 +18,7 @@ trait GeneratesQuotePdf
 			'customer:id,name,business_name,email,type,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
 			'customerAddress.relatedCountry:id,name,currency_id',
-			'customerAddress.relatedCountry.currency:id,symbol,major_unit_name,minor_unit_name',
+			'customerAddress.relatedCountry.currency:id,title,symbol,major_unit_name,minor_unit_name',
 			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 			'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'quoteProducts.product.brand:id,name',
