@@ -130,7 +130,7 @@ $pageNumber = 1;
 			</table>
 			@endif
 
-			<table style="width:100%; border-collapse:collapse; border:1px solid black; font-size:11px; font-family: 'Inter', sans-serif;">
+			<table style="width:100%; border-collapse:collapse; border:1px solid black; font-size:11px;">
 				<thead>
 					<tr style="background-color:#d9d9d9;">
 						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:5%; font-family: 'Inter', sans-serif;">S.No</th>
@@ -145,7 +145,7 @@ $pageNumber = 1;
 				</thead>
 				<tbody>
 					@foreach($chunk as $index1 => $product)
-					<tr style="background-color:white; font-family: 'Inter', sans-serif;">
+					<tr style="background-color:white;">
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $index1+1 }}</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  font-family: 'Inter', sans-serif;">
 							<div style="margin-bottom:4px; font-family: 'Inter', sans-serif;">
@@ -186,7 +186,7 @@ $pageNumber = 1;
 
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->sellingType }}</td>
 
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center;">{{ $currency }} ₹ {{ number_format($product->unitPrice, 2, '.', ',') }}</td>
+						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center;">{{ $currency }} {{ number_format($product->unitPrice, 2, '.', ',') }}</td>
 
 
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center;">{{ $currency }} {{ number_format($product->accessoryCharge, 2, '.', ',') }}</td>
