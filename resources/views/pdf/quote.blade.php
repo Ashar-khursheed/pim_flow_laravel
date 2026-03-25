@@ -136,7 +136,7 @@ $pageNumber = 1;
 							<tr style="text-align: center;">
 								<td style="border: 1px solid black; padding: 0.5rem;">{{ $paymentMode }}</td>
 								<td style="border: 1px solid black; padding: 0.5rem;">{{ $quoteType }}</td>
-								<td style="border: 1px solid black; padding: 0.5rem; color: #dc2626; font-weight: 600; font-family: 'DejaVu Sans', sans-serif;">{{ $currency }}</td>
+								<td style="border: 1px solid black; padding: 0.5rem; color: #dc2626; font-weight: 600; font-family: 'dejavu sans', sans-serif;">{{ $currency }}</td>
 							</tr>
 						</table>
 					</td>
