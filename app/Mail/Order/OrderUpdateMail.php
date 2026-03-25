@@ -6,10 +6,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
-
 use App\Models\FrontEnd\Order;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\AccessoryCharge;
+use App\Models\ProductSupplier;
+use App\Helpers\CurrencyConverter;
 
 class OrderUpdateMail extends Mailable
 {
@@ -19,9 +20,6 @@ class OrderUpdateMail extends Mailable
 	public $originalTotalAmount;
 	public $updateReason;
 
-	/**
-	 * Create a new message instance.
-	 */
 	public function __construct(Order $order, $originalTotalAmount, $updateReason)
 	{
 		$this->order = $order;
@@ -29,27 +27,23 @@ class OrderUpdateMail extends Mailable
 		$this->updateReason = $updateReason;
 	}
 
-	/**
-	 * Get pricing breakdown variables
-	 */
-	private function getPricingBreakdown($products)
+	private function getPricingBreakdown($products, $currencyConversionRate)
 	{
 		$order = $this->order;
+		$isUAE = in_array(config('app.website'), ['UAE', 'UAE_T']);
 
-		/* Total price before discount (raw value) */
-		$totalPriceWithoutDiscount = $products->sum(function ($p) {
-			return (float) $p->priceBeforeDiscount * $p->quantity;
-		});
+		/* Total price before discount */
+		$totalPriceWithoutDiscount = $products->sum(fn($p) => (float) $p->priceBeforeDiscount * $p->quantity);
 
 		/* Total saved = original total - actual subtotal */
-		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($order->amount ?? 0));
+		$totalSaved = max(0, $totalPriceWithoutDiscount - ($order->amount ?? 0));
 
-		/* Charges */
+		/* Surcharges */
 		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
 		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
 		$insideDeliveryCharge = $order->is_inside_delivery ? 249 : 0;
 
-		/* Discounts & Amounts */
+		/* Amounts */
 		$subTotal = $order->amount ?? 0;
 		$discount = $order->discount ?? 0;
 		$additionalDiscountAmount = $order->additional_discount_amount ?? 0;
@@ -59,7 +53,7 @@ class OrderUpdateMail extends Mailable
 		$chequeDiscountPercentage = $order->cheque_discount_percentage ?? 0;
 
 		/* Tax */
-		$taxName = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'VAT' : 'SALES TAX';
+		$taxName = $isUAE ? 'VAT' : 'SALES TAX';
 		$taxPercent = ($order->tax_percentage ?? 0) + 0;
 		$taxAmount = $order->tax_amount ?? 0;
 
@@ -67,193 +61,196 @@ class OrderUpdateMail extends Mailable
 		$shippingCharge = $order->shipping_charge ?? 0;
 		$total = $order->total_amount ?? 0;
 
-		/* Amount Before Tax */
-		$amountBeforeTax = $subTotal - $discount - $chequeDiscount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 0 : $shippingCharge);
+		/* Amount before tax */
+		$amountBeforeTax = $subTotal - $discount - $chequeDiscount - $additionalDiscountAmount + $liftGateCharge + $residentialAddressCharge + $insideDeliveryCharge + ($isUAE ? 0 : $shippingCharge);
 
 		return [
-			'totalSaved' => $totalSaved,
-			'subTotal' => $subTotal,
-			'discount' => $discount,
-			'chequeDiscount' => $chequeDiscount,
+			'totalSaved' => $totalSaved * $currencyConversionRate,
+			'subTotal' => $subTotal * $currencyConversionRate,
+			'discount' => $discount * $currencyConversionRate,
+			'chequeDiscount' => $chequeDiscount * $currencyConversionRate,
 			'chequeDiscountPercentage' => $chequeDiscountPercentage,
-			'additionalDiscountAmount' => $additionalDiscountAmount,
+			'additionalDiscountAmount' => $additionalDiscountAmount * $currencyConversionRate,
 			'additionalDiscountReason' => $additionalDiscountReason,
 			'additionalDiscountPercentage' => $additionalDiscountPercentage,
-			'liftGateCharge' => $liftGateCharge,
-			'residentialAddressCharge' => $residentialAddressCharge,
-			'insideDeliveryCharge' => $insideDeliveryCharge,
-			'shippingCharge' => $shippingCharge,
-			'amountBeforeTax' => $amountBeforeTax,
+			'liftGateCharge' => $liftGateCharge * $currencyConversionRate,
+			'residentialAddressCharge' => $residentialAddressCharge * $currencyConversionRate,
+			'insideDeliveryCharge' => $insideDeliveryCharge * $currencyConversionRate,
+			'shippingCharge' => $shippingCharge * $currencyConversionRate,
+			'amountBeforeTax' => $amountBeforeTax * $currencyConversionRate,
 			'taxName' => $taxName,
 			'taxPercent' => $taxPercent,
-			'taxAmount' => $taxAmount,
-			'total' => $total,
+			'taxAmount' => $taxAmount * $currencyConversionRate,
+			'total' => $total * $currencyConversionRate,
 		];
 	}
 
 	public function build()
 	{
 		$order = $this->order;
+		$isUAE = in_array(config('app.website'), ['UAE', 'UAE_T']); /* Resolved once — used throughout */
 
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . '/logo.png';
 		$name = $order->customer->name ?? 'User';
-
-		$originalTotalAmount = $this->originalTotalAmount;
-		$paidAmount = $order->paid_amount ?? 0;
-		$pendingAmount = $order->pending_amount ?? 0;
 		$updateReason = $this->updateReason;
-
-		$paymentUrl = $order->payment_link ?? url("/");
+		$paymentUrl = $order->payment_link ?? url('/');
 		$orderNumber = $order->order_number;
 		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
+		$customerEmail = $order->customer->email;
 
 		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
 		$zipcode = $customerAddress->zip_code ?? '';
-		$customerEmail = $order->customer->email;
 
-		/* Currency */
-		$baseCurrency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
-		$currency = $customerAddress->relatedCountry->currency->symbol ?? $baseCurrency;
+		/* Resolve source and target currency */
+		$sourceCurrencySymbol = $isUAE ? 'AED' : '$';
+		$sourceCurrencyTitle = $isUAE ? 'AED' : 'USD';
+		$currency = $customerAddress->relatedCountry->currency->symbol ?? $sourceCurrencySymbol;
+		$targetCurrencyTitle = $customerAddress->relatedCountry->currency->title ?? $sourceCurrencyTitle;
+		$currencyConversionRate = CurrencyConverter::getRate($sourceCurrencyTitle, $targetCurrencyTitle) ?? 1; /* Fallback to 1 if rate unavailable */
 
-		$products = collect();
+		/* Convert original amounts with conversion rate */
+		$originalTotalAmount = $this->originalTotalAmount * $currencyConversionRate;
+		$paidAmount = ($order->paid_amount ?? 0) * $currencyConversionRate;
+		$pendingAmount = ($order->pending_amount ?? 0) * $currencyConversionRate;
 
-		foreach ($order->orderProducts as $orderProduct) {
-			$productSupplierDetail = $orderProduct->vendorProductSupplier;
-			$productDetail = $orderProduct->product;
+		/* Batch-fetch vendor product suppliers — not a relation, so with() cannot be used */
+		$orderProducts = $order->orderProducts;
+		$vendorSuppliers = collect();
 
-			if ($productDetail) {
-				$product = new \stdClass();
-
-				$images = is_array($productDetail->images)
-				? $productDetail->images
-				: (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
-				$product->image = is_array($images) ? ($images[0] ?? null) : null;
-				$product->name = $productDetail->name;
-				$product->expectedShippingDate = $productSupplierDetail
-				? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
-				: null;
-
-				/* Original Price (before discount) */
-				$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
-				$product->priceBeforeDiscount = $originalPrice;
-				$product->unitPrice = $orderProduct->unit_price;
-
-				if (
-					$productSupplierDetail &&
-					$productSupplierDetail->price > $orderProduct->unit_price &&
-					$productSupplierDetail->price > 0 &&
-					$orderProduct->unit_price > 0
-				) {
-					$product->discount = (($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100;
-				} else {
-					$product->discount = 0;
-				}
-
-				$product->quantity = (int) $orderProduct->quantity;
-				$product->total = $orderProduct->amount;
-
-				$product->accessories = [];
-
-				$accessoryCharges = AccessoryCharge::where('relation_type', OrderProduct::class)
-				->where('relation_id', $orderProduct->id)
-				->get();
-				if ($accessoryCharges->isNotEmpty()) {
-					$product->accessories = $accessoryCharges->map(function ($charge) {
-						return [
-							'id' => $charge->id,
-							'accessory_item_id' => $charge->accessory_item_id,
-							'accessory_item_name' => $charge->accessoryItem->name ?? null,
-							'accessory_item_price' => $charge->accessoryItem->price ?? null,
-							'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
-							'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-							'amount' => $charge->amount,
-						];
+		if ($orderProducts->isNotEmpty()) {
+			$vendorSuppliers = ProductSupplier::where(function ($query) use ($orderProducts) {
+				foreach ($orderProducts as $orderProduct) {
+					$query->orWhere(function ($q) use ($orderProduct) {
+						$q->where('product_id', $orderProduct->product_id)
+						->where('vendor_id', $orderProduct->vendor_id);
 					});
 				}
-
-				$products->push($product);
-			}
+			})
+			->select('id', 'product_id', 'vendor_id', 'price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy')
+			->get()
+			->keyBy(fn($item) => $item->product_id . '_' . $item->vendor_id);
 		}
 
-		/* Get pricing breakdown variables */
-		$pricingBreakdown = $this->getPricingBreakdown($products);
+		/* Batch-fetch accessory charges grouped by order product id */
+		$orderProductIds = $orderProducts->pluck('id')->toArray();
+		$accessoryChargesGrouped = AccessoryCharge::where('relation_type', OrderProduct::class)
+		->whereIn('relation_id', $orderProductIds)
+		->with([
+			'accessoryItem.accessory',
+		])
+		->get()
+		->groupBy('relation_id');
 
-		/* Additional charges (if exists) */
-		$additionalAmountName = $order->additional_amount_name;
-		$additionalAmountPrice = $order->additional_amount_price;
+		/* Build products collection */
+		$products = collect();
 
+		foreach ($orderProducts as $orderProduct) {
+			$productDetail = $orderProduct->product;
+			if (!$productDetail) continue;
+
+			/* Attach supplier from batch-fetched collection */
+			$key = $orderProduct->product_id . '_' . $orderProduct->vendor_id;
+			$productSupplierDetail = $vendorSuppliers->get($key);
+
+			$images = is_array($productDetail->images) ? $productDetail->images : (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
+
+			/* Original price before discount */
+			$originalPrice = ($productSupplierDetail->price ?? $orderProduct->unit_price) * $currencyConversionRate;
+
+			$product = new \stdClass();
+			$product->image = $images[0] ?? null;
+			$product->name = $productDetail->name;
+			$product->expectedShippingDate = $productSupplierDetail ? getDateRange($order->created_at, $productSupplierDetail->delivery_days) : null;
+			$product->priceBeforeDiscount = $originalPrice;
+			$product->unitPrice = $orderProduct->unit_price * $currencyConversionRate;
+			$product->quantity = (int) $orderProduct->quantity;
+			$product->total = $orderProduct->amount * $currencyConversionRate;
+
+			/* Discount percentage — only if supplier price is higher than unit price */
+			$product->discount = (
+				$productSupplierDetail &&
+				$productSupplierDetail->price > $orderProduct->unit_price &&
+				$productSupplierDetail->price > 0 &&
+				$orderProduct->unit_price > 0
+			) ? (($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100 : 0;
+
+			/* Attach accessory charges from batch-fetched grouped collection */
+			$charges = $accessoryChargesGrouped->get($orderProduct->id, collect());
+			$product->accessories = $charges->map(function ($charge) use ($currencyConversionRate) {
+				return [
+					'id' => $charge->id,
+					'accessory_item_id' => $charge->accessory_item_id,
+					'accessory_item_name' => $charge->accessoryItem->name ?? null,
+					'accessory_item_price' => ($charge->accessoryItem->price ?? 0) * $currencyConversionRate,
+					'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+					'amount' => $charge->amount * $currencyConversionRate,
+				];
+			})->values();
+
+			$products->push($product);
+		}
+
+		/* Pricing breakdown */
+		$pricingBreakdown = $this->getPricingBreakdown($products, $currencyConversionRate);
+
+		/* Site identity based on deployment */
 		$siteUrl = match (config('app.website')) {
-			'US'  => 'Thehorecastore.com',
-			'UAE'  => 'HorecaStore.ae',
-			'TEST' => 'Thehorecastore.com',
+			'UAE' => 'HorecaStore.ae',
 			default => 'Thehorecastore.com',
 		};
 
 		$siteEmail = match (config('app.website')) {
-			'US'  => 'orders@thehorecastore.com',
-			'UAE'  => 'orders@horecastore.ae',
+			'UAE' => 'orders@horecastore.ae',
 			'US_T' => 'test_us@thehorecastore.co',
 			'UAE_T' => 'test_uae@thehorecastore.co',
-			default => 'test@thehorecastore.co',
+			default => 'orders@thehorecastore.com',
+		};
+
+		/* Subject and email type based on pending amount */
+		$emailType = match(true) {
+			$pendingAmount > 0 => 'pending',
+			$pendingAmount < 0 => 'refund',
+			default => 'default',
+		};
+
+		$subject = match($emailType) {
+			'pending' => "Update on Your HorecaStore Order #{$orderNumber} – Action Required",
+			'refund' => "Update on Your HorecaStore Order #{$orderNumber} – Refund Processing",
+			default => "Update on Your HorecaStore Order #{$orderNumber} – No Action Required",
 		};
 
 		$params = [
 			'logoUrl' => $logoUrl,
 			'name' => $name,
-
 			'originalTotalAmount' => $originalTotalAmount,
 			'paidAmount' => $paidAmount,
 			'pendingAmount' => $pendingAmount,
 			'updateReason' => $updateReason,
-
 			'paymentUrl' => $paymentUrl,
 			'orderNumber' => $orderNumber,
 			'orderDate' => $orderDate,
-
 			'address' => $address,
 			'city' => $city,
 			'country' => $country,
 			'zipcode' => $zipcode,
 			'customerEmail' => $customerEmail,
-
 			'products' => $products,
-
-			/* Merge pricing breakdown variables */
 			'currency' => $currency,
 			...$pricingBreakdown,
-
-			'additionalAmountName' => $additionalAmountName,
-			'additionalAmountPrice' => $additionalAmountPrice,
-
+			'additionalAmountName' => $order->additional_amount_name,
+			'additionalAmountPrice' => ($order->additional_amount_price ?? 0) * $currencyConversionRate,
+			'emailType' => $emailType,
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 
-		/* Determine email subject and template based on pending amount */
-		if ($pendingAmount > 0) {
-			/* Customer needs to pay remaining amount */
-			$emailType = 'pending';
-			$subject = "Update on Your HorecaStore Order #{$orderNumber} – Action Required";
-		} elseif ($pendingAmount < 0) {
-			/* Customer will receive a refund */
-			$emailType = 'refund';
-			$subject = "Update on Your HorecaStore Order #{$orderNumber} – Refund Processing";
-		// } elseif ($pendingAmount == 0 && $pricingBreakdown['additionalDiscountAmount'] > 0) {
-		// 	/* Discount applied, no payment needed */
-		// 	$subject = "Update on Your HorecaStore Order #{$orderNumber} – No Action Required";
-		} else {
-			/* Default: standard order update */
-			$emailType = 'default';
-			$subject = "Update on Your HorecaStore Order #{$orderNumber} – No Action Required";
-		}
-		$params['emailType'] = $emailType;
-
 		return $this->subject($subject)
-		->markdown("emails.orders.order-update")
+		->markdown('emails.orders.order-update')
 		->with($params);
 	}
 }
