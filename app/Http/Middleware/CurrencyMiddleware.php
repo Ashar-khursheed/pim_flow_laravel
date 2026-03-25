@@ -291,6 +291,8 @@ class CurrencyMiddleware
     private const BASE_CURRENCY_SYMBOL = 'AED';
     private const BASE_AED_RATE        = 3.6725;
 
+    public function __construct(protected GeoLocationService $geoService) {}
+
     public function handle(Request $request, Closure $next)
     {
         $startTime = microtime(true);
