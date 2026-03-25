@@ -713,7 +713,7 @@ Route::Post('frontend/attribute-product-variants', [FndProductVariantController:
 Route::Post('frontend/product-variants-by-attribute', [FndProductVariantController::class, 'getAttributeByProductVariant']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
-	Route::get('frontend/currencies/convert-currency', [F_CurrencyController::class, 'convertAll']);
+	Route::get('/frontend/convert-currency', [F_CurrencyController::class, 'convertAll']);
 
 	Route::post('frontend/finances', [F_FinanceController::class, 'store']);
 	Route::get('/frontend/finances', [F_FinanceController::class, 'index']);
