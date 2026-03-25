@@ -193,7 +193,7 @@ class CustomerCartController extends Controller
 		$cart->tax_amount = number_format(($taxAmount * $currencyConversionRate), 2, '.', '');
 		$cart->total_amount = number_format(($totalAmount * $currencyConversionRate), 2, '.', '');
 		$cart->additional_amount_price = number_format(($additionalAmount * $currencyConversionRate), 2, '.', '');
-		$cart->base_currency = $targetCurrencyTitle ?? $sourceCurrencyTitle;
+		$cart->source_currency = $targetCurrencyTitle ?? $sourceCurrencyTitle;
 
 		/* Remove unnecessary cart fields */
 		unset(
