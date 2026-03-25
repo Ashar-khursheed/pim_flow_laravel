@@ -259,23 +259,21 @@ class CurrencyMiddleware
         'PKR' => 'PKR', 'Rs'  => 'PKR', 'Rs.' => 'PKR',
     ];
 
-    // ─── FIX #5: ip-api returns full country names — map them to DB names ─────
     private const COUNTRY_NAME_MAP = [
-        'United Arab Emirates' => 'UAE',
-        'UAE'                  => 'UAE',
+        'United Arab Emirates'    => 'UAE',
+        'UAE'                     => 'UAE',
         'Kingdom of Saudi Arabia' => 'Saudi Arabia',
-        'KSA'                  => 'Saudi Arabia',
-        'Pakistan'             => 'Pakistan',
-        'India'                => 'India',
-        'United Kingdom'       => 'United Kingdom',
-        'United States'        => 'United States',
-        'Bahrain'              => 'Bahrain',
-        'Kuwait'               => 'Kuwait',
-        'Qatar'                => 'Qatar',
-        'Oman'                 => 'Oman',
+        'KSA'                     => 'Saudi Arabia',
+        'Pakistan'                => 'Pakistan',
+        'India'                   => 'India',
+        'United Kingdom'          => 'United Kingdom',
+        'United States'           => 'United States',
+        'Bahrain'                 => 'Bahrain',
+        'Kuwait'                  => 'Kuwait',
+        'Qatar'                   => 'Qatar',
+        'Oman'                    => 'Oman',
     ];
 
-    // Base currency — prices in DB are stored in AED
     private const BASE_CURRENCY_CODE   = 'AED';
     private const BASE_CURRENCY_SYMBOL = 'AED';
     private const BASE_AED_RATE        = 3.6725;
@@ -284,16 +282,15 @@ class CurrencyMiddleware
 
     public function handle(Request $request, Closure $next)
     {
-        // Debug log
-        \Log::info('CURRENCY_MW_INIT', [
+        Log::info('CURRENCY_MW_INIT', [
             'path' => $request->path(),
-            'ip'   => $request->ip()
+            'ip'   => $request->ip(),
         ]);
 
         if (!str_contains($request->path(), 'frontend')) {
             return $next($request);
         }
-        // Optional: force a country for testing (?force_country=Pakistan)
+
         $forceCountry = $request->query('force_country');
 
         // Resolve real client IP
@@ -305,16 +302,9 @@ class CurrencyMiddleware
             $ip = trim(explode(',', $ip)[0]);
         }
 
-        $isPrivateIp = (
-            empty($ip) ||
-            $ip === '127.0.0.1' ||
-            $ip === '::1' ||
-            str_starts_with($ip, '172.') ||
-            str_starts_with($ip, '10.') ||
-            str_starts_with($ip, '192.168.')
-        );
+        // ✅ FIX: Correct RFC-1918 private IP check (172.x poora nahi, sirf 172.16-31)
+        $isPrivateIp = $this->isPrivateIp($ip);
 
-        // ─── FIX #3: Private IP without force → skip geo, return AED default ──
         if ($isPrivateIp && !$forceCountry) {
             $ctx = $this->defaultContext();
             app()->instance('currency.context', $ctx);
@@ -333,7 +323,6 @@ class CurrencyMiddleware
             }
 
             if ($countryName) {
-                // ─── FIX #5: Normalize country name to match DB ────────────────
                 $dbName = self::COUNTRY_NAME_MAP[$countryName] ?? $countryName;
 
                 $country = Country::with('currency')
@@ -365,41 +354,61 @@ class CurrencyMiddleware
                     'db_name'  => $dbName,
                 ]);
             }
-            
+
             Log::info('CURRENCY_MW: Falling back to default AED context');
             return $this->defaultContext();
         });
 
         app()->instance('currency.context', $ctx);
 
-        $response = $next($request);
-
-        return $this->processJsonResponse($response, $ctx);
+        return $this->processJsonResponse($next($request), $ctx);
     }
 
-    
+    // ✅ FIX: Correct RFC-1918 ranges — 172.0-15.x aur 172.32-255.x public hain
+    private function isPrivateIp(string $ip): bool
+    {
+        if (empty($ip) || in_array($ip, ['127.0.0.1', '::1'])) {
+            return true;
+        }
+
+        $ipLong = ip2long($ip);
+        if ($ipLong === false) {
+            return false;
+        }
+
+        foreach ([
+            ['10.0.0.0',   '10.255.255.255'],
+            ['172.16.0.0', '172.31.255.255'],  // ✅ sirf yeh, 172.x poora nahi
+            ['192.168.0.0','192.168.255.255'],
+            ['169.254.0.0','169.254.255.255'],  // link-local
+        ] as [$start, $end]) {
+            if ($ipLong >= ip2long($start) && $ipLong <= ip2long($end)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function processJsonResponse($response, array $ctx)
     {
         if (!$response instanceof JsonResponse) {
             return $response;
         }
 
-        // Add Vary header to help partition cache
         $response->headers->set('Vary', 'Accept-Encoding, X-Forced-Country, CF-IPCountry');
 
-        // If not default AED or if using forced country, prevent public caching
-        // This is critical to prevent UAE users from seeing Pakistan prices and vice-versa
         if (!$ctx['is_default'] || request()->has('force_country')) {
             $response->headers->set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
         }
 
         $data = $response->getData(true);
-        
+
         Log::info('CURRENCY_MW_TRANSFORM', [
-            'currency' => $ctx['currency_code'] ?? 'AED',
-            'symbol'   => $ctx['symbol'] ?? 'AED',
+            'currency'   => $ctx['currency_code'] ?? 'AED',
+            'symbol'     => $ctx['symbol'] ?? 'AED',
             'is_default' => $ctx['is_default'] ?? false,
-            'data_keys' => is_array($data) ? array_keys($data) : 'not_array'
+            'data_keys'  => is_array($data) ? array_keys($data) : 'not_array',
         ]);
 
         $data = $this->transform($data, $ctx);
@@ -412,8 +421,8 @@ class CurrencyMiddleware
     {
         if (!is_array($data)) return $data;
 
-        // Pass 1: convert numeric price fields (skip if default + no margin = no conversion needed)
         $needsPriceConversion = !($ctx['is_default'] && $ctx['margin'] == 0);
+
         foreach ($data as $key => &$value) {
             if ($needsPriceConversion && in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
                 $value = $this->convertPrice((float) $value, $ctx);
@@ -422,7 +431,6 @@ class CurrencyMiddleware
             }
         }
 
-        // Pass 2: update currency symbol/title string fields
         foreach ($data as $key => &$value) {
             if ($key === 'currency') {
                 if (is_string($value) && strlen($value) <= 10) {
@@ -457,12 +465,10 @@ class CurrencyMiddleware
 
         $priceAfterMargin = $margin != 0 ? $price * (1 + $margin / 100) : $price;
 
-        // AED → AED, no FX needed
         if ($targetCode === self::BASE_CURRENCY_CODE) {
             return round($priceAfterMargin, $decimals);
         }
 
-        // AED → USD (using fixed peg) → target currency
         $rates      = $this->getExchangeRates();
         $targetRate = $rates[$targetCode] ?? null;
 
@@ -490,7 +496,6 @@ class CurrencyMiddleware
                 Log::error('CURRENCY_MW: exchange rate fetch failed', ['error' => $e->getMessage()]);
             }
 
-            // Fallback static rates (relative to USD)
             return [
                 'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
                 'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
@@ -499,26 +504,7 @@ class CurrencyMiddleware
             ];
         });
     }
-    // CurrencyMiddleware.php
-        // Replace the entire getExchangeRates() method with this:
-        // private function getExchangeRates(): array
-        // {
-        //     $rates = CurrencyConverter::getRates();
 
-        //     if (!$rates) {
-        //         // Fallback static rates
-        //         return [
-        //             'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
-        //             'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
-        //             'OMR' => 0.3847, 'EUR' => 0.92,   'GBP' => 0.79,
-        //             'INR' => 83.5,   'PKR' => 278.47,
-        //         ];
-        //     }
-
-        //     return $rates;
-        // }
-
-    // ─── FIX #2: Always return AED as base (prices stored in AED) ─────────────
     private function defaultContext(): array
     {
         return [
