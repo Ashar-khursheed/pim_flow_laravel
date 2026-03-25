@@ -247,7 +247,7 @@ $pageNumber = 1;
 			@endif
 
 			{{-- Amount Details --}}
-			<table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; font-family: 'Inter', sans-serif;">
+			<table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px;">
 				<tr>
 					<td style="width: 50%; vertical-align: top; border: 1px solid black; padding: 10px; background-color: #ffffff; font-family: 'Inter', sans-serif;">
 						<p style="font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif; margin-top: 0px;">TERMS OF SALE</p>
@@ -281,9 +281,9 @@ $pageNumber = 1;
 
 
 					<!-- Invoice Summary Column -->
-					<td style="width: 50%; vertical-align: top; border: 1px solid black; background-color: #ffffff; font-family: 'Inter', sans-serif;">
-						<div style="padding: 10px; font-family: 'Inter', sans-serif;">
-							<table style="width: 100%; font-size: 12px; font-family: 'Inter', sans-serif;">
+					<td style="width: 50%; vertical-align: top; border: 1px solid black; background-color: #ffffff;">
+						<div style="padding: 10px;">
+							<table style="width: 100%; font-size: 12px;">
 								<tbody>
 									@if (isset($additionalAmountName) && isset($additionalAmountPrice) && $additionalAmountPrice > 0)
 									<!-- Products Subtotal (without additional amount) -->
@@ -300,7 +300,7 @@ $pageNumber = 1;
 
 									<tr>
 										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif; {{ isset($additionalAmountPrice) && $additionalAmountPrice > 0 ? 'font-weight: 600;' : '' }}">Invoice Subtotal</td>
-										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif; {{ isset($additionalAmountPrice) && $additionalAmountPrice > 0 ? 'font-weight: 600;' : '' }}">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; {{ isset($additionalAmountPrice) && $additionalAmountPrice > 0 ? 'font-weight: 600;' : '' }}">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
 									</tr>
 
 
