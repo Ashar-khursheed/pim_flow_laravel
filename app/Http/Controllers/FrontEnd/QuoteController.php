@@ -21,6 +21,7 @@ use App\Jobs\Quote\QuotePlacedMailJob;
 
 use App\Traits\CalculationTrait;
 use App\Traits\GeneratesQuotePdf;
+use App\Helpers\CurrencyConverter;
 
 class QuoteController extends BaseController
 {
