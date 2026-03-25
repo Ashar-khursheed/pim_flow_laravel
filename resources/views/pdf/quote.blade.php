@@ -8,20 +8,6 @@
 	<title>Sales Quotation Design</title>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 	<script src="https://cdn.tailwindcss.com"></script>
-	{{-- <style>
-		@font-face {
-			font-family: 'DejaVu Sans';
-			font-style: normal;
-			font-weight: normal;
-			src: url('{{ base_path("vendor/dompdf/dompdf/lib/fonts/DejaVuSans.ttf") }}') format('truetype');
-		}
-		@font-face {
-			font-family: 'DejaVu Sans';
-			font-style: normal;
-			font-weight: bold;
-			src: url('{{ base_path("vendor/dompdf/dompdf/lib/fonts/DejaVuSans-Bold.ttf") }}') format('truetype');
-		}
-	</style> --}}
 </head>
 @php
 use Illuminate\Support\Str;
@@ -136,7 +122,7 @@ $pageNumber = 1;
 							<tr style="text-align: center;">
 								<td style="border: 1px solid black; padding: 0.5rem;">{{ $paymentMode }}</td>
 								<td style="border: 1px solid black; padding: 0.5rem;">{{ $quoteType }}</td>
-								<td style="border: 1px solid black; padding: 0.5rem; color: #dc2626; font-weight: 600; font-family: 'dejavu sans', sans-serif;">{{ $currency }}</td>
+								<td style="border: 1px solid black; padding: 0.5rem; color: #dc2626; font-weight: 600;">{{ $currency }}</td>
 							</tr>
 						</table>
 					</td>
