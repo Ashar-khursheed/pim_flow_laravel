@@ -66,46 +66,38 @@ class GeoLocationService
 
         // If you're behind CloudFront, you might see private IPs etc.
         // You can add more filtering here if needed.
-        $cacheKey = 'geo_ip_' . $ip;
+        $cacheKey = 'geo_ip_v2_' . $ip;
 
-        return Cache::remember($cacheKey, now()->addHours(6), function () use ($ip) {
-            try {
-                $response = $this->client->get($this->apiUrl . $ip, [
-                    'query' => [
-                        // you can request only needed fields to reduce payload
-                        // 'fields' => 'status,country,regionName,city,lat,lon,query',
-                    ],
-                ]);
+        $cached = Cache::get($cacheKey);
+        if ($cached) {
+            return $cached;
+        }
 
-                $data = json_decode((string) $response->getBody(), true);
+        try {
+            $response = $this->client->get($this->apiUrl . $ip);
+            $data = json_decode((string) $response->getBody(), true);
 
-                if (!is_array($data) || ($data['status'] ?? null) !== 'success') {
-                    Log::warning('GeoLocation lookup failed or returned bad status', [
-                        'ip'   => $ip,
-                        'data' => $data ?? null,
-                    ]);
-
-                    // Don’t cache bad responses forever
-                    return null;
-                }
-
+            if (is_array($data) && ($data['status'] ?? null) === 'success') {
+                Cache::put($cacheKey, $data, now()->addHours(6));
                 return $data;
-            } catch (GuzzleException $e) {
-                Log::warning('GeoLocation HTTP error', [
-                    'ip'      => $ip,
-                    'message' => $e->getMessage(),
-                ]);
-
-                // returning null here means: fail soft, don’t block the user experience
-                return null;
-            } catch (\Throwable $e) {
-                Log::error('GeoLocation unexpected error', [
-                    'ip'      => $ip,
-                    'message' => $e->getMessage(),
-                ]);
-
-                return null;
             }
-        });
+
+            Log::warning('GeoLocation lookup failed or returned bad status', [
+                'ip'   => $ip,
+                'data' => $data ?? null,
+            ]);
+        } catch (GuzzleException $e) {
+            Log::warning('GeoLocation HTTP error', [
+                'ip'      => $ip,
+                'message' => $e->getMessage(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('GeoLocation unexpected error', [
+                'ip'      => $ip,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
     }
 }

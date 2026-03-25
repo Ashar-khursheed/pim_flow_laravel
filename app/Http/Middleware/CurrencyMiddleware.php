@@ -274,56 +274,79 @@ class CurrencyMiddleware
         'Oman'                    => 'Oman',
     ];
 
+    private const ISO_TO_NAME_MAP = [
+        'AE' => 'UAE',
+        'SA' => 'Saudi Arabia',
+        'PK' => 'Pakistan',
+        'IN' => 'India',
+        'US' => 'United States',
+        'GB' => 'United Kingdom',
+        'BH' => 'Bahrain',
+        'KW' => 'Kuwait',
+        'QA' => 'Qatar',
+        'OM' => 'Oman',
+    ];
+
     private const BASE_CURRENCY_CODE   = 'AED';
     private const BASE_CURRENCY_SYMBOL = 'AED';
     private const BASE_AED_RATE        = 3.6725;
 
-    public function __construct(protected GeoLocationService $geoService) {}
-
     public function handle(Request $request, Closure $next)
     {
-        Log::info('CURRENCY_MW_INIT', [
-            'path' => $request->path(),
-            'ip'   => $request->ip(),
-        ]);
+        $startTime = microtime(true);
 
         if (!str_contains($request->path(), 'frontend')) {
             return $next($request);
         }
 
-        $forceCountry = $request->query('force_country');
+        $forceCountry = $request->header('X-Forced-Country') ?? $request->query('force_country');
 
         // Resolve real client IP
-        $ip = $request->header('X-Forwarded-For')
-            ?? $request->header('CF-Connecting-IP')
+        $ip = $request->header('CF-Connecting-IP')
+            ?? $request->header('X-Real-IP')
+            ?? $request->header('X-Forwarded-For')
             ?? $request->ip();
 
-        if (str_contains((string) $ip, ',')) {
-            $ip = trim(explode(',', $ip)[0]);
+        if (str_contains((string)$ip, ',')) {
+            $ip = trim(explode(',', (string)$ip)[0]);
         }
 
-        // ✅ FIX: Correct RFC-1918 private IP check (172.x poora nahi, sirf 172.16-31)
+        // Fast path: Check CDN headers first (Cloudflare / CloudFront)
+        $cdnCountry = $request->header('CF-IPCountry') ?? $request->header('CloudFront-Viewer-Country');
+
         $isPrivateIp = $this->isPrivateIp($ip);
 
-        if ($isPrivateIp && !$forceCountry) {
+        // If local/private and no override, use default instantly
+        if ($isPrivateIp && !$forceCountry && !$cdnCountry) {
             $ctx = $this->defaultContext();
             app()->instance('currency.context', $ctx);
             return $this->processJsonResponse($next($request), $ctx);
         }
 
-        $cacheKey = 'currency_ctx_v2_' . ($forceCountry ? 'forced_' . $forceCountry : $ip);
+        $cacheKey = 'currency_ctx_v3_' . ($forceCountry ? 'forced_' . $forceCountry : ($cdnCountry ? 'cdn_' . $cdnCountry : $ip));
 
-        $ctx = Cache::remember($cacheKey, now()->addHours(6), function () use ($ip, $forceCountry, $isPrivateIp) {
+        $ctx = Cache::remember($cacheKey, now()->addHours(6), function () use ($ip, $forceCountry, $cdnCountry, $isPrivateIp) {
             $countryName = $forceCountry;
 
+            // Priority 1: CDN header (very fast)
+            if (!$countryName && $cdnCountry && $cdnCountry !== 'XX') {
+                // If we have ISO code, we might need a map or handle it.
+                // For now, let's see if we can use it.
+                $countryName = $cdnCountry;
+            }
+
+            // Priority 2: GeoIP API (fallback)
             if (!$countryName && !$isPrivateIp) {
-                $geoData     = $this->geoService->getLocation($ip);
+                $geoData = $this->geoService->getLocation($ip);
                 $countryName = $geoData['country'] ?? null;
-                Log::info('CURRENCY_GEO', ['ip' => $ip, 'geo_country' => $countryName]);
+                Log::info('CURRENCY_MW: GeoIP lookup', ['ip' => $ip, 'country' => $countryName]);
             }
 
             if ($countryName) {
-                $dbName = self::COUNTRY_NAME_MAP[$countryName] ?? $countryName;
+                // If it's a 2-char code (from CDN), try to get full name
+                $dbName = (strlen((string)$countryName) === 2) 
+                        ? (self::ISO_TO_NAME_MAP[strtoupper($countryName)] ?? $countryName)
+                        : (self::COUNTRY_NAME_MAP[$countryName] ?? $countryName);
 
                 $country = Country::with('currency')
                     ->whereRaw('LOWER(name) = ?', [strtolower($dbName)])
@@ -361,7 +384,23 @@ class CurrencyMiddleware
 
         app()->instance('currency.context', $ctx);
 
-        return $this->processJsonResponse($next($request), $ctx);
+        $response = $next($request);
+
+        if (!$response instanceof JsonResponse || !$response->isSuccessful()) {
+            return $response;
+        }
+
+        // Prefetch rates once to avoid repeated cache hits in loops
+        $ctx['rates'] = $this->getExchangeRates();
+
+        $result = $this->processJsonResponse($response, $ctx);
+
+        Log::info('CURRENCY_MW_FINISH', [
+            'ms'       => round((microtime(true) - $startTime) * 1000, 2),
+            'currency' => $ctx['currency_code'] ?? '?',
+        ]);
+
+        return $result;
     }
 
     // ✅ FIX: Correct RFC-1918 ranges — 172.0-15.x aur 172.32-255.x public hain
@@ -419,35 +458,64 @@ class CurrencyMiddleware
 
     private function transform(mixed $data, array $ctx): mixed
     {
-        if (!is_array($data)) return $data;
-
-        $needsPriceConversion = !($ctx['is_default'] && $ctx['margin'] == 0);
-
-        foreach ($data as $key => &$value) {
-            if ($needsPriceConversion && in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
-                $value = $this->convertPrice((float) $value, $ctx);
-            } elseif (is_array($value)) {
-                $value = $this->transform($value, $ctx);
-            }
+        if (!is_array($data)) {
+            return $data;
         }
 
+        $needsPriceConversion = !($ctx['is_default'] && $ctx['margin'] == 0);
+        $symbol = $ctx['symbol'] ?? 'AED';
+        $rates  = $ctx['rates'] ?? [];
+
         foreach ($data as $key => &$value) {
-            if ($key === 'currency') {
-                if (is_string($value) && strlen($value) <= 10) {
-                    $value = $ctx['symbol'];
-                } elseif (is_array($value) && isset($value['symbol'])) {
-                    $value['symbol'] = $ctx['symbol'];
-                    $value['title']  = $ctx['currency_title'];
+            // Handle Arrays (Recursive)
+            if (is_array($value)) {
+                $value = $this->transform($value, $ctx);
+
+                // If this is a currency object, override its sub-fields
+                if ($key === 'currency' && isset($value['symbol'])) {
+                    $value['symbol'] = $symbol;
+                    $value['title']  = $ctx['currency_title'] ?? $value['title'] ?? 'Selected Currency';
                 }
-            } elseif (($key === 'currency_title' || $key === 'price_with_symbol') && is_string($value)) {
-                if (isset($data['price'])) {
-                    $value = $ctx['symbol'] . ' ' . $data['price'];
-                } elseif (isset($data['sale_price'])) {
-                    $value = $ctx['symbol'] . ' ' . $data['sale_price'];
+                continue;
+            }
+
+            // Handle Numeric Prices
+            if ($needsPriceConversion && in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
+                // Inline convertPrice logic to reuse $rates
+                $margin           = $ctx['margin'] ?? 0;
+                $targetCode       = $ctx['currency_code'] ?? self::BASE_CURRENCY_CODE;
+                $decimals         = $ctx['decimals'] ?? 2;
+                $priceAfterMargin = $margin != 0 ? (float)$value * (1 + $margin / 100) : (float)$value;
+
+                if ($targetCode === self::BASE_CURRENCY_CODE) {
+                    $value = round($priceAfterMargin, $decimals);
+                } else {
+                    $targetRate = $rates[$targetCode] ?? null;
+                    if ($targetRate) {
+                        $value = round(($priceAfterMargin / self::BASE_AED_RATE) * $targetRate, $decimals);
+                    } else {
+                        $value = round($priceAfterMargin, $decimals);
+                    }
+                }
+                continue;
+            }
+
+            // Handle Currency Code Strings
+            if ($key === 'currency' && is_string($value) && strlen($value) <= 10) {
+                $value = $symbol;
+                continue;
+            }
+
+            // Handle Formatted Strings (e.g. "AED 100", "SAR 50")
+            if (($key === 'currency_title' || $key === 'price_with_symbol') && is_string($value)) {
+                if (isset($data['price']) && is_numeric($data['price'])) {
+                    $value = $symbol . ' ' . $data['price'];
+                } elseif (isset($data['sale_price']) && is_numeric($data['sale_price'])) {
+                    $value = $symbol . ' ' . $data['sale_price'];
                 } else {
                     $value = preg_replace(
                         '/\b(AED|USD|SAR|KWD|BHD|QAR|OMR|PKR|INR|EUR|GBP|Rs\.?)\b|\$/',
-                        $ctx['symbol'],
+                        $symbol,
                         $value
                     );
                 }
