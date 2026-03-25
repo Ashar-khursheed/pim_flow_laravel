@@ -14,7 +14,7 @@ switch ($website) {
 		break;
 
 	case 'UAE_T':
-		$url = 'https://www.uae.thehorecastore.co';
+		$url = 'https://www.uae-website.thehorecastore.co';
 		$backendUrl = 'https://test-uae.thehorecastore.co';
 		break;
 
