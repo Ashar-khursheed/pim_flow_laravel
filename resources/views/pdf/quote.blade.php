@@ -8,7 +8,7 @@
 	<title>Sales Quotation Design</title>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 	<script src="https://cdn.tailwindcss.com"></script>
-	<style>
+	{{-- <style>
 		@font-face {
 			font-family: 'DejaVu Sans';
 			font-style: normal;
@@ -21,7 +21,7 @@
 			font-weight: bold;
 			src: url('{{ base_path("vendor/dompdf/dompdf/lib/fonts/DejaVuSans-Bold.ttf") }}') format('truetype');
 		}
-	</style>
+	</style> --}}
 </head>
 @php
 use Illuminate\Support\Str;
