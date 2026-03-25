@@ -309,8 +309,8 @@ class CurrencyMiddleware
             ?? $request->header('X-Forwarded-For')
             ?? $request->ip();
 
-        if (str_contains((string)$ip, ',')) {
-            $ip = trim(explode(',', (string)$ip)[0]);
+        if (str_contains((string) $ip, ',')) {
+            $ip = trim(explode(',', (string) $ip)[0]);
         }
 
         // Fast path: Check CDN headers first (Cloudflare / CloudFront)
@@ -320,35 +320,35 @@ class CurrencyMiddleware
 
         // If local/private and no override, use default instantly
         if ($isPrivateIp && !$forceCountry && !$cdnCountry) {
-            $ctx = $this->defaultContext();
+            $ctx = $this->buildContext($ctx = $this->defaultContext());
             app()->instance('currency.context', $ctx);
             return $this->processJsonResponse($next($request), $ctx);
         }
 
-        $cacheKey = 'currency_ctx_v3_' . ($forceCountry ? 'forced_' . $forceCountry : ($cdnCountry ? 'cdn_' . $cdnCountry : $ip));
+        $cacheKey = 'currency_ctx_v3_' . ($forceCountry
+            ? 'forced_' . $forceCountry
+            : ($cdnCountry ? 'cdn_' . $cdnCountry : $ip));
 
         $ctx = Cache::remember($cacheKey, now()->addHours(6), function () use ($ip, $forceCountry, $cdnCountry, $isPrivateIp) {
             $countryName = $forceCountry;
 
             // Priority 1: CDN header (very fast)
             if (!$countryName && $cdnCountry && $cdnCountry !== 'XX') {
-                // If we have ISO code, we might need a map or handle it.
-                // For now, let's see if we can use it.
                 $countryName = $cdnCountry;
             }
 
             // Priority 2: GeoIP API (fallback)
             if (!$countryName && !$isPrivateIp) {
-                $geoData = $this->geoService->getLocation($ip);
+                $geoData     = $this->geoService->getLocation($ip);
                 $countryName = $geoData['country'] ?? null;
                 Log::info('CURRENCY_MW: GeoIP lookup', ['ip' => $ip, 'country' => $countryName]);
             }
 
             if ($countryName) {
-                // If it's a 2-char code (from CDN), try to get full name
-                $dbName = (strlen((string)$countryName) === 2) 
-                        ? (self::ISO_TO_NAME_MAP[strtoupper($countryName)] ?? $countryName)
-                        : (self::COUNTRY_NAME_MAP[$countryName] ?? $countryName);
+                // If it's a 2-char ISO code (from CDN), map to full name
+                $dbName = (strlen((string) $countryName) === 2)
+                    ? (self::ISO_TO_NAME_MAP[strtoupper($countryName)] ?? $countryName)
+                    : (self::COUNTRY_NAME_MAP[$countryName] ?? $countryName);
 
                 $country = Country::with('currency')
                     ->whereRaw('LOWER(name) = ?', [strtolower($dbName)])
@@ -384,6 +384,8 @@ class CurrencyMiddleware
             return $this->defaultContext();
         });
 
+        // ✅ FIX 2: Prefetch rates BEFORE $next() so app('currency.context') always has rates
+        $ctx['rates'] = $this->getExchangeRates();
         app()->instance('currency.context', $ctx);
 
         $response = $next($request);
@@ -391,9 +393,6 @@ class CurrencyMiddleware
         if (!$response instanceof JsonResponse || !$response->isSuccessful()) {
             return $response;
         }
-
-        // Prefetch rates once to avoid repeated cache hits in loops
-        $ctx['rates'] = $this->getExchangeRates();
 
         $result = $this->processJsonResponse($response, $ctx);
 
@@ -405,7 +404,13 @@ class CurrencyMiddleware
         return $result;
     }
 
-    // ✅ FIX: Correct RFC-1918 ranges — 172.0-15.x aur 172.32-255.x public hain
+    private function buildContext(array $ctx): array
+    {
+        $ctx['rates'] = $this->getExchangeRates();
+        return $ctx;
+    }
+
+    // ✅ Correct RFC-1918 private IP ranges
     private function isPrivateIp(string $ip): bool
     {
         if (empty($ip) || in_array($ip, ['127.0.0.1', '::1'])) {
@@ -418,10 +423,10 @@ class CurrencyMiddleware
         }
 
         foreach ([
-            ['10.0.0.0',   '10.255.255.255'],
-            ['172.16.0.0', '172.31.255.255'],  // ✅ sirf yeh, 172.x poora nahi
-            ['192.168.0.0','192.168.255.255'],
-            ['169.254.0.0','169.254.255.255'],  // link-local
+            ['10.0.0.0',    '10.255.255.255'],
+            ['172.16.0.0',  '172.31.255.255'],  // ✅ Only true private range, NOT all 172.x
+            ['192.168.0.0', '192.168.255.255'],
+            ['169.254.0.0', '169.254.255.255'],  // link-local
         ] as [$start, $end]) {
             if ($ipLong >= ip2long($start) && $ipLong <= ip2long($end)) {
                 return true;
@@ -437,16 +442,21 @@ class CurrencyMiddleware
             return $response;
         }
 
-        $response->headers->set('Vary', 'Accept-Encoding, X-Forced-Country, CF-IPCountry');
+        // ✅ FIX 1: ALWAYS set these headers on every currency-sensitive response.
+        // Cloudflare IGNORES the Vary header — it will cache AED and serve it to everyone.
+        // CDN-Cache-Control and Cloudflare-CDN-Cache-Control explicitly tell CF: never cache this.
+        $response->headers->set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('CDN-Cache-Control', 'no-store');                  // Generic CDN
+        $response->headers->set('Cloudflare-CDN-Cache-Control', 'no-store');       // Cloudflare specific
+        $response->headers->set('Surrogate-Control', 'no-store');                  // Varnish / Fastly
+        $response->headers->set('Vary', 'CF-IPCountry, X-Forced-Country, Accept-Encoding');
 
         $isDefault = ($ctx['is_default'] ?? false) && ($ctx['margin'] ?? 0) == 0;
-        $isForced  = request()->has('force_country');
+        $isForced  = request()->has('force_country') || request()->hasHeader('X-Forced-Country');
 
-        if (!$isDefault || $isForced) {
-            $response->headers->set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
-        }
-
-        // FAST PATH: If already default currency with no margin, skip the expensive transform
+        // FAST PATH: Already AED with no margin and not forced — skip expensive transform
+        // CDN headers are already set above, so CF won't cache it ✅
         if ($isDefault && !$isForced) {
             return $response;
         }
@@ -473,11 +483,11 @@ class CurrencyMiddleware
         }
 
         $needsPriceConversion = !($ctx['is_default'] && $ctx['margin'] == 0);
-        $symbol = $ctx['symbol'] ?? 'AED';
-        $rates  = $ctx['rates'] ?? [];
+        $symbol               = $ctx['symbol'] ?? 'AED';
+        $rates                = $ctx['rates'] ?? [];
 
         foreach ($data as $key => &$value) {
-            // Handle Arrays (Recursive)
+            // Recurse into nested arrays
             if (is_array($value)) {
                 $value = $this->transform($value, $ctx);
 
@@ -489,13 +499,12 @@ class CurrencyMiddleware
                 continue;
             }
 
-            // Handle Numeric Prices
+            // Convert numeric price fields
             if ($needsPriceConversion && in_array($key, self::PRICE_FIELDS) && is_numeric($value) && $value > 0) {
-                // Inline convertPrice logic to reuse $rates
                 $margin           = $ctx['margin'] ?? 0;
                 $targetCode       = $ctx['currency_code'] ?? self::BASE_CURRENCY_CODE;
                 $decimals         = $ctx['decimals'] ?? 2;
-                $priceAfterMargin = $margin != 0 ? (float)$value * (1 + $margin / 100) : (float)$value;
+                $priceAfterMargin = $margin != 0 ? (float) $value * (1 + $margin / 100) : (float) $value;
 
                 if ($targetCode === self::BASE_CURRENCY_CODE) {
                     $value = round($priceAfterMargin, $decimals);
@@ -504,19 +513,20 @@ class CurrencyMiddleware
                     if ($targetRate) {
                         $value = round(($priceAfterMargin / self::BASE_AED_RATE) * $targetRate, $decimals);
                     } else {
+                        Log::warning('CURRENCY_MW: No exchange rate found', ['code' => $targetCode]);
                         $value = round($priceAfterMargin, $decimals);
                     }
                 }
                 continue;
             }
 
-            // Handle Currency Code Strings
+            // Replace currency code string (e.g. "AED" → "SAR")
             if ($key === 'currency' && is_string($value) && strlen($value) <= 10) {
                 $value = $symbol;
                 continue;
             }
 
-            // Handle Formatted Strings (e.g. "AED 100", "SAR 50")
+            // Replace currency symbol in formatted strings (e.g. "AED 100" → "SAR 137")
             if (($key === 'currency_title' || $key === 'price_with_symbol') && is_string($value)) {
                 if (isset($data['price']) && is_numeric($data['price'])) {
                     $value = $symbol . ' ' . $data['price'];
@@ -551,12 +561,11 @@ class CurrencyMiddleware
         $targetRate = $rates[$targetCode] ?? null;
 
         if (!$targetRate) {
-            Log::warning('CURRENCY_MW: no exchange rate for', ['code' => $targetCode]);
+            Log::warning('CURRENCY_MW: No exchange rate for', ['code' => $targetCode]);
             return round($priceAfterMargin, $decimals);
         }
 
-        $converted = ($priceAfterMargin / self::BASE_AED_RATE) * $targetRate;
-        return round($converted, $decimals);
+        return round(($priceAfterMargin / self::BASE_AED_RATE) * $targetRate, $decimals);
     }
 
     private function getExchangeRates(): array
@@ -571,9 +580,10 @@ class CurrencyMiddleware
                     }
                 }
             } catch (\Throwable $e) {
-                Log::error('CURRENCY_MW: exchange rate fetch failed', ['error' => $e->getMessage()]);
+                Log::error('CURRENCY_MW: Exchange rate fetch failed', ['error' => $e->getMessage()]);
             }
 
+            // Hardcoded fallback rates
             return [
                 'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
                 'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
