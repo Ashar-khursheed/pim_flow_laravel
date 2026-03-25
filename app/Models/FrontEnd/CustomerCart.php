@@ -4,6 +4,7 @@ namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use App\Models\Country;
 
 class CustomerCart extends Model
 {
