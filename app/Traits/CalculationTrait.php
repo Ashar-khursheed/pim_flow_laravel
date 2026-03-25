@@ -26,7 +26,7 @@ trait CalculationTrait
 			$accessoryItems = getAccessoryItemIDPrice($accessoryIds);
 			$accessoryPriceSum = array_sum(array_column($accessoryItems, 'price'));
 
-			$unitPrice = $fetchedDetail->unit_price + (in_array(config('app.website'), ['UAE', 'UAE_T', 'US_T'])  ? ($fetchedDetail->unit_price * ($margin / 100)) : 0);
+			$unitPrice = $fetchedDetail->unit_price + (in_array(config('app.website'), ['UAE', 'UAE_T', 'US_T']) ? ($fetchedDetail->unit_price * ($margin / 100)) : 0);
 			$productDetails[] = [
 				'product_id' => $product['product_id'],
 				'vendor_id' => $product['vendor_id'],
@@ -66,7 +66,7 @@ trait CalculationTrait
 				$additionalDiscountAmount = $request->additional_discount_amount ?? 0;
 			} else if ($additionalDiscountType == 'percentage') {
 				$additionalDiscountPercentage = $request->additional_discount_percentage;
-				$additionalDiscountAmount = round($amountAfterDiscount * $additionalDiscountPercentage / 100, 2);
+				$additionalDiscountAmount = $amountAfterDiscount * $additionalDiscountPercentage / 100;
 			} else {
 				$additionalDiscountPercentage = null;
 				$additionalDiscountAmount = 0;
@@ -116,7 +116,7 @@ trait CalculationTrait
 				$chequeDiscountPercentage = 0;
 			}
 
-			$chequeDiscount = round($amountAfterDiscount * $chequeDiscountPercentage / 100, 2);
+			$chequeDiscount = $amountAfterDiscount * $chequeDiscountPercentage / 100;
 			$amountAfterDiscount -= $chequeDiscount;
 		} else {
 			$chequeImg = null;
@@ -134,13 +134,13 @@ trait CalculationTrait
 		/* Tax rules */
 		$taxPercentage = $isTaxFree ? 0 : $request->tax_percentage;
 		if (in_array(config('app.website'), ['UAE', 'UAE_T'])) {
-			$taxAmount = round($amountAfterDiscount * ($taxPercentage / 100), 2);
+			$taxAmount = $amountAfterDiscount * ($taxPercentage / 100);
 			$shippingCharge = (($amountAfterDiscount + $taxAmount) < 500) ? 30 : 0;
 		} elseif (in_array(config('app.website'), ['US', 'US_T'])) {
 			$taxableAmount = $amountAfterDiscount + $shippingCharge;
-			$taxAmount = round($taxableAmount * ($taxPercentage / 100), 2);
+			$taxAmount = $taxableAmount * ($taxPercentage / 100);
 		} else {
-			$taxAmount = round($amountAfterDiscount * ($taxPercentage / 100), 2);
+			$taxAmount = $amountAfterDiscount * ($taxPercentage / 100);
 		}
 
 		$grandTotal = $amountAfterDiscount + $taxAmount + $shippingCharge;
@@ -149,31 +149,37 @@ trait CalculationTrait
 		$paidAmount = $existingOrder ? ($existingOrder->paid_amount ?? 0) : 0;
 		$pendingAmount = $grandTotal - $paidAmount;
 
-		/* Return all calculated data */
+		/* Return all calculated data — all amounts rounded to 2 decimal places here */
 		return [
-			'product_details' => $productDetails,
+			'product_details' => array_map(function ($product) {
+				return array_merge($product, [
+					'unit_price' => round($product['unit_price'], 2),
+					'accessory_item_charge' => round($product['accessory_item_charge'], 2),
+					'shipping_charge' => round($product['shipping_charge'], 2),
+				]);
+			}, $productDetails),
 			'total_products' => $totalProducts,
-			'subtotal' => $subtotal,
-			'discount' => $discount,
-			'amount_after_discount' => $amountAfterDiscount,
+			'subtotal' => round($subtotal, 2),
+			'discount' => round($discount, 2),
+			'amount_after_discount' => round($amountAfterDiscount, 2),
 			'additional_discount_reason' => $additionalDiscountReason,
 			'additional_discount_type' => $additionalDiscountType,
-			'additional_discount_percentage' => $additionalDiscountPercentage,
-			'additional_discount_amount' => $additionalDiscountAmount,
+			'additional_discount_percentage' => round($additionalDiscountPercentage ?? 0, 2) ?: null,
+			'additional_discount_amount' => round($additionalDiscountAmount, 2),
 			'pay_with_cheque' => $payWithCheque,
 			'cheque_img' => $chequeImg,
 			'cheque_img_back' => $chequeImgBack,
-			'cheque_discount_percentage' => $chequeDiscountPercentage,
-			'cheque_discount' => $chequeDiscount,
-			'lift_gate_charge' => $liftGateCharge,
-			'residential_charge' => $residentialCharge,
-			'inside_delivery_charge' => $insideDeliveryCharge,
+			'cheque_discount_percentage' => round($chequeDiscountPercentage, 2),
+			'cheque_discount' => round($chequeDiscount, 2),
+			'lift_gate_charge' => round($liftGateCharge, 2),
+			'residential_charge' => round($residentialCharge, 2),
+			'inside_delivery_charge' => round($insideDeliveryCharge, 2),
 			'tax_percentage' => $taxPercentage,
-			'tax_amount' => $taxAmount,
-			'shipping_charge' => $shippingCharge,
-			'grand_total' => $grandTotal,
-			'paid_amount' => $paidAmount,
-			'pending_amount' => $pendingAmount,
+			'tax_amount' => round($taxAmount, 2),
+			'shipping_charge' => round($shippingCharge, 2),
+			'grand_total' => round($grandTotal, 2),
+			'paid_amount' => round($paidAmount, 2),
+			'pending_amount' => round($pendingAmount, 2),
 		];
 	}
 }
