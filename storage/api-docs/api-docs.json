@@ -22177,50 +22177,53 @@
                                     "payment_date"
                                 ],
                                 "properties": {
+                                    "currency": {
+                                        "type": "string",
+                                        "example": "USD"
+                                    },
                                     "order_id": {
-                                        "description": "ID of the order this payment is for",
                                         "type": "integer",
                                         "example": 123
                                     },
                                     "transaction_id": {
-                                        "description": "Unique transaction identifier",
                                         "type": "string",
                                         "example": "TXN456789"
                                     },
                                     "payment_mode": {
-                                        "description": "Method of payment",
                                         "type": "string",
                                         "example": "Credit Card"
                                     },
                                     "amount": {
-                                        "description": "Payment amount",
                                         "type": "number",
                                         "format": "float",
                                         "example": 299.99
                                     },
                                     "status": {
-                                        "description": "Payment status",
                                         "type": "string",
                                         "example": "completed"
                                     },
                                     "payment_date": {
-                                        "description": "Date when payment was made",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2024-06-24"
                                     },
                                     "notes": {
-                                        "description": "Additional notes about the payment",
                                         "type": "string",
                                         "example": "First installment paid"
                                     },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "example": "stripe"
+                                    },
+                                    "payment_img": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "payment_details": {
-                                        "description": "Additional payment gateway details",
                                         "type": "object",
                                         "example": {
                                             "bank": "XYZ Bank",
-                                            "ref": "12345XYZ",
-                                            "gateway_response": "success"
+                                            "ref": "12345XYZ"
                                         }
                                     }
                                 },
@@ -50891,24 +50894,6 @@
                     "updated_at": {
                         "type": "string",
                         "format": "date-time"
-                    }
-                },
-                "type": "object"
-            },
-            "Country": {
-                "title": "Country",
-                "required": [
-                    "id",
-                    "name"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "United States"
                     }
                 },
                 "type": "object"

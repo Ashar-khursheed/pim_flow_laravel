@@ -7,13 +7,12 @@ use App\Models\PaymentManagement;
 use Illuminate\Http\Request;
 use App\Models\FrontEnd\Order;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Validation\ValidationException;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
 use App\Jobs\Order\OrderPlacedMailJob;
+use App\Helpers\CurrencyConverter;
 
 class PaymentManagementController extends Controller
 {
@@ -67,19 +66,17 @@ class PaymentManagementController extends Controller
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             required={"order_id", "payment_mode", "amount", "status", "payment_date"},
-	 *             @OA\Property(property="order_id", type="integer", description="ID of the order this payment is for", example=123),
-	 *             @OA\Property(property="transaction_id", type="string", description="Unique transaction identifier", example="TXN456789"),
-	 *             @OA\Property(property="payment_mode", type="string", description="Method of payment", example="Credit Card"),
-	 *             @OA\Property(property="amount", type="number", format="float", description="Payment amount", example=299.99),
-	 *             @OA\Property(property="status", type="string", description="Payment status", example="completed"),
-	 *             @OA\Property(property="payment_date", type="string", format="date", description="Date when payment was made", example="2024-06-24"),
-	 *             @OA\Property(property="notes", type="string", description="Additional notes about the payment", example="First installment paid"),
-	 *             @OA\Property(
-	 *                 property="payment_details",
-	 *                 type="object",
-	 *                 description="Additional payment gateway details",
-	 *                 example={"bank":"XYZ Bank","ref":"12345XYZ","gateway_response":"success"}
-	 *             )
+	 *             @OA\Property(property="currency", type="string", example="USD"),
+	 *             @OA\Property(property="order_id", type="integer", example=123),
+	 *             @OA\Property(property="transaction_id", type="string", example="TXN456789"),
+	 *             @OA\Property(property="payment_mode", type="string", example="Credit Card"),
+	 *             @OA\Property(property="amount", type="number", format="float", example=299.99),
+	 *             @OA\Property(property="status", type="string", example="completed"),
+	 *             @OA\Property(property="payment_date", type="string", format="date", example="2024-06-24"),
+	 *             @OA\Property(property="notes", type="string", example="First installment paid"),
+	 *             @OA\Property(property="payment_method", type="string", example="stripe"),
+	 *             @OA\Property(property="payment_img", type="string", format="binary"),
+	 *             @OA\Property(property="payment_details", type="object", example={"bank":"XYZ Bank","ref":"12345XYZ"})
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
@@ -89,8 +86,9 @@ class PaymentManagementController extends Controller
 	public function store(Request $request)
 	{
 		try {
-			// Validate the incoming request
+			/* Validate incoming request */
 			$validated = $request->validate([
+				'currency' => 'required|string|exists:currencies,title',
 				'order_id' => 'required|integer|exists:orders,id',
 				'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id',
 				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,Paymob,Stax,Square,CC Avenue,NetTerm,Check,Cheque,Ascentium Capital,Resolve Pay,Approve',
@@ -100,51 +98,40 @@ class PaymentManagementController extends Controller
 				'notes' => 'nullable|string|max:1000',
 				'payment_details' => 'nullable|json|max:2000',
 				'payment_method' => 'nullable|string|max:255',
-				'currency' => 'nullable|string'
 			]);
 
-			if (!auth()->check()) {
+			$order = Order::find($request->order_id);
+
+			/* Convert paid amount to base currency */
+			$isUAE = in_array(config('app.website'), ['UAE', 'UAE_T']);
+			$baseCurrencyTitle = $isUAE ? 'AED' : 'USD';
+			$paidAmountInBase = CurrencyConverter::convertCurrency($request->currency, $baseCurrencyTitle, $request->amount) ?? 0;
+
+			/* Validate paid amount does not exceed order total */
+			$totalAmount = $order->total_amount;
+			if ($totalAmount < $paidAmountInBase) {
 				return response()->json([
-					'message' => 'Authentication required.'
+					'success' => false,
+					'message' => 'Paid amount is greater than total amount ' . $totalAmount,
 				], 401);
 			}
 
-			$order = Order::where('id', $request->order_id)->first();
-			if (isset($validated['payment_details'])) {
-				$validated['payment_details'] = json_encode($validated['payment_details']);
-			}
+			/* Merge original currency and amount into payment_details before saving */
+			$existingDetails = isset($validated['payment_details']) ? json_decode($validated['payment_details'], true) : [];
+			$existingDetails['original_currency'] = $request->currency;
+			$existingDetails['original_amount'] = $request->amount;
+			$validated['payment_details'] = json_encode($existingDetails);
+
+			/* Override amount with base currency value and remove currency field */
+			$validated['amount'] = $paidAmountInBase;
+			unset($validated['currency']);
+
+			/* Assign meta fields */
 			$validated['order_id'] = $order->id;
 			$validated['created_by'] = auth()->id();
 			$validated['rider_name'] = $request->rider_name;
 
-
-			/* Currency Handling and Conversion to AED */
-			$currencyContext = app('currency.context');
-			$currency = $request->currency ?? $currencyContext['currency_code'] ?? 'AED';
-			
-			$amountInAed = $request->amount;
-			if (strtoupper($currency) !== 'AED') {
-				$convertedAmount = \App\Helpers\CurrencyConverter::convertCurrency($currency, 'AED', $request->amount);
-				if ($convertedAmount !== null) {
-					$amountInAed = $convertedAmount;
-				}
-			}
-
-			$total_amount = $order->total_amount;
-			if ($total_amount < $amountInAed) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Paid amount (' . $amountInAed . ' AED) is greater than total amount ' . $total_amount,
-				], 401);
-			}
-
-			// Save the amount in AED as requested
-			$validated['amount'] = $amountInAed;
-			if ($currency !== 'AED' && !str_contains($validated['notes'] ?? '', 'Charged in')) {
-				$validated['notes'] = ($validated['notes'] ?? '') . ' (Charged in ' . $currency . ' ' . $request->amount . ')';
-			}
-
-			// Upload payment image if available
+			/* Upload payment image if provided */
 			$validated['payment_img'] = uploadImageToWebpS3FromFile(
 				$request,
 				'payment_img',
@@ -153,12 +140,12 @@ class PaymentManagementController extends Controller
 
 			DB::beginTransaction();
 
-			// Create the payment record
+			/* Create payment record */
 			$payment = PaymentManagement::create($validated);
 
-			/* Update order amounts */
-			$newPaidAmount = $order->paid_amount + $amountInAed;
-			$pendingAmount = $order->total_amount - $newPaidAmount;
+			/* Update order paid and pending amounts */
+			$newPaidAmount = $order->paid_amount + $paidAmountInBase;
+			$pendingAmount = $totalAmount - $newPaidAmount;
 
 			$order->update([
 				'paid_amount' => $newPaidAmount,
@@ -166,15 +153,14 @@ class PaymentManagementController extends Controller
 				'is_paid' => $pendingAmount <= 0,
 			]);
 
-			// ✅ If full amount is paid, release reservation
+			/* If fully paid — release reservation and dispatch order placed mail */
 			if ($pendingAmount <= 0) {
 				$order->update(['is_reserved' => 0]);
 
-				// ✅ Send email when payment completed
 				$batch = Bus::batch([])->name("Order Placed by Customer (Paid) - #{$order->order_number}")->dispatch();
 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 				$batch->add(new OrderPlacedMailJob([
-					'recordId' => $order->id
+					'recordId' => $order->id,
 				]));
 			}
 
@@ -183,21 +169,15 @@ class PaymentManagementController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Payment recorded successfully.',
-				'data' => $payment
+				'data' => $payment,
 			], 201);
-
-		} catch (ValidationException $e) {
-			return response()->json([
-				'success' => false,
-				'message' => 'The given data was invalid.',
-				'errors' => $e->errors()
-			], 422);
 
 		} catch (\Exception $e) {
 			DB::rollBack();
 			return response()->json([
+				'success' => false,
 				'message' => 'Something went wrong while creating the payment.',
-				'error' => $e->getMessage()
+				'error' => $e->getMessage(),
 			], 500);
 		}
 	}
