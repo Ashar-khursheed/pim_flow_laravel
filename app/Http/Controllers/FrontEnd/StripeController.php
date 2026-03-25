@@ -186,18 +186,21 @@ class StripeController extends Controller
 public function createPaymentIntent(Request $request)
 {
     $request->validate([
-        'payment_method_id' => 'required|string',   /* ✅ Add kiya */
+        'payment_method_id' => 'required|string',
         'amount'            => 'required|numeric|min:1',
-        'currency'          => 'sometimes|in:aed,usd',
+        'currency'          => 'sometimes|string',
         'customer_info'     => 'sometimes|array',
     ]);
+
+    $currencyContext = app('currency.context');
+    $currency = $request->currency ?? $currencyContext['currency_code'] ?? 'AED';
  
     Stripe::setApiKey(config('services.stripe.secret'));
  
     try {
         $paymentIntent = \Stripe\PaymentIntent::create([
             'amount'         => (int) round($request->amount * 100),
-            'currency'       => $request->currency ?? 'aed',
+            'currency'       => strtolower($currency),
             'payment_method' => $request->payment_method_id, /* ✅ Attach kiya */
             'description'    => 'Order Payment',
             'receipt_email'  => $request->customer_info['email'] ?? null,
@@ -524,15 +527,26 @@ public function createPaymentIntent(Request $request)
             // ✅ Save order payment in DB
             $orderId = $session->metadata->order_id ?? null;
 
+            $amountFromStripe = $session->amount_total / 100;
+            $currencyFromStripe = strtoupper($session->currency);
+            
+            $amountInAed = $amountFromStripe;
+            if ($currencyFromStripe !== 'AED') {
+                $convertedAmount = \App\Helpers\CurrencyConverter::convertCurrency($currencyFromStripe, 'AED', $amountFromStripe);
+                if ($convertedAmount !== null) {
+                    $amountInAed = $convertedAmount;
+                }
+            }
+
             PaymentManagement::create([
                 'order_id' => $orderId,
                 'transaction_id' => $session->payment_intent,
                 'payment_mode' => 'Credit Card',
                 'payment_method' => 'Stripe',
-                'amount' => $session->amount_total / 100,
+                'amount' => $amountInAed,
                 'status' => "Completed",
                 'payment_date' => date('Y-m-d H:i:s'),
-                'notes' => 'Payment marked through link',
+                'notes' => 'Payment marked through link (Charged in ' . $currencyFromStripe . ' ' . $amountFromStripe . ')',
                 'payment_details' => ''
             ]);
 
@@ -553,10 +567,19 @@ public function createPaymentIntent(Request $request)
         $data = $res->json();
 
         if (!empty($data)) {
-            $amount = $data['amount_total'] / 100;
-            $currency = $data['currency'];
+            $amountFromStripe = $data['amount_total'] / 100;
+            $currency = strtoupper($data['currency']);
             $transactionId = $data['payment_intent'];
             $order_id = $data['metadata']['order_id'];
+            
+            $amountInAed = $amountFromStripe;
+            if ($currency !== 'AED') {
+                $convertedAmount = \App\Helpers\CurrencyConverter::convertCurrency($currency, 'AED', $amountFromStripe);
+                if ($convertedAmount !== null) {
+                    $amountInAed = $convertedAmount;
+                }
+            }
+
             if ($data['status'] == 'complete') {
                 $status = "Completed";
             } else {
@@ -568,7 +591,7 @@ public function createPaymentIntent(Request $request)
 
             if (!empty($orderdetails)) {
                 $total_amount = $orderdetails->total_amount;
-                $paid_amount = $orderdetails->paid_amount + $amount;
+                $paid_amount = $orderdetails->paid_amount + $amountInAed;
                 $pending_amount = $total_amount - $paid_amount;
 
                 $order = Order::find($orderdetails->id);
@@ -579,8 +602,7 @@ public function createPaymentIntent(Request $request)
                         'is_paid' => $pending_amount <= 0,
                         'is_reserved' => $pending_amount <= 0,
                     ]);
-                } else if ($paid_amount == $total_amount) {
-
+                } else if ($paid_amount >= $total_amount) {
                     $order->update([
                         'paid_amount' => $paid_amount,
                         'pending_amount' => $pending_amount,
@@ -597,10 +619,10 @@ public function createPaymentIntent(Request $request)
                             'transaction_id' => $transactionId,
                             'payment_mode' => 'Credit Card',
                             'payment_method' => 'Stripe',
-                            'amount' => $amount,
+                            'amount' => $amountInAed,
                             'status' => $status,
                             'payment_date' => date('Y-m-d H:i:s'),
-                            'notes' => 'Payment marked through link',
+                            'notes' => 'Payment marked through link (Charged in ' . $currency . ' ' . $amountFromStripe . ')',
                             'payment_details' => ''
                         ]);
                     }
@@ -609,8 +631,10 @@ public function createPaymentIntent(Request $request)
             // Example response
             return response()->json([
                 'order_id' => $order_id ?? null,
-                'amount' => $amount,
-                'currency' => $currency,
+                'amount' => $amountInAed,
+                'currency' => 'AED',
+                'charged_amount' => $amountFromStripe,
+                'charged_currency' => $currency,
                 'status' => $status,
             ]);
         } else {

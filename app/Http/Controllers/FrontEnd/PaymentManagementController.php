@@ -99,7 +99,8 @@ class PaymentManagementController extends Controller
 				'payment_date' => 'required|date|before_or_equal:today',
 				'notes' => 'nullable|string|max:1000',
 				'payment_details' => 'nullable|json|max:2000',
-				'payment_method' => 'nullable|string|max:255'
+				'payment_method' => 'nullable|string|max:255',
+				'currency' => 'nullable|string'
 			]);
 
 			if (!auth()->check()) {
@@ -116,12 +117,31 @@ class PaymentManagementController extends Controller
 			$validated['created_by'] = auth()->id();
 			$validated['rider_name'] = $request->rider_name;
 
+
+			/* Currency Handling and Conversion to AED */
+			$currencyContext = app('currency.context');
+			$currency = $request->currency ?? $currencyContext['currency_code'] ?? 'AED';
+			
+			$amountInAed = $request->amount;
+			if (strtoupper($currency) !== 'AED') {
+				$convertedAmount = \App\Helpers\CurrencyConverter::convertCurrency($currency, 'AED', $request->amount);
+				if ($convertedAmount !== null) {
+					$amountInAed = $convertedAmount;
+				}
+			}
+
 			$total_amount = $order->total_amount;
-			if ($total_amount < $request->amount) {
+			if ($total_amount < $amountInAed) {
 				return response()->json([
 					'success' => false,
-					'message' => 'Paid amount is greater than total amount ' . $total_amount,
+					'message' => 'Paid amount (' . $amountInAed . ' AED) is greater than total amount ' . $total_amount,
 				], 401);
+			}
+
+			// Save the amount in AED as requested
+			$validated['amount'] = $amountInAed;
+			if ($currency !== 'AED' && !str_contains($validated['notes'] ?? '', 'Charged in')) {
+				$validated['notes'] = ($validated['notes'] ?? '') . ' (Charged in ' . $currency . ' ' . $request->amount . ')';
 			}
 
 			// Upload payment image if available
@@ -137,7 +157,7 @@ class PaymentManagementController extends Controller
 			$payment = PaymentManagement::create($validated);
 
 			/* Update order amounts */
-			$newPaidAmount = $order->paid_amount + $request->amount;
+			$newPaidAmount = $order->paid_amount + $amountInAed;
 			$pendingAmount = $order->total_amount - $newPaidAmount;
 
 			$order->update([
