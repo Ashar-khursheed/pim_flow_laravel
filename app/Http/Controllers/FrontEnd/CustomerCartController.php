@@ -76,9 +76,7 @@ class CustomerCartController extends Controller
 
 		$margin = $country->margin ?? 0;
 
-		$sourceCurrencySymbol = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$';
 		$sourceCurrencyTitle = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : 'USD';
-		$targetCurrencySymbol = $country->currency->symbol ?? $sourceCurrencySymbol;
 		$targetCurrencyTitle = $country->currency->title ?? $sourceCurrencyTitle;
 
 		$currencyConversionRate = CurrencyConverter::getRate($sourceCurrencyTitle, $targetCurrencyTitle);
@@ -98,7 +96,6 @@ class CustomerCartController extends Controller
 				: (json_decode($product->images, true) ?: []);
 
 				$product->image = $images[0] ?? null;
-				$product->currency_symbol = $targetCurrencySymbol ?? $sourceCurrencySymbol;
 				$product->category_url = $product->category_url() ?? null;
 				$product->parent_category_url = $product->parent_category_url() ?? null;
 				$product->url = $product->seoUrl->url ?? null;
@@ -196,6 +193,7 @@ class CustomerCartController extends Controller
 		$cart->tax_amount = number_format(($taxAmount * $currencyConversionRate), 2, '.', '');
 		$cart->total_amount = number_format(($totalAmount * $currencyConversionRate), 2, '.', '');
 		$cart->additional_amount_price = number_format(($additionalAmount * $currencyConversionRate), 2, '.', '');
+		$cart->base_currency = $targetCurrencyTitle ?? $sourceCurrencyTitle;
 
 		/* Remove unnecessary cart fields */
 		unset(
