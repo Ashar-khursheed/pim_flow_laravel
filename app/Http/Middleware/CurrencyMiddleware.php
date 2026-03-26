@@ -377,6 +377,7 @@
 //     }
 // }
 
+
 namespace App\Http\Middleware;
 
 use App\Models\Country;
@@ -406,78 +407,54 @@ class CurrencyMiddleware
         'PKR' => 'PKR', 'Rs'  => 'PKR', 'Rs.' => 'PKR',
     ];
 
+    // ISO-2 code → DB country name
     private const ISO_TO_NAME = [
-        'AE' => 'UAE',           'SA' => 'Saudi Arabia',
-        'PK' => 'Pakistan',      'IN' => 'India',
-        'US' => 'United States', 'GB' => 'United Kingdom',
-        'BH' => 'Bahrain',       'KW' => 'Kuwait',
-        'QA' => 'Qatar',         'OM' => 'Oman',
+        'AE' => 'UAE',            'SA' => 'Saudi Arabia',
+        'PK' => 'Pakistan',       'IN' => 'India',
+        'US' => 'United States',  'GB' => 'United Kingdom',
+        'BH' => 'Bahrain',        'KW' => 'Kuwait',
+        'QA' => 'Qatar',          'OM' => 'Oman',
     ];
 
     private const BASE_CODE   = 'AED';
     private const BASE_SYMBOL = 'AED';
-    private const BASE_RATE   = 3.6725;
-
-    // Cookie name jisme country ISO store hogi
-    private const COUNTRY_COOKIE = 'x_visitor_country';
+    private const BASE_RATE   = 3.6725; // 1 USD = 3.6725 AED
 
     public function __construct(protected GeoLocationService $geoService) {}
 
+    // ─────────────────────────────────────────────
+    // MAIN
+    // ─────────────────────────────────────────────
     public function handle(Request $request, Closure $next)
     {
+        // Only run for frontend routes
         if (!str_contains($request->path(), 'frontend')) {
             return $next($request);
         }
 
-        // Country detect karo
-        [$isoCode, $source] = $this->detectCountry($request);
+        // Detect country → get currency context
+        $ctx = $this->detectCurrency($request);
 
-        // Currency context banao
-        $ctx = $isoCode
-            ? $this->getCurrencyForIso($isoCode)
-            : $this->defaultContext();
-
+        // Make it available globally (e.g. in controllers/services)
         app()->instance('currency.context', $ctx);
 
+        // Run the actual request
         $response = $next($request);
 
+        // Only transform successful JSON responses
         if (!$response instanceof JsonResponse || !$response->isSuccessful()) {
             return $response;
         }
 
+        // Set no-cache headers so CDN never serves wrong currency to anyone
         $this->setNoCacheHeaders($response);
 
-        // ✅ VPN FIX:
-        // - GeoIP/CDN se jo ISO aaye aur cookie mein jo ho alag hain → cookie update karo
-        // - Cookie nahi hai aur GeoIP se mili → cookie set karo
-        $cookieIso   = $request->cookie(self::COUNTRY_COOKIE);
-        $shouldUpdate = $isoCode && (
-            $source === 'geoip' ||   // pehli baar GeoIP se mili
-            $source === 'cdn'  ||   // CDN se mili (most reliable)
-            ($cookieIso && strtoupper($cookieIso) !== strtoupper($isoCode)) // VPN change hua
-        );
-
-        if ($shouldUpdate) {
-            $response->headers->setCookie(
-                cookie(
-                    self::COUNTRY_COOKIE,
-                    strtoupper($isoCode),
-                    60 * 24 * 30, // 30 din
-                    '/',
-                    null,
-                    true,  // secure
-                    false, // httpOnly false — frontend bhi read kar sake
-                    false,
-                    'Lax'
-                )
-            );
-        }
-
-        // AED no margin → kuch convert nahi karna
+        // AED with no margin → nothing to convert, return as-is
         if ($ctx['is_default'] && $ctx['margin'] == 0) {
             return $response;
         }
 
+        // Convert prices in response
         $data = $response->getData(true);
         $response->setData($this->convertPrices($data, $ctx));
 
@@ -485,63 +462,75 @@ class CurrencyMiddleware
     }
 
     // ─────────────────────────────────────────────
-    // Country detect karo — 4 sources priority mein
-    // Returns: [isoCode|null, source_name]
+    // STEP 1: Detect which country the request is from
     // ─────────────────────────────────────────────
-    private function detectCountry(Request $request): array
+    private function detectCurrency(Request $request): array
     {
-        // Priority 1: Manual force (testing ke liye)
-        $force = $request->header('X-Forced-Country') ?? $request->query('force_country');
-        if ($force) {
-            Log::info('CURRENCY: source=forced', ['val' => $force]);
-            return [$force, 'forced'];
+        // Allow manual override (for testing)
+        $forceCountry = $request->header('X-Forced-Country')
+            ?? $request->query('force_country');
+
+        if ($forceCountry) {
+            return $this->getCurrencyForCountry($forceCountry, 'forced_' . $forceCountry);
         }
 
-        // Priority 2: CDN header (CloudFront / Cloudflare)
-        $cdn = $request->header('CloudFront-Viewer-Country')
-            ?? $request->header('CF-IPCountry');
-        if ($cdn && $cdn !== 'XX' && strlen($cdn) === 2) {
-            Log::info('CURRENCY: source=cdn', ['iso' => $cdn]);
-            return [strtoupper($cdn), 'cdn'];
+        // ── Priority 1: Cloudflare / CloudFront CDN header (most reliable, works on mobile too)
+        $cdnIso = $request->header('CF-IPCountry')
+            ?? $request->header('CloudFront-Viewer-Country');
+
+        if ($cdnIso && $cdnIso !== 'XX' && strlen($cdnIso) === 2) {
+            return $this->getCurrencyForCountry($cdnIso, 'cdn_' . strtolower($cdnIso));
         }
 
-        // Priority 3: Cookie — already detect ho chuki hai pehle
-        $cookie = $request->cookie(self::COUNTRY_COOKIE);
-        if ($cookie && strlen($cookie) === 2) {
-            Log::info('CURRENCY: source=cookie', ['iso' => $cookie]);
-            return [strtoupper($cookie), 'cookie'];
-        }
-
-        // Priority 4: GeoIP — sirf tab jab upar teeno na hon
+        // ── Priority 2: GeoIP lookup by real IP
         $ip = $this->getRealIp($request);
+
         if ($ip && !$this->isPrivateIp($ip)) {
-            $iso = $this->geoLookup($ip);
-            if ($iso) {
-                Log::info('CURRENCY: source=geoip', ['ip' => $ip, 'iso' => $iso]);
-                return [strtoupper($iso), 'geoip'];
-            }
+            return $this->getCurrencyForCountry($ip, 'ip_' . md5($ip), isIp: true);
         }
 
-        Log::info('CURRENCY: source=default (private ip or geoip failed)');
-        return [null, 'default'];
+        // ── Fallback: default AED (local/private IP)
+        return $this->defaultContext();
     }
 
     // ─────────────────────────────────────────────
-    // ISO code se currency context — server-side cache
+    // STEP 2: Given a country identifier, return currency context
+    // Cache only successful resolutions for 6h, failures for 2min
     // ─────────────────────────────────────────────
-    private function getCurrencyForIso(string $iso): array
+    private function getCurrencyForCountry(string $identifier, string $cacheKey, bool $isIp = false): array
     {
-        $cacheKey = 'curr_iso_' . strtolower($iso);
-
-        // Server cache check
-        $cached = Cache::get($cacheKey);
+        // Check cache first
+        $cached = Cache::get('curr_ctx_' . $cacheKey);
         if ($cached) {
             return $cached;
         }
 
-        // ISO → DB name
-        $dbName = self::ISO_TO_NAME[strtoupper($iso)] ?? null;
+        // Resolve country name
+        if ($isIp) {
+            // GeoIP lookup
+            try {
+                $geo        = $this->geoService->getLocation($identifier);
+                $countryRaw = $geo['country'] ?? null;
+            } catch (\Throwable $e) {
+                Log::error('CURRENCY: GeoIP failed', ['ip' => $identifier, 'err' => $e->getMessage()]);
+                $countryRaw = null;
+            }
+        } else {
+            $countryRaw = $identifier;
+        }
 
+        if (!$countryRaw) {
+            // GeoIP failed — cache for only 2 min so it retries soon
+            Cache::put('curr_ctx_' . $cacheKey, $this->defaultContext(), now()->addMinutes(2));
+            return $this->defaultContext();
+        }
+
+        // Normalize: ISO-2 code or full name → DB-friendly name
+        $dbName = strlen($countryRaw) === 2
+            ? (self::ISO_TO_NAME[strtoupper($countryRaw)] ?? null)
+            : $countryRaw;
+
+        // DB lookup
         $country = null;
 
         if ($dbName) {
@@ -550,20 +539,21 @@ class CurrencyMiddleware
                 ->first();
         }
 
-        // Fallback: iso_code column se try karo
-        if (!$country) {
+        // Fallback: try iso_code column if name lookup failed
+        if (!$country && strlen($countryRaw) === 2) {
             $country = Country::with('currency')
-                ->whereRaw('UPPER(iso_code) = ?', [strtoupper($iso)])
+                ->whereRaw('UPPER(iso_code) = ?', [strtoupper($countryRaw)])
                 ->first();
         }
 
         if (!$country || !$country->currency) {
-            Log::warning('CURRENCY: Country not in DB', ['iso' => $iso]);
-            // ✅ AED fallback ko sirf 2 min cache karo — retry jaldi ho
-            Cache::put($cacheKey, $this->defaultContext(), now()->addMinutes(2));
+            Log::warning('CURRENCY: Country not in DB', ['input' => $countryRaw]);
+            // Unknown country — cache 2 min only
+            Cache::put('curr_ctx_' . $cacheKey, $this->defaultContext(), now()->addMinutes(2));
             return $this->defaultContext();
         }
 
+        // Build context
         $symbol = $country->currency->symbol;
         $code   = self::SYMBOL_TO_CODE[$symbol] ?? $symbol;
 
@@ -577,52 +567,20 @@ class CurrencyMiddleware
             'rates'          => $this->getExchangeRates(),
         ];
 
-        Log::info('CURRENCY: Resolved', ['iso' => $iso, 'currency' => $code]);
+        Log::info('CURRENCY: Resolved', [
+            'input'    => $identifier,
+            'country'  => $country->name,
+            'currency' => $code,
+        ]);
 
-        // ✅ Successful resolution → 6 hours cache
-        Cache::put($cacheKey, $ctx, now()->addHours(6));
+        // Successful resolution → cache 6 hours
+        Cache::put('curr_ctx_' . $cacheKey, $ctx, now()->addHours(6));
 
         return $ctx;
     }
 
     // ─────────────────────────────────────────────
-    // GeoIP lookup — ISO-2 return karta hai
-    // ─────────────────────────────────────────────
-    private function geoLookup(string $ip): ?string
-    {
-        // IP level cache — same IP baar baar GeoIP call na kare
-        $cacheKey = 'geoip_' . md5($ip);
-        $cached   = Cache::get($cacheKey);
-        if ($cached !== null) {
-            return $cached ?: null; // empty string = previously failed
-        }
-
-        try {
-            $geo     = $this->geoService->getLocation($ip);
-            $country = $geo['country'] ?? null; // GeoService jo bhi return kare
-
-            // Agar full name return karta hai GeoService toh ISO mein convert karo
-            if ($country && strlen($country) > 2) {
-                $flipped = array_flip(self::ISO_TO_NAME);
-                $country = $flipped[$country] ?? null;
-            }
-
-            if ($country) {
-                // ✅ Cache: 24 hours (same IP dobara call nahi hoga)
-                Cache::put($cacheKey, strtoupper($country), now()->addHours(24));
-                return strtoupper($country);
-            }
-        } catch (\Throwable $e) {
-            Log::error('CURRENCY: GeoIP failed', ['ip' => $ip, 'err' => $e->getMessage()]);
-        }
-
-        // ✅ Failure cache: 5 min (retry hoga soon)
-        Cache::put($cacheKey, '', now()->addMinutes(5));
-        return null;
-    }
-
-    // ─────────────────────────────────────────────
-    // Price conversion
+    // STEP 3: Convert all price fields in response
     // ─────────────────────────────────────────────
     private function convertPrices(mixed $data, array $ctx): mixed
     {
@@ -639,8 +597,11 @@ class CurrencyMiddleware
         $needsConv  = !($ctx['is_default'] && $margin == 0);
 
         foreach ($data as $key => &$value) {
+            // Recurse into nested arrays/objects
             if (is_array($value)) {
                 $value = $this->convertPrices($value, $ctx);
+
+                // Update nested currency object fields
                 if ($key === 'currency' && isset($value['symbol'])) {
                     $value['symbol'] = $symbol;
                     $value['title']  = $ctx['currency_title'] ?? $value['title'] ?? '';
@@ -648,28 +609,36 @@ class CurrencyMiddleware
                 continue;
             }
 
+            // ── Convert numeric price fields
             if ($needsConv && in_array($key, self::PRICE_FIELDS, true) && is_numeric($value) && $value > 0) {
                 $price = (float) $value;
 
+                // Apply margin first
                 if ($margin != 0) {
                     $price = $price * (1 + $margin / 100);
                 }
 
-                if ($targetCode !== self::BASE_CODE && $targetRate) {
-                    $price = ($price / self::BASE_RATE) * $targetRate;
-                } elseif ($targetCode !== self::BASE_CODE) {
-                    Log::warning('CURRENCY: No rate for ' . $targetCode);
+                // Convert from AED to target currency
+                if ($targetCode !== self::BASE_CODE) {
+                    if ($targetRate) {
+                        // AED → USD → target
+                        $price = ($price / self::BASE_RATE) * $targetRate;
+                    } else {
+                        Log::warning('CURRENCY: No rate for ' . $targetCode);
+                    }
                 }
 
                 $value = round($price, $decimals);
                 continue;
             }
 
+            // ── Replace bare currency code string e.g. "AED" → "SAR"
             if ($key === 'currency' && is_string($value) && strlen($value) <= 10) {
                 $value = $symbol;
                 continue;
             }
 
+            // ── Replace symbol in formatted price strings e.g. "AED 100"
             if (in_array($key, ['currency_title', 'price_with_symbol'], true) && is_string($value)) {
                 $value = preg_replace(
                     '/\b(AED|USD|SAR|KWD|BHD|QAR|OMR|PKR|INR|EUR|GBP|Rs\.?)\b|\$/',
@@ -685,18 +654,25 @@ class CurrencyMiddleware
     // ─────────────────────────────────────────────
     // HELPERS
     // ─────────────────────────────────────────────
+
+    /**
+     * Get the real client IP — handles Cloudflare, proxies, IPv6, CGNAT
+     */
     private function getRealIp(Request $request): ?string
     {
+        // Cloudflare sets this to the true client IP always
         $ip = $request->header('CF-Connecting-IP');
         if ($ip && filter_var(trim($ip), FILTER_VALIDATE_IP)) {
             return trim($ip);
         }
 
+        // Nginx reverse proxy
         $ip = $request->header('X-Real-IP');
         if ($ip && filter_var(trim($ip), FILTER_VALIDATE_IP)) {
             return trim($ip);
         }
 
+        // X-Forwarded-For — find first public IP (skip private + CGNAT)
         $forwarded = $request->header('X-Forwarded-For');
         if ($forwarded) {
             foreach (array_map('trim', explode(',', $forwarded)) as $candidate) {
@@ -719,21 +695,24 @@ class CurrencyMiddleware
             return true;
         }
 
+        // IPv6 — only loopback + link-local are "private"
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
             return $ip === '::1' || str_starts_with(strtolower($ip), 'fe80:');
         }
 
+        // IPv4 private ranges
         if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             return false;
         }
 
         $long = ip2long($ip);
+
         foreach ([
             ['10.0.0.0',    '10.255.255.255'],
             ['172.16.0.0',  '172.31.255.255'],
             ['192.168.0.0', '192.168.255.255'],
             ['169.254.0.0', '169.254.255.255'],
-            ['100.64.0.0',  '100.127.255.255'],
+            ['100.64.0.0',  '100.127.255.255'], // CGNAT (mobile carriers)
         ] as [$start, $end]) {
             if ($long >= ip2long($start) && $long <= ip2long($end)) {
                 return true;
@@ -777,6 +756,7 @@ class CurrencyMiddleware
                 Log::error('CURRENCY: Rate fetch failed', ['err' => $e->getMessage()]);
             }
 
+            // Hardcoded fallback
             return [
                 'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
                 'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
@@ -799,405 +779,3 @@ class CurrencyMiddleware
         ];
     }
 }
-
-// namespace App\Http\Middleware;
-
-// use App\Models\Country;
-// use App\Services\GeoLocationService;
-// use Closure;
-// use Illuminate\Http\Request;
-// use Illuminate\Support\Facades\Cache;
-// use Illuminate\Support\Facades\Http;
-// use Illuminate\Support\Facades\Log;
-// use Symfony\Component\HttpFoundation\JsonResponse;
-
-// class CurrencyMiddleware
-// {
-//     private const PRICE_FIELDS = [
-//         'price', 'sale_price', 'list_price', 'cost_per_item',
-//         'total_cost_per_item', 'map', 'surcharge', 'additional_cost',
-//         'shipping_charge', 'restocking_fees', 'original_price',
-//         'front_sale_price', 'best_price',
-//     ];
-
-//     private const SYMBOL_TO_CODE = [
-//         'AED' => 'AED', 'SAR' => 'SAR', 'KWD' => 'KWD',
-//         'BHD' => 'BHD', 'QAR' => 'QAR', 'OMR' => 'OMR',
-//         'USD' => 'USD', '$'   => 'USD', '€'   => 'EUR',
-//         '£'   => 'GBP', '₹'   => 'INR', '₨'   => 'PKR',
-//         'EUR' => 'EUR', 'GBP' => 'GBP', 'INR' => 'INR',
-//         'PKR' => 'PKR', 'Rs'  => 'PKR', 'Rs.' => 'PKR',
-//     ];
-
-//     // ISO-2 code → DB country name
-//     private const ISO_TO_NAME = [
-//         'AE' => 'UAE',            'SA' => 'Saudi Arabia',
-//         'PK' => 'Pakistan',       'IN' => 'India',
-//         'US' => 'United States',  'GB' => 'United Kingdom',
-//         'BH' => 'Bahrain',        'KW' => 'Kuwait',
-//         'QA' => 'Qatar',          'OM' => 'Oman',
-//     ];
-
-//     private const BASE_CODE   = 'AED';
-//     private const BASE_SYMBOL = 'AED';
-//     private const BASE_RATE   = 3.6725; // 1 USD = 3.6725 AED
-
-//     public function __construct(protected GeoLocationService $geoService) {}
-
-//     // ─────────────────────────────────────────────
-//     // MAIN
-//     // ─────────────────────────────────────────────
-//     public function handle(Request $request, Closure $next)
-//     {
-//         // Only run for frontend routes
-//         if (!str_contains($request->path(), 'frontend')) {
-//             return $next($request);
-//         }
-
-//         // Detect country → get currency context
-//         $ctx = $this->detectCurrency($request);
-
-//         // Make it available globally (e.g. in controllers/services)
-//         app()->instance('currency.context', $ctx);
-
-//         // Run the actual request
-//         $response = $next($request);
-
-//         // Only transform successful JSON responses
-//         if (!$response instanceof JsonResponse || !$response->isSuccessful()) {
-//             return $response;
-//         }
-
-//         // Set no-cache headers so CDN never serves wrong currency to anyone
-//         $this->setNoCacheHeaders($response);
-
-//         // AED with no margin → nothing to convert, return as-is
-//         if ($ctx['is_default'] && $ctx['margin'] == 0) {
-//             return $response;
-//         }
-
-//         // Convert prices in response
-//         $data = $response->getData(true);
-//         $response->setData($this->convertPrices($data, $ctx));
-
-//         return $response;
-//     }
-
-//     // ─────────────────────────────────────────────
-//     // STEP 1: Detect which country the request is from
-//     // ─────────────────────────────────────────────
-//     private function detectCurrency(Request $request): array
-//     {
-//         // Allow manual override (for testing)
-//         $forceCountry = $request->header('X-Forced-Country')
-//             ?? $request->query('force_country');
-
-//         if ($forceCountry) {
-//             return $this->getCurrencyForCountry($forceCountry, 'forced_' . $forceCountry);
-//         }
-
-//         // ── Priority 1: Cloudflare / CloudFront CDN header (most reliable, works on mobile too)
-//         $cdnIso = $request->header('CF-IPCountry')
-//             ?? $request->header('CloudFront-Viewer-Country');
-
-//         if ($cdnIso && $cdnIso !== 'XX' && strlen($cdnIso) === 2) {
-//             return $this->getCurrencyForCountry($cdnIso, 'cdn_' . strtolower($cdnIso));
-//         }
-
-//         // ── Priority 2: GeoIP lookup by real IP
-//         $ip = $this->getRealIp($request);
-
-//         if ($ip && !$this->isPrivateIp($ip)) {
-//             return $this->getCurrencyForCountry($ip, 'ip_' . md5($ip), isIp: true);
-//         }
-
-//         // ── Fallback: default AED (local/private IP)
-//         return $this->defaultContext();
-//     }
-
-//     // ─────────────────────────────────────────────
-//     // STEP 2: Given a country identifier, return currency context
-//     // Cache only successful resolutions for 6h, failures for 2min
-//     // ─────────────────────────────────────────────
-//     private function getCurrencyForCountry(string $identifier, string $cacheKey, bool $isIp = false): array
-//     {
-//         // Check cache first
-//         $cached = Cache::get('curr_ctx_' . $cacheKey);
-//         if ($cached) {
-//             return $cached;
-//         }
-
-//         // Resolve country name
-//         if ($isIp) {
-//             // GeoIP lookup
-//             try {
-//                 $geo        = $this->geoService->getLocation($identifier);
-//                 $countryRaw = $geo['country'] ?? null;
-//             } catch (\Throwable $e) {
-//                 Log::error('CURRENCY: GeoIP failed', ['ip' => $identifier, 'err' => $e->getMessage()]);
-//                 $countryRaw = null;
-//             }
-//         } else {
-//             $countryRaw = $identifier;
-//         }
-
-//         if (!$countryRaw) {
-//             // GeoIP failed — cache for only 2 min so it retries soon
-//             Cache::put('curr_ctx_' . $cacheKey, $this->defaultContext(), now()->addMinutes(2));
-//             return $this->defaultContext();
-//         }
-
-//         // Normalize: ISO-2 code or full name → DB-friendly name
-//         $dbName = strlen($countryRaw) === 2
-//             ? (self::ISO_TO_NAME[strtoupper($countryRaw)] ?? null)
-//             : $countryRaw;
-
-//         // DB lookup
-//         $country = null;
-
-//         if ($dbName) {
-//             $country = Country::with('currency')
-//                 ->whereRaw('LOWER(name) = ?', [strtolower($dbName)])
-//                 ->first();
-//         }
-
-//         // Fallback: try iso_code column if name lookup failed
-//         if (!$country && strlen($countryRaw) === 2) {
-//             $country = Country::with('currency')
-//                 ->whereRaw('UPPER(iso_code) = ?', [strtoupper($countryRaw)])
-//                 ->first();
-//         }
-
-//         if (!$country || !$country->currency) {
-//             Log::warning('CURRENCY: Country not in DB', ['input' => $countryRaw]);
-//             // Unknown country — cache 2 min only
-//             Cache::put('curr_ctx_' . $cacheKey, $this->defaultContext(), now()->addMinutes(2));
-//             return $this->defaultContext();
-//         }
-
-//         // Build context
-//         $symbol = $country->currency->symbol;
-//         $code   = self::SYMBOL_TO_CODE[$symbol] ?? $symbol;
-
-//         $ctx = [
-//             'symbol'         => $symbol,
-//             'margin'         => (float) $country->margin,
-//             'currency_title' => $country->currency->title,
-//             'currency_code'  => $code,
-//             'is_default'     => ($code === self::BASE_CODE),
-//             'decimals'       => (int) ($country->currency->decimals ?? 2),
-//             'rates'          => $this->getExchangeRates(),
-//         ];
-
-//         Log::info('CURRENCY: Resolved', [
-//             'input'    => $identifier,
-//             'country'  => $country->name,
-//             'currency' => $code,
-//         ]);
-
-//         // Successful resolution → cache 6 hours
-//         Cache::put('curr_ctx_' . $cacheKey, $ctx, now()->addHours(6));
-
-//         return $ctx;
-//     }
-
-//     // ─────────────────────────────────────────────
-//     // STEP 3: Convert all price fields in response
-//     // ─────────────────────────────────────────────
-//     private function convertPrices(mixed $data, array $ctx): mixed
-//     {
-//         if (!is_array($data)) {
-//             return $data;
-//         }
-
-//         $symbol     = $ctx['symbol']        ?? self::BASE_SYMBOL;
-//         $margin     = $ctx['margin']        ?? 0;
-//         $targetCode = $ctx['currency_code'] ?? self::BASE_CODE;
-//         $decimals   = $ctx['decimals']      ?? 2;
-//         $rates      = $ctx['rates']         ?? [];
-//         $targetRate = $rates[$targetCode]   ?? null;
-//         $needsConv  = !($ctx['is_default'] && $margin == 0);
-
-//         foreach ($data as $key => &$value) {
-//             // Recurse into nested arrays/objects
-//             if (is_array($value)) {
-//                 $value = $this->convertPrices($value, $ctx);
-
-//                 // Update nested currency object fields
-//                 if ($key === 'currency' && isset($value['symbol'])) {
-//                     $value['symbol'] = $symbol;
-//                     $value['title']  = $ctx['currency_title'] ?? $value['title'] ?? '';
-//                 }
-//                 continue;
-//             }
-
-//             // ── Convert numeric price fields
-//             if ($needsConv && in_array($key, self::PRICE_FIELDS, true) && is_numeric($value) && $value > 0) {
-//                 $price = (float) $value;
-
-//                 // Apply margin first
-//                 if ($margin != 0) {
-//                     $price = $price * (1 + $margin / 100);
-//                 }
-
-//                 // Convert from AED to target currency
-//                 if ($targetCode !== self::BASE_CODE) {
-//                     if ($targetRate) {
-//                         // AED → USD → target
-//                         $price = ($price / self::BASE_RATE) * $targetRate;
-//                     } else {
-//                         Log::warning('CURRENCY: No rate for ' . $targetCode);
-//                     }
-//                 }
-
-//                 $value = round($price, $decimals);
-//                 continue;
-//             }
-
-//             // ── Replace bare currency code string e.g. "AED" → "SAR"
-//             if ($key === 'currency' && is_string($value) && strlen($value) <= 10) {
-//                 $value = $symbol;
-//                 continue;
-//             }
-
-//             // ── Replace symbol in formatted price strings e.g. "AED 100"
-//             if (in_array($key, ['currency_title', 'price_with_symbol'], true) && is_string($value)) {
-//                 $value = preg_replace(
-//                     '/\b(AED|USD|SAR|KWD|BHD|QAR|OMR|PKR|INR|EUR|GBP|Rs\.?)\b|\$/',
-//                     $symbol,
-//                     $value
-//                 );
-//             }
-//         }
-
-//         return $data;
-//     }
-
-//     // ─────────────────────────────────────────────
-//     // HELPERS
-//     // ─────────────────────────────────────────────
-
-//     /**
-//      * Get the real client IP — handles Cloudflare, proxies, IPv6, CGNAT
-//      */
-//     private function getRealIp(Request $request): ?string
-//     {
-//         // Cloudflare sets this to the true client IP always
-//         $ip = $request->header('CF-Connecting-IP');
-//         if ($ip && filter_var(trim($ip), FILTER_VALIDATE_IP)) {
-//             return trim($ip);
-//         }
-
-//         // Nginx reverse proxy
-//         $ip = $request->header('X-Real-IP');
-//         if ($ip && filter_var(trim($ip), FILTER_VALIDATE_IP)) {
-//             return trim($ip);
-//         }
-
-//         // X-Forwarded-For — find first public IP (skip private + CGNAT)
-//         $forwarded = $request->header('X-Forwarded-For');
-//         if ($forwarded) {
-//             foreach (array_map('trim', explode(',', $forwarded)) as $candidate) {
-//                 if (
-//                     filter_var($candidate, FILTER_VALIDATE_IP) &&
-//                     filter_var($candidate, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) &&
-//                     !$this->isCgnat($candidate)
-//                 ) {
-//                     return $candidate;
-//                 }
-//             }
-//         }
-
-//         return $request->ip();
-//     }
-
-//     private function isPrivateIp(string $ip): bool
-//     {
-//         if (in_array($ip, ['127.0.0.1', '::1', ''], true)) {
-//             return true;
-//         }
-
-//         // IPv6 — only loopback + link-local are "private"
-//         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-//             return $ip === '::1' || str_starts_with(strtolower($ip), 'fe80:');
-//         }
-
-//         // IPv4 private ranges
-//         if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-//             return false;
-//         }
-
-//         $long = ip2long($ip);
-
-//         foreach ([
-//             ['10.0.0.0',    '10.255.255.255'],
-//             ['172.16.0.0',  '172.31.255.255'],
-//             ['192.168.0.0', '192.168.255.255'],
-//             ['169.254.0.0', '169.254.255.255'],
-//             ['100.64.0.0',  '100.127.255.255'], // CGNAT (mobile carriers)
-//         ] as [$start, $end]) {
-//             if ($long >= ip2long($start) && $long <= ip2long($end)) {
-//                 return true;
-//             }
-//         }
-
-//         return false;
-//     }
-
-//     private function isCgnat(string $ip): bool
-//     {
-//         if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-//             return false;
-//         }
-//         $long = ip2long($ip);
-//         return $long >= ip2long('100.64.0.0') && $long <= ip2long('100.127.255.255');
-//     }
-
-//     private function setNoCacheHeaders(JsonResponse $response): void
-//     {
-//         $response->headers->set('Cache-Control',                'private, no-cache, no-store, must-revalidate');
-//         $response->headers->set('Pragma',                       'no-cache');
-//         $response->headers->set('CDN-Cache-Control',            'no-store');
-//         $response->headers->set('Cloudflare-CDN-Cache-Control', 'no-store');
-//         $response->headers->set('Surrogate-Control',            'no-store');
-//         $response->headers->set('Vary',                         'CF-IPCountry, X-Forced-Country, Accept-Encoding');
-//     }
-
-//     private function getExchangeRates(): array
-//     {
-//         return Cache::remember('exchange_rates_v2', now()->addHours(6), function () {
-//             try {
-//                 $resp = Http::timeout(5)->get('https://open.er-api.com/v6/latest/USD');
-//                 if ($resp->successful()) {
-//                     $rates = $resp->json('rates', []);
-//                     if (!empty($rates)) {
-//                         return $rates;
-//                     }
-//                 }
-//             } catch (\Throwable $e) {
-//                 Log::error('CURRENCY: Rate fetch failed', ['err' => $e->getMessage()]);
-//             }
-
-//             // Hardcoded fallback
-//             return [
-//                 'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
-//                 'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
-//                 'OMR' => 0.3847, 'EUR' => 0.92,   'GBP' => 0.79,
-//                 'INR' => 83.5,   'PKR' => 278.47,
-//             ];
-//         });
-//     }
-
-//     private function defaultContext(): array
-//     {
-//         return [
-//             'symbol'         => self::BASE_SYMBOL,
-//             'margin'         => 0.0,
-//             'currency_title' => 'UAE Dirham',
-//             'currency_code'  => self::BASE_CODE,
-//             'is_default'     => true,
-//             'decimals'       => 2,
-//             'rates'          => [],
-//         ];
-//     }
-// }
