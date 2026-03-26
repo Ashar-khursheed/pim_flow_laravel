@@ -316,7 +316,7 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('countries', CountryController::class);
 	Route::get('currencies/convert', [CurrencyController::class, 'convertAll']);
-	Route::get('currencies/convert/batch', [CurrencyController::class, 'convertBatch']);
+	Route::post('currencies/convert/batch', [CurrencyController::class, 'convertBatch']);
 	Route::apiResource('currencies', CurrencyController::class);
 	Route::apiResource('horeca-pages',  HorecaPageController::class);
 
