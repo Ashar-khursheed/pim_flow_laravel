@@ -244,41 +244,161 @@ class PaymentHistoryController extends Controller
 	 *     )
 	 * )
 	 */
+	// public function store(Request $request)
+	// {
+	// 	try {
+	// 		// Validate the incoming request
+	// 		$validated = $request->validate([
+	// 			'order_number' => 'required|integer|exists:orders,order_number',
+	// 			'transaction_id' => 'nullable|string',
+	// 			'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,CC Avenue,Paymob,Stax,Square,Tabby,Cheque,Check,Tamara,COD,NetTerm,Ascentium Capital,Resolve Pay,Approve',
+	// 			'amount' => 'required|numeric|min:0.01|max:999999.99',
+	// 			'status' => 'required|string|in:Pending,Completed,Failed,Cancelled,Refunded',
+	// 			'payment_date' => 'required|date|before_or_equal:today',
+	// 			'notes' => 'nullable|string|max:1000',
+	// 			'payment_details' => 'nullable|json|max:2000',
+	// 			'payment_method' => 'nullable|string|max:255'
+	// 		]);
+
+	// 		if (!auth()->check()) {
+	// 			return response()->json([
+	// 				'message' => 'Authentication required.'
+	// 			], 401);
+	// 		}
+
+	// 		$order = Order::where('order_number', $request->order_number)->first();
+
+	// 		$validated['order_id'] = $order->id;
+	// 		$validated['created_by'] = auth()->id();
+	// 		$validated['rider_name'] = $request->rider_name;
+
+	// 		$total_amount = $order->total_amount;
+	// 		if ($total_amount < $request->amount) {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'Paid amount is greater than total amount ' . $total_amount,
+	// 			], 401);
+	// 		}
+
+	// 		// Upload payment image if available
+	// 		$validated['payment_img'] = uploadImageToWebpS3FromFile(
+	// 			$request,
+	// 			'payment_img',
+	// 			env('STORAGE_ENV') . '/customer/payment'
+	// 		);
+
+	// 		DB::beginTransaction();
+
+	// 		// Create the payment record
+	// 		$payment = PaymentManagement::create($validated);
+
+	// 		if (strtolower($request->status) !== 'pending') {
+	// 			$newPaidAmount = $order->paid_amount + $request->amount;
+	// 			$pendingAmount = $order->total_amount - $newPaidAmount;
+
+	// 			$order->update([
+	// 				'paid_amount' => $newPaidAmount,
+	// 				'pending_amount' => $pendingAmount,
+	// 				'is_paid' => $pendingAmount <= 0,
+	// 			]);
+
+	// 			if ($pendingAmount <= 0) {
+	// 				Log::channel('testLog')->info("reserve called");
+
+	// 				$order->update(['is_reserved' => 0]);
+	// 				// $order->update(['pay_with_cheque' => 0]);
+
+	// 				$batch = Bus::batch([])->name("Order Placed from Backend (Paid) - #{$order->order_number}")->dispatch();
+	// 				$batch->options['queue'] = config('app.website') . '_ORD_PLC';
+	// 				$batch->add(new OrderPlacedMailJob([
+	// 					'recordId' => $order->id
+	// 				]));
+	// 			}
+	// 		}
+
+	// 		DB::commit();
+
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => 'Payment recorded successfully.',
+	// 			'data' => $payment
+	// 		], 201);
+	// 	} catch (ValidationException $e) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'The given data was invalid.',
+	// 			'errors' => $e->errors()
+	// 		], 422);
+	// 	} catch (\Exception $e) {
+	// 		DB::rollBack();
+	// 		return response()->json([
+	// 			'message' => 'Something went wrong while creating the payment.',
+	// 			'error' => $e->getMessage()
+	// 		], 500);
+	// 	}
+	// }
 	public function store(Request $request)
 	{
 		try {
 			// Validate the incoming request
 			$validated = $request->validate([
-				'order_number' => 'required|integer|exists:orders,order_number',
+				'order_number'   => 'required|integer|exists:orders,order_number',
 				'transaction_id' => 'nullable|string',
-				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,CC Avenue,Paymob,Stax,Square,Tabby,Cheque,Check,Tamara,COD,NetTerm,Ascentium Capital,Resolve Pay,Approve',
-				'amount' => 'required|numeric|min:0.01|max:999999.99',
-				'status' => 'required|string|in:Pending,Completed,Failed,Cancelled,Refunded',
-				'payment_date' => 'required|date|before_or_equal:today',
-				'notes' => 'nullable|string|max:1000',
-				'payment_details' => 'nullable|json|max:2000',
+				'currency'       => 'nullable|string|max:10', // ✅ optional — default base currency
+				'payment_mode'   => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay,CC Avenue,Paymob,Stax,Square,Tabby,Cheque,Check,Tamara,COD,NetTerm,Ascentium Capital,Resolve Pay,Approve',
+				'amount'         => 'required|numeric|min:0.01|max:999999.99',
+				'status'         => 'required|string|in:Pending,Completed,Failed,Cancelled,Refunded',
+				'payment_date'   => 'required|date|before_or_equal:today',
+				'notes'          => 'nullable|string|max:1000',
+				'payment_details'=> 'nullable|json|max:2000',
 				'payment_method' => 'nullable|string|max:255'
 			]);
 
 			if (!auth()->check()) {
-				return response()->json([
-					'message' => 'Authentication required.'
-				], 401);
+				return response()->json(['message' => 'Authentication required.'], 401);
 			}
 
 			$order = Order::where('order_number', $request->order_number)->first();
 
-			$validated['order_id'] = $order->id;
-			$validated['created_by'] = auth()->id();
-			$validated['rider_name'] = $request->rider_name;
+			// ─────────────────────────────────────────────
+			// ✅ Currency conversion — amount AED mein convert karo
+			// ─────────────────────────────────────────────
+			$isUAE        = in_array(config('app.website'), ['UAE', 'UAE_T']);
+			$baseCurrency = $isUAE ? 'AED' : 'USD';
+			$inputCurrency = strtoupper($request->input('currency', $baseCurrency));
 
+			$paidAmountInBase = $inputCurrency !== $baseCurrency
+				? (\App\Helpers\CurrencyConverter::convertCurrency(
+					$inputCurrency,
+					$baseCurrency,
+					(float) $request->amount
+				  ) ?? (float) $request->amount)
+				: (float) $request->amount;
+
+			// Original currency + amount payment_details mein preserve karo
+			$existingDetails = $request->filled('payment_details')
+				? json_decode($request->payment_details, true)
+				: [];
+			$existingDetails['original_currency'] = $inputCurrency;
+			$existingDetails['original_amount']   = $request->amount;
+
+			// ─────────────────────────────────────────────
+			// Validate: converted amount order total se zyada nahi hona chahiye
+			// ─────────────────────────────────────────────
 			$total_amount = $order->total_amount;
-			if ($total_amount < $request->amount) {
+			if ($total_amount < $paidAmountInBase) {
 				return response()->json([
 					'success' => false,
 					'message' => 'Paid amount is greater than total amount ' . $total_amount,
 				], 401);
 			}
+
+			$validated['order_id']        = $order->id;
+			$validated['created_by']      = auth()->id();
+			$validated['rider_name']      = $request->rider_name;
+			$validated['amount']          = $paidAmountInBase;            // ✅ AED mein save
+			$validated['payment_details'] = json_encode($existingDetails); // ✅ original preserved
+			unset($validated['currency']); // currency column nahi hai table mein
 
 			// Upload payment image if available
 			$validated['payment_img'] = uploadImageToWebpS3FromFile(
@@ -293,20 +413,19 @@ class PaymentHistoryController extends Controller
 			$payment = PaymentManagement::create($validated);
 
 			if (strtolower($request->status) !== 'pending') {
-				$newPaidAmount = $order->paid_amount + $request->amount;
+				$newPaidAmount = $order->paid_amount + $paidAmountInBase;
 				$pendingAmount = $order->total_amount - $newPaidAmount;
 
 				$order->update([
-					'paid_amount' => $newPaidAmount,
-					'pending_amount' => $pendingAmount,
-					'is_paid' => $pendingAmount <= 0,
+					'paid_amount'   => $newPaidAmount,
+					'pending_amount'=> $pendingAmount,
+					'is_paid'       => $pendingAmount <= 0,
 				]);
 
 				if ($pendingAmount <= 0) {
 					Log::channel('testLog')->info("reserve called");
 
 					$order->update(['is_reserved' => 0]);
-					// $order->update(['pay_with_cheque' => 0]);
 
 					$batch = Bus::batch([])->name("Order Placed from Backend (Paid) - #{$order->order_number}")->dispatch();
 					$batch->options['queue'] = config('app.website') . '_ORD_PLC';
@@ -321,19 +440,20 @@ class PaymentHistoryController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Payment recorded successfully.',
-				'data' => $payment
+				'data'    => $payment
 			], 201);
+
 		} catch (ValidationException $e) {
 			return response()->json([
 				'success' => false,
 				'message' => 'The given data was invalid.',
-				'errors' => $e->errors()
+				'errors'  => $e->errors()
 			], 422);
 		} catch (\Exception $e) {
 			DB::rollBack();
 			return response()->json([
 				'message' => 'Something went wrong while creating the payment.',
-				'error' => $e->getMessage()
+				'error'   => $e->getMessage()
 			], 500);
 		}
 	}
