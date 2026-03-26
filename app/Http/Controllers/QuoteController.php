@@ -468,7 +468,89 @@ class QuoteController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function show($id)
+	// public function show($id)
+	// {
+	// 	$quote = Quote::find($id);
+	// 	if (!$quote) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => "Quote not found."
+	// 		]);
+	// 	}
+
+	// 	/* Load relationships */
+	// 	$quote->load([
+	// 		'customer:id,name,email,type,country_code,mobile_number',
+	// 		'customerAddress:id,address,city,country',
+	// 		'customerAddress.relatedCountry:id,name,currency_id',
+	// 		'customerAddress.relatedCountry.currency:id,title,symbol',
+	// 		'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+	// 		'quoteProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
+	// 		'quoteProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
+	// 		'quoteProducts.accessoryCharges.accessoryItem.accessory:id,name',
+	// 		'quoteProducts.product:id,name,images,sku,brand_id,barcode',
+	// 		'quoteProducts.product.brand:id,name',
+	// 		'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
+	// 		'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+	// 		'quoteProducts.product.warrantyAttribute:id,product_id,attribute_value',
+	// 		'quoteEmails',
+	// 	]);
+
+	// 	/* Mutate the data for each quote product */
+	// 	foreach ($quote->quoteProducts as $quoteProduct) {
+	// 		$product = $quoteProduct->product;
+	// 		if ($product) {
+	// 			$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+	// 			$product->brand_name = $product->brand->name ?? null;
+	// 			$product->url = $product->seoProductUrl->url ?? null;
+	// 			$product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
+	// 			$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
+	// 			unset($product->brand, $product->seoProductUrl);
+	// 		}
+
+	// 		$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+	// 		$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
+	// 		? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
+	// 		: null;
+
+	// 		if ($quoteProduct->accessoryCharges) {
+	// 			$quoteProduct->accessory_charges = $quoteProduct->accessoryCharges->map(function ($charge) {
+	// 				return [
+	// 					'id' => $charge->id,
+	// 					'accessory_item_id' => $charge->accessory_item_id,
+	// 					'accessory_item_name' => $charge->accessoryItem->name ?? null,
+	// 					'accessory_item_price' => $charge->accessoryItem->price ?? null,
+	// 					'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
+	// 					'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
+	// 					'amount' => $charge->amount,
+	// 				];
+	// 			});
+
+	// 			unset($quoteProduct->accessoryCharges);
+	// 		}
+
+	// 		/* Format numeric values to 2 decimal places */
+	// 		foreach (['unit_price', 'amount', 'accessory_item_charge', 'shipping_charge', 'total_amount'] as $key) {
+	// 			if (isset($quoteProduct->$key)) {
+	// 				$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+	// 			}
+	// 		}
+	// 	}
+
+	// 	foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_amount_price', 'additional_discount_amount', 'total_amount'] as $key) {
+	// 		if (isset($quote->$key)) {
+	// 			$quote->$key = number_format($quote->$key, 2, '.', '');
+	// 		}
+	// 	}
+
+	// 	$quote->base_currency = (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$');
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'data' => $quote
+	// 	]);
+	// }
+public function show($id)
 	{
 		$quote = Quote::find($id);
 		if (!$quote) {
@@ -496,61 +578,108 @@ class QuoteController extends BaseController
 			'quoteEmails',
 		]);
 
-		/* Mutate the data for each quote product */
+		// ─────────────────────────────────────────────
+		// ✅ Currency detect karo address ki country se
+		// ─────────────────────────────────────────────
+		$symbolToCode = [
+			'AED' => 'AED', 'SAR' => 'SAR', 'KWD' => 'KWD',
+			'BHD' => 'BHD', 'QAR' => 'QAR', 'OMR' => 'OMR',
+			'USD' => 'USD', '$'   => 'USD', '€'   => 'EUR',
+			'£'   => 'GBP', '₹'   => 'INR', 'EUR' => 'EUR',
+			'GBP' => 'GBP', 'INR' => 'INR',
+		];
+
+		$baseCurrency    = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : 'USD';
+		$targetCurrency  = $baseCurrency; // default
+		$targetSymbol    = $baseCurrency;
+		$targetTitle     = $baseCurrency;
+
+		$addressCountry  = $quote->customerAddress->relatedCountry ?? null;
+		$addressCurrency = $addressCountry->currency ?? null;
+
+		if ($addressCurrency) {
+			$symbol         = $addressCurrency->symbol;
+			$targetCurrency = $symbolToCode[$symbol] ?? $baseCurrency;
+			$targetSymbol   = $symbol;
+			$targetTitle    = $addressCurrency->title ?? $targetCurrency;
+		}
+
+		$needsConversion = $targetCurrency !== $baseCurrency;
+
+		// Helper — convert amount if needed
+		$convert = function ($amount) use ($needsConversion, $baseCurrency, $targetCurrency) {
+			if (!$needsConversion || !is_numeric($amount) || $amount <= 0) {
+				return (float) $amount;
+			}
+			return \App\Helpers\CurrencyConverter::convertCurrency($baseCurrency, $targetCurrency, (float) $amount)
+				?? (float) $amount;
+		};
+
+		// ─────────────────────────────────────────────
+		// Quote product prices convert karo
+		// ─────────────────────────────────────────────
 		foreach ($quote->quoteProducts as $quoteProduct) {
 			$product = $quoteProduct->product;
 			if ($product) {
-				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-				$product->brand_name = $product->brand->name ?? null;
-				$product->url = $product->seoProductUrl->url ?? null;
-				$product->category_url = method_exists($product, 'category_url') ? $product->category_url() : null;
+				$product->images      = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+				$product->brand_name  = $product->brand->name ?? null;
+				$product->url         = $product->seoProductUrl->url ?? null;
+				$product->category_url        = method_exists($product, 'category_url') ? $product->category_url() : null;
 				$product->parent_category_url = method_exists($product, 'parent_category_url') ? $product->parent_category_url() : null;
 				unset($product->brand, $product->seoProductUrl);
 			}
 
-			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
+			$quoteProduct->product_supplier     = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'shipping_charge', 'delivery_days', 'return_policy']);
 			$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
-			? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
-			: null;
+				? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
+				: null;
 
 			if ($quoteProduct->accessoryCharges) {
-				$quoteProduct->accessory_charges = $quoteProduct->accessoryCharges->map(function ($charge) {
+				$quoteProduct->accessory_charges = $quoteProduct->accessoryCharges->map(function ($charge) use ($convert) {
 					return [
-						'id' => $charge->id,
-						'accessory_item_id' => $charge->accessory_item_id,
-						'accessory_item_name' => $charge->accessoryItem->name ?? null,
-						'accessory_item_price' => $charge->accessoryItem->price ?? null,
+						'id'                   => $charge->id,
+						'accessory_item_id'    => $charge->accessory_item_id,
+						'accessory_item_name'  => $charge->accessoryItem->name ?? null,
+						'accessory_item_price' => number_format($convert($charge->accessoryItem->price ?? 0), 2, '.', ''),
 						'product_accessory_id' => $charge->accessoryItem->accessory->id ?? null,
 						'product_accessory_name' => $charge->accessoryItem->accessory->name ?? null,
-						'amount' => $charge->amount,
+						'amount'               => number_format($convert($charge->amount), 2, '.', ''),
 					];
 				});
 
 				unset($quoteProduct->accessoryCharges);
 			}
 
-			/* Format numeric values to 2 decimal places */
+			// ✅ Convert product level price fields
 			foreach (['unit_price', 'amount', 'accessory_item_charge', 'shipping_charge', 'total_amount'] as $key) {
 				if (isset($quoteProduct->$key)) {
-					$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+					$quoteProduct->$key = number_format($convert($quoteProduct->$key), 2, '.', '');
 				}
 			}
 		}
 
+		// ─────────────────────────────────────────────
+		// ✅ Convert quote level price fields
+		// ─────────────────────────────────────────────
 		foreach (['shipping_charge', 'amount', 'tax_amount', 'discount', 'additional_amount_price', 'additional_discount_amount', 'total_amount'] as $key) {
 			if (isset($quote->$key)) {
-				$quote->$key = number_format($quote->$key, 2, '.', '');
+				$quote->$key = number_format($convert($quote->$key), 2, '.', '');
 			}
 		}
 
-		$quote->base_currency = (in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : '$');
+		// ─────────────────────────────────────────────
+		// ✅ Currency info response mein attach karo
+		// ─────────────────────────────────────────────
+		$quote->base_currency    = $baseCurrency;
+		$quote->currency_code    = $targetCurrency;
+		$quote->currency_symbol  = $targetSymbol;
+		$quote->currency_title   = $targetTitle;
 
 		return response()->json([
 			'success' => true,
-			'data' => $quote
+			'data'    => $quote
 		]);
 	}
-
 	/**
 	 * @OA\Put(
 	 *     path="/api/quotes/{id}",
