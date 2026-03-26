@@ -405,6 +405,7 @@ class CurrencyMiddleware
         '£'   => 'GBP', '₹'   => 'INR', '₨'   => 'PKR',
         'EUR' => 'EUR', 'GBP' => 'GBP', 'INR' => 'INR',
         'PKR' => 'PKR', 'Rs'  => 'PKR', 'Rs.' => 'PKR',
+        'MVR' => 'MVR', 'SCR' => 'SCR',
     ];
 
     // ISO-2 code → DB country name
@@ -414,6 +415,7 @@ class CurrencyMiddleware
         'US' => 'United States',  'GB' => 'United Kingdom',
         'BH' => 'Bahrain',        'KW' => 'Kuwait',
         'QA' => 'Qatar',          'OM' => 'Oman',
+        'MV' => 'Maldives',      'SC' => 'Seychelles',
     ];
 
     private const BASE_CODE   = 'AED';
@@ -761,7 +763,8 @@ class CurrencyMiddleware
                 'AED' => 3.6725, 'USD' => 1.0,    'SAR' => 3.75,
                 'KWD' => 0.3066, 'BHD' => 0.376,  'QAR' => 3.64,
                 'OMR' => 0.3847, 'EUR' => 0.92,   'GBP' => 0.79,
-                'INR' => 83.5,   'PKR' => 278.47,
+                'INR' => 83.5,   'PKR' => 278.47, 'MVR' => 15.4,
+                'SCR' => 14.2,
             ];
         });
     }
