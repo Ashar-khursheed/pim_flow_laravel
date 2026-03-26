@@ -550,7 +550,7 @@ class QuoteController extends BaseController
 	// 		'data' => $quote
 	// 	]);
 	// }
-public function show($id)
+	public function show($id)
 	{
 		$quote = Quote::find($id);
 		if (!$quote) {
@@ -604,7 +604,9 @@ public function show($id)
 			$targetTitle    = $addressCurrency->title ?? $targetCurrency;
 		}
 
-		$needsConversion = $targetCurrency !== $baseCurrency;
+		// ✅ ?convert=1 pass karo tab hi conversion hogi, warna AED as-is
+		$needsConversion = $targetCurrency !== $baseCurrency
+			&& filter_var(request()->query('convert', false), FILTER_VALIDATE_BOOLEAN);
 
 		// Helper — convert amount if needed
 		$convert = function ($amount) use ($needsConversion, $baseCurrency, $targetCurrency) {
@@ -680,6 +682,7 @@ public function show($id)
 			'data'    => $quote
 		]);
 	}
+
 	/**
 	 * @OA\Put(
 	 *     path="/api/quotes/{id}",
