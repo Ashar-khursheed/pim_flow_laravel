@@ -482,6 +482,8 @@ class QuoteController extends BaseController
 		$quote->load([
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress:id,address,city,country',
+			'customerAddress.relatedCountry:id,name,currency_id',
+			'customerAddress.relatedCountry.currency:id,title,symbol',
 			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 			'quoteProducts.accessoryCharges:id,relation_type,relation_id,accessory_item_id,amount',
 			'quoteProducts.accessoryCharges.accessoryItem:id,product_accessory_id,name,price',
