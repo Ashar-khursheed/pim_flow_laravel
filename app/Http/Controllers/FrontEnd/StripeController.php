@@ -463,47 +463,165 @@ class StripeController extends Controller
 
     }
 
-   public function generatePaymentLink($order)
-    {
-        $totalAmount = (int) round($order->pending_amount * 100);
+//    public function generatePaymentLink($order)
+//     {
+//         $totalAmount = (int) round($order->pending_amount * 100);
 
-        // Handle both real orders and test objects
-        if (is_object($order) && isset($order->orderProducts)) {
-            $product = $order->orderProducts->first();
-            $itemName = $order->orderProducts->count() > 1
-                ? "Order #" . $order->order_number . " (" . $order->orderProducts->count() . " items)"
-                : ($product->product->name ?? "Order #" . $order->order_number);
-        } else {
-            $itemName = "Order #" . $order->order_number;
-        }
+//         // Handle both real orders and test objects
+//         if (is_object($order) && isset($order->orderProducts)) {
+//             $product = $order->orderProducts->first();
+//             $itemName = $order->orderProducts->count() > 1
+//                 ? "Order #" . $order->order_number . " (" . $order->orderProducts->count() . " items)"
+//                 : ($product->product->name ?? "Order #" . $order->order_number);
+//         } else {
+//             $itemName = "Order #" . $order->order_number;
+//         }
 
-        $stripeSecret = config('services.stripe.secret');
+//         $stripeSecret = config('services.stripe.secret');
 
-        // ✅ Currency based on APP_WEBSITE
-        $currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : 'USD';
+//         // ✅ Currency based on APP_WEBSITE
+//         $currency = in_array(config('app.website'), ['UAE', 'UAE_T']) ? 'AED' : 'USD';
 
-        $success_url = config('app.url') . '/thanks?session_id={CHECKOUT_SESSION_ID}';
-        $cancel_url  = config('app.url') . '/failed?session_id={CHECKOUT_SESSION_ID}';
+//         $success_url = config('app.url') . '/thanks?session_id={CHECKOUT_SESSION_ID}';
+//         $cancel_url  = config('app.url') . '/failed?session_id={CHECKOUT_SESSION_ID}';
 
-        $res = Http::withOptions(['verify' => false])
-            ->withToken($stripeSecret)
-            ->asForm()
-            ->post('https://api.stripe.com/v1/checkout/sessions', [
-                'payment_method_types[]' => 'card',
-                'line_items[0][price_data][currency]' => strtolower($currency),
-                'line_items[0][price_data][unit_amount]' => $totalAmount,
-                'line_items[0][price_data][product_data][name]' => $itemName,
-                'line_items[0][quantity]' => 1,
-                'mode' => 'payment',
-                'success_url' => $success_url,
-                'cancel_url' => $cancel_url,
-                'metadata[order_id]' => $order->id,
-            ]);
+//         $res = Http::withOptions(['verify' => false])
+//             ->withToken($stripeSecret)
+//             ->asForm()
+//             ->post('https://api.stripe.com/v1/checkout/sessions', [
+//                 'payment_method_types[]' => 'card',
+//                 'line_items[0][price_data][currency]' => strtolower($currency),
+//                 'line_items[0][price_data][unit_amount]' => $totalAmount,
+//                 'line_items[0][price_data][product_data][name]' => $itemName,
+//                 'line_items[0][quantity]' => 1,
+//                 'mode' => 'payment',
+//                 'success_url' => $success_url,
+//                 'cancel_url' => $cancel_url,
+//                 'metadata[order_id]' => $order->id,
+//             ]);
 
-        $body = $res->json();
+//         $body = $res->json();
 
-        return $body['url'] ?? null;
+//         return $body['url'] ?? null;
+//     }
+public function generatePaymentLink($order)
+{
+    // ─────────────────────────────────────────────
+    // Step 1: Customer ke address ki country se currency detect karo
+    // ─────────────────────────────────────────────
+    $currency   = 'AED'; // default
+    $amountAED  = (float) $order->pending_amount;
+
+    // Order ke saath address aur country load karo
+    $address = $order->customerAddress ?? 
+               \App\Models\CustomerAddress::with('relatedCountry.currency')
+                   ->find($order->customer_address_id);
+
+    if ($address && $address->relatedCountry && $address->relatedCountry->currency) {
+        $symbol       = $address->relatedCountry->currency->symbol;
+
+        // Symbol → ISO code map
+        $symbolToCode = [
+            'AED' => 'AED', 'SAR' => 'SAR', 'KWD' => 'KWD',
+            'BHD' => 'BHD', 'QAR' => 'QAR', 'OMR' => 'OMR',
+            'USD' => 'USD', '$'   => 'USD', '€'   => 'EUR',
+            '£'   => 'GBP', '₹'   => 'INR', 'EUR' => 'EUR',
+            'GBP' => 'GBP', 'INR' => 'INR',
+        ];
+
+        $currency = $symbolToCode[$symbol] ?? 'AED';
     }
+
+    // ─────────────────────────────────────────────
+    // Step 2: Amount convert karo AED → target currency
+    // ─────────────────────────────────────────────
+    $convertedAmount = $amountAED; // default same raho
+
+    if ($currency !== 'AED') {
+        $converted = \App\Helpers\CurrencyConverter::convertCurrency('AED', $currency, $amountAED);
+        if ($converted !== null) {
+            $convertedAmount = $converted;
+        } else {
+            // Conversion fail — AED pe fallback
+            \Log::warning('StripeController: Currency conversion failed, using AED', [
+                'order_id'  => $order->id,
+                'currency'  => $currency,
+                'amount'    => $amountAED,
+            ]);
+            $currency        = 'AED';
+            $convertedAmount = $amountAED;
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // Step 3: Stripe ke liye amount → smallest unit mein convert karo
+    // AED, SAR, USD etc. → cents/halalas (×100)
+    // KWD, BHD, OMR → 3 decimal (×1000)
+    // ─────────────────────────────────────────────
+    $zeroDecimalCurrencies = ['JPY', 'KRW', 'VND', 'CLP', 'PYG', 'UGX'];
+    $threeDecimalCurrencies = ['KWD', 'BHD', 'OMR', 'JOD'];
+
+    if (in_array($currency, $zeroDecimalCurrencies)) {
+        $totalAmount = (int) round($convertedAmount);
+    } elseif (in_array($currency, $threeDecimalCurrencies)) {
+        $totalAmount = (int) round($convertedAmount * 1000);
+    } else {
+        $totalAmount = (int) round($convertedAmount * 100);
+    }
+
+    // ─────────────────────────────────────────────
+    // Step 4: Item name
+    // ─────────────────────────────────────────────
+    if (is_object($order) && isset($order->orderProducts)) {
+        $product  = $order->orderProducts->first();
+        $itemName = $order->orderProducts->count() > 1
+            ? "Order #" . $order->order_number . " (" . $order->orderProducts->count() . " items)"
+            : ($product->product->name ?? "Order #" . $order->order_number);
+    } else {
+        $itemName = "Order #" . $order->order_number;
+    }
+
+    // ─────────────────────────────────────────────
+    // Step 5: Stripe API call
+    // ─────────────────────────────────────────────
+    $stripeSecret = config('services.stripe.secret');
+    $success_url  = config('app.url') . '/thanks?session_id={CHECKOUT_SESSION_ID}';
+    $cancel_url   = config('app.url') . '/failed?session_id={CHECKOUT_SESSION_ID}';
+
+    \Log::info('StripeController: Generating payment link', [
+        'order_id'         => $order->id,
+        'original_aed'     => $amountAED,
+        'converted_amount' => $convertedAmount,
+        'stripe_amount'    => $totalAmount,
+        'currency'         => $currency,
+    ]);
+
+    $res = Http::withOptions(['verify' => false])
+        ->withToken($stripeSecret)
+        ->asForm()
+        ->post('https://api.stripe.com/v1/checkout/sessions', [
+            'payment_method_types[]'                        => 'card',
+            'line_items[0][price_data][currency]'           => strtolower($currency),
+            'line_items[0][price_data][unit_amount]'        => $totalAmount,
+            'line_items[0][price_data][product_data][name]' => $itemName,
+            'line_items[0][quantity]'                       => 1,
+            'mode'                                          => 'payment',
+            'success_url'                                   => $success_url,
+            'cancel_url'                                    => $cancel_url,
+            'metadata[order_id]'                            => $order->id,
+        ]);
+
+    $body = $res->json();
+
+    if (!isset($body['url'])) {
+        \Log::error('StripeController: Payment link generation failed', [
+            'order_id' => $order->id,
+            'response' => $body,
+        ]);
+    }
+
+    return $body['url'] ?? null;
+}
 
 
 
