@@ -9200,6 +9200,69 @@
                 ]
             }
         },
+        "/api/currencies/convert/batch": {
+            "post": {
+                "tags": [
+                    "Currencies"
+                ],
+                "summary": "Batch convert currencies",
+                "description": "Convert multiple currency amounts in a single request.",
+                "operationId": "73514b0753cfc43c5101e5a5e1b5a14b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "conversions"
+                                ],
+                                "properties": {
+                                    "conversions": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "from",
+                                                "amount"
+                                            ],
+                                            "properties": {
+                                                "from": {
+                                                    "type": "string",
+                                                    "example": "AED"
+                                                },
+                                                "amount": {
+                                                    "type": "number",
+                                                    "example": 100
+                                                },
+                                                "to": {
+                                                    "type": "string",
+                                                    "example": "INR",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Batch conversion results",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customers/{customer_id}/addresses": {
             "get": {
                 "tags": [
@@ -17426,6 +17489,69 @@
                 "responses": {
                     "200": {
                         "description": "Currency converted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/convert-currency/batch": {
+            "post": {
+                "tags": [
+                    "Frontend-Currencies"
+                ],
+                "summary": "Batch convert currencies",
+                "description": "Convert multiple currency amounts in a single request.",
+                "operationId": "84b382154736481f7dc0efd374e64757",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "conversions"
+                                ],
+                                "properties": {
+                                    "conversions": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "from",
+                                                "amount"
+                                            ],
+                                            "properties": {
+                                                "from": {
+                                                    "type": "string",
+                                                    "example": "AED"
+                                                },
+                                                "amount": {
+                                                    "type": "number",
+                                                    "example": 100
+                                                },
+                                                "to": {
+                                                    "type": "string",
+                                                    "example": "INR",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Batch conversion results",
                         "content": {
                             "application/json": {}
                         }

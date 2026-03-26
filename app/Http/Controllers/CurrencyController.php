@@ -399,4 +399,109 @@ class CurrencyController extends Controller
 	        'data'    => $conversions,
 	    ], 200);
 	}
+	/**
+	 * @OA\Post(
+	 *     path="/api/currencies/convert/batch",
+	 *     summary="Batch convert currencies",
+	 *     description="Convert multiple currency amounts in a single request.",
+	 *     tags={"Currencies"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"conversions"},
+	 *             @OA\Property(
+	 *                 property="conversions",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     required={"from", "amount"},
+	 *                     @OA\Property(property="from",   type="string", example="AED"),
+	 *                     @OA\Property(property="amount", type="number", example=100),
+	 *                     @OA\Property(property="to",     type="string", example="INR", nullable=true)
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Batch conversion results", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function convertBatch(Request $request)
+	{
+		$request->validate([
+			'conversions'          => 'required|array|min:1|max:50',
+			'conversions.*.from'   => 'required|string|size:3',
+			'conversions.*.amount' => 'required|numeric|min:0',
+			'conversions.*.to'     => 'nullable|string|size:3',
+		]);
+
+		$availableCurrencies = CurrencyConverter::getAvailableCurrencies();
+
+		if (empty($availableCurrencies)) {
+			return response()->json(['success' => false, 'message' => 'Exchange rates not available.'], 503);
+		}
+
+		$results = [];
+
+		foreach ($request->input('conversions') as $item) {
+			$from   = strtoupper($item['from']);
+			$amount = (float) $item['amount'];
+			$to     = !empty($item['to']) ? strtoupper($item['to']) : null;
+
+			if (!in_array($from, $availableCurrencies)) {
+				$results[] = [
+					'from'    => $from,
+					'amount'  => $amount,
+					'to'      => $to,
+					'success' => false,
+					'message' => "Source currency '{$from}' not found.",
+				];
+				continue;
+			}
+
+			if ($to) {
+				if (!in_array($to, $availableCurrencies)) {
+					$results[] = [
+						'from'    => $from,
+						'amount'  => $amount,
+						'to'      => $to,
+						'success' => false,
+						'message' => "Target currency '{$to}' not found.",
+					];
+					continue;
+				}
+
+				$results[] = [
+					'from'    => $from,
+					'amount'  => $amount,
+					'to'      => $to,
+					'success' => true,
+					'data'    => [
+						$to => CurrencyConverter::convertCurrency($from, $to, $amount),
+					],
+				];
+				continue;
+			}
+
+			$conversions = [];
+			foreach ($availableCurrencies as $currency) {
+				$conversions[$currency] = CurrencyConverter::convertCurrency($from, $currency, $amount);
+			}
+
+			$results[] = [
+				'from'    => $from,
+				'amount'  => $amount,
+				'to'      => null,
+				'success' => true,
+				'data'    => $conversions,
+			];
+		}
+
+		return response()->json([
+			'success' => true,
+			'data'    => $results,
+		], 200);
+	}
+
+
 }

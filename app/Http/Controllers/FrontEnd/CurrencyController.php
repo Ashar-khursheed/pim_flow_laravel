@@ -70,4 +70,6 @@ class CurrencyController extends Controller
 	        'data'    => $conversions,
 	    ], 200);
 	}
+
+	
 }
