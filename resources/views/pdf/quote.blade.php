@@ -29,7 +29,7 @@ foreach ($pattern as $size) {
 $pageNumber = 1;
 @endphp
 <body>
-	<div id="targetDiv" style="width: auto; min-height: 290mm; margin: 0px auto;  font-size: 12px; line-height: 1.3; font-family: Outfit;background-color: white;">
+	<div id="targetDiv" style="width: auto; min-height: 290mm; margin: 0px auto; font-size: 12px; line-height: 1.3; font-family: Outfit;background-color: white;">
 		<div style="min-height: 1070px; height: 1070px; display: flex; flex-direction: column; padding: 10px 0; box-sizing: border-box;background-color: white; position: relative;">
 			@foreach($chunks as $index => $chunk)
 
@@ -103,7 +103,7 @@ $pageNumber = 1;
 					</td>
 
 					<td style="width: 48%; vertical-align: top;">
-						<table style=" margin-left: 2%;  width: 98%; border-collapse: collapse; font-size: 12px; border: 1px solid black; font-family: 'Inter', sans-serif;">
+						<table style=" margin-left: 2%; width: 98%; border-collapse: collapse; font-size: 12px; border: 1px solid black; font-family: 'Inter', sans-serif;">
 							<tr style="background-color: #d9d9d9; text-align: center;">
 								<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Quotation Date</td>
 								<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Expiry Date</td>
@@ -146,8 +146,8 @@ $pageNumber = 1;
 				<tbody>
 					@foreach($chunk as $index1 => $product)
 					<tr style="background-color:white;">
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $index1+1 }}</td>
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  font-family: 'Inter', sans-serif;">
+						<td style="border-top:1px solid black; border-bottom:1px solid black; text-align:center; font-family: 'Inter', sans-serif;">{{ $index1+1 }}</td>
+						<td style="border-top:1px solid black; border-bottom:1px solid black; font-family: 'Inter', sans-serif;">
 							<div style="margin-bottom:4px; font-family: 'Inter', sans-serif;">
 								<p style="font-weight:bold; font-size:13px;margin-top:2px; margin-bottom:0px; font-family: 'Inter', sans-serif;">
 									{{ Str::limit($product->name, 70, '...') }}
@@ -172,7 +172,7 @@ $pageNumber = 1;
 								</a>
 							</div>
 						</td>
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; vertical-align:middle; font-family: 'Inter', sans-serif;">
+						<td style="border-top:1px solid black; border-bottom:1px solid black; text-align:center; vertical-align:middle; font-family: 'Inter', sans-serif;">
 							@if (!empty($product->base64_image))
 							<img src="{{ $product->base64_image }}" alt="Product Image" style="max-width: 60px; max-height: 60px; width: auto; height: auto; font-family: 'Inter', sans-serif;">
 							@else
@@ -182,16 +182,11 @@ $pageNumber = 1;
 							@endif
 						</td>
 
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->quantity }}</td>
-
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->sellingType }}</td>
-
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center;">{{ $currency }} {{ number_format($product->unitPrice, 2, '.', ',') }}</td>
-
-
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center;">{{ $currency }} {{ number_format($product->accessoryCharge, 2, '.', ',') }}</td>
-
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center;">{{ $currency }} {{ number_format($product->total, 2, '.', ',') }}</td>
+						<td style="border-top:1px solid black; border-bottom:1px solid black; text-align:center; font-family: 'Inter', sans-serif;">{{ $product->quantity }}</td>
+						<td style="border-top:1px solid black; border-bottom:1px solid black; text-align:center; font-family: 'Inter', sans-serif;">{{ $product->sellingType }}</td>
+						<td style="border-top:1px solid black; border-bottom:1px solid black; text-align:center;">{{ $currency }} {{ number_format($product->unitPrice, 2, '.', ',') }}</td>
+						<td style="border-top:1px solid black; border-bottom:1px solid black; text-align:center;">{{ $currency }} {{ number_format($product->accessoryCharge, 2, '.', ',') }}</td>
+						<td style="border-top:1px solid black; border-bottom:1px solid black; text-align:center;">{{ $currency }} {{ number_format($product->total, 2, '.', ',') }}</td>
 					</tr>
 					@endforeach
 				</tbody>
