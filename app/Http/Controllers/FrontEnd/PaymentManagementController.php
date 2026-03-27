@@ -154,7 +154,7 @@ class PaymentManagementController extends Controller
 			]);
 
 			/* If fully paid — release reservation and dispatch order placed mail */
-			if ($pendingAmount <= 0) {
+			if ($pendingAmount <= 0.10) {
 				$order->update(['is_reserved' => 0]);
 
 				$batch = Bus::batch([])->name("Order Placed by Customer (Paid) - #{$order->order_number}")->dispatch();
