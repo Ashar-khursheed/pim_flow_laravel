@@ -12,7 +12,7 @@ class DashboardController extends Controller
     /**
  * @OA\Get(
  *     path="/api/dashboard/stats",
- *     summary="Get dashboard statistics with optional range filter",
+ *     summary="Get dashboard statistics with optional range filters",
  *     tags={"Dashboard"},
  *     @OA\Parameter(
  *         name="range",
