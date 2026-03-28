@@ -217,7 +217,7 @@ class CountryController extends Controller
 	}
 
 	/**
-	 * @OA\Put(
+	 * @OA\Post(
 	 *     path="/api/countries/{id}",
 	 *     summary="Update a country",
 	 *     tags={"Countries"},
