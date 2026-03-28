@@ -266,7 +266,7 @@ class CountryController extends Controller
 			'icon' => 'nullable|file|mimes:webp,png|max:2048',
 			'icon_url' => 'nullable|string|url',
 			'currency_id' => 'required|integer|exists:currencies,id',
-			'margin' => 'nullable|numeric|min:0',
+			'margin' => 'nullable|numeric',
 		]);
 
 		/* Handle icon upload/update */
