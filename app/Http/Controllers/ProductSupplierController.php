@@ -34,7 +34,7 @@ class ProductSupplierController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-public function index(Request $request)
+	public function index(Request $request)
 	{
 		$searchableColumns = ['id', 'product_name', 'vendor_name', 'vendor_sku','product_sku'];
 		$sortableColumns = array_merge(
@@ -55,13 +55,15 @@ public function index(Request $request)
 		$recordsQuery = ProductSupplier::query()
 		->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
 		->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
+	    ->leftJoin('countries', 'vendors.country_id', '=', 'countries.id') // 👈 add this
 		->select(
 			'product_suppliers.*',
 			'ec_products.name as product_name',
 			 'ec_products.sku as product_sku',
 			'ec_products.status as product_status',
 			'vendors.name as vendor_name',
-			'vendors.country_id as vendor_country'
+			'vendors.country_id as vendor_country',
+			'countries.name as vendor_country'
 		);
 
 		if ($request->filled('product_id')) {
@@ -457,7 +459,8 @@ public function index(Request $request)
 	// 		'data' => $supplier
 	// 	], 200);
 	// }
-public function update(Request $request, $id)
+
+	public function update(Request $request, $id)
 {
     $supplier = ProductSupplier::find($id);
 
