@@ -655,14 +655,16 @@ class ProductController extends BaseController
 		// Admin reviews
 		$adminReviews = Review::where('product_id', $productId)->whereNull('customer_id')->get();
 
-		// FAQs
-		$faqs = $product->faqs;
-		// $faqs = Faq::where('relational_id', $productId)->get()->each(function ($faq) use ($locale) {
-		// 	$translation = $faq->translations->firstWhere('locale', $locale);
-		// 	$faq->question = $translation?->question_tr ?? $faq->question;
-		// 	$faq->answer = $translation?->answer_tr ?? $faq->answer;
-		// 	unset($faq->translations, $faq->question_tr, $faq->answer_tr);
-		// });
+		$faqs = Faq::with('translations')
+		->where('relational_id', $productId)
+		->where('relational_type', Product::class)
+		->get()
+		->each(function ($faq) use ($locale) {
+			$translation = $faq->translations->firstWhere('locale', $locale);
+			$faq->question = $translation?->question_tr ?? $faq->question;
+			$faq->answer = $translation?->answer_tr ?? $faq->answer;
+			unset($faq->translations);
+		});
 
 		// Content enabled check
 		$contentAllowedRoles = ['Super Admin', 'Admin', 'Content Writing Manager', 'Content Writer', 'Ecommerce Specialist'];
