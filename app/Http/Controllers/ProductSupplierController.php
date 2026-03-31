@@ -34,94 +34,95 @@ class ProductSupplierController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function index(Request $request)
-{
-    $searchableColumns = ['id', 'product_name', 'vendor_name', 'vendor_sku', 'product_sku'];
+public function index(Request $request)
+	{
+		$searchableColumns = ['id', 'product_name', 'vendor_name', 'vendor_sku','product_sku'];
+		$sortableColumns = array_merge(
+			$searchableColumns,
+			[
+				'list_price', 'multiple', 'cost_per_item', 'surcharge',
+				'additional_cost', 'total_cost_per_item', 'sale_price',
+				'price', 'margin', 'created_at', 'updated_at'
+			]
+		);
 
-    $sortableColumns = array_merge(
-        $searchableColumns,
-        [
-            'list_price', 'multiple', 'cost_per_item', 'surcharge',
-            'additional_cost', 'total_cost_per_item', 'sale_price',
-            'price', 'margin', 'created_at', 'updated_at', 'vendor_country'
-        ]
-    );
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns)
+		? $request->input('sort_by')
+		: 'id';
 
-    $sortBy = in_array($request->input('sort_by'), $sortableColumns)
-        ? $request->input('sort_by')
-        : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-    $sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+		$recordsQuery = ProductSupplier::query()
+		->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
+		->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
+		->select(
+			'product_suppliers.*',
+			'ec_products.name as product_name',
+			 'ec_products.sku as product_sku',
+			'ec_products.status as product_status',
+			'vendors.name as vendor_name',
+			'vendors.country_id as vendor_country'
+		);
 
-    $recordsQuery = ProductSupplier::query()
-        ->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
-        ->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
-        ->join('countries', 'vendors.country_id', '=', 'countries.id') // ✅ JOIN ADDED
-        ->select(
-            'product_suppliers.*',
-            'ec_products.name as product_name',
-            'ec_products.sku as product_sku',
-            'ec_products.status as product_status',
-            'vendors.name as vendor_name',
-            'countries.name as vendor_country' // ✅ COUNTRY NAME
-        );
+		if ($request->filled('product_id')) {
+			$recordsQuery->where('product_id', $request->input('product_id'));
+		}
 
-    /* Filter by product_id */
-    if ($request->filled('product_id')) {
-        $recordsQuery->where('product_suppliers.product_id', $request->input('product_id'));
-    }
+		/* Global Search */
+		if ($request->filled('global')) {
+			$search = $request->input('global');
 
-    /* Global Search */
-    if ($request->filled('global')) {
-        $search = $request->input('global');
+			$recordsQuery->where(function ($q) use ($search) {
+				$q->orWhere('product_suppliers.id', 'like', "%$search%")
+				->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
+				  ->orWhere('ec_products.sku', 'like', "%$search%")
+				->orWhere('ec_products.name', 'like', "%$search%")
+				->orWhere('vendors.name', 'like', "%$search%")
+				->orWhere('vendors.country', 'like', "%$search%");
+			});
+		}
 
-        $recordsQuery->where(function ($q) use ($search) {
-            $q->orWhere('product_suppliers.id', 'like', "%$search%")
-                ->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
-                ->orWhere('ec_products.sku', 'like', "%$search%")
-                ->orWhere('ec_products.name', 'like', "%$search%")
-                ->orWhere('vendors.name', 'like', "%$search%")
-                ->orWhere('countries.name', 'like', "%$search%"); // ✅ SEARCH UPDATED
-        });
-    }
-
-    /* Sorting */
-    if ($sortBy === 'product_name') {
-        $recordsQuery->orderBy('ec_products.name', $sortDir);
-    } elseif ($sortBy === 'vendor_name') {
-        $recordsQuery->orderBy('vendors.name', $sortDir);
-    } elseif ($sortBy === 'vendor_country') {
-        $recordsQuery->orderBy('countries.name', $sortDir); // ✅ SORT UPDATED
-    } elseif ($sortBy === 'product_sku') {
+		/* Sorting */
+		if ($sortBy === 'product_name') {
+			$recordsQuery->orderBy('ec_products.name', $sortDir);
+		} elseif ($sortBy === 'vendor_name') {
+			$recordsQuery->orderBy('vendors.name', $sortDir);
+		}
+		elseif ($sortBy === 'vendor_country') {
+			$recordsQuery->orderBy('vendors.country', $sortDir);
+		}
+		elseif ($sortBy === 'product_sku') {
         $recordsQuery->orderBy('ec_products.sku', $sortDir);
-    } else {
-        $recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
-    }
+		}
+		else {
+				$recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
+			}
 
-    /* Pagination */
-    $length = (int) $request->input('length', 20);
-    $page = max((int) $request->input('page', 1), 1);
+		/* Pagination */
+		$length = (int) $request->input('length', 20);
+		$page = max((int) $request->input('page', 1), 1);
 
-    $totalRecords = (clone $recordsQuery)->count();
-    $totalPages = (int) ceil($totalRecords / $length);
+		$totalRecords = (clone $recordsQuery)->count();
+		$totalPages = (int) ceil($totalRecords / $length);
 
-    if ($page > $totalPages && $totalPages > 0) {
-        $page = 1;
-    }
+		if ($page > $totalPages && $totalPages > 0) {
+			$page = 1;
+		}
 
-    $records = $recordsQuery
-        ->offset(($page - 1) * $length)
-        ->limit($length)
-        ->get();
+		$records = $recordsQuery
+		->offset(($page - 1) * $length)
+		->limit($length)
+		->get();
 
-    return response()->json([
-        'success' => true,
-        'message' => __('msg_rec_list'),
-        'data' => $records,
-        'total_pages' => $totalPages,
-        'total_records' => $totalRecords,
-    ]);
-}
+		return response()->json([
+			'success' => true,
+			'message' => __('msg_rec_list'),
+			'data' => $records,
+			'total_pages' => $totalPages,
+			'total_records' => $totalRecords,
+		]);
+	}
+
 	/**
 	 * @OA\Post(
 	 *     path="/api/product-suppliers",
