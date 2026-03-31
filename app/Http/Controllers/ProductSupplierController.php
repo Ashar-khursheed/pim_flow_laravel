@@ -55,7 +55,7 @@ class ProductSupplierController extends BaseController
 		$recordsQuery = ProductSupplier::query()
 		->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
 		->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
-	    ->leftJoin('countries', 'vendors.country_id', '=', 'countries.id') // 👈 add this
+	    ->leftJoin('country', 'vendors.country_id', '=', 'countries.id') // 👈 add this
 		->select(
 			'product_suppliers.*',
 			'ec_products.name as product_name',
