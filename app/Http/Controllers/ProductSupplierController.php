@@ -55,7 +55,7 @@ class ProductSupplierController extends BaseController
 		$recordsQuery = ProductSupplier::query()
 		->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
 		->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
-	    ->leftJoin('country', 'vendors.country_id', '=', 'country.id') // 👈 add this
+	    ->leftJoin('countries', 'vendors.country_id', '=', 'countries.id') // 👈 add this
 		->select(
 			'product_suppliers.*',
 			'ec_products.name as product_name',
@@ -63,7 +63,7 @@ class ProductSupplierController extends BaseController
 			'ec_products.status as product_status',
 			'vendors.name as vendor_name',
 			'vendors.country_id as vendor_country',
-			'country.name as vendor_country'
+			'countries.name as vendor_country'
 		);
 
 		if ($request->filled('product_id')) {
