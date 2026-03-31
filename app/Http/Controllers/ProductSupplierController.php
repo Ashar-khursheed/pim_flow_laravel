@@ -62,7 +62,7 @@ class ProductSupplierController extends BaseController
 			 'ec_products.sku as product_sku',
 			'ec_products.status as product_status',
 			'vendors.name as vendor_name',
-			'vendors.country_id as vendor_country',
+			'vendors.country_id as vendor_country_id',
 			'countries.name as vendor_country'
 		);
 
