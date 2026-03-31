@@ -6,6 +6,9 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use App\Models\FrontEnd\QuoteProduct;
+use App\Models\FrontEnd\OrderProduct;
 
 use App\Observers\TransactionLogObserver;
 
@@ -98,6 +101,11 @@ class AppServiceProvider extends ServiceProvider
 		CategoryAttributeGroup::observe(TransactionLogObserver::class);
 		Product::observe(TransactionLogObserver::class);
 		Category::observe(TransactionLogObserver::class);
+
+		Relation::morphMap([
+			'quote_product' => QuoteProduct::class,
+			'order_product' => OrderProduct::class,
+		]);
 
 		if (app()->environment('production')) {
 			URL::forceScheme('https');
