@@ -34,9 +34,99 @@ class ProductSupplierController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+	// public function index(Request $request)
+	// {
+	// 	$searchableColumns = ['id', 'product_name', 'vendor_name', 'vendor_sku','product_sku'];
+	// 	$sortableColumns = array_merge(
+	// 		$searchableColumns,
+	// 		[
+	// 			'list_price', 'multiple', 'cost_per_item', 'surcharge',
+	// 			'additional_cost', 'total_cost_per_item', 'sale_price',
+	// 			'price', 'margin', 'created_at', 'updated_at'
+	// 		]
+	// 	);
+
+	// 	$sortBy = in_array($request->input('sort_by'), $sortableColumns)
+	// 	? $request->input('sort_by')
+	// 	: 'id';
+
+	// 	$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+	// 	$recordsQuery = ProductSupplier::query()
+	// 	->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
+	// 	->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
+	//     ->leftJoin('countries', 'vendors.country_id', '=', 'countries.id') // 👈 add this
+	// 	->select(
+	// 		'product_suppliers.*',
+	// 		'ec_products.name as product_name',
+	// 		 'ec_products.sku as product_sku',
+	// 		'ec_products.status as product_status',
+	// 		'vendors.name as vendor_name',
+	// 		'vendors.country_id as vendor_country_id',
+	// 		'countries.name as vendor_country'
+	// 	);
+
+	// 	if ($request->filled('product_id')) {
+	// 		$recordsQuery->where('product_id', $request->input('product_id'));
+	// 	}
+
+	// 	/* Global Search */
+	// 	if ($request->filled('global')) {
+	// 		$search = $request->input('global');
+
+	// 		$recordsQuery->where(function ($q) use ($search) {
+	// 			$q->orWhere('product_suppliers.id', 'like', "%$search%")
+	// 			->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
+	// 			  ->orWhere('ec_products.sku', 'like', "%$search%")
+	// 			->orWhere('ec_products.name', 'like', "%$search%")
+	// 			->orWhere('vendors.name', 'like', "%$search%")
+	// 			->orWhere('vendors.country', 'like', "%$search%");
+	// 		});
+	// 	}
+
+	// 	/* Sorting */
+	// 	if ($sortBy === 'product_name') {
+	// 		$recordsQuery->orderBy('ec_products.name', $sortDir);
+	// 	} elseif ($sortBy === 'vendor_name') {
+	// 		$recordsQuery->orderBy('vendors.name', $sortDir);
+	// 	}
+	// 	elseif ($sortBy === 'vendor_country') {
+	// 		$recordsQuery->orderBy('vendors.country', $sortDir);
+	// 	}
+	// 	elseif ($sortBy === 'product_sku') {
+    //     $recordsQuery->orderBy('ec_products.sku', $sortDir);
+	// 	}
+	// 	else {
+	// 			$recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
+	// 		}
+
+	// 	/* Pagination */
+	// 	$length = (int) $request->input('length', 20);
+	// 	$page = max((int) $request->input('page', 1), 1);
+
+	// 	$totalRecords = (clone $recordsQuery)->count();
+	// 	$totalPages = (int) ceil($totalRecords / $length);
+
+	// 	if ($page > $totalPages && $totalPages > 0) {
+	// 		$page = 1;
+	// 	}
+
+	// 	$records = $recordsQuery
+	// 	->offset(($page - 1) * $length)
+	// 	->limit($length)
+	// 	->get();
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => __('msg_rec_list'),
+	// 		'data' => $records,
+	// 		'total_pages' => $totalPages,
+	// 		'total_records' => $totalRecords,
+	// 	]);
+	// }
 	public function index(Request $request)
 	{
-		$searchableColumns = ['id', 'product_name', 'vendor_name', 'vendor_sku','product_sku'];
+		$searchableColumns = ['id', 'product_name', 'vendor_name', 'vendor_sku', 'product_sku'];
 		$sortableColumns = array_merge(
 			$searchableColumns,
 			[
@@ -47,27 +137,40 @@ class ProductSupplierController extends BaseController
 		);
 
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns)
-		? $request->input('sort_by')
-		: 'id';
+			? $request->input('sort_by')
+			: 'id';
 
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
 		$recordsQuery = ProductSupplier::query()
-		->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
-		->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
-	    ->leftJoin('countries', 'vendors.country_id', '=', 'countries.id') // 👈 add this
-		->select(
-			'product_suppliers.*',
-			'ec_products.name as product_name',
-			 'ec_products.sku as product_sku',
-			'ec_products.status as product_status',
-			'vendors.name as vendor_name',
-			'vendors.country_id as vendor_country_id',
-			'countries.name as vendor_country'
-		);
+			->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
+			->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
+			->leftJoin('countries', 'vendors.country_id', '=', 'countries.id')
+			->leftJoin('users', 'product_suppliers.updated_by', '=', 'users.id') // 👈 users join
+			->select(
+				'product_suppliers.*',
+				'ec_products.name as product_name',
+				'ec_products.sku as product_sku',
+				'ec_products.status as product_status',
+				'vendors.name as vendor_name',
+				'vendors.country_id as vendor_country_id',
+				'countries.name as vendor_country',
+				/* 👇 combined full name */
+				\DB::raw("CONCAT(users.first_name, ' ', users.last_name) as updated_by_name")
+			);
 
 		if ($request->filled('product_id')) {
-			$recordsQuery->where('product_id', $request->input('product_id'));
+			$recordsQuery->where('product_suppliers.product_id', $request->input('product_id'));
+		}
+
+		/* Filter: product status (published / draft) */
+		if ($request->filled('status')) {
+			$recordsQuery->where('ec_products.status', $request->input('status'));
+		}
+
+		/* Filter: country */
+		if ($request->filled('country_id')) {
+			$recordsQuery->where('vendors.country_id', $request->input('country_id'));
 		}
 
 		/* Global Search */
@@ -77,10 +180,10 @@ class ProductSupplierController extends BaseController
 			$recordsQuery->where(function ($q) use ($search) {
 				$q->orWhere('product_suppliers.id', 'like', "%$search%")
 				->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
-				  ->orWhere('ec_products.sku', 'like', "%$search%")
+				->orWhere('ec_products.sku', 'like', "%$search%")
 				->orWhere('ec_products.name', 'like', "%$search%")
 				->orWhere('vendors.name', 'like', "%$search%")
-				->orWhere('vendors.country', 'like', "%$search%");
+				->orWhere('countries.name', 'like', "%$search%"); // 👈 fixed: was vendors.country
 			});
 		}
 
@@ -89,16 +192,13 @@ class ProductSupplierController extends BaseController
 			$recordsQuery->orderBy('ec_products.name', $sortDir);
 		} elseif ($sortBy === 'vendor_name') {
 			$recordsQuery->orderBy('vendors.name', $sortDir);
+		} elseif ($sortBy === 'vendor_country') {
+			$recordsQuery->orderBy('countries.name', $sortDir); // 👈 fixed: was vendors.country
+		} elseif ($sortBy === 'product_sku') {
+			$recordsQuery->orderBy('ec_products.sku', $sortDir);
+		} else {
+			$recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
 		}
-		elseif ($sortBy === 'vendor_country') {
-			$recordsQuery->orderBy('vendors.country', $sortDir);
-		}
-		elseif ($sortBy === 'product_sku') {
-        $recordsQuery->orderBy('ec_products.sku', $sortDir);
-		}
-		else {
-				$recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
-			}
 
 		/* Pagination */
 		$length = (int) $request->input('length', 20);
@@ -112,15 +212,15 @@ class ProductSupplierController extends BaseController
 		}
 
 		$records = $recordsQuery
-		->offset(($page - 1) * $length)
-		->limit($length)
-		->get();
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
 
 		return response()->json([
-			'success' => true,
-			'message' => __('msg_rec_list'),
-			'data' => $records,
-			'total_pages' => $totalPages,
+			'success'       => true,
+			'message'       => __('msg_rec_list'),
+			'data'          => $records,
+			'total_pages'   => $totalPages,
 			'total_records' => $totalRecords,
 		]);
 	}
