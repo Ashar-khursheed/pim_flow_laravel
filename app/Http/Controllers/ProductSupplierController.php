@@ -60,7 +60,8 @@ public function index(Request $request)
 			'ec_products.name as product_name',
 			 'ec_products.sku as product_sku',
 			'ec_products.status as product_status',
-			'vendors.name as vendor_name'
+			'vendors.name as vendor_name',
+			'vendors.country as vendor_country'
 		);
 
 		if ($request->filled('product_id')) {
@@ -76,7 +77,8 @@ public function index(Request $request)
 				->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
 				  ->orWhere('ec_products.sku', 'like', "%$search%")
 				->orWhere('ec_products.name', 'like', "%$search%")
-				->orWhere('vendors.name', 'like', "%$search%");
+				->orWhere('vendors.name', 'like', "%$search%")
+				->orWhere('vendors.country', 'like', "%$search%");
 			});
 		}
 
@@ -85,6 +87,9 @@ public function index(Request $request)
 			$recordsQuery->orderBy('ec_products.name', $sortDir);
 		} elseif ($sortBy === 'vendor_name') {
 			$recordsQuery->orderBy('vendors.name', $sortDir);
+		}
+		elseif ($sortBy === 'vendor_country') {
+			$recordsQuery->orderBy('vendors.country', $sortDir);
 		}
 		elseif ($sortBy === 'product_sku') {
         $recordsQuery->orderBy('ec_products.sku', $sortDir);
