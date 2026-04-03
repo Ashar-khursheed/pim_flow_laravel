@@ -309,29 +309,50 @@ class ProductController extends Controller
 
 		// Compare product
 		if ($product->compare_product_id) {
+
 			$cp = Product::with([
 				'productSuppliers' => function ($q) {
 					$q->select(['id', 'product_id', 'price', 'sale_price']);
 				},
-				'categories',
-			])->select(['id', 'name', 'sku'])->find($product->compare_product_id);
+				'seoUrl' // ✅ slug ke liye zaroori
+			])
+			->select(['id', 'name', 'sku'])
+			->find($product->compare_product_id);
 
 			if ($cp) {
+
 				$cpSupplier = $cp->productSuppliers->first();
+
+				// ✅ Category URLs
 				$cpParentUrl = method_exists($cp, 'parent_category_url') ? $cp->parent_category_url() : '';
 				$cpChildUrl = method_exists($cp, 'category_url') ? $cp->category_url() : '';
+
+				// ✅ Product slug
+				$cpSlug = optional($cp->seoUrl)->url ?? '';
+
+				// ✅ FULL SLUG (same logic as variants)
+				$cpFullSlug = trim($cpParentUrl . '/' . $cpChildUrl . '/' . $cpSlug, '/');
+
 				$product->compare_product = [
 					'id' => $cp->id,
 					'name' => $cp->name,
 					'sku' => $cp->sku,
-					'parent_category_url' => $cpParentUrl,
-					'category_url' => $cpChildUrl,
+
+					// ✅ Slugs
+					'parent_slug' => $cpParentUrl,
+					'child_slug' => $cpChildUrl,
+					'slug' => $cpSlug,
+					'full_slug' => $cpFullSlug,
+
+					// ✅ Pricing
 					'price' => $cpSupplier ? (float) $cpSupplier->price : 0,
 					'sale_price' => $cpSupplier ? (float) $cpSupplier->sale_price : 0,
 				];
+
 			} else {
 				$product->compare_product = null;
 			}
+
 		} else {
 			$product->compare_product = null;
 		}
@@ -663,42 +684,55 @@ class ProductController extends Controller
 		// Batch-load compare products to avoid N+1
 		$compareProductIds = $products->getCollection()->pluck('compare_product_id')->filter()->unique()->values()->toArray();
 		$compareProductsMap = [];
-		if (!empty($compareProductIds)) {
-			$compareProductsList = Product::with([
+			if ($product->compare_product_id) {
+
+			$cp = Product::with([
 				'productSuppliers' => function ($q) {
 					$q->select(['id', 'product_id', 'price', 'sale_price']);
 				},
-				'categories',
-			])->select(['id', 'name', 'sku'])->whereIn('id', $compareProductIds)->get()->keyBy('id');
+				'seoUrl' // ✅ slug ke liye zaroori
+			])
+			->select(['id', 'name', 'sku'])
+			->find($product->compare_product_id);
 
-			foreach ($compareProductsList as $cp) {
-				$cpParentCat = null;
-				$cpLastChildCat = null;
-				if ($cp->categories->isNotEmpty()) {
-					$cpFirstCat = $cp->categories->first();
-					$cpHierarchy = collect([$cpFirstCat]);
-					$cpCurrent = $cpFirstCat;
-					while ($cpCurrent->parent_id) {
-						$cpParent = Category::find($cpCurrent->parent_id);
-						if (!$cpParent) break;
-						$cpHierarchy->prepend($cpParent);
-						$cpCurrent = $cpParent;
-					}
-					$cpParentCat = $cpHierarchy->first()->name ?? null;
-					$cpLastChildCat = $cpHierarchy->last()->name ?? null;
-				}
+			if ($cp) {
+
 				$cpSupplier = $cp->productSuppliers->first();
-				$compareProductsMap[$cp->id] = [
+
+				// ✅ Category URLs
+				$cpParentUrl = method_exists($cp, 'parent_category_url') ? $cp->parent_category_url() : '';
+				$cpChildUrl = method_exists($cp, 'category_url') ? $cp->category_url() : '';
+
+				// ✅ Product slug
+				$cpSlug = optional($cp->seoUrl)->url ?? '';
+
+				// ✅ FULL SLUG (same logic as variants)
+				$cpFullSlug = trim($cpParentUrl . '/' . $cpChildUrl . '/' . $cpSlug, '/');
+
+				$product->compare_product = [
 					'id' => $cp->id,
 					'name' => $cp->name,
 					'sku' => $cp->sku,
-					'parent_category' => $cpParentCat,
-					'last_child_category' => $cpLastChildCat,
+
+					// ✅ Slugs
+					'parent_slug' => $cpParentUrl,
+					'child_slug' => $cpChildUrl,
+					'slug' => $cpSlug,
+					'full_slug' => $cpFullSlug,
+
+					// ✅ Pricing
 					'price' => $cpSupplier ? (float) $cpSupplier->price : 0,
 					'sale_price' => $cpSupplier ? (float) $cpSupplier->sale_price : 0,
 				];
+
+			} else {
+				$product->compare_product = null;
 			}
+
+		} else {
+			$product->compare_product = null;
 		}
+
 
 		// Transform the products collection
 		$products->getCollection()->transform(function ($product) use ($compareProductsMap) {
