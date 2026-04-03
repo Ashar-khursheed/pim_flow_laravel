@@ -33,7 +33,6 @@ __pycache__/
 # Ignore the virtual environment directory
 venv/
 app/Script/analytics-key.json
-app/Script/analytics-key.json
 .env
 *.json
 app/Script/horeca-464007-8c1c2e126143.json
