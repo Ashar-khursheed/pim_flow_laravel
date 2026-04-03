@@ -682,7 +682,7 @@ class ProductController extends Controller
 		];
 
 		// Batch-load compare products to avoid N+1
-		$compareProductIds = $products->getCollection()->pluck('compare_product_id')->filter()->unique()->values()->toArray();
+	
 		$compareProductIds = $products->getCollection()
 		->pluck('compare_product_id')
 		->filter()
