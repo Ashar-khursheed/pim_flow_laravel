@@ -169,6 +169,8 @@ trait GeneratesQuotePdf
 		$liftGateCharge = ($quote->is_lift_gate ? 75 : 0) * $currencyConversionRate;
 		$residentialAddressCharge = ($quote->is_residential_address ? 199 : 0) * $currencyConversionRate;
 		$insideDeliveryCharge = ($quote->is_inside_delivery ? 249 : 0) * $currencyConversionRate;
+
+		$shippingChargeName = $isUAE && $customerCountry == 'United Arab Emirates' ?  'Shipping Charge' : 'Operational & Fuel Surcharge';
 		$shippingCharge = ($quote->shipping_charge ?? 0) * $currencyConversionRate;
 
 		/* Amount before tax */
@@ -226,6 +228,7 @@ trait GeneratesQuotePdf
 			'liftGateCharge' => $liftGateCharge,
 			'residentialAddressCharge' => $residentialAddressCharge,
 			'insideDeliveryCharge' => $insideDeliveryCharge,
+			'shippingChargeName' => $shippingChargeName,
 			'shippingCharge' => $shippingCharge,
 			'amountBeforeTax' => $amountBeforeTax,
 			'taxName' => $taxName,

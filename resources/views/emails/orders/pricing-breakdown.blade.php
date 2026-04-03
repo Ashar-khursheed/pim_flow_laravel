@@ -115,7 +115,7 @@
 
 					@if (!in_array(config('app.website'), ['US', 'US_T']))
 					<tr>
-						<td style="font-family: 'Noto Sans', sans-serif;">Shipping Charge</td>
+						<td style="font-family: 'Noto Sans', sans-serif;">{{ $shippingChargeName ?? 'Shipping Charge' }}</td>
 						<td style="font-family: 'Noto Sans', sans-serif;" align="right">
 							{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : '<span style="color: green;">Free</span>' !!}
 						</td>

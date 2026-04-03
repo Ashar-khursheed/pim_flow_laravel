@@ -198,6 +198,8 @@ class OrderUpdateMail extends Mailable
 		/* Pricing breakdown */
 		$pricingBreakdown = $this->getPricingBreakdown($products, $currencyConversionRate);
 
+		$shippingChargeName = $isUAE && $country == 'United Arab Emirates' ?  'Shipping Charge' : 'Operational & Fuel Surcharge';
+
 		/* Site identity based on deployment */
 		$siteUrl = match (config('app.website')) {
 			'UAE' => 'HorecaStore.ae',
@@ -245,6 +247,7 @@ class OrderUpdateMail extends Mailable
 			'additionalAmountName' => $order->additional_amount_name,
 			'additionalAmountPrice' => ($order->additional_amount_price ?? 0) * $currencyConversionRate,
 			'emailType' => $emailType,
+			'shippingChargeName' => $shippingChargeName,
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];

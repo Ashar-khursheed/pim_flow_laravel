@@ -365,7 +365,7 @@ $pageNumber = 1;
 
 									@if (!in_array(config('app.website'), ['US', 'US_T']))
 									<tr>
-										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">Shipping Charge</td>
+										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $shippingChargeName ?? 'Shipping Charge' }}</td>
 										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px;">
 											{!! $shippingCharge > 0 ? $currency . ' ' . number_format($shippingCharge, 2, '.', ',') : "<span style='color: green; font-family: \"Inter\", sans-serif;'>Free</span>" !!}
 										</td>
