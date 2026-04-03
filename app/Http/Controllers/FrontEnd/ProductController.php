@@ -1178,6 +1178,8 @@ class ProductController extends Controller
 				? $compareProductsMap[$product->compare_product_id]
 				: null;
 
+			$product->compare_product_sku = $product->compare_product ? $product->compare_product['sku'] : null;
+
 			return $product;
 		});
 
