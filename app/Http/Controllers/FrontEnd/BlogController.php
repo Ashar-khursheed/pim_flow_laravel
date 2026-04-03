@@ -55,7 +55,8 @@ class BlogController extends Controller
 
         $blogs = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($perPage, $isFeatured) {
             $query = Blog::with(['category:id,name,slug,description'])
-                ->select(['id', 'name', 'slug', 'description', 'desktop_banner', 'desktop_banner_alt', 'mobile_banner', 'mobile_banner_alt', 'thumbnail', 'thumbnail_alt', 'tags', 'total_views', 'total_likes', 'total_shares', 'is_featured', 'created_at', 'blog_category_id'])
+                ->select(['id', 'name', 'slug', 'description', 'desktop_banner', 'desktop_banner_alt', 'mobile_banner', 'mobile_banner_alt', 'thumbnail', 'thumbnail_alt', 'tags', 'total_views', 'total_likes', 'total_shares', 'is_featured', 'created_at',
+                'created_date','author_designation','written_by', 'blog_category_id'])
                 ->where('status', 'published');
 
             if ($isFeatured !== null) {
