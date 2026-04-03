@@ -198,7 +198,7 @@ class OrderUpdateMail extends Mailable
 		/* Pricing breakdown */
 		$pricingBreakdown = $this->getPricingBreakdown($products, $currencyConversionRate);
 
-		$shippingChargeName = $isUAE && $country == 'United Arab Emirates' ?  'Shipping Charge' : 'Operational & Fuel Surcharge';
+		$shippingChargeName = $isUAE && $country == 'United Arab Emirates' ? 'Operational & Fuel Surcharge' : 'Shipping Charge';
 
 		/* Site identity based on deployment */
 		$siteUrl = match (config('app.website')) {

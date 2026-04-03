@@ -170,7 +170,7 @@ trait GeneratesQuotePdf
 		$residentialAddressCharge = ($quote->is_residential_address ? 199 : 0) * $currencyConversionRate;
 		$insideDeliveryCharge = ($quote->is_inside_delivery ? 249 : 0) * $currencyConversionRate;
 
-		$shippingChargeName = $isUAE && $customerCountry == 'United Arab Emirates' ?  'Shipping Charge' : 'Operational & Fuel Surcharge';
+		$shippingChargeName = $isUAE && $customerCountry == 'United Arab Emirates' ? 'Operational & Fuel Surcharge' : 'Shipping Charge';
 		$shippingCharge = ($quote->shipping_charge ?? 0) * $currencyConversionRate;
 
 		/* Amount before tax */
