@@ -84,7 +84,7 @@ class BlogController extends Controller
             'id' => $blog->id,
             'name' => $blog->name,
             'slug' => $blog->slug,
-            'description' => $description, // Now this will be an array of objects
+            'description' => isset($description[0]) ? [$description[0]] : [], // Only first paragraph for listing
             'desktop_banner' => $blog->desktop_banner,
             'desktop_banner_alt' => $blog->desktop_banner_alt,
             'mobile_banner' => $blog->mobile_banner,
@@ -548,12 +548,19 @@ class BlogController extends Controller
             ->groupBy('blog_category_id');
 
         $data = $categories->map(function ($category) use ($allBlogs) {
+            $blogs = $allBlogs->get($category->id, collect())->map(function ($blog) {
+                $description = $blog->description ?? [];
+                return array_merge($blog->toArray(), [
+                    'description' => isset($description[0]) ? [$description[0]] : [],
+                ]);
+            })->values();
+
             return [
                 'id' => $category->id,
                 'name' => $category->name,
                 'slug' => $category->slug,
                 'description' => $category->description,
-                'blogs' => $allBlogs->get($category->id, collect())->values(),
+                'blogs' => $blogs,
             ];
         })->values();
 
