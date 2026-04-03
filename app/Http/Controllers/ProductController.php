@@ -186,7 +186,7 @@ class ProductController extends BaseController
 			'productSuppliers.vendor:id,name', // Updated to include vendor relationship
 			'vendors:id,name' // Make sure to select the name field
 		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved' , 'ar_approved']);
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status', 'gen_type', 'approved' , 'ar_approved', 'compare_product_id']);
 
 		/* Apply search if provided */
 
@@ -228,6 +228,7 @@ class ProductController extends BaseController
 					'gen_type' => $product->gen_type,
 					'approved' => $product->approved,
 					'ar_approved' => $product->ar_approved,
+					'compare_product_id' => $product->compare_product_id,
 					'sku' => $product->sku,
 					'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 					'brand' => optional($product->brand)->name,
@@ -257,6 +258,7 @@ class ProductController extends BaseController
 				'gen_type' => $product->gen_type,
 				'approved' => $product->approved,
 				'ar_approved' => $product->ar_approved,
+				'compare_product_id' => $product->compare_product_id,
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
@@ -1523,7 +1525,7 @@ class ProductController extends BaseController
 		$input['documents'] = json_encode($input['documents']);
 
 		/* List of valid fields allowed for updating */
-		$validArray = ["sku", "status", "barcode", "currency_id", "name", "description", "video_path", "documents", "brand_id", "views", "order", "benefits_features", "gen_type", "approved" , "ar_approved"];
+		$validArray = ["sku", "status", "barcode", "currency_id", "name", "description", "video_path", "documents", "brand_id", "views", "order", "benefits_features", "gen_type", "approved" , "ar_approved", "compare_product_id"];
 
 		unset($input['product_attributes']);
 		unset($input['vendor_id']);

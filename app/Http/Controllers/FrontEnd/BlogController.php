@@ -49,19 +49,26 @@ class BlogController extends Controller
     {
         $perPage = $request->get('per_page', 10);
         $isFeatured = $request->get('is_featured');
+        $page = $request->get('page', 1);
 
-        $query = Blog::with('category')
-            ->where('status', 'published');
+        $cacheKey = "blogs_index_{$perPage}_{$page}_{$isFeatured}";
 
-        if ($isFeatured !== null) {
-            $query->where('is_featured', (int) $isFeatured);
-        }
+        $blogs = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($perPage, $isFeatured) {
+            $query = Blog::with(['category:id,name,slug,description'])
+                ->select(['id', 'name', 'slug', 'description', 'desktop_banner', 'desktop_banner_alt', 'mobile_banner', 'mobile_banner_alt', 'thumbnail', 'thumbnail_alt', 'tags', 'faqs', 'total_views', 'total_likes', 'total_shares', 'is_featured', 'created_at', 'blog_category_id'])
+                ->where('status', 'published');
 
-        $blogs = $query->orderByDesc('created_at')
-            ->paginate($perPage);
+            if ($isFeatured !== null) {
+                $query->where('is_featured', (int) $isFeatured);
+            }
 
-        $blogs->getCollection()->transform(function ($blog) {
-            return $this->formatBlog1($blog);
+            $blogs = $query->orderByDesc('created_at')->paginate($perPage);
+
+            $blogs->getCollection()->transform(function ($blog) {
+                return $this->formatBlog1($blog);
+            });
+
+            return $blogs;
         });
 
         return response()->json($blogs);
@@ -70,30 +77,8 @@ class BlogController extends Controller
 
     protected function formatBlog1($blog)
     {
-        // Handle the description field properly
-        $description = [];
-        if ($blog->description) {
-            // Check if it's already an array (Laravel auto-casting or already decoded)
-            if (is_array($blog->description)) {
-                $description = $blog->description;
-            }
-            // If it's a string, try to decode it
-            else if (is_string($blog->description)) {
-                $decoded = json_decode($blog->description, true);
-
-                // Check if the decoded result is an array (direct array of objects)
-                if (is_array($decoded)) {
-                    $description = $decoded;
-                }
-                // Check if it's a string that contains JSON array (double encoded)
-                else if (is_string($decoded)) {
-                    $secondDecode = json_decode($decoded, true);
-                    if (is_array($secondDecode)) {
-                        $description = $secondDecode;
-                    }
-                }
-            }
-        }
+        // description/faqs/tags are already cast to arrays by the Blog model
+        $description = $blog->description ?? [];
 
         return [
             'id' => $blog->id,
@@ -189,12 +174,16 @@ class BlogController extends Controller
      */
     public function show($slug)
     {
-        $blog = Blog::with('category')
-            ->where('slug', $slug)
-            ->where('status', 'published')
-            ->firstOrFail();
+        $data = Cache::remember("blog_show_{$slug}", now()->addMinutes(60), function () use ($slug) {
+            $blog = Blog::with(['category:id,name,slug,description'])
+                ->where('slug', $slug)
+                ->where('status', 'published')
+                ->firstOrFail();
 
-        return response()->json($this->formatBlog($blog));
+            return $this->formatBlog($blog);
+        });
+
+        return response()->json($data);
     }
 
     /**
@@ -303,41 +292,21 @@ class BlogController extends Controller
      */
     public function categories()
     {
-        $categories = BlogCategory::where('status', 'published')
-            ->orderBy('order', 'asc')
-            ->get();
+        $categories = Cache::remember('blog_categories', now()->addMinutes(60), function () {
+            return BlogCategory::where('status', 'published')
+                ->orderBy('order', 'asc')
+                ->get();
+        });
 
         return response()->json($categories);
     }
 
     private function formatBlog($blog)
     {
-         // Handle the description field properly
-         $description = [];
-         if ($blog->description) {
-             // Check if it's already an array (Laravel auto-casting or already decoded)
-             if (is_array($blog->description)) {
-                 $description = $blog->description;
-             }
-             // If it's a string, try to decode it
-             else if (is_string($blog->description)) {
-                 $decoded = json_decode($blog->description, true);
+        // description/faqs/tags are already cast to arrays by the Blog model
+        $description = $blog->description ?? [];
 
-                 // Check if the decoded result is an array (direct array of objects)
-                 if (is_array($decoded)) {
-                     $description = $decoded;
-                 }
-                 // Check if it's a string that contains JSON array (double encoded)
-                 else if (is_string($decoded)) {
-                     $secondDecode = json_decode($decoded, true);
-                     if (is_array($secondDecode)) {
-                         $description = $secondDecode;
-                     }
-                 }
-             }
-         }
-
-         return [
+        return [
              'id' => $blog->id,
              'name' => $blog->name,
              'slug' => $blog->slug,
@@ -565,26 +534,30 @@ class BlogController extends Controller
 
     public function categoryWiseBlogs()
     {
-        $categories = BlogCategory::where('status', 'published')
-            ->orderBy('order', 'asc')
-            ->get(['id', 'name', 'slug']);
+        $data = Cache::remember('blogs_category_wise', now()->addMinutes(30), function () {
+            $categories = BlogCategory::where('status', 'published')
+                ->orderBy('order', 'asc')
+                ->get(['id', 'name', 'slug', 'description']);
 
-        $data = [];
+            $categoryIds = $categories->pluck('id');
 
-        foreach ($categories as $category) {
-            $blogs = Blog::where('status', 'published')
-                ->where('blog_category_id', $category->id)
+            // Single query for all blogs, then group in PHP — eliminates N+1
+            $allBlogs = Blog::where('status', 'published')
+                ->whereIn('blog_category_id', $categoryIds)
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->groupBy('blog_category_id');
 
-            $data[] = [
-                'id' => $category->id,
-                'name' => $category->name,
-                'slug' => $category->slug,
-                'description' => $category->description,
-                'blogs' => $blogs
-            ];
-        }
+            return $categories->map(function ($category) use ($allBlogs) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'description' => $category->description,
+                    'blogs' => $allBlogs->get($category->id, collect())->values(),
+                ];
+            })->values();
+        });
 
         return response()->json($data);
     }
@@ -592,28 +565,36 @@ class BlogController extends Controller
 
     public function blogsByCategorySlug(Request $request, $slug)
     {
-        $category = BlogCategory::where('slug', $slug)
-            ->where('status', 'published')
-            ->first();
+        $page = $request->get('page', 1);
+
+        $category = Cache::remember("blog_category_{$slug}", now()->addMinutes(60), function () use ($slug) {
+            return BlogCategory::where('slug', $slug)
+                ->where('status', 'published')
+                ->first();
+        });
 
         if (!$category) {
             return response()->json(['message' => 'Category not found'], 404);
         }
 
-        $blogs = Blog::where('blog_category_id', $category->id)
-            ->where('status', 'published')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $result = Cache::remember("blogs_by_category_{$slug}_{$page}", now()->addMinutes(30), function () use ($category) {
+            $blogs = Blog::where('blog_category_id', $category->id)
+                ->where('status', 'published')
+                ->orderBy('created_at', 'desc')
+                ->paginate(20);
 
-        return response()->json([
-            'category' => [
-                'id' => $category->id,
-                'name' => $category->name,
-                'slug' => $category->slug,
-                'description' => $category->description,
-            ],
-            'blogs' => $blogs,
-        ]);
+            return [
+                'category' => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'description' => $category->description,
+                ],
+                'blogs' => $blogs,
+            ];
+        });
+
+        return response()->json($result);
     }
 
 }

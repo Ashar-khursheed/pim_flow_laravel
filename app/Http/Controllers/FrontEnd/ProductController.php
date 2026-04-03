@@ -307,6 +307,48 @@ class ProductController extends Controller
 			$product->is_fixed = 0;
 		}
 
+		// Compare product
+		if ($product->compare_product_id) {
+			$cp = Product::with([
+				'productSuppliers' => function ($q) {
+					$q->select(['id', 'product_id', 'price', 'sale_price']);
+				},
+				'categories',
+			])->select(['id', 'name', 'sku'])->find($product->compare_product_id);
+
+			if ($cp) {
+				$cpSupplier = $cp->productSuppliers->first();
+				$cpParentCat = null;
+				$cpLastChildCat = null;
+				if ($cp->categories->isNotEmpty()) {
+					$cpFirstCat = $cp->categories->first();
+					$cpHierarchy = collect([$cpFirstCat]);
+					$cpCurrent = $cpFirstCat;
+					while ($cpCurrent->parent_id) {
+						$cpParent = Category::find($cpCurrent->parent_id);
+						if (!$cpParent) break;
+						$cpHierarchy->prepend($cpParent);
+						$cpCurrent = $cpParent;
+					}
+					$cpParentCat = $cpHierarchy->first()->name ?? null;
+					$cpLastChildCat = $cpHierarchy->last()->name ?? null;
+				}
+				$product->compare_product = [
+					'id' => $cp->id,
+					'name' => $cp->name,
+					'sku' => $cp->sku,
+					'parent_category' => $cpParentCat,
+					'last_child_category' => $cpLastChildCat,
+					'price' => $cpSupplier ? (float) $cpSupplier->price : 0,
+					'sale_price' => $cpSupplier ? (float) $cpSupplier->sale_price : 0,
+				];
+			} else {
+				$product->compare_product = null;
+			}
+		} else {
+			$product->compare_product = null;
+		}
+
 		// Currency
 		$product->currency_title = $product->currency
 		? ($product->currency->is_prefix_symbol ? $product->currency->symbol : $product->price . ' ' . $product->currency->symbol)
@@ -631,8 +673,48 @@ class ProductController extends Controller
 			'next_page' => $currentPage + 1,
 		];
 
+		// Batch-load compare products to avoid N+1
+		$compareProductIds = $products->getCollection()->pluck('compare_product_id')->filter()->unique()->values()->toArray();
+		$compareProductsMap = [];
+		if (!empty($compareProductIds)) {
+			$compareProductsList = Product::with([
+				'productSuppliers' => function ($q) {
+					$q->select(['id', 'product_id', 'price', 'sale_price']);
+				},
+				'categories',
+			])->select(['id', 'name', 'sku'])->whereIn('id', $compareProductIds)->get()->keyBy('id');
+
+			foreach ($compareProductsList as $cp) {
+				$cpParentCat = null;
+				$cpLastChildCat = null;
+				if ($cp->categories->isNotEmpty()) {
+					$cpFirstCat = $cp->categories->first();
+					$cpHierarchy = collect([$cpFirstCat]);
+					$cpCurrent = $cpFirstCat;
+					while ($cpCurrent->parent_id) {
+						$cpParent = Category::find($cpCurrent->parent_id);
+						if (!$cpParent) break;
+						$cpHierarchy->prepend($cpParent);
+						$cpCurrent = $cpParent;
+					}
+					$cpParentCat = $cpHierarchy->first()->name ?? null;
+					$cpLastChildCat = $cpHierarchy->last()->name ?? null;
+				}
+				$cpSupplier = $cp->productSuppliers->first();
+				$compareProductsMap[$cp->id] = [
+					'id' => $cp->id,
+					'name' => $cp->name,
+					'sku' => $cp->sku,
+					'parent_category' => $cpParentCat,
+					'last_child_category' => $cpLastChildCat,
+					'price' => $cpSupplier ? (float) $cpSupplier->price : 0,
+					'sale_price' => $cpSupplier ? (float) $cpSupplier->sale_price : 0,
+				];
+			}
+		}
+
 		// Transform the products collection
-		$products->getCollection()->transform(function ($product) {
+		$products->getCollection()->transform(function ($product) use ($compareProductsMap) {
 
 			$product->benefits_features = json_decode($product->benefits_features, true);
 
@@ -1090,6 +1172,11 @@ class ProductController extends Controller
 				$product->category_url = null;
 				$product->parent_category_url = null;
 			}
+
+			// Compare product
+			$product->compare_product = isset($product->compare_product_id, $compareProductsMap[$product->compare_product_id])
+				? $compareProductsMap[$product->compare_product_id]
+				: null;
 
 			return $product;
 		});

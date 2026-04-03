@@ -85,7 +85,8 @@ class Product extends Model implements TranslatableContract
 		'benefits_features' => 'array',
 		'gen_type' => 'nullable|integer',
 		'approved' => 'nullable|integer',
-		'ar_approved' => 'nullable|integer'
+		'ar_approved' => 'nullable|integer',
+		'compare_product_id',
 	];
 
 	public function categories()
