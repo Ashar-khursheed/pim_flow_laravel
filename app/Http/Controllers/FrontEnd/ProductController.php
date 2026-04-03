@@ -318,27 +318,14 @@ class ProductController extends Controller
 
 			if ($cp) {
 				$cpSupplier = $cp->productSuppliers->first();
-				$cpParentCat = null;
-				$cpLastChildCat = null;
-				if ($cp->categories->isNotEmpty()) {
-					$cpFirstCat = $cp->categories->first();
-					$cpHierarchy = collect([$cpFirstCat]);
-					$cpCurrent = $cpFirstCat;
-					while ($cpCurrent->parent_id) {
-						$cpParent = Category::find($cpCurrent->parent_id);
-						if (!$cpParent) break;
-						$cpHierarchy->prepend($cpParent);
-						$cpCurrent = $cpParent;
-					}
-					$cpParentCat = $cpHierarchy->first()->name ?? null;
-					$cpLastChildCat = $cpHierarchy->last()->name ?? null;
-				}
+				$cpParentUrl = method_exists($cp, 'parent_category_url') ? $cp->parent_category_url() : '';
+				$cpChildUrl = method_exists($cp, 'category_url') ? $cp->category_url() : '';
 				$product->compare_product = [
 					'id' => $cp->id,
 					'name' => $cp->name,
 					'sku' => $cp->sku,
-					'parent_category' => $cpParentCat,
-					'last_child_category' => $cpLastChildCat,
+					'parent_category_url' => $cpParentUrl,
+					'category_url' => $cpChildUrl,
 					'price' => $cpSupplier ? (float) $cpSupplier->price : 0,
 					'sale_price' => $cpSupplier ? (float) $cpSupplier->sale_price : 0,
 				];
