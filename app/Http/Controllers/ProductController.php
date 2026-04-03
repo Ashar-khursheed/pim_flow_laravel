@@ -655,10 +655,9 @@ class ProductController extends BaseController
 			}
 		}
 		// Compare product
-		$formattedProduct['compare_product_id'] = $product->compare_product_id;
-		$formattedProduct['compare_product_sku'] = $product->compare_product_id
-			? optional(Product::select('sku')->find($product->compare_product_id))->sku
-			: null;
+	$formattedProduct['compare_product'] = $product->compare_product_id
+    ? Product::select('id', 'sku', 'name')->find($product->compare_product_id)->toArray()
+    : null;
 
 		// Admin reviews
 		$adminReviews = Review::where('product_id', $productId)->whereNull('customer_id')->get();
