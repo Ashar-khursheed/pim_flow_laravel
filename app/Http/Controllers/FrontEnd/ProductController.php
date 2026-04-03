@@ -683,56 +683,51 @@ class ProductController extends Controller
 
 		// Batch-load compare products to avoid N+1
 		$compareProductIds = $products->getCollection()->pluck('compare_product_id')->filter()->unique()->values()->toArray();
-		$compareProductsMap = [];
-			if ($product->compare_product_id) {
+		$compareProductIds = $products->getCollection()
+		->pluck('compare_product_id')
+		->filter()
+		->unique()
+		->values()
+		->toArray();
 
-			$cp = Product::with([
+		$compareProductsMap = [];
+
+		if (!empty($compareProductIds)) {
+
+			$compareProducts = Product::with([
 				'productSuppliers' => function ($q) {
 					$q->select(['id', 'product_id', 'price', 'sale_price']);
 				},
-				'seoUrl' // ✅ slug ke liye zaroori
+				'seoUrl'
 			])
-			->select(['id', 'name', 'sku'])
-			->find($product->compare_product_id);
+			->whereIn('id', $compareProductIds)
+			->get();
 
-			if ($cp) {
+			foreach ($compareProducts as $cp) {
 
 				$cpSupplier = $cp->productSuppliers->first();
 
-				// ✅ Category URLs
 				$cpParentUrl = method_exists($cp, 'parent_category_url') ? $cp->parent_category_url() : '';
 				$cpChildUrl = method_exists($cp, 'category_url') ? $cp->category_url() : '';
-
-				// ✅ Product slug
 				$cpSlug = optional($cp->seoUrl)->url ?? '';
 
-				// ✅ FULL SLUG (same logic as variants)
 				$cpFullSlug = trim($cpParentUrl . '/' . $cpChildUrl . '/' . $cpSlug, '/');
 
-				$product->compare_product = [
+				$compareProductsMap[$cp->id] = [
 					'id' => $cp->id,
 					'name' => $cp->name,
 					'sku' => $cp->sku,
 
-					// ✅ Slugs
 					'parent_slug' => $cpParentUrl,
 					'child_slug' => $cpChildUrl,
 					'slug' => $cpSlug,
 					'full_slug' => $cpFullSlug,
 
-					// ✅ Pricing
 					'price' => $cpSupplier ? (float) $cpSupplier->price : 0,
 					'sale_price' => $cpSupplier ? (float) $cpSupplier->sale_price : 0,
 				];
-
-			} else {
-				$product->compare_product = null;
 			}
-
-		} else {
-			$product->compare_product = null;
 		}
-
 
 		// Transform the products collection
 		$products->getCollection()->transform(function ($product) use ($compareProductsMap) {
