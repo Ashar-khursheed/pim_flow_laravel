@@ -139,7 +139,7 @@ class CountryController extends Controller
 			'phone_code' => 'required|string|max:10',
 			'icon' => 'nullable|file|mimes:webp,png|max:2048', /* Max 2MB */
 			'currency_id' => 'required|integer|exists:currencies,id',
-			'margin' => 'nullable|numeric|min:0',
+			'margin' => 'nullable|numeric',
 		]);
 
 		/* Handle File Upload to S3 */
@@ -217,7 +217,7 @@ class CountryController extends Controller
 	}
 
 	/**
-	 * @OA\Put(
+	 * @OA\Post(
 	 *     path="/api/countries/{id}",
 	 *     summary="Update a country",
 	 *     tags={"Countries"},
@@ -266,7 +266,7 @@ class CountryController extends Controller
 			'icon' => 'nullable|file|mimes:webp,png|max:2048',
 			'icon_url' => 'nullable|string|url',
 			'currency_id' => 'required|integer|exists:currencies,id',
-			'margin' => 'nullable|numeric|min:0',
+			'margin' => 'nullable|numeric',
 		]);
 
 		/* Handle icon upload/update */

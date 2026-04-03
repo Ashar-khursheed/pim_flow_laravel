@@ -8758,12 +8758,12 @@
                     }
                 ]
             },
-            "put": {
+            "post": {
                 "tags": [
                     "Countries"
                 ],
                 "summary": "Update a country",
-                "operationId": "7982dd6e171c77b5db788675b39774f9",
+                "operationId": "95c71f6754f7a179c7b6ba071edb53d0",
                 "parameters": [
                     {
                         "name": "id",
@@ -10525,7 +10525,7 @@
                 "tags": [
                     "Dashboard"
                 ],
-                "summary": "Get dashboard statistics with optional range filter",
+                "summary": "Get dashboard statistics with optional range filters",
                 "operationId": "2d1bd6c9f8fe1cf3f8cafed219f661e0",
                 "parameters": [
                     {
@@ -17489,69 +17489,6 @@
                 "responses": {
                     "200": {
                         "description": "Currency converted successfully",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/convert-currency/batch": {
-            "post": {
-                "tags": [
-                    "Frontend-Currencies"
-                ],
-                "summary": "Batch convert currencies",
-                "description": "Convert multiple currency amounts in a single request.",
-                "operationId": "84b382154736481f7dc0efd374e64757",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "conversions"
-                                ],
-                                "properties": {
-                                    "conversions": {
-                                        "type": "array",
-                                        "items": {
-                                            "required": [
-                                                "from",
-                                                "amount"
-                                            ],
-                                            "properties": {
-                                                "from": {
-                                                    "type": "string",
-                                                    "example": "AED"
-                                                },
-                                                "amount": {
-                                                    "type": "number",
-                                                    "example": 100
-                                                },
-                                                "to": {
-                                                    "type": "string",
-                                                    "example": "INR",
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Batch conversion results",
                         "content": {
                             "application/json": {}
                         }
