@@ -470,7 +470,7 @@ class ProductController extends BaseController
 			'productSuppliers.vendor'
 		]);
 
-		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id', 'compare_product_id'], $attributes));
 
 		if (!$product) {
 			return response()->json([
@@ -654,6 +654,12 @@ class ProductController extends BaseController
 				break;
 			}
 		}
+		// Compare product
+		$formattedProduct['compare_product_id'] = $product->compare_product_id;
+		$formattedProduct['compare_product_sku'] = $product->compare_product_id
+			? optional(Product::select('sku')->find($product->compare_product_id))->sku
+			: null;
+
 		// Admin reviews
 		$adminReviews = Review::where('product_id', $productId)->whereNull('customer_id')->get();
 
