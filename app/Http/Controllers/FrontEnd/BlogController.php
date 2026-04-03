@@ -534,30 +534,28 @@ class BlogController extends Controller
 
     public function categoryWiseBlogs()
     {
-        $data = Cache::remember('blogs_category_wise', now()->addMinutes(30), function () {
-            $categories = BlogCategory::where('status', 'published')
-                ->orderBy('order', 'asc')
-                ->get(['id', 'name', 'slug', 'description']);
+        $categories = BlogCategory::where('status', 'published')
+            ->orderBy('order', 'asc')
+            ->get(['id', 'name', 'slug', 'description']);
 
-            $categoryIds = $categories->pluck('id');
+        $categoryIds = $categories->pluck('id');
 
-            // Single query for all blogs, then group in PHP — eliminates N+1
-            $allBlogs = Blog::where('status', 'published')
-                ->whereIn('blog_category_id', $categoryIds)
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->groupBy('blog_category_id');
+        // Single query for all blogs, then group in PHP — eliminates N+1
+        $allBlogs = Blog::where('status', 'published')
+            ->whereIn('blog_category_id', $categoryIds)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('blog_category_id');
 
-            return $categories->map(function ($category) use ($allBlogs) {
-                return [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'slug' => $category->slug,
-                    'description' => $category->description,
-                    'blogs' => $allBlogs->get($category->id, collect())->values(),
-                ];
-            })->values();
-        });
+        $data = $categories->map(function ($category) use ($allBlogs) {
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => $category->slug,
+                'description' => $category->description,
+                'blogs' => $allBlogs->get($category->id, collect())->values(),
+            ];
+        })->values();
 
         return response()->json($data);
     }
