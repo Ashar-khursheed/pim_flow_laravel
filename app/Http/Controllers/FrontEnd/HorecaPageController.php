@@ -235,161 +235,171 @@ class HorecaPageController extends BaseController
 	// }
 
 	/**
- * @OA\Get(
- *     path="/api/frontend/horeca-pages-by-slug/{slug}",
- *     summary="Get Horeca page details by slug",
- *     tags={"FrontEnd-Horeca Pages"},
- *     @OA\Parameter(
- *         name="slug",
- *         in="path",
- *         description="Horeca Page SEO Slug",
- *         required=true,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Response(response=200, description="Horeca page details retrieved successfully", @OA\MediaType(mediaType="application/json")),
- * )
- */
-public function showBySlug($slug)
-{
-	
+	 * @OA\Get(
+	 *     path="/api/frontend/horeca-pages-by-slug/{slug}",
+	 *     summary="Get Horeca page details by slug",
+	 *     tags={"FrontEnd-Horeca Pages"},
+	 *     @OA\Parameter(
+	 *         name="slug",
+	 *         in="path",
+	 *         description="Horeca Page SEO Slug",
+	 *         required=true,
+	 *         @OA\Schema(type="string")
+	 *     ),
+	 *     @OA\Response(response=200, description="Horeca page details retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
+	public function showBySlug($slug)
+	{
+		
 
-    try {
-        $isUae = in_array(config('app.website'), ['UAE', 'UAE_T']);
-        $cacheKey = "horeca_page_slug:{$slug}:" . ($isUae ? 'uae' : 'default');
+		try {
+			$isUae = in_array(config('app.website'), ['UAE', 'UAE_T']);
+			$cacheKey = "horeca_page_slug:{$slug}:" . ($isUae ? 'uae' : 'default');
 
-        $result = Cache::remember($cacheKey, now()->addMinutes(15), function () use ($slug, $isUae) {
+			$result = Cache::remember($cacheKey, now()->addMinutes(15), function () use ($slug, $isUae) {
 
-            // Single query: join seo + page together to avoid 2 round trips
-            $page = HorecaPage::select([
-        'horeca_pages.id',
-        'horeca_pages.name',
-        'horeca_pages.description',
-        'horeca_pages.link_name',
-        'horeca_pages.link_url',
-        'horeca_pages.banner_url',
-        'horeca_pages.left_para_description',
-        'horeca_pages.right_para_description',
-        'horeca_pages.faqs',
-        'horeca_pages.is_active',
-        'horeca_pages.created_at',
-    ])
-    ->join('seo_management', function ($join) use ($slug) {
-        $join->on('seo_management.relational_id', '=', 'horeca_pages.id')
-            ->where('seo_management.relational_type', 'Page')
-            ->where('seo_management.url', $slug);
-    })
-    ->first();
+				// Single query: join seo + page together to avoid 2 round trips
+				$page = HorecaPage::select([
+			'horeca_pages.id',
+			'horeca_pages.name',
+			'horeca_pages.description',
+			'horeca_pages.link_name',
+			'horeca_pages.link_url',
+			'horeca_pages.banner_url',
+			'horeca_pages.left_para_description',
+			'horeca_pages.right_para_description',
+			'horeca_pages.faqs',
+			'horeca_pages.is_active',
+			'horeca_pages.created_at',
+		])
+		->join('seo_management', function ($join) use ($slug) {
+			$join->on('seo_management.relational_id', '=', 'horeca_pages.id')
+				->where('seo_management.relational_type', 'Page')
+				->where('seo_management.url', $slug);
+		})
+		->first();
 
-            if (!$page) {
-                return null;
-            }
+				if (!$page) {
+					return null;
+				}
 
-            // Build product eager-load relationships once
-           $productRelationships = [
-					'seoUrl:id,relational_id,relational_type,url',
-					'productSuppliers' => function ($q) {
-						$q->select([
-							'id', 'product_id', 'vendor_id', 'vendor_sku',
-							'cost_per_item', 'sale_price', 'price', 'inventory',
-							'in_stock', 'min_quantity', 'is_fixed', 'delivery_days',
-							'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'
-						])
-						->cheapest()
-						->with([
-							'vendor:id,address,zipcode,city_id,country_id',
-							'vendor.country:id,name',
-							'vendor.city:id,name',
-						]);
+				// Build product eager-load relationships once
+			$productRelationships = [
+						'seoUrl:id,relational_id,relational_type,url',
+						'productSuppliers' => function ($q) {
+							$q->select([
+								'id', 'product_id', 'vendor_id', 'vendor_sku',
+								'cost_per_item', 'sale_price', 'price', 'inventory',
+								'in_stock', 'min_quantity', 'is_fixed', 'delivery_days',
+								'return_policy', 'free_shipping', 'shipping_charge', 'warranty_information'
+							])
+							->cheapest()
+							->with([
+								'vendor:id,address,zipcode,city_id,country_id',
+								'vendor.country:id,name',
+								'vendor.city:id,name',
+							]);
+						},
+						'reviews:id,product_id,star',
+						'currency:id,title,symbol',
+						'sellingUnitAttribute',
+					];
+
+				if ($isUae) {
+					$productRelationships[] = 'translations';
+				}
+
+				// Load everything in one go with constrained eager loading
+				$page->load([
+					// Categories: select only needed columns + seo in one eager load
+					'categories' => function ($q) {
+						$q->select('categories.id', 'categories.name', 'categories.image', 'categories.parent_id')
+						->orderByPivot('order');
 					},
-					'reviews:id,product_id,star',
-					'currency:id,title,symbol',
-					'sellingUnitAttribute',
-				];
+					'categories.seoUrl:id,relational_id,relational_type,url',
+					'categories.parentRecursive',
 
-            if ($isUae) {
-                $productRelationships[] = 'translations';
-            }
+					// Product types ordered upfront
+					'productTypes' => function ($q) {
+						$q->select('id', 'horeca_page_id', 'type', 'description', 'order')
+						->orderBy('order');
+					},
+					'productTypes.products' => function ($query) use ($productRelationships) {
+						$query->select([
+							'ec_products.id',
+							'ec_products.name',
+							'ec_products.sku',
+							'ec_products.images',
+							'ec_products.currency_id',
+							'ec_products.alt_tags',
+							'ec_products.quote_available',
+							'ec_products.brand_id',
+						])
+						->where('ec_products.status', 'published')
+						->with($productRelationships)
+						->withCount('reviews')
+						->withAvg('reviews', 'star');
+					},
+				]);
 
-            // Load everything in one go with constrained eager loading
-            $page->load([
-                // Categories: select only needed columns + seo in one eager load
-                'categories' => function ($q) {
-                    $q->select('categories.id', 'categories.name', 'categories.image')
-                      ->orderByPivot('order'); // avoids in-memory sorting later
-                },
-                'categories.seoUrl:id,relational_id,relational_type,url',
+				// --- Transform in-memory (no extra queries) ---
 
-                // Product types ordered upfront
-                'productTypes' => function ($q) {
-                    $q->select('id', 'horeca_page_id', 'type', 'description', 'order')
-                      ->orderBy('order');
-                },
-				'productTypes.products' => function ($query) use ($productRelationships) {
-					$query->select([
-						'ec_products.id',
-						'ec_products.name',
-						'ec_products.sku',
-						'ec_products.images',
-						'ec_products.currency_id',
-						'ec_products.alt_tags',
-						'ec_products.quote_available',
-						'ec_products.brand_id',
-					])
-					->where('ec_products.status', 'published')
-					->with($productRelationships)
-					->withCount('reviews')
-					->withAvg('reviews', 'star');
-				},
-            ]);
+				// Categories: flatten pivot + seo into clean fields
+				$getRootParent = function ($category) use (&$getRootParent) {
+					if (!$category->parentRecursive) {
+						return $category;
+					}
+					return $getRootParent($category->parentRecursive);
+				};
+				$page->setRelation('categories', $page->categories->map(function ($cat) use ($getRootParent) {
+				$root = $getRootParent($cat);
 
-            // --- Transform in-memory (no extra queries) ---
+					return [
+						'id'                => $cat->id,
+						'name'              => $cat->name,
+						'image'             => $cat->image,
+						'order'             => optional($cat->pivot)->order,
+						'slug'              => optional($cat->seoUrl)->url,
+						'parent_slug' => $root->id !== $cat->id ? optional($root->seoUrl)->url : null,
+					];
+				})->values());
 
-            // Categories: flatten pivot + seo into clean fields
-            $page->setRelation('categories', $page->categories->map(function ($cat) {
-                return [
-                    'id'    => $cat->id,
-                    'name'  => $cat->name,
-                    'image' => $cat->image,
-                    'order' => optional($cat->pivot)->order,
-                    'slug'  => optional($cat->seoUrl)->url,
-                ];
-            })->values());
-
-            // Product types + products
-				$page->productTypes->each(function ($productType) use ($isUae) {
-					$productType->products->each(function ($product) use ($isUae) {
-						$this->transformFeaturedProduct(
-							$product,
-							categoryMostParentURL: '',  // skip parent_category_url() DB call
-							categoryURL: '',            // skip category_url() DB call
-							withTranslation: $isUae
-				);
+				// Product types + products
+					$page->productTypes->each(function ($productType) use ($isUae) {
+						$productType->products->each(function ($product) use ($isUae) {
+							$this->transformFeaturedProduct(
+								$product,
+								categoryMostParentURL: '',  // skip parent_category_url() DB call
+								categoryURL: '',            // skip category_url() DB call
+								withTranslation: $isUae
+					);
+				});
 			});
-		});
 
-            return $page;
-        });
+				return $page;
+			});
 
-        if (!$result) {
+			if (!$result) {
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Horeca page not found'
-            ], 404);
-        }
+				return response()->json([
+					'success' => false,
+					'message' => 'Horeca page not found'
+				], 404);
+			}
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Horeca page retrieved successfully',
-            'data'    => $result
-        ], 200);
+			return response()->json([
+				'success' => true,
+				'message' => 'Horeca page retrieved successfully',
+				'data'    => $result
+			], 200);
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to retrieve horeca page',
-            'error'   => $e->getMessage()
-        ], 500);
-    }
-}
+		} catch (\Exception $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to retrieve horeca page',
+				'error'   => $e->getMessage()
+			], 500);
+		}
+	}
 }
