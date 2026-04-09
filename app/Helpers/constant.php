@@ -377,6 +377,14 @@ if (!function_exists('convert_unit_with_id')) {
 	}
 }
 
+/**
+ * Upload and convert image to WebP format, then store on S3
+ *
+ * @param Request $request
+ * @param string $key Form field name
+ * @param string $pathPrefix S3 directory path
+ * @return string|null S3 URL or null on failure
+ */
 function uploadImageToWebpS3FromFile(Request $request, string $key, string $pathPrefix)
 {
 	if (!$request->hasFile($key) || !$request->file($key)->isValid()) {
@@ -385,12 +393,19 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 
 	try {
 		$file = $request->file($key);
+
+		/* Create image from uploaded file */
 		$image = imagecreatefromstring(file_get_contents($file->getRealPath()));
+
 		if (!$image) {
-			Log::error('Failed to create image from file.');
+			Log::error('Failed to create image from file', [
+				'key' => $key,
+				'file' => $file->getClientOriginalName()
+			]);
 			return null;
 		}
 
+		/* Convert palette to true color if needed */
 		if (!imageistruecolor($image)) {
 			imagepalettetotruecolor($image);
 		}
@@ -399,12 +414,12 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 		$originalWidth = imagesx($image);
 		$originalHeight = imagesy($image);
 
-		/* Set maximum dimensions (adjust as needed) */
+		/* Set maximum width (adjust as needed) */
 		$maxWidth = 1000;
 
-		/* Calculate new dimensions while maintaining aspect ratio */
+		/* Resize if image exceeds max width */
 		if ($originalWidth > $maxWidth) {
-			$newWidth = 1000;
+			$newWidth = $maxWidth;
 			$newHeight = intval(($originalHeight / $originalWidth) * $newWidth);
 
 			/* Create resized image */
@@ -414,7 +429,7 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 			imagealphablending($resizedImage, false);
 			imagesavealpha($resizedImage, true);
 
-			/* Resize image */
+			/* Resize image maintaining aspect ratio */
 			imagecopyresampled(
 				$resizedImage,
 				$image,
@@ -425,25 +440,36 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 				$originalHeight
 			);
 
+			/* Free memory from original image */
 			imagedestroy($image);
 			$image = $resizedImage;
 		}
 
-		/* Convert to WebP with quality setting (0-100, lower = smaller file) */
+		/* Convert to WebP with quality setting (0-100) */
 		ob_start();
 		imagewebp($image, null, 75); /* Quality: 75 for good balance */
 		$webpData = ob_get_clean();
+
+		/* Free memory */
 		imagedestroy($image);
 
+		/* Generate unique filename */
 		$filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+		$filename = preg_replace('/[^A-Za-z0-9_-]/', '_', $filename); /* Sanitize filename */
 		$uniqueName = $filename . '_' . time() . '.webp';
 		$path = "{$pathPrefix}/{$uniqueName}";
 
-		Storage::disk('s3')->put($path, $webpData);
+		/* Upload to S3 */
+		Storage::disk('s3')->put($path, $webpData); /* Make publicly accessible */
 
 		return Storage::disk('s3')->url($path);
+
 	} catch (\Exception $e) {
-		Log::error('uploadImageToWebpS3FromFile error: ' . $e->getMessage());
+		Log::error('uploadImageToWebpS3FromFile error', [
+			'key' => $key,
+			'error' => $e->getMessage(),
+			'trace' => $e->getTraceAsString()
+		]);
 		return null;
 	}
 }
@@ -698,7 +724,6 @@ if (!function_exists('glitch_error_reporting_mails')) {
 		];
 
 		$uaeMails = [
-			'nomanpeera@horecastore.ae',
 			'hello@horecastore.ae',
 			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
@@ -771,7 +796,6 @@ if (!function_exists('order_cc_mails')) {
 		];
 
 		$uaeMails = [
-			'noman.peera@thehorecastore.com',
 			'imran@horecastore.ae',
 			'hello@horecastore.ae',
 			'pm@horecastore.ae',
@@ -839,7 +863,6 @@ if (!function_exists('inquiry_cc_mails')) {
 		];
 
 		$uaeMails = [
-			'noman.peera@thehorecastore.com',
 			'imran@horecastore.ae',
 			'dmm@thehorecastore.com',
 			'pm@horecastore.ae',
@@ -902,7 +925,6 @@ if (!function_exists('quote_cc_mails')) {
 		];
 
 		$uaeMails = [
-			'noman.peera@thehorecastore.com',
 			'imran@horecastore.ae',
 			'css01@horecastore.ae',
 			'css03@horecastore.ae',
