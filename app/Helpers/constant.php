@@ -724,7 +724,6 @@ if (!function_exists('glitch_error_reporting_mails')) {
 		];
 
 		$uaeMails = [
-			'nomanpeera@horecastore.ae',
 			'hello@horecastore.ae',
 			'webdeveloper01@horecastore.ae',
 			'webdeveloper04@horecastore.ae',
@@ -797,7 +796,6 @@ if (!function_exists('order_cc_mails')) {
 		];
 
 		$uaeMails = [
-			'noman.peera@thehorecastore.com',
 			'imran@horecastore.ae',
 			'hello@horecastore.ae',
 			'pm@horecastore.ae',
@@ -865,7 +863,6 @@ if (!function_exists('inquiry_cc_mails')) {
 		];
 
 		$uaeMails = [
-			'noman.peera@thehorecastore.com',
 			'imran@horecastore.ae',
 			'dmm@thehorecastore.com',
 			'pm@horecastore.ae',
@@ -928,7 +925,6 @@ if (!function_exists('quote_cc_mails')) {
 		];
 
 		$uaeMails = [
-			'noman.peera@thehorecastore.com',
 			'imran@horecastore.ae',
 			'css01@horecastore.ae',
 			'css03@horecastore.ae',

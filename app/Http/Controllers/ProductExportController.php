@@ -101,7 +101,7 @@ class ProductExportController extends BaseController
 		$includeDescriptiveAttributes = $request->boolean('include_descriptive_attributes');
 
 		$query = Product::with([
-			'categories:id,name',
+			'categories:id,name,parent_id',
 			'brand:id,name',
 			'vendors:id,name',
 			'tags:id,name',
@@ -237,6 +237,7 @@ class ProductExportController extends BaseController
 			if ($includeDescriptiveAttributes && $product->descriptiveAttributes) {
 				$descriptiveAttributes = $product->descriptiveAttributes->pluck('attribute_value', 'attributeDetails.name')->toArray();
 			}
+
 
 			$fullURL = config('app.url') . '/' . $product->parent_category_url() . '/' . $product->category_url() . '/' . ($product->seoProductUrl->url ?? "");
 
