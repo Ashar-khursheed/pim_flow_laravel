@@ -859,7 +859,7 @@ public function getAllGuestFeaturedProductsByCategory(Request $request)
                         'best_price' => $firstSupplier ? (float) $firstSupplier->price : (float) $details->price,
                         'vendor_id' => $firstSupplier->vendor_id ?? null,
                         'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-                        'inventory12' => $firstSupplier->inventory ?? null,
+                        'inventory' => $firstSupplier->inventory ?? null,
 						'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
 						'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
                         'in_stock' => $firstSupplier->in_stock ?? null,
