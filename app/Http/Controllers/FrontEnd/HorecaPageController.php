@@ -255,9 +255,8 @@ public function showBySlug($slug)
 
     try {
         $isUae = in_array(config('app.website'), ['UAE', 'UAE_T']);
-        $cacheKey = "horeca_page_slug:{$slug}:" . ($isUae ? 'uae' : 'default');
 
-        $result = Cache::remember($cacheKey, now()->addMinutes(15), function () use ($slug, $isUae) {
+        $result = (function () use ($slug, $isUae) {
 
             // Single query: join seo + page together to avoid 2 round trips
             $page = HorecaPage::select([
@@ -368,7 +367,7 @@ public function showBySlug($slug)
 		});
 
             return $page;
-        });
+        })();
 
         if (!$result) {
 

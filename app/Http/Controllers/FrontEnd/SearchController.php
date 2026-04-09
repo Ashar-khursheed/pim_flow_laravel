@@ -210,7 +210,7 @@ class SearchController extends Controller
 		$defaultBrands = ['Atosa', 'BakeMax', 'True', 'Beverage-Air', 'Midea'];
 
 		if (empty($query)) {
-			return Cache::remember('search_default_data', 60, function () use ($imageUrl, $defaultBrands, $mapProduct) {
+			return (function () use ($imageUrl, $defaultBrands, $mapProduct) {
 				$products = Product::with(['slug', 'currency', 'brand' , 'seoUrl'])
 				->where('status', 'published')
 				->inRandomOrder()
@@ -265,7 +265,7 @@ class SearchController extends Controller
 					'categories' => $categories,
 					'brands' => $brands,
 				]);
-			});
+			})();
 		}
 
 		// Generate search terms for fuzzy matching
@@ -434,8 +434,7 @@ class SearchController extends Controller
 		$totalResults = $products->count() + $categories->count() + $brands->count();
 
 		if ($totalResults < 3) {
-			// Quick suggestion using cached common terms
-			$suggestions = Cache::remember('search_suggestions_' . substr(md5($query), 0, 8), 300, function () use ($query) {
+			$suggestions = (function () use ($query) {
 				$commonTerms = [];
 
 				// Get top brand names
@@ -468,7 +467,7 @@ class SearchController extends Controller
 				}
 
 				return array_slice(array_unique(array_merge($commonTerms, $words)), 0, 3);
-			});
+			})();
 		}
 
 		$response = [
@@ -530,32 +529,24 @@ class SearchController extends Controller
 			return response()->json(['categories' => []]);
 		}
 
-		$cacheKey = 'categories_search_' . md5($query);
-
-		$categories = Cache::get($cacheKey);
-
-		if (!$categories) {
-			$categories = Category::where('status', 'published') // Filter only published categories
-			->where(function ($q) use ($query) {
-				$q->where('name', 'LIKE', "%{$query}%")
-				->orWhereHas('slug', function ($subQ) use ($query) {
-					$subQ->where('key', 'LIKE', "%{$query}%");
-				});
-			})
-			->with(['slug', 'parent.slug'])
-			->take(4)
-			->get()
-			->map(function ($category) {
-				return [
-					'id' => $category->id,
-					'name' => $category->name,
-					'slug' => optional($category->slug)->key,
-					'slug_path' => $this->getSlugPath($category),
-				];
+		$categories = Category::where('status', 'published')
+		->where(function ($q) use ($query) {
+			$q->where('name', 'LIKE', "%{$query}%")
+			->orWhereHas('slug', function ($subQ) use ($query) {
+				$subQ->where('key', 'LIKE', "%{$query}%");
 			});
-
-			Cache::put($cacheKey, $categories, 60);
-		}
+		})
+		->with(['slug', 'parent.slug'])
+		->take(4)
+		->get()
+		->map(function ($category) {
+			return [
+				'id' => $category->id,
+				'name' => $category->name,
+				'slug' => optional($category->slug)->key,
+				'slug_path' => $this->getSlugPath($category),
+			];
+		});
 
 		return response()->json(['categories' => $categories]);
 	}

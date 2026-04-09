@@ -153,11 +153,7 @@ class CategoryMenuController extends Controller
 
         $records = $records->orderBy('order');
 
-        $cacheKey = $filterId ? "categories_menu_$filterId" : "categories_menu__all";
-
-        $categoriesMenus = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($records) {
-            return $records->get();
-        });
+        $categoriesMenus = $records->get();
 
         return response()->json($categoriesMenus);
     }
@@ -195,12 +191,8 @@ class CategoryMenuController extends Controller
             });
         }
 
-        $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
-
-        $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
-            $categories = $query->get();
-            return $this->buildCategoryTree($categories);
-        });
+        $categories = $query->get();
+        $categoriesTree = $this->buildCategoryTree($categories);
 
         return response()->json($categoriesTree)
             ;
