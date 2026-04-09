@@ -808,7 +808,8 @@ class ProductController extends Controller
 			$firstSupplier = $product->productSuppliers()
 			->with([
 				'vendor.country:id,name',
-				'vendor.city:id,name'
+				'vendor.city:id,name',
+				'inventoryUpdator:id,first_name,last_name'
 			])
 			->first();
 
@@ -828,6 +829,8 @@ class ProductController extends Controller
 				$product->vendor_id = $firstSupplier->vendor_id;
 				$product->map = (float) $firstSupplier->map;
 				$product->inventory = $firstSupplier->inventory;
+				$product->inventory_updated_by = $firstSupplier->inventoryUpdator->name ?? null;
+				$product->inventory_updated_at = $firstSupplier->inventory_updated_at ?? null;
 				$product->in_stock = $firstSupplier->in_stock;
 				$product->delivery_days = $firstSupplier->delivery_days;
 				$product->return_policy = $firstSupplier->return_policy;
