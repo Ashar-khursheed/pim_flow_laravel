@@ -289,7 +289,7 @@ class SaveForLaterController extends Controller
 				'map' => (float) ($firstSupplier->map ?? 0),
 				'inventory' => $firstSupplier->inventory ?? null,
 				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-				'inventory' => $firstSupplier->inventory_updated_at ?? null,
+				'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
 				'in_stock' => $firstSupplier->in_stock ?? null,
 				'delivery_days' => $firstSupplier->delivery_days ?? null,
 				'return_policy' => $firstSupplier->return_policy ?? null,
