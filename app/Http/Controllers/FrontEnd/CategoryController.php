@@ -769,51 +769,50 @@ class CategoryController extends Controller
 	// }
 	public function getAllGuestFeaturedProductsByCategory(Request $request)
 	{
-		return Cache::remember('guest_featured_products', 3600, function () {
+		$categories = Cache::remember('guest_featured_products', 3600, function () {
 			$categories = Category::whereHas('products', function ($query) {
-				$query->where('is_featured', 1)->where('status', 'published');
-			}, '>=', 5)
-			->whereHas('parent.parent')
-			->with([
-				'products' => function ($query) {
-					$query->where('is_featured', 1)
-					->where('status', 'published')
-					->select('id', 'name', 'sku', 'currency_id');
-				}
-			])
-			->take(5)
-			->get();
+					$query->where('is_featured', 1)->where('status', 'published');
+				}, '>=', 5)
+				->whereHas('parent.parent')
+				->with([
+					'products' => function ($query) {
+						$query->where('is_featured', 1)
+							->where('status', 'published')
+							->select('id', 'name', 'sku', 'currency_id');
+					}
+				])
+				->take(5)
+				->get();
 
 			$subQuery = Product::select('sku')->groupBy('sku');
 
-			$categories = $categories->map(function ($category) use ($subQuery) {
+			return $categories->map(function ($category) use ($subQuery) {
 				$featuredProducts = $category->products->take(10);
 
 				$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-					$join->on('ec_products.sku', '=', 'best_products.sku');
-				})
-				->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-				->with([
-					'reviews',
-					'currency',
-					'seoUrl',
-						// ✅ Supplier + vendor ek saath eager load
-					'productSuppliers' => function ($q) {
-						$q->with([
-							'vendor:id,address,zipcode',
-							'vendor.country:id,name',
-							'vendor.city:id,name',
-							'inventoryUpdator:id,first_name,last_name'
-						])->orderBy('id')->limit(1);
-					},
-					'productAttributes' => function ($query) {
-						$query->whereHas('attributeDetails', function ($q) {
-							$q->whereIn('name', ['Units per Case', 'Pack Type']);
-						});
-					},
-				])
-				->get()
-				->keyBy('id');
+						$join->on('ec_products.sku', '=', 'best_products.sku');
+					})
+					->whereIn('ec_products.id', $featuredProducts->pluck('id'))
+					->with([
+						'reviews',
+						'currency',
+						'seoUrl',
+						'productSuppliers' => function ($q) {
+							$q->with([
+								'vendor:id,address,zipcode',
+								'vendor.country:id,name',
+								'vendor.city:id,name',
+								'inventoryUpdator:id,first_name,last_name',
+							])->orderBy('id')->limit(1);
+						},
+						'productAttributes' => function ($query) {
+							$query->whereHas('attributeDetails', function ($q) {
+								$q->whereIn('name', ['Units per Case', 'Pack Type']);
+							});
+						},
+					])
+					->get()
+					->keyBy('id');
 
 				return [
 					'category_name' => $category->name,
@@ -821,18 +820,13 @@ class CategoryController extends Controller
 						$details = $productDetails[$product->id] ?? null;
 						if (!$details) return null;
 
-						// ✅ Already eager loaded - no extra query
 						$firstSupplier = $details->productSuppliers->first();
-
 						$totalReviews = $details->reviews->count();
 						$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
 						$currencyTitle = $details->currency->symbol ?? null;
-
 						$imageUrls = is_string($details->images) ? json_decode($details->images, true) : (array) $details->images;
 						$cleanedAlt = is_string($details->alt_tags) ? json_decode($details->alt_tags, true) : (array) $details->alt_tags;
-
 						$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
-						$basePrice = $firstSupplier ? (($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price) : null;
 
 						return [
 							'id' => $details->id,
@@ -859,8 +853,8 @@ class CategoryController extends Controller
 							'best_price' => $firstSupplier ? (float) $firstSupplier->price : (float) $details->price,
 							'vendor_id' => $firstSupplier->vendor_id ?? null,
 							'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-							'inventory' => $firstSupplier->inventory ?? null,
-							'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+							'inventory12' => $firstSupplier->inventory ?? null,
+							'inventory_updated_by' => $firstSupplier->inventoryUpdator->first_name ?? null,
 							'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
 							'in_stock' => $firstSupplier->in_stock ?? null,
 							'delivery_days' => $firstSupplier->delivery_days ?? null,
@@ -875,13 +869,14 @@ class CategoryController extends Controller
 					})->filter()->values(),
 				];
 			});
-
-			return response()->json([//
-				'success' => true,
-				'data' => $categories,
-			])->header('Cache-Control', 'public, max-age=86400');
 		});
-	}//
+
+		/* Response object cache ke bahar — sirf data cache hoga */
+		return response()->json([
+			'success' => true,
+			'data' => $categories,
+		])->header('Cache-Control', 'public, max-age=86400');
+	}
 
 	private function addImageUrlsRecursively($category)
 	{
