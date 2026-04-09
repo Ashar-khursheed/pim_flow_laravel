@@ -433,7 +433,8 @@ class BrandController extends Controller
 						$firstSupplier = $details->productSuppliers()
 						->with([
 							'vendor.country:id,name',
-							'vendor.city:id,name'
+							'vendor.city:id,name',
+							'inventoryUpdator:id,first_name,last_name'
 						])
 						->first();
 
@@ -490,6 +491,8 @@ class BrandController extends Controller
 							'best_price' => (float) ($firstSupplier->price ?? 0),
 							'map' => (float) ($firstSupplier->map ?? 0),
 							'inventory' => $firstSupplier->inventory ?? null,
+							'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+							'inventory' => $firstSupplier->inventory_updated_at ?? null,
 							'in_stock' => $firstSupplier->in_stock ?? null,
 							'delivery_days' => $firstSupplier->delivery_days ?? null,
 							'return_policy' => $firstSupplier->return_policy ?? null,
@@ -971,7 +974,8 @@ class BrandController extends Controller
 				$firstSupplier = $product->productSuppliers()
 				->with([
 					'vendor.country:id,name',
-					'vendor.city:id,name'
+					'vendor.city:id,name',
+					'inventoryUpdator:id,first_name,last_name'
 				])
 				->first();
 
@@ -1009,6 +1013,8 @@ class BrandController extends Controller
 					'vendor_id' => $firstSupplier->vendor_id ?? null,
 					'map' => $firstSupplier ? (float) $firstSupplier->map : null,
 					'inventory' => $firstSupplier->inventory ?? null,
+					'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+					'inventory' => $firstSupplier->inventory_updated_at ?? null,
 					'in_stock' => $firstSupplier->in_stock ?? null,
 					'delivery_days' => $firstSupplier->delivery_days ?? null,
 					'return_policy' => $firstSupplier->return_policy ?? null,

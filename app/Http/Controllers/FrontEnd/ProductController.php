@@ -1222,7 +1222,8 @@ class ProductController extends Controller
 			$firstSupplier = $product->productSuppliers()
 			->with([
 				'vendor.country:id,name',
-				'vendor.city:id,name'
+				'vendor.city:id,name',
+				'inventoryUpdator:id,first_name,last_name'
 			])
 			->first();
 
@@ -1268,6 +1269,8 @@ class ProductController extends Controller
 				'vendor_id' => $firstSupplier->vendor_id ?? null,
 				'map' => (float) $firstSupplier->map ?? null,
 				'inventory' => $firstSupplier->inventory ?? null,
+				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+				'inventory' => $firstSupplier->inventory_updated_at ?? null,
 				'in_stock' => $firstSupplier->in_stock ?? null,
 				'delivery_days' => $firstSupplier->delivery_days ?? null,
 				'return_policy' => $firstSupplier->return_policy ?? null,
@@ -1395,7 +1398,8 @@ class ProductController extends Controller
 			$firstSupplier = $product->productSuppliers()
 			->with([
 				'vendor.country:id,name',
-				'vendor.city:id,name'
+				'vendor.city:id,name',
+				'inventoryUpdator:id,first_name,last_name'
 			])
 			->first();
 
@@ -1440,6 +1444,8 @@ class ProductController extends Controller
 				'vendor_id' => $firstSupplier->vendor_id ?? null,
 				'map' => (float) $firstSupplier->map ?? null,
 				'inventory' => $firstSupplier->inventory ?? null,
+				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+				'inventory' => $firstSupplier->inventory_updated_at ?? null,
 				'in_stock' => $firstSupplier->in_stock ?? null,
 				'delivery_days' => $firstSupplier->delivery_days ?? null,
 				'return_policy' => $firstSupplier->return_policy ?? null,
@@ -1559,7 +1565,8 @@ class ProductController extends Controller
 			$firstSupplier = $product->productSuppliers()
 			->with([
 				'vendor.country:id,name',
-				'vendor.city:id,name'
+				'vendor.city:id,name',
+				'inventoryUpdator:id,first_name,last_name'
 			])
 			->first();
 
@@ -1603,6 +1610,8 @@ class ProductController extends Controller
 				'vendor_id' => $firstSupplier->vendor_id ?? null,
 				'map' => (float) $firstSupplier->map ?? null,
 				'inventory' => $firstSupplier->inventory ?? null,
+				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+				'inventory' => $firstSupplier->inventory_updated_at ?? null,
 				'in_stock' => $firstSupplier->in_stock ?? null,
 				'delivery_days' => $firstSupplier->delivery_days ?? null,
 				'return_policy' => $firstSupplier->return_policy ?? null,
@@ -2103,7 +2112,8 @@ class ProductController extends Controller
 			$firstSupplier = $product->productSuppliers()
 			->with([
 				'vendor.country:id,name',
-				'vendor.city:id,name'
+				'vendor.city:id,name',
+				'inventoryUpdator:id,first_name,last_name'
 			])
 			->first();
 
@@ -2147,6 +2157,8 @@ class ProductController extends Controller
 				'vendor_id' => $firstSupplier->vendor_id ?? null,
 				'map' => (float) $firstSupplier->map ?? null,
 				'inventory' => $firstSupplier->inventory ?? null,
+				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+				'inventory' => $firstSupplier->inventory_updated_at ?? null,
 				'in_stock' => $firstSupplier->in_stock ?? null,
 				'delivery_days' => $firstSupplier->delivery_days ?? null,
 				'return_policy' => $firstSupplier->return_policy ?? null,
@@ -2558,7 +2570,7 @@ class ProductController extends Controller
 	// 	foreach ($categoryOrderNames as $index => $name) {
 	// 		// Use LIKE to be more improved against spacing/case issues
 	// 		$cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
-			
+
 	// 		if ($cat) {
 	// 			// Assign the parent category ID to this index (priority)
 	// 			$categorySortMap[$cat->id] = $index;
@@ -2572,10 +2584,10 @@ class ProductController extends Controller
 	// 					$categorySortMap[$childId] = $index;
 	// 				}
 	// 			}
-				
+
 	// 			// Also get intermediate children if getLeafCategories only returns tips
 	// 			// A safer approach for a tree is to just get all children recursive
-	// 			$allChildren = $cat->childrenRecursive; 
+	// 			$allChildren = $cat->childrenRecursive;
 	// 			// Flatten function to get all IDs
 	// 			$traverse = function($categories) use (&$traverse, &$categorySortMap, $index) {
 	// 				foreach ($categories as $category) {
@@ -2683,7 +2695,7 @@ class ProductController extends Controller
 	// 					$consonants = preg_replace('/[aeiouyAEIOUY\s]+/', '%', $search);
 	// 					// Ensure we don't have multiple % side by side if possible (preg_replace handles it but good to be sure)
 	// 					$fuzzyPattern = '%' . $consonants . '%';
-						
+
 	// 					// Only apply if we have enough "skeleton" to match on
 	// 					if (strlen($consonants) >= 3) {
 	// 						$q->orWhere('name', 'LIKE', $fuzzyPattern);
@@ -3044,7 +3056,7 @@ class ProductController extends Controller
 						$consonants = preg_replace('/[aeiouyAEIOUY\s]+/', '%', $search);
 						// Ensure we don't have multiple % side by side if possible (preg_replace handles it but good to be sure)
 						$fuzzyPattern = '%' . $consonants . '%';
-						
+
 						// Only apply if we have enough "skeleton" to match on
 						if (strlen($consonants) >= 3) {
 							$q->orWhere('name', 'LIKE', $fuzzyPattern);
@@ -3239,6 +3251,8 @@ class ProductController extends Controller
 				'vendor_id' => $firstSupplier->vendor_id ?? null,
 				'map' => (float)($firstSupplier->map ?? 0),
 				'inventory' => $firstSupplier->inventory ?? null,
+				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+				'inventory' => $firstSupplier->inventory_updated_at ?? null,
 				'in_stock' => $firstSupplier->in_stock ?? null,
 				'delivery_days' => $firstSupplier->delivery_days ?? null,
 				'return_policy' => $firstSupplier->return_policy ?? null,
@@ -3737,9 +3751,9 @@ class ProductController extends Controller
 	}
 
 
-	
-	
-	
+
+
+
 		/**
 	 * @OA\Get(
 	 *     path="/api/frontend/ec-products",
@@ -3792,8 +3806,8 @@ class ProductController extends Controller
 	 *     )
 	 * )
 	 */
-	
-	
+
+
 		public function getEcProducts(Request $request)
 	{
 		$targetSkus = [
@@ -3994,6 +4008,8 @@ class ProductController extends Controller
 				'vendor_id' => $firstSupplier->vendor_id ?? null,
 				'map' => (float)($firstSupplier->map ?? 0),
 				'inventory' => $firstSupplier->inventory ?? null,
+				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+				'inventory' => $firstSupplier->inventory_updated_at ?? null,
 				'in_stock' => $firstSupplier->in_stock ?? null,
 				'delivery_days' => $firstSupplier->delivery_days ?? null,
 				'return_policy' => $firstSupplier->return_policy ?? null,

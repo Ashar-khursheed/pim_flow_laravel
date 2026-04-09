@@ -522,7 +522,8 @@ class CategoryController extends Controller
 					$firstSupplier = $details->productSuppliers()
 					->with([
 						'vendor.country:id,name',
-						'vendor.city:id,name'
+						'vendor.city:id,name',
+						'inventoryUpdator:id,first_name,last_name'
 					])
 					->first();
 
@@ -576,6 +577,8 @@ class CategoryController extends Controller
 						'vendor_id' => $firstSupplier->vendor_id ?? null,
 						'map' => $firstSupplier ? (float) $firstSupplier->map : null,
 						'inventory' => $firstSupplier->inventory ?? null,
+						'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+						'inventory' => $firstSupplier->inventory_updated_at ?? null,
 						'in_stock' => $firstSupplier->in_stock ?? null,
 						'delivery_days' => $firstSupplier->delivery_days ?? null,
 						'return_policy' => $firstSupplier->return_policy ?? null,
@@ -799,7 +802,8 @@ public function getAllGuestFeaturedProductsByCategory(Request $request)
                         $q->with([
                             'vendor:id,address,zipcode',
                             'vendor.country:id,name',
-                            'vendor.city:id,name'
+                            'vendor.city:id,name',
+							'inventoryUpdator:id,first_name,last_name'
                         ])->orderBy('id')->limit(1);
                     },
                     'productAttributes' => function ($query) {
@@ -856,6 +860,8 @@ public function getAllGuestFeaturedProductsByCategory(Request $request)
                         'vendor_id' => $firstSupplier->vendor_id ?? null,
                         'map' => $firstSupplier ? (float) $firstSupplier->map : null,
                         'inventory' => $firstSupplier->inventory ?? null,
+						'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+						'inventory' => $firstSupplier->inventory_updated_at ?? null,
                         'in_stock' => $firstSupplier->in_stock ?? null,
                         'delivery_days' => $firstSupplier->delivery_days ?? null,
                         'return_policy' => $firstSupplier->return_policy ?? null,

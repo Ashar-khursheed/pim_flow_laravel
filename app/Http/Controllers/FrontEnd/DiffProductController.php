@@ -96,7 +96,8 @@ class DiffProductController extends Controller
 				$firstSupplier = $product->productSuppliers()
 				->with([
 					'vendor.country:id,name',
-					'vendor.city:id,name'
+					'vendor.city:id,name',
+					'inventoryUpdator:id,first_name,last_name'
 				])
 				->first();
 
@@ -139,6 +140,8 @@ class DiffProductController extends Controller
 					'vendor_id' => $firstSupplier->vendor_id ?? null,
 					'map' => $firstSupplier ? (float) $firstSupplier->map : null,
 					'inventory' => $firstSupplier->inventory ?? null,
+					'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+					'inventory' => $firstSupplier->inventory_updated_at ?? null,
 					'in_stock' => $firstSupplier->in_stock ?? null,
 					'delivery_days' => $firstSupplier->delivery_days ?? null,
 					'return_policy' => $firstSupplier->return_policy ?? null,
@@ -248,7 +251,8 @@ class DiffProductController extends Controller
 				$firstSupplier = $product->productSuppliers()
 				->with([
 					'vendor.country:id,name',
-					'vendor.city:id,name'
+					'vendor.city:id,name',
+					'inventoryUpdator:id,first_name,last_name'
 				])
 				->first();
 
@@ -290,6 +294,8 @@ class DiffProductController extends Controller
 					'vendor_id' => $firstSupplier->vendor_id ?? null,
 					'map' => $firstSupplier ? (float) $firstSupplier->map : null,
 					'inventory' => $firstSupplier->inventory ?? null,
+					'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+					'inventory' => $firstSupplier->inventory_updated_at ?? null,
 					'in_stock' => $firstSupplier->in_stock ?? null,
 					'delivery_days' => $firstSupplier->delivery_days ?? null,
 					'return_policy' => $firstSupplier->return_policy ?? null,

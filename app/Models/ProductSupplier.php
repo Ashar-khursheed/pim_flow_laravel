@@ -45,6 +45,11 @@ class ProductSupplier extends Model
 		return $this->belongsTo(Vendor::class, 'vendor_id');
 	}
 
+	public function inventoryUpdator()
+	{
+		return $this->belongsTo(User::class, 'inventory_updated_by');
+	}
+
 	/**
 	 * Scope to filter by price range
 	 * Uses sale_price if > 0, otherwise uses price

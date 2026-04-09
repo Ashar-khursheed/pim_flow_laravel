@@ -401,7 +401,7 @@ class ProductSupplierController extends BaseController
 	 */
 	public function show($id)
 	{
-		$productSupplier = ProductSupplier::with(['product:id,name', 'vendor:id,name'])->find($id);
+		$productSupplier = ProductSupplier::with(['product:id,name', 'vendor:id,name', 'inventoryUpdator:id,first_name,last_name'])->find($id);
 
 		if (!$productSupplier) {
 			return response()->json([

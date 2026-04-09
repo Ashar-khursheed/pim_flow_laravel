@@ -128,7 +128,8 @@ class SearchController extends Controller
 			$firstSupplier = $product->productSuppliers()
 			->with([
 				'vendor.country:id,name',
-				'vendor.city:id,name'
+				'vendor.city:id,name',
+				'inventoryUpdator:id,first_name,last_name'
 			])
 			->first();
 
@@ -155,6 +156,8 @@ class SearchController extends Controller
 				'sale_price' => $firstSupplier->sale_price ?? null,
 				'map' => $firstSupplier->map ?? null,
 				'inventory' => $firstSupplier->inventory ?? null,
+				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+				'inventory' => $firstSupplier->inventory_updated_at ?? null,
 				'in_stock' => $firstSupplier->in_stock ?? null,
 				'delivery_days' => $firstSupplier->delivery_days ?? null,
 				'return_policy' => $firstSupplier->return_policy ?? null,
@@ -596,7 +599,8 @@ class SearchController extends Controller
 			$firstSupplier = $product->productSuppliers()
 			->with([
 				'vendor.country:id,name',
-				'vendor.city:id,name'
+				'vendor.city:id,name',
+				'inventoryUpdator:id,first_name,last_name'
 			])
 			->first();
 
@@ -623,6 +627,8 @@ class SearchController extends Controller
 				'sale_price' =>  $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->sale_price) : null,
 				'map' => $firstSupplier->map ?? null,
 				'inventory' => $firstSupplier->inventory ?? null,
+				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
+				'inventory' => $firstSupplier->inventory_updated_at ?? null,
 				'in_stock' => $firstSupplier->in_stock ?? null,
 				'delivery_days' => $firstSupplier->delivery_days ?? null,
 				'return_policy' => $firstSupplier->return_policy ?? null,
