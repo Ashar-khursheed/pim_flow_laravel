@@ -769,24 +769,23 @@ class CategoryController extends Controller
 	// }
 	public function getAllGuestFeaturedProductsByCategory(Request $request)
 	{
-		$categories = Cache::remember('guest_featured_products', 3600, function () {
-			$categories = Category::whereHas('products', function ($query) {
-					$query->where('is_featured', 1)->where('status', 'published');
-				}, '>=', 5)
-				->whereHas('parent.parent')
-				->with([
-					'products' => function ($query) {
-						$query->where('is_featured', 1)
-							->where('status', 'published')
-							->select('id', 'name', 'sku', 'currency_id');
-					}
-				])
-				->take(5)
-				->get();
+		$categories = Category::whereHas('products', function ($query) {
+				$query->where('is_featured', 1)->where('status', 'published');
+			}, '>=', 5)
+			->whereHas('parent.parent')
+			->with([
+				'products' => function ($query) {
+					$query->where('is_featured', 1)
+						->where('status', 'published')
+						->select('id', 'name', 'sku', 'currency_id');
+				}
+			])
+			->take(5)
+			->get();
 
-			$subQuery = Product::select('sku')->groupBy('sku');
+		$subQuery = Product::select('sku')->groupBy('sku');
 
-			return $categories->map(function ($category) use ($subQuery) {
+		$categories = $categories->map(function ($category) use ($subQuery) {
 				$featuredProducts = $category->products->take(10);
 
 				$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
@@ -868,10 +867,8 @@ class CategoryController extends Controller
 						];
 					})->filter()->values(),
 				];
-			});
 		});
 
-		/* Response object cache ke bahar — sirf data cache hoga */
 		return response()->json([
 			'success' => true,
 			'data' => $categories,
