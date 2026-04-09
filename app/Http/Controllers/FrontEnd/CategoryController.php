@@ -769,7 +769,7 @@ class CategoryController extends Controller
 	// }
 	public function getAllGuestFeaturedProductsByCategory(Request $request)
 	{
-		return Cache::remember('guest_featured_products', 3600, function () {
+		$categories = Cache::remember('guest_featured_products', 3600, function () {
 			$categories = Category::whereHas('products', function ($query) {
 					$query->where('is_featured', 1)->where('status', 'published');
 				}, '>=', 5)
@@ -786,7 +786,7 @@ class CategoryController extends Controller
 
 			$subQuery = Product::select('sku')->groupBy('sku');
 
-			$categories = $categories->map(function ($category) use ($subQuery) {
+			return $categories->map(function ($category) use ($subQuery) {
 				$featuredProducts = $category->products->take(10);
 
 				$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
@@ -797,13 +797,12 @@ class CategoryController extends Controller
 						'reviews',
 						'currency',
 						'seoUrl',
-						// ✅ Supplier + vendor ek saath eager load
 						'productSuppliers' => function ($q) {
 							$q->with([
 								'vendor:id,address,zipcode',
 								'vendor.country:id,name',
 								'vendor.city:id,name',
-								'inventoryUpdator:id,first_name,last_name'
+								'inventoryUpdator:id,first_name,last_name',
 							])->orderBy('id')->limit(1);
 						},
 						'productAttributes' => function ($query) {
@@ -821,19 +820,14 @@ class CategoryController extends Controller
 						$details = $productDetails[$product->id] ?? null;
 						if (!$details) return null;
 
-						// ✅ Already eager loaded - no extra query
 						$firstSupplier = $details->productSuppliers->first();
-
 						$totalReviews = $details->reviews->count();
 						$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
 						$currencyTitle = $details->currency->symbol ?? null;
-
 						$imageUrls = is_string($details->images) ? json_decode($details->images, true) : (array) $details->images;
 						$cleanedAlt = is_string($details->alt_tags) ? json_decode($details->alt_tags, true) : (array) $details->alt_tags;
-
 						$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
-						$basePrice = $firstSupplier ? (($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price) : null;
-		// dd($firstSupplier->inventory_updated_by, $firstSupplier->inventory_updated_at);
+
 						return [
 							'id' => $details->id,
 							'name' => $details->name,
@@ -860,7 +854,7 @@ class CategoryController extends Controller
 							'vendor_id' => $firstSupplier->vendor_id ?? null,
 							'map' => $firstSupplier ? (float) $firstSupplier->map : null,
 							'inventory' => $firstSupplier->inventory ?? null,
-							'inventory_updated_by' => $firstSupplier->inventory_updated_by ?? null,
+							'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
 							'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
 							'in_stock' => $firstSupplier->in_stock ?? null,
 							'delivery_days' => $firstSupplier->delivery_days ?? null,
@@ -875,13 +869,15 @@ class CategoryController extends Controller
 					})->filter()->values(),
 				];
 			});
-
-			return response()->json([
-				'success' => true,
-				'data' => $categories,
-			]);
 		});
+
+		/* Response object cache ke bahar — sirf data cache hoga */
+		return response()->json([
+			'success' => true,
+			'data' => $categories,
+		])->header('Cache-Control', 'public, max-age=86400');
 	}
+
 	private function addImageUrlsRecursively($category)
 	{
 		// If the category has children, modify their images as well
