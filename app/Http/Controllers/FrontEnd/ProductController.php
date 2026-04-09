@@ -1098,7 +1098,7 @@ class ProductController extends Controller
 			'success' => true,
 			'data' => $products,
 			'pagination' => $pagination,
-		])->header('Cache-Control', 'public, max-age=86400');
+		]);
 	}
 
 	/**
@@ -1286,7 +1286,7 @@ class ProductController extends Controller
 		return response()->json([//
 			'success' => true,
 			'data' => $transformed
-		])->header('Cache-Control', 'public, max-age=86400');
+		]);
 	}
 
 	/**
@@ -1466,7 +1466,7 @@ class ProductController extends Controller
 			'total' => $products->total(),
 			'per_page' => $products->perPage(),
 			'data' => $transformed,
-		])->header('Cache-Control', 'public, max-age=86400');
+		]);
 	}
 
 	/**
@@ -1632,7 +1632,7 @@ class ProductController extends Controller
 			'total' => $products->total(),
 			'per_page' => $products->perPage(),
 			'data' => $transformed,
-		])->header('Cache-Control', 'public, max-age=86400');
+		]);
 	}
 
 	/**
@@ -1722,7 +1722,7 @@ class ProductController extends Controller
 				'total_units_sold' => $totalUnitsSold,
 				'total_reviews' => $totalReviews,
 			]
-		])->header('Cache-Control', 'public, max-age=86400');
+		]);
 	}
 
 	/**
@@ -1935,7 +1935,7 @@ class ProductController extends Controller
 		return response()->json([//
 			'success' => true,
 			'data' => $data,
-		])->header('Cache-Control', 'public, max-age=86400');
+		]);
 	}
 
 	/**
@@ -2174,7 +2174,7 @@ class ProductController extends Controller
 		return response()->json([//
 			'success' => true,
 			'data' => $transformed
-		])->header('Cache-Control', 'public, max-age=86400');
+		]);
 	}
 
 	private function getAllChildCategoryIds($categoryId)
@@ -2441,7 +2441,7 @@ class ProductController extends Controller
 			'Return_policy' => $product->productSuppliers->first()->return_policy ?? null,
 			'Free_shipping' => ($product->productSuppliers->first()->free_shipping ?? null) == 1 ? 'Yes' : 'No',
 
-		])->header('Cache-Control', 'public, max-age=86400');
+		]);
 	}
 
 	/**

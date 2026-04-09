@@ -159,7 +159,7 @@ class CategoryMenuController extends Controller
             return $records->get();
         });
 
-        return response()->json($categoriesMenus)->header('Cache-Control', 'public, max-age=86400');
+        return response()->json($categoriesMenus);
     }
 
     /**
@@ -203,7 +203,7 @@ class CategoryMenuController extends Controller
         });
 
         return response()->json($categoriesTree)
-            ->header('Cache-Control', 'public, max-age=86400');
+            ;
     }
 
     private function buildCategoryTree($categories)

@@ -250,7 +250,7 @@ class BrandController extends Controller
 					})
 				];//
 			}),//
-		])->header('Cache-Control', 'public, max-age=86400');//
+		]);//
 	}//
 
 	/**
@@ -504,7 +504,7 @@ class BrandController extends Controller
 					})->values(),
 				];//
 			}),
-		]) ->header('Cache-Control', 'public, max-age=86400');//
+		]) ;//
 	}//
 
 	/**
@@ -588,7 +588,7 @@ class BrandController extends Controller
 			'success' => true,
 			'message' => 'Brands retrieved successfully.',
 			'data'    => $brands
-		])->header('Cache-Control', 'public, max-age=86400');
+		]);
 	}
 
 	/**
@@ -711,7 +711,7 @@ class BrandController extends Controller
 			'success' => true,
 			'brand_id' => $brand->id,
 			'categories' => $categories
-		]) ->header('Cache-Control', 'public, max-age=86400');
+		]) ;
 	}
 
 	/**
@@ -887,7 +887,7 @@ class BrandController extends Controller
 						return response()->json([
 							'success' => false,
 							'message' => 'Category not found'
-						], 404) ->header('Cache-Control', 'public, max-age=86400');
+						], 404) ;
 					}
 
 					$categoryId = $seoCategory->relational_id;
@@ -1032,7 +1032,7 @@ class BrandController extends Controller
 				'data' => $transformedProducts->values(),
 				'pagination' => $pagination,
 				'message' => 'Products retrieved successfully',
-			]) ->header('Cache-Control', 'public, max-age=86400');
+			]) ;
 		} catch (\Exception $e) {
 			Log::error('Error in getProductsByBrandAndCategory: ' . $e->getMessage());
 			return response()->json([
@@ -1151,7 +1151,7 @@ class BrandController extends Controller
 				'success' => true,
 				'message' => 'Brands grouped alphabetically.',
 				'data' => $grouped
-			]) ->header('Cache-Control', 'public, max-age=86400');
+			]) ;
 		}
 	}
 }
