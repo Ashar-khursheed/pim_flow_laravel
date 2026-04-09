@@ -149,6 +149,11 @@ class ImportProductSupplierJob implements ShouldQueue
 				$rowErrors[] = "'Price' is required.";
 			}
 
+			/* Inventory must be numeric — 0 is allowed */
+			if (!is_numeric($inventory)) {
+				$rowErrors[] = "'Inventory' must be a numeric value.";
+			}
+
 			if (empty($delivery_days)) {
 				$rowErrors[] = "'Delivery Days' are required.";
 			}
@@ -283,10 +288,19 @@ class ImportProductSupplierJob implements ShouldQueue
 					$supplier = new ProductSupplier();
 					$supplier->created_by = $this->userId;
 					$supplier->created_at = now();
+
+					$supplier->inventory_updated_by = $this->userId;
+					$supplier->inventory_updated_at = now();
 				} else {
 					$supplier = $existingSupplier;
 					$supplier->updated_by = $this->userId;
 					$supplier->updated_at = now();
+
+					/* Track inventory change — update audit fields only if inventory changed */
+					if ($existingSupplier->inventory != $inventory) {
+						$supplier->inventory_updated_by = $this->userId;
+						$supplier->inventory_updated_at = now();
+					}
 				}
 
 				/* Set values */

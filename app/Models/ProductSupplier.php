@@ -19,6 +19,8 @@ class ProductSupplier extends Model
 		'sale_price',
 		'price',
 		'inventory',
+		'inventory_updated_by',
+		'inventory_updated_at',
 		'in_stock',
 		'min_quantity',
 		'is_fixed',
