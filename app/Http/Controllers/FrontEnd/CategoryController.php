@@ -875,7 +875,7 @@ class CategoryController extends Controller
 		return response()->json([
 			'success' => true,
 			'data' => $categories,
-		])->header('Cache-Control', 'public, max-age=86400');
+		]);
 	}
 
 	private function addImageUrlsRecursively($category)

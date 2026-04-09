@@ -500,7 +500,7 @@ class ProductController extends Controller
 				'to' => 1,
 				'total' => 1,
 			]
-		])->header('Cache-Control', 'public, max-age=3600');
+		]);
 	}
 
 	/**
