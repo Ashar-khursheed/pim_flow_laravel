@@ -268,7 +268,7 @@ class CategoryController extends BaseController
 				'nullable',
 				'integer',
 				function ($attribute, $value, $fail) {
-					if ($value != 0 && !Category::where('id', $value)->exists()) {
+					if (!empty($value) && $value != 0 && !Category::where('id', $value)->exists()) {
 						$fail('The selected parent category is invalid.');
 					}
 				}
