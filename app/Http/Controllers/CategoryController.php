@@ -264,15 +264,7 @@ class CategoryController extends BaseController
 		}
 		$validator = Validator::make($request->all(), [
 			'name' => 'required|string|max:191',
-			'parent_id' => [
-				'nullable',
-				'integer',
-				function ($attribute, $value, $fail) {
-					if (!empty($value) && $value != 0 && !Category::where('id', $value)->exists()) {
-						$fail('The selected parent category is invalid.');
-					}
-				}
-			],
+			'parent_id' => 'nullable|exists:categories,id',
 			'description' => 'nullable|string',
 			'status' => 'required|string|in:published,draft,pending',
 			'order' => 'nullable|integer',
