@@ -681,12 +681,26 @@ class ProductSupplierController extends BaseController
 		$data['updated_by'] = auth()->id();
 
 		/* Track inventory change — update audit fields only if inventory changed */
-		if ($supplier->inventory != $data['inventory']) {
+		$inventoryChanged = $supplier->inventory != $data['inventory'];
+		if ($inventoryChanged) {
 			$data['inventory_updated_by'] = auth()->id();
 			$data['inventory_updated_at'] = now();
 		}
 
+		/* Only touch updated_at when non-inventory fields changed.
+		   inventory + in_stock (derived from inventory) don't count. */
+		$inventoryOnlyKeys = ['inventory', 'in_stock', 'inventory_updated_by', 'inventory_updated_at', 'updated_by'];
+		$hasNonInventoryChanges = collect($data)
+			->except($inventoryOnlyKeys)
+			->filter(fn($value, $key) => $supplier->getAttribute($key) != $value)
+			->isNotEmpty();
+
+		$supplier->timestamps = false;
+		if ($hasNonInventoryChanges) {
+			$data['updated_at'] = now();
+		}
 		$supplier->update($data);
+		$supplier->timestamps = true;
 
 	    return response()->json([
 	        'success' => true,
