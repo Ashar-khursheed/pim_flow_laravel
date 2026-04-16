@@ -255,104 +255,115 @@ class CategoryController extends BaseController
 	 * )
 	 */
 	public function store(Request $request): JsonResponse
-	{
-		if (!auth()->user()->can('add category')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
-		$validator = Validator::make($request->all(), [
-			'name' => 'required|string|max:191',
-			'parent_id' =>'nullable'|'integer',
-			'description' => 'nullable|string',
-			'status' => 'required|string|in:published,draft,pending',
-			'order' => 'nullable|integer',
-			'image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
-			'is_featured' => 'nullable|boolean',
-			'website_ids' => 'nullable|string|max:255',
-			'icon' => 'nullable|string|max:191',
-			'icon_image' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
-			'slug' => 'nullable|string|max:191|unique:categories,slug',
-			'last_child' => [
-				'nullable',
-				'string',
-				Rule::regex('/^(\d+)(,\d+)*$/'),
-			],
+{
+	if (!auth()->user()->can('add category')) {
+		return response()->json([
+			'success' => false,
+			'message' => "You don't have permission to access this module.",
 		]);
+	}
 
-		$disk = 's3'; // or use config
+	$validator = Validator::make($request->all(), [
+		'name' => 'required|string|max:191',
+		'parent_id' => 'nullable|integer',
+		'description' => 'nullable|string',
+		'status' => 'required|string|in:published,draft,pending',
+		'order' => 'nullable|integer',
+		'image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
+		'is_featured' => 'nullable|boolean',
+		'website_ids' => 'nullable|string|max:255',
+		'icon' => 'nullable|string|max:191',
+		'icon_image' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
+		'slug' => 'nullable|string|max:191|unique:categories,slug',
+		'last_child' => [
+			'nullable',
+			'string',
+			Rule::regex('/^(\d+)(,\d+)*$/'),
+		],
+	]);
 
-		if ($validator->fails()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Validation error',
-				'errors' => $validator->errors()
-			], 422);
+	if ($validator->fails()) {
+		return response()->json([
+			'success' => false,
+			'message' => $validator->errors()->first(),
+			'errors' => $validator->errors()
+		], 422);
+	}
+
+	try {
+		$data = $validator->validated();
+
+		$disk = config('filesystems.default');
+
+		// Generate unique slug
+		$baseSlug = Str::slug($data['name']);
+		$slug = $baseSlug;
+		$count = 1;
+
+		while (Category::where('slug', $slug)->exists()) {
+			$slug = $baseSlug . '-' . $count++;
 		}
 
-		try {
-			$data = $validator->validated();
+		$data['slug'] = $slug;
 
-			// Generate a slug if one isn't provided
-			if (empty($data['slug'])) {
-				$data['slug'] = Str::slug($data['name']);
-			}
+		// Upload image
+		if ($request->hasFile('image')) {
+			$path = $request->file('image')->store('categories', $disk);
+			$data['image'] = Storage::disk($disk)->url($path);
+		}
 
+		// Upload icon image
+		if ($request->hasFile('icon_image')) {
+			$path = $request->file('icon_image')->store('categories/icons', $disk);
+			$data['icon_image'] = Storage::disk($disk)->url($path);
+		}
 
+		// Set default order
+		if (!isset($data['order'])) {
+			$parentId = $data['parent_id'] ?? 0;
+			$lastOrder = Category::where('parent_id', $parentId)->max('order');
+			$data['order'] = $lastOrder ? $lastOrder + 1 : 1;
+		}
 
-			if ($request->hasFile('image')) {
-				$path = $request->file('image')->store('categories', $disk);
-				$data['image'] = Storage::disk($disk)->url($path); // This returns full S3 URL
-			}
+		// Business rule: prevent publish without product assignment
+		if ($data['status'] === 'published') {
+			$hasProducts = Product::where('category_id', $data['parent_id'] ?? null)->exists();
 
-			if ($request->hasFile('icon_image')) {
-				$path = $request->file('icon_image')->store('categories/icons', $disk);
-				$data['icon_image'] = Storage::disk($disk)->url($path); // No extra prefix
-			}
-
-			// Set default order as the last position if not specified
-			if (!isset($data['order'])) {
-				$parentId = $data['parent_id'] ?? 0;
-				$lastOrder = Category::where('parent_id', $parentId)->max('order');
-				$data['order'] = $lastOrder ? $lastOrder + 1 : 1;
-			}
-
-			if ($data['status'] == 'published') {
+			if (!$hasProducts) {
 				return response()->json([
 					'success' => false,
-					'message' => 'At least 1 products must be assigned to the product family before it can be published.'
+					'message' => 'At least 1 product must be assigned before publishing this category.'
 				]);
 			}
-
-			// Create the category
-			$category = Category::create($data);
-
-			if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
-				$category->translateOrNew('en')->name_tr = $request->name;
-			}
-
-			$category->save();
-
-			// Clear cache
-			Cache::forget('all_categories');
-
-
-			return response()->json([
-				'success' => true,
-				'message' => 'Category created successfully',
-				'category' => $category
-			], 201);
-
-		} catch (\Exception $e) {
-
-			return response()->json([
-				'success' => false,
-				'message' => 'Failed to create category',
-				'error' => $e->getMessage()
-			], 500);
 		}
+
+		// Create category
+		$category = Category::create($data);
+
+		// Translation handling
+		if (in_array(config('app.website'), ['UAE', 'UAE_T', 'SA'])) {
+			$category->translateOrNew('en')->name_tr = $request->name;
+			$category->save();
+		}
+
+		// Clear cache
+		Cache::forget('all_categories');
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Category created successfully',
+			'category' => $category
+		], 201);
+
+	} catch (\Exception $e) {
+
+		return response()->json([
+			'success' => false,
+			'message' => 'Failed to create category',
+			'error' => $e->getMessage()
+		], 500);
 	}
+}
 
 	/**
 	 * @OA\Get(
