@@ -278,7 +278,7 @@ class CategoryController extends BaseController
 		'last_child' => [
 			'nullable',
 			'string',
-			'regex:/^(\d+)(,\d+)*$/',
+			'integer'
 		],
 	]);
 
