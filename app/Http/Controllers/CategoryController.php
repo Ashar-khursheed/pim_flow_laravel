@@ -274,7 +274,11 @@ class CategoryController extends BaseController
 			'icon' => 'nullable|string|max:191',
 			'icon_image' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
 			'slug' => 'nullable|string|max:191|unique:categories,slug',
-			'last_child' => 'nullable|string|regex:/^(\d+)(,\d+)*$/',
+			'last_child' => [
+				'nullable',
+				'string',
+				Rule::regex('/^(\d+)(,\d+)*$/'),
+			],
 		]);
 
 		$disk = 's3'; // or use config
