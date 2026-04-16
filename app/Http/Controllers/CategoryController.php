@@ -278,7 +278,7 @@ class CategoryController extends BaseController
 		'last_child' => [
 			'nullable',
 			'string',
-			Rule::regex('/^(\d+)(,\d+)*$/'),
+			'regex:/^(\d+)(,\d+)*$/',
 		],
 	]);
 
