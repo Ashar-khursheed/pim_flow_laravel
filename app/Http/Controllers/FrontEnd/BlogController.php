@@ -175,19 +175,36 @@ class BlogController extends Controller
      *     )
      * )
      */
+    // public function show($slug)
+    // {
+    //     $data = Cache::remember("blog_show_{$slug}", now()->addMinutes(60), function () use ($slug) {
+    //         $blog = Blog::with(['category:id,name,slug,description'])
+    //             ->where('slug', $slug)
+    //             ->where('status', 'published')
+    //             ->firstOrFail();
+
+    //         return $this->formatBlog($blog);
+    //     });
+
+    //     return response()->json($data);
+    // }
     public function show($slug)
-    {
-        $data = Cache::remember("blog_show_{$slug}", now()->addMinutes(60), function () use ($slug) {
+        {
             $blog = Blog::with(['category:id,name,slug,description'])
                 ->where('slug', $slug)
                 ->where('status', 'published')
-                ->firstOrFail();
+                ->first();
 
-            return $this->formatBlog($blog);
-        });
+            if (!$blog) {
+                return response()->json(['message' => 'Blog not found.'], 404);
+            }
 
-        return response()->json($data);
-    }
+            $data = Cache::remember("blog_show_{$slug}", now()->addMinutes(60), function () use ($blog) {
+                return $this->formatBlog($blog);
+            });
+
+            return response()->json($data);
+        }
 
     /**
      * @OA\Post(
