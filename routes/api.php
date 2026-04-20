@@ -236,7 +236,7 @@ Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
 
 		return response($response->body(), 200)
 		->header('Content-Type', $response->header('Content-Type') ?? 'image/webp')
-		
+
 		->header('Access-Control-Allow-Origin', '*')
 		->header('Access-Control-Allow-Headers', 'Content-Type');
 	} catch (\Exception $e) {
@@ -463,6 +463,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'store']);
 	Route::post('/vendors/import', [VendorController::class, 'import']);
 	Route::post('/vendors/export', [VendorController::class, 'export']);
+	Route::get('/vendors/stats', [VendorController::class, 'stats']);
 	Route::apiResource('vendors', VendorController::class);
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
 

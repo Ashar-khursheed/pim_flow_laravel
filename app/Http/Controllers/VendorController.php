@@ -812,4 +812,111 @@ class VendorController extends BaseController
 
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/vendors/stats",
+	 *     summary="Get vendor inventory stats",
+	 *     description="Returns paginated list of vendors with inventory update statistics",
+	 *     tags={"Vendors"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search", example="ABC", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
+	public function stats(Request $request)
+	{
+		$searchableColumns = ['id', 'name'];
+		$sortableColumns = $searchableColumns;
+
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+		$recordsQuery = Vendor::query();
+
+		/* No pagination — return only id and name */
+		if (!$request->filled('page') || !$request->filled('length')) {
+			$records = $recordsQuery->orderBy('name', 'asc')->get(['id', 'name']);
+
+			return response()->json([
+				'success' => true,
+				'message' => __('msg_rec_list'),
+				'data' => $records,
+				'total_pages' => 1,
+				'total_records' => $records->count(),
+			]);
+		}
+
+		/* Eager load vendor product inventory stats */
+		$recordsQuery
+		->select('id', 'name')
+		->withCount(['vendorProducts as total_products'])
+		->with([
+			'vendorProducts' => function ($q) {
+				$q->select('vendor_id',
+					\DB::raw('DATE(MAX(inventory_updated_at)) as last_updated_at'),
+					\DB::raw('SUM(CASE WHEN DATE(inventory_updated_at) = (SELECT DATE(MAX(ps2.inventory_updated_at)) FROM product_suppliers ps2 WHERE ps2.vendor_id = product_suppliers.vendor_id) THEN 1 ELSE 0 END) as last_updated_product_count')
+				)
+				->groupBy('vendor_id');
+			},
+		]);
+
+		/* Global search */
+		if ($request->filled('global')) {
+			$search = $request->input('global');
+			$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+				foreach ($searchableColumns as $col) {
+					$q->orWhere($col, 'LIKE', '%' . $search . '%');
+				}
+			});
+		}
+
+		/* Sorting */
+		$recordsQuery->orderBy('name', $sortDir);
+
+		/* Count before pagination */
+		$totalRecords = (clone $recordsQuery)->count();
+
+		/* Pagination calculation */
+		$length = (int) $request->input('length');
+		$page = (int) $request->input('page');
+		$totalPages = (int) ceil($totalRecords / $length);
+		$page = ($page > $totalPages && $totalPages > 0) ? 1 : $page;
+
+		/* Fetch paginated records */
+		$records = $recordsQuery
+		->offset(($page - 1) * $length)
+		->limit($length)
+		->get();
+
+		/* Transform records */
+		$records->transform(function ($record) {
+			$vendorProduct = $record->vendorProducts->first();
+			$lastUpdatedAt = $vendorProduct->last_updated_at ?? null;
+			$lastUpdatedProductCount = $lastUpdatedAt ? ($vendorProduct->last_updated_product_count ?? null) : null;
+
+			/* Fortnightly updated — 1 if last_updated_at is within 15 days, else 0 */
+			$fortnightlyUpdated = ($lastUpdatedAt && \Carbon\Carbon::parse($lastUpdatedAt)->gte(now()->subDays(15))) ? 1 : 0;
+
+			$record->last_updated_at = $lastUpdatedAt;
+			$record->last_updated_product_count = $lastUpdatedProductCount;
+			$record->fortnightly_updated = $fortnightlyUpdated;
+
+			unset($record->vendorProducts);
+
+			return $record;
+		});
+
+		return response()->json([
+			'success' => true,
+			'message' => __('msg_rec_list'),
+			'data' => $records,
+			'total_pages' => $totalPages,
+			'total_records' => $totalRecords,
+		]);
+	}
 }

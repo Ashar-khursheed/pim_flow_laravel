@@ -33,6 +33,11 @@ class Vendor extends Model
 		return $this->hasMany(VendorContact::class);
 	}
 
+	public function vendorProducts()
+	{
+		return $this->hasMany(ProductSupplier::class);
+	}
+
 	/**
 	 * Prepare a date for array / JSON serialization.
 	 *
