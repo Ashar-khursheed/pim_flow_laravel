@@ -267,6 +267,12 @@ class Product extends Model implements TranslatableContract
 	{
 		return $this->hasMany(ProductSupplier::class, 'product_id');
 	}
+
+	public function firstSupplier()
+	{
+		return $this->hasOne(ProductSupplier::class, 'product_id')->oldestOfMany('id');
+	}
+
 	public function productVariants()
 	{
 		return $this->hasMany(ProductVariant::class, 'parent_id');

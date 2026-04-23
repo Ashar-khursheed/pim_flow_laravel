@@ -92,6 +92,7 @@ use App\Http\Controllers\TrainingDataController;
 use App\Http\Controllers\ProductAttributeController;
 use App\Http\Controllers\ChatbotManagementController;
 use App\Http\Controllers\HorecaPageController;
+use App\Http\Controllers\HorecaIqController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -514,6 +515,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('products/duplicate', [ProductController::class, 'productDuplicate']);
 
 	Route::post('products/delete-product-document', [ProductController::class, 'deleteProductDocument']);
+
+	Route::apiResource('horeca-iq/products', HorecaIqController::class);
+
 	Route::post('/product-report-export', [ProductReportController::class, 'index']);
 	Route::post('/product-benefit-report', [ProductReportController::class, 'exportBenefitReport']);
 	Route::post('/vendor-brand-product-export', [ProductReportController::class, 'vendorBrandProductExport']);

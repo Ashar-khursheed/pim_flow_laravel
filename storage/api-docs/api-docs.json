@@ -31791,6 +31791,128 @@
                 ]
             }
         },
+        "/api/horeca-iq/products": {
+            "get": {
+                "tags": [
+                    "Product IQ"
+                ],
+                "summary": "Get products list for Horeca IQ",
+                "description": "Returns paginated list of products with search and sort support",
+                "operationId": "aab26017c9378a0dd2762975eaafdc8e",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search across all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "sku"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/horeca-iq/products/{product_id}": {
+            "get": {
+                "tags": [
+                    "Product IQ"
+                ],
+                "summary": "Get product details for Horeca IQ",
+                "description": "Returns detailed information of a single product including pricing, brand, categories and attributes",
+                "operationId": "8f53010fc5f5186a36f388fce03766b3",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/horeca-pages": {
             "get": {
                 "tags": [
@@ -50720,6 +50842,10 @@
         },
         {
             "name": "Frontend FProduct",
+            "description": "........"
+        },
+        {
+            "name": "Product IQ",
             "description": "........"
         },
         {

@@ -44,6 +44,11 @@ use App\Http\Controllers\Controller;
  * )
  *
  * @OA\Tag(
+ *     name="Product IQ",
+ *     description="........"
+ * )
+ *
+ * @OA\Tag(
  *     name="Attributes",
  *     description="API Endpoints for Attribute Management"
  * )
