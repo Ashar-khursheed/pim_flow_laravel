@@ -1025,6 +1025,9 @@ Route::get('/frontend/products-7.xml', [SitemapController::class, 'getProductsSi
 Route::get('/frontend/products-8.xml', [SitemapController::class, 'getProductsSitemap8']);
 Route::get('/frontend/products-9.xml', [SitemapController::class, 'getProductsSitemap9']);
 Route::get('/frontend/products-10.xml', [SitemapController::class, 'getProductsSitemap10']);
+Route::get('/frontend/products-11.xml', [SitemapController::class, 'getProductsSitemap11']);
+Route::get('/frontend/products-12.xml', [SitemapController::class, 'getProductsSitemap12']);
+Route::get('/frontend/products-13.xml', [SitemapController::class, 'getProductsSitemap13']);
 
 Route::get('/frontend/pages.xml', [SitemapController::class, 'getPagesSitemap']);
 Route::get('/frontend/blog.xml', [SitemapController::class, 'getBlogSitemap']);
