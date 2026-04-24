@@ -27109,7 +27109,7 @@
                                         },
                                         "error": {
                                             "type": "string",
-                                            "example": "Error generating sitemap"
+                                            "example": "Error generating sitemaps"
                                         }
                                     },
                                     "type": "object"
@@ -43159,6 +43159,39 @@
                 "responses": {
                     "200": {
                         "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/quotes/{id}/download-pdf": {
+            "get": {
+                "tags": [
+                    "Quotes"
+                ],
+                "summary": "Download quote's pdf",
+                "operationId": "cad5ab09570718ed46abc6a89efe0e47",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF downloaded successfully",
                         "content": {
                             "application/json": {}
                         }
