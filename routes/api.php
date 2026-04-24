@@ -639,7 +639,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::put('support-tickets/{id}/status', [SupportTicketController::class, 'updateStatus']);
 	Route::apiResource('support-tickets', SupportTicketController::class);
 
-	Route::get('quotes/{id}/download-pdf', [F_QuoteController::class, 'downloadPdfAdmin']);
+	Route::get('quotes/{id}/download-pdf', [QuoteController::class, 'downloadPdfAdmin']);
 	Route::apiResource('quotes', QuoteController::class);
 
 	Route::get('/redirect-links/template', [RedirectLinkController::class, 'downloadTemplate']);
