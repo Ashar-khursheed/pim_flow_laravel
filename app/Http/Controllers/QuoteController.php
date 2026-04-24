@@ -19,10 +19,12 @@ use App\Models\FrontEnd\Customer;
 use App\Jobs\Quote\QuotePlacedMailJob;
 
 use App\Traits\CalculationTrait;
+use App\Traits\GeneratesQuotePdf;
 
 class QuoteController extends BaseController
 {
 	use CalculationTrait;
+	use GeneratesQuotePdf;
 	/**
 	 * @OA\Get(
 	 *     path="/api/quotes",
@@ -771,5 +773,36 @@ class QuoteController extends BaseController
 	public function destroy(Quote $quote)
 	{
 		//
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/quotes/{id}/download-pdf",
+	 *     summary="Download quote's pdf",
+	 *     tags={"Quotes"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Quote ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="PDF downloaded successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function downloadPdfAdmin($id)
+	{
+		$quote = Quote::find($id);
+		if (!$quote) {
+			return response()->json([
+				'success' => false,
+				'message' => "Quote not found."
+			]);
+		}
+
+		$pdfParams = $this->generateQuotePdfParams($id);
+		$pdf = Pdf::loadView('pdf.quote', $pdfParams);
+		return $pdf->download("quote_{$quote->id}.pdf");
 	}
 }
