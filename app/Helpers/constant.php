@@ -462,7 +462,8 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 		/* Upload to S3 */
 		Storage::disk('s3')->put($path, $webpData); /* Make publicly accessible */
 
-		return Storage::disk('s3')->url($path);
+		$s3Url = Storage::disk('s3')->url($path);
+		return str_replace('https://uae-horeca-images.s3.me-central-1.amazonaws.com', 'https://d2dy46c7t7z5ba.cloudfront.net', $s3Url);
 
 	} catch (\Exception $e) {
 		Log::error('uploadImageToWebpS3FromFile error', [
@@ -477,7 +478,11 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 function uploadFileToS3($file, $path)
 {
 	$filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-	return Storage::disk('s3')->putFileAs($path, $file, $filename, 'public') ? Storage::disk('s3')->url("$path/$filename") : null;
+	if (Storage::disk('s3')->putFileAs($path, $file, $filename, 'public')) {
+		$s3Url = Storage::disk('s3')->url("$path/$filename");
+		return str_replace('https://uae-horeca-images.s3.me-central-1.amazonaws.com', 'https://d2dy46c7t7z5ba.cloudfront.net', $s3Url);
+	}
+	return null;
 }
 
 /**
@@ -501,7 +506,8 @@ function uploadPdfToS3FromFile(Request $request, string $key, string $pathPrefix
 
 		Storage::disk('s3')->put($path, file_get_contents($file->getRealPath()));
 
-		return Storage::disk('s3')->url($path);
+		$s3Url = Storage::disk('s3')->url($path);
+		return str_replace('https://uae-horeca-images.s3.me-central-1.amazonaws.com', 'https://d2dy46c7t7z5ba.cloudfront.net', $s3Url);
 	} catch (\Exception $e) {
 		return null;
 	}
