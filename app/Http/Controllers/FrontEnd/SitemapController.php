@@ -187,6 +187,27 @@ class SitemapController extends Controller
                 'changefreq' => 'weekly',
                 'priority' => '0.5',
             ],
+             [
+
+                'loc' => 'products-11.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-12.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
+             [
+
+                'loc' => 'products-13.xml',
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.5',
+            ],
             [
                 'loc' => 'pages.xml',
                 'lastmod' => $now,
@@ -792,12 +813,18 @@ public function getProductsSitemap9() { return $this->generateProductsSitemap(80
      *         description="Server error",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="error", type="string", example="Error generating sitemap")
+     *             @OA\Property(property="error", type="string", example="Error generating sitemaps")
      *         )
      *     )
      * )
      */
 public function getProductsSitemap10() { return $this->generateProductsSitemap(9000, 1000); }
+
+public function getProductsSitemap11() { return $this->generateProductsSitemap(10000, 1000); }
+
+public function getProductsSitemap12() { return $this->generateProductsSitemap(11000, 1000); }
+
+public function getProductsSitemap13() { return $this->generateProductsSitemap(12000, 1000); }
 
 private function generateProductsSitemap($offset, $limit)
 {
