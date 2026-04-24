@@ -1000,7 +1000,7 @@ class ProductImageUploadController extends Controller
                 File::delete($compressedImagePath);
                 $compressedImagePath = null;
 
-                $imageUrl = str_replace('https://uae-horeca-images.s3.me-central-1.amazonaws.com', 'https://d2dy46c7t7z5ba.cloudfront.net', Storage::disk('s3')->url($s3FilePath));
+                $imageUrl = Storage::disk('s3')->url($s3FilePath);
                 $imageUrls[] = $imageUrl;
 
                 error_log("Successfully uploaded: {$originalFileName} ({$fileSize} bytes)");

@@ -21,13 +21,8 @@ trait HandlesImageUpload
 			return null;
 		}
 
-		/* If already on our AWS S3 or CDN, return as-is */
-		if (Str::startsWith($image, [
-			env('AWS_URL'), 
-			env('AWS_CACHE_URL'), 
-			'https://d2dy46c7t7z5ba.cloudfront.net', 
-			'http://d2dy46c7t7z5ba.cloudfront.net'
-		])) {
+		/* If already on our AWS S3, return as-is */
+		if (Str::startsWith($image, [env('AWS_URL'), env('AWS_CACHE_URL')])) {
 			return $image;
 		}
 

@@ -229,7 +229,7 @@ class ProductController extends BaseController
 					'approved' => $product->approved,
 					'ar_approved' => $product->ar_approved,
 					'sku' => $product->sku,
-					'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $this->convertToCdn($imageUrls[0]) : null,
+					'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 					'brand' => optional($product->brand)->name,
 					'status' => $product->status,
 					'quote_available' => $product->quote_available,
@@ -258,7 +258,7 @@ class ProductController extends BaseController
 				'approved' => $product->approved,
 				'ar_approved' => $product->ar_approved,
 				'sku' => $product->sku,
-				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $this->convertToCdn($imageUrls[0]) : null,
+				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
 				'status' => $product->status,
 				'quote_available' => $product->quote_available,
@@ -530,13 +530,13 @@ class ProductController extends BaseController
 				'attribute_name' => $attr->attributeDetails->name,
 				'attribute_value' => ($attr->attributeDetails->type == 'multiple_images')
 				? (is_array($attr->attribute_value)
-					? $this->convertToCdn($attr->attribute_value)
+					? $attr->attribute_value
 					: (is_array($decoded = json_decode($attr->attribute_value, true))
-						? $this->convertToCdn($decoded)
+						? $decoded
 						: null
 					)
 				)
-				: $this->convertToCdn($attr->attribute_value),
+				: $attr->attribute_value,
 				'measurement_unit_id' => $attr->measurement_unit_id,
 				'measurement_unit_name' => $attr->measurementUnit->name ?? null,
 			];
@@ -583,8 +583,7 @@ class ProductController extends BaseController
 				case 'images':
 				$field = $attribute . '_tr';
 				$value = $translation ? $translation->$field : $value;
-				$decoded = is_array($value) ? $value : json_decode($value, true);
-				$formattedProduct[$attribute] = $this->convertToCdn($decoded);
+				$formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true);
 				break;
 
 				case 'refund':
@@ -640,8 +639,7 @@ class ProductController extends BaseController
 					// $formattedProduct[$attribute] = is_array($value) ? $value : [];
 				case 'video_path':
 				case 'documents':
-				$decoded = is_array($value) ? $value : json_decode($value, true) ?? [];
-				$formattedProduct[$attribute] = $this->convertToCdn($decoded);
+				$formattedProduct[$attribute] = is_array($value) ? $value : json_decode($value, true) ?? [];
 				break;
 
 
@@ -1404,8 +1402,7 @@ class ProductController extends BaseController
 						file_put_contents($tempPath, $encoded);
 
 						$path = Storage::disk('s3')->putFile($imagePath, new \Illuminate\Http\File($tempPath));
-						$s3Url = Storage::disk('s3')->url($path);
-						$updatedImages[] = str_replace('https://uae-horeca-images.s3.me-central-1.amazonaws.com', 'https://d2dy46c7t7z5ba.cloudfront.net', $s3Url);
+						$updatedImages[] = Storage::disk('s3')->url($path);
 
 						@unlink($tempPath);
 					}
@@ -1461,8 +1458,7 @@ class ProductController extends BaseController
 						}
 
 						$path = $file->store($videoPath, 's3');
-						$s3Url = Storage::disk('s3')->url($path);
-						$finalVideos[] = str_replace('https://uae-horeca-images.s3.me-central-1.amazonaws.com', 'https://d2dy46c7t7z5ba.cloudfront.net', $s3Url);
+						$finalVideos[] = Storage::disk('s3')->url($path);
 					}
 					// ignore invalid inputs
 				}
@@ -1514,7 +1510,7 @@ class ProductController extends BaseController
 				/* Create an array with title and path for each uploaded document */
 				$uploadedDocs[] = [
 					'title' => $title,
-					'path' => str_replace('https://uae-horeca-images.s3.me-central-1.amazonaws.com', 'https://d2dy46c7t7z5ba.cloudfront.net', Storage::disk('s3')->url($path))
+					'path' => Storage::disk('s3')->url($path)
 				];
 			}
 
@@ -2733,32 +2729,5 @@ class ProductController extends BaseController
 			'product_id' => $product->id,
 			'store_url' => $fullUrl,
 		]);
-	/**
-	 * Convert S3 URLs to CDN URLs in strings or arrays
-	 */
-	private function convertToCdn($data)
-	{
-		if (!$data) return $data;
-
-		$s3Base = 'https://uae-horeca-images.s3.me-central-1.amazonaws.com';
-		$cdnBase = 'https://d2dy46c7t7z5ba.cloudfront.net';
-
-		if (is_string($data)) {
-			return str_replace($s3Base, $cdnBase, $data);
-		}
-
-		if (is_array($data)) {
-			return array_map(function ($item) use ($s3Base, $cdnBase) {
-				if (is_string($item)) {
-					return str_replace($s3Base, $cdnBase, $item);
-				}
-				if (is_array($item)) {
-					return $this->convertToCdn($item);
-				}
-				return $item;
-			}, $data);
-		}
-
-		return $data;
 	}
 }
