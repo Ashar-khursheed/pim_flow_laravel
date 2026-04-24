@@ -777,7 +777,7 @@ class QuoteController extends BaseController
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/quotes/{id}/download-pdf",
+	 *     path="/api/quotes/{id}/download-pdf-admin",
 	 *     summary="Download quote's pdf",
 	 *     tags={"Quotes"},
 	 *     @OA\Parameter(

@@ -43171,13 +43171,13 @@
                 ]
             }
         },
-        "/api/quotes/{id}/download-pdf": {
+        "/api/quotes/{id}/download-pdf-admin": {
             "get": {
                 "tags": [
                     "Quotes"
                 ],
                 "summary": "Download quote's pdf",
-                "operationId": "cad5ab09570718ed46abc6a89efe0e47",
+                "operationId": "2a054c36276518e51113f635de2e59d9",
                 "parameters": [
                     {
                         "name": "id",
