@@ -281,139 +281,42 @@ public function getByRelationalId($identifier)
 // =============================================
 // SCHEMA DECODE HELPER — Corrupted JSON fix
 // =============================================
-// private function decodeSchema($raw)
-// {
-//     if (is_array($raw)) return $raw;
-
-//     // Step 1: Direct
-//     $decoded = json_decode($raw, true);
-//     if (is_array($decoded)) return $decoded;
-
-//     // Step 2: Stripslashes pehle
-//     $str = stripslashes($raw);
-//     $decoded = json_decode($str, true);
-//     if (is_array($decoded)) return $decoded;
-
-//     // Step 3: Stripslashes ke baad inch fix
-//     // 52" Pass -> 52in Pass  (lekin "15" ya "4.6" safe rahega)
-//     $fixed = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $str);
-//     $decoded = json_decode($fixed, true);
-//     if (is_array($decoded)) return $decoded;
-
-//     // Step 4: Raw pe inch fix (without stripslashes)
-//     $fixed2 = preg_replace('/(\d)\"(?=[^,\}\]\d])/', '$1in', $raw);
-//     $decoded = json_decode($fixed2, true);
-//     if (is_array($decoded)) return $decoded;
-
-//     // Step 5: Dono ek saath + control chars
-//     $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
-//     $clean = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $clean);
-//     $decoded = json_decode($clean, true);
-//     if (is_array($decoded)) return $decoded;
-
-//     \Log::error('Schema decode failed', [
-//         'error'   => json_last_error_msg(),
-//         'snippet' => substr($fixed, 0, 300),
-//     ]);
-
-//     return null;
-// }
 private function decodeSchema($raw)
 {
     if (is_array($raw)) return $raw;
 
-    // 1. Basic cleanup
-    $raw = preg_replace('/[\x00-\x1F\x7F]/u', '', $raw);
-    $raw = str_replace(["\r", "\n", "\\n"], '', $raw);
+    // Step 1: Direct
+    $decoded = json_decode($raw, true);
+    if (is_array($decoded)) return $decoded;
 
-    // 2. Try multiple decode passes (handles double encoding)
-    $decoded = $this->multiJsonDecode($raw);
-    if (!is_array($decoded)) return null;
+    // Step 2: Stripslashes pehle
+    $str = stripslashes($raw);
+    $decoded = json_decode($str, true);
+    if (is_array($decoded)) return $decoded;
 
-    // 3. Clean structure recursively
-    $decoded = $this->cleanArray($decoded);
+    // Step 3: Stripslashes ke baad inch fix
+    // 52" Pass -> 52in Pass  (lekin "15" ya "4.6" safe rahega)
+    $fixed = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $str);
+    $decoded = json_decode($fixed, true);
+    if (is_array($decoded)) return $decoded;
 
-    return $decoded;
-}
+    // Step 4: Raw pe inch fix (without stripslashes)
+    $fixed2 = preg_replace('/(\d)\"(?=[^,\}\]\d])/', '$1in', $raw);
+    $decoded = json_decode($fixed2, true);
+    if (is_array($decoded)) return $decoded;
 
-/**
- * Try decoding multiple layers of JSON
- */
-private function multiJsonDecode($data)
-{
-    for ($i = 0; $i < 3; $i++) {
-        if (!is_string($data)) break;
+    // Step 5: Dono ek saath + control chars
+    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
+    $clean = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $clean);
+    $decoded = json_decode($clean, true);
+    if (is_array($decoded)) return $decoded;
 
-        $trimmed = trim($data, "\"'");
+    \Log::error('Schema decode failed', [
+        'error'   => json_last_error_msg(),
+        'snippet' => substr($fixed, 0, 300),
+    ]);
 
-        $json = json_decode($trimmed, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            $data = $json;
-        } else {
-            break;
-        }
-    }
-
-    return $data;
-}
-
-/**
- * Clean recursion + fix description field
- */
-private function cleanArray($data)
-{
-    if (!is_array($data)) return $data;
-
-    foreach ($data as $key => $value) {
-
-        // If value is array -> recurse
-        if (is_array($value)) {
-            $data[$key] = $this->cleanArray($value);
-            continue;
-        }
-
-        // Clean strings
-        if (is_string($value)) {
-
-            // remove HTML tags
-            $value = strip_tags($value);
-
-            // remove leftover escaped quotes
-            $value = str_replace(['\"', '\\\"'], '"', $value);
-
-            // remove extra spaces
-            $value = trim($value);
-
-            $data[$key] = $value;
-        }
-
-        // SPECIAL CASE: description field fix
-        if ($key === 'description') {
-            $data[$key] = $this->fixDescription($data[$key]);
-        }
-    }
-
-    return $data;
-}
-
-/**
- * Fix weird description array stored as string
- */
-private function fixDescription($value)
-{
-    if (!is_string($value)) return $value;
-
-    $value = trim($value, "\"'");
-
-    $json = json_decode($value, true);
-
-    if (is_array($json)) {
-        return array_values(array_filter($json, function ($v) {
-            return $v !== null && $v !== '';
-        }));
-    }
-
-    return strip_tags($value);
+    return null;
 }
 
     // public function getByRelationalId($identifier)
