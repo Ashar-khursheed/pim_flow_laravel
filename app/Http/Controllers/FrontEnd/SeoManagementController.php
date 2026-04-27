@@ -232,38 +232,58 @@ public function getByRelationalId($identifier)
         //         $filtered['schema'] = $decoded;
         //     }
         // }
-        if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+       if (!empty($filtered['schema'])) {
 
     $rawSchema = $filtered['schema'];
+    $decoded = null;
 
-    // Step 1: Try normal decode
-    $decoded = json_decode($rawSchema, true);
-
-    // Step 2: If failed → maybe double encoded
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        $decoded = json_decode(stripslashes($rawSchema), true);
+    // ===============================
+    // STEP 1: Normalize input type
+    // ===============================
+    if (is_array($rawSchema)) {
+        $decoded = $rawSchema;
     }
 
-    // Step 3: If still failed → try removing extra quotes
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        $cleaned = trim($rawSchema, '"');
-        $decoded = json_decode($cleaned, true);
+    if (is_string($rawSchema)) {
+
+        // Try normal JSON decode
+        $decoded = json_decode($rawSchema, true);
+
+        // If failed → try stripslashes (double encoded JSON)
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $decoded = json_decode(stripslashes($rawSchema), true);
+        }
+
+        // If still failed → trim quotes (stringified JSON)
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $decoded = json_decode(trim($rawSchema, '"'), true);
+        }
+
+        // Final fallback → HTML decode
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $decoded = json_decode(html_entity_decode($rawSchema), true);
+        }
     }
 
-    // Step 4: If still failed → skip safely
-    if (json_last_error() !== JSON_ERROR_NONE) {
+    // ===============================
+    // STEP 2: Validate decoded JSON
+    // ===============================
+    if (json_last_error() !== JSON_ERROR_NONE || empty($decoded)) {
         $filtered['schema'] = null;
+        $filtered['canonical_url'] = null;
     } else {
 
-        // ✅ Extract canonical URL (supports all formats)
+        // ===============================
+        // STEP 3: Extract canonical URL
+        // ===============================
         $canonicalUrl = null;
 
         if (is_array($decoded)) {
 
             foreach ($decoded as $schemaItem) {
 
-                // Case: @graph
-                if (isset($schemaItem['@graph'])) {
+                // Case: @graph structure
+                if (isset($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
                     foreach ($schemaItem['@graph'] as $graphItem) {
                         if (!empty($graphItem['url'])) {
                             $canonicalUrl = $graphItem['url'];
@@ -272,7 +292,7 @@ public function getByRelationalId($identifier)
                     }
                 }
 
-                // Case: direct url
+                // Case: direct URL
                 if (!empty($schemaItem['url'])) {
                     $canonicalUrl = $schemaItem['url'];
                     break;
@@ -280,11 +300,13 @@ public function getByRelationalId($identifier)
             }
         }
 
+        // ===============================
+        // STEP 4: Final assign
+        // ===============================
         $filtered['schema'] = $decoded;
         $filtered['canonical_url'] = $canonicalUrl;
     }
 }
-
         // Attach canonical URL separately
         $filtered['canonical_url'] = $canonicalUrl;
 
